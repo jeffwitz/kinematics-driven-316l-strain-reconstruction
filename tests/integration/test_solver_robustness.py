@@ -5,6 +5,10 @@ import pytest
 
 from fem_inhouse.config import CaseStudyConfig, SolverConfig
 from fem_inhouse.core import nonlinear
+from fem_inhouse.core.plane_stress_material import (
+    LocalPlaneStressConvergenceError,
+    PlaneStressBatchStatistics,
+)
 from fem_inhouse.examples import reduced_biaxial_case
 from fem_inhouse.postprocessing import von_mises_stress
 from fem_inhouse.solver import run_case_study
@@ -95,3 +99,59 @@ def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
     monkeypatch.setattr(nonlinear, "_solve", nonfinite_solution)
     with pytest.raises(RuntimeError, match="increment cutback below minimum"):
         _solve_case(case, config=config)
+
+
+def test_local_constitutive_failure_triggers_clean_global_cutback(monkeypatch) -> None:
+    case = reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
+    original_factory = nonlinear.create_plane_stress_material_batch
+    wrapper_holder = {}
+
+    class FailFirstTrial:
+        def __init__(self, delegate):
+            self.delegate = delegate
+            self.failed = False
+            self.reverts = 0
+
+        @property
+        def point_count(self):
+            return self.delegate.point_count
+
+        @property
+        def backend_name(self):
+            return self.delegate.backend_name
+
+        @property
+        def completion_strategy(self):
+            return self.delegate.completion_strategy
+
+        @property
+        def statistics(self):
+            return PlaneStressBatchStatistics(local_plane_stress_failures=int(self.failed))
+
+        def evaluate(self, *args, **kwargs):
+            if not self.failed:
+                self.failed = True
+                raise LocalPlaneStressConvergenceError("injected local failure")
+            return self.delegate.evaluate(*args, **kwargs)
+
+        def commit(self):
+            self.delegate.commit()
+
+        def revert(self):
+            self.reverts += 1
+            self.delegate.revert()
+
+    def factory(*args, **kwargs):
+        wrapper = FailFirstTrial(original_factory(*args, **kwargs))
+        wrapper_holder["batch"] = wrapper
+        return wrapper
+
+    monkeypatch.setattr(nonlinear, "create_plane_stress_material_batch", factory)
+    result = _solve_case(case)
+
+    wrapper = wrapper_holder["batch"]
+    assert result.diagnostics is not None
+    assert result.diagnostics.cutbacks == 1
+    assert result.diagnostics.local_plane_stress_failures == 1
+    assert wrapper.reverts >= 1
+    assert all(np.isfinite(field).all() for field in result.arrays())
