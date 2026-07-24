@@ -15,6 +15,10 @@ build/
 dist/
 *.egg-info/
 
+# Generated scientific inputs and results
+data/processed/
+results/
+
 # Editor and operating-system files
 .idea/
 .vscode/

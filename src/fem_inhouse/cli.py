@@ -17,6 +17,7 @@ from fem_inhouse.config import (
     MeshConfig,
     SolverConfig,
 )
+from fem_inhouse.data_preparation import PreparationConfig, prepare_case_study
 from fem_inhouse.examples import (
     reduced_biaxial_case,
     save_reduced_example,
@@ -51,6 +52,27 @@ def _parser() -> argparse.ArgumentParser:
     example.add_argument("--output", type=Path, required=True)
     example.add_argument("--nx", type=int, default=10)
     example.add_argument("--ny", type=int, default=10)
+
+    prepare = commands.add_parser(
+        "prepare-case",
+        help="verify and convert the versioned raw DIC data to canonical solver inputs",
+    )
+    prepare.add_argument("--raw", type=Path, required=True)
+    prepare.add_argument("--output", type=Path, required=True)
+    prepare.add_argument("--pixel-size-um", type=float, default=1.84)
+    prepare.add_argument("--hardening-scale-mpa", type=float, default=380.0)
+    prepare.add_argument(
+        "--nonfinite-policy",
+        choices=("error", "nearest"),
+        default="error",
+        help="explicit policy for non-finite hardening multipliers",
+    )
+    prepare.add_argument(
+        "--nodal-completion",
+        choices=("edge-pad-upper",),
+        default="edge-pad-upper",
+        help="explicit rule used to obtain the final nodal row and column",
+    )
 
     layout = commands.add_parser("layout", help="write an article partition manifest")
     layout.add_argument("--count", type=int, choices=(25, 100), required=True)
@@ -179,6 +201,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         report = save_reduced_example(args.output, nx=args.nx, ny=args.ny)
         _print_json(asdict(report))
         return 0 if report.passed else 1
+    if args.command == "prepare-case":
+        manifest = prepare_case_study(
+            args.raw,
+            args.output,
+            config=PreparationConfig(
+                pixel_size_um=args.pixel_size_um,
+                hardening_scale_mpa=args.hardening_scale_mpa,
+                nonfinite_policy=args.nonfinite_policy,
+                nodal_completion=args.nodal_completion,
+            ),
+        )
+        _print_json(manifest)
+        return 0
     if args.command == "partition":
         workflow = _partition_workflow(args)
         if args.list_pending:
