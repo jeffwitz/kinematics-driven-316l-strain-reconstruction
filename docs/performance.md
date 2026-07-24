@@ -143,12 +143,47 @@ MFront. La grille est toutefois trop petite pour extrapoler ce rapport : les
 coûts fixes MGIS, l'assemblage sparse et PyPardiso changent de poids avec la
 taille.
 
+## Partition de l'article avec MFront par défaut
+
+La partition de coin 0 du découpage `10×10`, padding 150, représente
+`510×460 = 234 600` éléments. Elle a été recalculée avec huit threads MGIS, la
+loi MFront analytique sans plafond PEEQ, 20 incréments et les mêmes entrées DIC
+que la campagne Python tabulée conservée.
+
+| Mesure | Python tabulé | MFront analytique | Évolution |
+|---|---:|---:|---:|
+| Temps mur processus | 1089,80 s | 650,08 s | -40,35 % |
+| Temps solveur | 1088,126 s | 648,402 s | gain 1,678× |
+| Temps constitutif | 575,906 s | 83,409 s | gain 6,905× |
+| Assemblage tangent | 157,026 s | 191,854 s | +22,18 % |
+| Solveur linéaire | 299,491 s | 320,724 s | +7,09 % |
+| Itérations Newton | 113 | 112 | -1 |
+| Pic RSS processus | 3 768 132 KiB | 4 163 308 KiB | +10,49 % |
+
+Le temps global MFront est donc `10 min 50,08 s`, contre `18 min 09,80 s`,
+sans cutback dans les deux cas. Le gain vient principalement de l'intégration
+constitutive. Les hausses des temps d'assemblage et de résolution linéaire
+montrent que cette comparaison de deux exécutions uniques inclut aussi la
+variabilité système ; elle ne doit pas être lue comme un microbenchmark isolé
+de ces phases.
+
+La table Python de 1000 points n'est jamais construite sur le chemin MFront.
+Le pic RSS global augmente pourtant de `395 176 KiB`, car cette mesure inclut
+les états et tangentes MGIS, les matrices sparse et PyPardiso. La suppression
+de la table corrige le modèle nominal et évite son allocation, mais ne constitue
+pas à elle seule une optimisation prouvée du pic mémoire du processus complet.
+Aucun point de cette partition ne dépasse PEEQ `0,2` (`max=0,06496`) : le
+plafond historique n'était donc pas actif dans ce calcul précis.
+
+Les résultats complets et le rapport comparatif sont conservés dans
+`validation/reference_data/article_100p_pad150_p0000_mfront_v1`.
+
 Avant le ROI complet, il reste donc à :
 
 - séparer, si l'API PyPardiso le permet sans modifier le résultat, analyse,
   factorisation et substitutions ;
-- mesurer 350k éléments ;
-- définir un budget par job à partir du cas hétérogène ;
+- mesurer une partition intérieure paddée, plus grande que le coin validé ;
+- définir un budget par job à partir de cette mesure de 234 600 éléments ;
 - tester l'effet d'un nombre de threads fixé ;
 - contrôler les copies lors de l'assemblage des tangentes.
 

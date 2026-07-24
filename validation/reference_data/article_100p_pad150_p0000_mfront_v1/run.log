@@ -1,0 +1,36 @@
+2026-07-24 16:16:08,867 INFO fem_inhouse.workflows.partitioned Solving partition 0 of 100
+2026-07-24 16:16:08,871 INFO fem_inhouse.solver Starting 510x460 element solve with pypardiso (MKL, multithreaded)
+2026-07-24 16:16:09,536 INFO fem_inhouse.core.nonlinear nonlinear solve started
+2026-07-24 16:26:57,273 INFO fem_inhouse.core.nonlinear nonlinear solve completed
+{
+  "complete": true,
+  "diagnostics": {
+    "attempted_increments": 20,
+    "backend": "pypardiso (MKL, multithreaded); constitutive=mfront",
+    "constitutive_seconds": 83.40860934718512,
+    "converged_increments": 20,
+    "cutbacks": 0,
+    "elapsed_seconds": 648.4024217817932,
+    "elastic_assembly_seconds": 0.6722856541164219,
+    "final_convergence_criterion": "relative_residual",
+    "final_relative_residual": 2.2071199509644647e-08,
+    "final_residual_norm": 5.943199460589793e-08,
+    "initialization_seconds": 1.0072388099506497,
+    "linear_solve_seconds": 320.7243334832601,
+    "maximum_newton_iterations": 6,
+    "output_seconds": 0.40523366699926555,
+    "tangent_assembly_seconds": 191.85363870766014,
+    "total_newton_iterations": 112,
+    "write_seconds": 0.14055952709168196
+  },
+  "manifest_sha256": "098772c27beb8547329c7737c985140514ca69a1544c4b525ae05c2eb4c40613",
+  "outputs": {
+    "E": "f826bb62fb19dd640975e0cacb35635dd62804942bec892dbfb73431f23745fb",
+    "PE": "73100e17a31b863861a0dd96af8028e1ad2fec26e5139290b9a164d5f4eb6edc",
+    "PEEQ": "1f1579c070748b92ba812e781756e02cb685faffc7434322904c935eadff733a",
+    "RF": "116326e2d554881bc9f45852afe67fa45a2a4694b053dd5ec549e7c9917d1ef5",
+    "S": "0d582a5518802a7b993b049090a5b2bfc7fb0d2ad81a13e966214864153e40a7",
+    "U": "1c1c2259b3104e1fd44d2bb3e615269b5876f20bea81792600908d44377f2dd5"
+  },
+  "partition_id": 0
+}

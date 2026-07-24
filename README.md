@@ -21,11 +21,12 @@ numerical model and partition layout are documented in
 [`docs/partitioning.md`](docs/partitioning.md).
 
 An article-sized corner partition (`510×460`, 234,600 elements) has now been
-run directly from the versioned DIC inputs with the article's 100-partition,
-150-pixel-padding layout. It converged in 20 increments without cutback; all
-six raw fields, logs, hashes, resource measurements and derived comparison
-maps are preserved under
-[`validation/reference_data/article_100p_pad150_p0000`](validation/reference_data/article_100p_pad150_p0000).
+run with the default analytical MFront law directly from the versioned DIC
+inputs and the article's 100-partition, 150-pixel-padding layout. It converged
+in 20 increments without cutback in `650.08 s` wall time. All six raw fields,
+logs, hashes, resource measurements, derived maps and the comparison with the
+historical tabulated Python run are preserved under
+[`validation/reference_data/article_100p_pad150_p0000_mfront_v1`](validation/reference_data/article_100p_pad150_p0000_mfront_v1).
 
 The default constitutive backend is MFront 5.1.0/MGIS 3.1, compiled for the
 same plane-stress J2/Ludwik material. It is connected to the
@@ -40,6 +41,12 @@ repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and
 PyPardiso. Raw timings and final states are preserved under
 [`validation/reference_data/mfront_performance_v1`](validation/reference_data/mfront_performance_v1).
+On the complete article-sized partition, MFront reduces process wall time by
+40.35% (`1089.80 → 650.08 s`) and constitutive time by a factor of 6.90. The
+measured full-process peak RSS nevertheless increases by 10.49%
+(`3,768,132 → 4,163,308 KiB`): removing the 1000-point table does not imply a
+lower process peak because MGIS state/tangent storage and the sparse FEM
+working set dominate this measurement.
 
 Known limitations at this stage:
 
@@ -50,9 +57,6 @@ Known limitations at this stage:
 - Abaqus parity is not yet established from the original `.inp` and ODB
   extraction scripts and is intentionally deferred until the DIC-first
   workflow is stable.
-- the analytical MFront default has not yet been exercised on an article-sized
-  partition; the earlier completed partition used the historical Python
-  tabulated law.
 
 ## Reproduce from the versioned DIC data
 

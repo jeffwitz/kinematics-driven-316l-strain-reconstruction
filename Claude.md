@@ -244,9 +244,9 @@ au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
 - [x] Brancher MFront derrière une sélection de backend dans la boucle Newton
 - [x] Vérifier la tangente MFront dans les conventions d'assemblage CPS4
 - [x] Comparer les deux backends sur le crop DIC réel `10×10`
-- [~] Mesurer coût, mémoire et stratégie de traitement par blocs aux points de
-      Gauss avant tout calcul de taille article ; noyau constitutif mesuré sur
-      200 000 points et branchement EF validé, partition article à mesurer
+- [x] Mesurer coût et mémoire sur une partition à la taille de l'article ;
+      `510×460` éléments mesurés avec MFront en 650,08 s et 4 163 308 KiB RSS,
+      sans construire la table Python
 - [x] Basculer le backend par défaut vers MFront après parité du sous-domaine
 
 **Critère de sortie :** le même sous-domaine DIC converge avec les deux
@@ -659,6 +659,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Partition article DIC réelle | 100 partitions, padding 150, partition 0 (`510×460`) | 20/20 incréments, 0 cutback, 18 min 08 s, 3,59 GiB RSS | Réussi |
 | 2026-07-24 | Intégrité partition article | `validation-report.json`, SHA-256 et contrôles mécaniques | 6 champs finis, bords DIC à `4,16e-17 mm`, équilibre `4,39e-14` | Réussi |
 | 2026-07-24 | Comparaison exploratoire DIC/EF | `epsilon_vM` sur la zone résolue | RMSE `0,253 %`, MAE `0,185 %`, corrélation `0,016` | À approfondir |
+| 2026-07-24 | MFront nominal sur partition article | Même partition `510×460`, loi analytique non capée, 8 threads MGIS | 20/20 incréments, 10 min 50,08 s, 4 163 308 KiB RSS | Réussi |
+| 2026-07-24 | Comparaison longue MFront/tabulé | Champs, temps et mémoire sauvegardés | -40,35 % mur, constitutif 6,905× plus rapide, RSS +10,49 % | Réussi |
 | 2026-07-24 | Installation TFEL/MFront et MGIS | Versions et imports depuis `.venv` | TFEL 5.1.0, MGIS 3.1, interface générique active | Réussi |
 | 2026-07-24 | Parité constitutive Python/MFront | `validation/reference_data/mfront_material_point_v1/report.json` | L2 contrainte `0,227–0,368 %`, erreur PEEQ max `<3,88e-5` | Réussi |
 | 2026-07-24 | Suite après backend MFront | Ruff, mypy, compilation MFront et couverture | 165 tests, 94,25 %, dont 2 tests MGIS réels | Réussi |
@@ -671,6 +673,32 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après couplage Newton | Ruff, mypy, MGIS réel | 172 tests | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-24 — Loi MFront nominale et calcul long de l'article
+
+- Passage des valeurs par défaut de la configuration, de l'API basse et de la
+  CLI vers `constitutive_backend=mfront` et `hardening_mode=ludwik`
+- Construction paresseuse de la table Python uniquement si le backend
+  historique est demandé explicitement ; aucun tableau de 1000 points n'est
+  créé sur le chemin nominal
+- Conservation de la loi tabulée plafonnée à PEEQ `0,2` uniquement pour les
+  régressions historiques et la future comparaison Abaqus
+- Exécution complète de la partition de coin `510×460` avec les entrées DIC,
+  PyPardiso, 20 incréments et huit threads MGIS
+- Convergence 20/20 sans cutback en `648,402 s` solveur et `650,08 s` mur
+  global, 112 itérations Newton, résidu relatif final `2,207e-8`
+- Conservation des six champs, manifeste, logs, temps `/usr/bin/time -v`,
+  empreintes, cartes dérivées, aperçu et rapport de comparaison reproductible
+- Gain mur de `40,35 %` et gain constitutif de `6,905×` face à l'ancien calcul
+  Python tabulé ; différences L2 relatives de `0,72–0,91 %` sur
+  `E/PE/PEEQ/S`
+- Pic RSS complet de `4 163 308 KiB`, supérieur de `10,49 %` à l'ancien run :
+  la suppression de la table est effective, mais le stockage MGIS et le
+  système EF sparse dominent la mesure globale
+- PEEQ maximal `0,06496` : le plafond historique `0,2` n'aurait pas été atteint
+  sur cette partition, mais il est désormais absent du modèle nominal
+- Validation par 172 tests avec MGIS réel, 167 tests et 5 skips sans MGIS,
+  Ruff, mypy, smoke CLI MFront et préflight de la partition
 
 ### 2026-07-24 — Premier backend constitutif MFront/MGIS
 

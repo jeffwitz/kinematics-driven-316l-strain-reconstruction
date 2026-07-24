@@ -212,3 +212,32 @@ The complete benchmark lasts `1 min 03.24 s` and peaks at `393.45 MiB`. MFront
 serial and parallel outputs are identical. This result covers only the
 constitutive kernel; the separate end-to-end crop above validates the coupling
 but remains too small to predict article-partition performance.
+
+## Article-sized DIC partition
+
+The default MFront path has also completed the preserved article corner
+partition (`510×460`, 234,600 elements, 20 increments, eight MGIS threads).
+The independently measured process wall time is `650.08 s`, including startup,
+solve and output, and the solver diagnostic is `648.402 s`. The solve converges
+all increments without cutback in 112 Newton iterations.
+
+Against the otherwise matched historical Python/table campaign:
+
+- process wall time decreases by 40.35% (`1089.80 → 650.08 s`);
+- constitutive time decreases by a factor of 6.905
+  (`575.906 → 83.409 s`);
+- peak process RSS increases by 10.49%
+  (`3,768,132 → 4,163,308 KiB`).
+
+The last result matters: the MFront path does not construct the Python
+1000-point table, but MGIS state/tangent arrays and the complete sparse FEM
+working set determine the measured process peak. Removing the table avoids an
+unnecessary model representation; it has not reduced peak RSS in this complete
+run. The maximum PEEQ is `0.06496`, so the legacy `0.2` cap would not have been
+reached on this partition, although it remains intentionally absent from the
+nominal law.
+
+All raw fields, hashes, logs, derived maps and comparison metrics are under
+`validation/reference_data/article_100p_pad150_p0000_mfront_v1`. The report can
+be regenerated without repeating the solve using
+`scripts/validate_saved_article_partition.py`.

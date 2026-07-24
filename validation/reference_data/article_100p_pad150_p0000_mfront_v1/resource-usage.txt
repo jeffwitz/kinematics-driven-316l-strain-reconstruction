@@ -1,0 +1,23 @@
+	Command being timed: "env MKL_NUM_THREADS=8 OMP_NUM_THREADS=8 .venv/bin/python -m fem_inhouse --verbose partition --input data/processed/case_study --output validation/reference_data/article_100p_pad150_p0000_mfront_v1 --count 100 --padding 150 --mfront-threads 8 --partition-id 0"
+	User time (seconds): 2235.44
+	System time (seconds): 255.38
+	Percent of CPU this job got: 383%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 10:50.08
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 4163308
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 26197106
+	Voluntary context switches: 8217
+	Involuntary context switches: 7201763
+	Swaps: 0
+	File system inputs: 144
+	File system outputs: 51440
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

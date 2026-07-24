@@ -111,6 +111,12 @@ La maturité scientifique 4/5 exige encore :
 - les mêmes emplacements physiques et conventions de cisaillement ;
 - la comparaison `U1`, `U2`, `S11`, `S22`, `S12`, `E11`, `E22`, `E12`, PEEQ et
   réactions ;
-- un sous-domaine hétérogène représentatif ;
 - l'étude padding 50/100/150/200 ;
-- les champs DIC du ROI et les métriques publiées.
+- l'exécution et le raccordement des 100 partitions du ROI ;
+- l'application au ROI raccordé du masque et des conventions métriques exactes
+  de l'article.
+
+La partition hétérogène de coin `510×460` est désormais validée avec le backend
+MFront nominal. Ses six champs, contrôles mécaniques et comparaisons avec le
+chemin Python tabulé sont conservés sous
+`validation/reference_data/article_100p_pad150_p0000_mfront_v1`.

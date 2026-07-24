@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "purpose": "Reproduce the previous article-sized DIC partition with the default unbounded analytical MFront law",
+  "software_git_sha": "67c55e2f77232fd50ba72d79bd655b873728c9fe",
+  "prepared_input_manifest": {
+    "path": "data/processed/case_study/manifest.json",
+    "sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "mfront": {
+    "behaviour": "PixelLudwikJ2Plasticity",
+    "source": "mfront/PixelLudwikJ2Plasticity.mfront",
+    "source_sha256": "6d40bbdeab5b6c829b5e2b89a00366a6fd04db598ac78359990561691c3d01ff",
+    "library": "build/mfront/src/libBehaviour.so",
+    "library_sha256": "2f5169785856edcb60056b991ef1727e158b002e348168fca912e1add9eb3908",
+    "tfel_version": "5.1.0"
+  },
+  "layout": {
+    "global_shape": [3600, 3100],
+    "partition_count": 100,
+    "partition_id": 0,
+    "core_shape": [360, 310],
+    "padding": 150,
+    "solve_shape": [510, 460],
+    "element_count": 234600
+  },
+  "solver": {
+    "linear_backend": "pypardiso",
+    "constitutive_backend": "mfront",
+    "hardening_mode": "ludwik",
+    "peeq_cap": null,
+    "increments": 20,
+    "maximum_newton_iterations": 15,
+    "residual_tolerance": 1e-06
+  },
+  "environment": {
+    "MGIS_THREADS": 8,
+    "MKL_NUM_THREADS": 8,
+    "OMP_NUM_THREADS": 8
+  },
+  "required_outputs": ["U", "S", "E", "PE", "PEEQ", "RF"],
+  "command": "source /home/jeff/.local/share/tfel/env/env.sh && env MKL_NUM_THREADS=8 OMP_NUM_THREADS=8 .venv/bin/python -m fem_inhouse --verbose partition --input data/processed/case_study --output validation/reference_data/article_100p_pad150_p0000_mfront_v1 --count 100 --padding 150 --mfront-threads 8 --partition-id 0"
+}
