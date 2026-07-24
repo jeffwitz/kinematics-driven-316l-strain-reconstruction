@@ -206,14 +206,14 @@ avec rapport automatique champ par champ.
 - [x] Créer un `pyproject.toml`
 - [x] Verrouiller les dépendances et versions
 - [x] Créer un paquet sous `src/fem_inhouse`
-- [ ] Séparer :
-  - maillage ;
-  - élément ;
-  - matériau ;
-  - assemblage ;
-  - solveur non linéaire ;
-  - résultats ;
-  - post-traitement.
+- [~] Séparer :
+  - [x] maillage ;
+  - [x] élément ;
+  - [ ] matériau constitutif ;
+  - [x] assemblage ;
+  - [ ] solveur non linéaire ;
+  - [x] résultats ;
+  - [x] post-traitement.
 - [x] Remplacer les 19 paramètres de `run_fem` par des configurations typées
 - [x] Ajouter les validations d'entrée
 - [x] Supprimer les effets de bord lors des imports
@@ -480,6 +480,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Robustesse constitutive/globale | 3 trajets plastiques, hétérogène, cutback, réactions | 111 tests, 96,14 % | Réussi |
 | 2026-07-24 | Performance 10k/50k/100k | `/usr/bin/time -v fem-inhouse validate` | 5,01/10,60/21,87 s ; 163/557/1061 MiB | Réussi |
 | 2026-07-24 | Performance 350k | Vérification mémoire avant lancement | 3,7 GiB disponibles, swap saturé | Reporté |
+| 2026-07-24 | Modules maillage/élément/assemblage | Suite complète après extraction | 117 tests, 96,26 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -581,3 +582,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Utilisation multithread observée entre 349 % et 552 % CPU
 - Point 350k reporté pour éviter un OOM avec 3,7 GiB disponibles et swap saturé
 - Protocole, limites et conditions de reprise documentés
+
+### 2026-07-24 — Extraction du noyau EF
+
+- Extraction du maillage rectangulaire structuré dans `core.mesh`
+- Extraction du CPS4, de la quadrature et de l'élasticité dans `core.element`
+- Extraction de l'assemblage sparse et des forces internes dans `core.assembly`
+- Validation explicite des géométries, Jacobien, paramètres et formes matricielles
+- Boucle Newton et retour constitutif conservés comme dette isolée
+- Validation complète par 117 tests avec 96,26 % de couverture

@@ -27,8 +27,21 @@ import functools
 import time
 
 import numpy as np
-from scipy.sparse import coo_matrix
 from scipy.sparse.linalg import spsolve
+
+from fem_inhouse.core.assembly import (
+    assemble_stiffness,
+    assembly_indices,
+    internal_force,
+)
+from fem_inhouse.core.element import (
+    GAUSS_POINT_COUNT,
+    GAUSS_POINTS,
+    GAUSS_WEIGHTS,
+    plane_stress_elasticity,
+    precompute_element,
+)
+from fem_inhouse.core.mesh import StructuredMesh
 
 print = functools.partial(print, flush=True)  # live progress under runners
 
@@ -48,11 +61,9 @@ except Exception:
 
     _SOLVER_NAME = "scipy SuperLU (single-threaded; 'pip install pypardiso' for a large speed-up)"
 
-# ── Gauss quadrature 2x2 ────────────────────────────────────────────────────
-_G = 1.0 / np.sqrt(3.0)
-GP_XI = np.array([[-_G, -_G], [_G, -_G], [_G, _G], [-_G, _G]])
-GP_W = np.ones(4)
-N_GP = 4
+GP_XI = GAUSS_POINTS
+GP_W = GAUSS_WEIGHTS
+N_GP = GAUSS_POINT_COUNT
 
 # von Mises plane-stress matrix:  svm^2 = s^T M s
 _M = np.array([[1.0, -0.5, 0.0], [-0.5, 1.0, 0.0], [0.0, 0.0, 3.0]])
@@ -64,34 +75,6 @@ def _vm(s):
             s[..., 0] ** 2 - s[..., 0] * s[..., 1] + s[..., 1] ** 2 + 3 * s[..., 2] ** 2, 0.0
         )
     )
-
-
-# ── Shape function derivatives ───────────────────────────────────────────────
-def _dN(xi, eta):
-    return 0.25 * np.array(
-        [[-(1 - eta), (1 - eta), (1 + eta), -(1 + eta)], [-(1 - xi), -(1 + xi), (1 + xi), (1 - xi)]]
-    )
-
-
-# ── B matrix ────────────────────────────────────────────────────────────────
-def _B_detJ(coords, xi, eta):
-    dNn = _dN(xi, eta)
-    J = dNn @ coords
-    dJ = J[0, 0] * J[1, 1] - J[0, 1] * J[1, 0]
-    Ji = np.array([[J[1, 1], -J[0, 1]], [-J[1, 0], J[0, 0]]]) / dJ
-    dNx = Ji @ dNn
-    B = np.zeros((3, 8))
-    for k in range(4):
-        B[0, 2 * k] = dNx[0, k]
-        B[1, 2 * k + 1] = dNx[1, k]
-        B[2, 2 * k] = dNx[1, k]
-        B[2, 2 * k + 1] = dNx[0, k]
-    return B, dJ
-
-
-def _Cps(E, nu):
-    f = E / (1 - nu * nu)
-    return f * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1 - nu) / 2.0]])
 
 
 # ── Hardening laws ───────────────────────────────────────────────────────────
@@ -285,84 +268,6 @@ def _cep(sigma, dg, ep0, sy0p, Kp, hf, hfp, C_ps, cm11, cm12, cm33):
     return np.einsum("nij,jk->nik", T, C_ps)  # (N,3,3)
 
 
-# ── Mesh ─────────────────────────────────────────────────────────────────────
-class _Mesh:
-    def __init__(self, xs, ys, el, sf):
-        nx = round(xs / el)
-        ny = round(ys / el)
-        self.nx, self.ny = nx, ny
-        nxn, nyn = nx + 1, ny + 1
-        self.n_nodes = nxn * nyn
-        self.n_elems = nx * ny
-        self.n_dof = 2 * nxn * nyn
-        self.node_ids = np.arange(nxn * nyn).reshape((nxn, nyn), order="F")
-        xp = np.linspace(0, nx * el, nxn) * sf
-        yp = np.linspace(0, ny * el, nyn) * sf
-        self.coords = np.zeros((nxn * nyn, 2))
-        ii, jj = np.meshgrid(np.arange(nxn), np.arange(nyn), indexing="ij")
-        nd = self.node_ids[ii, jj]
-        self.coords[nd.ravel(), 0] = np.repeat(xp, nyn)
-        self.coords[nd.ravel(), 1] = np.tile(yp, nxn)
-        self.elem_ids = np.arange(nx * ny).reshape((nx, ny), order="F")
-        ie, je = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")
-        ef = self.elem_ids[ie, je].ravel()
-        conn = np.zeros((nx * ny, 4), dtype=int)
-        conn[ef, 0] = self.node_ids[ie.ravel(), je.ravel()]
-        conn[ef, 1] = self.node_ids[ie.ravel() + 1, je.ravel()]
-        conn[ef, 2] = self.node_ids[ie.ravel() + 1, je.ravel() + 1]
-        conn[ef, 3] = self.node_ids[ie.ravel(), je.ravel() + 1]
-        self.conn = conn
-        bc = np.concatenate(
-            [
-                self.node_ids[:, 0],
-                self.node_ids[:, -1],
-                self.node_ids[0, 1:-1],
-                self.node_ids[-1, 1:-1],
-            ]
-        )
-        bcd = np.union1d(2 * bc, 2 * bc + 1)
-        self.dofs_bc = bcd.astype(int)
-        self.dofs_free = np.setdiff1d(np.arange(self.n_dof), bcd).astype(int)
-
-
-# ── Element precompute ───────────────────────────────────────────────────────
-def _precomp(mesh, C_ps):
-    c = mesh.coords[mesh.conn[0]]
-    Ke = np.zeros((8, 8))
-    Bs = np.zeros((N_GP, 3, 8))
-    dJs = np.zeros(N_GP)
-    for g, (xi_eta, w) in enumerate(zip(GP_XI, GP_W, strict=True)):
-        B, dJ = _B_detJ(c, xi_eta[0], xi_eta[1])
-        Ke += w * (B.T @ C_ps @ B) * dJ
-        Bs[g] = B
-        dJs[g] = dJ
-    return Ke, Bs, dJs
-
-
-# ── Assembly (COO→CSR) ───────────────────────────────────────────────────────
-def _assemble(mesh, Ke_arr, ld, rc=None):
-    """Ke_arr : (n_e,8,8)  or scalar broadcast (8,8).
-    rc : optional precomputed (rows, cols) raveled index arrays (constant per
-    mesh — pass them to avoid rebuilding every Newton iteration)."""
-    n_e = mesh.n_elems
-    n_dof = mesh.n_dof
-    if rc is None:
-        rows = ld[:, :, None].repeat(8, axis=2).ravel()
-        cols = ld[:, None, :].repeat(8, axis=1).ravel()
-    else:
-        rows, cols = rc
-    data = np.broadcast_to(Ke_arr, (n_e, 8, 8)) if Ke_arr.ndim == 2 else Ke_arr
-    return coo_matrix((data.ravel(), (rows, cols)), shape=(n_dof, n_dof)).tocsr()
-
-
-# ── Internal forces ──────────────────────────────────────────────────────────
-def _Fint(mesh, sig, Bs, dJs, ld):
-    fe = np.einsum("g,g,gak,ega->ek", GP_W, dJs, Bs, sig)
-    F = np.zeros(mesh.n_dof)
-    np.add.at(F, ld, fe)
-    return F
-
-
 # ── Main solver ──────────────────────────────────────────────────────────────
 def run_fem(
     disp_x,
@@ -404,7 +309,7 @@ def run_fem(
         n_table,
         first_positive_plastic_strain,
     )
-    mesh = _Mesh(x_size, y_size, element_size, scale_factor)
+    mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
     nxn, nyn = nx + 1, ny + 1
     n_e = mesh.n_elems
@@ -425,25 +330,25 @@ def run_fem(
     sy0_gp = np.repeat(yield_map.ravel(order="F"), N_GP)
     K_gp = np.repeat(K_map.ravel(order="F"), N_GP)
 
-    C_ps = _Cps(E_mod, nu)
+    C_ps = plane_stress_elasticity(E_mod, nu)
     CM = C_ps @ _M
     cm11, cm12, cm33 = CM[0, 0], CM[0, 1], CM[2, 2]
-    Ke, Bs, dJs = _precomp(mesh, C_ps)
+    operators = precompute_element(mesh, C_ps)
+    Ke = operators.elastic_stiffness
+    Bs = operators.strain_displacement
+    dJs = operators.jacobian_determinants
 
     # DOF maps
     nd_all = mesh.node_ids
-    nodes = mesh.conn
-    ld = np.zeros((n_e, 8), dtype=int)
-    ld[:, 0::2] = 2 * nodes
-    ld[:, 1::2] = 2 * nodes + 1
+    ld = mesh.location_matrix()
     dof_I = mesh.dofs_free
     dof_B = mesh.dofs_bc
 
     # constant assembly index arrays (reused for every tangent assembly)
-    _rc = (ld[:, :, None].repeat(8, axis=2).ravel(), ld[:, None, :].repeat(8, axis=1).ravel())
+    _rc = assembly_indices(ld)
 
     # Elastic predictor matrix; PyPardiso reuses its factorization for each RHS.
-    K_el = _assemble(mesh, Ke, ld, _rc)
+    K_el = assemble_stiffness(mesh, Ke, ld, _rc)
     KII_el = K_el[dof_I][:, dof_I].tocsr()
     KIB_el = K_el[dof_I][:, dof_B].tocsr()
 
@@ -510,7 +415,7 @@ def run_fem(
             dp_acc = dp
 
             # Internal forces and residual
-            R = _Fint(mesh, sf, Bs, dJs, ld)
+            R = internal_force(mesh, sf, Bs, dJs, ld)
             R_I = R[dof_I]
             res = np.linalg.norm(R_I)
             if not np.isfinite(res):
@@ -549,7 +454,7 @@ def run_fem(
             # Vectorised element tangent stiffness
             CB = np.einsum("egij,gjk->egik", C_ep_gp, Bs)
             Ke_ep = np.einsum("g,g,gik,egil->ekl", GP_W, dJs, Bs, CB)
-            K_tang = _assemble(mesh, Ke_ep, ld, _rc)
+            K_tang = assemble_stiffness(mesh, Ke_ep, ld, _rc)
             KII = K_tang[dof_I][:, dof_I].tocsr()
 
             du = _solve(KII, -R_I)
@@ -587,7 +492,7 @@ def run_fem(
                 print(f"[FEM] snapshot recorded at load fraction {fsnap:.3f}")
 
     # Output
-    F_all = _Fint(mesh, sig, Bs, dJs, ld)
+    F_all = internal_force(mesh, sig, Bs, dJs, ld)
     bc_m = np.zeros(mesh.n_dof, dtype=bool)
     bc_m[dof_B] = True
 
