@@ -1,11 +1,11 @@
 {
     "schema_version": 1,
-    "commit": "c9676b4787834cd86161f231032be9e339231f81",
-    "indexed_at": "2026-07-24T10:23:14Z",
+    "commit": "e09c31b0ceb7ff3447748793e9e5bca58b2d8dcc",
+    "indexed_at": "2026-07-24T10:33:28Z",
     "project": "home-jeff-CNRS-Theses-Adil-Data_code-fem_inhouse",
-    "nodes": 381,
-    "edges": 1117,
-    "original_size": 1572864,
-    "compressed_size": 69271,
-    "compression_level": 9
+    "nodes": 439,
+    "edges": 1298,
+    "original_size": 2686976,
+    "compressed_size": 133752,
+    "compression_level": 3
 }

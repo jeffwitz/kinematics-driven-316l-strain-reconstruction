@@ -1,7 +1,7 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-24
-Statut global : **socle scientifique et partitionnement déterministe disponibles**
+Statut global : **API solveur testée et partitionnement déterministe disponibles**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -185,11 +185,11 @@ implicite.
 
 ### Semaines 2–3 — Parité numérique avec Abaqus
 
-- [~] Reproduire la table plastique Abaqus :
+- [x] Reproduire la table plastique Abaqus :
   - domaine `0 <= ep <= 0.2` ;
   - 1000 points ;
   - traitement documenté du premier incrément `1e-6`.
-- [~] Tester séparément loi analytique et loi tabulée
+- [x] Tester séparément loi analytique et loi tabulée
 - [x] Corriger le calcul et l'étiquetage de la contrainte EF directe
 - [x] Corriger les conventions d'axes et de cisaillement
 - [ ] Comparer contraintes et déformations au même emplacement physique
@@ -204,8 +204,8 @@ avec rapport automatique champ par champ.
 ### Semaines 4–5 — Ingénierie logicielle
 
 - [x] Créer un `pyproject.toml`
-- [ ] Verrouiller les dépendances et versions
-- [~] Créer un paquet sous `src/fem_inhouse`
+- [x] Verrouiller les dépendances et versions
+- [x] Créer un paquet sous `src/fem_inhouse`
 - [ ] Séparer :
   - maillage ;
   - élément ;
@@ -214,14 +214,14 @@ avec rapport automatique champ par champ.
   - solveur non linéaire ;
   - résultats ;
   - post-traitement.
-- [~] Remplacer les 19 paramètres de `run_fem` par des configurations typées
-- [ ] Ajouter les validations d'entrée
-- [ ] Supprimer les effets de bord lors des imports
+- [x] Remplacer les 19 paramètres de `run_fem` par des configurations typées
+- [x] Ajouter les validations d'entrée
+- [x] Supprimer les effets de bord lors des imports
 - [ ] Supprimer les chemins absolus
 - [ ] Ajouter une CLI limitée au cas d'étude
 - [x] Ajouter Ruff, Pyright ou mypy, pytest et couverture
-- [ ] Ajouter une journalisation structurée
-- [ ] Échouer explicitement si PyPardiso n'est pas disponible en production
+- [~] Ajouter une journalisation structurée
+- [x] Échouer explicitement si PyPardiso n'est pas disponible en production
 
 **Critère de sortie :** installation fraîche et cas réduit exécutables par une
 commande documentée.
@@ -264,12 +264,12 @@ calcul partitionné avec padding suffisant.
 
 #### Niveau 1 : vérification mathématique
 
-- [ ] Partition de l'unité et dérivées des fonctions de forme
-- [ ] Jacobien positif
-- [ ] Patch test élastique
-- [ ] Trois modes rigides
+- [x] Partition de l'unité et dérivées des fonctions de forme
+- [x] Jacobien positif
+- [x] Patch test élastique
+- [x] Trois modes rigides
 - [ ] Retour plastique uniaxial, biaxial et en cisaillement
-- [ ] Tangente par différences finies
+- [x] Tangente par différences finies
 - [ ] Cas tabulé dans chaque segment et au-delà de `ep = 0.2`
 - [ ] Équilibre des réactions
 - [ ] Convergence en nombre d'incréments
@@ -309,7 +309,7 @@ artefacts de raccordement.
 
 - [ ] README de démarrage rapide
 - [ ] Tutoriel complet du cas réduit
-- [ ] Documentation du modèle numérique
+- [x] Documentation du modèle numérique
 - [ ] Documentation des conventions
 - [x] Documentation du partitionnement
 - [ ] Documentation de la validation
@@ -386,17 +386,17 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 ### Ingénierie logicielle
 
-- [ ] API publique typée
-- [ ] Au moins 85 % de couverture des lignes
-- [ ] Au moins 80 % de couverture des branches
-- [ ] Couverture dédiée de toutes les fonctions constitutives critiques
+- [x] API publique typée
+- [x] Au moins 85 % de couverture des lignes
+- [x] Au moins 80 % de couverture des branches
+- [x] Couverture dédiée de toutes les fonctions constitutives critiques
 - [ ] Aucun avertissement qualité non justifié
 - [ ] Revue de code obligatoire pour les formules numériques
 
 ### Reproductibilité
 
 - [ ] Installation fraîche reproductible
-- [ ] Versions verrouillées
+- [x] Versions verrouillées
 - [ ] Données de référence identifiées par empreinte
 - [ ] Aucun chemin dépendant d'un poste personnel
 - [ ] Résultats accompagnés de leur configuration et version du code
@@ -466,6 +466,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Qualité du nouveau code | `ruff check src tests` | Aucun défaut | Réussi |
 | 2026-07-24 | Partitionnement et raccordement | `pytest --cov=fem_inhouse --cov-branch` | 62 tests, 98 % | Réussi |
 | 2026-07-24 | Grilles de l'article | Tests `(5,5)` et `(10,10)`, padding 150 | 25/100 cœurs sans trou | Réussi |
+| 2026-07-24 | API solveur et noyau EF | `pytest --cov=fem_inhouse --cov-branch` | 82 tests, 94 %, sans avertissement | Réussi |
+| 2026-07-24 | Tangente cohérente automatisée | Différences finies du retour plastique | Erreur relative `< 1e-5` | Réussi |
+| 2026-07-24 | Compatibilité historique | `.venv/bin/python fem_pixel.py` via pytest | Biaxial SVM/PEEQ réussi | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -497,3 +500,16 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Écriture du champ global au format `.npy` mappé en mémoire
 - Ajout d'un manifeste JSON déterministe et de la documentation associée
 - Validation par 62 tests avec 98 % de couverture lignes et branches combinées
+
+### 2026-07-24 — API solveur et noyau testable
+
+- Déplacement du noyau historique dans le paquet avec point d'entrée compatible
+- Ajout de `CaseStudyConfig` comme API publique à la place des 19 paramètres
+- Ajout de résultats typés et nommés, avec contrôle des valeurs non finies
+- Validation des dimensions, cartes matériau, pseudo-temps et domaines physiques
+- Échec explicite si PyPardiso/MKL est absent du calcul de production
+- Alignement de la loi tabulée sur la grille `0`, `1e-6`, puis jusqu'à `0.2`
+- Ajout des tests élémentaires, du patch affine, du retour plastique et de la
+  tangente par différences finies
+- Verrouillage exact de l'environnement Linux/Python 3.12
+- Validation par 82 tests, 94 % de couverture totale et aucun avertissement

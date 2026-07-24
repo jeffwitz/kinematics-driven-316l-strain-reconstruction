@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +73,7 @@ class SolverConfig:
     residual_tolerance: float = 1e-6
     minimum_step_divisor: int = 1_024
     require_pypardiso: bool = True
+    hardening_mode: Literal["ludwik", "tabular"] = "tabular"
 
     def __post_init__(self) -> None:
         if self.increments < 1:
@@ -82,6 +84,8 @@ class SolverConfig:
             raise ValueError("residual_tolerance must lie in (0, 1)")
         if self.minimum_step_divisor < 2:
             raise ValueError("minimum_step_divisor must be at least 2")
+        if self.hardening_mode not in {"ludwik", "tabular"}:
+            raise ValueError("hardening_mode must be 'ludwik' or 'tabular'")
 
 
 @dataclass(frozen=True, slots=True)

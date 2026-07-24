@@ -11,6 +11,7 @@ def test_article_case_defaults_are_explicit() -> None:
     assert material.plastic_strain_max == 0.2
     assert material.plastic_table_points == 1_000
     assert material.first_positive_plastic_strain == 1e-6
+    assert SolverConfig().hardening_mode == "tabular"
 
 
 def test_mesh_uses_article_pixel_scale() -> None:
@@ -38,6 +39,10 @@ def test_mesh_uses_article_pixel_scale() -> None:
         (lambda: SolverConfig(max_newton_iterations=0), "max_newton_iterations"),
         (lambda: SolverConfig(residual_tolerance=1.0), "residual_tolerance"),
         (lambda: SolverConfig(minimum_step_divisor=1), "minimum_step_divisor"),
+        (
+            lambda: SolverConfig(hardening_mode="unsupported"),  # type: ignore[arg-type]
+            "hardening_mode",
+        ),
     ],
 )
 def test_invalid_configuration_is_rejected(factory, message: str) -> None:
