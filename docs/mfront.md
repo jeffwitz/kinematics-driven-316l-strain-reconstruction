@@ -118,7 +118,8 @@ MGIS stores symmetric tensors in Kelvin notation. The Python adapter converts:
 
 `MFrontMaterialPointBatch.evaluate` is non-committing by default. The explicit
 `commit` and `revert` operations are required for a correct global Newton
-integration.
+integration. The constructor also accepts `thread_count`; values greater than
+one create an explicit MGIS thread pool.
 
 ## Reproduce the material-point comparison
 
@@ -138,3 +139,21 @@ Across the three paths, stress relative L2 errors are `0.227–0.368 %`, maximum
 absolute PEEQ errors are `3.02e-5–3.87e-5`, and the tangent discrepancy remains
 diagnostic (`1.02–6.39 %`). The latter must be investigated during the
 finite-element integration rather than silently accepted.
+
+## Constitutive performance benchmark
+
+The versioned benchmark under
+`validation/reference_data/mfront_performance_v1` evaluates 200,000
+heterogeneous points over 20 increments, including state updates and consistent
+tangents. Two repetitions and reversed execution order give:
+
+| Backend | Median time | Relative result |
+|---|---:|---:|
+| Python/NumPy | `12.347 s` | baseline |
+| MFront serial | `13.333 s` | `1.080×` slower |
+| MFront, 8 threads | `3.527 s` | `3.500×` faster |
+
+The complete benchmark lasts `1 min 03.24 s` and peaks at `393.45 MiB`. MFront
+serial and parallel outputs are identical. This result covers only the
+constitutive kernel: a reduced end-to-end DIC/EF comparison remains mandatory
+after connection to the Newton loop.

@@ -100,6 +100,32 @@ Le temps mur total n'est pas retenu comme gain : les appels PyPardiso ont varié
 entre les deux exécutions. La parité algébrique de l'assemblage dense et par
 blocs est protégée par un test dédié.
 
+## Benchmark constitutif Python/MFront
+
+Un benchmark séparé mesure uniquement la mise à jour constitutive, sans
+assemblage EF ni PyPardiso. Le cas contient 200 000 points hétérogènes, 20
+incréments, la mise à jour des états et la tangente cohérente à chaque
+incrément. Deux répétitions sont exécutées dans des ordres opposés.
+
+| Backend | Temps médian | Plage | Débit |
+|---|---:|---:|---:|
+| Python/NumPy | 12,347 s | 11,543–13,150 s | 0,324 M mises à jour/s |
+| MFront série | 13,333 s | 13,236–13,430 s | 0,300 M mises à jour/s |
+| MFront, 8 threads | 3,527 s | 3,342–3,712 s | 1,134 M mises à jour/s |
+
+MFront série est 8,0 % plus lent que Python sur ce cas. Le pool MGIS à huit
+threads accélère MFront de `3,780×` et atteint un gain de `3,500×` par rapport
+à Python. Les résultats MFront série et parallèle sont strictement identiques.
+
+La commande complète dure 1 min 03,24 s et atteint 393,45 MiB de RSS. Les
+variables standard de threads étaient non définies, mais le rapport CPU/mur de
+Python montre qu'il ne s'agit pas d'une référence strictement monocœur.
+
+Les résultats bruts, états finaux et limites d'interprétation sont conservés
+dans `validation/reference_data/mfront_performance_v1`. Cette mesure ne prédit
+pas encore le gain du solveur complet : la part PyPardiso, l'assemblage et le
+nombre d'appels constitutifs par itération Newton restent inchangés.
+
 Avant le ROI complet, il reste donc à :
 
 - séparer, si l'API PyPardiso le permet sans modifier le résultat, analyse,

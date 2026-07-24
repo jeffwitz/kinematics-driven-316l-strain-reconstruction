@@ -34,6 +34,12 @@ uniaxial, equibiaxial, and shear paths. Installation, tensor conventions, exact
 metrics, and reproduction commands are documented in
 [`docs/mfront.md`](docs/mfront.md).
 
+On a one-minute constitutive benchmark (200,000 points, 20 increments, two
+repetitions), the eight-thread MGIS backend is 3.50× faster than the current
+Python update; MFront serial is 8.0% slower. This excludes assembly and
+PyPardiso. Raw timings and final states are preserved under
+[`validation/reference_data/mfront_performance_v1`](validation/reference_data/mfront_performance_v1).
+
 Known limitations at this stage:
 
 - the complete 11.16-million-element ROI has not yet been executed and

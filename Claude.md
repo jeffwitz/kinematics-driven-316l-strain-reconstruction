@@ -244,8 +244,9 @@ au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
 - [ ] Brancher MFront derrière une sélection de backend dans la boucle Newton
 - [ ] Vérifier la tangente MFront dans les conventions d'assemblage CPS4
 - [ ] Comparer les deux backends sur le crop DIC réel `10×10`
-- [ ] Mesurer coût, mémoire et stratégie de traitement par blocs aux points de
-      Gauss avant tout calcul de taille article
+- [~] Mesurer coût, mémoire et stratégie de traitement par blocs aux points de
+      Gauss avant tout calcul de taille article ; noyau constitutif mesuré sur
+      200 000 points, branchement EF et taille de bloc encore à faire
 - [ ] Basculer le backend par défaut seulement après parité du sous-domaine
 
 **Critère de sortie :** le même sous-domaine DIC converge avec les deux
@@ -661,6 +662,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Installation TFEL/MFront et MGIS | Versions et imports depuis `.venv` | TFEL 5.1.0, MGIS 3.1, interface générique active | Réussi |
 | 2026-07-24 | Parité constitutive Python/MFront | `validation/reference_data/mfront_material_point_v1/report.json` | L2 contrainte `0,227–0,368 %`, erreur PEEQ max `<3,88e-5` | Réussi |
 | 2026-07-24 | Suite après backend MFront | Ruff, mypy, compilation MFront et couverture | 165 tests, 94,25 %, dont 2 tests MGIS réels | Réussi |
+| 2026-07-24 | Performance constitutive Python/MFront | 200k points, 20 incréments, 2 répétitions | Python 12,347 s ; MFront série 13,333 s ; MFront 8 threads 3,527 s | Réussi |
+| 2026-07-24 | Reproductibilité MFront parallèle | États série/parallèle sur 4 millions de mises à jour | Écarts max contrainte et PEEQ strictement nuls | Réussi |
+| 2026-07-24 | Suite après pool MGIS | Ruff, mypy et couverture avec bibliothèque réelle | 167 tests, 94,21 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -682,6 +686,24 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   94,25 % de couverture ; les deux tests MGIS utilisent la bibliothèque réelle
 - Maintien explicite du backend Python en production tant que la parité du
   sous-domaine DIC et la loi tabulée exacte ne sont pas validées
+
+### 2026-07-24 — Benchmark constitutif d'une minute
+
+- Ajout d'un pool de threads MGIS explicite et vérification de sa parité avec
+  l'intégration série
+- Construction d'un cas hétérogène de 200 000 points, 20 incréments et tangente
+  cohérente à chaque mise à jour
+- Deux répétitions avec inversion de l'ordre des backends pour limiter le biais
+  thermique et de cache
+- Temps médian Python `12,347 s`, MFront série `13,333 s` et MFront 8 threads
+  `3,527 s`
+- Gain MFront parallèle de `3,500×` sur Python et `3,780×` sur MFront série
+- Durée complète `1 min 03,24 s`, pic RSS `393,45 MiB`, aucun swap
+- Conservation des temps bruts, états finaux complets, échantillons de
+  tangentes, empreintes, figure et mesure `/usr/bin/time -v`
+- Validation complète par Ruff, mypy et 167 tests avec 94,21 % de couverture
+- Limitation maintenue : benchmark du noyau constitutif uniquement, sans
+  assemblage CPS4, Newton global ni PyPardiso
 
 ### 2026-07-24 — Première partition à la taille de l'article
 

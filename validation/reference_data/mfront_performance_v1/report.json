@@ -1,0 +1,162 @@
+{
+  "artifacts": {
+    "plot": "timings.png",
+    "states": "final_states.npz"
+  },
+  "created_at_utc": "2026-07-24T13:33:56.172268+00:00",
+  "environment": {
+    "cpu_model": "Intel(R) Core(TM) Ultra 5 228V",
+    "logical_cpu_count": 8,
+    "numpy": "2.4.4",
+    "parallel_mgis_threads": 8,
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "thread_environment": {
+      "MKL_NUM_THREADS": null,
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null
+    }
+  },
+  "git_commit": "110f53de9e0ed880c83440532555b8331cb56c5f",
+  "inputs": {
+    "consistent_tangent": true,
+    "increments": 20,
+    "mfront_hardening": "regularised analytical",
+    "mfront_library": "build/mfront/src/libBehaviour.so",
+    "mfront_library_sha256": "2f5169785856edcb60056b991ef1727e158b002e348168fca912e1add9eb3908",
+    "mfront_source": "mfront/PixelLudwikJ2Plasticity.mfront",
+    "mfront_source_sha256": "6d40bbdeab5b6c829b5e2b89a00366a6fd04db598ac78359990561691c3d01ff",
+    "point_count": 200000,
+    "point_updates_per_repeat": 4000000,
+    "python_hardening": "1000-point tabular",
+    "repeats": 2
+  },
+  "method": {
+    "repeat_order": [
+      [
+        "python",
+        "mfront_serial",
+        "mfront_parallel"
+      ],
+      [
+        "mfront_parallel",
+        "mfront_serial",
+        "python"
+      ]
+    ],
+    "timed_region": "constitutive integration, state update, tangent computation, and Python/MGIS result conversion; setup reported separately",
+    "warm_up_increments": 4,
+    "warm_up_points": 2000
+  },
+  "parity": {
+    "mfront_parallel_vs_serial_max_peeq": 0.0,
+    "mfront_parallel_vs_serial_max_stress_mpa": 0.0,
+    "python_vs_mfront_relative_stress_l2": 4.113500143483058e-06
+  },
+  "ratios": {
+    "mfront_parallel_speedup_vs_python": 3.5004307017099907,
+    "mfront_parallel_speedup_vs_serial": 3.7799943808793386,
+    "mfront_serial_slowdown_vs_python": 1.079865508845177
+  },
+  "raw_repetitions": {
+    "mfront_parallel": [
+      {
+        "integration_cpu_seconds": 13.662820840999998,
+        "integration_wall_seconds": 3.3420329310465604,
+        "setup_wall_seconds": 0.00974400108680129,
+        "state_checksums": {
+          "peeq_sum": 1808.644042663685,
+          "plastic_strain_sum": 1922.5620545217155,
+          "stress_sum_mpa": 122105233.77314347,
+          "tangent_sum_mpa": 46627822562.303314
+        }
+      },
+      {
+        "integration_cpu_seconds": 14.118714771999997,
+        "integration_wall_seconds": 3.7124564610421658,
+        "setup_wall_seconds": 0.009961216012015939,
+        "state_checksums": {
+          "peeq_sum": 1808.644042663685,
+          "plastic_strain_sum": 1922.5620545217155,
+          "stress_sum_mpa": 122105233.77314347,
+          "tangent_sum_mpa": 46627822562.303314
+        }
+      }
+    ],
+    "mfront_serial": [
+      {
+        "integration_cpu_seconds": 13.196246163999998,
+        "integration_wall_seconds": 13.236040513031185,
+        "setup_wall_seconds": 0.0625640801154077,
+        "state_checksums": {
+          "peeq_sum": 1808.644042663685,
+          "plastic_strain_sum": 1922.5620545217155,
+          "stress_sum_mpa": 122105233.77314347,
+          "tangent_sum_mpa": 46627822562.303314
+        }
+      },
+      {
+        "integration_cpu_seconds": 13.404089414999987,
+        "integration_wall_seconds": 13.429889749037102,
+        "setup_wall_seconds": 0.008485696977004409,
+        "state_checksums": {
+          "peeq_sum": 1808.644042663685,
+          "plastic_strain_sum": 1922.5620545217155,
+          "stress_sum_mpa": 122105233.77314347,
+          "tangent_sum_mpa": 46627822562.303314
+        }
+      }
+    ],
+    "python": [
+      {
+        "integration_cpu_seconds": 28.619683041,
+        "integration_wall_seconds": 13.150275022024289,
+        "setup_wall_seconds": 0.007969754049554467,
+        "state_checksums": {
+          "peeq_sum": 1808.6522546683514,
+          "plastic_strain_sum": 1922.5625314251329,
+          "stress_sum_mpa": 122105208.1102331,
+          "tangent_sum_mpa": 46627574869.44083
+        }
+      },
+      {
+        "integration_cpu_seconds": 26.472904567,
+        "integration_wall_seconds": 11.543476230930537,
+        "setup_wall_seconds": 0.004947200184687972,
+        "state_checksums": {
+          "peeq_sum": 1808.6522546683514,
+          "plastic_strain_sum": 1922.5625314251329,
+          "stress_sum_mpa": 122105208.1102331,
+          "tangent_sum_mpa": 46627574869.44083
+        }
+      }
+    ]
+  },
+  "schema_version": 1,
+  "summary": {
+    "mfront_parallel": {
+      "maximum_wall_seconds": 3.7124564610421658,
+      "median_cpu_seconds": 13.890767806499998,
+      "median_setup_wall_seconds": 0.009852608549408615,
+      "median_wall_seconds": 3.527244696044363,
+      "million_point_updates_per_second": 1.134029630687604,
+      "minimum_wall_seconds": 3.3420329310465604
+    },
+    "mfront_serial": {
+      "maximum_wall_seconds": 13.429889749037102,
+      "median_cpu_seconds": 13.300167789499993,
+      "median_setup_wall_seconds": 0.03552488854620606,
+      "median_wall_seconds": 13.332965131034143,
+      "million_point_updates_per_second": 0.3000082847805174,
+      "minimum_wall_seconds": 13.236040513031185
+    },
+    "python": {
+      "maximum_wall_seconds": 13.150275022024289,
+      "median_cpu_seconds": 27.546293804,
+      "median_setup_wall_seconds": 0.00645847711712122,
+      "median_wall_seconds": 12.346875626477413,
+      "million_point_updates_per_second": 0.3239685991022822,
+      "minimum_wall_seconds": 11.543476230930537
+    }
+  }
+}
