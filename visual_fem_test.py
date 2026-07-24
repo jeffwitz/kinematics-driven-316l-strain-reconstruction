@@ -196,11 +196,12 @@ def smooth2d_nanmean(a, k):
     return out
 
 def strain_from_disp(U, V, dx=1.0):
-    dU_dy, dU_dx = np.gradient(U, dx, dx)
-    dV_dy, dV_dx = np.gradient(V, dx, dx)
+    # Mesh convention: axis0=x, axis1=y, V=u_x, U=u_y.
+    dU_dx, dU_dy = np.gradient(U, dx, dx)
+    dV_dx, dV_dy = np.gradient(V, dx, dx)
     exx = dV_dx
     eyy = dU_dy
-    exy = 0.5 * (dU_dx + dV_dy)
+    exy = 0.5 * (dV_dy + dU_dx)
     return exx, exy, eyy
 
 def stress_vm(s11, s12, s22):
@@ -381,7 +382,7 @@ num_x_eyy_pct = None
 num_evm_classic = None
 num_evm_ps = None
 
-num_sig_fem_vm_stitched = None
+num_sig_fem_vm_direct = None
 num_sig_3G_classic_stitched = None
 num_sig_3G_ps_stitched = None
 num_sig_uniax_stitched = None
@@ -422,16 +423,11 @@ if have_num_stress:
         s22 = np.asarray(num_s22[:n], dtype=float)
         evm_ps_k = None
 
-    sig_vm_el = stress_vm(s11, s12, s22)
-
-    if evm_ps_k is not None:
-        sig_vm_ep = sigma_vm_from_evm_stitched_ludwik(evm_ps_k, E, nu, sigma_y, K_ludwik, n_ludwik)
-        num_sig_fem_vm_stitched = np.where(evm_ps_k <= eps_y_vm, sig_vm_el, sig_vm_ep)
-    else:
-        num_sig_fem_vm_stitched = sig_vm_el
-
-    m = np.isfinite(num_sig_fem_vm_stitched)
-    num_sig_fem_vm_stitched = np.asarray(num_sig_fem_vm_stitched)[m]
+    # Direct FE stress is a separate scientific observable. Never replace its
+    # plastic branch with the strain-based Ludwik reconstruction.
+    num_sig_fem_vm_direct = stress_vm(s11, s12, s22)
+    m = np.isfinite(num_sig_fem_vm_direct)
+    num_sig_fem_vm_direct = np.asarray(num_sig_fem_vm_direct)[m]
 
     if have_num_strains:
         num_x_eyy_pct_s = 100.0 * np.asarray(num_e22[:n], dtype=float)[m]
@@ -482,18 +478,18 @@ if (num_evm_ps is not None) and (num_sig_3G_ps_stitched is not None):
         label="FEM reconstructed"
     )
 
-if (num_evm_ps_s is not None) and (num_sig_fem_vm_stitched is not None):
-    nplot_s = min(len(num_evm_ps_s), len(num_sig_fem_vm_stitched))
+if (num_evm_ps_s is not None) and (num_sig_fem_vm_direct is not None):
+    nplot_s = min(len(num_evm_ps_s), len(num_sig_fem_vm_direct))
 
     ax.plot(
         100.0 * num_evm_ps_s[:nplot_s],
-        num_sig_fem_vm_stitched[:nplot_s],
+        num_sig_fem_vm_direct[:nplot_s],
         linewidth=3,
         linestyle=(0, (4, 2, 1, 2)),
         marker="s",
         markersize=7,
         color="#2ca02c",
-        label="FEM stress"
+        label="FEM direct stress"
     )
 
 ax.set_xlabel(r"$\varepsilon_{vM}$ (%)")

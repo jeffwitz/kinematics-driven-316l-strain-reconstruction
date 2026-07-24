@@ -78,10 +78,11 @@ def _Cps(E,nu):
 # ── Hardening laws ───────────────────────────────────────────────────────────
 # sy(ep) = sy0 + K*hf(ep),  H(ep) = K*hfp(ep)
 # 'ludwik'  : hf(ep)=ep^n (analytic, keeps hardening forever)
-# 'tabular' : piecewise-linear interpolation of ep^n at the same 50 knots that
-#             Case5/generate_mesh write into the .inp (E_p=linspace(0,0.2,50)),
-#             perfectly plastic beyond the last knot — exactly what Abaqus solves.
-def make_hardening(n_exp, mode='ludwik', ep_max=0.2, n_pts=50):
+# 'tabular' : piecewise-linear interpolation of ep^n at 1000 knots over
+#             E_p=linspace(0,0.2,1000), matching the article specification.
+#             The exact first positive increment remains to be checked against
+#             the original Abaqus input generator.
+def make_hardening(n_exp, mode='ludwik', ep_max=0.2, n_pts=1000):
     if mode == 'ludwik':
         def hf(ep):  return np.where(ep>0, np.maximum(ep,0.)**n_exp, 0.)
         def hfp(ep): return n_exp*np.where(ep>1e-15, ep**(n_exp-1.), 0.)
@@ -267,12 +268,12 @@ def _Fint(mesh,sig,Bs,dJs,ld):
 def run_fem(disp_x,disp_y,yield_map,K_map,n_exp,
             x_size,y_size,element_size,scale_factor,
             E_mod=205000.,nu=0.3,N_inc=20,max_nr=15,nr_tol=1e-6,
-            hardening='ludwik',ep_table_max=0.2,n_table=50,
+            hardening='ludwik',ep_table_max=0.2,n_table=1000,
             snapshot_fractions=None,
             verbose=True):
     """
     hardening : 'ludwik'  – analytic sy = sy0 + K*ep^n
-                'tabular' – piecewise-linear 50-pt table clamped at ep_table_max
+                'tabular' – piecewise-linear table clamped at ep_table_max
                             (matches the *Plastic table Abaqus interpolates)
     snapshot_fractions : optional list of load fractions in (0,1]; the S/E/PEEQ
                 fields at those pseudo-times are recorded during ONE incremental
@@ -492,8 +493,10 @@ def _verify():
     print(f"\n  sigma_vm  = {sv:.3f} MPa  (expected {sig_t:.1f})")
     print(f"  PEEQ      = {ep:.6f}     (expected {ep_ref:.6f})")
     err=abs(sv-sig_t)/sig_t*100
+    ep_err=abs(ep-ep_ref)/ep_ref*100
     print(f"  Error     = {err:.3f} %")
     assert err<0.5, f"FAILED: {err:.2f}%"
+    assert ep_err<0.5, f"FAILED PEEQ: {ep_err:.2f}%"
     print("  PASSED")
 
 if __name__=="__main__":

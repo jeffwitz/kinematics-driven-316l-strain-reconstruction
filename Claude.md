@@ -1,7 +1,7 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-24
-Statut global : **cadrage validé, travaux non commencés**
+Statut global : **premier lot scientifique et logiciel en cours**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -167,11 +167,11 @@ revue scientifique régulière.
 
 ### Semaine 1 — Contrat scientifique
 
-- [ ] Écrire les conventions d'axes `U/V`, `x/y`, axes NumPy 0/1
-- [ ] Définir les unités de toutes les entrées et sorties
-- [ ] Définir `epsilon_xy` tensoriel et `gamma_xy` ingénieur
-- [ ] Définir la formule de `epsilon_vM` sous contrainte plane
-- [ ] Définir les quatre courbes de contrainte-déformation
+- [x] Écrire les conventions d'axes `U/V`, `x/y`, axes NumPy 0/1
+- [x] Définir les unités de toutes les entrées et sorties
+- [x] Définir `epsilon_xy` tensoriel et `gamma_xy` ingénieur
+- [x] Définir la formule de `epsilon_vM` sous contrainte plane
+- [x] Définir les quatre courbes de contrainte-déformation
 - [ ] Vérifier la section et l'épaisseur réellement utilisées dans Abaqus
 - [ ] Identifier les fichiers exacts ayant produit les résultats de l'article
 - [ ] Établir un jeu de données réduit, versionnable et non confidentiel
@@ -182,27 +182,27 @@ implicite.
 
 ### Semaines 2–3 — Parité numérique avec Abaqus
 
-- [ ] Reproduire la table plastique Abaqus :
+- [~] Reproduire la table plastique Abaqus :
   - domaine `0 <= ep <= 0.2` ;
   - 1000 points ;
   - traitement documenté du premier incrément `1e-6`.
-- [ ] Tester séparément loi analytique et loi tabulée
-- [ ] Corriger le calcul et l'étiquetage de la contrainte EF directe
-- [ ] Corriger les conventions d'axes et de cisaillement
+- [~] Tester séparément loi analytique et loi tabulée
+- [x] Corriger le calcul et l'étiquetage de la contrainte EF directe
+- [x] Corriger les conventions d'axes et de cisaillement
 - [ ] Comparer contraintes et déformations au même emplacement physique
-- [ ] Définir la méthode commune de calcul des déformations depuis `U`
+- [x] Définir la méthode commune de calcul des déformations depuis `U`
 - [ ] Vérifier `U1`, `U2`, `S11`, `S22`, `S12`, `PEEQ`
 - [ ] Vérifier le signe et la définition des réactions
-- [ ] Ajouter des assertions sur PEEQ au test biaxial
+- [x] Ajouter des assertions sur PEEQ au test biaxial
 
 **Critère de sortie :** petit cas identique exécuté par Abaqus et `fem_inhouse`,
 avec rapport automatique champ par champ.
 
 ### Semaines 4–5 — Ingénierie logicielle
 
-- [ ] Créer un `pyproject.toml`
+- [x] Créer un `pyproject.toml`
 - [ ] Verrouiller les dépendances et versions
-- [ ] Créer un paquet sous `src/fem_inhouse`
+- [~] Créer un paquet sous `src/fem_inhouse`
 - [ ] Séparer :
   - maillage ;
   - élément ;
@@ -211,12 +211,12 @@ avec rapport automatique champ par champ.
   - solveur non linéaire ;
   - résultats ;
   - post-traitement.
-- [ ] Remplacer les 19 paramètres de `run_fem` par des configurations typées
+- [~] Remplacer les 19 paramètres de `run_fem` par des configurations typées
 - [ ] Ajouter les validations d'entrée
 - [ ] Supprimer les effets de bord lors des imports
 - [ ] Supprimer les chemins absolus
 - [ ] Ajouter une CLI limitée au cas d'étude
-- [ ] Ajouter Ruff, Pyright ou mypy, pytest et couverture
+- [x] Ajouter Ruff, Pyright ou mypy, pytest et couverture
 - [ ] Ajouter une journalisation structurée
 - [ ] Échouer explicitement si PyPardiso n'est pas disponible en production
 
@@ -459,6 +459,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Tangente constitutive | Différences finies | `1e-10` à `7e-9` | Réussi |
 | 2026-07-24 | Cas hétérogène | 6×6, quatre incréments | 4 NR/incrément | Réussi |
 | 2026-07-24 | Scripts complets | Imports des scripts | `test_config.py` absent | Bloqué |
+| 2026-07-24 | Socle de paquet | `pytest --cov=fem_inhouse` | 44 tests, 100 % | Réussi |
+| 2026-07-24 | Qualité du nouveau code | `ruff check src tests` | Aucun défaut | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -470,3 +472,13 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Lecture de `ArticleSource/ArticleAdil.pdf`
 - Recentrage du projet sur la reconstruction cinématique partitionnée
 - Extension du planning de 9 à 12 semaines
+
+### 2026-07-24 — Premier lot scientifique et logiciel
+
+- Ajout du contrat scientifique exécutable et documenté
+- Ajout de `pyproject.toml`, du paquet `src/fem_inhouse` et de pytest/Ruff
+- Formalisation des configurations matériau, maillage et solveur
+- Implémentation commune des déformations DIC/EF et de l'invariant plane-stress
+- Séparation entre contrainte EF directe et reconstruction depuis la déformation
+- Passage de la table historique de 50 à 1000 points
+- Ajout d'une assertion PEEQ au test biaxial

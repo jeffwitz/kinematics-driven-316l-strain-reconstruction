@@ -70,8 +70,8 @@ def cell_strains(U, V):
     1) np.gradient of U, V (pixel units, spacing 1 px -> dimensionless strain)
     2) average each strain COMPONENT from nodes to element centres
     3) eps_vM computed afterwards, per element.
-    Component convention as visual28: eyy=dU/d0, exx=dV/d1, exy=0.5(dU/d1+dV/d0)
-    (tensorial shear)."""
+    Mesh convention: axis0=x, axis1=y, V=u_x, U=u_y. Therefore
+    exx=dV/d0, eyy=dU/d1, exy=0.5*(dV/d1+dU/d0) (tensorial shear)."""
     dU0, dU1 = np.gradient(U)          # spacing = 1 px
     dV0, dV1 = np.gradient(V)
 
