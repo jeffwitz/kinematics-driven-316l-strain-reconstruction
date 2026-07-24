@@ -78,6 +78,27 @@ def test_mfront_batch_rejects_missing_library(tmp_path: Path) -> None:
         )
 
 
+def test_mfront_batch_rejects_invalid_thread_count(tmp_path: Path) -> None:
+    library = tmp_path / "placeholder.so"
+    library.touch()
+    with pytest.raises(ValueError, match="at least 1"):
+        MFrontMaterialPointBatch(
+            library,
+            250.0,
+            380.0,
+            0.245,
+            thread_count=0,
+        )
+    with pytest.raises(TypeError, match="integer"):
+        MFrontMaterialPointBatch(
+            library,
+            250.0,
+            380.0,
+            0.245,
+            thread_count=1.5,  # type: ignore[arg-type]
+        )
+
+
 @pytest.mark.mfront
 def test_compiled_mfront_behaviour_matches_elastic_plane_stress() -> None:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
@@ -129,3 +150,34 @@ def test_mfront_trial_can_be_reverted_before_commit() -> None:
     zero_trial = batch.evaluate(np.zeros((1, 3)))
     np.testing.assert_allclose(zero_trial.stress_mpa, 0.0, atol=1e-12)
     np.testing.assert_allclose(zero_trial.equivalent_plastic_strain, 0.0, atol=1e-15)
+
+
+@pytest.mark.mfront
+def test_mfront_thread_pool_matches_serial_integration() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    material_points = 32
+    material = (
+        np.linspace(230.0, 270.0, material_points),
+        np.linspace(330.0, 430.0, material_points),
+        np.full(material_points, 0.245),
+    )
+    serial = MFrontMaterialPointBatch(library, *material)
+    parallel = MFrontMaterialPointBatch(library, *material, thread_count=2)
+    strain = np.tile([0.006, -0.0006, 0.002], (material_points, 1))
+
+    serial_result = serial.evaluate(strain)
+    parallel_result = parallel.evaluate(strain)
+
+    np.testing.assert_allclose(parallel_result.stress_mpa, serial_result.stress_mpa)
+    np.testing.assert_allclose(
+        parallel_result.equivalent_plastic_strain,
+        serial_result.equivalent_plastic_strain,
+    )
+    assert serial_result.consistent_tangent_mpa is not None
+    assert parallel_result.consistent_tangent_mpa is not None
+    np.testing.assert_allclose(
+        parallel_result.consistent_tangent_mpa,
+        serial_result.consistent_tangent_mpa,
+    )

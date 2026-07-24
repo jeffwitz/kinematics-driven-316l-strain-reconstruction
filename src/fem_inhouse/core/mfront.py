@@ -95,6 +95,16 @@ def _load_mgis() -> Any:
         ) from error
 
 
+def _load_mgis_root() -> Any:
+    try:
+        return import_module("mgis")
+    except (ImportError, OSError) as error:
+        raise MFrontUnavailableError(
+            "MGIS Python bindings are unavailable; source the TFEL environment "
+            "before starting Python"
+        ) from error
+
+
 def _broadcast_material_properties(
     initial_yield_stress_mpa: ArrayLike,
     hardening_coefficient_mpa: ArrayLike,
@@ -135,12 +145,17 @@ class MFrontMaterialPointBatch:
         hardening_exponent: ArrayLike,
         *,
         temperature_k: float = 293.15,
+        thread_count: int = 1,
     ) -> None:
         library = Path(library_path)
         if not library.is_file():
             raise FileNotFoundError(f"MFront behaviour library not found: {library}")
         if not np.isfinite(temperature_k) or temperature_k <= 0:
             raise ValueError("temperature_k must be finite and positive")
+        if isinstance(thread_count, bool) or not isinstance(thread_count, int):
+            raise TypeError("thread_count must be an integer")
+        if thread_count < 1:
+            raise ValueError("thread_count must be at least 1")
 
         yield_stress, coefficient, exponent = _broadcast_material_properties(
             initial_yield_stress_mpa,
@@ -186,6 +201,9 @@ class MFrontMaterialPointBatch:
         self._point_count = yield_stress.size
         self._material_values = material_values
         self._temperature_values = temperature_values
+        self._thread_pool = (
+            _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
+        )
         self._equivalent_plastic_strain_offset = mgis.getVariableOffset(
             behaviour.isvs,
             "EquivalentPlasticStrain",
@@ -235,13 +253,21 @@ class MFrontMaterialPointBatch:
             if consistent_tangent
             else self._mgis.IntegrationType.IntegrationWithoutTangentOperator
         )
-        status = self._mgis.integrate(
-            self._manager,
-            integration_type,
-            float(time_increment),
-            0,
-            self._point_count,
-        )
+        if self._thread_pool is None:
+            status = self._mgis.integrate(
+                self._manager,
+                integration_type,
+                float(time_increment),
+                0,
+                self._point_count,
+            )
+        else:
+            status = self._mgis.integrate(
+                self._thread_pool,
+                self._manager,
+                integration_type,
+                float(time_increment),
+            )
         if status != 1:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
