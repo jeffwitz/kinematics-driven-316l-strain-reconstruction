@@ -248,14 +248,14 @@ calcul partitionné avec padding suffisant.
 
 ### Semaine 9 — Performance et ressources
 
-- [ ] Mesurer temps et mémoire pour 10k, 50k, 100k et 350k éléments
+- [~] Mesurer temps et mémoire pour 10k, 50k, 100k et 350k éléments
 - [ ] Mesurer séparément assemblage, factorisation, Newton et écriture
-- [ ] Vérifier le nombre de threads MKL
+- [~] Vérifier le nombre de threads MKL
 - [ ] Définir la taille maximale d'une partition pour la machine cible
-- [ ] Comparer PyPardiso au repli SciPy sur les petits cas
+- [x] Réserver le repli SciPy au diagnostic ; PyPardiso reste obligatoire
 - [ ] Définir un budget mémoire et un budget de temps par partition
 - [ ] Vérifier l'absence de copies mémoire évitables
-- [ ] Documenter la stratégie de parallélisation
+- [~] Documenter la stratégie de parallélisation
 
 **Critère de sortie :** dimensionnement documenté avant tout calcul sur
 11,16 millions d'éléments.
@@ -478,6 +478,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Parité monolithique/partitionnée | Cas homogène 6×6, padding 0 et 1 | `U/S/E/PEEQ` égaux aux tolérances | Réussi |
 | 2026-07-24 | Métriques de champs/interfaces | `pytest --cov=fem_inhouse --cov-branch` | 104 tests, 95,36 % | Réussi |
 | 2026-07-24 | Robustesse constitutive/globale | 3 trajets plastiques, hétérogène, cutback, réactions | 111 tests, 96,14 % | Réussi |
+| 2026-07-24 | Performance 10k/50k/100k | `/usr/bin/time -v fem-inhouse validate` | 5,01/10,60/21,87 s ; 163/557/1061 MiB | Réussi |
+| 2026-07-24 | Performance 350k | Vérification mémoire avant lancement | 3,7 GiB disponibles, swap saturé | Reporté |
 
 ## 14. Journal des mises à jour
 
@@ -569,3 +571,13 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Équilibre global des réactions intégré au seuil de l'exemple
 - Échec de convergence forcé et diagnostiqué après réduction de pas
 - Validation complète par 111 tests avec 96,14 % de couverture
+
+### 2026-07-24 — Première campagne de performance
+
+- Mesure homogène tabulée avec PyPardiso et 20 incréments
+- 10k éléments : 5,01 s et 163 MiB
+- 50 176 éléments : 10,60 s et 557 MiB
+- 99 856 éléments : 21,87 s et 1,04 GiB
+- Utilisation multithread observée entre 349 % et 552 % CPU
+- Point 350k reporté pour éviter un OOM avec 3,7 GiB disponibles et swap saturé
+- Protocole, limites et conditions de reprise documentés

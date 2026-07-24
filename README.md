@@ -54,6 +54,8 @@ of the example and its declared thresholds.
 The retained article-migration scripts no longer contain personal paths. Their
 explicit `.npy` input and environment-variable contract is documented in
 [`docs/legacy_data_contract.md`](docs/legacy_data_contract.md).
+Initial PyPardiso timing and memory measurements are recorded in
+[`docs/performance.md`](docs/performance.md).
 
 ## Typed solver API
 
