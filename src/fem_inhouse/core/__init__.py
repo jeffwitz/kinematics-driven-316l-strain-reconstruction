@@ -3,6 +3,7 @@
 from fem_inhouse.core.assembly import (
     assemble_stiffness,
     assembly_indices,
+    element_tangent_stiffness,
     internal_force,
 )
 from fem_inhouse.core.constitutive import (
@@ -32,6 +33,7 @@ __all__ = [
     "assemble_stiffness",
     "assembly_indices",
     "consistent_tangent",
+    "element_tangent_stiffness",
     "internal_force",
     "make_hardening",
     "plane_stress_elasticity",

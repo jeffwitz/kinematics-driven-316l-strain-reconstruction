@@ -73,6 +73,33 @@ factorisation et substitutions dans l'appel chronométré `linear_solve_seconds`
 Le statut de chaque partition enregistre aussi `write_seconds`, séparément du
 temps du solveur.
 
+### Réduction des copies de tangente
+
+L'implémentation initiale matérialisait, à chaque itération de Newton, la
+tangente 3×3 aux quatre points de Gauss de tous les éléments, puis le produit
+`C B`. Ces deux tableaux globaux représentaient 1 056 octets par élément, en
+plus des matrices élémentaires 8×8.
+
+L'assemblage actuel part de la matrice élémentaire élastique et ajoute
+uniquement les corrections des points plastiques, par blocs de 8 192 points.
+Dans le pire cas entièrement plastique, les tableaux globaux correspondants
+passent de 1 568 à 800 octets par élément, plus un bloc temporaire borné. À
+350k éléments, cela évite théoriquement environ 269 MB de tableaux NumPy
+transitoires.
+
+Une comparaison A/B sur le même cas hétérogène 100×100 donne :
+
+| Implémentation | Tangentes + assemblage | Pic RSS | Newton |
+|---|---:|---:|---:|
+| Tenseur dense | 9,737 s | 230 348 KiB | 78 |
+| Corrections par blocs | 7,554 s | 223 044 KiB | 78 |
+
+Le poste tangent baisse de 22,4 % et le pic RSS du processus complet de 3,2 %
+sur ce petit cas, où MKL et les structures sparse dominent déjà la mémoire.
+Le temps mur total n'est pas retenu comme gain : les appels PyPardiso ont varié
+entre les deux exécutions. La parité algébrique de l'assemblage dense et par
+blocs est protégée par un test dédié.
+
 Avant le ROI complet, il reste donc à :
 
 - séparer, si l'API PyPardiso le permet sans modifier le résultat, analyse,

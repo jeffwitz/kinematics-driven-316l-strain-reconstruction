@@ -32,6 +32,7 @@ from scipy.sparse.linalg import spsolve
 from fem_inhouse.core.assembly import (
     assemble_stiffness,
     assembly_indices,
+    element_tangent_stiffness,
     internal_force,
 )
 from fem_inhouse.core.constitutive import (
@@ -284,11 +285,9 @@ def run_fem(
 
             # Build consistent tangent stiffness
             tangent_started_at = time.perf_counter()
-            N_flat = n_e * N_GP
-            C_ep_flat = np.broadcast_to(C_ps, (N_flat, 3, 3)).copy()
             pl_idx = np.where(dg > 0)[0]
             if len(pl_idx):
-                C_ep_flat[pl_idx] = consistent_tangent(
+                plastic_tangents = consistent_tangent(
                     sf.reshape(-1, 3)[pl_idx],
                     dg[pl_idx],
                     ep_bar.ravel()[pl_idx],
@@ -301,11 +300,17 @@ def run_fem(
                     cm12,
                     cm33,
                 )
-            C_ep_gp = C_ep_flat.reshape(n_e, N_GP, 3, 3)
-
-            # Vectorised element tangent stiffness
-            CB = np.einsum("egij,gjk->egik", C_ep_gp, Bs)
-            Ke_ep = np.einsum("g,g,gik,egil->ekl", GP_W, dJs, Bs, CB)
+            else:
+                plastic_tangents = np.empty((0, 3, 3))
+            Ke_ep = element_tangent_stiffness(
+                Ke,
+                C_ps,
+                plastic_tangents,
+                pl_idx,
+                Bs,
+                dJs,
+                element_count=n_e,
+            )
             K_tang = assemble_stiffness(mesh, Ke_ep, ld, _rc)
             KII = K_tang[dof_I][:, dof_I].tocsr()
             tangent_assembly_seconds += time.perf_counter() - tangent_started_at

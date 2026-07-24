@@ -6,6 +6,7 @@ from fem_inhouse.core import (
     StructuredMesh,
     assemble_stiffness,
     consistent_tangent,
+    element_tangent_stiffness,
     make_hardening,
     plane_stress_elasticity,
     precompute_element,
@@ -76,6 +77,114 @@ def test_assembly_and_internal_force_contracts() -> None:
     assert stiffness.shape == (mesh.n_dof, mesh.n_dof)
     np.testing.assert_allclose(stiffness.toarray(), stiffness_precomputed.toarray())
     np.testing.assert_allclose(force, 0.0)
+
+
+def test_chunked_plastic_tangent_matches_dense_gauss_tensor() -> None:
+    mesh = StructuredMesh(0.003, 0.001, 0.001, 1.0)
+    elasticity = plane_stress_elasticity(205_000.0, 0.3)
+    operators = precompute_element(mesh, elasticity)
+    plastic_indices = np.array([0, 2, 5, 11])
+    plastic_tangents = np.stack(
+        (
+            0.80 * elasticity,
+            0.85 * elasticity,
+            0.90 * elasticity,
+            0.95 * elasticity,
+        )
+    )
+    dense_tangents = np.broadcast_to(
+        elasticity,
+        (mesh.n_elems * GAUSS_POINT_COUNT, 3, 3),
+    ).copy()
+    dense_tangents[plastic_indices] = plastic_tangents
+    dense_tangents = dense_tangents.reshape(
+        mesh.n_elems,
+        GAUSS_POINT_COUNT,
+        3,
+        3,
+    )
+    dense_product = np.einsum(
+        "egij,gjk->egik",
+        dense_tangents,
+        operators.strain_displacement,
+    )
+    expected = np.einsum(
+        "g,g,gik,egil->ekl",
+        np.ones(GAUSS_POINT_COUNT),
+        operators.jacobian_determinants,
+        operators.strain_displacement,
+        dense_product,
+    )
+
+    chunked = element_tangent_stiffness(
+        operators.elastic_stiffness,
+        elasticity,
+        plastic_tangents,
+        plastic_indices,
+        operators.strain_displacement,
+        operators.jacobian_determinants,
+        element_count=mesh.n_elems,
+        chunk_size=2,
+    )
+
+    np.testing.assert_allclose(chunked, expected, rtol=1e-13, atol=1e-9)
+
+
+def test_chunked_plastic_tangent_rejects_invalid_contracts() -> None:
+    elasticity = np.eye(3)
+    matrices_b = np.zeros((GAUSS_POINT_COUNT, 3, 8))
+    determinants = np.ones(GAUSS_POINT_COUNT)
+    with pytest.raises(ValueError, match="elastic_element_stiffness"):
+        element_tangent_stiffness(
+            np.zeros((3, 3)),
+            elasticity,
+            np.empty((0, 3, 3)),
+            np.array([], dtype=int),
+            matrices_b,
+            determinants,
+            element_count=1,
+        )
+    with pytest.raises(ValueError, match="out-of-range"):
+        element_tangent_stiffness(
+            np.zeros((8, 8)),
+            elasticity,
+            np.zeros((1, 3, 3)),
+            np.array([4]),
+            matrices_b,
+            determinants,
+            element_count=1,
+        )
+
+
+@pytest.mark.parametrize(
+    ("keyword", "value", "message"),
+    [
+        ("elasticity", np.zeros((2, 2)), "elasticity"),
+        ("plastic_tangents", np.zeros((1, 3, 3)), "plastic_tangents"),
+        ("strain_displacement", np.zeros((3, 3, 8)), "strain_displacement"),
+        ("jacobian_determinants", np.ones(3), "jacobian_determinants"),
+        ("element_count", 0, "element_count"),
+        ("chunk_size", 0, "chunk_size"),
+    ],
+)
+def test_chunked_plastic_tangent_rejects_each_invalid_shape(
+    keyword,
+    value,
+    message,
+) -> None:
+    arguments = {
+        "elastic_element_stiffness": np.zeros((8, 8)),
+        "elasticity": np.eye(3),
+        "plastic_tangents": np.empty((0, 3, 3)),
+        "plastic_flat_indices": np.array([], dtype=int),
+        "strain_displacement": np.zeros((GAUSS_POINT_COUNT, 3, 8)),
+        "jacobian_determinants": np.ones(GAUSS_POINT_COUNT),
+        "element_count": 1,
+        "chunk_size": 2,
+    }
+    arguments[keyword] = value
+    with pytest.raises(ValueError, match=message):
+        element_tangent_stiffness(**arguments)
 
 
 @pytest.mark.parametrize(

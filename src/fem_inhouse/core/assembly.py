@@ -42,6 +42,62 @@ def assemble_stiffness(
     ).tocsr()
 
 
+def element_tangent_stiffness(
+    elastic_element_stiffness: NDArray,
+    elasticity: NDArray,
+    plastic_tangents: NDArray,
+    plastic_flat_indices: NDArray,
+    strain_displacement: NDArray,
+    jacobian_determinants: NDArray,
+    *,
+    element_count: int,
+    chunk_size: int = 8_192,
+) -> NDArray:
+    """Add plastic Gauss-point corrections without a dense all-point tensor."""
+
+    gauss_count = len(GAUSS_WEIGHTS)
+    indices = np.asarray(plastic_flat_indices, dtype=np.int64)
+    if elastic_element_stiffness.shape != (8, 8):
+        raise ValueError("elastic_element_stiffness must have shape (8, 8)")
+    if elasticity.shape != (3, 3):
+        raise ValueError("elasticity must have shape (3, 3)")
+    if plastic_tangents.shape != (len(indices), 3, 3):
+        raise ValueError("plastic_tangents must have shape (n_plastic, 3, 3)")
+    if strain_displacement.shape != (gauss_count, 3, 8):
+        raise ValueError("strain_displacement has an invalid shape")
+    if jacobian_determinants.shape != (gauss_count,):
+        raise ValueError("jacobian_determinants has an invalid shape")
+    if element_count < 1:
+        raise ValueError("element_count must be positive")
+    if chunk_size < 1:
+        raise ValueError("chunk_size must be positive")
+    if np.any(indices < 0) or np.any(indices >= element_count * gauss_count):
+        raise ValueError("plastic_flat_indices contain an out-of-range index")
+
+    result = np.broadcast_to(
+        elastic_element_stiffness,
+        (element_count, 8, 8),
+    ).copy()
+    for start in range(0, len(indices), chunk_size):
+        stop = min(start + chunk_size, len(indices))
+        chunk_indices = indices[start:stop]
+        element_indices = chunk_indices // gauss_count
+        gauss_indices = chunk_indices % gauss_count
+        matrices_b = strain_displacement[gauss_indices]
+        tangent_difference = plastic_tangents[start:stop] - elasticity
+        integration_weights = GAUSS_WEIGHTS[gauss_indices] * jacobian_determinants[gauss_indices]
+        correction = np.einsum(
+            "n,nai,nab,nbj->nij",
+            integration_weights,
+            matrices_b,
+            tangent_difference,
+            matrices_b,
+            optimize=True,
+        )
+        np.add.at(result, element_indices, correction)
+    return result
+
+
 def internal_force(
     mesh: StructuredMesh,
     stress: NDArray,

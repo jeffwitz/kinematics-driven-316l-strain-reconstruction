@@ -255,7 +255,8 @@ calcul partitionné avec padding suffisant.
 - [ ] Définir la taille maximale d'une partition pour la machine cible
 - [x] Réserver le repli SciPy au diagnostic ; PyPardiso reste obligatoire
 - [ ] Définir un budget mémoire et un budget de temps par partition
-- [ ] Vérifier l'absence de copies mémoire évitables
+- [~] Vérifier l'absence de copies mémoire évitables : tenseurs constitutifs
+  globaux supprimés, structures sparse encore à profiler à grande taille
 - [x] Documenter la stratégie de parallélisation
 
 **Critère de sortie :** dimensionnement documenté avant tout calcul sur
@@ -505,6 +506,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Provenance de l'article | Manifeste SHA-256 vérifié par test | PDF 2 698 182 octets identifié | Réussi |
 | 2026-07-24 | Rapport de comparaison | CLI à seuils pré-déclarés | JSON, carte signée et code retour testés | Réussi |
 | 2026-07-24 | Suite après rapport automatique | Ruff, mypy et couverture | 135 tests, 96,70 % | Réussi |
+| 2026-07-24 | Assemblage tangent par blocs | A/B hétérogène 10k | -22,4 % tangent, -3,2 % RSS | Réussi |
+| 2026-07-24 | Suite après optimisation mémoire | Ruff, mypy et couverture | 143 tests, 96,93 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -721,3 +724,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Ajout d'une carte signée `prédiction - référence` avec masque et NaN explicites
 - Ajout de la commande `compare-fields` et d'un code retour exploitable en CI
 - Documentation explicite de l'exigence de co-enregistrement préalable
+
+### 2026-07-24 — Réduction mémoire de la tangente
+
+- Suppression des tenseurs `C_ep` et `C B` matérialisés pour tous les points
+- Assemblage par corrections plastiques sur la matrice élastique, par blocs
+- Parité avec la formulation dense vérifiée à `rtol=1e-13`
+- Réduction théorique de 1 568 à 800 octets globaux par élément
+- Mesure A/B 10k : poste tangent -22,4 %, pic RSS processus -3,2 %
