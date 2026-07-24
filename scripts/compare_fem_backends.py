@@ -15,10 +15,18 @@ import numpy as np
 from numpy.typing import NDArray
 
 from fem_inhouse.config import CaseStudyConfig, MaterialConfig, MeshConfig, SolverConfig
+from fem_inhouse.core.tensor_reconstruction import reconstruct_python_plane_stress_state
+from fem_inhouse.postprocessing import (
+    instantaneous_equivalent_plastic_strain,
+    plane_stress_equivalent_strain,
+    reconstructed_equivalent_strain,
+    von_mises_from_stress_tensor,
+    von_mises_stress,
+)
 from fem_inhouse.results import FEMResult
 from fem_inhouse.solver import run_case_study
 
-FIELD_NAMES = (
+HISTORICAL_FIELD_NAMES = (
     "displacement_mm",
     "stress_mpa",
     "total_strain",
@@ -26,6 +34,21 @@ FIELD_NAMES = (
     "equivalent_plastic_strain",
     "reaction_force",
 )
+TENSOR_FIELD_NAMES = (
+    "stress_tensor_mpa",
+    "total_strain_tensor",
+    "elastic_strain_tensor",
+    "plastic_strain_tensor",
+    "plane_stress_residual_mpa",
+)
+DERIVED_FIELD_NAMES = (
+    "EVM_HISTORICAL",
+    "EVM_RECONSTRUCTED_3D",
+    "PEEQ_TENSOR_INSTANTANEOUS",
+    "MISES_3D_MPA",
+)
+FIELD_NAMES = HISTORICAL_FIELD_NAMES + TENSOR_FIELD_NAMES + DERIVED_FIELD_NAMES
+COMPARISON_FIELD_NAMES = HISTORICAL_FIELD_NAMES + TENSOR_FIELD_NAMES[:-1] + DERIVED_FIELD_NAMES
 INPUT_NAMES = (
     "displacement_x_mm",
     "displacement_y_mm",
@@ -39,6 +62,14 @@ THRESHOLDS = {
     "plastic_strain": 1e-3,
     "equivalent_plastic_strain": 1e-3,
     "reaction_force": 5e-4,
+    "stress_tensor_mpa": 5e-4,
+    "total_strain_tensor": 5e-4,
+    "elastic_strain_tensor": 5e-4,
+    "plastic_strain_tensor": 1e-3,
+    "EVM_HISTORICAL": 5e-4,
+    "EVM_RECONSTRUCTED_3D": 5e-4,
+    "PEEQ_TENSOR_INSTANTANEOUS": 1e-3,
+    "MISES_3D_MPA": 5e-4,
 }
 
 
@@ -73,8 +104,48 @@ def _load_inputs(directory: Path) -> dict[str, NDArray]:
     return inputs
 
 
-def _arrays(result: FEMResult) -> dict[str, NDArray]:
-    return {name: np.asarray(getattr(result, name)) for name in FIELD_NAMES}
+def _full_tensor_arrays(result: FEMResult) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
+    values = (
+        result.stress_tensor_mpa,
+        result.total_strain_tensor,
+        result.elastic_strain_tensor,
+        result.plastic_strain_tensor,
+        result.plane_stress_residual_mpa,
+    )
+    if any(value is None for value in values):
+        raise ValueError("the solver result does not contain a complete reconstructed state")
+    stress, total, elastic, plastic, residual = values
+    assert stress is not None
+    assert total is not None
+    assert elastic is not None
+    assert plastic is not None
+    assert residual is not None
+    return stress, total, elastic, plastic, residual
+
+
+def _arrays(result: FEMResult, *, poisson_ratio: float) -> dict[str, NDArray]:
+    stress, total, elastic, plastic, residual = _full_tensor_arrays(result)
+    arrays = {name: np.asarray(getattr(result, name)) for name in HISTORICAL_FIELD_NAMES}
+    arrays.update(
+        {
+            "stress_tensor_mpa": stress,
+            "total_strain_tensor": total,
+            "elastic_strain_tensor": elastic,
+            "plastic_strain_tensor": plastic,
+            "plane_stress_residual_mpa": residual,
+        }
+    )
+    arrays["EVM_HISTORICAL"] = plane_stress_equivalent_strain(
+        result.total_strain[..., 0],
+        result.total_strain[..., 1],
+        result.total_strain[..., 2],
+        poisson_ratio=poisson_ratio,
+        shear_convention="engineering",
+    )
+    arrays["EVM_RECONSTRUCTED_3D"] = reconstructed_equivalent_strain(total)
+    arrays["PEEQ_TENSOR_INSTANTANEOUS"] = instantaneous_equivalent_plastic_strain(plastic)
+    arrays["MISES_3D_MPA"] = von_mises_from_stress_tensor(stress)
+    return arrays
 
 
 def _field_metrics(reference: NDArray, prediction: NDArray) -> dict[str, float]:
@@ -87,6 +158,66 @@ def _field_metrics(reference: NDArray, prediction: NDArray) -> dict[str, float]:
         "relative_l2": float(np.linalg.norm(difference) / reference_norm),
         "rmse": float(np.sqrt(np.mean(difference**2))),
     }
+
+
+def _state_consistency(
+    result: FEMResult,
+    arrays: dict[str, NDArray],
+    *,
+    poisson_ratio: float,
+) -> dict[str, float]:
+    _, total, elastic, plastic, plane_stress_residual = _full_tensor_arrays(result)
+    additive_residual = total - elastic - plastic
+    analytical = reconstruct_python_plane_stress_state(
+        result.total_strain,
+        result.plastic_strain,
+        result.stress_mpa,
+        poisson_ratio,
+    )
+    historical_mises = von_mises_stress(
+        result.stress_mpa[..., 0],
+        result.stress_mpa[..., 1],
+        result.stress_mpa[..., 2],
+    )
+    return {
+        "maximum_abs_plane_stress_residual_mpa": float(np.max(np.abs(plane_stress_residual))),
+        "maximum_abs_plastic_trace": float(np.max(np.abs(np.trace(plastic, axis1=-2, axis2=-1)))),
+        "maximum_abs_additive_residual": float(np.max(np.abs(additive_residual))),
+        "maximum_abs_mises_3d_minus_historical_mpa": float(
+            np.max(np.abs(arrays["MISES_3D_MPA"] - historical_mises))
+        ),
+        "maximum_abs_native_minus_analytical_total_strain": float(
+            np.max(np.abs(total - analytical.total_strain_tensor))
+        ),
+        "maximum_abs_native_minus_analytical_elastic_strain": float(
+            np.max(np.abs(elastic - analytical.elastic_strain_tensor))
+        ),
+        "maximum_abs_native_minus_analytical_plastic_strain": float(
+            np.max(np.abs(plastic - analytical.plastic_strain_tensor))
+        ),
+    }
+
+
+def _historical_regression(
+    reference_directory: Path,
+    arrays: dict[str, dict[str, NDArray]],
+) -> dict[str, dict[str, dict[str, float]]]:
+    regression: dict[str, dict[str, dict[str, float]]] = {}
+    for backend in ("python", "mfront"):
+        reference_path = reference_directory / f"{backend}_fields.npz"
+        if not reference_path.is_file():
+            raise FileNotFoundError(f"historical reference not found: {reference_path}")
+        with np.load(reference_path) as reference:
+            missing = [name for name in HISTORICAL_FIELD_NAMES if name not in reference]
+            if missing:
+                raise ValueError(
+                    f"historical reference {reference_path} is missing fields: {missing}"
+                )
+            regression[backend] = {
+                name: _field_metrics(reference[name], arrays[backend][name])
+                for name in HISTORICAL_FIELD_NAMES
+            }
+    return regression
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -102,6 +233,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--increments", type=int, default=20)
     parser.add_argument("--max-newton-iterations", type=int, default=25)
     parser.add_argument("--residual-tolerance", type=float, default=1e-7)
+    parser.add_argument(
+        "--historical-reference",
+        type=Path,
+        help="optional campaign containing legacy Python/MFront fields",
+    )
     return parser
 
 
@@ -137,11 +273,20 @@ def main() -> int:
             base_config,
             solver=replace(base_solver, constitutive_backend=backend),
         )
-        results[backend] = run_case_study(config, **inputs)
-        arrays[backend] = _arrays(results[backend])
+        results[backend] = run_case_study(
+            config,
+            displacement_x_mm=inputs["displacement_x_mm"],
+            displacement_y_mm=inputs["displacement_y_mm"],
+            yield_stress_mpa=inputs["yield_stress_mpa"],
+            hardening_coefficient_mpa=inputs["hardening_coefficient_mpa"],
+        )
+        arrays[backend] = _arrays(
+            results[backend],
+            poisson_ratio=base_config.material.poisson_ratio,
+        )
         np.savez_compressed(
             args.output / f"{backend}_fields.npz",
-            **arrays[backend],
+            **arrays[backend],  # type: ignore[arg-type]
         )
         diagnostics = results[backend].diagnostics
         (args.output / f"{backend}_diagnostics.json").write_text(
@@ -150,12 +295,41 @@ def main() -> int:
         )
 
     metrics = {
-        name: _field_metrics(arrays["python"][name], arrays["mfront"][name]) for name in FIELD_NAMES
+        name: _field_metrics(arrays["python"][name], arrays["mfront"][name])
+        for name in COMPARISON_FIELD_NAMES
     }
-    passed = all(metrics[name]["relative_linf"] <= THRESHOLDS[name] for name in FIELD_NAMES)
+    consistency = {
+        backend: _state_consistency(
+            results[backend],
+            arrays[backend],
+            poisson_ratio=base_config.material.poisson_ratio,
+        )
+        for backend in ("python", "mfront")
+    }
+    historical_regression = (
+        _historical_regression(args.historical_reference, arrays)
+        if args.historical_reference is not None
+        else None
+    )
+    field_comparison_passed = all(
+        metrics[name]["relative_linf"] <= THRESHOLDS[name] for name in COMPARISON_FIELD_NAMES
+    )
+    invariants_passed = all(
+        values["maximum_abs_plastic_trace"] <= 1e-10
+        and values["maximum_abs_additive_residual"] <= 1e-10
+        and values["maximum_abs_plane_stress_residual_mpa"]
+        <= 1e-6 * max(1.0, float(np.max(arrays[backend]["MISES_3D_MPA"])))
+        for backend, values in consistency.items()
+    )
+    historical_regression_passed = historical_regression is None or all(
+        field["maximum_absolute_error"] <= 1e-12
+        for backend in historical_regression.values()
+        for field in backend.values()
+    )
+    passed = field_comparison_passed and invariants_passed and historical_regression_passed
 
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at_utc": datetime.now(UTC).isoformat(),
         "git_commit": _git_commit(),
         "configuration": asdict(base_config),
@@ -184,6 +358,20 @@ def main() -> int:
             for name, threshold in THRESHOLDS.items()
         },
         "metrics": metrics,
+        "consistency": consistency,
+        "historical_regression": {
+            "reference_directory": (
+                str(args.historical_reference) if args.historical_reference is not None else None
+            ),
+            "maximum_absolute_error_limit": 1e-12,
+            "metrics": historical_regression,
+            "passed": historical_regression_passed,
+        },
+        "checks": {
+            "field_comparison_passed": field_comparison_passed,
+            "invariants_passed": invariants_passed,
+            "historical_regression_passed": historical_regression_passed,
+        },
         "passed": passed,
         "artifacts": {
             backend: {
