@@ -87,9 +87,7 @@ def test_elastic_uniaxial_and_biaxial_axial_strain_expressions_agree() -> None:
     young = 205_000.0
     poisson = 0.3
     uniaxial_stress = np.array([[400.0, 0.0, 0.0]])
-    uniaxial_total = np.array(
-        [[400.0 / young, -poisson * 400.0 / young, 0.0]]
-    )
+    uniaxial_total = np.array([[400.0 / young, -poisson * 400.0 / young, 0.0]])
     uniaxial = reconstruct_python_plane_stress_state(
         uniaxial_total,
         np.zeros_like(uniaxial_total),
@@ -101,12 +99,13 @@ def test_elastic_uniaxial_and_biaxial_axial_strain_expressions_agree() -> None:
     )
 
     biaxial_stress = np.array([[320.0, 180.0, 0.0]])
-    compliance = np.array(
-        [[1.0, -poisson], [-poisson, 1.0]],
-    ) / young
-    biaxial_total = np.array(
-        [[*(compliance @ biaxial_stress[0, :2]), 0.0]]
+    compliance = (
+        np.array(
+            [[1.0, -poisson], [-poisson, 1.0]],
+        )
+        / young
     )
+    biaxial_total = np.array([[*(compliance @ biaxial_stress[0, :2]), 0.0]])
     biaxial = reconstruct_python_plane_stress_state(
         biaxial_total,
         np.zeros_like(biaxial_total),

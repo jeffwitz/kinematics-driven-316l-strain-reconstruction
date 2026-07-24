@@ -125,9 +125,7 @@ def load_full_tensor_state(
         if not all(np.isfinite(array).all() for array in arrays.values()):
             raise ValueError("saved full tensor state contains non-finite values")
         if not np.array_equal(residual, stress_tensor[..., 2, 2]):
-            raise ValueError(
-                "saved plane-stress residual does not equal S_3D[..., 2, 2]"
-            )
+            raise ValueError("saved plane-stress residual does not equal S_3D[..., 2, 2]")
         return FullTensorState(
             stress_tensor_mpa=stress_tensor,
             total_strain_tensor=arrays["total_strain_tensor"],

@@ -452,9 +452,7 @@ def run_fem(
     if accepted_mfront_full_state is None:
         full_state = reconstruct_python_plane_stress_state(E, PE, S, nu)
         tensor_reconstruction_source = (
-            "python_analytical"
-            if mfront_batch is None
-            else "mfront_analytical_fallback"
+            "python_analytical" if mfront_batch is None else "mfront_analytical_fallback"
         )
     else:
         full_state = FullTensorState(

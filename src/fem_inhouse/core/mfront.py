@@ -55,17 +55,13 @@ def engineering_strain_to_kelvin(strain: ArrayLike) -> NDArray:
 def kelvin_strain_to_engineering(strain: ArrayLike) -> NDArray:
     """Convert a MFront 2D Kelvin strain to ``[e11, e22, gamma12]``."""
 
-    return tensor_to_engineering_strain_2d(
-        kelvin_plane_stress_to_tensor(strain, quantity="strain")
-    )
+    return tensor_to_engineering_strain_2d(kelvin_plane_stress_to_tensor(strain, quantity="strain"))
 
 
 def kelvin_stress_to_engineering(stress: ArrayLike) -> NDArray:
     """Convert a MFront 2D Kelvin stress to ``[s11, s22, s12]``."""
 
-    return tensor_to_engineering_stress_2d(
-        kelvin_plane_stress_to_tensor(stress, quantity="stress")
-    )
+    return tensor_to_engineering_stress_2d(kelvin_plane_stress_to_tensor(stress, quantity="stress"))
 
 
 def kelvin_tangent_to_engineering(tangent: ArrayLike) -> NDArray:
@@ -378,9 +374,7 @@ class MFrontMaterialPointBatch:
         if self._axial_strain_offset is None:
             return None
         total_kelvin = self._manager.s1.gradients.copy()
-        total_kelvin[:, 2] = self._manager.s1.internal_state_variables[
-            :, self._axial_strain_offset
-        ]
+        total_kelvin[:, 2] = self._manager.s1.internal_state_variables[:, self._axial_strain_offset]
         elastic_offset = self._elastic_strain_offset
         elastic_kelvin = self._manager.s1.internal_state_variables[
             :, elastic_offset : elastic_offset + 4

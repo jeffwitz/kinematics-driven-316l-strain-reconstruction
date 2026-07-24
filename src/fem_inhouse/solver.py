@@ -101,9 +101,7 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
     present = tuple(key in raw for key in reconstructed_keys)
     if any(present) and not all(present):
         missing = [
-            key
-            for key, available in zip(reconstructed_keys, present, strict=True)
-            if not available
+            key for key, available in zip(reconstructed_keys, present, strict=True) if not available
         ]
         raise RuntimeError(f"solver returned an incomplete reconstructed tensor state: {missing}")
     if all(present):
