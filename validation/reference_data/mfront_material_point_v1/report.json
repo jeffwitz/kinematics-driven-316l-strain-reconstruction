@@ -1,0 +1,66 @@
+{
+  "artifacts": {
+    "histories": "material_point_histories.npz",
+    "plot": "comparison.png"
+  },
+  "created_at_utc": "2026-07-24T13:19:03.986325+00:00",
+  "git_commit": "7175678bbe0a5f1873d46dcd36e3d76d7017108e",
+  "inputs": {
+    "material": {
+      "hardening_coefficient_mpa": 380.0,
+      "hardening_exponent": 0.245,
+      "initial_yield_stress_mpa": 250.0,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mfront_library": "build/mfront/src/libBehaviour.so",
+    "mfront_library_sha256": "2f5169785856edcb60056b991ef1727e158b002e348168fca912e1add9eb3908",
+    "mfront_source": "mfront/PixelLudwikJ2Plasticity.mfront",
+    "mfront_source_sha256": "6d40bbdeab5b6c829b5e2b89a00366a6fd04db598ac78359990561691c3d01ff",
+    "steps": 200
+  },
+  "model_difference": "Python uses the 1000-point piecewise-linear table clamped at PEEQ=0.2; MFront uses the same linear first segment followed by the analytical power law. The tested histories remain below PEEQ=0.2.",
+  "passed": true,
+  "paths": {
+    "equibiaxial_strain": {
+      "maximum_peeq_absolute_error": 3.871714677069719e-05,
+      "maximum_stress_error_mpa": 8.01759598728539,
+      "maximum_stress_error_over_initial_yield": 0.03207038394914156,
+      "peeq_relative_l2": 0.0010731000023860937,
+      "peeq_threshold_passed": true,
+      "plastic_strain_relative_l2": 0.001073100002386092,
+      "stress_relative_l2": 0.0023911990676108367,
+      "stress_threshold_passed": true,
+      "tangent_relative_l2": 0.06394632418298077
+    },
+    "simple_shear": {
+      "maximum_peeq_absolute_error": 3.0158155197229523e-05,
+      "maximum_stress_error_mpa": 4.118564883904526,
+      "maximum_stress_error_over_initial_yield": 0.016474259535618103,
+      "peeq_relative_l2": 0.0017206670773701135,
+      "peeq_threshold_passed": true,
+      "plastic_strain_relative_l2": 0.0017206670773701148,
+      "stress_relative_l2": 0.003675523591957547,
+      "stress_threshold_passed": true,
+      "tangent_relative_l2": 0.010241866398571345
+    },
+    "uniaxial_strain": {
+      "maximum_peeq_absolute_error": 3.421372005999213e-05,
+      "maximum_stress_error_mpa": 6.8730934279591684,
+      "maximum_stress_error_over_initial_yield": 0.027492373711836673,
+      "peeq_relative_l2": 0.0009584534140749478,
+      "peeq_threshold_passed": true,
+      "plastic_strain_relative_l2": 0.0010436684346597671,
+      "stress_relative_l2": 0.002271237866474776,
+      "stress_threshold_passed": true,
+      "tangent_relative_l2": 0.033060991680251596
+    }
+  },
+  "schema_version": 1,
+  "thresholds": {
+    "maximum_peeq_absolute_error_max": 0.0001,
+    "maximum_stress_error_over_initial_yield_max": 0.05,
+    "stress_relative_l2_max": 0.005,
+    "tangent_is_diagnostic_only": true
+  }
+}

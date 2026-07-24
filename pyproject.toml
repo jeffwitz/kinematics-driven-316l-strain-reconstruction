@@ -35,6 +35,9 @@ fem_inhouse = ["py.typed"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers -ra"
 testpaths = ["tests"]
+markers = [
+    "mfront: requires a compiled MFront behaviour and MGIS runtime",
+]
 
 [tool.coverage.run]
 branch = true

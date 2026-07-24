@@ -2,8 +2,9 @@
 
 Dernière mise à jour : 2026-07-24
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
-partitionné validé sur une partition article de 234 600 éléments ; exécution
-et raccordement des 100 partitions du ROI complet à planifier**
+partitionné validé sur une partition article de 234 600 éléments ; backend
+MFront/MGIS validé au point matériel mais pas encore branché dans Newton ;
+exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -226,6 +227,30 @@ revue scientifique régulière.
 
 **Critère de sortie :** aucune donnée ou transformation scientifique nécessaire
 au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
+
+### Phase prioritaire A.1 — Remplacement constitutif par MFront
+
+- [x] Installer depuis les sources TFEL/MFront 5.1.0 et MGIS 3.1
+- [x] Épingler les tags, commits, options CMake et procédure d'activation
+- [x] Implémenter la loi J2/Ludwik sous l'hypothèse `PlaneStress`
+- [x] Exposer les cartes locales `sy0`, `K` et `n` comme propriétés matériau
+- [x] Compiler l'interface générique MFront de façon reproductible
+- [x] Ajouter l'adaptateur Python MGIS avec conversions Kelvin/ingénieur
+- [x] Gérer explicitement les états d'essai, `commit` et `revert`
+- [x] Comparer et sauvegarder trois trajets au point matériel sur 200 incréments
+- [x] Déclarer les seuils avant la comparaison et conserver tous les champs
+- [ ] Décider entre loi MFront analytique régularisée et réplication exacte des
+      1000 segments tabulés jusqu'à `PEEQ=0.2`
+- [ ] Brancher MFront derrière une sélection de backend dans la boucle Newton
+- [ ] Vérifier la tangente MFront dans les conventions d'assemblage CPS4
+- [ ] Comparer les deux backends sur le crop DIC réel `10×10`
+- [ ] Mesurer coût, mémoire et stratégie de traitement par blocs aux points de
+      Gauss avant tout calcul de taille article
+- [ ] Basculer le backend par défaut seulement après parité du sous-domaine
+
+**Critère de sortie :** le même sous-domaine DIC converge avec les deux
+backends, les six champs sauvegardés respectent des seuils ratifiés, et aucun
+état MFront d'une itération Newton rejetée n'est commis.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -633,8 +658,30 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Partition article DIC réelle | 100 partitions, padding 150, partition 0 (`510×460`) | 20/20 incréments, 0 cutback, 18 min 08 s, 3,59 GiB RSS | Réussi |
 | 2026-07-24 | Intégrité partition article | `validation-report.json`, SHA-256 et contrôles mécaniques | 6 champs finis, bords DIC à `4,16e-17 mm`, équilibre `4,39e-14` | Réussi |
 | 2026-07-24 | Comparaison exploratoire DIC/EF | `epsilon_vM` sur la zone résolue | RMSE `0,253 %`, MAE `0,185 %`, corrélation `0,016` | À approfondir |
+| 2026-07-24 | Installation TFEL/MFront et MGIS | Versions et imports depuis `.venv` | TFEL 5.1.0, MGIS 3.1, interface générique active | Réussi |
+| 2026-07-24 | Parité constitutive Python/MFront | `validation/reference_data/mfront_material_point_v1/report.json` | L2 contrainte `0,227–0,368 %`, erreur PEEQ max `<3,88e-5` | Réussi |
+| 2026-07-24 | Suite après backend MFront | Ruff, mypy, compilation MFront et couverture | 165 tests, 94,25 %, dont 2 tests MGIS réels | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-24 — Premier backend constitutif MFront/MGIS
+
+- Installation source de TFEL/MFront 5.1.0 et MGIS 3.1 sous
+  `/home/jeff/.local`, avec commits et options CMake enregistrés
+- Contournement documenté du suffixe de module Python TFEL 5.1.0 en désactivant
+  uniquement `TFEL_APPEND_VERSION`, sans patcher les sources
+- Ajout d'une loi J2/Ludwik en contrainte plane avec propriétés locales
+  `InitialYieldStress`, `HardeningCoefficient` et `HardeningExponent`
+- Ajout d'un adaptateur MGIS vectorisé avec conversions Kelvin, tangente
+  cohérente et transactions explicites `evaluate/commit/revert`
+- Sauvegarde de 200 incréments pour trois trajets dans un NPZ, avec rapport
+  JSON, empreintes et figure
+- Passage des seuils initiaux de contrainte et PEEQ ; écart de tangente
+  `1,02–6,39 %` conservé comme diagnostic avant branchement dans Newton
+- Validation complète par Ruff, mypy, recompilation MFront et 165 tests avec
+  94,25 % de couverture ; les deux tests MGIS utilisent la bibliothèque réelle
+- Maintien explicite du backend Python en production tant que la parité du
+  sous-domaine DIC et la loi tabulée exacte ne sont pas validées
 
 ### 2026-07-24 — Première partition à la taille de l'article
 
