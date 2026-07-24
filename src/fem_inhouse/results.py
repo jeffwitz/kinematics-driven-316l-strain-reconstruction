@@ -39,6 +39,7 @@ class SolverDiagnostics:
     final_residual_norm: float
     final_relative_residual: float
     final_convergence_criterion: str
+    tensor_reconstruction_source: str = "unspecified"
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,13 +52,18 @@ class FEMResult:
     plastic_strain: FloatArray
     equivalent_plastic_strain: FloatArray
     reaction_force: FloatArray
+    stress_tensor_mpa: FloatArray | None = None
+    total_strain_tensor: FloatArray | None = None
+    elastic_strain_tensor: FloatArray | None = None
+    plastic_strain_tensor: FloatArray | None = None
+    plane_stress_residual_mpa: FloatArray | None = None
     frames: dict[float, FrameResult] = field(default_factory=dict)
     diagnostics: SolverDiagnostics | None = None
 
     def arrays(self) -> tuple[FloatArray, ...]:
         """Return every final-state array for common validation operations."""
 
-        return (
+        historical = (
             self.displacement_mm,
             self.stress_mpa,
             self.total_strain,
@@ -65,3 +71,11 @@ class FEMResult:
             self.equivalent_plastic_strain,
             self.reaction_force,
         )
+        reconstructed = (
+            self.stress_tensor_mpa,
+            self.total_strain_tensor,
+            self.elastic_strain_tensor,
+            self.plastic_strain_tensor,
+            self.plane_stress_residual_mpa,
+        )
+        return historical + tuple(field for field in reconstructed if field is not None)

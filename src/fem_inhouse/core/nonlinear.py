@@ -50,6 +50,10 @@ from fem_inhouse.core.element import (
     precompute_element,
 )
 from fem_inhouse.core.mesh import StructuredMesh
+from fem_inhouse.core.tensor_reconstruction import (
+    FullTensorState,
+    reconstruct_python_plane_stress_state,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -146,7 +150,7 @@ def run_fem(
     def tg(a):
         if a.ndim == 1:
             return a.reshape(nx, ny, order="F")
-        return a.reshape(nx, ny, a.shape[1], order="F")
+        return a.reshape(nx, ny, *a.shape[1:], order="F")
 
     # Material per GP
     sy0_gp = np.repeat(yield_map.ravel(order="F"), N_GP)
@@ -221,6 +225,7 @@ def run_fem(
     ep_bar = np.zeros((n_e, N_GP))
     sig = np.zeros((n_e, N_GP, 3))
     eps_tot = np.zeros((n_e, N_GP, 3))
+    accepted_mfront_full_state: FullTensorState | None = None
 
     # Incremental loading with automatic cutback (Abaqus-style):
     # pseudo-time t: 0 -> 1, initial/maximum step 1/N_inc, halved on failure.
@@ -256,6 +261,7 @@ def run_fem(
         sf_acc = sig.copy()
         dp_acc = np.zeros_like(eps_p)
         ep_new = ep_bar.copy()
+        mfront_full_state_acc: FullTensorState | None = None
         converged = False
 
         for nrit in range(max_nr):
@@ -328,6 +334,8 @@ def run_fem(
             # Converge on absolute OR relative residual
             if res < 1e-10 or rel < nr_tol:
                 converged = True
+                if mfront_batch is not None:
+                    mfront_full_state_acc = mfront_batch.current_full_tensor_state()
                 final_residual_norm = float(res)
                 final_relative_residual = float(rel)
                 final_convergence_criterion = (
@@ -400,6 +408,7 @@ def run_fem(
 
         if mfront_batch is not None:
             mfront_batch.commit()
+            accepted_mfront_full_state = mfront_full_state_acc
         eps_p += dp_acc
         ep_bar = ep_new
         sig = sf_acc
@@ -437,6 +446,36 @@ def run_fem(
     RF[..., 0] = np.where(bc_m[2 * nd_all], F_all[2 * nd_all], 0.0).reshape(nxn, nyn)
     RF[..., 1] = np.where(bc_m[2 * nd_all + 1], F_all[2 * nd_all + 1], 0.0).reshape(nxn, nyn)
 
+    S = tg(gm(sig))
+    E = tg(gm(eps_tot))
+    PE = tg(gm(eps_p))
+    if accepted_mfront_full_state is None:
+        full_state = reconstruct_python_plane_stress_state(E, PE, S, nu)
+        tensor_reconstruction_source = (
+            "python_analytical"
+            if mfront_batch is None
+            else "mfront_analytical_fallback"
+        )
+    else:
+        full_state = FullTensorState(
+            stress_tensor_mpa=tg(
+                gm(accepted_mfront_full_state.stress_tensor_mpa.reshape(n_e, N_GP, 3, 3))
+            ),
+            total_strain_tensor=tg(
+                gm(accepted_mfront_full_state.total_strain_tensor.reshape(n_e, N_GP, 3, 3))
+            ),
+            elastic_strain_tensor=tg(
+                gm(accepted_mfront_full_state.elastic_strain_tensor.reshape(n_e, N_GP, 3, 3))
+            ),
+            plastic_strain_tensor=tg(
+                gm(accepted_mfront_full_state.plastic_strain_tensor.reshape(n_e, N_GP, 3, 3))
+            ),
+            plane_stress_residual_mpa=tg(
+                gm(accepted_mfront_full_state.plane_stress_residual_mpa.reshape(n_e, N_GP))
+            ),
+        )
+        tensor_reconstruction_source = "mfront_native_axial_strain"
+
     output_seconds = time.perf_counter() - output_started_at
     elapsed_seconds = time.perf_counter() - started_at
     LOGGER.info(
@@ -452,11 +491,16 @@ def run_fem(
     )
     return dict(
         U=U,
-        S=tg(gm(sig)),
-        E=tg(gm(eps_tot)),
-        PE=tg(gm(eps_p)),
+        S=S,
+        E=E,
+        PE=PE,
         PEEQ=tg(gm(ep_bar)),
         RF=RF,
+        S_3D=full_state.stress_tensor_mpa,
+        E_3D=full_state.total_strain_tensor,
+        EE_3D=full_state.elastic_strain_tensor,
+        PE_3D=full_state.plastic_strain_tensor,
+        S33_RESIDUAL_MPA=full_state.plane_stress_residual_mpa,
         mesh=mesh,
         frames=snaps,
         diagnostics=dict(
@@ -476,6 +520,7 @@ def run_fem(
             final_residual_norm=final_residual_norm,
             final_relative_residual=final_relative_residual,
             final_convergence_criterion=final_convergence_criterion,
+            tensor_reconstruction_source=tensor_reconstruction_source,
         ),
     )
 

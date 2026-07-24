@@ -11,6 +11,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from fem_inhouse.config import CaseStudyConfig
 from fem_inhouse.core import nonlinear
+from fem_inhouse.core.tensor_reconstruction import reconstruct_python_plane_stress_state
 from fem_inhouse.results import FEMResult, FrameResult, SolverDiagnostics
 
 LOGGER = logging.getLogger(__name__)
@@ -72,15 +73,69 @@ def _convert_frame(frame: dict[str, Any]) -> FrameResult:
     )
 
 
-def _convert_result(raw: dict[str, Any]) -> FEMResult:
+def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
     diagnostics = raw["diagnostics"]
+    displacement = np.asarray(raw["U"])
+    stress = np.asarray(raw["S"])
+    total_strain = np.asarray(raw["E"])
+    plastic_strain = np.asarray(raw["PE"])
+    equivalent_plastic_strain = np.asarray(raw["PEEQ"])
+    reaction_force = np.asarray(raw["RF"])
+    historical_fields = (
+        displacement,
+        stress,
+        total_strain,
+        plastic_strain,
+        equivalent_plastic_strain,
+        reaction_force,
+    )
+    if not all(np.isfinite(field).all() for field in historical_fields):
+        raise RuntimeError("solver returned non-finite final fields")
+    reconstructed_keys = (
+        "S_3D",
+        "E_3D",
+        "EE_3D",
+        "PE_3D",
+        "S33_RESIDUAL_MPA",
+    )
+    present = tuple(key in raw for key in reconstructed_keys)
+    if any(present) and not all(present):
+        missing = [
+            key
+            for key, available in zip(reconstructed_keys, present, strict=True)
+            if not available
+        ]
+        raise RuntimeError(f"solver returned an incomplete reconstructed tensor state: {missing}")
+    if all(present):
+        stress_tensor = np.asarray(raw["S_3D"])
+        total_strain_tensor = np.asarray(raw["E_3D"])
+        elastic_strain_tensor = np.asarray(raw["EE_3D"])
+        plastic_strain_tensor = np.asarray(raw["PE_3D"])
+        plane_stress_residual = np.asarray(raw["S33_RESIDUAL_MPA"])
+    else:
+        legacy_state = reconstruct_python_plane_stress_state(
+            total_strain,
+            plastic_strain,
+            stress,
+            poisson_ratio,
+        )
+        stress_tensor = legacy_state.stress_tensor_mpa
+        total_strain_tensor = legacy_state.total_strain_tensor
+        elastic_strain_tensor = legacy_state.elastic_strain_tensor
+        plastic_strain_tensor = legacy_state.plastic_strain_tensor
+        plane_stress_residual = legacy_state.plane_stress_residual_mpa
     result = FEMResult(
-        displacement_mm=np.asarray(raw["U"]),
-        stress_mpa=np.asarray(raw["S"]),
-        total_strain=np.asarray(raw["E"]),
-        plastic_strain=np.asarray(raw["PE"]),
-        equivalent_plastic_strain=np.asarray(raw["PEEQ"]),
-        reaction_force=np.asarray(raw["RF"]),
+        displacement_mm=displacement,
+        stress_mpa=stress,
+        total_strain=total_strain,
+        plastic_strain=plastic_strain,
+        equivalent_plastic_strain=equivalent_plastic_strain,
+        reaction_force=reaction_force,
+        stress_tensor_mpa=stress_tensor,
+        total_strain_tensor=total_strain_tensor,
+        elastic_strain_tensor=elastic_strain_tensor,
+        plastic_strain_tensor=plastic_strain_tensor,
+        plane_stress_residual_mpa=plane_stress_residual,
         frames={
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()
@@ -171,4 +226,4 @@ def run_case_study(
         snapshot_fractions=snapshot_fractions,
         verbose=verbose,
     )
-    return _convert_result(raw)
+    return _convert_result(raw, poisson_ratio=config.material.poisson_ratio)

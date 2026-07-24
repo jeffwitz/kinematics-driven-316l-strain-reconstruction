@@ -97,6 +97,13 @@ def test_typed_api_validates_and_forwards_configuration(monkeypatch) -> None:
     )
 
     assert result.stress_mpa.shape == (2, 2, 3)
+    assert result.stress_tensor_mpa is not None
+    assert result.total_strain_tensor is not None
+    assert result.elastic_strain_tensor is not None
+    assert result.plastic_strain_tensor is not None
+    assert result.plane_stress_residual_mpa is not None
+    assert result.stress_tensor_mpa.shape == (2, 2, 3, 3)
+    np.testing.assert_array_equal(result.plane_stress_residual_mpa, 0.0)
     assert result.frames[0.5].displacement_mm.shape == (3, 3, 2)
     assert result.diagnostics is not None
     assert result.diagnostics.backend == "test backend"
@@ -163,6 +170,22 @@ def test_non_finite_solver_output_is_rejected(monkeypatch) -> None:
     ux, uy, yield_map, hardening_map = _fields()
 
     with pytest.raises(RuntimeError, match="non-finite final fields"):
+        solver.run_case_study(
+            CaseStudyConfig(MeshConfig(nx=2, ny=2)),
+            displacement_x_mm=ux,
+            displacement_y_mm=uy,
+            yield_stress_mpa=yield_map,
+            hardening_coefficient_mpa=hardening_map,
+        )
+
+
+def test_incomplete_reconstructed_tensor_state_is_rejected(monkeypatch) -> None:
+    raw = _raw_result()
+    raw["S_3D"] = np.zeros((2, 2, 3, 3))
+    monkeypatch.setattr(solver.nonlinear, "run_fem", lambda *args, **kwargs: raw)
+    ux, uy, yield_map, hardening_map = _fields()
+
+    with pytest.raises(RuntimeError, match="incomplete reconstructed tensor state"):
         solver.run_case_study(
             CaseStudyConfig(MeshConfig(nx=2, ny=2)),
             displacement_x_mm=ux,

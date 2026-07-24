@@ -63,3 +63,45 @@ def test_mfront_backend_matches_python_through_the_complete_newton_loop() -> Non
         atol=1e-12,
     )
     np.testing.assert_allclose(mfront.reaction_force, python.reaction_force, rtol=1e-8, atol=1e-10)
+    assert python.diagnostics is not None
+    assert python.diagnostics.tensor_reconstruction_source == "python_analytical"
+    assert mfront.diagnostics.tensor_reconstruction_source == "mfront_native_axial_strain"
+
+    tensor_fields = (
+        "stress_tensor_mpa",
+        "total_strain_tensor",
+        "elastic_strain_tensor",
+        "plastic_strain_tensor",
+    )
+    for field_name in tensor_fields:
+        python_field = getattr(python, field_name)
+        mfront_field = getattr(mfront, field_name)
+        assert python_field is not None
+        assert mfront_field is not None
+        np.testing.assert_allclose(
+            mfront_field,
+            python_field,
+            rtol=1e-6,
+            atol=1e-6 if field_name == "stress_tensor_mpa" else 1e-10,
+        )
+
+    assert python.plane_stress_residual_mpa is not None
+    assert mfront.plane_stress_residual_mpa is not None
+    np.testing.assert_array_equal(python.plane_stress_residual_mpa, 0.0)
+    assert np.max(np.abs(mfront.plane_stress_residual_mpa)) <= 1e-9
+    for result in (python, mfront):
+        assert result.total_strain_tensor is not None
+        assert result.elastic_strain_tensor is not None
+        assert result.plastic_strain_tensor is not None
+        np.testing.assert_allclose(
+            result.total_strain_tensor,
+            result.elastic_strain_tensor + result.plastic_strain_tensor,
+            rtol=0.0,
+            atol=1e-14,
+        )
+        np.testing.assert_allclose(
+            np.trace(result.plastic_strain_tensor, axis1=-2, axis2=-1),
+            0.0,
+            rtol=0.0,
+            atol=1e-12,
+        )

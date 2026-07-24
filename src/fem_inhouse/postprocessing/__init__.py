@@ -23,6 +23,11 @@ from fem_inhouse.postprocessing.stress_curves import (
     reconstructed_stress_curve_from_strain,
     von_mises_stress,
 )
+from fem_inhouse.postprocessing.tensor_measures import (
+    instantaneous_equivalent_plastic_strain,
+    reconstructed_equivalent_strain,
+    von_mises_from_stress_tensor,
+)
 
 __all__ = [
     "FieldAcceptanceThresholds",
@@ -34,12 +39,15 @@ __all__ = [
     "direct_fe_equivalent_stress_curve",
     "evaluate_field_comparison",
     "field_error_metrics",
+    "instantaneous_equivalent_plastic_strain",
     "interface_gradient_ratio",
     "localization_overlap_metrics",
     "plane_stress_equivalent_strain",
+    "reconstructed_equivalent_strain",
     "reconstructed_equivalent_stress",
     "reconstructed_stress_curve_from_strain",
     "signed_difference_field",
     "strain_from_displacement",
+    "von_mises_from_stress_tensor",
     "von_mises_stress",
 ]
