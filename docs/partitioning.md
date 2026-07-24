@@ -37,3 +37,27 @@ Le manifeste JSON enregistre les bornes exactes de chaque partition. Il est
 déterministe pour une configuration donnée et constitue la base du futur
 mécanisme de reprise et d'empreinte des entrées.
 
+## Workflow reprenable
+
+`PartitionWorkflow` associe le découpage aux quatre champs globaux et à la
+configuration scientifique. `prepare()` écrit un manifeste immuable contenant :
+
+- toute la configuration typée ;
+- les bornes des partitions ;
+- la version et l'empreinte SHA-256 du code Python empaqueté ;
+- l'empreinte SHA-256 de chaque champ d'entrée ;
+- la liste explicite des sorties conservées.
+
+Les empreintes des tableaux sont calculées par blocs et acceptent donc les
+tableaux `numpy.memmap`. Elles ne nécessitent pas une copie de la totalité du
+ROI.
+
+Chaque partition écrit atomiquement `U`, `S`, `E` et `PEEQ`, puis un
+`status.json` contenant leurs empreintes. Au redémarrage, une partition n'est
+réutilisée que si le manifeste et chaque fichier correspondent encore. Un
+fichier manquant ou corrompu replace automatiquement la partition dans la liste
+des calculs en attente.
+
+Le workflow traite les partitions séquentiellement par défaut. Leur identité et
+leurs sorties ne dépendent pas de l'ordre d'exécution ; le même contrat pourra
+donc être utilisé par un job array sans modifier le format de résultats.

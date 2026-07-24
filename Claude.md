@@ -233,12 +233,12 @@ commande documentée.
 - [x] Gérer correctement les partitions de bord et de coin
 - [x] Extraire les cartes matériau et les déplacements locaux
 - [x] Ajouter le padding configurable
-- [ ] Résoudre indépendamment chaque partition
-- [ ] Enregistrer uniquement les résultats nécessaires par partition
+- [x] Résoudre indépendamment chaque partition
+- [x] Enregistrer uniquement les résultats nécessaires par partition
 - [x] Extraire et raccorder les cœurs non recouverts
 - [x] Garantir l'absence de trous, doublons et décalages d'indices
-- [ ] Permettre une reprise après interruption
-- [~] Ajouter un manifeste et une empreinte des entrées
+- [x] Permettre une reprise après interruption
+- [x] Ajouter un manifeste et une empreinte des entrées
 - [x] Produire des fichiers `.npy` mappés en mémoire pour le champ global
 - [x] Rendre l'ordre d'exécution des partitions sans effet sur le résultat
 - [ ] Ajouter un modèle de job array pour le calcul parallèle si nécessaire
@@ -397,10 +397,10 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 - [ ] Installation fraîche reproductible
 - [x] Versions verrouillées
-- [ ] Données de référence identifiées par empreinte
+- [~] Données de référence identifiées par empreinte
 - [ ] Aucun chemin dépendant d'un poste personnel
-- [ ] Résultats accompagnés de leur configuration et version du code
-- [ ] Workflow reprenable partition par partition
+- [x] Résultats accompagnés de leur configuration et version du code
+- [x] Workflow reprenable partition par partition
 
 ### Performance
 
@@ -469,6 +469,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | API solveur et noyau EF | `pytest --cov=fem_inhouse --cov-branch` | 82 tests, 94 %, sans avertissement | Réussi |
 | 2026-07-24 | Tangente cohérente automatisée | Différences finies du retour plastique | Erreur relative `< 1e-5` | Réussi |
 | 2026-07-24 | Compatibilité historique | `.venv/bin/python fem_pixel.py` via pytest | Biaxial SVM/PEEQ réussi | Réussi |
+| 2026-07-24 | Workflow reprenable | Tests manifestes, corruption, reprise, raccordement | 87 tests, 95 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -513,3 +514,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   tangente par différences finies
 - Verrouillage exact de l'environnement Linux/Python 3.12
 - Validation par 82 tests, 94 % de couverture totale et aucun avertissement
+
+### 2026-07-24 — Workflow partitionné reprenable
+
+- Résolution autonome de chaque zone de calcul paddée avec configuration locale
+- Écriture atomique des seuls champs `U`, `S`, `E` et `PEEQ`
+- Manifeste immuable avec empreintes des entrées, du code et de la configuration
+- Reprise automatique avec détection des fichiers manquants ou corrompus
+- Raccordement hors mémoire uniquement lorsque toutes les partitions sont valides
+- Validation de la reprise et du raccordement par 87 tests, couverture 95 %
