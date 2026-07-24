@@ -22,7 +22,7 @@ CODE_DIR = os.path.dirname(os.path.abspath(__file__))       # .../fem/1_codes
 ROOT     = os.path.dirname(os.path.dirname(CODE_DIR))       # test root
 sys.path.insert(0, CODE_DIR)   # fem_pixel
 sys.path.insert(0, ROOT)       # test_config
-from test_config import FEM_OUT
+from test_config import DIC_DIR, FEM_OUT, MACRO_STRESS_STRAIN_FILE
 FEM_DIR = FEM_OUT     # all FEM outputs live here (final_validation/fem_single)
 os.makedirs(FEM_DIR, exist_ok=True)
 
@@ -121,11 +121,11 @@ sigma_y = 124.0
 K_ludwik = 380
 n_ludwik = 0.245
 
-macro_path = r"C:\Users\adil.kilinc\Desktop\Thesis\3_data\stress_strain.npy"
+macro_path = MACRO_STRESS_STRAIN_FILE
 
 # same dataset the FEA BCs are built from
-dic_dir_U = r"C:\Users\adil.kilinc\Desktop\Thesis\3_data\22_U_V_again_"
-dic_dir_V = r"C:\Users\adil.kilinc\Desktop\Thesis\3_data\22_U_V_again_"
+dic_dir_U = DIC_DIR
+dic_dir_V = DIC_DIR
 dic_max_frame = 40   # FEM is loaded up to frame 40 -> stop the DIC curve there too
 dic_baseline_n = 5
 

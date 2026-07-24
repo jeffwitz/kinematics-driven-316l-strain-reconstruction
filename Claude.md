@@ -130,9 +130,9 @@ pour fonctionner hors mémoire.
 Une case cochée dans cette liste signifie que le défaut initial a été corrigé
 et vérifié ; une case vide indique qu'il reste à traiter.
 
-- [ ] `test_config.py` est absent du projet livré
-- [ ] Les scripts de validation ne sont pas exécutables de manière autonome
-- [ ] Des chemins Windows absolus sont présents
+- [x] `test_config.py` est absent du projet livré
+- [~] Les scripts de validation ne sont pas exécutables de manière autonome
+- [x] Des chemins Windows absolus sont présents
 - [x] La courbe étiquetée « FEM stress » remplace la contrainte EF directe par
       une reconstruction de Ludwik après plastification
 - [x] Les quatre courbes scientifiques de l'article ne sont pas séparées
@@ -143,7 +143,7 @@ et vérifié ; une case vide indique qu'il reste à traiter.
 - [x] Le seul test intégré n'asserte pas la valeur de PEEQ
 - [x] Aucun moteur de partitionnement/raccordement n'existe
 - [x] Aucun traitement hors mémoire du ROI complet n'existe
-- [ ] Aucun manifeste de dépendances ou verrouillage des versions n'existe
+- [x] Aucun manifeste de dépendances ou verrouillage des versions n'existe
 - [x] Aucun historique Git exploitable n'est présent dans le dossier
 - [ ] Aucun seuil automatique de parité Abaqus n'est défini
 
@@ -217,7 +217,7 @@ avec rapport automatique champ par champ.
 - [x] Remplacer les 19 paramètres de `run_fem` par des configurations typées
 - [x] Ajouter les validations d'entrée
 - [x] Supprimer les effets de bord lors des imports
-- [ ] Supprimer les chemins absolus
+- [x] Supprimer les chemins absolus
 - [x] Ajouter une CLI limitée au cas d'étude
 - [x] Ajouter Ruff, Pyright ou mypy, pytest et couverture
 - [~] Ajouter une journalisation structurée
@@ -315,7 +315,7 @@ artefacts de raccordement.
 - [ ] Documentation de la validation
 - [ ] Documentation des limites scientifiques
 - [x] Commandes uniques `test`, `validate`, `example`
-- [~] CI verte sur une installation fraîche
+- [x] CI verte sur une installation fraîche
 - [ ] Revue indépendante scientifique
 - [ ] Revue indépendante logicielle
 - [ ] Version figée `1.0.0-case-study`
@@ -372,7 +372,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 ### Noyau numérique
 
 - [ ] Tous les tests mathématiques critiques passent
-- [ ] Tangente cohérente vérifiée automatiquement
+- [x] Tangente cohérente vérifiée automatiquement
 - [ ] Convergence robuste sur cas homogène et hétérogène
 - [ ] Échec de convergence diagnostiqué sans résultat silencieusement invalide
 
@@ -380,7 +380,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 - [ ] Parité Abaqus démontrée sur petits cas
 - [ ] Métriques de l'article reproduites ou écarts expliqués
-- [ ] Contrainte directe séparée des reconstructions
+- [x] Contrainte directe séparée des reconstructions
 - [ ] Artefacts de partition quantifiés
 - [ ] Seuils définis avant lecture des résultats finaux
 
@@ -390,32 +390,32 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 - [x] Au moins 85 % de couverture des lignes
 - [x] Au moins 80 % de couverture des branches
 - [x] Couverture dédiée de toutes les fonctions constitutives critiques
-- [ ] Aucun avertissement qualité non justifié
+- [x] Aucun avertissement qualité non justifié
 - [ ] Revue de code obligatoire pour les formules numériques
 
 ### Reproductibilité
 
-- [~] Installation fraîche reproductible
+- [x] Installation fraîche reproductible
 - [x] Versions verrouillées
 - [~] Données de référence identifiées par empreinte
-- [ ] Aucun chemin dépendant d'un poste personnel
+- [x] Aucun chemin dépendant d'un poste personnel
 - [x] Résultats accompagnés de leur configuration et version du code
 - [x] Workflow reprenable partition par partition
 
 ### Performance
 
-- [ ] PyPardiso/MKL utilisé et vérifié
+- [x] PyPardiso/MKL utilisé et vérifié
 - [ ] Temps et mémoire mesurés
 - [ ] Cas de production compatible avec la machine cible
-- [ ] Traitement hors mémoire du ROI complet
+- [x] Traitement hors mémoire du ROI complet
 - [ ] Absence de régression de performance supérieure au seuil défini
 
 ### Documentation
 
 - [x] Une personne externe peut installer et exécuter le cas réduit
 - [ ] Une personne externe peut reproduire les figures principales
-- [ ] Les hypothèses et limites sont visibles
-- [ ] Les descripteurs locaux ne sont pas présentés comme propriétés de grains
+- [x] Les hypothèses et limites sont visibles
+- [x] Les descripteurs locaux ne sont pas présentés comme propriétés de grains
 
 ## 11. Seuils de validation à ratifier
 
@@ -473,6 +473,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Exemple réduit tabulé 4×4 | `python -m fem_inhouse validate --nx 4 --ny 4` | erreur SVM `5,84e-6`, PEEQ `2,17e-6` | Réussi |
 | 2026-07-24 | Suite complète et seuil CI | `pytest --cov=fem_inhouse --cov-branch` | 92 tests, 95,04 % | Réussi |
 | 2026-07-24 | Construction du paquet | `pip wheel . --no-deps` et inspection | cœur, workflow et CLI présents | Réussi |
+| 2026-07-24 | Portabilité des scripts historiques | Contrat `.npy`, chemins par environnement | 97 tests, 95,20 %, aucun chemin personnel | Réussi |
+| 2026-07-24 | CI sur installation fraîche | GitHub Actions `30086978438` | installation, Ruff et tests verts | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -535,3 +537,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Construction et inspection réussies du wheel Python
 - Ajout d'une CI GitHub avec environnement exact, Ruff et seuil de couverture 85 %
 - Validation locale par 92 tests avec 95,04 % de couverture
+
+### 2026-07-24 — Portabilité des données historiques
+
+- Remplacement du `test_config.py` externe manquant par un contrat versionné
+- Suppression des chemins Windows personnels dans les scripts conservés
+- Configuration des données et résultats uniquement par variables d'environnement
+- Validation des formes, valeurs finies et domaines des quatre champs d'entrée
+- Documentation explicite des noms de fichiers `.npy` attendus
+- Validation par 97 tests avec 95,20 % de couverture

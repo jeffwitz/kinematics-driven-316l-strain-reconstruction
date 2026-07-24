@@ -51,6 +51,10 @@ fem-inhouse example --nx 10 --ny 10 --output results/reduced
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation
 of the example and its declared thresholds.
 
+The retained article-migration scripts no longer contain personal paths. Their
+explicit `.npy` input and environment-variable contract is documented in
+[`docs/legacy_data_contract.md`](docs/legacy_data_contract.md).
+
 ## Typed solver API
 
 ```python
