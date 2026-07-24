@@ -1,10 +1,12 @@
+import logging
+
 import numpy as np
 
 from fem_inhouse.config import CaseStudyConfig, MeshConfig, SolverConfig
 from fem_inhouse.solver import run_case_study
 
 
-def test_affine_elastic_field_is_reproduced_with_typed_api() -> None:
+def test_affine_elastic_field_is_reproduced_with_typed_api(caplog) -> None:
     mesh = MeshConfig(nx=4, ny=4)
     config = CaseStudyConfig(
         mesh,
@@ -15,13 +17,15 @@ def test_affine_elastic_field_is_reproduced_with_typed_api() -> None:
     xx, yy = np.meshgrid(x, y, indexing="ij")
     strain_xx = 1e-4
 
-    result = run_case_study(
-        config,
-        displacement_x_mm=strain_xx * xx,
-        displacement_y_mm=np.zeros_like(yy),
-        yield_stress_mpa=np.full((mesh.nx, mesh.ny), 250.0),
-        hardening_coefficient_mpa=np.full((mesh.nx, mesh.ny), 500.0),
-    )
+    with caplog.at_level(logging.INFO, logger="fem_inhouse.core.nonlinear"):
+        result = run_case_study(
+            config,
+            displacement_x_mm=strain_xx * xx,
+            displacement_y_mm=np.zeros_like(yy),
+            yield_stress_mpa=np.full((mesh.nx, mesh.ny), 250.0),
+            hardening_coefficient_mpa=np.full((mesh.nx, mesh.ny), 500.0),
+            verbose=True,
+        )
 
     expected_s11 = (
         config.material.young_modulus_mpa * strain_xx / (1.0 - config.material.poisson_ratio**2)
@@ -31,3 +35,7 @@ def test_affine_elastic_field_is_reproduced_with_typed_api() -> None:
     np.testing.assert_allclose(result.total_strain[..., 0], strain_xx, rtol=1e-11, atol=1e-14)
     np.testing.assert_allclose(result.stress_mpa[..., 0], expected_s11, rtol=1e-11)
     np.testing.assert_allclose(result.equivalent_plastic_strain, 0.0)
+    events = [getattr(record, "event", None) for record in caplog.records]
+    assert events[0] == "nonlinear_solve_started"
+    assert "newton_iteration" in events
+    assert events[-1] == "nonlinear_solve_completed"

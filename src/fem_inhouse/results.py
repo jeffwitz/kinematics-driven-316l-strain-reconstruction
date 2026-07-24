@@ -20,6 +20,22 @@ class FrameResult:
 
 
 @dataclass(frozen=True, slots=True)
+class SolverDiagnostics:
+    """Convergence and timing data for one completed nonlinear solve."""
+
+    backend: str
+    elapsed_seconds: float
+    attempted_increments: int
+    converged_increments: int
+    cutbacks: int
+    total_newton_iterations: int
+    maximum_newton_iterations: int
+    final_residual_norm: float
+    final_relative_residual: float
+    final_convergence_criterion: str
+
+
+@dataclass(frozen=True, slots=True)
 class FEMResult:
     """Final fields returned by the supported structured CPS4 solve."""
 
@@ -30,6 +46,7 @@ class FEMResult:
     equivalent_plastic_strain: FloatArray
     reaction_force: FloatArray
     frames: dict[float, FrameResult] = field(default_factory=dict)
+    diagnostics: SolverDiagnostics | None = None
 
     def arrays(self) -> tuple[FloatArray, ...]:
         """Return every final-state array for common validation operations."""

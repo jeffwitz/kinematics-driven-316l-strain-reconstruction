@@ -11,7 +11,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from fem_inhouse.config import CaseStudyConfig
 from fem_inhouse.core import nonlinear
-from fem_inhouse.results import FEMResult, FrameResult
+from fem_inhouse.results import FEMResult, FrameResult, SolverDiagnostics
 
 LOGGER = logging.getLogger(__name__)
 
@@ -73,6 +73,7 @@ def _convert_frame(frame: dict[str, Any]) -> FrameResult:
 
 
 def _convert_result(raw: dict[str, Any]) -> FEMResult:
+    diagnostics = raw["diagnostics"]
     result = FEMResult(
         displacement_mm=np.asarray(raw["U"]),
         stress_mpa=np.asarray(raw["S"]),
@@ -84,6 +85,7 @@ def _convert_result(raw: dict[str, Any]) -> FEMResult:
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()
         },
+        diagnostics=SolverDiagnostics(**diagnostics),
     )
     if not all(np.isfinite(field).all() for field in result.arrays()):
         raise RuntimeError("solver returned non-finite final fields")

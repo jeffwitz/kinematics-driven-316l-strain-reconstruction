@@ -22,6 +22,18 @@ def _raw_result(nx: int = 2, ny: int = 2):
         "PE": np.zeros((nx, ny, 3)),
         "PEEQ": np.zeros((nx, ny)),
         "RF": np.zeros((nx + 1, ny + 1, 2)),
+        "diagnostics": {
+            "backend": "test backend",
+            "elapsed_seconds": 0.1,
+            "attempted_increments": 2,
+            "converged_increments": 2,
+            "cutbacks": 0,
+            "total_newton_iterations": 4,
+            "maximum_newton_iterations": 2,
+            "final_residual_norm": 1e-12,
+            "final_relative_residual": 1e-8,
+            "final_convergence_criterion": "absolute_residual",
+        },
         "frames": {
             0.5: {
                 "U": np.zeros((nx + 1, ny + 1, 2)),
@@ -77,6 +89,9 @@ def test_typed_api_validates_and_forwards_configuration(monkeypatch) -> None:
 
     assert result.stress_mpa.shape == (2, 2, 3)
     assert result.frames[0.5].displacement_mm.shape == (3, 3, 2)
+    assert result.diagnostics is not None
+    assert result.diagnostics.backend == "test backend"
+    assert result.diagnostics.final_convergence_criterion == "absolute_residual"
     assert captured.args[4] == config.material.hardening_exponent
     assert captured.kwargs["N_inc"] == 7
     assert captured.kwargs["max_nr"] == 9

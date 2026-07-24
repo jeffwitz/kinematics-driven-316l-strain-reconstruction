@@ -23,7 +23,7 @@ Usage:
                      N_inc=20, verbose=True)
 """
 
-import functools
+import logging
 import time
 
 import numpy as np
@@ -50,7 +50,7 @@ from fem_inhouse.core.element import (
 )
 from fem_inhouse.core.mesh import StructuredMesh
 
-print = functools.partial(print, flush=True)  # live progress under runners
+LOGGER = logging.getLogger(__name__)
 
 # Optional fast multithreaded direct solver (MKL Pardiso).
 #   pip install pypardiso
@@ -119,8 +119,15 @@ def run_fem(
     nxn, nyn = nx + 1, ny + 1
     n_e = mesh.n_elems
 
-    if verbose:
-        print(f"[FEM] {nx}x{ny} elems | {len(mesh.dofs_free)} free DOFs | solver: {_SOLVER_NAME}")
+    LOGGER.info(
+        "nonlinear solve started",
+        extra={
+            "event": "nonlinear_solve_started",
+            "elements": n_e,
+            "free_dofs": len(mesh.dofs_free),
+            "backend": _SOLVER_NAME,
+        },
+    )
 
     # element->grid output helpers (also used for snapshots)
     def gm(a):
@@ -179,6 +186,13 @@ def run_fem(
     dt_max = 1.0 / N_inc
     dt_min = dt_max / minimum_step_divisor
     inc = 0
+    converged_increments = 0
+    cutbacks = 0
+    total_newton_iterations = 0
+    maximum_newton_iterations = 0
+    final_residual_norm = float("nan")
+    final_relative_residual = float("nan")
+    final_convergence_criterion = "none"
     snaps = {}
     pending = sorted(snapshot_fractions) if snapshot_fractions else []
     while t < 1.0 - 1e-12:
@@ -202,6 +216,8 @@ def run_fem(
         converged = False
 
         for nrit in range(max_nr):
+            total_newton_iterations += 1
+            maximum_newton_iterations = max(maximum_newton_iterations, nrit + 1)
             u_e = u[ld]
             eps_tot = np.einsum("gak,ek->ega", Bs, u_e)
             sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
@@ -229,11 +245,26 @@ def run_fem(
                 res0 = max(res, 1e-30)
             rel = res / res0
             if verbose:
-                print(f"  inc {inc:3d} t={t + dt:.4f} NR {nrit + 1:2d} |R|={res:.2e} rel={rel:.2e}")
+                LOGGER.info(
+                    "Newton iteration",
+                    extra={
+                        "event": "newton_iteration",
+                        "increment": inc,
+                        "pseudo_time": t + dt,
+                        "iteration": nrit + 1,
+                        "residual_norm": float(res),
+                        "relative_residual": float(rel),
+                    },
+                )
 
             # Converge on absolute OR relative residual
             if res < 1e-10 or rel < nr_tol:
                 converged = True
+                final_residual_norm = float(res)
+                final_relative_residual = float(rel)
+                final_convergence_criterion = (
+                    "absolute_residual" if res < 1e-10 else "relative_residual"
+                )
                 break
 
             # Build consistent tangent stiffness
@@ -270,8 +301,15 @@ def run_fem(
         if not converged:
             u = u_save
             dt *= 0.5
-            if verbose:
-                print(f"  inc {inc:3d}: no convergence, cutback dt -> {dt:.2e}")
+            cutbacks += 1
+            LOGGER.warning(
+                "increment cutback",
+                extra={
+                    "event": "increment_cutback",
+                    "increment": inc,
+                    "next_step": dt,
+                },
+            )
             if dt < dt_min:
                 raise RuntimeError(
                     f"run_fem: increment cutback below minimum ({dt:.2e}) - solution not converging"
@@ -282,6 +320,7 @@ def run_fem(
         ep_bar = ep_new
         sig = sf_acc
         t += dt
+        converged_increments += 1
         dt = min(dt * 1.5, dt_max)  # grow back after success
 
         # record snapshot fields at requested load fractions (element fields
@@ -293,8 +332,13 @@ def run_fem(
             Usnap[..., 0] = u[2 * nd_all].reshape(nxn, nyn)
             Usnap[..., 1] = u[2 * nd_all + 1].reshape(nxn, nyn)
             snaps[fsnap] = dict(S=tg(gm(sig)), E=tg(gm(eps_tot)), PEEQ=tg(gm(ep_bar)), U=Usnap)
-            if verbose:
-                print(f"[FEM] snapshot recorded at load fraction {fsnap:.3f}")
+            LOGGER.info(
+                "snapshot recorded",
+                extra={
+                    "event": "snapshot_recorded",
+                    "load_fraction": fsnap,
+                },
+            )
 
     # Output
     F_all = internal_force(mesh, sig, Bs, dJs, ld)
@@ -308,12 +352,18 @@ def run_fem(
     RF[..., 0] = np.where(bc_m[2 * nd_all], F_all[2 * nd_all], 0.0).reshape(nxn, nyn)
     RF[..., 1] = np.where(bc_m[2 * nd_all + 1], F_all[2 * nd_all + 1], 0.0).reshape(nxn, nyn)
 
-    if verbose:
-        print(
-            f"\n[FEM] done {time.time() - t0:.1f}s  "
-            f"PEEQ_max={ep_bar.max():.4f}  "
-            f"svm_max={von_mises(sig.reshape(-1, 3)).max():.1f}MPa"
-        )
+    elapsed_seconds = time.time() - t0
+    LOGGER.info(
+        "nonlinear solve completed",
+        extra={
+            "event": "nonlinear_solve_completed",
+            "elapsed_seconds": elapsed_seconds,
+            "attempted_increments": inc,
+            "converged_increments": converged_increments,
+            "cutbacks": cutbacks,
+            "total_newton_iterations": total_newton_iterations,
+        },
+    )
     return dict(
         U=U,
         S=tg(gm(sig)),
@@ -323,6 +373,18 @@ def run_fem(
         RF=RF,
         mesh=mesh,
         frames=snaps,
+        diagnostics=dict(
+            backend=_SOLVER_NAME,
+            elapsed_seconds=elapsed_seconds,
+            attempted_increments=inc,
+            converged_increments=converged_increments,
+            cutbacks=cutbacks,
+            total_newton_iterations=total_newton_iterations,
+            maximum_newton_iterations=maximum_newton_iterations,
+            final_residual_norm=final_residual_norm,
+            final_relative_residual=final_relative_residual,
+            final_convergence_criterion=final_convergence_criterion,
+        ),
     )
 
 

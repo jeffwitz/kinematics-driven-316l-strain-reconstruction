@@ -30,7 +30,8 @@ La commande `example` produit :
 - `displacement_mm.npy` ;
 - `stress_mpa.npy` ;
 - `equivalent_plastic_strain.npy` ;
-- `report.json`, contenant toute la configuration et les erreurs mesurées.
+- `report.json`, contenant toute la configuration, les diagnostics de
+  convergence et les erreurs mesurées.
 
 Ces fichiers illustrent le contrat de sortie, mais ne remplacent pas la future
 référence Abaqus. Le cas est homogène et ne valide ni les interfaces de

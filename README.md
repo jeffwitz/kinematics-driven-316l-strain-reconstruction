@@ -77,7 +77,11 @@ result = run_case_study(
     hardening_coefficient_mpa=np.full(shape_elements, 500.0),
 )
 print(result.equivalent_plastic_strain.max())
+print(result.diagnostics)
 ```
+
+`result.diagnostics` trace le backend, la durée, les incréments convergés, les
+cutbacks, les itérations de Newton et le critère de convergence final.
 
 The top-level `fem_pixel.py` file remains only as a compatibility entry point
 for existing case-study scripts.

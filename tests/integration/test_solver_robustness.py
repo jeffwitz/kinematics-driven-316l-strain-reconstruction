@@ -54,6 +54,17 @@ def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
 
     assert all(np.isfinite(field).all() for field in result.arrays())
     assert result.equivalent_plastic_strain.max() > 0
+    assert result.diagnostics is not None
+    assert result.diagnostics.converged_increments > 0
+    assert result.diagnostics.total_newton_iterations >= result.diagnostics.converged_increments
+    assert (
+        result.diagnostics.final_residual_norm < 1e-10
+        or result.diagnostics.final_relative_residual < case.config.solver.residual_tolerance
+    )
+    assert result.diagnostics.final_convergence_criterion in {
+        "absolute_residual",
+        "relative_residual",
+    }
     net_reaction = np.linalg.norm(result.reaction_force.sum(axis=(0, 1)))
     reaction_scale = np.linalg.norm(result.reaction_force, axis=-1).sum()
     assert net_reaction / reaction_scale < 1e-10

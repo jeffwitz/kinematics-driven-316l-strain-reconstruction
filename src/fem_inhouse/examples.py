@@ -144,6 +144,7 @@ def save_reduced_example(directory: str | Path, *, nx: int = 10, ny: int = 10) -
     )
     metadata = {
         "config": asdict(case.config),
+        "diagnostics": asdict(result.diagnostics) if result.diagnostics else None,
         "validation": asdict(report),
     }
     (destination / "report.json").write_text(

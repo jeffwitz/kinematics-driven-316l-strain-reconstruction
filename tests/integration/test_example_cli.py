@@ -34,6 +34,8 @@ def test_example_command_saves_self_describing_results(tmp_path, capsys) -> None
 
     assert printed["passed"]
     assert report["validation"]["passed"]
+    assert report["diagnostics"]["backend"].startswith("pypardiso")
+    assert report["diagnostics"]["converged_increments"] > 0
     assert report["config"]["solver"]["hardening_mode"] == "tabular"
     assert np.load(destination / "stress_mpa.npy").shape == (4, 4, 3)
     assert np.load(destination / "displacement_mm.npy").shape == (5, 5, 2)

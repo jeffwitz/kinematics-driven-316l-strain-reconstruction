@@ -220,7 +220,7 @@ avec rapport automatique champ par champ.
 - [x] Supprimer les chemins absolus
 - [x] Ajouter une CLI limitée au cas d'étude
 - [x] Ajouter Ruff, Pyright ou mypy, pytest et couverture
-- [~] Ajouter une journalisation structurée
+- [x] Ajouter une journalisation structurée
 - [x] Échouer explicitement si PyPardiso n'est pas disponible en production
 
 **Critère de sortie :** installation fraîche et cas réduit exécutables par une
@@ -484,6 +484,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Modules maillage/élément/assemblage | Suite complète après extraction | 117 tests, 96,26 % | Réussi |
 | 2026-07-24 | Module constitutif public | Suite complète après extraction | 123 tests, 96,32 % | Réussi |
 | 2026-07-24 | Module solveur non linéaire | Suite complète et compatibilité historique | 123 tests, 96,33 % | Réussi |
+| 2026-07-24 | Diagnostics structurés | Événements `logging` et rapport JSON | Convergence et cutbacks traçables | Réussi |
+| 2026-07-24 | Suite après diagnostics | `pytest --cov=fem_inhouse --cov-branch` | 123 tests, 96,66 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -612,3 +614,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Réduction de `core.solver_legacy` à une couche de compatibilité historique
 - Conservation du test de non-convergence par injection du solveur linéaire
 - Validation complète par 123 tests avec 96,33 % de couverture
+
+### 2026-07-24 — Diagnostics de convergence structurés
+
+- Ajout de `SolverDiagnostics` au résultat public typé
+- Enregistrement du backend, du temps, des incréments, cutbacks et itérations
+- Enregistrement du résidu final et du critère de convergence réellement actif
+- Émission d'événements `logging` structurés du début à la fin du calcul
+- Inclusion des diagnostics dans le `report.json` de l'exemple reproductible
+- Validation complète par 123 tests avec 96,66 % de couverture

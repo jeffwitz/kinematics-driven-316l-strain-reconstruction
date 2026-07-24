@@ -28,10 +28,17 @@ provoque une erreur explicite avant l'assemblage.
 - déformations plastiques ;
 - PEEQ ;
 - réactions nodales ;
-- instantanés éventuellement demandés aux pseudo-temps.
+- instantanés éventuellement demandés aux pseudo-temps ;
+- diagnostics typés de convergence : backend, temps, incréments tentés et
+  convergés, cutbacks, itérations de Newton et résidu final.
 
 Le résultat brut historique sous forme de dictionnaire n'est plus l'API
 publique.
+
+Les événements `nonlinear_solve_started`, `newton_iteration`,
+`increment_cutback`, `snapshot_recorded` et `nonlinear_solve_completed` sont
+émis via le module standard `logging`. Les itérations détaillées ne sont
+émises que lorsque `verbose=True`.
 
 ## Intégration constitutive
 
