@@ -107,8 +107,9 @@ def test_partition_solves_are_resumable_and_stitchable(tmp_path, monkeypatch) ->
 
     workflow.solve_partition(0)
     assert len(calls) == 6
-    workflow.solve_partition(0, force=True)
+    status = workflow.solve_partition(0, force=True)
     assert len(calls) == 7
+    assert status["diagnostics"]["write_seconds"] >= 0
 
     stitched_stress = workflow.stitch("S")
     expected_stress = np.stack(

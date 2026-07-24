@@ -47,10 +47,36 @@ Le benchmark 350k doit être repris lorsque :
 ## Interprétation
 
 Le temps observé couvre la génération du cas, l'assemblage, toutes les
-résolutions PyPardiso, Newton et le post-traitement final. L'instrumentation ne
-sépare pas encore ces postes. Avant le ROI complet, il reste donc à :
+résolutions PyPardiso, Newton et le post-traitement final.
 
-- instrumenter assemblage, analyse/factorisation, substitutions, Newton et I/O ;
+Une instrumentation interne a ensuite été ajoutée à `SolverDiagnostics`. Sur
+un cas hétérogène déterministe de 100×100 éléments (gradients et perturbations
+sinusoïdales des deux cartes matériau), elle donne :
+
+| Poste | Temps cumulé |
+|---|---:|
+| Initialisation du maillage et des opérateurs | 0,019 s |
+| Assemblage élastique initial | 0,054 s |
+| Intégration constitutive | 8,744 s |
+| Tangentes et assemblages non linéaires | 10,095 s |
+| Résolutions linéaires PyPardiso | 10,592 s |
+| Construction des sorties | 0,021 s |
+| Total mur | 31,948 s |
+
+Ce calcul a convergé sans cutback en 20 incréments, 78 itérations de Newton au
+total et au plus 5 itérations par incrément. Les temps sont cumulatifs par
+phase, mesurés avec `perf_counter`; leur somme n'est pas exactement le temps
+mur, car les calculs de résidu et les allocations intermédiaires ne forment pas
+encore une catégorie dédiée. PyPardiso regroupe actuellement analyse,
+factorisation et substitutions dans l'appel chronométré `linear_solve_seconds`.
+
+Le statut de chaque partition enregistre aussi `write_seconds`, séparément du
+temps du solveur.
+
+Avant le ROI complet, il reste donc à :
+
+- séparer, si l'API PyPardiso le permet sans modifier le résultat, analyse,
+  factorisation et substitutions ;
 - mesurer 350k éléments ;
 - définir un budget par job à partir du cas hétérogène ;
 - tester l'effet d'un nombre de threads fixé ;
@@ -59,4 +85,3 @@ sépare pas encore ces postes. Avant le ROI complet, il reste donc à :
 SciPy/SuperLU n'est pas une option de production : conformément au cahier des
 charges, son repli reste limité au diagnostic de petits systèmes lorsque l'API
 publique est appelée avec `require_pypardiso=False`.
-

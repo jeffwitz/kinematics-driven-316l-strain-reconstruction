@@ -106,7 +106,7 @@ def run_fem(
                 solve and returned in result['frames'] = {fraction: {...}}.
                 (Replaces re-solving the whole problem per load level.)
     """
-    t0 = time.time()
+    started_at = time.perf_counter()
     hf, hfp = make_hardening(
         n_exp,
         hardening,
@@ -155,17 +155,30 @@ def run_fem(
     ld = mesh.location_matrix()
     dof_I = mesh.dofs_free
     dof_B = mesh.dofs_bc
+    initialization_seconds = time.perf_counter() - started_at
 
     # constant assembly index arrays (reused for every tangent assembly)
+    assembly_started_at = time.perf_counter()
     _rc = assembly_indices(ld)
 
     # Elastic predictor matrix; PyPardiso reuses its factorization for each RHS.
     K_el = assemble_stiffness(mesh, Ke, ld, _rc)
     KII_el = K_el[dof_I][:, dof_I].tocsr()
     KIB_el = K_el[dof_I][:, dof_B].tocsr()
+    elastic_assembly_seconds = time.perf_counter() - assembly_started_at
+    linear_solve_seconds = 0.0
+    constitutive_seconds = 0.0
+    tangent_assembly_seconds = 0.0
+
+    def timed_solve(matrix, right_hand_side):
+        nonlocal linear_solve_seconds
+        solve_started_at = time.perf_counter()
+        solution = _solve(matrix, right_hand_side)
+        linear_solve_seconds += time.perf_counter() - solve_started_at
+        return solution
 
     def solve_el(b):
-        return _solve(KII_el, b)
+        return timed_solve(KII_el, b)
 
     # Prescribed displacements
     u_bc = np.zeros(mesh.n_dof)
@@ -223,9 +236,11 @@ def run_fem(
             sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
 
             # Return mapping
+            constitutive_started_at = time.perf_counter()
             sf, dp, dg = return_mapping(
                 sig_tr.reshape(-1, 3), ep_bar.ravel(), sy0_gp, K_gp, hf, cm11, cm12, cm33
             )
+            constitutive_seconds += time.perf_counter() - constitutive_started_at
             sf = sf.reshape(n_e, N_GP, 3)
             dp = dp.reshape(n_e, N_GP, 3)
             dg_ = dg.reshape(n_e, N_GP)
@@ -268,6 +283,7 @@ def run_fem(
                 break
 
             # Build consistent tangent stiffness
+            tangent_started_at = time.perf_counter()
             N_flat = n_e * N_GP
             C_ep_flat = np.broadcast_to(C_ps, (N_flat, 3, 3)).copy()
             pl_idx = np.where(dg > 0)[0]
@@ -292,8 +308,9 @@ def run_fem(
             Ke_ep = np.einsum("g,g,gik,egil->ekl", GP_W, dJs, Bs, CB)
             K_tang = assemble_stiffness(mesh, Ke_ep, ld, _rc)
             KII = K_tang[dof_I][:, dof_I].tocsr()
+            tangent_assembly_seconds += time.perf_counter() - tangent_started_at
 
-            du = _solve(KII, -R_I)
+            du = timed_solve(KII, -R_I)
             if not np.isfinite(du).all():
                 break  # singular tangent -> cutback
             u[dof_I] += du
@@ -341,6 +358,7 @@ def run_fem(
             )
 
     # Output
+    output_started_at = time.perf_counter()
     F_all = internal_force(mesh, sig, Bs, dJs, ld)
     bc_m = np.zeros(mesh.n_dof, dtype=bool)
     bc_m[dof_B] = True
@@ -352,7 +370,8 @@ def run_fem(
     RF[..., 0] = np.where(bc_m[2 * nd_all], F_all[2 * nd_all], 0.0).reshape(nxn, nyn)
     RF[..., 1] = np.where(bc_m[2 * nd_all + 1], F_all[2 * nd_all + 1], 0.0).reshape(nxn, nyn)
 
-    elapsed_seconds = time.time() - t0
+    output_seconds = time.perf_counter() - output_started_at
+    elapsed_seconds = time.perf_counter() - started_at
     LOGGER.info(
         "nonlinear solve completed",
         extra={
@@ -376,6 +395,12 @@ def run_fem(
         diagnostics=dict(
             backend=_SOLVER_NAME,
             elapsed_seconds=elapsed_seconds,
+            initialization_seconds=initialization_seconds,
+            elastic_assembly_seconds=elastic_assembly_seconds,
+            constitutive_seconds=constitutive_seconds,
+            tangent_assembly_seconds=tangent_assembly_seconds,
+            linear_solve_seconds=linear_solve_seconds,
+            output_seconds=output_seconds,
             attempted_increments=inc,
             converged_increments=converged_increments,
             cutbacks=cutbacks,

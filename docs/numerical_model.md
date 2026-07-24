@@ -29,8 +29,9 @@ provoque une erreur explicite avant l'assemblage.
 - PEEQ ;
 - réactions nodales ;
 - instantanés éventuellement demandés aux pseudo-temps ;
-- diagnostics typés de convergence : backend, temps, incréments tentés et
-  convergés, cutbacks, itérations de Newton et résidu final.
+- diagnostics typés de convergence : backend, temps total et par phase,
+  incréments tentés et convergés, cutbacks, itérations de Newton et résidu
+  final.
 
 Le résultat brut historique sous forme de dictionnaire n'est plus l'API
 publique.

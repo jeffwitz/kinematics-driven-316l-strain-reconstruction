@@ -65,6 +65,10 @@ def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
         "absolute_residual",
         "relative_residual",
     }
+    assert result.diagnostics.elapsed_seconds > 0
+    assert result.diagnostics.linear_solve_seconds > 0
+    assert result.diagnostics.constitutive_seconds > 0
+    assert result.diagnostics.output_seconds > 0
     net_reaction = np.linalg.norm(result.reaction_force.sum(axis=(0, 1)))
     reaction_scale = np.linalg.norm(result.reaction_force, axis=-1).sum()
     assert net_reaction / reaction_scale < 1e-10

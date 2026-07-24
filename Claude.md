@@ -249,7 +249,7 @@ calcul partitionné avec padding suffisant.
 ### Semaine 9 — Performance et ressources
 
 - [~] Mesurer temps et mémoire pour 10k, 50k, 100k et 350k éléments
-- [ ] Mesurer séparément assemblage, factorisation, Newton et écriture
+- [~] Mesurer séparément assemblage, factorisation, Newton et écriture
 - [~] Vérifier le nombre de threads MKL
 - [ ] Définir la taille maximale d'une partition pour la machine cible
 - [x] Réserver le repli SciPy au diagnostic ; PyPardiso reste obligatoire
@@ -487,6 +487,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Diagnostics structurés | Événements `logging` et rapport JSON | Convergence et cutbacks traçables | Réussi |
 | 2026-07-24 | Suite après diagnostics | `pytest --cov=fem_inhouse --cov-branch` | 123 tests, 96,66 % | Réussi |
 | 2026-07-24 | Typage statique | `mypy src/fem_inhouse` | 25 fichiers, aucun défaut | Réussi |
+| 2026-07-24 | Profil par phase 10k hétérogène | `SolverDiagnostics` | 31,948 s, 78 Newton, 0 cutback | Réussi |
+| 2026-07-24 | Suite après instrumentation | `pytest --cov=fem_inhouse --cov-branch` | 123 tests, 96,59 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -632,3 +634,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   de champs partitionnés
 - Ajout du contrôle mypy à la CI après Ruff
 - Validation sans défaut des 25 fichiers du paquet
+
+### 2026-07-24 — Instrumentation des performances
+
+- Chronométrage séparé de l'initialisation et de l'assemblage élastique
+- Cumul des temps de retour constitutif, tangentes/assemblages et PyPardiso
+- Chronométrage de la construction des sorties et de l'écriture des partitions
+- Profil hétérogène 10k : 31,948 s, 78 itérations de Newton, aucun cutback
+- Factorisation et substitutions encore regroupées par l'appel PyPardiso

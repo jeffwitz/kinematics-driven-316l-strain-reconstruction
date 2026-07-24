@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from dataclasses import asdict, dataclass, field, replace
 from hashlib import sha256
 from pathlib import Path
@@ -246,6 +247,7 @@ class PartitionWorkflow:
                 location="element",
             ),
         )
+        write_started_at = time.perf_counter()
         outputs: dict[str, str] = {}
         for field_name, (attribute, _location) in RESULT_FIELDS.items():
             path = self._result_path(partition_id, field_name)
@@ -253,6 +255,10 @@ class PartitionWorkflow:
             outputs[field_name] = _fingerprint_file(path)
         status = {
             "complete": True,
+            "diagnostics": {
+                **(asdict(result.diagnostics) if result.diagnostics else {}),
+                "write_seconds": time.perf_counter() - write_started_at,
+            },
             "manifest_sha256": manifest_digest,
             "partition_id": partition_id,
             "outputs": outputs,

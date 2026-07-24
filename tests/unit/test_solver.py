@@ -25,6 +25,12 @@ def _raw_result(nx: int = 2, ny: int = 2):
         "diagnostics": {
             "backend": "test backend",
             "elapsed_seconds": 0.1,
+            "initialization_seconds": 0.01,
+            "elastic_assembly_seconds": 0.01,
+            "constitutive_seconds": 0.02,
+            "tangent_assembly_seconds": 0.02,
+            "linear_solve_seconds": 0.03,
+            "output_seconds": 0.01,
             "attempted_increments": 2,
             "converged_increments": 2,
             "cutbacks": 0,

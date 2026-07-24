@@ -25,6 +25,12 @@ class SolverDiagnostics:
 
     backend: str
     elapsed_seconds: float
+    initialization_seconds: float
+    elastic_assembly_seconds: float
+    constitutive_seconds: float
+    tangent_assembly_seconds: float
+    linear_solve_seconds: float
+    output_seconds: float
     attempted_increments: int
     converged_increments: int
     cutbacks: int
