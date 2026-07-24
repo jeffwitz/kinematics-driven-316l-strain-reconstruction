@@ -34,6 +34,13 @@ from fem_inhouse.core.assembly import (
     assembly_indices,
     internal_force,
 )
+from fem_inhouse.core.constitutive import (
+    PLANE_STRESS_VON_MISES_METRIC,
+    consistent_tangent,
+    make_hardening,
+    return_mapping,
+    von_mises,
+)
 from fem_inhouse.core.element import (
     GAUSS_POINT_COUNT,
     GAUSS_POINTS,
@@ -64,208 +71,6 @@ except Exception:
 GP_XI = GAUSS_POINTS
 GP_W = GAUSS_WEIGHTS
 N_GP = GAUSS_POINT_COUNT
-
-# von Mises plane-stress matrix:  svm^2 = s^T M s
-_M = np.array([[1.0, -0.5, 0.0], [-0.5, 1.0, 0.0], [0.0, 0.0, 3.0]])
-
-
-def _vm(s):
-    return np.sqrt(
-        np.maximum(
-            s[..., 0] ** 2 - s[..., 0] * s[..., 1] + s[..., 1] ** 2 + 3 * s[..., 2] ** 2, 0.0
-        )
-    )
-
-
-# ── Hardening laws ───────────────────────────────────────────────────────────
-# sy(ep) = sy0 + K*hf(ep),  H(ep) = K*hfp(ep)
-# 'ludwik'  : hf(ep)=ep^n (analytic, keeps hardening forever)
-# 'tabular' : piecewise-linear interpolation of ep^n at 1000 knots over
-#             E_p=linspace(0,0.2,1000), matching the article specification.
-#             The exact first positive increment remains to be checked against
-#             the original Abaqus input generator.
-def make_hardening(
-    n_exp,
-    mode="ludwik",
-    ep_max=0.2,
-    n_pts=1000,
-    first_positive_strain=1e-6,
-):
-    if mode == "ludwik":
-
-        def hf(ep):
-            return np.where(ep > 0, np.maximum(ep, 0.0) ** n_exp, 0.0)
-
-        def hfp(ep):
-            values = np.asarray(ep, dtype=float)
-            derivative = np.zeros_like(values)
-            np.power(
-                values,
-                n_exp - 1.0,
-                out=derivative,
-                where=values > 1e-15,
-            )
-            return n_exp * derivative
-
-        return hf, hfp
-    elif mode == "tabular":
-        ep_k = np.concatenate(
-            (
-                np.array([0.0]),
-                np.linspace(first_positive_strain, ep_max, n_pts - 1),
-            )
-        )
-        f_k = np.where(ep_k > 0, ep_k**n_exp, 0.0)
-        sl = np.diff(f_k) / np.diff(ep_k)
-
-        def hf(ep):
-            return np.interp(np.clip(ep, 0.0, ep_k[-1]), ep_k, f_k)
-
-        def hfp(ep):
-            idx = np.clip(np.searchsorted(ep_k, ep, side="right") - 1, 0, len(sl) - 1)
-            return np.where(ep < ep_k[-1], sl[idx], 0.0)
-
-        return hf, hfp
-    raise ValueError(f"unknown hardening mode '{mode}'")
-
-
-# ── Return mapping ───────────────────────────────────────────────────────────
-# A = I + r*CM  is block-diagonal:  cm13=cm23=0  → analytical solve
-def _rm(s_tr, ep0, sy0, K, hf, cm11, cm12, cm33, max_it=50, tol=1e-10):
-    """
-    Vectorised return mapping.
-    Returns: sigma (N,3), deps_p (N,3), dg (N,) equiv-plastic increment
-    """
-
-    def sy(ep):
-        return sy0 + K * hf(ep)
-
-    phi0 = _vm(s_tr) - sy(ep0)
-    pl = phi0 > 0
-    sig = s_tr.copy()
-    dp = np.zeros_like(s_tr)
-    dg = np.zeros(len(ep0))
-    if not pl.any():
-        return sig, dp, dg
-
-    idx = np.where(pl)[0]
-    s0 = s_tr[idx]
-    e0 = ep0[idx]
-    sy0p = sy0[idx]
-    Kp = K[idx]
-
-    def syp(g):
-        return sy0p + Kp * hf(e0 + g)
-
-    def solp(g):
-        sk = syp(g)
-        r = g / np.where(sk > 1e-30, sk, 1e-30)
-        a = 1 + r * cm11
-        b = r * cm12
-        c = 1 + r * cm33
-        d = a * a - b * b
-        return np.stack(
-            [(a * s0[:, 0] - b * s0[:, 1]) / d, (a * s0[:, 1] - b * s0[:, 0]) / d, s0[:, 2] / c],
-            axis=1,
-        )
-
-    def res(g):
-        return _vm(solp(g)) - syp(g)
-
-    # Guarded Newton: res(g) is monotone decreasing, res(0)>0.
-    # Bracket [g_lo,g_hi] first, then Newton with bisection fallback —
-    # unconditionally stable even in the perfectly-plastic (H=0) clamp
-    # of tabular hardening.
-    n_p = len(idx)
-    g_lo = np.zeros(n_p)
-    g_hi = np.full(n_p, 1e-4)
-    for _ in range(80):
-        open_ = res(g_hi) > 0
-        if not open_.any():
-            break
-        g_hi = np.where(open_, g_hi * 2.0, g_hi)
-    g = 0.5 * (g_lo + g_hi)
-    for _ in range(max(max_it, 100)):
-        r = res(g)
-        conv = (np.abs(r) / (syp(g) + 1e-30)).max()
-        if conv < tol:
-            break
-        g_lo = np.where(r > 0, g, g_lo)
-        g_hi = np.where(r <= 0, g, g_hi)
-        h = np.maximum(np.abs(g), 1e-8) * 1e-7
-        dr = (res(g + h) - r) / h
-        dr = np.where(np.abs(dr) < 1e-30, -1.0, dr)
-        g_new = g - r / dr
-        bad = ~np.isfinite(g_new) | (g_new <= g_lo) | (g_new >= g_hi)
-        g = np.where(bad, 0.5 * (g_lo + g_hi), g_new)
-
-    sf = solp(g)
-    sv = _vm(sf)
-    nd = (sf @ _M.T) / np.maximum(sv, 1e-30)[:, None]
-    sig[idx] = sf
-    dp[idx] = g[:, None] * nd
-    dg[idx] = g
-    return sig, dp, dg
-
-
-# ── Consistent tangent ───────────────────────────────────────────────────────
-def _cep(sigma, dg, ep0, sy0p, Kp, hf, hfp, C_ps, cm11, cm12, cm33):
-    """
-    Analytical consistent tangent for plastic GPs.
-    Returns C_ep (N_p, 3, 3)  where C_ep = T @ C_ps
-    T = A^-1 - outer(w,p)/(1+beta)
-    with w = A^-1 * alpha*CM*s,  p = A^-1 * n,
-         alpha = (1-r*H)/(sy*H)
-    """
-    sk = sy0p + Kp * hf(ep0 + dg)
-    Hk = Kp * hfp(ep0 + dg)
-    r = dg / np.where(sk > 1e-30, sk, 1e-30)
-    a = 1 + r * cm11
-    b = r * cm12
-    c = 1 + r * cm33
-    d = a * a - b * b
-    Hs = np.where(np.abs(Hk) > 1e-30, Hk, 1e-30)
-    alpha = (1.0 - r * Hk) / (sk * Hs)
-
-    s0, s1, s2 = sigma[:, 0], sigma[:, 1], sigma[:, 2]
-    # CM*s
-    q0 = cm11 * s0 + cm12 * s1
-    q1 = cm12 * s0 + cm11 * s1
-    q2 = cm33 * s2
-    # w = A^-1 * alpha*q
-    aq0 = alpha * q0
-    aq1 = alpha * q1
-    aq2 = alpha * q2
-    w0 = (a * aq0 - b * aq1) / d
-    w1 = (-b * aq0 + a * aq1) / d
-    w2 = aq2 / c
-    # n, p = A^-1*n
-    sv = _vm(sigma)
-    sv_ = np.where(sv > 1e-30, sv, 1e-30)
-    n0 = (s0 - 0.5 * s1) / sv_
-    n1 = (s1 - 0.5 * s0) / sv_
-    n2 = 3 * s2 / sv_
-    p0 = (a * n0 - b * n1) / d
-    p1 = (-b * n0 + a * n1) / d
-    p2 = n2 / c
-    beta = n0 * w0 + n1 * w1 + n2 * w2
-    denom = 1.0 + beta
-
-    # Build A^-1 (N_p,3,3)
-    z = np.zeros_like(a)
-    Ai = np.stack(
-        [
-            np.stack([a / d, -b / d, z], 1),
-            np.stack([-b / d, a / d, z], 1),
-            np.stack([z, z, 1 / c], 1),
-        ],
-        axis=1,
-    )  # (N,3,3)
-    wv = np.stack([w0, w1, w2], 1)
-    pv = np.stack([p0, p1, p2], 1)
-    corr = np.einsum("ni,nj->nij", wv, pv) / denom[:, None, None]
-    T = Ai - corr
-    return np.einsum("nij,jk->nik", T, C_ps)  # (N,3,3)
 
 
 # ── Main solver ──────────────────────────────────────────────────────────────
@@ -331,7 +136,7 @@ def run_fem(
     K_gp = np.repeat(K_map.ravel(order="F"), N_GP)
 
     C_ps = plane_stress_elasticity(E_mod, nu)
-    CM = C_ps @ _M
+    CM = C_ps @ PLANE_STRESS_VON_MISES_METRIC
     cm11, cm12, cm33 = CM[0, 0], CM[0, 1], CM[2, 2]
     operators = precompute_element(mesh, C_ps)
     Ke = operators.elastic_stiffness
@@ -402,7 +207,7 @@ def run_fem(
             sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
 
             # Return mapping
-            sf, dp, dg = _rm(
+            sf, dp, dg = return_mapping(
                 sig_tr.reshape(-1, 3), ep_bar.ravel(), sy0_gp, K_gp, hf, cm11, cm12, cm33
             )
             sf = sf.reshape(n_e, N_GP, 3)
@@ -436,7 +241,7 @@ def run_fem(
             C_ep_flat = np.broadcast_to(C_ps, (N_flat, 3, 3)).copy()
             pl_idx = np.where(dg > 0)[0]
             if len(pl_idx):
-                C_ep_flat[pl_idx] = _cep(
+                C_ep_flat[pl_idx] = consistent_tangent(
                     sf.reshape(-1, 3)[pl_idx],
                     dg[pl_idx],
                     ep_bar.ravel()[pl_idx],
@@ -507,7 +312,7 @@ def run_fem(
         print(
             f"\n[FEM] done {time.time() - t0:.1f}s  "
             f"PEEQ_max={ep_bar.max():.4f}  "
-            f"svm_max={_vm(sig.reshape(-1, 3)).max():.1f}MPa"
+            f"svm_max={von_mises(sig.reshape(-1, 3)).max():.1f}MPa"
         )
     return dict(
         U=U,
@@ -571,7 +376,7 @@ def _verify():
         verbose=True,
     )
 
-    sv = _vm(result["S"].reshape(-1, 3)).mean()
+    sv = von_mises(result["S"].reshape(-1, 3)).mean()
     ep = result["PEEQ"].mean()
     print(f"\n  sigma_vm  = {sv:.3f} MPa  (expected {sig_t:.1f})")
     print(f"  PEEQ      = {ep:.6f}     (expected {ep_ref:.6f})")

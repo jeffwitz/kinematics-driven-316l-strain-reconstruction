@@ -46,16 +46,15 @@ réduction automatique du pas en cas de non-convergence.
 
 ## État du refactoring
 
-Le maillage structuré, l'élément CPS4 et l'assemblage sparse sont maintenant
-séparés dans :
+Le maillage structuré, l'élément CPS4, le modèle constitutif et l'assemblage
+sparse sont maintenant séparés dans :
 
 - `fem_inhouse.core.mesh` ;
 - `fem_inhouse.core.element` ;
+- `fem_inhouse.core.constitutive` ;
 - `fem_inhouse.core.assembly`.
 
 Le solveur historique les utilise directement ; la parité du résultat est
-protégée par les cas analytiques et partitionnés. La loi de retour plastique,
-sa tangente et la boucle Newton restent regroupées dans
-`fem_inhouse.core.solver_legacy`. Leur extraction constitue encore une dette
-technique, sans justification pour généraliser le modèle au-delà du cas
-d'étude.
+protégée par les cas analytiques et partitionnés. La boucle Newton reste dans
+`fem_inhouse.core.solver_legacy` et constitue la prochaine dette à isoler, sans
+justification pour généraliser le modèle au-delà du cas d'étude.

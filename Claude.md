@@ -209,7 +209,7 @@ avec rapport automatique champ par champ.
 - [~] Séparer :
   - [x] maillage ;
   - [x] élément ;
-  - [ ] matériau constitutif ;
+  - [x] matériau constitutif ;
   - [x] assemblage ;
   - [ ] solveur non linéaire ;
   - [x] résultats ;
@@ -333,7 +333,7 @@ fem_inhouse/
 │   ├── core/
 │   │   ├── mesh.py
 │   │   ├── element.py
-│   │   ├── material.py
+│   │   ├── constitutive.py
 │   │   ├── assembly.py
 │   │   └── solver.py
 │   ├── partitioning/
@@ -481,6 +481,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Performance 10k/50k/100k | `/usr/bin/time -v fem-inhouse validate` | 5,01/10,60/21,87 s ; 163/557/1061 MiB | Réussi |
 | 2026-07-24 | Performance 350k | Vérification mémoire avant lancement | 3,7 GiB disponibles, swap saturé | Reporté |
 | 2026-07-24 | Modules maillage/élément/assemblage | Suite complète après extraction | 117 tests, 96,26 % | Réussi |
+| 2026-07-24 | Module constitutif public | Suite complète après extraction | 123 tests, 96,32 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -589,5 +590,14 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Extraction du CPS4, de la quadrature et de l'élasticité dans `core.element`
 - Extraction de l'assemblage sparse et des forces internes dans `core.assembly`
 - Validation explicite des géométries, Jacobien, paramètres et formes matricielles
-- Boucle Newton et retour constitutif conservés comme dette isolée
+- Boucle Newton conservée comme dette isolée à l'issue de ce lot
 - Validation complète par 117 tests avec 96,26 % de couverture
+
+### 2026-07-24 — Extraction du modèle constitutif
+
+- Extraction de l'invariant de von Mises plane-stress dans `core.constitutive`
+- Extraction des écrouissages analytique et tabulé avec contrats d'entrée
+- Extraction du retour plastique vectorisé et de la tangente cohérente
+- Utilisation directe de ce module par le solveur et l'API publique du cœur
+- Conservation de l'alias historique `_vm` dans `fem_pixel.py` uniquement
+- Validation complète par 123 tests avec 96,32 % de couverture

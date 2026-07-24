@@ -2,15 +2,20 @@ import numpy as np
 import pytest
 
 from fem_inhouse.core import (
+    PLANE_STRESS_VON_MISES_METRIC,
     StructuredMesh,
     assemble_stiffness,
+    consistent_tangent,
+    make_hardening,
     plane_stress_elasticity,
     precompute_element,
+    return_mapping,
     shape_function_derivatives,
     strain_displacement_matrix,
+    von_mises,
 )
-from fem_inhouse.core import solver_legacy as kernel
 from fem_inhouse.core.assembly import internal_force
+from fem_inhouse.core.element import GAUSS_POINT_COUNT
 
 
 def test_shape_derivatives_and_element_matrix() -> None:
@@ -62,7 +67,7 @@ def test_assembly_and_internal_force_contracts() -> None:
     )
     force = internal_force(
         mesh,
-        np.zeros((mesh.n_elems, kernel.N_GP, 3)),
+        np.zeros((mesh.n_elems, GAUSS_POINT_COUNT, 3)),
         matrices_b,
         determinants,
         location,
@@ -106,12 +111,12 @@ def test_element_and_assembly_contract_failures() -> None:
 
 
 def test_hardening_modes_and_von_mises() -> None:
-    ludwik, ludwik_derivative = kernel.make_hardening(0.25, "ludwik")
-    tabular, tabular_derivative = kernel.make_hardening(
+    ludwik, ludwik_derivative = make_hardening(0.25, "ludwik")
+    tabular, tabular_derivative = make_hardening(
         0.25,
         "tabular",
-        ep_max=0.2,
-        n_pts=1_000,
+        plastic_strain_max=0.2,
+        point_count=1_000,
     )
     strain = np.array([0.0, 0.01, 0.25])
 
@@ -120,24 +125,51 @@ def test_hardening_modes_and_von_mises() -> None:
     assert tabular(strain)[-1] == pytest.approx(0.2**0.25)
     assert tabular_derivative(np.array([0.0]))[0] == pytest.approx(1e-6**0.25 / 1e-6)
     assert tabular_derivative(strain)[-1] == 0.0
-    equivalent = kernel._vm(np.array([[100.0, 0.0, 0.0], [0.0, 0.0, 10.0]]))
+    equivalent = von_mises(np.array([[100.0, 0.0, 0.0], [0.0, 0.0, 10.0]]))
     np.testing.assert_allclose(equivalent, [100.0, np.sqrt(300.0)])
 
     with pytest.raises(ValueError, match="unknown hardening mode"):
-        kernel.make_hardening(0.25, "unknown")
+        make_hardening(0.25, "unknown")
+
+
+@pytest.mark.parametrize(
+    ("keyword", "value", "message"),
+    [
+        ("exponent", 0.0, "exponent"),
+        ("plastic_strain_max", 0.0, "plastic_strain_max"),
+        ("point_count", 2, "point_count"),
+        ("first_positive_strain", 0.2, "first_positive_strain"),
+    ],
+)
+def test_hardening_rejects_invalid_parameters(keyword, value, message) -> None:
+    arguments = {
+        "exponent": 0.245,
+        "plastic_strain_max": 0.2,
+        "point_count": 1_000,
+        "first_positive_strain": 1e-6,
+    }
+    arguments[keyword] = value
+    with pytest.raises(ValueError, match=message):
+        make_hardening(**arguments)
+
+
+@pytest.mark.parametrize("stress", [1.0, np.zeros((2, 2))])
+def test_von_mises_rejects_invalid_stress_shape(stress) -> None:
+    with pytest.raises(ValueError, match="final axis"):
+        von_mises(stress)
 
 
 def test_return_mapping_elastic_and_consistent_tangent() -> None:
     elasticity = plane_stress_elasticity(205_000.0, 0.3)
-    metric_product = elasticity @ kernel._M
+    metric_product = elasticity @ PLANE_STRESS_VON_MISES_METRIC
     cm11, cm12, cm33 = metric_product[0, 0], metric_product[0, 1], metric_product[2, 2]
-    hardening, hardening_derivative = kernel.make_hardening(0.245, "ludwik")
+    hardening, hardening_derivative = make_hardening(0.245, "ludwik")
     yield_stress = np.array([250.0])
     coefficient = np.array([500.0])
     accumulated_strain = np.array([0.0])
 
     elastic_trial = np.array([[100.0, 20.0, 5.0]])
-    elastic_stress, plastic_increment, equivalent_increment = kernel._rm(
+    elastic_stress, plastic_increment, equivalent_increment = return_mapping(
         elastic_trial,
         accumulated_strain,
         yield_stress,
@@ -155,7 +187,7 @@ def test_return_mapping_elastic_and_consistent_tangent() -> None:
 
     def mapped_stress(strain):
         trial = (elasticity @ strain)[None, :]
-        return kernel._rm(
+        return return_mapping(
             trial,
             accumulated_strain,
             yield_stress,
@@ -168,7 +200,7 @@ def test_return_mapping_elastic_and_consistent_tangent() -> None:
 
     stress, _, increment = mapped_stress(total_strain)
     assert increment[0] > 0
-    tangent = kernel._cep(
+    tangent = consistent_tangent(
         stress,
         increment,
         accumulated_strain,
@@ -204,9 +236,9 @@ def test_return_mapping_elastic_and_consistent_tangent() -> None:
 )
 def test_plastic_return_paths_end_on_yield_surface(trial_stress) -> None:
     elasticity = plane_stress_elasticity(205_000.0, 0.3)
-    metric_product = elasticity @ kernel._M
-    hardening, _ = kernel.make_hardening(0.245, "ludwik")
-    stress, plastic_increment, equivalent_increment = kernel._rm(
+    metric_product = elasticity @ PLANE_STRESS_VON_MISES_METRIC
+    hardening, _ = make_hardening(0.245, "ludwik")
+    stress, plastic_increment, equivalent_increment = return_mapping(
         np.asarray([trial_stress]),
         np.array([0.0]),
         np.array([250.0]),
@@ -220,14 +252,14 @@ def test_plastic_return_paths_end_on_yield_surface(trial_stress) -> None:
     assert equivalent_increment[0] > 0
     assert np.linalg.norm(plastic_increment) > 0
     expected_yield = 250.0 + 500.0 * hardening(equivalent_increment)[0]
-    assert kernel._vm(stress)[0] == pytest.approx(expected_yield, rel=1e-9)
+    assert von_mises(stress)[0] == pytest.approx(expected_yield, rel=1e-9)
 
 
 def test_tabular_return_clamps_beyond_last_segment() -> None:
     elasticity = plane_stress_elasticity(205_000.0, 0.3)
-    metric_product = elasticity @ kernel._M
-    hardening, _ = kernel.make_hardening(0.245, "tabular")
-    stress, _plastic_increment, equivalent_increment = kernel._rm(
+    metric_product = elasticity @ PLANE_STRESS_VON_MISES_METRIC
+    hardening, _ = make_hardening(0.245, "tabular")
+    stress, _plastic_increment, equivalent_increment = return_mapping(
         np.array([[100_000.0, 0.0, 0.0]]),
         np.array([0.0]),
         np.array([250.0]),
@@ -240,18 +272,18 @@ def test_tabular_return_clamps_beyond_last_segment() -> None:
 
     assert equivalent_increment[0] > 0.2
     expected_clamped_yield = 250.0 + 500.0 * 0.2**0.245
-    assert kernel._vm(stress)[0] == pytest.approx(expected_clamped_yield, rel=1e-9)
+    assert von_mises(stress)[0] == pytest.approx(expected_clamped_yield, rel=1e-9)
 
 
 def test_tabular_hardening_interpolates_every_segment() -> None:
     exponent = 0.245
     knots = np.concatenate((np.array([0.0]), np.linspace(1e-6, 0.2, 5)))
     values = knots**exponent
-    hardening, derivative = kernel.make_hardening(
+    hardening, derivative = make_hardening(
         exponent,
         "tabular",
-        ep_max=0.2,
-        n_pts=6,
+        plastic_strain_max=0.2,
+        point_count=6,
         first_positive_strain=1e-6,
     )
     midpoints = 0.5 * (knots[:-1] + knots[1:])
