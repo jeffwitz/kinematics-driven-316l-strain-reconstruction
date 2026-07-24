@@ -39,6 +39,36 @@ class LocalizationOverlapMetrics:
     prediction_precision: float
 
 
+@dataclass(frozen=True, slots=True)
+class FieldAcceptanceThresholds:
+    """Pre-declared scalar acceptance thresholds for one field comparison."""
+
+    maximum_rmse: float
+    maximum_mae: float
+    minimum_correlation: float
+    minimum_localization_iou: float
+
+    def __post_init__(self) -> None:
+        if not np.isfinite(self.maximum_rmse) or self.maximum_rmse < 0:
+            raise ValueError("maximum_rmse must be finite and nonnegative")
+        if not np.isfinite(self.maximum_mae) or self.maximum_mae < 0:
+            raise ValueError("maximum_mae must be finite and nonnegative")
+        if not -1 <= self.minimum_correlation <= 1:
+            raise ValueError("minimum_correlation must lie in [-1, 1]")
+        if not 0 <= self.minimum_localization_iou <= 1:
+            raise ValueError("minimum_localization_iou must lie in [0, 1]")
+
+
+@dataclass(frozen=True, slots=True)
+class FieldComparisonReport:
+    """Metrics, thresholds and decision for one co-registered field pair."""
+
+    errors: FieldErrorMetrics
+    localization: LocalizationOverlapMetrics
+    thresholds: FieldAcceptanceThresholds
+    passed: bool
+
+
 def field_error_metrics(
     reference: ArrayLike,
     prediction: ArrayLike,
@@ -143,6 +173,60 @@ def localization_overlap_metrics(
         dice_coefficient=2.0 * intersection_count / (reference_count + prediction_count),
         reference_recall=intersection_count / reference_count,
         prediction_precision=intersection_count / prediction_count,
+    )
+
+
+def signed_difference_field(
+    reference: ArrayLike,
+    prediction: ArrayLike,
+    *,
+    mask: ArrayLike | None = None,
+) -> np.ndarray:
+    """Return ``prediction - reference``, with invalid or excluded values as NaN."""
+
+    reference_values = np.asarray(reference, dtype=float)
+    prediction_values = np.asarray(prediction, dtype=float)
+    if reference_values.shape != prediction_values.shape:
+        raise ValueError("reference and prediction must have the same shape")
+    valid = np.isfinite(reference_values) & np.isfinite(prediction_values)
+    if mask is not None:
+        mask_values = np.asarray(mask, dtype=bool)
+        if mask_values.shape != reference_values.shape:
+            raise ValueError("mask must have the same shape as the compared fields")
+        valid &= mask_values
+    difference = np.full(reference_values.shape, np.nan)
+    difference[valid] = prediction_values[valid] - reference_values[valid]
+    return difference
+
+
+def evaluate_field_comparison(
+    reference: ArrayLike,
+    prediction: ArrayLike,
+    thresholds: FieldAcceptanceThresholds,
+    *,
+    top_fraction: float = 0.1,
+    mask: ArrayLike | None = None,
+) -> FieldComparisonReport:
+    """Evaluate a co-registered field against thresholds declared in advance."""
+
+    errors = field_error_metrics(reference, prediction, mask=mask)
+    localization = localization_overlap_metrics(
+        reference,
+        prediction,
+        top_fraction=top_fraction,
+        mask=mask,
+    )
+    passed = (
+        errors.rmse <= thresholds.maximum_rmse
+        and errors.mae <= thresholds.maximum_mae
+        and errors.pearson_correlation >= thresholds.minimum_correlation
+        and localization.intersection_over_union >= thresholds.minimum_localization_iou
+    )
+    return FieldComparisonReport(
+        errors=errors,
+        localization=localization,
+        thresholds=thresholds,
+        passed=passed,
     )
 
 

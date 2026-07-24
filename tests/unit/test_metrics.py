@@ -3,9 +3,12 @@ import pytest
 
 from fem_inhouse.partitioning import PartitionLayout
 from fem_inhouse.postprocessing import (
+    FieldAcceptanceThresholds,
+    evaluate_field_comparison,
     field_error_metrics,
     interface_gradient_ratio,
     localization_overlap_metrics,
+    signed_difference_field,
 )
 
 
@@ -89,6 +92,77 @@ def test_localization_overlap_contracts_masks_and_ties() -> None:
         localization_overlap_metrics(np.zeros(2), np.zeros(2), mask=np.ones(3))
     with pytest.raises(ValueError, match="no valid"):
         localization_overlap_metrics([np.nan], [np.nan])
+
+
+def test_field_acceptance_report_and_signed_difference() -> None:
+    reference = np.array([4.0, 3.0, 2.0, np.nan])
+    prediction = np.array([4.1, 2.9, 2.0, 8.0])
+    thresholds = FieldAcceptanceThresholds(
+        maximum_rmse=0.1,
+        maximum_mae=0.1,
+        minimum_correlation=0.99,
+        minimum_localization_iou=1.0,
+    )
+
+    report = evaluate_field_comparison(
+        reference,
+        prediction,
+        thresholds,
+        top_fraction=1.0 / 3.0,
+    )
+    difference = signed_difference_field(reference, prediction)
+
+    assert report.passed
+    assert report.thresholds == thresholds
+    np.testing.assert_allclose(difference[:3], [0.1, -0.1, 0.0])
+    assert np.isnan(difference[3])
+
+    rejected = evaluate_field_comparison(
+        reference,
+        prediction,
+        FieldAcceptanceThresholds(
+            maximum_rmse=0.01,
+            maximum_mae=0.01,
+            minimum_correlation=1.0,
+            minimum_localization_iou=1.0,
+        ),
+    )
+    assert not rejected.passed
+
+
+@pytest.mark.parametrize(
+    ("keyword", "value", "message"),
+    [
+        ("maximum_rmse", -1.0, "maximum_rmse"),
+        ("maximum_mae", np.inf, "maximum_mae"),
+        ("minimum_correlation", 1.1, "minimum_correlation"),
+        ("minimum_localization_iou", -0.1, "minimum_localization_iou"),
+    ],
+)
+def test_field_acceptance_threshold_contracts(keyword, value, message) -> None:
+    arguments = {
+        "maximum_rmse": 1.0,
+        "maximum_mae": 1.0,
+        "minimum_correlation": 0.0,
+        "minimum_localization_iou": 0.0,
+    }
+    arguments[keyword] = value
+    with pytest.raises(ValueError, match=message):
+        FieldAcceptanceThresholds(**arguments)
+
+
+def test_signed_difference_contracts_mask() -> None:
+    difference = signed_difference_field(
+        [1.0, 2.0],
+        [2.0, 4.0],
+        mask=[True, False],
+    )
+    assert difference[0] == 1.0
+    assert np.isnan(difference[1])
+    with pytest.raises(ValueError, match="same shape"):
+        signed_difference_field(np.zeros(2), np.zeros(3))
+    with pytest.raises(ValueError, match="mask"):
+        signed_difference_field(np.zeros(2), np.zeros(2), mask=np.ones(3))
 
 
 def test_interface_ratio_is_one_for_affine_field_and_detects_seam() -> None:

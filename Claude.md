@@ -280,7 +280,8 @@ calcul partitionné avec padding suffisant.
 - [ ] Comparaison sur 10×10 ou 20×20
 - [ ] Comparaison sur un sous-domaine hétérogène représentatif
 - [ ] Comparaison à plusieurs pseudo-temps
-- [ ] Rapport automatique avec seuils de succès
+- [~] Rapport automatique avec seuils de succès : commande prête, références
+  Abaqus/DIC encore absentes
 
 #### Niveau 3 : partitionnement
 
@@ -293,11 +294,11 @@ calcul partitionné avec padding suffisant.
 
 #### Niveau 4 : reproduction scientifique
 
-- [ ] RMSE du déplacement `U2`
-- [ ] RMSE et MAE de `epsilon_vM`
-- [ ] Carte de différence signée
+- [~] RMSE du déplacement `U2` : outil prêt, données absentes
+- [~] RMSE et MAE de `epsilon_vM` : outil prêt, données absentes
+- [~] Carte de différence signée : génération prête, données absentes
 - [ ] BGE
-- [ ] Corrélation spatiale des champs
+- [~] Corrélation spatiale des champs : outil prêt, données absentes
 - [~] Recouvrement des zones de plus forte localisation : métrique testée,
   données de l'article encore absentes
 - [ ] Quatre courbes de contrainte-déformation séparées
@@ -502,6 +503,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Recouvrement des localisations | Jaccard, Dice, rappel, précision | Cas identique, partiel et masqué testés | Réussi |
 | 2026-07-24 | Suite après métrique de localisation | Ruff, mypy et couverture | 127 tests, 96,55 % | Réussi |
 | 2026-07-24 | Provenance de l'article | Manifeste SHA-256 vérifié par test | PDF 2 698 182 octets identifié | Réussi |
+| 2026-07-24 | Rapport de comparaison | CLI à seuils pré-déclarés | JSON, carte signée et code retour testés | Réussi |
+| 2026-07-24 | Suite après rapport automatique | Ruff, mypy et couverture | 135 tests, 96,70 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -710,3 +713,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Enregistrement du titre, des auteurs, de la taille et du SHA-256
 - DOI maintenu explicitement nul car absent du manuscrit fourni
 - Ajout d'un test empêchant une modification silencieuse de la référence
+
+### 2026-07-24 — Rapports automatiques de champs
+
+- Ajout de seuils typés pour RMSE, MAE, corrélation et recouvrement
+- Ajout d'une décision globale reproductible sans ajustement après calcul
+- Ajout d'une carte signée `prédiction - référence` avec masque et NaN explicites
+- Ajout de la commande `compare-fields` et d'un code retour exploitable en CI
+- Documentation explicite de l'exigence de co-enregistrement préalable

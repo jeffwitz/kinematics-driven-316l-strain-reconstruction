@@ -23,6 +23,11 @@ from fem_inhouse.examples import (
     validate_reduced_case,
 )
 from fem_inhouse.partitioning import PartitionLayout
+from fem_inhouse.postprocessing import (
+    FieldAcceptanceThresholds,
+    evaluate_field_comparison,
+    signed_difference_field,
+)
 from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import PartitionWorkflow
 
@@ -78,6 +83,21 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         help="optional output path used with --stitch",
     )
+
+    compare = commands.add_parser(
+        "compare-fields",
+        help="compare two co-registered fields against pre-declared thresholds",
+    )
+    compare.add_argument("--reference", type=Path, required=True)
+    compare.add_argument("--prediction", type=Path, required=True)
+    compare.add_argument("--mask", type=Path)
+    compare.add_argument("--report", type=Path, required=True)
+    compare.add_argument("--difference", type=Path, required=True)
+    compare.add_argument("--top-fraction", type=float, default=0.1)
+    compare.add_argument("--max-rmse", type=float, required=True)
+    compare.add_argument("--max-mae", type=float, required=True)
+    compare.add_argument("--min-correlation", type=float, required=True)
+    compare.add_argument("--min-localization-iou", type=float, required=True)
     return parser
 
 
@@ -179,4 +199,34 @@ def main(argv: Sequence[str] | None = None) -> int:
         output = workflow.stitch(args.stitch, output_path=args.field_output)
         print(output.filename)
         return 0
+    if args.command == "compare-fields":
+        reference = np.load(args.reference, mmap_mode="r", allow_pickle=False)
+        prediction = np.load(args.prediction, mmap_mode="r", allow_pickle=False)
+        mask = (
+            np.load(args.mask, mmap_mode="r", allow_pickle=False) if args.mask is not None else None
+        )
+        thresholds = FieldAcceptanceThresholds(
+            maximum_rmse=args.max_rmse,
+            maximum_mae=args.max_mae,
+            minimum_correlation=args.min_correlation,
+            minimum_localization_iou=args.min_localization_iou,
+        )
+        comparison_report = evaluate_field_comparison(
+            reference,
+            prediction,
+            thresholds,
+            top_fraction=args.top_fraction,
+            mask=mask,
+        )
+        difference = signed_difference_field(reference, prediction, mask=mask)
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.difference.parent.mkdir(parents=True, exist_ok=True)
+        report_data = asdict(comparison_report)
+        args.report.write_text(
+            json.dumps(report_data, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        np.save(args.difference, difference)
+        _print_json(report_data)
+        return 0 if comparison_report.passed else 1
     raise AssertionError(f"unhandled command {args.command!r}")  # pragma: no cover

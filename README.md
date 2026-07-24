@@ -48,6 +48,7 @@ fem-inhouse backend
 fem-inhouse validate --nx 10 --ny 10
 fem-inhouse example --nx 10 --ny 10 --output results/reduced
 fem-inhouse partition --help
+fem-inhouse compare-fields --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation

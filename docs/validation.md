@@ -64,6 +64,30 @@ légèrement supérieure à la fraction demandée. Cette métrique mesure la
 coïncidence spatiale des zones fortement localisées sans confondre leurs
 amplitudes.
 
+## Rapport automatique avec seuils pré-déclarés
+
+`compare-fields` exige les seuils au moment du lancement, avant d'afficher les
+résultats. Il écrit un rapport JSON complet et la carte signée
+`prédiction - référence` :
+
+```bash
+fem-inhouse compare-fields \
+  --reference reference_evm.npy \
+  --prediction reconstructed_evm.npy \
+  --report validation/evm-report.json \
+  --difference validation/evm-difference.npy \
+  --top-fraction 0.10 \
+  --max-rmse 0.005 \
+  --max-mae 0.005 \
+  --min-correlation 0.95 \
+  --min-localization-iou 0.70
+```
+
+La commande retourne un code nul seulement si RMSE, MAE, corrélation et
+recouvrement satisfont simultanément les seuils. Elle suppose que les deux
+tableaux ont déjà été placés au même emplacement physique ; elle ne réalise
+aucun recalage implicite.
+
 ## Gradient aux interfaces
 
 `interface_gradient_ratio` compare, direction par direction, les gradients

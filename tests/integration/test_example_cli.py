@@ -133,3 +133,49 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
     assert main([*common, "--stitch", "S", "--field-output", str(stitched_path)]) == 0
     assert capsys.readouterr().out.strip() == str(stitched_path)
     np.testing.assert_array_equal(np.load(stitched_path), 1.0)
+
+
+def test_compare_fields_cli_writes_report_and_signed_map(tmp_path, capsys) -> None:
+    reference_path = tmp_path / "reference.npy"
+    prediction_path = tmp_path / "prediction.npy"
+    report_path = tmp_path / "comparison" / "report.json"
+    difference_path = tmp_path / "comparison" / "difference.npy"
+    np.save(reference_path, np.array([[4.0, 3.0], [2.0, 1.0]]))
+    np.save(prediction_path, np.array([[4.1, 2.9], [2.0, 1.0]]))
+    arguments = [
+        "compare-fields",
+        "--reference",
+        str(reference_path),
+        "--prediction",
+        str(prediction_path),
+        "--report",
+        str(report_path),
+        "--difference",
+        str(difference_path),
+        "--top-fraction",
+        "0.25",
+        "--max-rmse",
+        "0.1",
+        "--max-mae",
+        "0.1",
+        "--min-correlation",
+        "0.99",
+        "--min-localization-iou",
+        "1.0",
+    ]
+
+    assert main(arguments) == 0
+    printed = json.loads(capsys.readouterr().out)
+    persisted = json.loads(report_path.read_text(encoding="utf-8"))
+    assert printed == persisted
+    assert persisted["passed"]
+    np.testing.assert_allclose(
+        np.load(difference_path),
+        [[0.1, -0.1], [0.0, 0.0]],
+        atol=1e-15,
+    )
+
+    rejected_arguments = arguments.copy()
+    rejected_arguments[rejected_arguments.index("--max-rmse") + 1] = "0.01"
+    assert main(rejected_arguments) == 1
+    assert not json.loads(capsys.readouterr().out)["passed"]
