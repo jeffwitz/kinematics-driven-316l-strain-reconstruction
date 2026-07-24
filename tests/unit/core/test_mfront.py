@@ -131,6 +131,55 @@ def test_compiled_mfront_behaviour_matches_elastic_plane_stress() -> None:
     np.testing.assert_array_equal(result.plastic_strain, np.zeros((1, 3)))
     np.testing.assert_array_equal(result.equivalent_plastic_strain, np.zeros(1))
 
+    full_state = batch.current_full_tensor_state()
+    assert batch.has_native_plane_stress_state
+    assert full_state is not None
+    expected_e33 = -poisson / (1.0 - poisson) * 1e-3
+    assert full_state.total_strain_tensor[0, 2, 2] == pytest.approx(
+        expected_e33,
+        abs=1e-14,
+    )
+    np.testing.assert_allclose(
+        full_state.total_strain_tensor,
+        full_state.elastic_strain_tensor,
+        rtol=0.0,
+        atol=1e-14,
+    )
+    np.testing.assert_allclose(full_state.plastic_strain_tensor, 0.0, atol=1e-14)
+    assert abs(full_state.plane_stress_residual_mpa[0]) <= 1e-9
+
+
+@pytest.mark.mfront
+def test_mfront_native_plastic_state_is_additive_isochoric_and_plane_stress() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFrontMaterialPointBatch(library, 250.0, 380.0, 0.245)
+    batch.evaluate(np.array([[0.01, -0.001, 0.002]]))
+    state = batch.current_full_tensor_state()
+
+    assert state is not None
+    np.testing.assert_allclose(
+        state.total_strain_tensor,
+        state.elastic_strain_tensor + state.plastic_strain_tensor,
+        rtol=0.0,
+        atol=1e-14,
+    )
+    np.testing.assert_allclose(
+        np.trace(state.plastic_strain_tensor, axis1=-2, axis2=-1),
+        0.0,
+        rtol=0.0,
+        atol=1e-12,
+    )
+    elastic = state.elastic_strain_tensor[0]
+    expected_elastic_33 = -0.3 / 0.7 * (elastic[0, 0] + elastic[1, 1])
+    assert elastic[2, 2] == pytest.approx(expected_elastic_33, abs=1e-12)
+    assert abs(state.plane_stress_residual_mpa[0]) <= 1e-9
+
+    batch.commit()
+    with pytest.raises(RuntimeError, match="no successful MFront trial"):
+        batch.current_full_tensor_state()
+
 
 @pytest.mark.mfront
 def test_mfront_trial_can_be_reverted_before_commit() -> None:

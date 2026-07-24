@@ -10,6 +10,16 @@ from typing import Any
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from fem_inhouse.core.tensor_reconstruction import (
+    FullTensorState,
+    engineering_strain_2d_to_tensor,
+    kelvin_plane_stress_to_tensor,
+    reconstruct_native_plane_stress_state,
+    tensor_to_engineering_strain_2d,
+    tensor_to_engineering_stress_2d,
+    tensor_to_kelvin_plane_stress,
+)
+
 _SQRT_TWO = np.sqrt(2.0)
 _PLANE_STRESS_COMPONENTS = np.array([0, 1, 3])
 _KELVIN_TO_ENGINEERING_STRESS_SCALE = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
@@ -38,36 +48,24 @@ class MFrontIntegrationResult:
 def engineering_strain_to_kelvin(strain: ArrayLike) -> NDArray:
     """Convert ``[e11, e22, gamma12]`` to MFront's 2D Kelvin stensor."""
 
-    values = np.asarray(strain, dtype=float)
-    if values.ndim < 1 or values.shape[-1] != 3:
-        raise ValueError("engineering strain must have a trailing dimension of 3")
-    kelvin = np.zeros((*values.shape[:-1], 4), dtype=float)
-    kelvin[..., 0] = values[..., 0]
-    kelvin[..., 1] = values[..., 1]
-    kelvin[..., 3] = values[..., 2] / _SQRT_TWO
-    return kelvin
+    tensor = engineering_strain_2d_to_tensor(strain, 0.0)
+    return tensor_to_kelvin_plane_stress(tensor, quantity="strain")
 
 
 def kelvin_strain_to_engineering(strain: ArrayLike) -> NDArray:
     """Convert a MFront 2D Kelvin strain to ``[e11, e22, gamma12]``."""
 
-    values = np.asarray(strain, dtype=float)
-    if values.ndim < 1 or values.shape[-1] != 4:
-        raise ValueError("Kelvin strain must have a trailing dimension of 4")
-    return np.stack(
-        (values[..., 0], values[..., 1], _SQRT_TWO * values[..., 3]),
-        axis=-1,
+    return tensor_to_engineering_strain_2d(
+        kelvin_plane_stress_to_tensor(strain, quantity="strain")
     )
 
 
 def kelvin_stress_to_engineering(stress: ArrayLike) -> NDArray:
     """Convert a MFront 2D Kelvin stress to ``[s11, s22, s12]``."""
 
-    values = np.asarray(stress, dtype=float)
-    if values.ndim < 1 or values.shape[-1] != 4:
-        raise ValueError("Kelvin stress must have a trailing dimension of 4")
-    selected = np.take(values, _PLANE_STRESS_COMPONENTS, axis=-1)
-    return selected * _KELVIN_TO_ENGINEERING_STRESS_SCALE
+    return tensor_to_engineering_stress_2d(
+        kelvin_plane_stress_to_tensor(stress, quantity="stress")
+    )
 
 
 def kelvin_tangent_to_engineering(tangent: ArrayLike) -> NDArray:
@@ -130,6 +128,32 @@ def _broadcast_material_properties(
     return yield_stress, coefficient, exponent
 
 
+def _variable_offset(
+    mgis: Any,
+    variables: Any,
+    name: str,
+    hypothesis: Any,
+    *,
+    expected_size: int,
+    required: bool = True,
+) -> int | None:
+    matches = [variable for variable in variables if variable.name == name]
+    if not matches:
+        if required:
+            raise MFrontUnavailableError(
+                f"MFront behaviour does not expose required variable {name!r}"
+            )
+        return None
+    if len(matches) != 1:
+        raise MFrontUnavailableError(f"MFront behaviour exposes {name!r} more than once")
+    actual_size = int(mgis.getVariableSize(matches[0], hypothesis))
+    if actual_size != expected_size:
+        raise MFrontUnavailableError(
+            f"MFront variable {name!r} has size {actual_size}, expected {expected_size}"
+        )
+    return int(mgis.getVariableOffset(variables, name, hypothesis))
+
+
 class MFrontMaterialPointBatch:
     """Stateful MGIS bridge for independent plane-stress material points.
 
@@ -169,6 +193,20 @@ class MFrontMaterialPointBatch:
             "PixelLudwikJ2Plasticity",
             hypothesis,
         )
+        _variable_offset(
+            mgis,
+            behaviour.gradients,
+            "Strain",
+            hypothesis,
+            expected_size=4,
+        )
+        _variable_offset(
+            mgis,
+            behaviour.thermodynamic_forces,
+            "Stress",
+            hypothesis,
+            expected_size=4,
+        )
         manager = mgis.MaterialDataManager(behaviour, yield_stress.size)
 
         material_values = {
@@ -202,21 +240,41 @@ class MFrontMaterialPointBatch:
         self._material_values = material_values
         self._temperature_values = temperature_values
         self._thread_pool = _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
-        self._equivalent_plastic_strain_offset = mgis.getVariableOffset(
+        equivalent_plastic_strain_offset = _variable_offset(
+            mgis,
             behaviour.isvs,
             "EquivalentPlasticStrain",
             hypothesis,
+            expected_size=1,
         )
-        self._yield_surface_radius_offset = mgis.getVariableOffset(
+        yield_surface_radius_offset = _variable_offset(
+            mgis,
             behaviour.isvs,
             "YieldSurfaceRadius",
             hypothesis,
+            expected_size=1,
         )
-        self._elastic_strain_offset = mgis.getVariableOffset(
+        elastic_strain_offset = _variable_offset(
+            mgis,
             behaviour.isvs,
             "ElasticStrain",
             hypothesis,
+            expected_size=4,
         )
+        self._axial_strain_offset = _variable_offset(
+            mgis,
+            behaviour.isvs,
+            "AxialStrain",
+            hypothesis,
+            expected_size=1,
+            required=False,
+        )
+        assert equivalent_plastic_strain_offset is not None
+        assert yield_surface_radius_offset is not None
+        assert elastic_strain_offset is not None
+        self._equivalent_plastic_strain_offset = equivalent_plastic_strain_offset
+        self._yield_surface_radius_offset = yield_surface_radius_offset
+        self._elastic_strain_offset = elastic_strain_offset
         self._has_trial_state = False
 
     @property
@@ -224,6 +282,12 @@ class MFrontMaterialPointBatch:
         """Number of independent material points in the batch."""
 
         return self._point_count
+
+    @property
+    def has_native_plane_stress_state(self) -> bool:
+        """Whether MGIS exposes the native axial strain used by plane stress."""
+
+        return self._axial_strain_offset is not None
 
     def evaluate(
         self,
@@ -305,6 +369,28 @@ class MFrontMaterialPointBatch:
         if commit:
             self.commit()
         return result
+
+    def current_full_tensor_state(self) -> FullTensorState | None:
+        """Extract the latest successful native MFront trial without committing it."""
+
+        if not self._has_trial_state:
+            raise RuntimeError("no successful MFront trial state is available")
+        if self._axial_strain_offset is None:
+            return None
+        total_kelvin = self._manager.s1.gradients.copy()
+        total_kelvin[:, 2] = self._manager.s1.internal_state_variables[
+            :, self._axial_strain_offset
+        ]
+        elastic_offset = self._elastic_strain_offset
+        elastic_kelvin = self._manager.s1.internal_state_variables[
+            :, elastic_offset : elastic_offset + 4
+        ].copy()
+        stress_kelvin = self._manager.s1.thermodynamic_forces.copy()
+        return reconstruct_native_plane_stress_state(
+            total_kelvin,
+            elastic_kelvin,
+            stress_kelvin,
+        )
 
     def commit(self) -> None:
         """Commit the latest successful trial state."""
