@@ -16,6 +16,7 @@ For a solved element grid `(nx, ny)`, the public arrays are:
 | `E_3D` | `total_strain_tensor` | elements `(nx, ny, 3, 3)` | — |
 | `EE_3D` | `elastic_strain_tensor` | elements `(nx, ny, 3, 3)` | — |
 | `PE_3D` | `plastic_strain_tensor` | elements `(nx, ny, 3, 3)` | — |
+| `PLANE_STRESS_RESIDUAL_MPA` | `plane_stress_residual_vector_mpa` | elements `(nx, ny, 3)` | MPa |
 | `S33_RESIDUAL_MPA` | `plane_stress_residual_mpa` | elements `(nx, ny)` | MPa |
 
 The component order is:
@@ -33,7 +34,7 @@ Shear strain in element vectors is engineering shear:
 $\gamma_{12}=2\epsilon_{12}$. Shear stress is tensorial $S_{12}$.
 
 The historical six arrays retain their previous shapes, values, and component
-conventions. The five new arrays are additional fields; no 2D result is
+conventions. The six new arrays are additional fields; no 2D result is
 replaced.
 
 ## Complete tensor contract
@@ -58,18 +59,20 @@ E_3D = EE_3D + PE_3D
 within the declared numerical tolerance. Associated J2 flow also satisfies
 `trace(PE_3D) = 0`.
 
-`S33_RESIDUAL_MPA` is exactly `S_3D[..., 2, 2]`. It is zero by construction
-for Python. For MFront it preserves the native numerical residual of the
-plane-stress local solve. Components 13 and 23 are zero under the membrane
-kinematic assumption.
+`PLANE_STRESS_RESIDUAL_MPA` is ordered
+`[S33, S13, S23]`. `S33_RESIDUAL_MPA` is exactly its first component and
+`S_3D[..., 2, 2]`. It remains a compatibility view for older consumers.
+Python returns an exact zero vector. Both MFront paths preserve their native
+numerical residual instead of replacing it after integration. The maximum is
+controlled at each Gauss point before element averaging.
 
 The `tensor_reconstruction_source` diagnostic is one of:
 
 | Value | Meaning |
 |---|---|
-| `python_analytical` | completion from the converged Python 2D plastic state |
-| `mfront_native_axial_strain` | native MGIS `AxialStrain`, `ElasticStrain`, and `Stress` |
-| `mfront_analytical_fallback` | documented analytical completion because native axial strain is unavailable |
+| `j2_isotropic_analytical` | completion from the converged Python J2 plastic state |
+| `mfront_native_plane_stress` | native MGIS `PlaneStress` state |
+| `mfront_3d_local_condensation` | local condensation of a six-component MFront law |
 
 See {doc}`../explanation/plane_stress_tensors` for the mechanical derivation.
 
@@ -116,6 +119,7 @@ historical snapshot payload remains unchanged.
 | increments | attempted, converged, cutbacks |
 | Newton | total iterations, maximum iterations |
 | convergence | final norm, final relative residual, criterion name |
+| local plane stress | maximum Gauss-point residual, maximum and mean local iterations, local failures, maximum `cond(Cbb)` |
 
 Campaign status also records write time because filesystem output occurs after
 the typed solver result has been returned.
@@ -137,6 +141,7 @@ campaign/
         ├── E_3D.npy
         ├── EE_3D.npy
         ├── PE_3D.npy
+        ├── PLANE_STRESS_RESIDUAL_MPA.npy
         ├── S33_RESIDUAL_MPA.npy
         └── status.json
 ```
@@ -158,9 +163,12 @@ the stitched field.
 
 ## Reading earlier result directories
 
-`load_full_tensor_state(directory, poisson_ratio=...)` loads the five new
-files when present. A directory containing only historical `S.npy`, `E.npy`,
-and `PE.npy` can be reconstructed analytically only when `poisson_ratio` is
-provided. Without that material property, the loader raises a clear error.
-Partially present new tensor files are rejected rather than silently mixed
-with reconstructed values.
+`load_full_tensor_state(directory)` loads complete tensor files when present.
+An earlier complete-tensor directory without the vector residual is accepted;
+its scalar `S33_RESIDUAL_MPA` is promoted to `[S33,0,0]`.
+
+A directory containing only historical `S.npy`, `E.npy`, and `PE.npy` is
+reconstructed only when both `poisson_ratio` and the explicit capability
+`completion_strategy="j2_isotropic_analytical"` are supplied. This prevents a
+J2-specific closure from being silently applied to another material law.
+Other partially present tensor files are rejected.

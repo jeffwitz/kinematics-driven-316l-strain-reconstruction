@@ -101,6 +101,8 @@ Start here
 * :doc:`explanation/scientific_goal` for the scientific question;
 * :doc:`explanation/material_law` for the constitutive model;
 * :doc:`explanation/plane_stress_tensors` for complete 3D tensor reconstruction;
+* :doc:`explanation/mfront_3d_condensation` for the experimental generic
+  condensation of a 3D material law;
 * :doc:`how-to/install` to install TFEL/MFront, MGIS, and the Python package;
 * :doc:`reference/input_contract` to check input arrays;
 * :doc:`reference/results` to interpret the validated campaigns.
@@ -143,5 +145,6 @@ Start here
    explanation/material_law
    explanation/plane_stress_tensors
    explanation/mfront_newton
+   explanation/mfront_3d_condensation
    explanation/partitioning
    explanation/validation

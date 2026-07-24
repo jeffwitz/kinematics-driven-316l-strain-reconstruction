@@ -32,6 +32,14 @@ same plane-stress J2/Ludwik material. It is connected to the
 finite-element Newton loop with trial/commit/revert state transactions and its
 consistent tangent is assembled at every Gauss point. Material-point tests and
 the saved DIC-driven `10×10` comparison both pass their declared thresholds.
+The same law is now also compiled as a genuine six-component
+`Tridimensional` behaviour. The experimental
+`mfront-3d-condensed-plane-stress` backend solves locally for
+`[epsilon33, gamma13, gamma23]` and passes an explicit Schur-complement tangent
+to the unchanged 2D solver. The global Newton loop now depends only on a common
+plane-stress material protocol, so a future 3D crystal-plasticity behaviour can
+replace J2 inside this adapter without changing the FEM kernel.
+
 Every converged final state now also exposes complete symmetric `3×3` stress,
 total-strain, elastic-strain, and plastic-strain tensors. This is an
 output-only completion of the existing 2D plane-stress state: the mesh,
@@ -48,6 +56,14 @@ residual is `1.406e-19`, and maximum additive-decomposition residual is
 `1.355e-19`. Regression against the earlier artifacts confirms that historical
 2D outputs changed by at most `4.263e-14 MPa` (MFront round-off; Python is
 identical).
+
+The native-versus-condensed J2 campaign is preserved under
+[`validation/reference_data/mfront_3d_condensed_dic_10x10_v1`](validation/reference_data/mfront_3d_condensed_dic_10x10_v1).
+Both paths converge the same DIC 10×10 case in 66 global Newton iterations
+without cutback. Their maximum in-plane stress difference is
+`4.804e-08 MPa`; the condensed path reaches a maximum Gauss-point transverse
+residual of `2.705e-08 MPa` in at most four local iterations, with no local
+failure.
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
@@ -147,9 +163,11 @@ The script is equivalent to:
 
 Every partition preserves the historical final fields (`U`, `S`, `E`, `PE`,
 `PEEQ`, `RF`) and the additional complete fields (`S_3D`, `E_3D`, `EE_3D`,
-`PE_3D`, `S33_RESIDUAL_MPA`) together with convergence diagnostics and output
-hashes. The full production run uses the same prepared contract, with padding
-and partition execution distributed according to the available memory. See
+`PE_3D`, `PLANE_STRESS_RESIDUAL_MPA`, `S33_RESIDUAL_MPA`) together with
+convergence diagnostics and output hashes. The vector residual is ordered
+`[S33, S13, S23]`; the scalar field remains its first component for backward
+compatibility. The full production run uses the same prepared contract, with
+padding and partition execution distributed according to the available memory. See
 [`docs/from_dic_to_reconstruction.md`](docs/from_dic_to_reconstruction.md).
 
 ## Development setup
@@ -170,6 +188,8 @@ selectable for regression and Abaqus-table reproduction. See
 After building the behaviour, partition solves select it with
 `--constitutive-backend mfront --mfront-library`
 `build/mfront/src/libBehaviour.so --mfront-threads N`.
+Use `--constitutive-backend mfront-3d-condensed-plane-stress` to exercise the
+experimental six-component condensation path.
 
 The installed CLI provides the routine entry points:
 
@@ -220,16 +240,20 @@ print(result.equivalent_plastic_strain.max())
 print(result.stress_tensor_mpa.shape)
 print(result.total_strain_tensor[..., 2, 2].min())
 print(np.abs(result.plane_stress_residual_mpa).max())
+print(np.abs(result.plane_stress_residual_vector_mpa).max())
 print(result.diagnostics)
 ```
 
 `result.diagnostics` records the backend, timings, converged increments,
 cutbacks, Newton iterations, final convergence criterion, and whether the
-complete tensors came from native MFront axial state or analytical
-reconstruction. See
+complete tensors came from native MFront plane stress, analytical J2
+completion, or local condensation of a 3D law. The condensed backend also
+records local iteration counts, failures, the maximum Gauss-point residual,
+and the maximum condition number of `Cbb`. See
 [`docs/explanation/plane_stress_tensors.md`](docs/explanation/plane_stress_tensors.md)
-for the derivation and the important distinction from completing a single
-plastified DIC image.
+for result completion and
+[`docs/explanation/mfront_3d_condensation.md`](docs/explanation/mfront_3d_condensation.md)
+for the constitutive architecture.
 
 The top-level `fem_pixel.py` file remains only as a compatibility entry point
 for existing case-study scripts.

@@ -21,6 +21,12 @@ MFront owns, independently at every Gauss point:
 
 MGIS is the generic-interface bridge between both layers.
 
+Global Newton now depends on the `PlaneStressMaterialBatch` protocol rather
+than on J2 or MGIS state-variable details. The production implementation uses
+MFront's native `PlaneStress` hypothesis. The experimental implementation
+starts from a six-component `Tridimensional` law and performs a nested local
+plane-stress solve. See {doc}`mfront_3d_condensation`.
+
 ## Behaviour definition
 
 The versioned file `mfront/PixelLudwikJ2Plasticity.mfront` declares:
@@ -105,7 +111,7 @@ Global Newton evaluates several trial states before accepting one increment.
 Committing every constitutive call would accumulate plastic strain from
 rejected iterations and produce a path-dependent numerical error.
 
-`MFrontMaterialPointBatch` therefore exposes three operations:
+Every `PlaneStressMaterialBatch` therefore exposes three operations:
 
 `evaluate`
 : Integrate a trial total strain from the last converged state. Do not modify

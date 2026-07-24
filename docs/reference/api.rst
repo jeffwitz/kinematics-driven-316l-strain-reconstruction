@@ -33,6 +33,22 @@ Plane-stress tensor reconstruction
    :undoc-members:
    :show-inheritance:
 
+Plane-stress material protocol
+------------------------------
+
+.. automodule:: fem_inhouse.core.plane_stress_material
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+MFront adapters and condensation
+--------------------------------
+
+.. automodule:: fem_inhouse.core.mfront
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Material helpers
 ----------------
 

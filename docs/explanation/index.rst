@@ -28,6 +28,13 @@ the supplied article.
       How MGIS states, tensor conventions, consistent tangents, and
       trial/commit/revert fit the global nonlinear solve.
 
+   .. grid-item-card:: Condensed 3D material law
+      :link: mfront_3d_condensation
+      :link-type: doc
+
+      How a six-component MFront law is locally reduced to plane stress
+      without changing the two-dimensional finite-element solve.
+
    .. grid-item-card:: Complete plane-stress tensors
       :link: plane_stress_tensors
       :link-type: doc

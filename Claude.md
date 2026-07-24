@@ -1,11 +1,13 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-07-24
+Dernière mise à jour : 2026-07-25
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
 MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
 tenseurs 3D complets reconstruits en post-traitement du solveur 2D et validés
 sur les deux backends sans modification des sorties historiques ;
+loi J2 tridimensionnelle condensée localement en contraintes planes et validée
+contre le backend MFront natif, interface prête à recevoir une loi 3D ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -269,7 +271,9 @@ backends, les six champs sauvegardés respectent des seuils ratifiés, et aucun
 - [x] Vérifier par essai matériel que le gradient Kelvin ne porte pas le
       `e33` natif de ce comportement
 - [x] Conserver le `S33` MFront natif comme résidu de contraintes planes
-- [x] Prévoir et tracer explicitement le fallback analytique MFront
+- [x] Interdire le fallback analytique implicite MFront ; n'autoriser la
+      complétion J2 qu'avec la capacité explicite
+      `j2_isotropic_analytical`
 - [x] Étendre `FEMResult`, les exports de partitions, le raccordement et le
       chargeur des résultats anciens
 - [x] Séparer `EVM_HISTORICAL` de `EVM_RECONSTRUCTED_3D`
@@ -291,6 +295,43 @@ maximale avec les sorties historiques est nulle pour Python et
 **Critère de sortie :** tout résultat FEM convergé expose les quatre tenseurs
 symétriques `3×3` et le résidu `S33`, sans nouvelle résolution mécanique et
 sans régression des sorties 2D.
+
+### Phase prioritaire A.3 — Loi 3D condensée en contraintes planes
+
+- [x] Ajouter les conversions Kelvin 3D à six composantes et vérifier l'ordre
+      MGIS `[11,22,33,12,13,23]` par métadonnées et essais élémentaires
+- [x] Généraliser le résidu à `[S33,S13,S23]` tout en conservant
+      `S33_RESIDUAL_MPA` comme vue compatible
+- [x] Introduire le protocole transactionnel commun
+      `PlaneStressMaterialBatch`
+- [x] Adapter les backends Python J2 et MFront `PlaneStress` au protocole
+- [x] Compiler la même loi J2/Ludwik sous l'hypothèse `Tridimensional`
+- [x] Résoudre localement `[epsilon33,gamma13,gamma23]` depuis le même état
+      constitutif validé à chaque itération
+- [x] Condenser la tangente 6×6 par complément de Schur sans inversion
+      explicite
+- [x] Ajouter les diagnostics de résidu au point de Gauss, itérations locales,
+      échecs locaux et conditionnement de `Cbb`
+- [x] Vérifier la tangente condensée par différences finies dans un état
+      plastique éloigné du seuil
+- [x] Tester l'échec local et l'absence de pollution de l'état validé
+- [x] Comparer les deux chemins sur les trajets matériels et un maillage 4×4
+- [x] Comparer et sauvegarder les deux chemins sur le crop DIC réel 10×10
+- [x] Documenter l'architecture, ses limites et le contrat pour une future loi
+      cristalline 3D
+
+**Preuve DIC 10×10 :**
+`validation/reference_data/mfront_3d_condensed_dic_10x10_v1`. Les deux chemins
+convergent en 66 itérations Newton globales, sans cutback. L'écart maximal sur
+la contrainte dans le plan vaut `4,804e-08 MPa`. Le backend condensé atteint
+un résidu transverse maximal au point de Gauss de `2,705e-08 MPa` en quatre
+itérations locales au plus, avec zéro échec et
+`max(cond(Cbb)) = 1,896`.
+
+**Critère de sortie :** le solveur global ne connaît plus la loi J2 ou les
+détails MGIS ; les chemins J2 MFront natif et J2 3D condensé sont équivalents
+aux tolérances numériques sur le cas DIC, et la substitution future d'une loi
+3D petites déformations reste confinée à l'adaptateur constitutif.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -715,6 +756,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Parité MFront/Python sur DIC réelle | Crop central 10×10, 6 champs sauvegardés | L∞ relatif `4,7e-9–3,3e-4`, 20/20 incréments, 0 cutback | Réussi |
 | 2026-07-24 | Performance EF complète MFront | Crop central 10×10, PyPardiso | 0,669 s et 66 Newton contre 1,583 s et 84 Newton | Réussi |
 | 2026-07-24 | Suite après couplage Newton | Ruff, mypy, MGIS réel | 172 tests | Réussi |
+| 2026-07-25 | Parité MFront natif/J2 3D condensé | Crop DIC 10×10, 20 incréments | 66 Newton chacun, contrainte max `4,804e-08 MPa`, 0 échec local | Réussi |
+| 2026-07-25 | Résolution locale de contraintes planes | Résidu GP, itérations et `Cbb` | `2,705e-08 MPa`, 4 itérations max, `cond(Cbb)=1,896` | Réussi |
+| 2026-07-25 | Suite architecture constitutive commune | Ruff, mypy et MGIS/MFront réel | 206 tests | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -1137,3 +1181,25 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   en PDF de 78 pages
 - Validation finale avec le vrai backend MGIS/MFront : 199 tests réussis ;
   Ruff sans défaut et mypy sans défaut sur le paquet et le script de campagne
+
+### 2026-07-25 — Condensation d'une loi MFront 3D en contraintes planes
+
+- Ajout d'un contrat commun `PlaneStressMaterialBatch` utilisé par le Newton
+  global, sans connaissance de J2 ni des variables internes MGIS
+- Compilation de la loi J2/Ludwik identique sous les hypothèses
+  `PlaneStress` et `Tridimensional`
+- Vérification de l'ordre Kelvin 3D MGIS `[11,22,33,12,13,23]` par
+  métadonnées et six essais élastiques indépendants
+- Résolution locale transactionnelle de
+  `[epsilon33,gamma13,gamma23]` et condensation de la tangente par complément
+  de Schur
+- Ajout du résidu vectoriel `[S33,S13,S23]` et des diagnostics locaux au point
+  de Gauss, sans rupture du champ historique `S33_RESIDUAL_MPA`
+- Suppression du fallback J2 implicite pour un comportement MFront ne
+  déclarant pas la capacité correspondante
+- Tests de parité sur trajets matériels, tangent par différences finies,
+  échec local sans pollution d'état, maillage homogène 4×4 et DIC 10×10
+- Campagne immuable
+  `validation/reference_data/mfront_3d_condensed_dic_10x10_v1` sauvegardée
+- Validation avec MGIS/MFront réel : 206 tests réussis ; Ruff, mypy et
+  contrôle des différences Git sans défaut

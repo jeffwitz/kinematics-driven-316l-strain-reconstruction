@@ -120,6 +120,7 @@ The conversions are centralised in
 | FE engineering 2D | \([e_{11},e_{22},\gamma_{12}]\) | \([s_{11},s_{22},s_{12}]\) |
 | 3D tensor | \(e_{12}=\gamma_{12}/2\) | \(s_{12}\) |
 | MFront Kelvin plane stress | \([e_{11},e_{22},e_{33},\gamma_{12}/\sqrt{2}]\) | \([s_{11},s_{22},s_{33},\sqrt{2}s_{12}]\) |
+| MFront Kelvin 3D | \([e_{11},e_{22},e_{33},\sqrt{2}e_{12},\sqrt{2}e_{13},\sqrt{2}e_{23}]\) | \([s_{11},s_{22},s_{33},\sqrt{2}s_{12},\sqrt{2}s_{13},\sqrt{2}s_{23}]\) |
 
 The \(\sqrt{2}\) scaling preserves tensor double contractions in Kelvin
 coordinates. Conversion factors are tested and are not duplicated in the
@@ -143,10 +144,16 @@ and offsets, then reads `AxialStrain` after global convergence and before
 commit. Plastic strain is the difference between native total and elastic
 strain. The public MFront tensors retain those native values.
 
-If a future compatible MGIS behaviour does not expose `AxialStrain`, the code
-uses the same documented analytical reconstruction as Python and records
-`mfront_analytical_fallback` in the diagnostics. It never invents a supposedly
-native component.
+If a native MFront behaviour does not expose `AxialStrain`, this backend fails
+with a capability error. It does not silently apply the J2 analytical
+completion to an anisotropic or otherwise incompatible law. Analytical legacy
+completion is available only when the caller explicitly declares
+`completion_strategy="j2_isotropic_analytical"`.
+
+The six-component path uses the verified MGIS order
+`[11,22,33,12,13,23]` and retains all three transverse components. Its local
+condensation and Schur-complement tangent are explained in
+{doc}`mfront_3d_condensation`.
 
 ## Equivalent measures
 

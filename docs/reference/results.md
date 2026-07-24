@@ -3,6 +3,35 @@
 This page reports preserved evidence. It is not a promise of performance on
 another machine.
 
+## Native versus condensed 3D J2 on the DIC 10×10 case
+
+Campaign:
+`validation/reference_data/mfront_3d_condensed_dic_10x10_v1`
+
+The same J2/Ludwik model was run through native MFront `PlaneStress` and
+through MFront `Tridimensional` followed by local three-component
+plane-stress condensation.
+
+| Measure | Native plane stress | Condensed 3D |
+|---|---:|---:|
+| global Newton iterations | 66 | 66 |
+| cutbacks | 0 | 0 |
+| maximum Gauss-point transverse residual (MPa) | `5.575e-14` | `2.705e-08` |
+| maximum local iterations | 0 | 4 |
+| mean local iterations | 0 | `2.666` |
+| local failures | 0 | 0 |
+| maximum `cond(Cbb)` | 0 | `1.896` |
+
+Maximum absolute backend differences are `6.245e-16 mm` for displacement,
+`4.804e-08 MPa` for in-plane stress, `5.101e-13` for total 3D strain,
+`6.117e-13` for plastic 3D strain, and `4.038e-13` for PEEQ. All declared
+field and invariant checks pass.
+
+The condensed run takes `2.805 s`, of which `1.804 s` is constitutive, versus
+`1.310 s` and `0.377 s` for the native path on this host. This expected
+validation cost is not a reason to replace the faster native backend for the
+current isotropic law.
+
 ## Complete-tensor reconstruction on the DIC 10×10 case
 
 Campaign:

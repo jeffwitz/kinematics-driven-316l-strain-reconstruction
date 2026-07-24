@@ -12,7 +12,7 @@ installation procedure, see {doc}`../how-to/install`.
 At the end, `results/tutorial-dic-10x10` will contain:
 
 - a manifest describing inputs, solver settings, and 25 partitions;
-- all six historical fields and five complete-tensor fields for every
+- all six historical fields and six complete-state fields for every
   partition;
 - stitched global fields;
 - convergence diagnostics and SHA-256 fingerprints.
@@ -128,7 +128,7 @@ A complete partition whose hashes still match is not recomputed.
 ## 5. Stitch the fields
 
 ```bash
-for field in U S E PE PEEQ RF S_3D E_3D EE_3D PE_3D S33_RESIDUAL_MPA; do
+for field in U S E PE PEEQ RF S_3D E_3D EE_3D PE_3D PLANE_STRESS_RESIDUAL_MPA S33_RESIDUAL_MPA; do
   fem-inhouse partition \
     --input data/processed/tutorial-dic-10x10 \
     --output results/tutorial-dic-10x10 \
@@ -157,6 +157,9 @@ stress_3d = np.load(result_directory / "S_3D.npy")
 total_strain_3d = np.load(result_directory / "E_3D.npy")
 elastic_strain_3d = np.load(result_directory / "EE_3D.npy")
 plastic_strain_3d = np.load(result_directory / "PE_3D.npy")
+transverse_residual_mpa = np.load(
+    result_directory / "PLANE_STRESS_RESIDUAL_MPA.npy"
+)
 s33_residual_mpa = np.load(result_directory / "S33_RESIDUAL_MPA.npy")
 
 print("U:", displacement.shape, displacement.min(), displacement.max())
@@ -165,6 +168,7 @@ print("PEEQ:", peeq.shape, peeq.min(), peeq.max())
 print("S_3D:", stress_3d.shape)
 print("E_3D:", total_strain_3d.shape)
 print("maximum |S33| (MPa):", np.max(np.abs(s33_residual_mpa)))
+print("maximum transverse residual (MPa):", np.max(np.abs(transverse_residual_mpa)))
 print(
     "maximum additive residual:",
     np.max(np.abs(total_strain_3d - elastic_strain_3d - plastic_strain_3d)),

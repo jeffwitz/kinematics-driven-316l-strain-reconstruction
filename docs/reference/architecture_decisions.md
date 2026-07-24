@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The repository records five accepted architecture decisions. This page is the
+The repository records six accepted architecture decisions. This page is the
 English public summary; the original ADR files remain the authoritative
 versioned records.
 
@@ -48,3 +48,13 @@ Ludwik hardening after a finite first interval and no upper PEEQ cap. The
 comparison must identify whether it targets the analytical model or the legacy
 table.
 
+## ADR 0006 — Condense 3D laws behind a plane-stress protocol
+
+The global FEM solver depends on a transactional plane-stress material
+protocol. An experimental adapter integrates a six-component MFront law,
+solves its three transverse strains locally, and passes a Schur-complement
+tangent to the unchanged 2D Newton solve.
+
+**Consequence:** a future small-strain 3D crystal-plasticity behaviour can
+replace J2 within the constitutive adapter. The native MFront plane-stress path
+remains the faster production default for the current isotropic law.

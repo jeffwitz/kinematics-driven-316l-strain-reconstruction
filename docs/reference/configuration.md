@@ -45,9 +45,24 @@ fields. They are element-wise input maps.
 | `constitutive_backend` | `"mfront"` | constitutive implementation |
 | `mfront_library` | `build/mfront/src/libBehaviour.so` | generic-interface library |
 | `mfront_threads` | `1` | explicit MGIS thread-pool size |
+| `local_plane_stress_tolerance_mpa` | `1e-8` | absolute transverse-stress tolerance |
+| `local_plane_stress_relative_tolerance` | `1e-10` | relative transverse-stress tolerance |
+| `maximum_local_plane_stress_iterations` | `15` | local Newton iteration limit |
+| `maximum_cbb_condition_number` | `1e12` | reject an ill-conditioned transverse tangent |
 
 `hardening_mode="tabular"` is meaningful only with the historical Python
 backend. The nominal MFront path never allocates the 1000-point table.
+
+Supported backend values are:
+
+| Value | Meaning |
+|---|---|
+| `mfront` | compatibility alias for native MFront plane stress |
+| `mfront-native-plane-stress` | explicit native MFront plane stress |
+| `mfront-3d-condensed-plane-stress` | experimental 3D law with local condensation |
+| `python` | historical analytical/tabulated J2 regression implementation |
+
+The local plane-stress controls are used only by the condensed 3D backend.
 
 ## PreparationConfig
 
@@ -78,4 +93,3 @@ partition_id = index_x * 10 + index_y
 ```
 
 The complete `(3600, 3100)` domain is divided into `(10, 10)` balanced cores.
-

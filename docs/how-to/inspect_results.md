@@ -61,7 +61,8 @@ import numpy as np
 partition = Path("results/reconstruction-100/partitions/0000")
 for name in (
     "U", "S", "E", "PE", "PEEQ", "RF",
-    "S_3D", "E_3D", "EE_3D", "PE_3D", "S33_RESIDUAL_MPA",
+    "S_3D", "E_3D", "EE_3D", "PE_3D",
+    "PLANE_STRESS_RESIDUAL_MPA", "S33_RESIDUAL_MPA",
 ):
     field = np.load(partition / f"{name}.npy", mmap_mode="r")
     print(
@@ -96,14 +97,20 @@ additive = (
 plastic_trace = np.trace(state.plastic_strain_tensor, axis1=-2, axis2=-1)
 
 print("maximum |S33| (MPa):", np.max(np.abs(state.plane_stress_residual_mpa)))
+print(
+    "maximum transverse residual (MPa):",
+    np.max(np.abs(state.plane_stress_residual_vector_mpa)),
+)
 print("maximum |trace(PE)|:", np.max(np.abs(plastic_trace)))
 print("maximum |E - EE - PE|:", np.max(np.abs(additive)))
 PY
 ```
 
 For an older directory containing only `S.npy`, `E.npy`, and `PE.npy`, call
-`load_full_tensor_state(partition, poisson_ratio=0.3)`. The material property
-is mandatory because it cannot be inferred from those arrays.
+`load_full_tensor_state(partition, poisson_ratio=0.3,
+completion_strategy="j2_isotropic_analytical")`. Both the material property
+and explicit J2 capability are mandatory because they cannot be inferred from
+those arrays.
 
 ## Interpret convergence
 
@@ -116,9 +123,11 @@ Check at least:
 | `maximum_newton_iterations` | below the configured limit |
 | `final_relative_residual` | below tolerance |
 | `backend` | mentions PyPardiso and MFront |
-| `tensor_reconstruction_source` | `mfront_native_axial_strain` for the nominal backend |
+| `tensor_reconstruction_source` | `mfront_native_plane_stress` for the nominal backend |
+| local plane-stress diagnostics | zero for native; populated for condensed 3D |
 | finite fields | `true` |
 | `S_3D[..., 2, 2]` | exactly equal to `S33_RESIDUAL_MPA` |
+| `PLANE_STRESS_RESIDUAL_MPA[..., 0]` | exactly equal to `S33_RESIDUAL_MPA` |
 | plastic trace and additive residual | below the declared tensor tolerances |
 | total reaction resultant | close to zero |
 | DIC boundary error | close to machine precision |

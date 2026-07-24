@@ -11,10 +11,14 @@ Newton loop. The completed migration sequence was:
 3. connect trial/commit/revert semantics to the Newton loop;
 4. compare a reduced DIC subdomain;
 5. switch the default after the declared thresholds pass.
+6. compile the same law in 3D and validate explicit local plane-stress
+   condensation against the native path.
 
-All five steps are complete. Saved comparisons are under
+All six steps are complete. Saved comparisons are under
 `validation/reference_data/mfront_material_point_v1` and
-`validation/reference_data/mfront_newton_dic_10x10_v1`.
+`validation/reference_data/mfront_newton_dic_10x10_v1`; the 3D-condensation
+campaign is under
+`validation/reference_data/mfront_3d_condensed_dic_10x10_v1`.
 
 ## Installed versions on the development machine
 
@@ -90,14 +94,18 @@ The output is `build/mfront/src/libBehaviour.so`. The script accepts:
 - `MFRONT_BUILD_DIR` to select another generated build directory.
 
 Generated C++ and binaries remain under ignored `build/`; the MFront source is
-versioned at `mfront/PixelLudwikJ2Plasticity.mfront`.
+versioned in:
+
+- `mfront/PixelLudwikJ2Plasticity.mfront`, hypothesis `PlaneStress`;
+- `mfront/PixelLudwikJ2Plasticity3D.mfront`, hypothesis `Tridimensional`.
+
+Both behaviours implement the same J2/Ludwik model and are compiled into the
+same library.
 
 ## Constitutive contract
 
-The behaviour uses MFront's `StandardElastoViscoPlasticity` brick with:
+Both behaviours use MFront's `StandardElastoViscoPlasticity` brick with:
 
-- hypothesis `PlaneStress`, including the internal axial strain required to
-  enforce `S33 = 0`;
 - fixed case-study elasticity `E = 205000 MPa`, `nu = 0.3`;
 - von Mises criterion and associated plastic flow;
 - point-wise material properties `InitialYieldStress`,
@@ -116,6 +124,12 @@ MGIS stores symmetric tensors in Kelvin notation. The Python adapter converts:
 - `[s11, s22, s33, sqrt(2) s12]` to `[s11, s22, s12]`;
 - the 4×4 Kelvin tangent to the 3×3 engineering-shear tangent.
 
+For the `Tridimensional` behaviour, metadata and six elementary elastic probes
+establish the MGIS order `[11,22,33,12,13,23]`. The local adapter solves for
+`[e33,gamma13,gamma23]`, retains
+`[s33,s13,s23]`, and condenses the 6×6 algorithmic tangent by a Schur
+complement before converting its shear convention.
+
 The plane-stress axial state was located from MGIS metadata and a minimal
 material-point probe. For the installed behaviour:
 
@@ -132,26 +146,34 @@ and preserves native `s33` as `plane_stress_residual_mpa`. This is output-only
 post-processing; Newton, its condensed tangent, and trial/commit/revert
 semantics are unchanged.
 
-`MFrontMaterialPointBatch.evaluate` is non-committing by default. The explicit
-`commit` and `revert` operations are required for a correct global Newton
-integration. The constructor also accepts `thread_count`; values greater than
-one create an explicit MGIS thread pool.
+The common `PlaneStressMaterialBatch` contract exposes non-committing
+`evaluate`, `commit`, and `revert` operations. Its native MFront and condensed
+3D implementations preserve the same transaction boundary. Values of
+`mfront_threads` greater than one create an explicit MGIS thread pool.
 
 Inside `run_fem`, every Newton trial is evaluated from the last converged MGIS
 state. A new trial automatically discards the previous uncommitted trial,
 `commit` is called only after global convergence, and a failed increment calls
-`revert` before cutback. The MFront 3×3 consistent operator is passed directly
-to the existing CPS4 Gauss-point tangent assembly.
+`revert` before cutback. Native plane stress supplies its MFront-condensed
+3×3 tangent. The 3D backend supplies the explicitly condensed 3×3 tangent.
+Both feed the same CPS4 assembly.
 
 The public configuration fields are:
 
-- `constitutive_backend`: `mfront` (default) or the historical `python`;
+- `constitutive_backend`: `mfront` (default alias for native plane stress),
+  `mfront-native-plane-stress`, `mfront-3d-condensed-plane-stress`, or
+  historical `python`;
 - `mfront_library`: generic-interface shared library path;
 - `mfront_threads`: size of the explicit MGIS thread pool.
 
 The compiled behaviour currently fixes `E=205000 MPa`, `nu=0.3`, and the first
 positive plastic strain at `1e-6`; the solver rejects incompatible MFront
 configurations instead of silently mixing material definitions.
+
+The condensed backend additionally exposes absolute and relative local
+residual tolerances, a local-iteration limit, and a maximum accepted
+`cond(Cbb)`. A local failure is a constitutive failure visible to global
+cutback; it is never converted into a partially converged state.
 
 ## Reproduce the material-point comparison
 
@@ -186,8 +208,8 @@ bash scripts/build_mfront_behaviour.sh
 ```
 
 The command runs the same real central DIC crop with the analytical Python
-Ludwik law and MFront, then saves the six historical fields, five complete
-tensor fields, four explicit invariant maps, diagnostics, input and library
+Ludwik law and MFront, then saves the six historical fields, six complete-state
+fields, four explicit invariant maps, diagnostics, input and library
 hashes, metrics, thresholds, and the decision. It refuses to overwrite a
 non-empty campaign.
 
@@ -214,6 +236,25 @@ Its maximum native MFront `|s33|` is `1.046e-14 MPa`, maximum
 `|trace(epsilon_p)|` is `1.406e-19`, and maximum additive-decomposition
 residual is `1.355e-19`. Python historical fields are identical to the earlier
 campaign; the largest MFront historical difference is `4.263e-14 MPa`.
+
+To compare native and explicit 3D condensation:
+
+```bash
+.venv/bin/python scripts/compare_fem_backends.py \
+  --input data/processed/case-study-10x10 \
+  --output results/mfront-3d-condensed-dic-10x10 \
+  --library build/mfront/src/libBehaviour.so \
+  --threads 2 \
+  --reference-backend mfront-native-plane-stress \
+  --prediction-backend mfront-3d-condensed-plane-stress
+```
+
+The preserved campaign converges both paths in 66 global Newton iterations
+without cutback. The maximum in-plane stress difference is
+`4.804e-08 MPa`. The condensed path reaches a maximum Gauss-point transverse
+residual of `2.705e-08 MPa`, needs at most four local iterations, and reports
+no local failure. See {doc}`explanation/mfront_3d_condensation` for the
+derivation and the exact transaction semantics.
 
 An exploratory run preceded threshold fixation. These are therefore transparent
 regression/acceptance thresholds for the coupling, not an independent blind

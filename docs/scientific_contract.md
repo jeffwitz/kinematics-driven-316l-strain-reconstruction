@@ -98,9 +98,32 @@ epsilon_33 = epsilon_e_33 + epsilon_p_33
 ```
 
 The public final result contains `S_3D`, `E_3D`, `EE_3D`, `PE_3D`, and
-`S33_RESIDUAL_MPA` in addition to the unchanged historical arrays. MFront
-outputs use native MGIS `AxialStrain`, `ElasticStrain`, and complete `Stress`;
-the native numerical `S33` is preserved.
+`PLANE_STRESS_RESIDUAL_MPA` in addition to the unchanged historical arrays.
+The vector residual is `[S33, S13, S23]`; `S33_RESIDUAL_MPA` remains its first
+component for compatibility. MFront native-plane-stress outputs use MGIS
+`AxialStrain`, `ElasticStrain`, and complete `Stress`; no native residual is
+replaced by an exact zero.
+
+## Three-dimensional constitutive condensation
+
+The default backend remains the MFront behaviour compiled with the native
+`PlaneStress` hypothesis. A second, experimental backend compiles the same
+J2/Ludwik law with the `Tridimensional` hypothesis and imposes plane stress in
+the MGIS adapter.
+
+At every Gauss point it solves for
+`[epsilon_33, gamma_13, gamma_23]` such that
+`[sigma_33, sigma_13, sigma_23] = 0`. The local iterations always restart from
+the last globally committed material state. The tangent passed to the 2D
+solver is the Schur complement of the transverse block of the six-component
+algorithmic tangent. The mesh, displacement unknowns, element formulation,
+global equations, and Newton algorithm are unchanged.
+
+The global nonlinear solver depends on a common transactional plane-stress
+material protocol rather than J2- or MFront-specific variables. This
+architecture is the prerequisite for substituting a small-strain 3D crystal
+plasticity behaviour. It does not itself validate crystal plasticity, finite
+strain, or multiplicative kinematics.
 
 ## Historical and reconstructed equivalent strain
 

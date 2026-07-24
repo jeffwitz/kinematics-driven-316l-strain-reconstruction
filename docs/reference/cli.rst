@@ -84,7 +84,8 @@ Exactly one action is required:
      - Stitch one complete global field.
 
 Solver options include ``--increments``, ``--max-newton-iterations``,
-``--residual-tolerance``, ``--constitutive-backend {python,mfront}``,
+``--residual-tolerance``,
+``--constitutive-backend {python,mfront,mfront-native-plane-stress,mfront-3d-condensed-plane-stress}``,
 ``--mfront-library``, and ``--mfront-threads``.
 
 Exit behaviour
@@ -93,4 +94,3 @@ Exit behaviour
 The CLI returns a non-zero status for invalid contracts, unavailable required
 backends, incompatible manifests, non-convergence, corrupt outputs, and failed
 comparison thresholds. It does not convert these conditions into warnings.
-
