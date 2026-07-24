@@ -1,0 +1,52 @@
+@DSL Implicit;
+@Behaviour PixelLudwikJ2Plasticity;
+@Author Adil case-study contributors;
+@Date 24 / 07 / 2026;
+@Description {
+  Small-strain isotropic J2 plasticity for the article case study.
+
+  The yield radius follows the same regularised Ludwik-Hollomon law as the
+  Python tabular implementation at the origin:
+
+    R(p) = sy0 + K h(p)
+
+  with a linear first segment near the origin and the analytical power law
+  afterwards.
+
+  The Python implementation additionally linearly interpolates 998 intervals
+  inside the calibrated range. That discretisation error is measured explicitly by the
+  comparison suite rather than hidden in this behaviour.
+};
+
+@ModellingHypothesis PlaneStress;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 100;
+@Theta 1;
+
+@MaterialProperty stress sy0;
+sy0.setEntryName("InitialYieldStress");
+
+@MaterialProperty stress K;
+K.setEntryName("HardeningCoefficient");
+
+@MaterialProperty real ludwik_n;
+ludwik_n.setEntryName("HardeningExponent");
+
+@Parameter real p0 = 1.e-6;
+p0.setEntryName("FirstPositivePlasticStrain");
+
+@Brick StandardElastoViscoPlasticity {
+  stress_potential : "Hooke" {
+    young_modulus : 205000,
+    poisson_ratio : 0.3
+  },
+  inelastic_flow : "Plastic" {
+    criterion : "Mises",
+    isotropic_hardening : "UserDefined" {
+      R : "p <= p0 ? sy0+K*p*p0**(ludwik_n-1) : sy0+K*p**ludwik_n",
+      dR_dp : "p < p0 ? K*p0**(ludwik_n-1) : K*ludwik_n*p**(ludwik_n-1)"
+    },
+    save_yield_surface_radius : true
+  }
+};
