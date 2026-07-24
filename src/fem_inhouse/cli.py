@@ -97,6 +97,16 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--increments", type=int, default=20)
     partition.add_argument("--max-newton-iterations", type=int, default=15)
     partition.add_argument("--residual-tolerance", type=float, default=1e-6)
+    partition.add_argument(
+        "--constitutive-backend",
+        choices=("python", "mfront"),
+        default="python",
+    )
+    partition.add_argument(
+        "--mfront-library",
+        default="build/mfront/src/libBehaviour.so",
+    )
+    partition.add_argument("--mfront-threads", type=int, default=1)
     action = partition.add_mutually_exclusive_group(required=True)
     action.add_argument("--list-pending", action="store_true")
     action.add_argument("--partition-id", type=int)
@@ -164,6 +174,9 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             increments=args.increments,
             max_newton_iterations=args.max_newton_iterations,
             residual_tolerance=args.residual_tolerance,
+            constitutive_backend=args.constitutive_backend,
+            mfront_library=args.mfront_library,
+            mfront_threads=args.mfront_threads,
         ),
     )
     return PartitionWorkflow(

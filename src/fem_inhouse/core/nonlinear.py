@@ -95,6 +95,9 @@ def run_fem(
     n_table=1000,
     first_positive_plastic_strain=1e-6,
     minimum_step_divisor=1024,
+    constitutive_backend="python",
+    mfront_library="build/mfront/src/libBehaviour.so",
+    mfront_threads=1,
     snapshot_fractions=None,
     verbose=True,
 ):
@@ -106,8 +109,12 @@ def run_fem(
                 fields at those pseudo-times are recorded during ONE incremental
                 solve and returned in result['frames'] = {fraction: {...}}.
                 (Replaces re-solving the whole problem per load level.)
+    constitutive_backend : 'python' uses the in-house return mapping; 'mfront'
+                delegates stress, state update and consistent tangent to MGIS.
     """
     started_at = time.perf_counter()
+    if constitutive_backend not in {"python", "mfront"}:
+        raise ValueError("constitutive_backend must be 'python' or 'mfront'")
     hf, hfp = make_hardening(
         n_exp,
         hardening,
@@ -142,6 +149,26 @@ def run_fem(
     # Material per GP
     sy0_gp = np.repeat(yield_map.ravel(order="F"), N_GP)
     K_gp = np.repeat(K_map.ravel(order="F"), N_GP)
+    mfront_batch = None
+    if constitutive_backend == "mfront":
+        if not np.isclose(E_mod, 205_000.0) or not np.isclose(nu, 0.3):
+            raise ValueError(
+                "the compiled MFront behaviour currently requires E_mod=205000 MPa and nu=0.3"
+            )
+        if not np.isclose(first_positive_plastic_strain, 1e-6):
+            raise ValueError(
+                "the compiled MFront behaviour currently requires "
+                "first_positive_plastic_strain=1e-6"
+            )
+        from fem_inhouse.core.mfront import MFrontMaterialPointBatch
+
+        mfront_batch = MFrontMaterialPointBatch(
+            mfront_library,
+            sy0_gp,
+            K_gp,
+            np.full_like(sy0_gp, n_exp),
+            thread_count=mfront_threads,
+        )
 
     C_ps = plane_stress_elasticity(E_mod, nu)
     CM = C_ps @ PLANE_STRESS_VON_MISES_METRIC
@@ -234,18 +261,40 @@ def run_fem(
             maximum_newton_iterations = max(maximum_newton_iterations, nrit + 1)
             u_e = u[ld]
             eps_tot = np.einsum("gak,ek->ega", Bs, u_e)
-            sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
-
-            # Return mapping
+            # Constitutive trial from the last converged material state.
             constitutive_started_at = time.perf_counter()
-            sf, dp, dg = return_mapping(
-                sig_tr.reshape(-1, 3), ep_bar.ravel(), sy0_gp, K_gp, hf, cm11, cm12, cm33
-            )
+            if mfront_batch is None:
+                sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
+                sf, dp, dg = return_mapping(
+                    sig_tr.reshape(-1, 3),
+                    ep_bar.ravel(),
+                    sy0_gp,
+                    K_gp,
+                    hf,
+                    cm11,
+                    cm12,
+                    cm33,
+                )
+                sf = sf.reshape(n_e, N_GP, 3)
+                dp = dp.reshape(n_e, N_GP, 3)
+                dg_ = dg.reshape(n_e, N_GP)
+                ep_new = ep_bar + dg_
+                mfront_tangents = None
+            else:
+                trial = mfront_batch.evaluate(
+                    eps_tot.reshape(-1, 3),
+                    time_increment=dt,
+                    consistent_tangent=True,
+                )
+                sf = trial.stress_mpa.reshape(n_e, N_GP, 3)
+                eps_p_trial = trial.plastic_strain.reshape(n_e, N_GP, 3)
+                ep_new = trial.equivalent_plastic_strain.reshape(n_e, N_GP)
+                dp = eps_p_trial - eps_p
+                dg = (ep_new - ep_bar).ravel()
+                mfront_tangents = trial.consistent_tangent_mpa
+                if mfront_tangents is None:
+                    raise RuntimeError("MFront did not return a consistent tangent")
             constitutive_seconds += time.perf_counter() - constitutive_started_at
-            sf = sf.reshape(n_e, N_GP, 3)
-            dp = dp.reshape(n_e, N_GP, 3)
-            dg_ = dg.reshape(n_e, N_GP)
-            ep_new = ep_bar + dg_
 
             # Save state from this iteration (used if we break here)
             sf_acc = sf
@@ -285,23 +334,27 @@ def run_fem(
 
             # Build consistent tangent stiffness
             tangent_started_at = time.perf_counter()
-            pl_idx = np.where(dg > 0)[0]
-            if len(pl_idx):
-                plastic_tangents = consistent_tangent(
-                    sf.reshape(-1, 3)[pl_idx],
-                    dg[pl_idx],
-                    ep_bar.ravel()[pl_idx],
-                    sy0_gp[pl_idx],
-                    K_gp[pl_idx],
-                    hf,
-                    hfp,
-                    C_ps,
-                    cm11,
-                    cm12,
-                    cm33,
-                )
+            if mfront_tangents is not None:
+                pl_idx = np.arange(n_e * N_GP)
+                plastic_tangents = mfront_tangents
             else:
-                plastic_tangents = np.empty((0, 3, 3))
+                pl_idx = np.where(dg > 0)[0]
+                if len(pl_idx):
+                    plastic_tangents = consistent_tangent(
+                        sf.reshape(-1, 3)[pl_idx],
+                        dg[pl_idx],
+                        ep_bar.ravel()[pl_idx],
+                        sy0_gp[pl_idx],
+                        K_gp[pl_idx],
+                        hf,
+                        hfp,
+                        C_ps,
+                        cm11,
+                        cm12,
+                        cm33,
+                    )
+                else:
+                    plastic_tangents = np.empty((0, 3, 3))
             Ke_ep = element_tangent_stiffness(
                 Ke,
                 C_ps,
@@ -321,6 +374,8 @@ def run_fem(
             u[dof_I] += du
 
         if not converged:
+            if mfront_batch is not None:
+                mfront_batch.revert()
             u = u_save
             dt *= 0.5
             cutbacks += 1
@@ -338,6 +393,8 @@ def run_fem(
                 )
             continue
 
+        if mfront_batch is not None:
+            mfront_batch.commit()
         eps_p += dp_acc
         ep_bar = ep_new
         sig = sf_acc
@@ -398,7 +455,7 @@ def run_fem(
         mesh=mesh,
         frames=snaps,
         diagnostics=dict(
-            backend=_SOLVER_NAME,
+            backend=f"{_SOLVER_NAME}; constitutive={constitutive_backend}",
             elapsed_seconds=elapsed_seconds,
             initialization_seconds=initialization_seconds,
             elastic_assembly_seconds=elastic_assembly_seconds,

@@ -12,6 +12,7 @@ def test_article_case_defaults_are_explicit() -> None:
     assert material.plastic_table_points == 1_000
     assert material.first_positive_plastic_strain == 1e-6
     assert SolverConfig().hardening_mode == "tabular"
+    assert SolverConfig().constitutive_backend == "python"
 
 
 def test_mesh_uses_article_pixel_scale() -> None:
@@ -43,6 +44,12 @@ def test_mesh_uses_article_pixel_scale() -> None:
             lambda: SolverConfig(hardening_mode="unsupported"),  # type: ignore[arg-type]
             "hardening_mode",
         ),
+        (
+            lambda: SolverConfig(constitutive_backend="unsupported"),  # type: ignore[arg-type]
+            "constitutive_backend",
+        ),
+        (lambda: SolverConfig(mfront_library=""), "mfront_library"),
+        (lambda: SolverConfig(mfront_threads=0), "mfront_threads"),
     ],
 )
 def test_invalid_configuration_is_rejected(factory, message: str) -> None:

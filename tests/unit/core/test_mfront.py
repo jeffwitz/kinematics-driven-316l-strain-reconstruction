@@ -153,6 +153,25 @@ def test_mfront_trial_can_be_reverted_before_commit() -> None:
 
 
 @pytest.mark.mfront
+def test_mfront_new_trial_automatically_discards_previous_trial() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFrontMaterialPointBatch(
+        library,
+        250.0,
+        380.0,
+        0.245,
+    )
+    plastic_trial = batch.evaluate(np.array([[0.005, 0.0, 0.0]]))
+    assert plastic_trial.equivalent_plastic_strain[0] > 0
+
+    zero_trial = batch.evaluate(np.zeros((1, 3)))
+    np.testing.assert_allclose(zero_trial.stress_mpa, 0.0, atol=1e-12)
+    np.testing.assert_allclose(zero_trial.equivalent_plastic_strain, 0.0, atol=1e-15)
+
+
+@pytest.mark.mfront
 def test_mfront_thread_pool_matches_serial_integration() -> None:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     if library is None:

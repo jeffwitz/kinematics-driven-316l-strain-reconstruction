@@ -201,9 +201,7 @@ class MFrontMaterialPointBatch:
         self._point_count = yield_stress.size
         self._material_values = material_values
         self._temperature_values = temperature_values
-        self._thread_pool = (
-            _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
-        )
+        self._thread_pool = _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
         self._equivalent_plastic_strain_offset = mgis.getVariableOffset(
             behaviour.isvs,
             "EquivalentPlasticStrain",
@@ -245,6 +243,12 @@ class MFrontMaterialPointBatch:
             raise ValueError(f"total_strain must have shape {expected_shape}")
         if not np.isfinite(strain).all():
             raise ValueError("total_strain must be finite")
+
+        # Newton iterations must always start from the last converged state,
+        # never from the previous (uncommitted) trial.
+        if self._has_trial_state:
+            self._mgis.revert(self._manager)
+            self._has_trial_state = False
 
         total_kelvin = engineering_strain_to_kelvin(strain)
         self._manager.s1.gradients[:, :] = total_kelvin
@@ -288,9 +292,7 @@ class MFrontMaterialPointBatch:
             :, self._yield_surface_radius_offset
         ].copy()
         tangent = (
-            kelvin_tangent_to_engineering(self._manager.K).copy()
-            if consistent_tangent
-            else None
+            kelvin_tangent_to_engineering(self._manager.K).copy() if consistent_tangent else None
         )
         result = MFrontIntegrationResult(
             stress_mpa=stress,

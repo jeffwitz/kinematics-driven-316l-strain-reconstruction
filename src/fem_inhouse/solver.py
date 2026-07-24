@@ -165,6 +165,9 @@ def run_case_study(
         n_table=config.material.plastic_table_points,
         first_positive_plastic_strain=config.material.first_positive_plastic_strain,
         minimum_step_divisor=config.solver.minimum_step_divisor,
+        constitutive_backend=config.solver.constitutive_backend,
+        mfront_library=config.solver.mfront_library,
+        mfront_threads=config.solver.mfront_threads,
         snapshot_fractions=snapshot_fractions,
         verbose=verbose,
     )
