@@ -293,7 +293,7 @@ def run_fem(
             # Internal forces and residual
             R = internal_force(mesh, sf, Bs, dJs, ld)
             R_I = R[dof_I]
-            res = np.linalg.norm(R_I)
+            res = float(np.linalg.norm(R_I))
             if not np.isfinite(res):
                 break  # diverged -> cutback
             if nrit == 0:
