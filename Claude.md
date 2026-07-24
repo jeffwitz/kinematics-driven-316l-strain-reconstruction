@@ -1,7 +1,8 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-24
-Statut global : **API solveur testée et partitionnement déterministe disponibles**
+Statut global : **socle logiciel 4/5 atteint ; validation scientifique et
+dimensionnement de production encore bloqués par les références et ressources**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -411,10 +412,11 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 ### Performance
 
 - [x] PyPardiso/MKL utilisé et vérifié
-- [ ] Temps et mémoire mesurés
+- [~] Temps et mémoire mesurés : 10k, 50k et 100k terminés ; 350k reporté
 - [ ] Cas de production compatible avec la machine cible
 - [x] Traitement hors mémoire du ROI complet
-- [ ] Absence de régression de performance supérieure au seuil défini
+- [~] Absence de régression de performance supérieure au seuil défini :
+  comparaison A/B disponible, seuil global encore à ratifier
 
 ### Documentation
 
@@ -422,6 +424,26 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 - [ ] Une personne externe peut reproduire les figures principales
 - [x] Les hypothèses et limites sont visibles
 - [x] Les descripteurs locaux ne sont pas présentés comme propriétés de grains
+
+### Évaluation provisoire au 2026-07-24
+
+| Axe | Note | Justification principale |
+|---|---:|---|
+| Noyau numérique | 4,5/5 | Cas fermés, tangente, cutback, réactions et cisaillement testés |
+| Validation scientifique | 2,0/5 | `.inp`, ODB, données DIC et formule BGE source absents |
+| Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 143 tests, revue documentée |
+| Reproductibilité | 4,0/5 | Lock, wheel, empreintes, reprise et article identifié |
+| Performance | 3,5/5 | 10k–100k mesurés et mémoire optimisée ; 350k non exécuté |
+| Documentation | 4,0/5 | Contrats, ADR, tutoriel et limites ; figures finales non reproductibles |
+
+Les notes ne doivent pas être relevées artificiellement par des cas
+synthétiques. Pour atteindre 4/5 partout, les deux chemins critiques restants
+sont :
+
+1. récupérer les entrées Abaqus/ODB et données DIC exactes, puis exécuter la
+   validation hiérarchique avec seuils ratifiés ;
+2. réserver une fenêtre machine permettant les mesures 350k et le
+   dimensionnement d'une partition de production.
 
 ## 11. Seuils de validation à ratifier
 
