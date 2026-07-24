@@ -1,8 +1,8 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-24
-Statut global : **socle logiciel 4/5 atteint ; validation scientifique et
-dimensionnement de production encore bloqués par les références et ressources**
+Statut global : **socle logiciel 4/5 atteint ; priorité au pipeline autonome
+DIC → entrées canoniques → calcul partitionné → champs reconstruits**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -30,14 +30,34 @@ vérifié par un test, un rapport ou une mesure reproductible.
 ## 2. Sources de vérité
 
 1. `ArticleSource/ArticleAdil.pdf`
-2. Les fichiers d'entrée Abaqus et le script d'extraction ODB utilisés pour
-   produire les résultats de l'article
-3. Les données DIC et cartes de paramètres réellement utilisées
+2. Les données DIC et cartes de paramètres versionnées dans
+   `data/raw/case_study`
+3. Le manifeste de provenance et le profil de préparation produits par le
+   présent projet
 4. Les tests automatisés du présent projet
+5. À titre de validation différée : les fichiers d'entrée Abaqus, ODB et
+   scripts d'extraction ayant produit les résultats historiques
 
 Toute contradiction entre l'article, les entrées Abaqus et le code doit être
 documentée et résolue explicitement. Le comportement courant du code n'est pas
 considéré comme une spécification par défaut.
+
+### Priorité de développement
+
+Le chemin critique est la reproduction du calcul **à partir des données DIC**.
+Le dépôt doit permettre, depuis un clone neuf :
+
+1. de récupérer et vérifier les données scientifiques brutes versionnées ;
+2. de les convertir sans opération implicite vers le contrat canonique ;
+3. de lancer ou reprendre les partitions indépendamment ;
+4. de raccorder les champs globaux ;
+5. de reconstruire les grandeurs de l'article depuis les déplacements ;
+6. d'obtenir des manifestes et rapports contenant les paramètres, empreintes et
+   versions du code.
+
+La comparaison Abaqus reste souhaitable, mais elle n'est plus un prérequis au
+développement ni à l'exécution de ce pipeline principal. Elle constitue une
+campagne de validation externe ultérieure.
 
 ## 3. Objectif scientifique
 
@@ -54,7 +74,9 @@ cinématique :
   du pixel ;
 - capable de reconstruire l'organisation spatiale des bandes de localisation ;
 - capable de traiter le domaine complet par sous-domaines avec recouvrement et
-  raccordement.
+  raccordement ;
+- reproductible depuis les quatre tableaux bruts versionnés, sans chemin
+  personnel ni donnée cachée.
 
 Les paramètres locaux sont des **descripteurs effectifs dépendant du chargement,
 de la résolution DIC et des hypothèses constitutives**. Ils ne doivent pas être
@@ -78,7 +100,8 @@ présentés comme des propriétés intrinsèques des grains.
 - partitionnement sans recouvrement et avec padding ;
 - raccordement des cœurs des partitions ;
 - post-traitement DIC/EF commun à partir des déplacements ;
-- comparaison avec les références Abaqus et les champs expérimentaux.
+- comparaison avec les champs expérimentaux ;
+- préparation traçable des données DIC historiques.
 
 ### Hors périmètre
 
@@ -92,6 +115,9 @@ présentés comme des propriétés intrinsèques des grains.
 - plasticité cristalline ;
 - chargements généraux sans rapport avec le cas d'étude ;
 - solveur EF généraliste ou remplacement global d'Abaqus.
+
+La comparaison avec Abaqus appartient au périmètre de validation, mais peut
+être réalisée après la mise en service du calcul autonome depuis la DIC.
 
 ## 5. Échelle du problème de production
 
@@ -147,6 +173,13 @@ et vérifié ; une case vide indique qu'il reste à traiter.
 - [x] Aucun manifeste de dépendances ou verrouillage des versions n'existe
 - [x] Aucun historique Git exploitable n'est présent dans le dossier
 - [ ] Aucun seuil automatique de parité Abaqus n'est défini
+- [x] Les quatre tableaux scientifiques du ROI sont absents du dépôt
+- [~] Aucun pipeline autonome ne transforme les noms, unités et conventions
+      historiques vers les quatre entrées canoniques
+- [ ] La règle de complétion nodale `3600×3100 → 3601×3101` n'est pas encore
+      ratifiée scientifiquement
+- [ ] L'écart entre le facteur d'écrouissage `380 MPa` de l'article et
+      `396 MPa` du générateur historique doit rester explicite et paramétrable
 
 ## 7. Grandeurs scientifiques à maintenir séparées
 
@@ -169,6 +202,40 @@ L'écart entre la contrainte EF directe et la courbe macroscopique mesurée doit
 Durée prévisionnelle : **12 semaines pour une personne à temps plein**, avec
 revue scientifique régulière.
 
+### Phase prioritaire A — Dépôt autonome depuis la DIC
+
+- [x] Versionner sous Git LFS les quatre tableaux bruts sans les modifier
+- [x] Enregistrer forme, type, taille, rôle et SHA-256 de chaque tableau
+- [x] Conserver les générateurs Abaqus reçus uniquement comme provenance
+- [~] Ajouter `fem-inhouse prepare-case`
+- [ ] Vérifier les empreintes avant toute transformation
+- [ ] Convertir `V → u_x`, `U → u_y` et pixels → millimètres
+- [ ] Rendre le facteur macroscopique `K` explicite, avec `380 MPa` nominal et
+      `396 MPa` historique
+- [ ] Détecter les neuf valeurs non finies et appliquer seulement une politique
+      explicitement sélectionnée et enregistrée
+- [ ] Compléter la grille nodale selon une politique explicite et enregistrée
+- [ ] Écrire les quatre `.npy` canoniques et un manifeste reproductible
+- [ ] Ajouter un test d'intégration depuis des données brutes synthétiques
+- [ ] Ajouter un contrôle d'intégrité des données réelles, sans les charger
+      entièrement en mémoire
+- [ ] Documenter une séquence unique `clone → install → prepare → partition →
+      stitch → postprocess`
+- [ ] Exécuter un sous-domaine réel versionné depuis cette séquence
+
+**Critère de sortie :** aucune donnée ou transformation scientifique nécessaire
+au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
+
+### Phase différée B — Validation externe Abaqus
+
+- [ ] Récupérer ou régénérer un petit `.inp` de référence
+- [ ] Extraire les mêmes champs aux mêmes emplacements physiques
+- [ ] Comparer automatiquement `U/S/E/PEEQ/RF`
+- [ ] Étendre la comparaison à plusieurs pseudo-temps si les ODB deviennent
+      disponibles
+
+Cette phase ne bloque pas la phase A ni les campagnes DIC/EF du cas d'étude.
+
 ### Semaine 1 — Contrat scientifique
 
 - [x] Écrire les conventions d'axes `U/V`, `x/y`, axes NumPy 0/1
@@ -177,14 +244,15 @@ revue scientifique régulière.
 - [x] Définir la formule de `epsilon_vM` sous contrainte plane
 - [x] Définir les quatre courbes de contrainte-déformation
 - [ ] Vérifier la section et l'épaisseur réellement utilisées dans Abaqus
-- [ ] Identifier les fichiers exacts ayant produit les résultats de l'article
-- [ ] Établir un jeu de données réduit, versionnable et non confidentiel
+- [x] Identifier et versionner les quatre tableaux disponibles du ROI
+- [~] Établir un jeu de données réduit pour les tests rapides ; les données
+  complètes sont versionnées par Git LFS
 - [ ] Décider et documenter les tolérances avant comparaison finale
 
 **Critère de sortie :** document scientifique relu et approuvé, sans convention
 implicite.
 
-### Semaines 2–3 — Parité numérique avec Abaqus
+### Semaines 2–3 — Préparation DIC et calcul autonome
 
 - [x] Reproduire la table plastique Abaqus :
   - domaine `0 <= ep <= 0.2` ;
@@ -200,8 +268,9 @@ implicite.
 - [x] Vérifier le signe et la définition des réactions
 - [x] Ajouter des assertions sur PEEQ au test biaxial
 
-**Critère de sortie :** petit cas identique exécuté par Abaqus et `fem_inhouse`,
-avec rapport automatique champ par champ.
+**Critère de sortie :** sous-domaine réel préparé depuis les données brutes,
+calculé par `fem_inhouse` et accompagné d'un manifeste complet. La parité Abaqus
+est reportée à la phase B.
 
 ### Semaines 4–5 — Ingénierie logicielle
 
@@ -279,6 +348,7 @@ calcul partitionné avec padding suffisant.
 
 #### Niveau 2 : parité Abaqus
 
+- [ ] Campagne différée jusqu'à stabilisation du pipeline DIC autonome
 - [ ] Comparaison sur 10×10 ou 20×20
 - [ ] Comparaison sur un sous-domaine hétérogène représentatif
 - [ ] Comparaison à plusieurs pseudo-temps
@@ -296,13 +366,15 @@ calcul partitionné avec padding suffisant.
 
 #### Niveau 4 : reproduction scientifique
 
-- [~] RMSE du déplacement `U2` : outil prêt, données absentes
-- [~] RMSE et MAE de `epsilon_vM` : outil prêt, données absentes
-- [~] Carte de différence signée : génération prête, données absentes
+- [~] RMSE du déplacement `U2` : outil et champ final DIC disponibles,
+  résultat EF global à produire
+- [~] RMSE et MAE de `epsilon_vM` : outil et champ final DIC disponibles,
+  résultat EF global à produire
+- [~] Carte de différence signée : génération prête, préparation DIC à finaliser
 - [ ] BGE
-- [~] Corrélation spatiale des champs : outil prêt, données absentes
+- [~] Corrélation spatiale des champs : outil et champ DIC disponibles
 - [~] Recouvrement des zones de plus forte localisation : métrique testée,
-  données de l'article encore absentes
+  résultat EF global encore absent
 - [ ] Quatre courbes de contrainte-déformation séparées
 - [ ] Intervalles de confiance calculés selon la méthode documentée
 - [ ] Comparaison 25 partitions / 100 partitions avec padding 150
@@ -333,7 +405,12 @@ fem_inhouse/
 ├── README.md
 ├── LICENSE                 # décision juridique encore ouverte
 ├── Claude.md
+├── data/
+│   └── raw/case_study/     # tableaux immuables suivis par Git LFS + manifeste
+├── references/
+│   └── legacy_abaqus/      # provenance, jamais importée par le paquet
 ├── src/fem_inhouse/
+│   ├── data_preparation.py
 │   ├── config.py
 │   ├── core/
 │   │   ├── mesh.py
@@ -384,7 +461,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 ### Validation scientifique
 
-- [ ] Parité Abaqus démontrée sur petits cas
+- [ ] Parité Abaqus démontrée sur petits cas, validation externe différée
 - [ ] Métriques de l'article reproduites ou écarts expliqués
 - [x] Contrainte directe séparée des reconstructions
 - [ ] Artefacts de partition quantifiés
@@ -404,7 +481,9 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 - [x] Installation fraîche reproductible
 - [x] Versions verrouillées
-- [~] Données de référence identifiées par empreinte
+- [x] Données DIC et cartes locales brutes versionnées par Git LFS et identifiées
+  par empreinte
+- [~] Préparation brute → canonique automatisée et manifestée
 - [x] Aucun chemin dépendant d'un poste personnel
 - [x] Résultats accompagnés de leur configuration et version du code
 - [x] Workflow reprenable partition par partition
@@ -430,20 +509,22 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 | Axe | Note | Justification principale |
 |---|---:|---|
 | Noyau numérique | 4,5/5 | Cas fermés, tangente, cutback, réactions et cisaillement testés |
-| Validation scientifique | 2,0/5 | `.inp`, ODB, données DIC et formule BGE source absents |
+| Validation scientifique | 2,5/5 | DIC finale et cartes locales retrouvées ; calcul global et métriques à produire |
 | Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 143 tests, revue documentée |
-| Reproductibilité | 4,0/5 | Lock, wheel, empreintes, reprise et article identifié |
+| Reproductibilité | 4,0/5 | Données brutes LFS et empreintes présentes ; préparation canonique en cours |
 | Performance | 3,5/5 | 10k–100k mesurés et mémoire optimisée ; 350k non exécuté |
 | Documentation | 4,0/5 | Contrats, ADR, tutoriel et limites ; figures finales non reproductibles |
 
 Les notes ne doivent pas être relevées artificiellement par des cas
-synthétiques. Pour atteindre 4/5 partout, les deux chemins critiques restants
-sont :
+synthétiques. Pour atteindre 4/5 partout, les chemins critiques sont désormais :
 
-1. récupérer les entrées Abaqus/ODB et données DIC exactes, puis exécuter la
-   validation hiérarchique avec seuils ratifiés ;
-2. réserver une fenêtre machine permettant les mesures 350k et le
-   dimensionnement d'une partition de production.
+1. terminer et vérifier le pipeline autonome depuis les données DIC versionnées ;
+2. exécuter un calcul réel partitionné, raccorder les champs et reproduire les
+   métriques expérimentales accessibles ;
+3. réserver une fenêtre machine permettant les mesures 350k et le
+   dimensionnement d'une partition de production ;
+4. réaliser ensuite la validation externe Abaqus lorsqu'une référence
+   exploitable sera disponible.
 
 ## 11. Seuils de validation à ratifier
 
@@ -472,12 +553,15 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 | Décision | Statut | Responsable | Échéance |
 |---|---|---|---|
-| Fichiers Abaqus exacts de référence | Ouvert | À définir | S1 |
-| Épaisseur de section EF utilisée dans Abaqus | Ouvert | À définir | S1 |
+| Fichiers Abaqus exacts de référence | Différé, non bloquant | À définir | Phase B |
+| Épaisseur de section EF utilisée dans Abaqus | Différé, non bloquant | À définir | Phase B |
 | Convention définitive U/V et x/y | Résolu dans `docs/scientific_contract.md` | Projet | S1 |
+| Complétion nodale du bord supérieur | À ratifier ; profil initial explicite `edge-pad` | Revue scientifique | Phase A |
+| Facteur de carte d'écrouissage | `380 MPa` nominal, `396 MPa` historique | Revue scientifique | Phase A |
+| Traitement des neuf NaN d'écrouissage | Politique explicite à enregistrer | Revue scientifique | Phase A |
 | Format des données globales hors mémoire | Résolu : `.npy` memmap | Projet | S4 |
 | Machine cible et budget mémoire | Ouvert | À définir | S9 |
-| Seuils finaux de parité Abaqus | Ouvert | Revue scientifique | S3 |
+| Seuils finaux de parité Abaqus | Différé | Revue scientifique | Phase B |
 | Schéma de production 25 ou 100 partitions | Ouvert | Revue scientifique | S11 |
 | Métrique de localisation complémentaire | Ouvert | Revue scientifique | S10 |
 | Licence du logiciel avant publication | Ouvert | Propriétaire du projet | S12 |
@@ -533,8 +617,27 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après optimisation mémoire | Ruff, mypy et couverture | 143 tests, 96,93 % | Réussi |
 | 2026-07-24 | Gouvernance technique | ADR, guide et modèle de PR | Règles numériques explicites | Réussi |
 | 2026-07-24 | CI complète distante | GitHub Actions `30089878592` | lint, mypy, wheel et tests verts | Réussi |
+| 2026-07-24 | Inventaire scientifique reçu | Formes, statistiques, SHA-256 et scripts de provenance | 4 tableaux `3600×3100` identifiés | Réussi |
+| 2026-07-24 | Sous-domaine DIC réel | Centre 10×10, PyPardiso, 10 incréments | Tous champs finis, 0 cutback | Réussi |
+| 2026-07-24 | Données scientifiques versionnées | Git LFS + `data/raw/case_study/manifest.json` | 4 tableaux bruts immuables | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-24 — Recentrage sur le calcul autonome depuis la DIC
+
+- Déplacement de la comparaison Abaqus vers une phase de validation externe
+  différée et non bloquante
+- Adoption du pipeline prioritaire `raw DIC → préparation canonique → partitions
+  → raccordement → post-traitement`
+- Copie sans modification des quatre tableaux scientifiques dans
+  `data/raw/case_study`
+- Versionnement des grands tableaux par Git LFS
+- Ajout d'un manifeste avec empreintes, formes, types, unités et ambiguïtés
+- Conservation des deux générateurs historiques sous `references/legacy_abaqus`
+- Exclusion du ZIP duplicatif et du HDF5 de plasticité cristalline, qui
+  n'apportent aucune entrée supplémentaire au calcul ciblé
+- Enregistrement explicite des trois décisions encore nécessaires : complétion
+  nodale, facteur `K=380/396 MPa`, traitement des neuf valeurs non finies
 
 ### 2026-07-24 — Création
 

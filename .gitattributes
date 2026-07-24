@@ -1,0 +1,2 @@
+data/raw/case_study/*.npy filter=lfs diff=lfs merge=lfs -text
+references/legacy_abaqus/*.py -text -diff
