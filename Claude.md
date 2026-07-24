@@ -218,7 +218,7 @@ avec rapport automatique champ par champ.
 - [x] Ajouter les validations d'entrée
 - [x] Supprimer les effets de bord lors des imports
 - [ ] Supprimer les chemins absolus
-- [ ] Ajouter une CLI limitée au cas d'étude
+- [x] Ajouter une CLI limitée au cas d'étude
 - [x] Ajouter Ruff, Pyright ou mypy, pytest et couverture
 - [~] Ajouter une journalisation structurée
 - [x] Échouer explicitement si PyPardiso n'est pas disponible en production
@@ -307,15 +307,15 @@ artefacts de raccordement.
 
 ### Semaine 12 — Documentation et version de référence
 
-- [ ] README de démarrage rapide
-- [ ] Tutoriel complet du cas réduit
+- [x] README de démarrage rapide
+- [x] Tutoriel complet du cas réduit
 - [x] Documentation du modèle numérique
 - [ ] Documentation des conventions
 - [x] Documentation du partitionnement
 - [ ] Documentation de la validation
 - [ ] Documentation des limites scientifiques
-- [ ] Commandes uniques `test`, `validate`, `example`
-- [ ] CI verte sur une installation fraîche
+- [x] Commandes uniques `test`, `validate`, `example`
+- [~] CI verte sur une installation fraîche
 - [ ] Revue indépendante scientifique
 - [ ] Revue indépendante logicielle
 - [ ] Version figée `1.0.0-case-study`
@@ -395,7 +395,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 ### Reproductibilité
 
-- [ ] Installation fraîche reproductible
+- [~] Installation fraîche reproductible
 - [x] Versions verrouillées
 - [~] Données de référence identifiées par empreinte
 - [ ] Aucun chemin dépendant d'un poste personnel
@@ -412,7 +412,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 ### Documentation
 
-- [ ] Une personne externe peut installer et exécuter le cas réduit
+- [x] Une personne externe peut installer et exécuter le cas réduit
 - [ ] Une personne externe peut reproduire les figures principales
 - [ ] Les hypothèses et limites sont visibles
 - [ ] Les descripteurs locaux ne sont pas présentés comme propriétés de grains
@@ -470,6 +470,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Tangente cohérente automatisée | Différences finies du retour plastique | Erreur relative `< 1e-5` | Réussi |
 | 2026-07-24 | Compatibilité historique | `.venv/bin/python fem_pixel.py` via pytest | Biaxial SVM/PEEQ réussi | Réussi |
 | 2026-07-24 | Workflow reprenable | Tests manifestes, corruption, reprise, raccordement | 87 tests, 95 % | Réussi |
+| 2026-07-24 | Exemple réduit tabulé 4×4 | `python -m fem_inhouse validate --nx 4 --ny 4` | erreur SVM `5,84e-6`, PEEQ `2,17e-6` | Réussi |
+| 2026-07-24 | Suite complète et seuil CI | `pytest --cov=fem_inhouse --cov-branch` | 92 tests, 95,04 % | Réussi |
+| 2026-07-24 | Construction du paquet | `pip wheel . --no-deps` et inspection | cœur, workflow et CLI présents | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -523,3 +526,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Reprise automatique avec détection des fichiers manquants ou corrompus
 - Raccordement hors mémoire uniquement lorsque toutes les partitions sont valides
 - Validation de la reprise et du raccordement par 87 tests, couverture 95 %
+
+### 2026-07-24 — Exemple exécutable et intégration continue
+
+- Ajout des commandes `backend`, `validate`, `example` et `layout`
+- Ajout d'un cas équibiaxial réduit avec seuils déclarés avant exécution
+- Sauvegarde de résultats auto-décrits et tutoriel de reproduction
+- Construction et inspection réussies du wheel Python
+- Ajout d'une CI GitHub avec environnement exact, Ruff et seuil de couverture 85 %
+- Validation locale par 92 tests avec 95,04 % de couverture

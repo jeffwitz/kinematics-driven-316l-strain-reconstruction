@@ -22,7 +22,8 @@ numerical model and partition layout are documented in
 
 Known limitations at this stage:
 
-- the full 11.16-million-element partitioned workflow is not implemented yet;
+- the 11.16-million-element workflow is implemented but not yet benchmarked or
+  executed at production scale;
 - the historical plotting scripts still depend on external case data;
 - Abaqus parity is not yet established from the original `.inp` and ODB
   extraction scripts.
@@ -38,6 +39,17 @@ python -m venv .venv
 ```
 
 PyPardiso/MKL is a required runtime dependency for production solves.
+
+The installed CLI provides the three routine entry points:
+
+```bash
+fem-inhouse backend
+fem-inhouse validate --nx 10 --ny 10
+fem-inhouse example --nx 10 --ny 10 --output results/reduced
+```
+
+See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation
+of the example and its declared thresholds.
 
 ## Typed solver API
 

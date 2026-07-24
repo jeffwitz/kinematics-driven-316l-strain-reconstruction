@@ -15,6 +15,9 @@ dependencies = [
     "scipy>=1.14,<2",
 ]
 
+[project.scripts]
+fem-inhouse = "fem_inhouse.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8,<10",
@@ -31,9 +34,11 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
+omit = ["src/fem_inhouse/__main__.py"]
 source = ["fem_inhouse"]
 
 [tool.coverage.report]
+fail_under = 85
 show_missing = true
 skip_covered = true
 
