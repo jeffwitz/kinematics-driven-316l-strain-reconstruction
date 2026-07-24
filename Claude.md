@@ -1,7 +1,7 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-24
-Statut global : **premier lot scientifique et logiciel en cours**
+Statut global : **socle scientifique et partitionnement déterministe disponibles**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -125,23 +125,26 @@ pour fonctionner hors mémoire.
 - [x] Cas hétérogène convergeant en quatre itérations de Newton par incrément
 - [x] Équilibre global observé de l'ordre de `1e-14`
 
-### Blocages et défauts connus
+### Blocages et défauts initiaux
+
+Une case cochée dans cette liste signifie que le défaut initial a été corrigé
+et vérifié ; une case vide indique qu'il reste à traiter.
 
 - [ ] `test_config.py` est absent du projet livré
 - [ ] Les scripts de validation ne sont pas exécutables de manière autonome
 - [ ] Des chemins Windows absolus sont présents
-- [ ] La courbe étiquetée « FEM stress » remplace la contrainte EF directe par
+- [x] La courbe étiquetée « FEM stress » remplace la contrainte EF directe par
       une reconstruction de Ludwik après plastification
-- [ ] Les quatre courbes scientifiques de l'article ne sont pas séparées
-- [ ] La table plastique par défaut utilise 50 points, contre 1000 points dans
+- [x] Les quatre courbes scientifiques de l'article ne sont pas séparées
+- [x] La table plastique par défaut utilise 50 points, contre 1000 points dans
       l'article
-- [ ] Les conventions d'axes DIC ne sont pas cohérentes dans tous les scripts
-- [ ] Les conventions cisaillement tensoriel/ingénieur ne sont pas garanties
-- [ ] Le seul test intégré n'asserte pas la valeur de PEEQ
-- [ ] Aucun moteur de partitionnement/raccordement n'existe
-- [ ] Aucun traitement hors mémoire du ROI complet n'existe
+- [x] Les conventions d'axes DIC ne sont pas cohérentes dans tous les scripts
+- [x] Les conventions cisaillement tensoriel/ingénieur ne sont pas garanties
+- [x] Le seul test intégré n'asserte pas la valeur de PEEQ
+- [x] Aucun moteur de partitionnement/raccordement n'existe
+- [x] Aucun traitement hors mémoire du ROI complet n'existe
 - [ ] Aucun manifeste de dépendances ou verrouillage des versions n'existe
-- [ ] Aucun historique Git exploitable n'est présent dans le dossier
+- [x] Aucun historique Git exploitable n'est présent dans le dossier
 - [ ] Aucun seuil automatique de parité Abaqus n'est défini
 
 ## 7. Grandeurs scientifiques à maintenir séparées
@@ -225,19 +228,19 @@ commande documentée.
 
 ### Semaines 6–8 — Partitionnement, padding et raccordement
 
-- [ ] Définir une grille déterministe de 25 partitions
-- [ ] Définir une grille déterministe de 100 partitions
-- [ ] Gérer correctement les partitions de bord et de coin
-- [ ] Extraire les cartes matériau et les déplacements locaux
-- [ ] Ajouter le padding configurable
+- [x] Définir une grille déterministe de 25 partitions
+- [x] Définir une grille déterministe de 100 partitions
+- [x] Gérer correctement les partitions de bord et de coin
+- [x] Extraire les cartes matériau et les déplacements locaux
+- [x] Ajouter le padding configurable
 - [ ] Résoudre indépendamment chaque partition
 - [ ] Enregistrer uniquement les résultats nécessaires par partition
-- [ ] Extraire et raccorder les cœurs non recouverts
-- [ ] Garantir l'absence de trous, doublons et décalages d'indices
+- [x] Extraire et raccorder les cœurs non recouverts
+- [x] Garantir l'absence de trous, doublons et décalages d'indices
 - [ ] Permettre une reprise après interruption
-- [ ] Ajouter un manifeste et une empreinte des entrées
-- [ ] Produire des fichiers `.npy` mappés en mémoire pour le champ global
-- [ ] Rendre l'ordre d'exécution des partitions sans effet sur le résultat
+- [~] Ajouter un manifeste et une empreinte des entrées
+- [x] Produire des fichiers `.npy` mappés en mémoire pour le champ global
+- [x] Rendre l'ordre d'exécution des partitions sans effet sur le résultat
 - [ ] Ajouter un modèle de job array pour le calcul parallèle si nécessaire
 
 **Critère de sortie :** domaine réduit identique entre calcul monolithique et
@@ -308,7 +311,7 @@ artefacts de raccordement.
 - [ ] Tutoriel complet du cas réduit
 - [ ] Documentation du modèle numérique
 - [ ] Documentation des conventions
-- [ ] Documentation du partitionnement
+- [x] Documentation du partitionnement
 - [ ] Documentation de la validation
 - [ ] Documentation des limites scientifiques
 - [ ] Commandes uniques `test`, `validate`, `example`
@@ -443,8 +446,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 |---|---|---|---|
 | Fichiers Abaqus exacts de référence | Ouvert | À définir | S1 |
 | Épaisseur de section EF utilisée dans Abaqus | Ouvert | À définir | S1 |
-| Convention définitive U/V et x/y | Ouvert | À définir | S1 |
-| Format des données globales hors mémoire | Proposition : `.npy` memmap | À définir | S4 |
+| Convention définitive U/V et x/y | Résolu dans `docs/scientific_contract.md` | Projet | S1 |
+| Format des données globales hors mémoire | Résolu : `.npy` memmap | Projet | S4 |
 | Machine cible et budget mémoire | Ouvert | À définir | S9 |
 | Seuils finaux de parité Abaqus | Ouvert | Revue scientifique | S3 |
 | Schéma de production 25 ou 100 partitions | Ouvert | Revue scientifique | S11 |
@@ -461,6 +464,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Scripts complets | Imports des scripts | `test_config.py` absent | Bloqué |
 | 2026-07-24 | Socle de paquet | `pytest --cov=fem_inhouse` | 44 tests, 100 % | Réussi |
 | 2026-07-24 | Qualité du nouveau code | `ruff check src tests` | Aucun défaut | Réussi |
+| 2026-07-24 | Partitionnement et raccordement | `pytest --cov=fem_inhouse --cov-branch` | 62 tests, 98 % | Réussi |
+| 2026-07-24 | Grilles de l'article | Tests `(5,5)` et `(10,10)`, padding 150 | 25/100 cœurs sans trou | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -482,3 +487,13 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Séparation entre contrainte EF directe et reconstruction depuis la déformation
 - Passage de la table historique de 50 à 1000 points
 - Ajout d'une assertion PEEQ au test biaxial
+
+### 2026-07-24 — Partitionnement déterministe
+
+- Ajout des grilles équilibrées de 25 et 100 partitions du ROI complet
+- Gestion explicite des cœurs, du padding et des bords du domaine
+- Extraction locale des champs aux éléments et aux nœuds
+- Raccordement à propriétaire unique, indépendant de l'ordre d'exécution
+- Écriture du champ global au format `.npy` mappé en mémoire
+- Ajout d'un manifeste JSON déterministe et de la documentation associée
+- Validation par 62 tests avec 98 % de couverture lignes et branches combinées
