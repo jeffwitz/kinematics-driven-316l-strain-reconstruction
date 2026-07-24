@@ -89,3 +89,10 @@ cutbacks, les itérations de Newton et le critère de convergence final.
 
 The top-level `fem_pixel.py` file remains only as a compatibility entry point
 for existing case-study scripts.
+
+## Citation and licensing
+
+Citation metadata and the associated article authors are recorded in
+[`CITATION.cff`](CITATION.cff). The repository does not yet declare a software
+license: that legal choice remains an explicit project-owner decision and must
+be resolved before a public release.

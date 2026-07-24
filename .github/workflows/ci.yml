@@ -24,5 +24,7 @@ jobs:
         run: ruff check .
       - name: Type check
         run: mypy src/fem_inhouse
+      - name: Build package
+        run: python -m pip wheel . --no-deps --wheel-dir dist
       - name: Test
         run: pytest --cov=fem_inhouse --cov-branch --cov-fail-under=85

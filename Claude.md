@@ -311,10 +311,10 @@ artefacts de raccordement.
 - [x] README de démarrage rapide
 - [x] Tutoriel complet du cas réduit
 - [x] Documentation du modèle numérique
-- [ ] Documentation des conventions
+- [x] Documentation des conventions
 - [x] Documentation du partitionnement
 - [x] Documentation de la validation
-- [ ] Documentation des limites scientifiques
+- [x] Documentation des limites scientifiques
 - [x] Commandes uniques `test`, `validate`, `example`
 - [x] CI verte sur une installation fraîche
 - [ ] Revue indépendante scientifique
@@ -327,7 +327,7 @@ artefacts de raccordement.
 fem_inhouse/
 ├── pyproject.toml
 ├── README.md
-├── LICENSE
+├── LICENSE                 # décision juridique encore ouverte
 ├── Claude.md
 ├── src/fem_inhouse/
 │   ├── config.py
@@ -454,6 +454,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | Seuils finaux de parité Abaqus | Ouvert | Revue scientifique | S3 |
 | Schéma de production 25 ou 100 partitions | Ouvert | Revue scientifique | S11 |
 | Métrique de localisation complémentaire | Ouvert | Revue scientifique | S10 |
+| Licence du logiciel avant publication | Ouvert | Propriétaire du projet | S12 |
 
 ## 13. Registre des validations
 
@@ -496,6 +497,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | CLI partitionnée | Reprise, partition isolée, raccordement | Workflow job array exécutable | Réussi |
 | 2026-07-24 | Suite après CLI partitionnée | Ruff, mypy, pytest et `bash -n` | 125 tests, 96,46 % | Réussi |
 | 2026-07-24 | Qualité dépôt complet | `ruff check .` | Aucun défaut, scripts historiques inclus | Réussi |
+| 2026-07-24 | Wheel typé | `pip wheel . --no-deps` et inspection | `py.typed`, cœur et métadonnées présents | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -681,3 +683,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Exceptions limitées aux noms de variables scientifiques et imports de compatibilité
 - Passage de la CI de chemins sélectionnés à `ruff check .`
 - Validation locale : Ruff, mypy et 125 tests réussis
+
+### 2026-07-24 — Distribution et citation
+
+- Déclaration PEP 561 du paquet public avec `py.typed`
+- Vérification du contenu du wheel construit localement
+- Ajout de la construction du wheel à la CI
+- Ajout de `CITATION.cff` depuis le titre et les auteurs de l'article source
+- Licence laissée explicitement ouverte avant publication publique

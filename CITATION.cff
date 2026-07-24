@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite the associated scientific article
+  listed as the preferred citation.
+title: Kinematics-Driven 316L Strain Reconstruction
+type: software
+version: 0.1.0
+repository-code: >-
+  https://github.com/jeffwitz/kinematics-driven-316l-strain-reconstruction
+authors:
+  - given-names: Adil
+    family-names: Kılınç
+  - given-names: Qi
+    family-names: Hu
+  - given-names: Jean-François
+    family-names: Witz
+  - given-names: Denis
+    family-names: Najjar
+  - given-names: Vincent
+    family-names: Magnier
+  - given-names: Ahmed
+    family-names: El Bartali
+keywords:
+  - 316L stainless steel
+  - digital image correlation
+  - finite element reconstruction
+  - strain localization
+preferred-citation:
+  type: article
+  title: >-
+    Kinematics-Driven Reconstruction of Microscale Strain Localization in
+    316L Stainless Steel
+  authors:
+    - given-names: Adil
+      family-names: Kılınç
+    - given-names: Qi
+      family-names: Hu
+    - given-names: Jean-François
+      family-names: Witz
+    - given-names: Denis
+      family-names: Najjar
+    - given-names: Vincent
+      family-names: Magnier
+    - given-names: Ahmed
+      family-names: El Bartali
