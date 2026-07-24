@@ -230,7 +230,7 @@ au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
 
 - [ ] Récupérer ou régénérer un petit `.inp` de référence
 - [ ] Extraire les mêmes champs aux mêmes emplacements physiques
-- [ ] Comparer automatiquement `U/S/E/PEEQ/RF`
+- [ ] Comparer automatiquement `U/S/E/PE/PEEQ/RF`
 - [ ] Étendre la comparaison à plusieurs pseudo-temps si les ODB deviennent
       disponibles
 
@@ -626,6 +626,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après pipeline DIC | Ruff, mypy, pytest avec branches | 156 tests, 95,26 % | Réussi |
 | 2026-07-24 | Clone distant avec Git LFS | Clone isolé, `git lfs pull`, SHA-256, crop 4×4 | Données récupérées et préparées depuis GitHub | Réussi |
 | 2026-07-24 | CI distante du pipeline DIC | GitHub Actions `30091651001` | Ruff, mypy, wheel et tests verts | Réussi |
+| 2026-07-24 | Sauvegarde exhaustive des partitions | Tests CLI et reprise | `U/S/E/PE/PEEQ/RF` atomiques et empreintés | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -663,6 +664,16 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Clone distant isolé vérifié avec téléchargement des quatre objets Git LFS,
   empreintes identiques et préparation réussie d'un crop `4×4`
 - CI GitHub verte sur le commit du pipeline autonome
+
+### 2026-07-24 — Conservation exhaustive des calculs coûteux
+
+- Extension des sorties persistantes à tous les champs finaux du solveur :
+  `U`, `S`, `E`, `PE`, `PEEQ` et `RF`
+- Écriture atomique et empreinte SHA-256 de chaque champ avant validation du
+  statut de partition
+- Conservation des diagnostics de convergence dans `status.json`
+- Activation de Git LFS pour les résultats numériques de référence
+- Validation par la suite complète : 156 tests, couverture 95,26 %
 
 ### 2026-07-24 — Création
 

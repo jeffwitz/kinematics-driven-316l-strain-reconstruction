@@ -52,8 +52,9 @@ Les empreintes des tableaux sont calculées par blocs et acceptent donc les
 tableaux `numpy.memmap`. Elles ne nécessitent pas une copie de la totalité du
 ROI.
 
-Chaque partition écrit atomiquement `U`, `S`, `E` et `PEEQ`, puis un
-`status.json` contenant leurs empreintes. Au redémarrage, une partition n'est
+Chaque partition écrit atomiquement tous les champs finaux du solveur : `U`,
+`S`, `E`, `PE`, `PEEQ` et `RF`, puis un `status.json` contenant leurs
+empreintes. Au redémarrage, une partition n'est
 réutilisée que si le manifeste et chaque fichier correspondent encore. Un
 fichier manquant ou corrompu replace automatiquement la partition dans la liste
 des calculs en attente.

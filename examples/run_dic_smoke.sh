@@ -26,7 +26,7 @@ fi
   --increments 10 \
   --solve-pending
 
-for field in U S E PEEQ; do
+for field in U S E PE PEEQ RF; do
   "${cli}" partition \
     --input "${input_directory}" \
     --output "${output_directory}" \

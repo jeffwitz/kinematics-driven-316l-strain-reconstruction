@@ -123,6 +123,8 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
 
     assert main([*common, "--partition-id", "0"]) == 0
     assert json.loads(capsys.readouterr().out)["complete"]
+    for field_name in ("U", "S", "E", "PE", "PEEQ", "RF"):
+        assert (output_directory / "partitions" / "0000" / f"{field_name}.npy").is_file()
 
     assert main([*common, "--solve-pending"]) == 0
     solve_report = json.loads(capsys.readouterr().out)
@@ -133,6 +135,11 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
     assert main([*common, "--stitch", "S", "--field-output", str(stitched_path)]) == 0
     assert capsys.readouterr().out.strip() == str(stitched_path)
     np.testing.assert_array_equal(np.load(stitched_path), 1.0)
+
+    reaction_path = tmp_path / "global_reaction.npy"
+    assert main([*common, "--stitch", "RF", "--field-output", str(reaction_path)]) == 0
+    assert capsys.readouterr().out.strip() == str(reaction_path)
+    assert np.load(reaction_path).shape == (6, 6, 2)
 
 
 def test_compare_fields_cli_writes_report_and_signed_map(tmp_path, capsys) -> None:

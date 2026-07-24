@@ -99,7 +99,7 @@ La séquence détaillée exécutée par ce script est :
   --increments 10 \
   --solve-pending
 
-for field in U S E PEEQ; do
+for field in U S E PE PEEQ RF; do
   .venv/bin/fem-inhouse partition \
     --input data/processed/case-study-10x10 \
     --output results/dic-smoke-10x10 \
@@ -148,7 +148,7 @@ Slurm est fourni dans `examples/slurm_partition_array.sh`.
 Après la dernière partition :
 
 ```bash
-for field in U S E PEEQ; do
+for field in U S E PE PEEQ RF; do
   .venv/bin/fem-inhouse partition \
     --input data/processed/case-study \
     --output results/reconstruction-100 \

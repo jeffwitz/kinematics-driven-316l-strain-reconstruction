@@ -76,8 +76,10 @@ The script is equivalent to:
   --solve-pending
 ```
 
-The full production run uses the same prepared contract, with padding and
-partition execution distributed according to the available memory. See
+Every partition preserves all final solver fields (`U`, `S`, `E`, `PE`,
+`PEEQ`, `RF`) together with convergence diagnostics and output hashes. The full
+production run uses the same prepared contract, with padding and partition
+execution distributed according to the available memory. See
 [`docs/from_dic_to_reconstruction.md`](docs/from_dic_to_reconstruction.md).
 
 ## Development setup

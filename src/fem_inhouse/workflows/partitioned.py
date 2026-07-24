@@ -29,7 +29,9 @@ RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "U": ("displacement_mm", "node"),
     "S": ("stress_mpa", "element"),
     "E": ("total_strain", "element"),
+    "PE": ("plastic_strain", "element"),
     "PEEQ": ("equivalent_plastic_strain", "element"),
+    "RF": ("reaction_force", "node"),
 }
 
 
