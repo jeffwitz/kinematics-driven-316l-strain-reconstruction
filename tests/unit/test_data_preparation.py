@@ -136,6 +136,25 @@ def test_prepare_case_cli_writes_manifest(tmp_path, capsys) -> None:
     assert (output_directory / "hardening_coefficient_mpa.npy").is_file()
 
 
+def test_prepare_case_supports_a_reproducible_central_crop(tmp_path) -> None:
+    raw_directory = tmp_path / "raw"
+    arrays = _raw_case(raw_directory)
+    output_directory = tmp_path / "prepared"
+
+    manifest = prepare_case_study(
+        raw_directory,
+        output_directory,
+        config=PreparationConfig(crop_nx=1, crop_ny=2),
+    )
+
+    np.testing.assert_array_equal(
+        np.load(output_directory / "yield_stress_mpa.npy"),
+        arrays["el_thresh50.npy"][1:2, :],
+    )
+    assert manifest["config"]["crop_nx"] == 1
+    assert manifest["transformations"]["source_crop_bounds_axis_0_axis_1"] == [1, 2, 0, 2]
+
+
 def test_preparation_config_defaults() -> None:
     assert PreparationConfig().pixel_size_um == 1.84
 
@@ -147,6 +166,8 @@ def test_preparation_config_defaults() -> None:
         ({"hardening_scale_mpa": 0.0}, "hardening_scale_mpa"),
         ({"nonfinite_policy": "invalid"}, "nonfinite_policy"),
         ({"nodal_completion": "invalid"}, "nodal_completion"),
+        ({"crop_nx": 1}, "specified together"),
+        ({"crop_nx": 0, "crop_ny": 1}, "positive"),
     ],
 )
 def test_preparation_config_rejects_invalid_values(kwargs, message) -> None:

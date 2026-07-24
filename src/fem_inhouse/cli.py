@@ -61,6 +61,8 @@ def _parser() -> argparse.ArgumentParser:
     prepare.add_argument("--output", type=Path, required=True)
     prepare.add_argument("--pixel-size-um", type=float, default=1.84)
     prepare.add_argument("--hardening-scale-mpa", type=float, default=380.0)
+    prepare.add_argument("--crop-nx", type=int)
+    prepare.add_argument("--crop-ny", type=int)
     prepare.add_argument(
         "--nonfinite-policy",
         choices=("error", "nearest"),
@@ -210,6 +212,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 hardening_scale_mpa=args.hardening_scale_mpa,
                 nonfinite_policy=args.nonfinite_policy,
                 nodal_completion=args.nodal_completion,
+                crop_nx=args.crop_nx,
+                crop_ny=args.crop_ny,
             ),
         )
         _print_json(manifest)

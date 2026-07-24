@@ -24,9 +24,61 @@ Known limitations at this stage:
 
 - the 11.16-million-element workflow is implemented but not yet benchmarked or
   executed at production scale;
-- the historical plotting scripts still depend on external case data;
+- only DIC step 40 is available; the baseline steps 1–5 are not versioned;
 - Abaqus parity is not yet established from the original `.inp` and ODB
-  extraction scripts.
+  extraction scripts and is intentionally deferred until the DIC-first
+  workflow is stable.
+
+## Reproduce from the versioned DIC data
+
+The four raw scientific arrays are versioned with Git LFS under
+[`data/raw/case_study`](data/raw/case_study). From a fresh clone:
+
+```bash
+git lfs install
+git lfs pull
+python -m venv .venv
+.venv/bin/pip install -r requirements-lock.txt
+.venv/bin/pip install -e . --no-deps
+
+.venv/bin/fem-inhouse prepare-case \
+  --raw data/raw/case_study \
+  --output data/processed/case-study \
+  --nonfinite-policy nearest
+```
+
+This command verifies every raw SHA-256, maps `V → u_x` and `U → u_y`,
+converts pixels to millimetres, applies the article's nominal `K=380 MPa`,
+repairs the nine declared non-finite hardening multipliers, completes the nodal
+grid and writes a manifest for all generated arrays.
+
+A fast smoke calculation uses a real central `10×10` crop:
+
+```bash
+bash examples/run_dic_smoke.sh
+```
+
+The script is equivalent to:
+
+```bash
+.venv/bin/fem-inhouse prepare-case \
+  --raw data/raw/case_study \
+  --output data/processed/case-study-10x10 \
+  --crop-nx 10 \
+  --crop-ny 10
+
+.venv/bin/fem-inhouse partition \
+  --input data/processed/case-study-10x10 \
+  --output results/dic-smoke-10x10 \
+  --count 25 \
+  --padding 0 \
+  --increments 10 \
+  --solve-pending
+```
+
+The full production run uses the same prepared contract, with padding and
+partition execution distributed according to the available memory. See
+[`docs/from_dic_to_reconstruction.md`](docs/from_dic_to_reconstruction.md).
 
 ## Development setup
 
@@ -41,12 +93,13 @@ python -m venv .venv
 
 PyPardiso/MKL is a required runtime dependency for production solves.
 
-The installed CLI provides the three routine entry points:
+The installed CLI provides the routine entry points:
 
 ```bash
 fem-inhouse backend
 fem-inhouse validate --nx 10 --ny 10
 fem-inhouse example --nx 10 --ny 10 --output results/reduced
+fem-inhouse prepare-case --help
 fem-inhouse partition --help
 fem-inhouse compare-fields --help
 ```
@@ -54,15 +107,17 @@ fem-inhouse compare-fields --help
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation
 of the example and its declared thresholds.
 
-The retained article-migration scripts no longer contain personal paths. Their
-explicit `.npy` input and environment-variable contract is documented in
-[`docs/legacy_data_contract.md`](docs/legacy_data_contract.md).
+The historical Abaqus generators are kept byte-for-byte under
+[`references/legacy_abaqus`](references/legacy_abaqus) solely for scientific
+provenance. The production package neither imports nor executes them.
 Initial PyPardiso timing and memory measurements are recorded in
 [`docs/performance.md`](docs/performance.md).
 The resumable CLI and Slurm-array workflow are documented in
 [`docs/partitioning.md`](docs/partitioning.md).
 Architecture decisions are recorded in [`docs/adr`](docs/adr), and numerical
 review requirements are defined in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+The raw-to-canonical choices are recorded specifically in
+[`ADR 0004`](docs/adr/0004-dic-input-preparation.md).
 
 ## Typed solver API
 

@@ -1,8 +1,8 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-24
-Statut global : **socle logiciel 4/5 atteint ; priorité au pipeline autonome
-DIC → entrées canoniques → calcul partitionné → champs reconstruits**
+Statut global : **pipeline autonome DIC → entrées canoniques → calcul
+partitionné opérationnel sur un crop réel ; exécution du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -207,21 +207,21 @@ revue scientifique régulière.
 - [x] Versionner sous Git LFS les quatre tableaux bruts sans les modifier
 - [x] Enregistrer forme, type, taille, rôle et SHA-256 de chaque tableau
 - [x] Conserver les générateurs Abaqus reçus uniquement comme provenance
-- [~] Ajouter `fem-inhouse prepare-case`
-- [ ] Vérifier les empreintes avant toute transformation
-- [ ] Convertir `V → u_x`, `U → u_y` et pixels → millimètres
-- [ ] Rendre le facteur macroscopique `K` explicite, avec `380 MPa` nominal et
+- [x] Ajouter `fem-inhouse prepare-case`
+- [x] Vérifier les empreintes avant toute transformation
+- [x] Convertir `V → u_x`, `U → u_y` et pixels → millimètres
+- [x] Rendre le facteur macroscopique `K` explicite, avec `380 MPa` nominal et
       `396 MPa` historique
-- [ ] Détecter les neuf valeurs non finies et appliquer seulement une politique
+- [x] Détecter les neuf valeurs non finies et appliquer seulement une politique
       explicitement sélectionnée et enregistrée
-- [ ] Compléter la grille nodale selon une politique explicite et enregistrée
-- [ ] Écrire les quatre `.npy` canoniques et un manifeste reproductible
-- [ ] Ajouter un test d'intégration depuis des données brutes synthétiques
-- [ ] Ajouter un contrôle d'intégrité des données réelles, sans les charger
+- [x] Compléter la grille nodale selon une politique explicite et enregistrée
+- [x] Écrire les quatre `.npy` canoniques et un manifeste reproductible
+- [x] Ajouter un test d'intégration depuis des données brutes synthétiques
+- [x] Ajouter un contrôle d'intégrité des données réelles, sans les charger
       entièrement en mémoire
-- [ ] Documenter une séquence unique `clone → install → prepare → partition →
+- [x] Documenter une séquence unique `clone → install → prepare → partition →
       stitch → postprocess`
-- [ ] Exécuter un sous-domaine réel versionné depuis cette séquence
+- [x] Exécuter un sous-domaine réel versionné depuis cette séquence
 
 **Critère de sortie :** aucune donnée ou transformation scientifique nécessaire
 au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
@@ -483,7 +483,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 - [x] Versions verrouillées
 - [x] Données DIC et cartes locales brutes versionnées par Git LFS et identifiées
   par empreinte
-- [~] Préparation brute → canonique automatisée et manifestée
+- [x] Préparation brute → canonique automatisée, atomique et manifestée
 - [x] Aucun chemin dépendant d'un poste personnel
 - [x] Résultats accompagnés de leur configuration et version du code
 - [x] Workflow reprenable partition par partition
@@ -510,8 +510,8 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 |---|---:|---|
 | Noyau numérique | 4,5/5 | Cas fermés, tangente, cutback, réactions et cisaillement testés |
 | Validation scientifique | 2,5/5 | DIC finale et cartes locales retrouvées ; calcul global et métriques à produire |
-| Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 143 tests, revue documentée |
-| Reproductibilité | 4,0/5 | Données brutes LFS et empreintes présentes ; préparation canonique en cours |
+| Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 156 tests, revue documentée |
+| Reproductibilité | 4,5/5 | Données LFS, préparation atomique, manifestes et smoke test DIC réel |
 | Performance | 3,5/5 | 10k–100k mesurés et mémoire optimisée ; 350k non exécuté |
 | Documentation | 4,0/5 | Contrats, ADR, tutoriel et limites ; figures finales non reproductibles |
 
@@ -620,6 +620,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Inventaire scientifique reçu | Formes, statistiques, SHA-256 et scripts de provenance | 4 tableaux `3600×3100` identifiés | Réussi |
 | 2026-07-24 | Sous-domaine DIC réel | Centre 10×10, PyPardiso, 10 incréments | Tous champs finis, 0 cutback | Réussi |
 | 2026-07-24 | Données scientifiques versionnées | Git LFS + `data/raw/case_study/manifest.json` | 4 tableaux bruts immuables | Réussi |
+| 2026-07-24 | Préparation ROI complet | `fem-inhouse prepare-case --nonfinite-policy nearest` | 4 champs canoniques, manifestés, 9 réparations | Réussi |
+| 2026-07-24 | Idempotence de préparation | Deuxième exécution sur les mêmes sorties | Empreintes vérifiées, aucune réécriture | Réussi |
+| 2026-07-24 | Chaîne DIC réelle 10×10 | Préparation centrale, 25 partitions, raccordement | `U/S/E/PEEQ` finis et complets | Réussi |
+| 2026-07-24 | Suite après pipeline DIC | Ruff, mypy, pytest avec branches | 156 tests, 95,26 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -638,6 +642,22 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   n'apportent aucune entrée supplémentaire au calcul ciblé
 - Enregistrement explicite des trois décisions encore nécessaires : complétion
   nodale, facteur `K=380/396 MPa`, traitement des neuf valeurs non finies
+
+### 2026-07-24 — Préparation canonique et smoke test DIC
+
+- Ajout de `fem-inhouse prepare-case`
+- Vérification en flux des tailles et empreintes SHA-256 brutes
+- Conversion explicite `V → u_x`, `U → u_y` et pixel → millimètre
+- Facteur `K=380 MPa` nominal et `396 MPa` historique sélectionnable
+- Refus par défaut des valeurs non finies et politique `nearest` explicite
+- Complétion nodale `edge-pad-upper` enregistrée dans le manifeste
+- Écriture atomique hors du répertoire brut et réutilisation idempotente
+- Ajout d'un crop central reproductible pour les contrôles rapides réels
+- Préparation réussie du ROI complet en `3601×3101` nœuds et
+  `3600×3100` éléments
+- Calcul réussi du crop réel `10×10` en 25 partitions, puis raccordement de
+  `U`, `S`, `E` et `PEEQ`
+- Documentation du chemin complet depuis un clone neuf
 
 ### 2026-07-24 — Création
 

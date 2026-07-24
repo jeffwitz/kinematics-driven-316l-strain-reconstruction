@@ -1,5 +1,9 @@
 # Contrat de données des scripts historiques
 
+> Ce document décrit uniquement la couche de compatibilité. Pour le workflow
+> principal autonome et les données désormais versionnées, utiliser
+> `docs/from_dic_to_reconstruction.md`.
+
 Les trois scripts de comparaison conservés à la racine provenaient d'une
 arborescence externe non livrée et contenaient des chemins Windows personnels.
 Ils utilisent maintenant `fem_inhouse.legacy_config`.
@@ -27,4 +31,3 @@ Les tailles historiques se configurent avec
 `FEM_INHOUSE_LEGACY_NX` et `FEM_INHOUSE_LEGACY_NY`. Les valeurs par défaut
 10×10 ne constituent pas une référence scientifique : elles permettent
 seulement de conserver un point d'entrée explicite pendant la migration.
-

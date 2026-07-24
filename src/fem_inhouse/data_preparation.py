@@ -40,6 +40,8 @@ class PreparationConfig:
     hardening_scale_mpa: float = 380.0
     nonfinite_policy: NonfinitePolicy = "error"
     nodal_completion: NodalCompletion = "edge-pad-upper"
+    crop_nx: int | None = None
+    crop_ny: int | None = None
 
     def __post_init__(self) -> None:
         if self.pixel_size_um <= 0:
@@ -50,6 +52,13 @@ class PreparationConfig:
             raise ValueError(f"unsupported nonfinite_policy {self.nonfinite_policy!r}")
         if self.nodal_completion != "edge-pad-upper":
             raise ValueError(f"unsupported nodal_completion {self.nodal_completion!r}")
+        if (self.crop_nx is None) != (self.crop_ny is None):
+            raise ValueError("crop_nx and crop_ny must be specified together")
+        invalid_crop = self.crop_nx is not None and (
+            self.crop_nx < 1 or self.crop_ny is None or self.crop_ny < 1
+        )
+        if invalid_crop:
+            raise ValueError("crop dimensions must be positive")
 
     @property
     def displacement_scale_mm_per_pixel(self) -> float:
@@ -113,6 +122,20 @@ def verify_raw_case_study(raw_directory: str | Path) -> dict[str, Any]:
 
 def _create_memmap(path: Path, *, shape: tuple[int, ...]) -> np.memmap:
     return open_memmap(path, mode="w+", dtype=np.float64, shape=shape)
+
+
+def _center_crop(
+    values: NDArray[Any],
+    *,
+    rows: int,
+    columns: int,
+) -> tuple[NDArray[Any], tuple[int, int, int, int]]:
+    if rows > values.shape[0] or columns > values.shape[1]:
+        raise ValueError(f"cannot crop shape {values.shape} to {(rows, columns)}")
+    row_start = (values.shape[0] - rows) // 2
+    column_start = (values.shape[1] - columns) // 2
+    bounds = (row_start, row_start + rows, column_start, column_start + columns)
+    return values[bounds[0] : bounds[1], bounds[2] : bounds[3]], bounds
 
 
 def _write_scaled_rows(
@@ -238,10 +261,26 @@ def prepare_case_study(
     if destination.exists() and any(destination.iterdir()):
         raise RuntimeError(f"output directory is not empty: {destination}")
 
-    raw_arrays = {
+    full_raw_arrays = {
         logical_name: np.load(source / filename, mmap_mode="r", allow_pickle=False)
         for logical_name, filename in RAW_FILENAMES.items()
     }
+    crop_bounds: tuple[int, int, int, int] | None = None
+    if selected_config.crop_nx is not None and selected_config.crop_ny is not None:
+        raw_arrays = {}
+        for logical_name, array in full_raw_arrays.items():
+            cropped, bounds = _center_crop(
+                array,
+                rows=selected_config.crop_nx,
+                columns=selected_config.crop_ny,
+            )
+            raw_arrays[logical_name] = cropped
+            if crop_bounds is None:
+                crop_bounds = bounds
+            elif crop_bounds != bounds:
+                raise ValueError("raw arrays do not share the same crop coordinates")
+    else:
+        raw_arrays = full_raw_arrays
     element_shape = raw_arrays["yield_stress_mpa"].shape
     if len(element_shape) != 2:
         raise ValueError(f"material fields must be two-dimensional, got {element_shape}")
@@ -328,6 +367,7 @@ def prepare_case_study(
                 "nodal_completion": (
                     "duplicate the final row and column on the upper array bounds"
                 ),
+                "source_crop_bounds_axis_0_axis_1": list(crop_bounds) if crop_bounds else None,
             },
             "outputs": _output_file_metadata(temporary),
         }
