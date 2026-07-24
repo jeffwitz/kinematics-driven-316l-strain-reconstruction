@@ -22,6 +22,7 @@ jobs:
           python -m pip install -e . --no-deps
       - name: Lint
         run: ruff check src tests fem_pixel.py
+      - name: Type check
+        run: mypy src/fem_inhouse
       - name: Test
         run: pytest --cov=fem_inhouse --cov-branch --cov-fail-under=85
-

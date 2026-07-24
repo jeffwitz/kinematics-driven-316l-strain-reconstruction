@@ -7,7 +7,7 @@ import logging
 from dataclasses import asdict, dataclass, field, replace
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -22,7 +22,8 @@ from fem_inhouse.partitioning import (
 from fem_inhouse.solver import run_case_study
 
 LOGGER = logging.getLogger(__name__)
-RESULT_FIELDS = {
+FieldLocation = Literal["element", "node"]
+RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "U": ("displacement_mm", "node"),
     "S": ("stress_mpa", "element"),
     "E": ("total_strain", "element"),
@@ -47,7 +48,7 @@ def fingerprint_array(values: ArrayLike, *, chunk_elements: int = 131_072) -> st
         buffersize=chunk_elements,
     )
     for chunk in iterator:
-        digest.update(chunk.tobytes(order="C"))
+        digest.update(np.asarray(chunk).tobytes(order="C"))
     return digest.hexdigest()
 
 

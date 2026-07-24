@@ -486,6 +486,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Module solveur non linéaire | Suite complète et compatibilité historique | 123 tests, 96,33 % | Réussi |
 | 2026-07-24 | Diagnostics structurés | Événements `logging` et rapport JSON | Convergence et cutbacks traçables | Réussi |
 | 2026-07-24 | Suite après diagnostics | `pytest --cov=fem_inhouse --cov-branch` | 123 tests, 96,66 % | Réussi |
+| 2026-07-24 | Typage statique | `mypy src/fem_inhouse` | 25 fichiers, aucun défaut | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -623,3 +624,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Émission d'événements `logging` structurés du début à la fin du calcul
 - Inclusion des diagnostics dans le `report.json` de l'exemple reproductible
 - Validation complète par 123 tests avec 96,66 % de couverture
+
+### 2026-07-24 — Contrôle statique du paquet
+
+- Ajout de mypy aux dépendances de développement verrouillées
+- Correction des types des gradients, empreintes par blocs et emplacements
+  de champs partitionnés
+- Ajout du contrôle mypy à la CI après Ruff
+- Validation sans défaut des 25 fichiers du paquet

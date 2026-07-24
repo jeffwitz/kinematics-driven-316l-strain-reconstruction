@@ -55,9 +55,9 @@ def strain_from_displacement(
     dux_dx, dux_dy = np.gradient(ux, spacing_x, spacing_y)
     duy_dx, duy_dy = np.gradient(uy, spacing_x, spacing_y)
     return StrainComponents(
-        epsilon_xx=dux_dx,
-        epsilon_yy=duy_dy,
-        gamma_xy=dux_dy + duy_dx,
+        epsilon_xx=np.asarray(dux_dx, dtype=float),
+        epsilon_yy=np.asarray(duy_dy, dtype=float),
+        gamma_xy=np.asarray(dux_dy + duy_dx, dtype=float),
     )
 
 

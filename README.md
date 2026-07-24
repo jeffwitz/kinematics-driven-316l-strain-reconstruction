@@ -36,6 +36,7 @@ python -m venv .venv
 .venv/bin/pip install -e . --no-deps
 .venv/bin/pytest
 .venv/bin/ruff check .
+.venv/bin/mypy src/fem_inhouse
 ```
 
 PyPardiso/MKL is a required runtime dependency for production solves.
