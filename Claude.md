@@ -195,7 +195,7 @@ implicite.
 - [ ] Comparer contraintes et déformations au même emplacement physique
 - [x] Définir la méthode commune de calcul des déformations depuis `U`
 - [ ] Vérifier `U1`, `U2`, `S11`, `S22`, `S12`, `PEEQ`
-- [ ] Vérifier le signe et la définition des réactions
+- [x] Vérifier le signe et la définition des réactions
 - [x] Ajouter des assertions sur PEEQ au test biaxial
 
 **Critère de sortie :** petit cas identique exécuté par Abaqus et `fem_inhouse`,
@@ -489,6 +489,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Typage statique | `mypy src/fem_inhouse` | 25 fichiers, aucun défaut | Réussi |
 | 2026-07-24 | Profil par phase 10k hétérogène | `SolverDiagnostics` | 31,948 s, 78 Newton, 0 cutback | Réussi |
 | 2026-07-24 | Suite après instrumentation | `pytest --cov=fem_inhouse --cov-branch` | 123 tests, 96,59 % | Réussi |
+| 2026-07-24 | Réactions du patch affine | Sommes sur les quatre bords | Signes et résultantes analytiques | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -642,3 +643,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Chronométrage de la construction des sorties et de l'écriture des partitions
 - Profil hétérogène 10k : 31,948 s, 78 itérations de Newton, aucun cutback
 - Factorisation et substitutions encore regroupées par l'appel PyPardiso
+
+### 2026-07-24 — Convention des réactions
+
+- Définition explicite des réactions comme forces internes sur les DDL prescrits
+- Vérification des signes sur les quatre bords du patch affine
+- Vérification des résultantes analytiques horizontales et verticales
+- Documentation des unités et de l'épaisseur implicite de 1 mm
+- Maintien de l'épaisseur Abaqus exacte comme donnée externe encore absente

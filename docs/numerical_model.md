@@ -36,6 +36,20 @@ provoque une erreur explicite avant l'assemblage.
 Le résultat brut historique sous forme de dictionnaire n'est plus l'API
 publique.
 
+## Réactions et épaisseur implicite
+
+`reaction_force[i, j, component]` est la force nodale interne sur un degré de
+liberté prescrit, avec le même axe et le même signe que le déplacement. En
+traction uniforme, la somme est négative sur le bord de coordonnée minimale et
+positive sur le bord opposé. Les degrés de liberté libres sont remis à zéro
+dans ce champ de sortie.
+
+Le noyau 2D n'applique aucun multiplicateur d'épaisseur : avec les longueurs en
+mm et les contraintes en MPa, il représente donc une épaisseur implicite de
+1 mm et les réactions sont en N. Cette convention est vérifiée sur le patch
+test affine. L'épaisseur de la référence Abaqus ayant produit l'article reste
+à identifier avant toute comparaison quantitative de réactions.
+
 Les événements `nonlinear_solve_started`, `newton_iteration`,
 `increment_cutback`, `snapshot_recorded` et `nonlinear_solve_completed` sont
 émis via le module standard `logging`. Les itérations détaillées ne sont

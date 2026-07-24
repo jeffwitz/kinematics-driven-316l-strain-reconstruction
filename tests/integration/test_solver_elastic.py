@@ -30,11 +30,39 @@ def test_affine_elastic_field_is_reproduced_with_typed_api(caplog) -> None:
     expected_s11 = (
         config.material.young_modulus_mpa * strain_xx / (1.0 - config.material.poisson_ratio**2)
     )
+    expected_s22 = config.material.poisson_ratio * expected_s11
     np.testing.assert_allclose(result.displacement_mm[..., 0], strain_xx * xx, atol=1e-15)
     np.testing.assert_allclose(result.displacement_mm[..., 1], 0.0, atol=1e-15)
     np.testing.assert_allclose(result.total_strain[..., 0], strain_xx, rtol=1e-11, atol=1e-14)
     np.testing.assert_allclose(result.stress_mpa[..., 0], expected_s11, rtol=1e-11)
+    np.testing.assert_allclose(result.stress_mpa[..., 1], expected_s22, rtol=1e-11)
     np.testing.assert_allclose(result.equivalent_plastic_strain, 0.0)
+    expected_horizontal_reaction = expected_s11 * mesh.physical_size_mm[1]
+    expected_vertical_reaction = expected_s22 * mesh.physical_size_mm[0]
+    np.testing.assert_allclose(
+        result.reaction_force[0, :, 0].sum(),
+        -expected_horizontal_reaction,
+        rtol=1e-11,
+        atol=1e-14,
+    )
+    np.testing.assert_allclose(
+        result.reaction_force[-1, :, 0].sum(),
+        expected_horizontal_reaction,
+        rtol=1e-11,
+        atol=1e-14,
+    )
+    np.testing.assert_allclose(
+        result.reaction_force[:, 0, 1].sum(),
+        -expected_vertical_reaction,
+        rtol=1e-11,
+        atol=1e-14,
+    )
+    np.testing.assert_allclose(
+        result.reaction_force[:, -1, 1].sum(),
+        expected_vertical_reaction,
+        rtol=1e-11,
+        atol=1e-14,
+    )
     events = [getattr(record, "event", None) for record in caplog.records]
     assert events[0] == "nonlinear_solve_started"
     assert "newton_iteration" in events
