@@ -2,9 +2,9 @@
 
 ## Scope and current status
 
-MFront is being introduced as a second constitutive backend for the supported
-small-strain, plane-stress J2/Ludwik case study. It is not yet the default
-finite-element backend. The migration sequence is deliberately:
+MFront is a second constitutive backend for the supported small-strain,
+plane-stress J2/Ludwik case study. It is connected to the finite-element
+Newton loop but is not yet the default. The migration sequence is:
 
 1. compile the behaviour;
 2. validate it independently at material points;
@@ -12,8 +12,11 @@ finite-element backend. The migration sequence is deliberately:
 4. compare a reduced DIC subdomain;
 5. switch the default only after the declared thresholds pass.
 
-The first two steps are complete. The saved comparison is under
-`validation/reference_data/mfront_material_point_v1`.
+The first four steps are complete. Saved comparisons are under
+`validation/reference_data/mfront_material_point_v1` and
+`validation/reference_data/mfront_newton_dic_10x10_v1`. The remaining default
+switch is blocked by the explicit hardening-law decision described below, not
+by the Newton coupling.
 
 ## Installed versions on the development machine
 
@@ -121,6 +124,22 @@ MGIS stores symmetric tensors in Kelvin notation. The Python adapter converts:
 integration. The constructor also accepts `thread_count`; values greater than
 one create an explicit MGIS thread pool.
 
+Inside `run_fem`, every Newton trial is evaluated from the last converged MGIS
+state. A new trial automatically discards the previous uncommitted trial,
+`commit` is called only after global convergence, and a failed increment calls
+`revert` before cutback. The MFront 3×3 consistent operator is passed directly
+to the existing CPS4 Gauss-point tangent assembly.
+
+The public configuration fields are:
+
+- `constitutive_backend`: `python` (default) or `mfront`;
+- `mfront_library`: generic-interface shared library path;
+- `mfront_threads`: size of the explicit MGIS thread pool.
+
+The compiled behaviour currently fixes `E=205000 MPa`, `nu=0.3`, and the first
+positive plastic strain at `1e-6`; the solver rejects incompatible MFront
+configurations instead of silently mixing material definitions.
+
 ## Reproduce the material-point comparison
 
 ```bash
@@ -137,8 +156,47 @@ histories, hashes, metrics, thresholds, and a plot.
 The versioned v1 comparison passes all declared stress and PEEQ thresholds.
 Across the three paths, stress relative L2 errors are `0.227–0.368 %`, maximum
 absolute PEEQ errors are `3.02e-5–3.87e-5`, and the tangent discrepancy remains
-diagnostic (`1.02–6.39 %`). The latter must be investigated during the
-finite-element integration rather than silently accepted.
+diagnostic (`1.02–6.39 %`). The complete finite-element comparison below
+confirms that both tangents converge to the same global solution.
+
+## Reproduce the complete Newton/DIC comparison
+
+```bash
+source /home/jeff/.local/share/tfel/env/env.sh
+bash scripts/build_mfront_behaviour.sh
+.venv/bin/python scripts/compare_fem_backends.py \
+  --input data/processed/case-study-10x10 \
+  --output results/mfront-newton-dic-10x10 \
+  --library build/mfront/src/libBehaviour.so \
+  --threads 2
+```
+
+The command runs the same real central DIC crop with the analytical Python
+Ludwik law and MFront, then saves all six final fields, diagnostics, input and
+library hashes, metrics, thresholds, and the decision. It refuses to overwrite
+an existing `report.json`.
+
+The versioned v1 campaign converges both backends in 20 increments without
+cutback. MFront requires 66 Newton iterations (maximum 4 per increment), versus
+84 (maximum 8) for Python. Every pre-declared relative-L∞ threshold passes:
+
+| Field | Relative L∞ |
+|---|---:|
+| displacement | `4.68e-9` |
+| stress | `1.44e-4` |
+| total strain | `6.65e-5` |
+| plastic strain | `3.26e-4` |
+| PEEQ | `3.19e-4` |
+| reaction force | `1.74e-4` |
+
+On this small crop, the measured complete-solver times are `1.583 s` for
+Python and `0.669 s` for two-thread MFront. This ratio is a functional smoke
+measurement, not a production-size performance claim.
+
+An exploratory run preceded threshold fixation. These are therefore transparent
+regression/acceptance thresholds for the coupling, not an independent blind
+validation criterion. The script saves each backend immediately after its solve
+so that a later backend failure cannot waste the completed calculation.
 
 ## Constitutive performance benchmark
 
@@ -155,5 +213,5 @@ tangents. Two repetitions and reversed execution order give:
 
 The complete benchmark lasts `1 min 03.24 s` and peaks at `393.45 MiB`. MFront
 serial and parallel outputs are identical. This result covers only the
-constitutive kernel: a reduced end-to-end DIC/EF comparison remains mandatory
-after connection to the Newton loop.
+constitutive kernel; the separate end-to-end crop above validates the coupling
+but remains too small to predict article-partition performance.

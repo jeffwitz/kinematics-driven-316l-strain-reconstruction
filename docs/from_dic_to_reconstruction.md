@@ -114,6 +114,22 @@ Ce contrôle utilise les pixels centraux exacts du ROI. Le manifeste de
 préparation enregistre les bornes du crop dans les coordonnées des tableaux
 bruts.
 
+Après compilation de la loi MFront, la comparaison reproductible des deux
+backends sur ce même crop est :
+
+```bash
+source /home/jeff/.local/share/tfel/env/env.sh
+bash scripts/build_mfront_behaviour.sh
+.venv/bin/python scripts/compare_fem_backends.py \
+  --input data/processed/case-study-10x10 \
+  --output results/mfront-newton-dic-10x10 \
+  --threads 2
+```
+
+Cette campagne conserve les six champs de chaque backend, les diagnostics
+Newton, les empreintes et les métriques. Pour une partition ordinaire, la CLI
+sélectionne MFront avec `--constitutive-backend mfront`.
+
 ## 4. Calcul de production
 
 Le ROI complet ne doit pas être résolu monolithiquement. Chaque tâche traite une

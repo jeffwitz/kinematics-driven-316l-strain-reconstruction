@@ -1,0 +1,187 @@
+{
+  "artifacts": {
+    "mfront": {
+      "filename": "mfront_fields.npz",
+      "sha256": "f269b8911509a9269896f562c79d7deebcc4811a7dbcfb3ca702dced6732cd33"
+    },
+    "python": {
+      "filename": "python_fields.npz",
+      "sha256": "ddb1cb2effd8947bd5f45d19749e1ad1de62609c75b9628d54c99ac1143604b8"
+    }
+  },
+  "configuration": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 10,
+      "ny": 10,
+      "scale_factor": 1.84
+    },
+    "solver": {
+      "constitutive_backend": "python",
+      "hardening_mode": "ludwik",
+      "increments": 20,
+      "max_newton_iterations": 25,
+      "mfront_library": "build/mfront/src/libBehaviour.so",
+      "mfront_threads": 2,
+      "minimum_step_divisor": 1024,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-07
+    }
+  },
+  "comparison": {
+    "prediction_backend": "mfront",
+    "reference_backend": "python"
+  },
+  "created_at_utc": "2026-07-24T13:52:57.147398+00:00",
+  "diagnostics": {
+    "mfront": {
+      "attempted_increments": 20,
+      "backend": "pypardiso (MKL, multithreaded); constitutive=mfront",
+      "constitutive_seconds": 0.13955801166594028,
+      "converged_increments": 20,
+      "cutbacks": 0,
+      "elapsed_seconds": 0.6690839589573443,
+      "elastic_assembly_seconds": 0.001126192044466734,
+      "final_convergence_criterion": "absolute_residual",
+      "final_relative_residual": 4.400133694990033e-10,
+      "final_residual_norm": 1.6882369700567474e-11,
+      "initialization_seconds": 0.01860095397569239,
+      "linear_solve_seconds": 0.32415511598810554,
+      "maximum_newton_iterations": 4,
+      "output_seconds": 0.00020614801906049252,
+      "tangent_assembly_seconds": 0.14579742751084268,
+      "total_newton_iterations": 66
+    },
+    "python": {
+      "attempted_increments": 20,
+      "backend": "pypardiso (MKL, multithreaded); constitutive=python",
+      "constitutive_seconds": 0.9460837945807725,
+      "converged_increments": 20,
+      "cutbacks": 0,
+      "elapsed_seconds": 1.5829251129180193,
+      "elastic_assembly_seconds": 0.0015277331694960594,
+      "final_convergence_criterion": "absolute_residual",
+      "final_relative_residual": 5.007590505183571e-10,
+      "final_residual_norm": 1.9201000695644837e-11,
+      "initialization_seconds": 0.0023749270476400852,
+      "linear_solve_seconds": 0.4549091416411102,
+      "maximum_newton_iterations": 8,
+      "output_seconds": 0.00020174100063741207,
+      "tangent_assembly_seconds": 0.14648133888840675,
+      "total_newton_iterations": 84
+    }
+  },
+  "git_commit": "fa10eba75eaa37917853c567eba0368501aec2a9",
+  "inputs": {
+    "displacement_x_mm": {
+      "path": "data/processed/case-study-10x10/displacement_x_mm.npy",
+      "sha256": "5aba16dc1b6610b5e76868d74d63bd729a980238a944291ed35faa2fbc33ce9b",
+      "shape": [
+        11,
+        11
+      ]
+    },
+    "displacement_y_mm": {
+      "path": "data/processed/case-study-10x10/displacement_y_mm.npy",
+      "sha256": "2181da6b3db96f0ac68301931e29db16cde559cef8fc6150e9fdebbadd6f08cf",
+      "shape": [
+        11,
+        11
+      ]
+    },
+    "hardening_coefficient_mpa": {
+      "path": "data/processed/case-study-10x10/hardening_coefficient_mpa.npy",
+      "sha256": "67eb2bd452c8dee0ca0106c46bc0d2b7161d7e0662d832725f48260c663c6814",
+      "shape": [
+        10,
+        10
+      ]
+    },
+    "yield_stress_mpa": {
+      "path": "data/processed/case-study-10x10/yield_stress_mpa.npy",
+      "sha256": "a13c515980c1bf33bea4f303632bf24c62f05b304a3c4b84c9ed2ea14d0bc021",
+      "shape": [
+        10,
+        10
+      ]
+    }
+  },
+  "metrics": {
+    "displacement_mm": {
+      "maximum_absolute_error": 3.3418641465221555e-10,
+      "relative_l2": 1.1635147142948164e-09,
+      "relative_linf": 4.678375121113405e-09,
+      "rmse": 5.91044442323174e-11
+    },
+    "equivalent_plastic_strain": {
+      "maximum_absolute_error": 4.2735948808796525e-07,
+      "relative_l2": 0.00014417977551769767,
+      "relative_linf": 0.00031911735295114954,
+      "rmse": 5.68163829418807e-08
+    },
+    "plastic_strain": {
+      "maximum_absolute_error": 5.873398341264865e-07,
+      "relative_l2": 0.00013618053109552903,
+      "relative_linf": 0.0003256241978242058,
+      "rmse": 4.866029624869975e-08
+    },
+    "reaction_force": {
+      "maximum_absolute_error": 6.0712159084000406e-05,
+      "relative_l2": 8.267362918209953e-05,
+      "relative_linf": 0.00017369117614962152,
+      "rmse": 7.128672612321619e-06
+    },
+    "stress_mpa": {
+      "maximum_absolute_error": 0.03337844992594796,
+      "relative_l2": 5.536822389499567e-05,
+      "relative_linf": 0.0001437218816045968,
+      "rmse": 0.004333324371290543
+    },
+    "total_strain": {
+      "maximum_absolute_error": 1.9161987085958287e-07,
+      "relative_l2": 3.1935374140430874e-05,
+      "relative_linf": 6.65401006269065e-05,
+      "rmse": 2.9650010820699144e-08
+    }
+  },
+  "mfront_library": {
+    "path": "build/mfront/src/libBehaviour.so",
+    "sha256": "2f5169785856edcb60056b991ef1727e158b002e348168fca912e1add9eb3908"
+  },
+  "passed": true,
+  "schema_version": 1,
+  "thresholds": {
+    "displacement_mm": {
+      "maximum": 1e-06,
+      "metric": "relative_linf"
+    },
+    "equivalent_plastic_strain": {
+      "maximum": 0.001,
+      "metric": "relative_linf"
+    },
+    "plastic_strain": {
+      "maximum": 0.001,
+      "metric": "relative_linf"
+    },
+    "reaction_force": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "stress_mpa": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "total_strain": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    }
+  }
+}

@@ -3,7 +3,7 @@
 Dernière mise à jour : 2026-07-24
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
-MFront/MGIS validé au point matériel mais pas encore branché dans Newton ;
+MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -241,9 +241,9 @@ au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
 - [x] Déclarer les seuils avant la comparaison et conserver tous les champs
 - [ ] Décider entre loi MFront analytique régularisée et réplication exacte des
       1000 segments tabulés jusqu'à `PEEQ=0.2`
-- [ ] Brancher MFront derrière une sélection de backend dans la boucle Newton
-- [ ] Vérifier la tangente MFront dans les conventions d'assemblage CPS4
-- [ ] Comparer les deux backends sur le crop DIC réel `10×10`
+- [x] Brancher MFront derrière une sélection de backend dans la boucle Newton
+- [x] Vérifier la tangente MFront dans les conventions d'assemblage CPS4
+- [x] Comparer les deux backends sur le crop DIC réel `10×10`
 - [~] Mesurer coût, mémoire et stratégie de traitement par blocs aux points de
       Gauss avant tout calcul de taille article ; noyau constitutif mesuré sur
       200 000 points, branchement EF et taille de bloc encore à faire
@@ -665,6 +665,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Performance constitutive Python/MFront | 200k points, 20 incréments, 2 répétitions | Python 12,347 s ; MFront série 13,333 s ; MFront 8 threads 3,527 s | Réussi |
 | 2026-07-24 | Reproductibilité MFront parallèle | États série/parallèle sur 4 millions de mises à jour | Écarts max contrainte et PEEQ strictement nuls | Réussi |
 | 2026-07-24 | Suite après pool MGIS | Ruff, mypy et couverture avec bibliothèque réelle | 167 tests, 94,21 % | Réussi |
+| 2026-07-24 | Couplage MFront/Newton | Cas biaxial homogène complet | Parité champs `4,4e-11–1,2e-10`, 0 cutback | Réussi |
+| 2026-07-24 | Parité MFront/Python sur DIC réelle | Crop central 10×10, 6 champs sauvegardés | L∞ relatif `4,7e-9–3,3e-4`, 20/20 incréments, 0 cutback | Réussi |
+| 2026-07-24 | Performance EF complète MFront | Crop central 10×10, PyPardiso | 0,669 s et 66 Newton contre 1,583 s et 84 Newton | Réussi |
+| 2026-07-24 | Suite après couplage Newton | Ruff, mypy, MGIS réel | 172 tests | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -704,6 +708,26 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Validation complète par Ruff, mypy et 167 tests avec 94,21 % de couverture
 - Limitation maintenue : benchmark du noyau constitutif uniquement, sans
   assemblage CPS4, Newton global ni PyPardiso
+
+### 2026-07-24 — Couplage MFront dans Newton
+
+- Ajout de la sélection `python|mfront` dans `SolverConfig`, l'API typée et la
+  CLI de partitionnement, avec chemin de bibliothèque et pool MGIS configurés
+- Intégration de la contrainte, des variables internes et de la tangente MFront
+  aux points de Gauss dans la boucle Newton CPS4
+- Garantie transactionnelle : chaque essai repart du dernier état convergé,
+  `commit` uniquement après convergence globale et `revert` avant cutback
+- Test homogène plastique de bout en bout avec parité Python/MFront de l'ordre
+  de `1e-10`, sans cutback
+- Campagne DIC réelle `10×10` sauvegardée avec les six champs de chaque
+  backend, diagnostics, empreintes, seuils et rapport JSON
+- Passage de tous les seuils : L∞ relatif maximal `3,26e-4`; 20 incréments et
+  aucun cutback pour les deux backends
+- Temps indicatifs sur le crop : Python `1,583 s`, 84 itérations ; MFront
+  2 threads `0,669 s`, 66 itérations
+- Validation par Ruff, mypy et 172 tests avec la bibliothèque MGIS réelle
+- Maintien du backend Python par défaut jusqu'à décision sur la réplication
+  exacte de la table Abaqus à 1000 segments et essai d'une partition article
 
 ### 2026-07-24 — Première partition à la taille de l'article
 

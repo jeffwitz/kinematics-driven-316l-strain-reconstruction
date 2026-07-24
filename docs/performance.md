@@ -126,6 +126,23 @@ dans `validation/reference_data/mfront_performance_v1`. Cette mesure ne prédit
 pas encore le gain du solveur complet : la part PyPardiso, l'assemblage et le
 nombre d'appels constitutifs par itération Newton restent inchangés.
 
+## Premier benchmark EF complet avec MFront
+
+Le crop DIC réel `10×10` a été résolu avec les mêmes 20 incréments, la loi
+Ludwik analytique et une tolérance résiduelle de `1e-7`. Tous les champs et
+diagnostics sont conservés sous
+`validation/reference_data/mfront_newton_dic_10x10_v1`.
+
+| Backend | Temps total | Constitutif | Itérations Newton | Cutbacks |
+|---|---:|---:|---:|---:|
+| Python | 1,583 s | 0,946 s | 84 | 0 |
+| MFront, 2 threads | 0,669 s | 0,140 s | 66 | 0 |
+
+Le gain total observé est `2,37×`, avec moins d'itérations grâce à la tangente
+MFront. La grille est toutefois trop petite pour extrapoler ce rapport : les
+coûts fixes MGIS, l'assemblage sparse et PyPardiso changent de poids avec la
+taille.
+
 Avant le ROI complet, il reste donc à :
 
 - séparer, si l'API PyPardiso le permet sans modifier le résultat, analyse,
