@@ -13,8 +13,10 @@ from fem_inhouse.results import FEMResult
 from fem_inhouse.workflows import partitioned
 
 
-def test_reduced_tabular_case_passes_declared_thresholds() -> None:
-    _result, report = validate_reduced_case(reduced_biaxial_case(nx=4, ny=4))
+def test_reduced_python_ludwik_case_passes_declared_thresholds() -> None:
+    _result, report = validate_reduced_case(
+        reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
+    )
 
     assert report.passed
     assert report.relative_stress_error < 0.005
@@ -30,7 +32,22 @@ def test_reduced_case_rejects_elastic_target() -> None:
 
 def test_example_command_saves_self_describing_results(tmp_path, capsys) -> None:
     destination = tmp_path / "example"
-    assert main(["example", "--output", str(destination), "--nx", "4", "--ny", "4"]) == 0
+    assert (
+        main(
+            [
+                "example",
+                "--output",
+                str(destination),
+                "--nx",
+                "4",
+                "--ny",
+                "4",
+                "--constitutive-backend",
+                "python",
+            ]
+        )
+        == 0
+    )
     printed = json.loads(capsys.readouterr().out)
     report = json.loads((destination / "report.json").read_text(encoding="utf-8"))
 
@@ -39,7 +56,8 @@ def test_example_command_saves_self_describing_results(tmp_path, capsys) -> None
     assert report["diagnostics"]["backend"].startswith("pypardiso")
     assert report["diagnostics"]["converged_increments"] > 0
     assert report["diagnostics"]["linear_solve_seconds"] > 0
-    assert report["config"]["solver"]["hardening_mode"] == "tabular"
+    assert report["config"]["solver"]["hardening_mode"] == "ludwik"
+    assert report["config"]["solver"]["constitutive_backend"] == "python"
     assert np.load(destination / "stress_mpa.npy").shape == (4, 4, 3)
     assert np.load(destination / "displacement_mm.npy").shape == (5, 5, 2)
     assert (destination / "equivalent_plastic_strain.npy").exists()
@@ -49,7 +67,20 @@ def test_backend_validate_and_layout_commands(tmp_path, capsys) -> None:
     assert main(["backend"]) == 0
     assert capsys.readouterr().out.startswith("pypardiso")
 
-    assert main(["validate", "--nx", "4", "--ny", "4"]) == 0
+    assert (
+        main(
+            [
+                "validate",
+                "--nx",
+                "4",
+                "--ny",
+                "4",
+                "--constitutive-backend",
+                "python",
+            ]
+        )
+        == 0
+    )
     assert json.loads(capsys.readouterr().out)["passed"]
 
     manifest_path = tmp_path / "layout.json"
@@ -74,7 +105,12 @@ def test_backend_validate_and_layout_commands(tmp_path, capsys) -> None:
 
 
 def test_save_example_function_returns_report(tmp_path) -> None:
-    report = save_reduced_example(tmp_path / "direct", nx=4, ny=4)
+    report = save_reduced_example(
+        tmp_path / "direct",
+        nx=4,
+        ny=4,
+        constitutive_backend="python",
+    )
     assert report.passed
 
 

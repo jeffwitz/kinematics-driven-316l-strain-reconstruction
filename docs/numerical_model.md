@@ -57,13 +57,17 @@ Les événements `nonlinear_solve_started`, `newton_iteration`,
 
 ## Intégration constitutive
 
-La loi tabulée est le mode nominal pour la parité avec l'article. Sa grille
-contient 1000 valeurs : zéro, `1e-6`, puis un espacement linéaire jusqu'à 0,2.
-Le mode analytique de Ludwik reste disponible pour les vérifications fermées.
+Le mode nominal est la loi MFront J2/Ludwik analytique régularisée au voisinage
+de zéro. Elle ne plafonne pas PEEQ : après le premier segment
+`0 <= PEEQ <= 1e-6`, l'écrouissage suit `sy0 + K*PEEQ**n` sur tout le domaine
+atteint par le calcul.
 
-Le retour radial vectorisé utilise un Newton borné avec repli par bissection.
-La tangente élastoplastique cohérente est contrôlée par différences finies. Le
-solveur global utilise des incréments de pseudo-temps, Newton-Raphson et une
+La loi Python tabulée à 1000 valeurs jusqu'à `PEEQ=0.2` est conservée uniquement
+comme chemin historique explicite. Elle n'est ni construite ni allouée lorsque
+le backend MFront est sélectionné.
+
+MFront calcule la contrainte, les variables internes et la tangente cohérente.
+Le solveur global utilise des incréments de pseudo-temps, Newton-Raphson et une
 réduction automatique du pas en cas de non-convergence.
 
 ## État du refactoring

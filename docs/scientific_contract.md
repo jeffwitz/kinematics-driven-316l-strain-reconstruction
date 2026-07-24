@@ -106,10 +106,14 @@ Nominal article values are `E = 205000 MPa`, `nu = 0.30`, `n = 0.245`,
 `sigma_y = 124 MPa`, and `K = 380 MPa`. Local maps may replace `sigma_y` and
 `K`; `E`, `nu`, and `n` remain homogeneous for the supported case.
 
-The article states that Abaqus uses a table over `0 <= epsilon_p <= 0.2`, with
-1000 points and a minimum positive increment of `1e-6`. The precise original
-grid must still be confirmed from the input generator. The code exposes the
-first positive strain explicitly so that this choice is testable and recorded.
+The article states that Abaqus used a table over `0 <= epsilon_p <= 0.2`, with
+1000 points and a minimum positive increment of `1e-6`. This is retained as a
+historical reproduction mode, not as the production constitutive contract.
+
+The default MFront law regularises only the first interval
+`0 <= epsilon_p <= 1e-6`, then evaluates the analytical power law without an
+upper PEEQ cap. This avoids introducing a non-physical plateau outside the
+tabulated Abaqus range.
 
 ## Four macroscopic curves
 

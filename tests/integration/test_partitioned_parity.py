@@ -10,7 +10,7 @@ from fem_inhouse.workflows import PartitionWorkflow
 
 @pytest.fixture(scope="module")
 def homogeneous_reference():
-    case = reduced_biaxial_case(nx=6, ny=6)
+    case = reduced_biaxial_case(nx=6, ny=6, constitutive_backend="python")
     result = run_case_study(
         case.config,
         displacement_x_mm=case.displacement_x_mm,

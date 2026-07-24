@@ -27,8 +27,8 @@ six raw fields, logs, hashes, resource measurements and derived comparison
 maps are preserved under
 [`validation/reference_data/article_100p_pad150_p0000`](validation/reference_data/article_100p_pad150_p0000).
 
-An optional MFront 5.1.0/MGIS 3.1 constitutive backend is also implemented and
-compiled for the same plane-stress J2/Ludwik material. It is connected to the
+The default constitutive backend is MFront 5.1.0/MGIS 3.1, compiled for the
+same plane-stress J2/Ludwik material. It is connected to the
 finite-element Newton loop with trial/commit/revert state transactions and its
 consistent tangent is assembled at every Gauss point. Material-point tests and
 the saved DIC-driven `10×10` comparison both pass their declared thresholds.
@@ -50,9 +50,9 @@ Known limitations at this stage:
 - Abaqus parity is not yet established from the original `.inp` and ODB
   extraction scripts and is intentionally deferred until the DIC-first
   workflow is stable.
-- MFront has not yet been exercised on an article-sized partition and the
-  Python tabulated law remains the default until the exact 1000-segment
-  hardening choice is resolved.
+- the analytical MFront default has not yet been exercised on an article-sized
+  partition; the earlier completed partition used the historical Python
+  tabulated law.
 
 ## Reproduce from the versioned DIC data
 
@@ -118,8 +118,9 @@ python -m venv .venv
 .venv/bin/mypy src/fem_inhouse
 ```
 
-PyPardiso/MKL is a required runtime dependency for production solves.
-MFront/MGIS is currently an optional source-built backend; see
+PyPardiso/MKL and the source-built MFront/MGIS backend are required for default
+production solves. The historical Python return mapping remains explicitly
+selectable for regression and Abaqus-table reproduction. See
 [`docs/mfront.md`](docs/mfront.md) for the pinned installation and comparison.
 After building the behaviour, partition solves select it with
 `--constitutive-backend mfront --mfront-library`

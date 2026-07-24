@@ -239,15 +239,15 @@ au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
 - [x] Gérer explicitement les états d'essai, `commit` et `revert`
 - [x] Comparer et sauvegarder trois trajets au point matériel sur 200 incréments
 - [x] Déclarer les seuils avant la comparaison et conserver tous les champs
-- [ ] Décider entre loi MFront analytique régularisée et réplication exacte des
-      1000 segments tabulés jusqu'à `PEEQ=0.2`
+- [x] Retenir la loi MFront analytique régularisée sans plafond de PEEQ ; garder
+      les 1000 segments uniquement comme régression historique explicite
 - [x] Brancher MFront derrière une sélection de backend dans la boucle Newton
 - [x] Vérifier la tangente MFront dans les conventions d'assemblage CPS4
 - [x] Comparer les deux backends sur le crop DIC réel `10×10`
 - [~] Mesurer coût, mémoire et stratégie de traitement par blocs aux points de
       Gauss avant tout calcul de taille article ; noyau constitutif mesuré sur
-      200 000 points, branchement EF et taille de bloc encore à faire
-- [ ] Basculer le backend par défaut seulement après parité du sous-domaine
+      200 000 points et branchement EF validé, partition article à mesurer
+- [x] Basculer le backend par défaut vers MFront après parité du sous-domaine
 
 **Critère de sortie :** le même sous-domaine DIC converge avec les deux
 backends, les six champs sauvegardés respectent des seuils ratifiés, et aucun

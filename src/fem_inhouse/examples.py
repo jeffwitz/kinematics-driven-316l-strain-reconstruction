@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -48,6 +49,9 @@ def reduced_biaxial_case(
     target_stress_mpa: float = 400.0,
     yield_stress_mpa: float = 250.0,
     hardening_coefficient_mpa: float = 500.0,
+    constitutive_backend: Literal["python", "mfront"] = "mfront",
+    mfront_library: str = "build/mfront/src/libBehaviour.so",
+    mfront_threads: int = 1,
 ) -> ReducedBiaxialCase:
     """Construct the homogeneous closed-form verification used by the project."""
 
@@ -59,7 +63,10 @@ def reduced_biaxial_case(
         increments=20,
         max_newton_iterations=15,
         residual_tolerance=1e-8,
-        hardening_mode="tabular",
+        hardening_mode="ludwik",
+        constitutive_backend=constitutive_backend,
+        mfront_library=mfront_library,
+        mfront_threads=mfront_threads,
     )
     config = CaseStudyConfig(mesh=mesh, material=material, solver=solver)
     equivalent_plastic_strain = (
@@ -129,12 +136,26 @@ def validate_reduced_case(case: ReducedBiaxialCase) -> tuple[FEMResult, Validati
     return result, report
 
 
-def save_reduced_example(directory: str | Path, *, nx: int = 10, ny: int = 10) -> ValidationReport:
+def save_reduced_example(
+    directory: str | Path,
+    *,
+    nx: int = 10,
+    ny: int = 10,
+    constitutive_backend: Literal["python", "mfront"] = "mfront",
+    mfront_library: str = "build/mfront/src/libBehaviour.so",
+    mfront_threads: int = 1,
+) -> ValidationReport:
     """Execute and save a self-contained reduced example."""
 
     destination = Path(directory)
     destination.mkdir(parents=True, exist_ok=True)
-    case = reduced_biaxial_case(nx=nx, ny=ny)
+    case = reduced_biaxial_case(
+        nx=nx,
+        ny=ny,
+        constitutive_backend=constitutive_backend,
+        mfront_library=mfront_library,
+        mfront_threads=mfront_threads,
+    )
     result, report = validate_reduced_case(case)
     np.save(destination / "displacement_mm.npy", result.displacement_mm)
     np.save(destination / "stress_mpa.npy", result.stress_mpa)

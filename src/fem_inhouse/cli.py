@@ -47,11 +47,31 @@ def _parser() -> argparse.ArgumentParser:
     validate = commands.add_parser("validate", help="run the reduced analytical case")
     validate.add_argument("--nx", type=int, default=10)
     validate.add_argument("--ny", type=int, default=10)
+    validate.add_argument(
+        "--constitutive-backend",
+        choices=("python", "mfront"),
+        default="mfront",
+    )
+    validate.add_argument(
+        "--mfront-library",
+        default="build/mfront/src/libBehaviour.so",
+    )
+    validate.add_argument("--mfront-threads", type=int, default=1)
 
     example = commands.add_parser("example", help="run and save the reduced example")
     example.add_argument("--output", type=Path, required=True)
     example.add_argument("--nx", type=int, default=10)
     example.add_argument("--ny", type=int, default=10)
+    example.add_argument(
+        "--constitutive-backend",
+        choices=("python", "mfront"),
+        default="mfront",
+    )
+    example.add_argument(
+        "--mfront-library",
+        default="build/mfront/src/libBehaviour.so",
+    )
+    example.add_argument("--mfront-threads", type=int, default=1)
 
     prepare = commands.add_parser(
         "prepare-case",
@@ -100,7 +120,7 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument(
         "--constitutive-backend",
         choices=("python", "mfront"),
-        default="python",
+        default="mfront",
     )
     partition.add_argument(
         "--mfront-library",
@@ -209,11 +229,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(args.output)
         return 0
     if args.command == "validate":
-        _result, report = validate_reduced_case(reduced_biaxial_case(nx=args.nx, ny=args.ny))
+        _result, report = validate_reduced_case(
+            reduced_biaxial_case(
+                nx=args.nx,
+                ny=args.ny,
+                constitutive_backend=args.constitutive_backend,
+                mfront_library=args.mfront_library,
+                mfront_threads=args.mfront_threads,
+            )
+        )
         _print_json(asdict(report))
         return 0 if report.passed else 1
     if args.command == "example":
-        report = save_reduced_example(args.output, nx=args.nx, ny=args.ny)
+        report = save_reduced_example(
+            args.output,
+            nx=args.nx,
+            ny=args.ny,
+            constitutive_backend=args.constitutive_backend,
+            mfront_library=args.mfront_library,
+            mfront_threads=args.mfront_threads,
+        )
         _print_json(asdict(report))
         return 0 if report.passed else 1
     if args.command == "prepare-case":

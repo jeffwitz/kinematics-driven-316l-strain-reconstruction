@@ -95,7 +95,7 @@ def run_fem(
     n_table=1000,
     first_positive_plastic_strain=1e-6,
     minimum_step_divisor=1024,
-    constitutive_backend="python",
+    constitutive_backend="mfront",
     mfront_library="build/mfront/src/libBehaviour.so",
     mfront_threads=1,
     snapshot_fractions=None,
@@ -115,13 +115,15 @@ def run_fem(
     started_at = time.perf_counter()
     if constitutive_backend not in {"python", "mfront"}:
         raise ValueError("constitutive_backend must be 'python' or 'mfront'")
-    hf, hfp = make_hardening(
-        n_exp,
-        hardening,
-        ep_table_max,
-        n_table,
-        first_positive_plastic_strain,
-    )
+    hf = hfp = None
+    if constitutive_backend == "python":
+        hf, hfp = make_hardening(
+            n_exp,
+            hardening,
+            ep_table_max,
+            n_table,
+            first_positive_plastic_strain,
+        )
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
     nxn, nyn = nx + 1, ny + 1
@@ -264,6 +266,7 @@ def run_fem(
             # Constitutive trial from the last converged material state.
             constitutive_started_at = time.perf_counter()
             if mfront_batch is None:
+                assert hf is not None
                 sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
                 sf, dp, dg = return_mapping(
                     sig_tr.reshape(-1, 3),
@@ -338,6 +341,8 @@ def run_fem(
                 pl_idx = np.arange(n_e * N_GP)
                 plastic_tangents = mfront_tangents
             else:
+                assert hf is not None
+                assert hfp is not None
                 pl_idx = np.where(dg > 0)[0]
                 if len(pl_idx):
                     plastic_tangents = consistent_tangent(
@@ -522,6 +527,7 @@ def _verify():
         N_inc=30,
         max_nr=10,
         nr_tol=1e-8,
+        constitutive_backend="python",
         verbose=True,
     )
 

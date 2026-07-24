@@ -8,9 +8,10 @@ from typing import Literal
 
 @dataclass(frozen=True, slots=True)
 class MaterialConfig:
-    """Homogeneous material constants and Abaqus table settings.
+    """Homogeneous material constants and legacy Abaqus-table settings.
 
     Stress-like quantities use MPa and strains are dimensionless.
+    The table controls are ignored by the default analytical MFront backend.
     """
 
     young_modulus_mpa: float = 205_000.0
@@ -73,8 +74,8 @@ class SolverConfig:
     residual_tolerance: float = 1e-6
     minimum_step_divisor: int = 1_024
     require_pypardiso: bool = True
-    hardening_mode: Literal["ludwik", "tabular"] = "tabular"
-    constitutive_backend: Literal["python", "mfront"] = "python"
+    hardening_mode: Literal["ludwik", "tabular"] = "ludwik"
+    constitutive_backend: Literal["python", "mfront"] = "mfront"
     mfront_library: str = "build/mfront/src/libBehaviour.so"
     mfront_threads: int = 1
 

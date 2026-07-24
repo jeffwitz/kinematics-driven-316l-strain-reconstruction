@@ -14,7 +14,9 @@ La suite automatique contrôle actuellement :
 - patch affine élastique ;
 - retour élastique et retour plastique ;
 - retours plastiques uniaxial, équibiaxial et en cisaillement ;
-- comportement tabulé au-delà de la dernière valeur ;
+- loi MFront analytique non capée comme chemin nominal ;
+- comportement tabulé au-delà de la dernière valeur comme régression
+  historique ;
 - tangente cohérente par différences finies ;
 - traction équibiaxiale plastique avec solution analytique ;
 - stabilité entre 5, 10 et 20 incréments ;

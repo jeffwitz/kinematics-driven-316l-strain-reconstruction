@@ -107,7 +107,7 @@ def test_typed_api_validates_and_forwards_configuration(monkeypatch) -> None:
     assert captured.kwargs["minimum_step_divisor"] == 64
     assert captured.kwargs["first_positive_plastic_strain"] == 1e-6
     assert captured.kwargs["snapshot_fractions"] == (0.5, 1.0)
-    assert captured.kwargs["hardening"] == "tabular"
+    assert captured.kwargs["hardening"] == "ludwik"
     assert captured.kwargs["constitutive_backend"] == "mfront"
     assert captured.kwargs["mfront_library"] == "/tmp/libBehaviour.so"
     assert captured.kwargs["mfront_threads"] == 3

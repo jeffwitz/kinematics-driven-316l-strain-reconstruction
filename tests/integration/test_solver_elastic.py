@@ -10,7 +10,12 @@ def test_affine_elastic_field_is_reproduced_with_typed_api(caplog) -> None:
     mesh = MeshConfig(nx=4, ny=4)
     config = CaseStudyConfig(
         mesh,
-        solver=SolverConfig(increments=2, residual_tolerance=1e-9, hardening_mode="ludwik"),
+        solver=SolverConfig(
+            increments=2,
+            residual_tolerance=1e-9,
+            hardening_mode="ludwik",
+            constitutive_backend="python",
+        ),
     )
     x = np.linspace(0.0, mesh.physical_size_mm[0], mesh.nx + 1)
     y = np.linspace(0.0, mesh.physical_size_mm[1], mesh.ny + 1)
@@ -77,6 +82,7 @@ def test_affine_shear_patch_reproduces_engineering_shear_convention() -> None:
             increments=2,
             residual_tolerance=1e-9,
             hardening_mode="ludwik",
+            constitutive_backend="python",
         ),
     )
     x = np.linspace(0.0, mesh.physical_size_mm[0], mesh.nx + 1)

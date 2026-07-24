@@ -23,7 +23,7 @@ def _solve_case(case, config=None, yield_map=None, hardening_map=None):
 
 
 def test_increment_refinement_is_stable() -> None:
-    case = reduced_biaxial_case(nx=4, ny=4)
+    case = reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
     responses = []
     for increments in (5, 10, 20):
         config = replace(
@@ -44,7 +44,7 @@ def test_increment_refinement_is_stable() -> None:
 
 
 def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
-    case = reduced_biaxial_case(nx=6, ny=6)
+    case = reduced_biaxial_case(nx=6, ny=6, constitutive_backend="python")
     indices = np.indices((6, 6))
     modulation = (indices[0] + indices[1]) % 2
     yield_map = np.where(modulation, 220.0, 280.0)
@@ -75,7 +75,7 @@ def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
 
 
 def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
-    case = reduced_biaxial_case(nx=4, ny=4)
+    case = reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
     config = CaseStudyConfig(
         mesh=case.config.mesh,
         material=case.config.material,
@@ -85,6 +85,7 @@ def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
             minimum_step_divisor=2,
             require_pypardiso=False,
             hardening_mode="tabular",
+            constitutive_backend="python",
         ),
     )
 

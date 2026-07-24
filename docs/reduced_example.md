@@ -19,7 +19,11 @@ validation applique une traction équibiaxiale homogène visant 400 MPa avec :
 - limite d'élasticité : 250 MPa ;
 - coefficient de Ludwik : 500 MPa ;
 - exposant : 0,245 ;
-- loi tabulée nominale à 1000 points.
+- loi MFront analytique sans plafond de PEEQ.
+
+La bibliothèque MFront doit être construite et l'environnement TFEL activé.
+Le chemin historique Python reste testable avec
+`--constitutive-backend python`.
 
 Le rapport JSON échoue si l'erreur relative sur la contrainte ou PEEQ dépasse
 0,5 %, si l'erreur relative du déplacement dépasse `1e-8`, ou si le déséquilibre

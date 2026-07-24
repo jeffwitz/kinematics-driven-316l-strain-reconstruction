@@ -2,21 +2,19 @@
 
 ## Scope and current status
 
-MFront is a second constitutive backend for the supported small-strain,
+MFront is the default constitutive backend for the supported small-strain,
 plane-stress J2/Ludwik case study. It is connected to the finite-element
-Newton loop but is not yet the default. The migration sequence is:
+Newton loop. The completed migration sequence was:
 
 1. compile the behaviour;
 2. validate it independently at material points;
 3. connect trial/commit/revert semantics to the Newton loop;
 4. compare a reduced DIC subdomain;
-5. switch the default only after the declared thresholds pass.
+5. switch the default after the declared thresholds pass.
 
-The first four steps are complete. Saved comparisons are under
+All five steps are complete. Saved comparisons are under
 `validation/reference_data/mfront_material_point_v1` and
-`validation/reference_data/mfront_newton_dic_10x10_v1`. The remaining default
-switch is blocked by the explicit hardening-law decision described below, not
-by the Newton coupling.
+`validation/reference_data/mfront_newton_dic_10x10_v1`.
 
 ## Installed versions on the development machine
 
@@ -107,11 +105,10 @@ The behaviour uses MFront's `StandardElastoViscoPlasticity` brick with:
 - a finite first Ludwik segment on `0 <= PEEQ <= 1e-6`, followed by the
   analytical power law.
 
-The Python production law instead linearly interpolates 1000 points up to
-`PEEQ = 0.2` and clamps beyond that value. The material-point campaign remains
-below `0.2` and measures this known discretisation difference explicitly.
-Exact replication of all 1000 segments in a spatially parameterised MFront
-law remains open before the backend can be called strictly identical.
+The historical Python law linearly interpolates 1000 points up to
+`PEEQ = 0.2` and clamps beyond that value. It is retained only for regression
+and Abaqus-table reproduction. The default MFront law is intentionally
+analytical and unbounded in PEEQ; it does not construct the Python table.
 
 MGIS stores symmetric tensors in Kelvin notation. The Python adapter converts:
 
@@ -132,7 +129,7 @@ to the existing CPS4 Gauss-point tangent assembly.
 
 The public configuration fields are:
 
-- `constitutive_backend`: `python` (default) or `mfront`;
+- `constitutive_backend`: `mfront` (default) or the historical `python`;
 - `mfront_library`: generic-interface shared library path;
 - `mfront_threads`: size of the explicit MGIS thread pool.
 
