@@ -1,0 +1,71 @@
+# Stratégie de validation
+
+La validation est hiérarchique : les tests fermés du noyau ne remplacent pas la
+comparaison Abaqus, et la comparaison Abaqus ne remplace pas la reproduction
+des champs expérimentaux.
+
+## Niveau mathématique
+
+La suite automatique contrôle actuellement :
+
+- dérivées et partition de l'unité du CPS4 ;
+- Jacobien positif ;
+- symétrie et trois modes rigides de la matrice élémentaire ;
+- patch affine élastique ;
+- retour élastique et retour plastique ;
+- tangente cohérente par différences finies ;
+- traction équibiaxiale plastique avec solution analytique ;
+- résultat fini et diagnostic explicite des entrées invalides.
+
+## Parité monolithique/partitionnée
+
+Le cas équibiaxial homogène 6×6 est calculé :
+
+- en une résolution monolithique ;
+- en quatre partitions sans padding ;
+- en quatre partitions avec un padding d'un élément.
+
+Les champs `U`, `S`, `E` et `PEEQ` raccordés sont comparés au champ monolithique.
+Ce test valide les indices, les conditions aux limites locales et le
+raccordement sur un problème affine. Il ne prédit pas le padding nécessaire au
+cas hétérogène.
+
+## Métriques de champs
+
+`field_error_metrics` calcule sur le même masque de valeurs valides :
+
+- RMSE ;
+- erreur absolue moyenne ;
+- erreur moyenne signée (`prédiction - référence`) ;
+- maximum absolu ;
+- erreur L2 relative ;
+- corrélation de Pearson.
+
+Le nombre de pixels effectivement comparés est toujours conservé. Les champs de
+formes différentes et les masques incompatibles sont refusés.
+
+## Gradient aux interfaces
+
+`interface_gradient_ratio` compare, direction par direction, les gradients
+absolus aux frontières des cœurs avec le gradient moyen du champ dans la même
+direction. Une valeur proche de 1 signifie que le gradient d'interface est
+typique du champ ; une valeur supérieure indique un saut renforcé.
+
+L'article décrit qualitativement son BGE comme un rapport de discontinuité de
+déformation aux interfaces convergeant vers 1, mais ne publie pas sa formule
+complète. La métrique implémentée est donc nommée explicitement
+`interface_gradient_ratio` et **ne doit pas être présentée comme le BGE exact de
+l'article** tant que le script d'analyse original n'a pas été retrouvé.
+
+## Comparaisons restant indispensables
+
+La maturité scientifique 4/5 exige encore :
+
+- les `.inp` exacts et le script d'extraction ODB ;
+- les mêmes emplacements physiques et conventions de cisaillement ;
+- la comparaison `U1`, `U2`, `S11`, `S22`, `S12`, `E11`, `E22`, `E12`, PEEQ et
+  réactions ;
+- un sous-domaine hétérogène représentatif ;
+- l'étude padding 50/100/150/200 ;
+- les champs DIC du ROI et les métriques publiées.
+

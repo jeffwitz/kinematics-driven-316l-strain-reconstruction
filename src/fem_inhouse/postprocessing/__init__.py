@@ -6,6 +6,11 @@ from fem_inhouse.postprocessing.kinematics import (
     plane_stress_equivalent_strain,
     strain_from_displacement,
 )
+from fem_inhouse.postprocessing.metrics import (
+    FieldErrorMetrics,
+    field_error_metrics,
+    interface_gradient_ratio,
+)
 from fem_inhouse.postprocessing.stress_curves import (
     direct_fe_equivalent_stress_curve,
     reconstructed_equivalent_stress,
@@ -14,9 +19,12 @@ from fem_inhouse.postprocessing.stress_curves import (
 )
 
 __all__ = [
+    "FieldErrorMetrics",
     "StrainComponents",
     "cell_average",
     "direct_fe_equivalent_stress_curve",
+    "field_error_metrics",
+    "interface_gradient_ratio",
     "plane_stress_equivalent_strain",
     "reconstructed_equivalent_stress",
     "reconstructed_stress_curve_from_strain",

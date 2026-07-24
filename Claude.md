@@ -283,12 +283,12 @@ calcul partitionné avec padding suffisant.
 
 #### Niveau 3 : partitionnement
 
-- [ ] Référence monolithique sur domaine réduit
-- [ ] Comparaison sans recouvrement
+- [x] Référence monolithique sur domaine réduit
+- [x] Comparaison sans recouvrement
 - [ ] Comparaison avec padding 50, 100, 150 et 200
 - [ ] Étude du nombre de partitions
-- [ ] Calcul et convergence de la métrique BGE
-- [ ] Mesure spécifique des erreurs aux interfaces
+- [!] Calcul et convergence de la métrique BGE
+- [x] Mesure spécifique des erreurs aux interfaces
 
 #### Niveau 4 : reproduction scientifique
 
@@ -312,7 +312,7 @@ artefacts de raccordement.
 - [x] Documentation du modèle numérique
 - [ ] Documentation des conventions
 - [x] Documentation du partitionnement
-- [ ] Documentation de la validation
+- [x] Documentation de la validation
 - [ ] Documentation des limites scientifiques
 - [x] Commandes uniques `test`, `validate`, `example`
 - [x] CI verte sur une installation fraîche
@@ -475,6 +475,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Construction du paquet | `pip wheel . --no-deps` et inspection | cœur, workflow et CLI présents | Réussi |
 | 2026-07-24 | Portabilité des scripts historiques | Contrat `.npy`, chemins par environnement | 97 tests, 95,20 %, aucun chemin personnel | Réussi |
 | 2026-07-24 | CI sur installation fraîche | GitHub Actions `30086978438` | installation, Ruff et tests verts | Réussi |
+| 2026-07-24 | Parité monolithique/partitionnée | Cas homogène 6×6, padding 0 et 1 | `U/S/E/PEEQ` égaux aux tolérances | Réussi |
+| 2026-07-24 | Métriques de champs/interfaces | `pytest --cov=fem_inhouse --cov-branch` | 104 tests, 95,36 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -546,3 +548,13 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Validation des formes, valeurs finies et domaines des quatre champs d'entrée
 - Documentation explicite des noms de fichiers `.npy` attendus
 - Validation par 97 tests avec 95,20 % de couverture
+
+### 2026-07-24 — Métriques et parité de partition
+
+- Ajout de RMSE, MAE, erreur signée, L2 relative et corrélation spatiale
+- Ajout d'un ratio de gradient spécifique aux interfaces de raccordement
+- Parité vérifiée entre résolution monolithique et quatre partitions homogènes
+- Comparaison vérifiée sans padding et avec padding d'un élément
+- BGE exact maintenu bloqué : l'article ne donne pas la formule complète et le
+  script d'analyse source n'est pas livré
+- Validation complète par 104 tests avec 95,36 % de couverture
