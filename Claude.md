@@ -396,7 +396,8 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 - [x] Au moins 80 % de couverture des branches
 - [x] Couverture dédiée de toutes les fonctions constitutives critiques
 - [x] Aucun avertissement qualité non justifié
-- [ ] Revue de code obligatoire pour les formules numériques
+- [~] Revue de code obligatoire pour les formules numériques : procédure et
+  modèle de PR ajoutés, protection de branche non activée
 
 ### Reproductibilité
 
@@ -508,6 +509,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après rapport automatique | Ruff, mypy et couverture | 135 tests, 96,70 % | Réussi |
 | 2026-07-24 | Assemblage tangent par blocs | A/B hétérogène 10k | -22,4 % tangent, -3,2 % RSS | Réussi |
 | 2026-07-24 | Suite après optimisation mémoire | Ruff, mypy et couverture | 143 tests, 96,93 % | Réussi |
+| 2026-07-24 | Gouvernance technique | ADR, guide et modèle de PR | Règles numériques explicites | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -732,3 +734,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Parité avec la formulation dense vérifiée à `rtol=1e-13`
 - Réduction théorique de 1 568 à 800 octets globaux par élément
 - Mesure A/B 10k : poste tangent -22,4 %, pic RSS processus -3,2 %
+
+### 2026-07-24 — Décisions et revue numérique
+
+- Ajout d'ADR sur le périmètre, PyPardiso et le raccordement des cœurs
+- Ajout d'un guide de contribution limité au cas d'étude
+- Exigence écrite d'un second relecteur pour toute formule numérique
+- Ajout d'un modèle de PR avec preuves mathématiques et performance
+- Protection de branche laissée inactive pour ne pas bloquer le dépôt mono-auteur

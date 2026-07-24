@@ -61,6 +61,8 @@ Initial PyPardiso timing and memory measurements are recorded in
 [`docs/performance.md`](docs/performance.md).
 The resumable CLI and Slurm-array workflow are documented in
 [`docs/partitioning.md`](docs/partitioning.md).
+Architecture decisions are recorded in [`docs/adr`](docs/adr), and numerical
+review requirements are defined in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Typed solver API
 
