@@ -624,6 +624,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Idempotence de préparation | Deuxième exécution sur les mêmes sorties | Empreintes vérifiées, aucune réécriture | Réussi |
 | 2026-07-24 | Chaîne DIC réelle 10×10 | Préparation centrale, 25 partitions, raccordement | `U/S/E/PEEQ` finis et complets | Réussi |
 | 2026-07-24 | Suite après pipeline DIC | Ruff, mypy, pytest avec branches | 156 tests, 95,26 % | Réussi |
+| 2026-07-24 | Clone distant avec Git LFS | Clone isolé, `git lfs pull`, SHA-256, crop 4×4 | Données récupérées et préparées depuis GitHub | Réussi |
+| 2026-07-24 | CI distante du pipeline DIC | GitHub Actions `30091651001` | Ruff, mypy, wheel et tests verts | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -658,6 +660,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Calcul réussi du crop réel `10×10` en 25 partitions, puis raccordement de
   `U`, `S`, `E` et `PEEQ`
 - Documentation du chemin complet depuis un clone neuf
+- Clone distant isolé vérifié avec téléchargement des quatre objets Git LFS,
+  empreintes identiques et préparation réussie d'un crop `4×4`
+- CI GitHub verte sur le commit du pipeline autonome
 
 ### 2026-07-24 — Création
 
