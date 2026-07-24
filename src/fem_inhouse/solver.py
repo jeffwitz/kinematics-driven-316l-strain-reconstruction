@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from fem_inhouse.config import CaseStudyConfig
-from fem_inhouse.core import solver_legacy
+from fem_inhouse.core import nonlinear
 from fem_inhouse.results import FEMResult, FrameResult
 
 LOGGER = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def require_pypardiso() -> None:
 def linear_solver_backend() -> str:
     """Return the backend selected by the numerical kernel."""
 
-    return solver_legacy._SOLVER_NAME
+    return nonlinear._SOLVER_NAME
 
 
 def _validated_field(
@@ -143,7 +143,7 @@ def run_case_study(
         linear_solver_backend(),
     )
 
-    raw = solver_legacy.run_fem(
+    raw = nonlinear.run_fem(
         displacement_x,
         displacement_y,
         yield_map,

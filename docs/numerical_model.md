@@ -54,7 +54,9 @@ sparse sont maintenant séparés dans :
 - `fem_inhouse.core.constitutive` ;
 - `fem_inhouse.core.assembly`.
 
-Le solveur historique les utilise directement ; la parité du résultat est
-protégée par les cas analytiques et partitionnés. La boucle Newton reste dans
-`fem_inhouse.core.solver_legacy` et constitue la prochaine dette à isoler, sans
-justification pour généraliser le modèle au-delà du cas d'étude.
+Le solveur non linéaire les utilise directement ; la parité du résultat est
+protégée par les cas analytiques et partitionnés. L'incrémentation,
+Newton-Raphson et la réduction automatique du pas sont isolés dans
+`fem_inhouse.core.nonlinear`. `fem_inhouse.core.solver_legacy` ne conserve que
+les imports de compatibilité des scripts historiques. Cette séparation
+n'introduit aucun mécanisme générique au-delà du cas d'étude.

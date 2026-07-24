@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from fem_inhouse.config import CaseStudyConfig, SolverConfig
-from fem_inhouse.core import solver_legacy
+from fem_inhouse.core import nonlinear
 from fem_inhouse.examples import reduced_biaxial_case
 from fem_inhouse.postprocessing import von_mises_stress
 from fem_inhouse.solver import run_case_study
@@ -76,6 +76,6 @@ def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
     def nonfinite_solution(_matrix, right_hand_side):
         return np.full_like(right_hand_side, np.nan)
 
-    monkeypatch.setattr(solver_legacy, "_solve", nonfinite_solution)
+    monkeypatch.setattr(nonlinear, "_solve", nonfinite_solution)
     with pytest.raises(RuntimeError, match="increment cutback below minimum"):
         _solve_case(case, config=config)

@@ -64,7 +64,7 @@ def test_typed_api_validates_and_forwards_configuration(monkeypatch) -> None:
         captured.kwargs = kwargs
         return _raw_result()
 
-    monkeypatch.setattr(solver.solver_legacy, "run_fem", fake_run_fem)
+    monkeypatch.setattr(solver.nonlinear, "run_fem", fake_run_fem)
     ux, uy, yield_map, hardening_map = _fields()
     result = solver.run_case_study(
         config,
@@ -101,7 +101,7 @@ def test_invalid_input_fields_are_rejected(
     replacement,
     message,
 ) -> None:
-    monkeypatch.setattr(solver.solver_legacy, "run_fem", lambda *args, **kwargs: _raw_result())
+    monkeypatch.setattr(solver.nonlinear, "run_fem", lambda *args, **kwargs: _raw_result())
     fields = list(_fields())
     fields[field_index] = replacement
 
@@ -132,7 +132,7 @@ def test_invalid_snapshot_fractions_are_rejected(snapshots) -> None:
 def test_non_finite_solver_output_is_rejected(monkeypatch) -> None:
     raw = _raw_result()
     raw["S"][0, 0, 0] = np.nan
-    monkeypatch.setattr(solver.solver_legacy, "run_fem", lambda *args, **kwargs: raw)
+    monkeypatch.setattr(solver.nonlinear, "run_fem", lambda *args, **kwargs: raw)
     ux, uy, yield_map, hardening_map = _fields()
 
     with pytest.raises(RuntimeError, match="non-finite final fields"):
@@ -146,7 +146,7 @@ def test_non_finite_solver_output_is_rejected(monkeypatch) -> None:
 
 
 def test_solver_can_skip_backend_requirement_for_diagnostics(monkeypatch) -> None:
-    monkeypatch.setattr(solver.solver_legacy, "run_fem", lambda *args, **kwargs: _raw_result())
+    monkeypatch.setattr(solver.nonlinear, "run_fem", lambda *args, **kwargs: _raw_result())
 
     def unexpected_check():
         raise AssertionError("backend requirement should have been skipped")

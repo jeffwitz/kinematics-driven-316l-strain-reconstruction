@@ -211,7 +211,7 @@ avec rapport automatique champ par champ.
   - [x] élément ;
   - [x] matériau constitutif ;
   - [x] assemblage ;
-  - [ ] solveur non linéaire ;
+  - [x] solveur non linéaire ;
   - [x] résultats ;
   - [x] post-traitement.
 - [x] Remplacer les 19 paramètres de `run_fem` par des configurations typées
@@ -335,7 +335,8 @@ fem_inhouse/
 │   │   ├── element.py
 │   │   ├── constitutive.py
 │   │   ├── assembly.py
-│   │   └── solver.py
+│   │   ├── nonlinear.py
+│   │   └── solver_legacy.py
 │   ├── partitioning/
 │   │   ├── layout.py
 │   │   ├── overlap.py
@@ -482,6 +483,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Performance 350k | Vérification mémoire avant lancement | 3,7 GiB disponibles, swap saturé | Reporté |
 | 2026-07-24 | Modules maillage/élément/assemblage | Suite complète après extraction | 117 tests, 96,26 % | Réussi |
 | 2026-07-24 | Module constitutif public | Suite complète après extraction | 123 tests, 96,32 % | Réussi |
+| 2026-07-24 | Module solveur non linéaire | Suite complète et compatibilité historique | 123 tests, 96,33 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -601,3 +603,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Utilisation directe de ce module par le solveur et l'API publique du cœur
 - Conservation de l'alias historique `_vm` dans `fem_pixel.py` uniquement
 - Validation complète par 123 tests avec 96,32 % de couverture
+
+### 2026-07-24 — Isolation du solveur non linéaire
+
+- Déplacement de l'incrémentation, de Newton-Raphson et du cutback dans
+  `core.nonlinear`
+- Branchement direct de l'API publique typée sur ce module
+- Réduction de `core.solver_legacy` à une couche de compatibilité historique
+- Conservation du test de non-convergence par injection du solveur linéaire
+- Validation complète par 123 tests avec 96,33 % de couverture
