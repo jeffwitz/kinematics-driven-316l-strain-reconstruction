@@ -1,0 +1,19 @@
+{
+  "backend": "pypardiso (MKL, multithreaded); constitutive=python",
+  "elapsed_seconds": 1.2166585598606616,
+  "initialization_seconds": 0.0015295639168471098,
+  "elastic_assembly_seconds": 0.0014900949317961931,
+  "constitutive_seconds": 0.7990408565383404,
+  "tangent_assembly_seconds": 0.11619141441769898,
+  "linear_solve_seconds": 0.27074053580872715,
+  "output_seconds": 0.0005369330756366253,
+  "attempted_increments": 20,
+  "converged_increments": 20,
+  "cutbacks": 0,
+  "total_newton_iterations": 84,
+  "maximum_newton_iterations": 8,
+  "final_residual_norm": 1.9201000695644837e-11,
+  "final_relative_residual": 5.007590505183571e-10,
+  "final_convergence_criterion": "absolute_residual",
+  "tensor_reconstruction_source": "python_analytical"
+}

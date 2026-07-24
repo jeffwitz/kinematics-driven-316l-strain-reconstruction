@@ -1,0 +1,19 @@
+{
+  "backend": "pypardiso (MKL, multithreaded); constitutive=mfront",
+  "elapsed_seconds": 0.4910075080115348,
+  "initialization_seconds": 0.01873326487839222,
+  "elastic_assembly_seconds": 0.0010681119747459888,
+  "constitutive_seconds": 0.129982277052477,
+  "tangent_assembly_seconds": 0.07744353823363781,
+  "linear_solve_seconds": 0.23987610288895667,
+  "output_seconds": 0.0004832400009036064,
+  "attempted_increments": 20,
+  "converged_increments": 20,
+  "cutbacks": 0,
+  "total_newton_iterations": 66,
+  "maximum_newton_iterations": 4,
+  "final_residual_norm": 1.6882459848858976e-11,
+  "final_relative_residual": 4.4001571907754013e-10,
+  "final_convergence_criterion": "absolute_residual",
+  "tensor_reconstruction_source": "mfront_native_axial_strain"
+}

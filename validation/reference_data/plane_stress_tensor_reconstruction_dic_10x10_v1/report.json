@@ -1,0 +1,377 @@
+{
+  "artifacts": {
+    "mfront": {
+      "filename": "mfront_fields.npz",
+      "sha256": "7bac75b9511b930b8ba0cd30d0aaf89cc9ba7b1d963bec08ad7ddc3c1161a82b"
+    },
+    "python": {
+      "filename": "python_fields.npz",
+      "sha256": "58d0ea6abd57b122ad08a8e5eccfc05f6f80d00191a95a9a6fec20290587df1d"
+    }
+  },
+  "checks": {
+    "field_comparison_passed": true,
+    "historical_regression_passed": true,
+    "invariants_passed": true
+  },
+  "comparison": {
+    "prediction_backend": "mfront",
+    "reference_backend": "python"
+  },
+  "configuration": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 10,
+      "ny": 10,
+      "scale_factor": 1.84
+    },
+    "solver": {
+      "constitutive_backend": "mfront",
+      "hardening_mode": "ludwik",
+      "increments": 20,
+      "max_newton_iterations": 25,
+      "mfront_library": "build/mfront/src/libBehaviour.so",
+      "mfront_threads": 2,
+      "minimum_step_divisor": 1024,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-07
+    }
+  },
+  "consistency": {
+    "mfront": {
+      "maximum_abs_additive_residual": 1.3552527156068805e-19,
+      "maximum_abs_mises_3d_minus_historical_mpa": 5.684341886080802e-14,
+      "maximum_abs_native_minus_analytical_elastic_strain": 1.0842021724855044e-19,
+      "maximum_abs_native_minus_analytical_plastic_strain": 1.4060746924421386e-19,
+      "maximum_abs_native_minus_analytical_total_strain": 1.2197274440461925e-19,
+      "maximum_abs_plane_stress_residual_mpa": 1.0455425219503867e-14,
+      "maximum_abs_plastic_trace": 1.4060746924421386e-19
+    },
+    "python": {
+      "maximum_abs_additive_residual": 8.131516293641283e-20,
+      "maximum_abs_mises_3d_minus_historical_mpa": 2.842170943040401e-14,
+      "maximum_abs_native_minus_analytical_elastic_strain": 0.0,
+      "maximum_abs_native_minus_analytical_plastic_strain": 0.0,
+      "maximum_abs_native_minus_analytical_total_strain": 0.0,
+      "maximum_abs_plane_stress_residual_mpa": 0.0,
+      "maximum_abs_plastic_trace": 0.0
+    }
+  },
+  "created_at_utc": "2026-07-24T16:23:49.096068+00:00",
+  "diagnostics": {
+    "mfront": {
+      "attempted_increments": 20,
+      "backend": "pypardiso (MKL, multithreaded); constitutive=mfront",
+      "constitutive_seconds": 0.129982277052477,
+      "converged_increments": 20,
+      "cutbacks": 0,
+      "elapsed_seconds": 0.4910075080115348,
+      "elastic_assembly_seconds": 0.0010681119747459888,
+      "final_convergence_criterion": "absolute_residual",
+      "final_relative_residual": 4.4001571907754013e-10,
+      "final_residual_norm": 1.6882459848858976e-11,
+      "initialization_seconds": 0.01873326487839222,
+      "linear_solve_seconds": 0.23987610288895667,
+      "maximum_newton_iterations": 4,
+      "output_seconds": 0.0004832400009036064,
+      "tangent_assembly_seconds": 0.07744353823363781,
+      "tensor_reconstruction_source": "mfront_native_axial_strain",
+      "total_newton_iterations": 66
+    },
+    "python": {
+      "attempted_increments": 20,
+      "backend": "pypardiso (MKL, multithreaded); constitutive=python",
+      "constitutive_seconds": 0.7990408565383404,
+      "converged_increments": 20,
+      "cutbacks": 0,
+      "elapsed_seconds": 1.2166585598606616,
+      "elastic_assembly_seconds": 0.0014900949317961931,
+      "final_convergence_criterion": "absolute_residual",
+      "final_relative_residual": 5.007590505183571e-10,
+      "final_residual_norm": 1.9201000695644837e-11,
+      "initialization_seconds": 0.0015295639168471098,
+      "linear_solve_seconds": 0.27074053580872715,
+      "maximum_newton_iterations": 8,
+      "output_seconds": 0.0005369330756366253,
+      "tangent_assembly_seconds": 0.11619141441769898,
+      "tensor_reconstruction_source": "python_analytical",
+      "total_newton_iterations": 84
+    }
+  },
+  "git_commit": "6074d7389681fc097ab14338a142a829e896fb3b",
+  "historical_regression": {
+    "maximum_absolute_error_limit": 1e-12,
+    "metrics": {
+      "mfront": {
+        "displacement_mm": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        },
+        "equivalent_plastic_strain": {
+          "maximum_absolute_error": 4.336808689942018e-19,
+          "relative_l2": 2.7520466883472565e-16,
+          "relative_linf": 3.2385215907921683e-16,
+          "rmse": 1.0844691590073036e-19
+        },
+        "plastic_strain": {
+          "maximum_absolute_error": 2.710505431213761e-19,
+          "relative_l2": 1.5970160563275948e-16,
+          "relative_linf": 1.502781797145251e-16,
+          "rmse": 5.706394175205144e-20
+        },
+        "reaction_force": {
+          "maximum_absolute_error": 1.1102230246251565e-16,
+          "relative_l2": 1.9262443670889922e-16,
+          "relative_linf": 3.1762050798247653e-16,
+          "rmse": 1.660933671048408e-17
+        },
+        "stress_mpa": {
+          "maximum_absolute_error": 4.263256414560601e-14,
+          "relative_l2": 1.5167179728712192e-16,
+          "relative_linf": 1.8356775492717187e-16,
+          "rmse": 1.187034203898109e-14
+        },
+        "total_strain": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        }
+      },
+      "python": {
+        "displacement_mm": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        },
+        "equivalent_plastic_strain": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        },
+        "plastic_strain": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        },
+        "reaction_force": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        },
+        "stress_mpa": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        },
+        "total_strain": {
+          "maximum_absolute_error": 0.0,
+          "relative_l2": 0.0,
+          "relative_linf": 0.0,
+          "rmse": 0.0
+        }
+      }
+    },
+    "passed": true,
+    "reference_directory": "validation/reference_data/mfront_newton_dic_10x10_v1"
+  },
+  "inputs": {
+    "displacement_x_mm": {
+      "path": "data/processed/case-study-10x10/displacement_x_mm.npy",
+      "sha256": "5aba16dc1b6610b5e76868d74d63bd729a980238a944291ed35faa2fbc33ce9b",
+      "shape": [
+        11,
+        11
+      ]
+    },
+    "displacement_y_mm": {
+      "path": "data/processed/case-study-10x10/displacement_y_mm.npy",
+      "sha256": "2181da6b3db96f0ac68301931e29db16cde559cef8fc6150e9fdebbadd6f08cf",
+      "shape": [
+        11,
+        11
+      ]
+    },
+    "hardening_coefficient_mpa": {
+      "path": "data/processed/case-study-10x10/hardening_coefficient_mpa.npy",
+      "sha256": "67eb2bd452c8dee0ca0106c46bc0d2b7161d7e0662d832725f48260c663c6814",
+      "shape": [
+        10,
+        10
+      ]
+    },
+    "yield_stress_mpa": {
+      "path": "data/processed/case-study-10x10/yield_stress_mpa.npy",
+      "sha256": "a13c515980c1bf33bea4f303632bf24c62f05b304a3c4b84c9ed2ea14d0bc021",
+      "shape": [
+        10,
+        10
+      ]
+    }
+  },
+  "metrics": {
+    "EVM_HISTORICAL": {
+      "maximum_absolute_error": 1.331299359553671e-07,
+      "relative_l2": 2.69025445949133e-05,
+      "relative_linf": 6.833033760589534e-05,
+      "rmse": 2.789746668568186e-08
+    },
+    "EVM_RECONSTRUCTED_3D": {
+      "maximum_absolute_error": 1.3388658648872016e-07,
+      "relative_l2": 2.7779903293822983e-05,
+      "relative_linf": 6.684955351690346e-05,
+      "rmse": 2.901112389084395e-08
+    },
+    "MISES_3D_MPA": {
+      "maximum_absolute_error": 0.06930453985339113,
+      "relative_l2": 4.8628689510623405e-05,
+      "relative_linf": 0.00028818464487058974,
+      "rmse": 0.008635756925314991
+    },
+    "PEEQ_TENSOR_INSTANTANEOUS": {
+      "maximum_absolute_error": 4.2691101136984086e-07,
+      "relative_l2": 0.00014421191087855747,
+      "relative_linf": 0.0003203541161515988,
+      "rmse": 5.661050815689126e-08
+    },
+    "displacement_mm": {
+      "maximum_absolute_error": 3.3418641465221555e-10,
+      "relative_l2": 1.1635147142948164e-09,
+      "relative_linf": 4.678375121113405e-09,
+      "rmse": 5.91044442323174e-11
+    },
+    "elastic_strain_tensor": {
+      "maximum_absolute_error": 1.9785998163338904e-07,
+      "relative_l2": 5.370572460364891e-05,
+      "relative_linf": 0.00017591461637164597,
+      "rmse": 1.6569837227616798e-08
+    },
+    "equivalent_plastic_strain": {
+      "maximum_absolute_error": 4.273594880879662e-07,
+      "relative_l2": 0.00014417977551767067,
+      "relative_linf": 0.0003191173529511503,
+      "rmse": 5.6816382941870065e-08
+    },
+    "plastic_strain": {
+      "maximum_absolute_error": 5.873398341264482e-07,
+      "relative_l2": 0.00013618053109551854,
+      "relative_linf": 0.00032562419782418455,
+      "rmse": 4.8660296248696016e-08
+    },
+    "plastic_strain_tensor": {
+      "maximum_absolute_error": 2.936699170632241e-07,
+      "relative_l2": 0.0001460974677699174,
+      "relative_linf": 0.00032562419782418455,
+      "rmse": 2.3413319155870267e-08
+    },
+    "reaction_force": {
+      "maximum_absolute_error": 6.071215908395877e-05,
+      "relative_l2": 8.2673629182069e-05,
+      "relative_linf": 0.00017369117614950242,
+      "rmse": 7.128672612318987e-06
+    },
+    "stress_mpa": {
+      "maximum_absolute_error": 0.03337844992594796,
+      "relative_l2": 5.5368223894984966e-05,
+      "relative_linf": 0.0001437218816045968,
+      "rmse": 0.004333324371289704
+    },
+    "stress_tensor_mpa": {
+      "maximum_absolute_error": 0.03337844992594796,
+      "relative_l2": 5.379334297396111e-05,
+      "relative_linf": 0.0001437218816045968,
+      "rmse": 0.002776492978552977
+    },
+    "total_strain": {
+      "maximum_absolute_error": 1.9161987085958287e-07,
+      "relative_l2": 3.1935374140430874e-05,
+      "relative_linf": 6.65401006269065e-05,
+      "rmse": 2.9650010820699144e-08
+    },
+    "total_strain_tensor": {
+      "maximum_absolute_error": 9.580993542979144e-08,
+      "relative_l2": 3.414301985416452e-05,
+      "relative_linf": 6.65401006269065e-05,
+      "rmse": 1.4606518245776728e-08
+    }
+  },
+  "mfront_library": {
+    "path": "build/mfront/src/libBehaviour.so",
+    "sha256": "2f5169785856edcb60056b991ef1727e158b002e348168fca912e1add9eb3908"
+  },
+  "passed": true,
+  "schema_version": 2,
+  "thresholds": {
+    "EVM_HISTORICAL": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "EVM_RECONSTRUCTED_3D": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "MISES_3D_MPA": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "PEEQ_TENSOR_INSTANTANEOUS": {
+      "maximum": 0.001,
+      "metric": "relative_linf"
+    },
+    "displacement_mm": {
+      "maximum": 1e-06,
+      "metric": "relative_linf"
+    },
+    "elastic_strain_tensor": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "equivalent_plastic_strain": {
+      "maximum": 0.001,
+      "metric": "relative_linf"
+    },
+    "plastic_strain": {
+      "maximum": 0.001,
+      "metric": "relative_linf"
+    },
+    "plastic_strain_tensor": {
+      "maximum": 0.001,
+      "metric": "relative_linf"
+    },
+    "reaction_force": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "stress_mpa": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "stress_tensor_mpa": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "total_strain": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    },
+    "total_strain_tensor": {
+      "maximum": 0.0005,
+      "metric": "relative_linf"
+    }
+  }
+}
