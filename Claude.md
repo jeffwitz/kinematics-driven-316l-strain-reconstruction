@@ -194,7 +194,8 @@ implicite.
 - [x] Corriger les conventions d'axes et de cisaillement
 - [ ] Comparer contraintes et déformations au même emplacement physique
 - [x] Définir la méthode commune de calcul des déformations depuis `U`
-- [ ] Vérifier `U1`, `U2`, `S11`, `S22`, `S12`, `PEEQ`
+- [~] Vérifier `U1`, `U2`, `S11`, `S22`, `S12`, `PEEQ` : contrats internes
+  couverts, comparaison Abaqus encore absente
 - [x] Vérifier le signe et la définition des réactions
 - [x] Ajouter des assertions sur PEEQ au test biaxial
 
@@ -490,6 +491,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Profil par phase 10k hétérogène | `SolverDiagnostics` | 31,948 s, 78 Newton, 0 cutback | Réussi |
 | 2026-07-24 | Suite après instrumentation | `pytest --cov=fem_inhouse --cov-branch` | 123 tests, 96,59 % | Réussi |
 | 2026-07-24 | Réactions du patch affine | Sommes sur les quatre bords | Signes et résultantes analytiques | Réussi |
+| 2026-07-24 | Patch affine en cisaillement | Solution fermée | `U1/U2/E12/S12/PEEQ` conformes | Réussi |
+| 2026-07-24 | Suite après patch cisaillement | `pytest --cov=fem_inhouse --cov-branch` | 124 tests, 96,59 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -651,3 +654,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Vérification des résultantes analytiques horizontales et verticales
 - Documentation des unités et de l'épaisseur implicite de 1 mm
 - Maintien de l'épaisseur Abaqus exacte comme donnée externe encore absente
+
+### 2026-07-24 — Patch test en cisaillement
+
+- Ajout d'un champ affine de cisaillement simple sur maillage 4×3
+- Vérification de la convention de cisaillement d'ingénieur `gamma12`
+- Vérification de `S12 = G gamma12` et des composantes normales nulles
+- Vérification simultanée de `U1`, `U2` et de PEEQ nulle
