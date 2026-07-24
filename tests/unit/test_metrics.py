@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 
 from fem_inhouse.partitioning import PartitionLayout
-from fem_inhouse.postprocessing import field_error_metrics, interface_gradient_ratio
+from fem_inhouse.postprocessing import (
+    field_error_metrics,
+    interface_gradient_ratio,
+    localization_overlap_metrics,
+)
 
 
 def test_field_metrics_use_prediction_minus_reference() -> None:
@@ -41,6 +45,50 @@ def test_field_metric_contract_failures_and_zero_reference() -> None:
     nonzero_prediction = field_error_metrics(np.zeros(2), np.ones(2))
     assert np.isinf(nonzero_prediction.relative_l2_error)
     assert np.isnan(nonzero_prediction.pearson_correlation)
+
+
+def test_localization_overlap_quantifies_partial_hotspot_agreement() -> None:
+    reference = np.array([4.0, 3.0, 2.0, 1.0])
+    prediction = np.array([4.0, 1.0, 3.0, 2.0])
+
+    overlap = localization_overlap_metrics(
+        reference,
+        prediction,
+        top_fraction=0.5,
+    )
+
+    assert overlap.reference_count == 2
+    assert overlap.prediction_count == 2
+    assert overlap.intersection_count == 1
+    assert overlap.intersection_over_union == pytest.approx(1.0 / 3.0)
+    assert overlap.dice_coefficient == 0.5
+    assert overlap.reference_recall == 0.5
+    assert overlap.prediction_precision == 0.5
+
+
+def test_localization_overlap_contracts_masks_and_ties() -> None:
+    tied = np.ones((2, 2))
+    identical = localization_overlap_metrics(tied, tied, top_fraction=0.25)
+    assert identical.reference_count == 4
+    assert identical.intersection_over_union == 1.0
+
+    masked = localization_overlap_metrics(
+        [4.0, 3.0, np.nan],
+        [4.0, 2.0, 1.0],
+        top_fraction=0.5,
+        mask=[True, False, True],
+    )
+    assert masked.reference_count == 1
+    assert masked.intersection_over_union == 1.0
+
+    with pytest.raises(ValueError, match="top_fraction"):
+        localization_overlap_metrics([1.0], [1.0], top_fraction=0.0)
+    with pytest.raises(ValueError, match="same shape"):
+        localization_overlap_metrics(np.zeros(2), np.zeros(3))
+    with pytest.raises(ValueError, match="mask"):
+        localization_overlap_metrics(np.zeros(2), np.zeros(2), mask=np.ones(3))
+    with pytest.raises(ValueError, match="no valid"):
+        localization_overlap_metrics([np.nan], [np.nan])
 
 
 def test_interface_ratio_is_one_for_affine_field_and_detects_seam() -> None:

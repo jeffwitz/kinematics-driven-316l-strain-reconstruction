@@ -50,6 +50,20 @@ cas hétérogène.
 Le nombre de pixels effectivement comparés est toujours conservé. Les champs de
 formes différentes et les masques incompatibles sont refusés.
 
+`localization_overlap_metrics` sélectionne indépendamment les pixels du
+quantile supérieur de chaque champ, puis calcule :
+
+- intersection sur union (Jaccard) ;
+- coefficient de Dice ;
+- rappel par rapport à la zone de référence ;
+- précision par rapport à la zone prédite.
+
+Le seuil de chaque champ, les effectifs et l'intersection sont conservés. Les
+ex æquo au seuil sont tous inclus ; la fraction sélectionnée peut donc être
+légèrement supérieure à la fraction demandée. Cette métrique mesure la
+coïncidence spatiale des zones fortement localisées sans confondre leurs
+amplitudes.
+
 ## Gradient aux interfaces
 
 `interface_gradient_ratio` compare, direction par direction, les gradients

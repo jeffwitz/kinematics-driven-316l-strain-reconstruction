@@ -23,6 +23,22 @@ class FieldErrorMetrics:
     pearson_correlation: float
 
 
+@dataclass(frozen=True, slots=True)
+class LocalizationOverlapMetrics:
+    """Overlap of high-localization pixels selected independently per field."""
+
+    top_fraction: float
+    reference_threshold: float
+    prediction_threshold: float
+    reference_count: int
+    prediction_count: int
+    intersection_count: int
+    intersection_over_union: float
+    dice_coefficient: float
+    reference_recall: float
+    prediction_precision: float
+
+
 def field_error_metrics(
     reference: ArrayLike,
     prediction: ArrayLike,
@@ -73,6 +89,60 @@ def field_error_metrics(
         maximum_absolute_error=float(np.max(np.abs(difference))),
         relative_l2_error=relative_l2,
         pearson_correlation=correlation,
+    )
+
+
+def localization_overlap_metrics(
+    reference: ArrayLike,
+    prediction: ArrayLike,
+    *,
+    top_fraction: float = 0.1,
+    mask: ArrayLike | None = None,
+) -> LocalizationOverlapMetrics:
+    """Compare independently thresholded high-localization zones.
+
+    Each threshold is the ``1 - top_fraction`` quantile of the corresponding
+    valid field. Values equal to the threshold are retained, so tied pixels can
+    make the selected fraction slightly larger than requested.
+    """
+
+    if not 0 < top_fraction <= 1:
+        raise ValueError("top_fraction must lie in (0, 1]")
+    reference_values = np.asarray(reference, dtype=float)
+    prediction_values = np.asarray(prediction, dtype=float)
+    if reference_values.shape != prediction_values.shape:
+        raise ValueError("reference and prediction must have the same shape")
+    valid = np.isfinite(reference_values) & np.isfinite(prediction_values)
+    if mask is not None:
+        mask_values = np.asarray(mask, dtype=bool)
+        if mask_values.shape != reference_values.shape:
+            raise ValueError("mask must have the same shape as the compared fields")
+        valid &= mask_values
+    if not valid.any():
+        raise ValueError("no valid values remain for comparison")
+
+    reference_valid = reference_values[valid]
+    prediction_valid = prediction_values[valid]
+    quantile = 1.0 - top_fraction
+    reference_threshold = float(np.quantile(reference_valid, quantile))
+    prediction_threshold = float(np.quantile(prediction_valid, quantile))
+    reference_zone = reference_valid >= reference_threshold
+    prediction_zone = prediction_valid >= prediction_threshold
+    intersection_count = int(np.count_nonzero(reference_zone & prediction_zone))
+    reference_count = int(np.count_nonzero(reference_zone))
+    prediction_count = int(np.count_nonzero(prediction_zone))
+    union_count = reference_count + prediction_count - intersection_count
+    return LocalizationOverlapMetrics(
+        top_fraction=top_fraction,
+        reference_threshold=reference_threshold,
+        prediction_threshold=prediction_threshold,
+        reference_count=reference_count,
+        prediction_count=prediction_count,
+        intersection_count=intersection_count,
+        intersection_over_union=intersection_count / union_count,
+        dice_coefficient=2.0 * intersection_count / (reference_count + prediction_count),
+        reference_recall=intersection_count / reference_count,
+        prediction_precision=intersection_count / prediction_count,
     )
 
 

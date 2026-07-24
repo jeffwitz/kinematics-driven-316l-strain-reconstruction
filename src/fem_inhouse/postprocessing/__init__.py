@@ -8,8 +8,10 @@ from fem_inhouse.postprocessing.kinematics import (
 )
 from fem_inhouse.postprocessing.metrics import (
     FieldErrorMetrics,
+    LocalizationOverlapMetrics,
     field_error_metrics,
     interface_gradient_ratio,
+    localization_overlap_metrics,
 )
 from fem_inhouse.postprocessing.stress_curves import (
     direct_fe_equivalent_stress_curve,
@@ -20,11 +22,13 @@ from fem_inhouse.postprocessing.stress_curves import (
 
 __all__ = [
     "FieldErrorMetrics",
+    "LocalizationOverlapMetrics",
     "StrainComponents",
     "cell_average",
     "direct_fe_equivalent_stress_curve",
     "field_error_metrics",
     "interface_gradient_ratio",
+    "localization_overlap_metrics",
     "plane_stress_equivalent_strain",
     "reconstructed_equivalent_stress",
     "reconstructed_stress_curve_from_strain",

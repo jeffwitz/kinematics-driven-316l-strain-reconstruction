@@ -298,7 +298,8 @@ calcul partitionné avec padding suffisant.
 - [ ] Carte de différence signée
 - [ ] BGE
 - [ ] Corrélation spatiale des champs
-- [ ] Recouvrement des zones de plus forte localisation
+- [~] Recouvrement des zones de plus forte localisation : métrique testée,
+  données de l'article encore absentes
 - [ ] Quatre courbes de contrainte-déformation séparées
 - [ ] Intervalles de confiance calculés selon la méthode documentée
 - [ ] Comparaison 25 partitions / 100 partitions avec padding 150
@@ -373,7 +374,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 ### Noyau numérique
 
-- [ ] Tous les tests mathématiques critiques passent
+- [x] Tous les tests mathématiques critiques du modèle supporté passent
 - [x] Tangente cohérente vérifiée automatiquement
 - [x] Convergence robuste sur cas homogène et hétérogène
 - [x] Échec de convergence diagnostiqué sans résultat silencieusement invalide
@@ -498,6 +499,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après CLI partitionnée | Ruff, mypy, pytest et `bash -n` | 125 tests, 96,46 % | Réussi |
 | 2026-07-24 | Qualité dépôt complet | `ruff check .` | Aucun défaut, scripts historiques inclus | Réussi |
 | 2026-07-24 | Wheel typé | `pip wheel . --no-deps` et inspection | `py.typed`, cœur et métadonnées présents | Réussi |
+| 2026-07-24 | Recouvrement des localisations | Jaccard, Dice, rappel, précision | Cas identique, partiel et masqué testés | Réussi |
+| 2026-07-24 | Suite après métrique de localisation | Ruff, mypy et couverture | 127 tests, 96,55 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -691,3 +694,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Ajout de la construction du wheel à la CI
 - Ajout de `CITATION.cff` depuis le titre et les auteurs de l'article source
 - Licence laissée explicitement ouverte avant publication publique
+
+### 2026-07-24 — Recouvrement des zones localisées
+
+- Ajout d'une sélection indépendante par quantile supérieur
+- Ajout des scores de Jaccard et Dice
+- Ajout du rappel de la zone de référence et de la précision de la prédiction
+- Conservation des seuils et effectifs pour interpréter les ex æquo
+- Tests des recouvrements identique, partiel, masqué et des contrats invalides
