@@ -532,6 +532,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Assemblage tangent par blocs | A/B hétérogène 10k | -22,4 % tangent, -3,2 % RSS | Réussi |
 | 2026-07-24 | Suite après optimisation mémoire | Ruff, mypy et couverture | 143 tests, 96,93 % | Réussi |
 | 2026-07-24 | Gouvernance technique | ADR, guide et modèle de PR | Règles numériques explicites | Réussi |
+| 2026-07-24 | CI complète distante | GitHub Actions `30089878592` | lint, mypy, wheel et tests verts | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -764,3 +765,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Exigence écrite d'un second relecteur pour toute formule numérique
 - Ajout d'un modèle de PR avec preuves mathématiques et performance
 - Protection de branche laissée inactive pour ne pas bloquer le dépôt mono-auteur
+
+### 2026-07-24 — Actualisation des actions CI
+
+- CI complète validée sur installation fraîche, wheel inclus
+- Mise à jour de `actions/checkout` et `actions/setup-python` vers la version 7
+- Suppression attendue de l'annotation de dépréciation Node.js 20
