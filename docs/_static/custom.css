@@ -1,0 +1,81 @@
+:root {
+  --project-navy: #17324d;
+  --project-blue: #2980b9;
+  --project-green: #2e8b57;
+  --project-orange: #d97706;
+  --project-light: #f5f7f9;
+}
+
+.wy-nav-content {
+  max-width: 1120px;
+}
+
+.wy-side-nav-search > a img.logo,
+.wy-side-nav-search .wy-dropdown > a img.logo {
+  width: 88px;
+  height: 88px;
+  padding: 0;
+}
+
+.landing-title {
+  color: var(--project-navy);
+  font-size: 2.15rem;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.landing-subtitle {
+  color: #4b5563;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  margin: 0 auto 1.6rem;
+  max-width: 850px;
+  text-align: center;
+}
+
+.sd-card {
+  border-top: 4px solid var(--project-blue);
+  box-shadow: 0 0.15rem 0.45rem rgb(0 0 0 / 9%);
+}
+
+.sd-card:nth-child(2) {
+  border-top-color: var(--project-green);
+}
+
+.sd-card:nth-child(3) {
+  border-top-color: var(--project-orange);
+}
+
+.sd-card:nth-child(4) {
+  border-top-color: #7d3c98;
+}
+
+.sd-card-title {
+  color: var(--project-navy);
+}
+
+.result-strip {
+  background: var(--project-light);
+  border-left: 5px solid var(--project-green);
+  margin: 1.5rem 0;
+  padding: 0.8rem 1.2rem;
+}
+
+table.docutils {
+  width: 100%;
+}
+
+.admonition.objectif {
+  border-left-color: var(--project-blue);
+}
+
+.admonition.objectif > .admonition-title {
+  background: #d9edf7;
+}
+
+@media screen and (max-width: 768px) {
+  .landing-title {
+    font-size: 1.65rem;
+  }
+}

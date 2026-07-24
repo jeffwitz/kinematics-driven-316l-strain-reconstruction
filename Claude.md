@@ -412,6 +412,11 @@ artefacts de raccordement.
 ### Semaine 12 — Documentation et version de référence
 
 - [x] README de démarrage rapide
+- [x] Documentation Sphinx intégralement en anglais et structurée avec Diátaxis
+- [x] Landing page Read the Docs orientant vers tutoriels, guides, référence et explications
+- [x] Compilations HTML stricte et PDF disponibles
+- [x] Figures scientifiques vectorielles SVG/PDF reproductibles
+- [x] Vérification automatique de la documentation HTML et des figures dans la CI
 - [x] Tutoriel complet du cas réduit
 - [x] Documentation du modèle numérique
 - [x] Documentation des conventions
@@ -542,7 +547,7 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 | Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 156 tests, revue documentée |
 | Reproductibilité | 4,5/5 | Données LFS, préparation atomique, manifestes et smoke test DIC réel |
 | Performance | 4,0/5 | 10k–100k mesurés et partition article de 234,6k exécutée ; plus grande partition intérieure non mesurée |
-| Documentation | 4,0/5 | Contrats, ADR, tutoriel et limites ; figures finales non reproductibles |
+| Documentation | 4,5/5 | Site Sphinx anglais structuré avec Diátaxis, PDF, contrats, API et figures vectorielles reproductibles ; revue externe encore requise |
 
 Les notes ne doivent pas être relevées artificiellement par des cas
 synthétiques. Pour atteindre 4/5 partout, les chemins critiques sont désormais :
@@ -673,6 +678,22 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après couplage Newton | Ruff, mypy, MGIS réel | 172 tests | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-24 — Documentation Sphinx anglaise avec Diátaxis
+
+- Création d'une landing page Read the Docs présentant le but scientifique,
+  le périmètre supporté, les limites et les résultats validés
+- Organisation en quatre quadrants Diátaxis : tutoriel guidé, guides
+  opératoires, référence des contrats et explications scientifiques
+- Documentation détaillée de la chaîne DIC, de la loi J2/Ludwik analytique,
+  de MFront/MGIS, de Newton, du partitionnement, des entrées et des sorties
+- Génération reproductible de schémas vectoriels en paires SVG/PDF afin
+  d'adapter automatiquement le format aux sorties HTML et LaTeX
+- Compilation Sphinx stricte sans avertissement et production locale d'un PDF
+  de 70 pages avec LuaLaTeX
+- Configuration Read the Docs v2 pour publier `htmlzip` et PDF
+- Ajout d'un job CI régénérant les figures, contrôlant leur stabilité et
+  compilant le HTML avec les avertissements traités comme des erreurs
 
 ### 2026-07-24 — Loi MFront nominale et calcul long de l'article
 

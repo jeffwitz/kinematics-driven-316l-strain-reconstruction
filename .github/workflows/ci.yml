@@ -28,3 +28,28 @@ jobs:
         run: python -m pip wheel . --no-deps --wheel-dir dist
       - name: Test
         run: pytest --cov=fem_inhouse --cov-branch --cov-fail-under=85
+
+  documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements-lock.txt
+            requirements-docs.txt
+      - name: Install documentation environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-lock.txt
+          python -m pip install -r requirements-docs.txt
+          python -m pip install -e . --no-deps
+      - name: Regenerate documentation figures
+        run: python scripts/build_documentation_figures.py
+      - name: Check generated figures are current
+        run: git diff --exit-code -- docs/_static
+      - name: Build strict HTML documentation
+        run: sphinx-build -M html docs docs/_build -W --keep-going

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title description">
+  <title id="title">Kinematics-driven 316L reconstruction project logo</title>
+  <desc id="description">A regular mesh crossed by a localization band and surrounded by two arrows.</desc>
+  <rect width="128" height="128" rx="24" fill="#ffffff"/>
+  <g stroke="#17324d" stroke-width="2" opacity="0.78">
+    <path d="M25 25v78M45 25v78M65 25v78M85 25v78M105 25v78"/>
+    <path d="M25 25h80M25 45h80M25 65h80M25 85h80M25 105h80"/>
+  </g>
+  <path d="M24 91C42 83 48 50 67 55c17 4 19 26 39 16" fill="none" stroke="#d97706" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+  <path d="M13 64h15M19 56l-8 8 8 8M115 64h-15M109 56l8 8-8 8" fill="none" stroke="#2980b9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -14,11 +14,10 @@ partitioned reconstruction of the article's pixel-resolved region of interest.
 
 The numerical prototype is being converted into tested, reproducible research
 software. The live implementation plan and validation register are maintained
-in [`Claude.md`](Claude.md). Scientific conventions are specified in
-[`docs/scientific_contract.md`](docs/scientific_contract.md). The supported
-numerical model and partition layout are documented in
-[`docs/numerical_model.md`](docs/numerical_model.md) and
-[`docs/partitioning.md`](docs/partitioning.md).
+in [`Claude.md`](Claude.md). The English user documentation starts at
+[`docs/index.rst`](docs/index.rst) and follows the Diátaxis structure:
+a first reconstruction tutorial, task-oriented how-to guides, precise
+reference contracts, and scientific explanations.
 
 An article-sized corner partition (`510×460`, 234,600 elements) has now been
 run with the default analytical MFront law directly from the versioned DIC
@@ -57,6 +56,33 @@ Known limitations at this stage:
 - Abaqus parity is not yet established from the original `.inp` and ODB
   extraction scripts and is intentionally deferred until the DIC-first
   workflow is stable.
+
+## Documentation
+
+The documentation is written in English and uses the Read the Docs theme.
+Install its pinned dependencies and build the strict HTML and PDF outputs with:
+
+```bash
+.venv/bin/pip install -r requirements-docs.txt
+PATH="$PWD/.venv/bin:$PATH" make -C docs html
+PATH="$PWD/.venv/bin:$PATH" make -C docs latexpdf
+```
+
+The generated entry points are
+`docs/_build/html/index.html` and
+`docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf`.
+The figures used in the documentation are reproducibly generated as SVG and
+PDF pairs by:
+
+```bash
+.venv/bin/python scripts/build_documentation_figures.py
+```
+
+Read the tutorial first for a guided DIC-driven calculation, use the how-to
+guides for production tasks, consult the reference section for exact
+interfaces, and use the explanation section for the scientific and numerical
+rationale. Read the Docs is configured by [`.readthedocs.yaml`](.readthedocs.yaml)
+to publish both HTML and PDF.
 
 ## Reproduce from the versioned DIC data
 
@@ -179,8 +205,8 @@ print(result.equivalent_plastic_strain.max())
 print(result.diagnostics)
 ```
 
-`result.diagnostics` trace le backend, la durée, les incréments convergés, les
-cutbacks, les itérations de Newton et le critère de convergence final.
+`result.diagnostics` records the backend, timings, converged increments,
+cutbacks, Newton iterations, and final convergence criterion.
 
 The top-level `fem_pixel.py` file remains only as a compatibility entry point
 for existing case-study scripts.

@@ -1,0 +1,36 @@
+How-to guides
+=============
+
+Each page answers one operational question. If you are new to the project,
+start with :doc:`../tutorials/first_reconstruction`.
+
+.. grid:: 1 2 2 2
+   :gutter: 2
+
+   .. grid-item-card:: Install the software
+      :link: install
+      :link-type: doc
+
+      Build TFEL/MFront and MGIS, install the Python package, and compile the
+      behaviour.
+
+   .. grid-item-card:: Prepare input data
+      :link: prepare_data
+      :link-type: doc
+
+      Verify raw arrays, select an explicit repair policy, and create canonical
+      solver inputs.
+
+   .. grid-item-card:: Run partitioned calculations
+      :link: run_partitioned
+      :link-type: doc
+
+      Prepare, distribute, resume, and stitch the ROI partitions.
+
+   .. grid-item-card:: Inspect a campaign
+      :link: inspect_results
+      :link-type: doc
+
+      Check statuses, fingerprints, residuals, DIC boundary conditions, and
+      saved maps.
+
