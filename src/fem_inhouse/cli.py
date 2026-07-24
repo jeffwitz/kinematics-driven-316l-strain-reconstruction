@@ -32,7 +32,19 @@ from fem_inhouse.postprocessing import (
 from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import PartitionWorkflow
 
-PARTITION_FIELDS = ("U", "S", "E", "PE", "PEEQ", "RF")
+PARTITION_FIELDS = (
+    "U",
+    "S",
+    "S_3D",
+    "E",
+    "E_3D",
+    "EE_3D",
+    "PE",
+    "PE_3D",
+    "PEEQ",
+    "S33_RESIDUAL_MPA",
+    "RF",
+)
 
 
 def _parser() -> argparse.ArgumentParser:

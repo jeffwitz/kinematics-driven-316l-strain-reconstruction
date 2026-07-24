@@ -159,6 +159,29 @@ def save_reduced_example(
     result, report = validate_reduced_case(case)
     np.save(destination / "displacement_mm.npy", result.displacement_mm)
     np.save(destination / "stress_mpa.npy", result.stress_mpa)
+    full_fields = (
+        result.stress_tensor_mpa,
+        result.total_strain_tensor,
+        result.elastic_strain_tensor,
+        result.plastic_strain_tensor,
+        result.plane_stress_residual_mpa,
+    )
+    if any(field is None for field in full_fields):
+        raise RuntimeError("completed reduced solve did not provide full tensor fields")
+    stress_tensor, total_tensor, elastic_tensor, plastic_tensor, residual = full_fields
+    assert stress_tensor is not None
+    assert total_tensor is not None
+    assert elastic_tensor is not None
+    assert plastic_tensor is not None
+    assert residual is not None
+    np.save(destination / "S_3D.npy", stress_tensor)
+    np.save(destination / "E_3D.npy", total_tensor)
+    np.save(destination / "EE_3D.npy", elastic_tensor)
+    np.save(destination / "PE_3D.npy", plastic_tensor)
+    np.save(
+        destination / "S33_RESIDUAL_MPA.npy",
+        residual,
+    )
     np.save(
         destination / "equivalent_plastic_strain.npy",
         result.equivalent_plastic_strain,
@@ -166,6 +189,13 @@ def save_reduced_example(
     metadata = {
         "config": asdict(case.config),
         "diagnostics": asdict(result.diagnostics) if result.diagnostics else None,
+        "result_field_metadata": {
+            "S_3D": {"components": "symmetric 3x3 Cauchy stress", "unit": "MPa"},
+            "E_3D": {"components": "symmetric 3x3 total strain", "unit": "1"},
+            "EE_3D": {"components": "symmetric 3x3 elastic strain", "unit": "1"},
+            "PE_3D": {"components": "symmetric 3x3 plastic strain", "unit": "1"},
+            "S33_RESIDUAL_MPA": {"components": "s33", "unit": "MPa"},
+        },
         "validation": asdict(report),
     }
     (destination / "report.json").write_text(

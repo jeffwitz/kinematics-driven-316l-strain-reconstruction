@@ -105,13 +105,24 @@ def test_backend_validate_and_layout_commands(tmp_path, capsys) -> None:
 
 
 def test_save_example_function_returns_report(tmp_path) -> None:
+    destination = tmp_path / "direct"
     report = save_reduced_example(
-        tmp_path / "direct",
+        destination,
         nx=4,
         ny=4,
         constitutive_backend="python",
     )
     assert report.passed
+    for field_name in (
+        "S_3D",
+        "E_3D",
+        "EE_3D",
+        "PE_3D",
+        "S33_RESIDUAL_MPA",
+    ):
+        assert (destination / f"{field_name}.npy").is_file()
+    metadata = json.loads((destination / "report.json").read_text(encoding="utf-8"))
+    assert metadata["result_field_metadata"]["S_3D"]["unit"] == "MPa"
 
 
 def test_partition_cli_supports_job_arrays_resume_and_stitch(
@@ -132,6 +143,7 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
 
     def fake_solver(config, **_fields):
         nx, ny = config.mesh.nx, config.mesh.ny
+        element_tensor = np.zeros((nx, ny, 3, 3))
         return FEMResult(
             displacement_mm=np.zeros((nx + 1, ny + 1, 2)),
             stress_mpa=np.ones((nx, ny, 3)),
@@ -139,6 +151,11 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
             plastic_strain=np.zeros((nx, ny, 3)),
             equivalent_plastic_strain=np.zeros((nx, ny)),
             reaction_force=np.zeros((nx + 1, ny + 1, 2)),
+            stress_tensor_mpa=element_tensor.copy(),
+            total_strain_tensor=element_tensor.copy(),
+            elastic_strain_tensor=element_tensor.copy(),
+            plastic_strain_tensor=element_tensor.copy(),
+            plane_stress_residual_mpa=np.zeros((nx, ny)),
         )
 
     monkeypatch.setattr(partitioned, "run_case_study", fake_solver)
@@ -159,7 +176,19 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
 
     assert main([*common, "--partition-id", "0"]) == 0
     assert json.loads(capsys.readouterr().out)["complete"]
-    for field_name in ("U", "S", "E", "PE", "PEEQ", "RF"):
+    for field_name in (
+        "U",
+        "S",
+        "S_3D",
+        "E",
+        "E_3D",
+        "EE_3D",
+        "PE",
+        "PE_3D",
+        "PEEQ",
+        "S33_RESIDUAL_MPA",
+        "RF",
+    ):
         assert (output_directory / "partitions" / "0000" / f"{field_name}.npy").is_file()
 
     assert main([*common, "--solve-pending"]) == 0
@@ -171,6 +200,11 @@ def test_partition_cli_supports_job_arrays_resume_and_stitch(
     assert main([*common, "--stitch", "S", "--field-output", str(stitched_path)]) == 0
     assert capsys.readouterr().out.strip() == str(stitched_path)
     np.testing.assert_array_equal(np.load(stitched_path), 1.0)
+
+    tensor_path = tmp_path / "global_stress_tensor.npy"
+    assert main([*common, "--stitch", "S_3D", "--field-output", str(tensor_path)]) == 0
+    assert capsys.readouterr().out.strip() == str(tensor_path)
+    assert np.load(tensor_path).shape == (5, 5, 3, 3)
 
     reaction_path = tmp_path / "global_reaction.npy"
     assert main([*common, "--stitch", "RF", "--field-output", str(reaction_path)]) == 0

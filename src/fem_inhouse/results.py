@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
+import numpy as np
 from numpy.typing import NDArray
+
+from fem_inhouse.core.tensor_reconstruction import (
+    FullTensorState,
+    reconstruct_python_plane_stress_state,
+)
 
 FloatArray = NDArray
 
@@ -79,3 +86,67 @@ class FEMResult:
             self.plane_stress_residual_mpa,
         )
         return historical + tuple(field for field in reconstructed if field is not None)
+
+
+def load_full_tensor_state(
+    directory: str | Path,
+    *,
+    poisson_ratio: float | None = None,
+) -> FullTensorState:
+    """Load new tensor files or reconstruct a legacy ``S/E/PE`` result set."""
+
+    root = Path(directory)
+    tensor_files = {
+        "stress_tensor_mpa": root / "S_3D.npy",
+        "total_strain_tensor": root / "E_3D.npy",
+        "elastic_strain_tensor": root / "EE_3D.npy",
+        "plastic_strain_tensor": root / "PE_3D.npy",
+        "plane_stress_residual_mpa": root / "S33_RESIDUAL_MPA.npy",
+    }
+    present = {name: path.is_file() for name, path in tensor_files.items()}
+    if any(present.values()) and not all(present.values()):
+        missing = sorted(name for name, available in present.items() if not available)
+        raise RuntimeError(f"saved result contains an incomplete full tensor state: {missing}")
+    if all(present.values()):
+        arrays = {name: np.load(path) for name, path in tensor_files.items()}
+        stress_tensor = arrays["stress_tensor_mpa"]
+        residual = arrays["plane_stress_residual_mpa"]
+        if stress_tensor.shape[-2:] != (3, 3):
+            raise ValueError("S_3D.npy must have trailing dimensions (3, 3)")
+        for name in (
+            "total_strain_tensor",
+            "elastic_strain_tensor",
+            "plastic_strain_tensor",
+        ):
+            if arrays[name].shape != stress_tensor.shape:
+                raise ValueError(f"{tensor_files[name].name} shape does not match S_3D.npy")
+        if residual.shape != stress_tensor.shape[:-2]:
+            raise ValueError("S33_RESIDUAL_MPA.npy shape does not match S_3D.npy")
+        if not all(np.isfinite(array).all() for array in arrays.values()):
+            raise ValueError("saved full tensor state contains non-finite values")
+        if not np.array_equal(residual, stress_tensor[..., 2, 2]):
+            raise ValueError(
+                "saved plane-stress residual does not equal S_3D[..., 2, 2]"
+            )
+        return FullTensorState(
+            stress_tensor_mpa=stress_tensor,
+            total_strain_tensor=arrays["total_strain_tensor"],
+            elastic_strain_tensor=arrays["elastic_strain_tensor"],
+            plastic_strain_tensor=arrays["plastic_strain_tensor"],
+            plane_stress_residual_mpa=residual,
+        )
+
+    if poisson_ratio is None:
+        raise ValueError(
+            "poisson_ratio is required to reconstruct full tensors from legacy S/E/PE files"
+        )
+    legacy_files = {name: root / f"{name}.npy" for name in ("S", "E", "PE")}
+    missing_legacy = sorted(name for name, path in legacy_files.items() if not path.is_file())
+    if missing_legacy:
+        raise FileNotFoundError(f"legacy result fields are missing: {missing_legacy}")
+    return reconstruct_python_plane_stress_state(
+        np.load(legacy_files["E"]),
+        np.load(legacy_files["PE"]),
+        np.load(legacy_files["S"]),
+        poisson_ratio,
+    )

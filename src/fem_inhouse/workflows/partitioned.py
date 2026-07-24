@@ -28,10 +28,28 @@ FieldLocation = Literal["element", "node"]
 RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "U": ("displacement_mm", "node"),
     "S": ("stress_mpa", "element"),
+    "S_3D": ("stress_tensor_mpa", "element"),
     "E": ("total_strain", "element"),
+    "E_3D": ("total_strain_tensor", "element"),
+    "EE_3D": ("elastic_strain_tensor", "element"),
     "PE": ("plastic_strain", "element"),
+    "PE_3D": ("plastic_strain_tensor", "element"),
     "PEEQ": ("equivalent_plastic_strain", "element"),
+    "S33_RESIDUAL_MPA": ("plane_stress_residual_mpa", "element"),
     "RF": ("reaction_force", "node"),
+}
+RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
+    "U": {"components": "[u1, u2]", "unit": "mm"},
+    "S": {"components": "[s11, s22, s12]", "unit": "MPa"},
+    "S_3D": {"components": "symmetric 3x3 Cauchy stress", "unit": "MPa"},
+    "E": {"components": "[e11, e22, gamma12]", "unit": "1"},
+    "E_3D": {"components": "symmetric 3x3 total strain", "unit": "1"},
+    "EE_3D": {"components": "symmetric 3x3 elastic strain", "unit": "1"},
+    "PE": {"components": "[ep11, ep22, gamma_p12]", "unit": "1"},
+    "PE_3D": {"components": "symmetric 3x3 plastic strain", "unit": "1"},
+    "PEEQ": {"components": "accumulated equivalent plastic strain", "unit": "1"},
+    "S33_RESIDUAL_MPA": {"components": "s33", "unit": "MPa"},
+    "RF": {"components": "[r1, r2]", "unit": "N for implicit 1 mm thickness"},
 }
 
 
@@ -150,6 +168,7 @@ class PartitionWorkflow:
                 "hardening_coefficient_mpa": fingerprint_array(self.hardening_coefficient_mpa),
             },
             "result_fields": sorted(RESULT_FIELDS),
+            "result_field_metadata": RESULT_FIELD_METADATA,
         }
 
     def prepare(self) -> str:
@@ -260,7 +279,12 @@ class PartitionWorkflow:
         outputs: dict[str, str] = {}
         for field_name, (attribute, _location) in RESULT_FIELDS.items():
             path = self._result_path(partition_id, field_name)
-            _atomic_save_array(path, getattr(result, attribute))
+            values = getattr(result, attribute)
+            if values is None:
+                raise RuntimeError(
+                    f"completed solve did not provide required result field {field_name}"
+                )
+            _atomic_save_array(path, values)
             outputs[field_name] = _fingerprint_file(path)
         status = {
             "complete": True,

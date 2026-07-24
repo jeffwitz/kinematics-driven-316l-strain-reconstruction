@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from fem_inhouse.config import CaseStudyConfig, MeshConfig
+from fem_inhouse.core.tensor_reconstruction import reconstruct_python_plane_stress_state
 from fem_inhouse.partitioning import PartitionLayout
 from fem_inhouse.results import FEMResult
 from fem_inhouse.workflows import partitioned
@@ -48,6 +49,12 @@ def _fake_solver(calls):
             axis=-1,
         )
         displacement = np.stack((displacement_x_mm, displacement_y_mm), axis=-1)
+        tensor_state = reconstruct_python_plane_stress_state(
+            np.zeros_like(stress),
+            np.zeros_like(stress),
+            stress,
+            config.material.poisson_ratio,
+        )
         return FEMResult(
             displacement_mm=displacement,
             stress_mpa=stress,
@@ -55,6 +62,11 @@ def _fake_solver(calls):
             plastic_strain=np.zeros_like(stress),
             equivalent_plastic_strain=np.asarray(yield_stress_mpa),
             reaction_force=np.zeros_like(displacement),
+            stress_tensor_mpa=tensor_state.stress_tensor_mpa,
+            total_strain_tensor=tensor_state.total_strain_tensor,
+            elastic_strain_tensor=tensor_state.elastic_strain_tensor,
+            plastic_strain_tensor=tensor_state.plastic_strain_tensor,
+            plane_stress_residual_mpa=tensor_state.plane_stress_residual_mpa,
         )
 
     return solve
@@ -90,6 +102,7 @@ def test_manifest_is_deterministic_and_rejects_changed_inputs(tmp_path) -> None:
         "yield_stress_mpa",
         "hardening_coefficient_mpa",
     }
+    assert manifest["result_field_metadata"]["S_3D"]["unit"] == "MPa"
 
     with pytest.raises(RuntimeError, match="manifest does not match"):
         _workflow(tmp_path, yield_offset=1.0).prepare()
@@ -121,6 +134,9 @@ def test_partition_solves_are_resumable_and_stitchable(tmp_path, monkeypatch) ->
         axis=-1,
     )
     np.testing.assert_array_equal(stitched_stress, expected_stress)
+    stitched_stress_tensor = workflow.stitch("S_3D")
+    assert stitched_stress_tensor.shape == (7, 5, 3, 3)
+    np.testing.assert_array_equal(stitched_stress_tensor[..., 0, 0], expected_stress[..., 0])
 
     custom_path = tmp_path / "custom_u.npy"
     stitched_displacement = workflow.stitch("U", output_path=custom_path)
