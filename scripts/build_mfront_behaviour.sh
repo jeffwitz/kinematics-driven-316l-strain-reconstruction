@@ -5,7 +5,10 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repository_dir="$(cd -- "${script_dir}/.." && pwd)"
 tfel_env_file="${TFEL_ENV_FILE:-/home/jeff/.local/share/tfel/env/env.sh}"
 build_dir="${MFRONT_BUILD_DIR:-${repository_dir}/build/mfront}"
-behaviour_file="${repository_dir}/mfront/PixelLudwikJ2Plasticity.mfront"
+behaviour_files=(
+  "${repository_dir}/mfront/PixelLudwikJ2Plasticity.mfront"
+  "${repository_dir}/mfront/PixelLudwikJ2Plasticity3D.mfront"
+)
 
 if [[ ! -f "${tfel_env_file}" ]]; then
   echo "TFEL environment file not found: ${tfel_env_file}" >&2
@@ -20,7 +23,7 @@ set -u
 
 mkdir -p "${build_dir}"
 cd "${build_dir}"
-mfront --obuild --interface=generic "${behaviour_file}"
+mfront --obuild --interface=generic "${behaviour_files[@]}"
 
 library_path="${build_dir}/src/libBehaviour.so"
 if [[ ! -f "${library_path}" ]]; then

@@ -15,12 +15,15 @@ def test_load_full_tensor_state_reads_native_saved_fields(tmp_path) -> None:
     elastic = np.zeros_like(stress)
     plastic = np.zeros_like(stress)
     residual = stress[..., 2, 2].copy()
+    residual_vector = np.zeros((*shape, 3))
+    residual_vector[..., 0] = residual
     for name, values in (
         ("S_3D", stress),
         ("E_3D", total),
         ("EE_3D", elastic),
         ("PE_3D", plastic),
         ("S33_RESIDUAL_MPA", residual),
+        ("PLANE_STRESS_RESIDUAL_MPA", residual_vector),
     ):
         np.save(tmp_path / f"{name}.npy", values)
 
@@ -28,6 +31,10 @@ def test_load_full_tensor_state_reads_native_saved_fields(tmp_path) -> None:
 
     np.testing.assert_array_equal(state.stress_tensor_mpa, stress)
     np.testing.assert_array_equal(state.plane_stress_residual_mpa, residual)
+    np.testing.assert_array_equal(
+        state.plane_stress_residual_vector_mpa,
+        residual_vector,
+    )
 
 
 def test_load_full_tensor_state_reconstructs_legacy_fields_with_material_data(
@@ -39,10 +46,19 @@ def test_load_full_tensor_state_reconstructs_legacy_fields_with_material_data(
     for name, values in (("S", stress), ("E", total), ("PE", plastic)):
         np.save(tmp_path / f"{name}.npy", values)
 
-    with pytest.raises(ValueError, match="poisson_ratio is required"):
+    with pytest.raises(ValueError, match="completion_strategy"):
         load_full_tensor_state(tmp_path)
+    with pytest.raises(ValueError, match="poisson_ratio is required"):
+        load_full_tensor_state(
+            tmp_path,
+            completion_strategy="j2_isotropic_analytical",
+        )
 
-    state = load_full_tensor_state(tmp_path, poisson_ratio=0.3)
+    state = load_full_tensor_state(
+        tmp_path,
+        poisson_ratio=0.3,
+        completion_strategy="j2_isotropic_analytical",
+    )
     np.testing.assert_array_equal(state.stress_tensor_mpa[..., 0, 0], stress[..., 0])
     np.testing.assert_allclose(
         np.trace(state.plastic_strain_tensor, axis1=-2, axis2=-1),

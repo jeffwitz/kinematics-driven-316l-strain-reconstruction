@@ -64,8 +64,8 @@ def test_mfront_backend_matches_python_through_the_complete_newton_loop() -> Non
     )
     np.testing.assert_allclose(mfront.reaction_force, python.reaction_force, rtol=1e-8, atol=1e-10)
     assert python.diagnostics is not None
-    assert python.diagnostics.tensor_reconstruction_source == "python_analytical"
-    assert mfront.diagnostics.tensor_reconstruction_source == "mfront_native_axial_strain"
+    assert python.diagnostics.tensor_reconstruction_source == "j2_isotropic_analytical"
+    assert mfront.diagnostics.tensor_reconstruction_source == "mfront_native_plane_stress"
 
     tensor_fields = (
         "stress_tensor_mpa",
@@ -105,3 +105,57 @@ def test_mfront_backend_matches_python_through_the_complete_newton_loop() -> Non
             rtol=0.0,
             atol=1e-12,
         )
+
+
+@pytest.mark.mfront
+def test_3d_condensed_backend_matches_native_plane_stress_fem() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    case = reduced_biaxial_case(nx=4, ny=4)
+    base = replace(
+        case.config.solver,
+        hardening_mode="ludwik",
+        residual_tolerance=1e-8,
+        mfront_library=library,
+        mfront_threads=2,
+    )
+
+    results = {}
+    for backend in (
+        "mfront-native-plane-stress",
+        "mfront-3d-condensed-plane-stress",
+    ):
+        results[backend] = run_case_study(
+            replace(case.config, solver=replace(base, constitutive_backend=backend)),
+            displacement_x_mm=case.displacement_x_mm,
+            displacement_y_mm=case.displacement_y_mm,
+            yield_stress_mpa=case.yield_stress_mpa,
+            hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        )
+    native = results["mfront-native-plane-stress"]
+    condensed = results["mfront-3d-condensed-plane-stress"]
+    for field_name in (
+        "displacement_mm",
+        "stress_mpa",
+        "total_strain",
+        "plastic_strain",
+        "equivalent_plastic_strain",
+        "reaction_force",
+        "stress_tensor_mpa",
+        "total_strain_tensor",
+        "elastic_strain_tensor",
+        "plastic_strain_tensor",
+    ):
+        np.testing.assert_allclose(
+            getattr(condensed, field_name),
+            getattr(native, field_name),
+            rtol=1e-7,
+            atol=2e-7,
+        )
+    assert condensed.plane_stress_residual_vector_mpa is not None
+    assert np.max(np.abs(condensed.plane_stress_residual_vector_mpa)) < 1e-6
+    assert condensed.diagnostics is not None
+    assert condensed.diagnostics.maximum_local_plane_stress_iterations >= 2
+    assert condensed.diagnostics.local_plane_stress_failures == 0
+    assert condensed.diagnostics.maximum_cbb_condition_number > 1.0

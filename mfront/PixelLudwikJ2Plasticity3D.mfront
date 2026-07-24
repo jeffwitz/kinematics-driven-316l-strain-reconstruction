@@ -1,0 +1,45 @@
+@DSL Implicit;
+@Behaviour PixelLudwikJ2Plasticity3D;
+@Author Adil case-study contributors;
+@Date 25 / 07 / 2026;
+@Description {
+  Tridimensional form of the small-strain isotropic J2/Ludwik behaviour.
+
+  This behaviour deliberately uses the same elasticity, material properties,
+  origin regularisation, yield criterion, and associated flow as
+  PixelLudwikJ2Plasticity. Plane stress is imposed by the Python/MGIS adapter
+  through a local solve and explicit tangent condensation.
+};
+
+@ModellingHypothesis Tridimensional;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 100;
+@Theta 1;
+
+@MaterialProperty stress sy0;
+sy0.setEntryName("InitialYieldStress");
+
+@MaterialProperty stress K;
+K.setEntryName("HardeningCoefficient");
+
+@MaterialProperty real ludwik_n;
+ludwik_n.setEntryName("HardeningExponent");
+
+@Parameter real p0 = 1.e-6;
+p0.setEntryName("FirstPositivePlasticStrain");
+
+@Brick StandardElastoViscoPlasticity {
+  stress_potential : "Hooke" {
+    young_modulus : 205000,
+    poisson_ratio : 0.3
+  },
+  inelastic_flow : "Plastic" {
+    criterion : "Mises",
+    isotropic_hardening : "UserDefined" {
+      R : "p <= p0 ? sy0+K*p*p0**(ludwik_n-1) : sy0+K*p**ludwik_n",
+      dR_dp : "p < p0 ? K*p0**(ludwik_n-1) : K*ludwik_n*p**(ludwik_n-1)"
+    },
+    save_yield_surface_radius : true
+  }
+};

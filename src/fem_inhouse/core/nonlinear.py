@@ -35,13 +35,7 @@ from fem_inhouse.core.assembly import (
     element_tangent_stiffness,
     internal_force,
 )
-from fem_inhouse.core.constitutive import (
-    PLANE_STRESS_VON_MISES_METRIC,
-    consistent_tangent,
-    make_hardening,
-    return_mapping,
-    von_mises,
-)
+from fem_inhouse.core.constitutive import von_mises
 from fem_inhouse.core.element import (
     GAUSS_POINT_COUNT,
     GAUSS_POINTS,
@@ -50,9 +44,10 @@ from fem_inhouse.core.element import (
     precompute_element,
 )
 from fem_inhouse.core.mesh import StructuredMesh
-from fem_inhouse.core.tensor_reconstruction import (
-    FullTensorState,
-    reconstruct_python_plane_stress_state,
+from fem_inhouse.core.plane_stress_material import (
+    ConstitutiveIntegrationError,
+    ConstitutiveTrial,
+    create_plane_stress_material_batch,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -102,6 +97,10 @@ def run_fem(
     constitutive_backend="mfront",
     mfront_library="build/mfront/src/libBehaviour.so",
     mfront_threads=1,
+    local_plane_stress_tolerance_mpa=1e-8,
+    local_plane_stress_relative_tolerance=1e-10,
+    maximum_local_plane_stress_iterations=15,
+    maximum_cbb_condition_number=1e12,
     snapshot_fractions=None,
     verbose=True,
 ):
@@ -117,17 +116,6 @@ def run_fem(
                 delegates stress, state update and consistent tangent to MGIS.
     """
     started_at = time.perf_counter()
-    if constitutive_backend not in {"python", "mfront"}:
-        raise ValueError("constitutive_backend must be 'python' or 'mfront'")
-    hf = hfp = None
-    if constitutive_backend == "python":
-        hf, hfp = make_hardening(
-            n_exp,
-            hardening,
-            ep_table_max,
-            n_table,
-            first_positive_plastic_strain,
-        )
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
     nxn, nyn = nx + 1, ny + 1
@@ -155,30 +143,28 @@ def run_fem(
     # Material per GP
     sy0_gp = np.repeat(yield_map.ravel(order="F"), N_GP)
     K_gp = np.repeat(K_map.ravel(order="F"), N_GP)
-    mfront_batch = None
-    if constitutive_backend == "mfront":
-        if not np.isclose(E_mod, 205_000.0) or not np.isclose(nu, 0.3):
-            raise ValueError(
-                "the compiled MFront behaviour currently requires E_mod=205000 MPa and nu=0.3"
-            )
-        if not np.isclose(first_positive_plastic_strain, 1e-6):
-            raise ValueError(
-                "the compiled MFront behaviour currently requires "
-                "first_positive_plastic_strain=1e-6"
-            )
-        from fem_inhouse.core.mfront import MFrontMaterialPointBatch
-
-        mfront_batch = MFrontMaterialPointBatch(
-            mfront_library,
-            sy0_gp,
-            K_gp,
-            np.full_like(sy0_gp, n_exp),
-            thread_count=mfront_threads,
-        )
+    material_batch = create_plane_stress_material_batch(
+        constitutive_backend,
+        sy0_gp,
+        K_gp,
+        n_exp,
+        young_modulus_mpa=E_mod,
+        poisson_ratio=nu,
+        hardening_mode=hardening,
+        plastic_strain_max=ep_table_max,
+        plastic_table_points=n_table,
+        first_positive_plastic_strain=first_positive_plastic_strain,
+        mfront_library=mfront_library,
+        mfront_threads=mfront_threads,
+        local_plane_stress_options={
+            "local_tolerance_mpa": local_plane_stress_tolerance_mpa,
+            "local_relative_tolerance": local_plane_stress_relative_tolerance,
+            "maximum_local_iterations": maximum_local_plane_stress_iterations,
+            "maximum_cbb_condition_number": maximum_cbb_condition_number,
+        },
+    )
 
     C_ps = plane_stress_elasticity(E_mod, nu)
-    CM = C_ps @ PLANE_STRESS_VON_MISES_METRIC
-    cm11, cm12, cm33 = CM[0, 0], CM[0, 1], CM[2, 2]
     operators = precompute_element(mesh, C_ps)
     Ke = operators.elastic_stiffness
     Bs = operators.strain_displacement
@@ -225,7 +211,7 @@ def run_fem(
     ep_bar = np.zeros((n_e, N_GP))
     sig = np.zeros((n_e, N_GP, 3))
     eps_tot = np.zeros((n_e, N_GP, 3))
-    accepted_mfront_full_state: FullTensorState | None = None
+    accepted_constitutive_trial: ConstitutiveTrial | None = None
 
     # Incremental loading with automatic cutback (Abaqus-style):
     # pseudo-time t: 0 -> 1, initial/maximum step 1/N_inc, halved on failure.
@@ -259,9 +245,9 @@ def run_fem(
 
         # Saved converged state (updated each NR iter before possible break)
         sf_acc = sig.copy()
-        dp_acc = np.zeros_like(eps_p)
+        eps_p_acc = eps_p.copy()
         ep_new = ep_bar.copy()
-        mfront_full_state_acc: FullTensorState | None = None
+        constitutive_trial_acc: ConstitutiveTrial | None = None
         converged = False
 
         for nrit in range(max_nr):
@@ -269,45 +255,40 @@ def run_fem(
             maximum_newton_iterations = max(maximum_newton_iterations, nrit + 1)
             u_e = u[ld]
             eps_tot = np.einsum("gak,ek->ega", Bs, u_e)
+            if not np.isfinite(eps_tot).all():
+                break
             # Constitutive trial from the last converged material state.
             constitutive_started_at = time.perf_counter()
-            if mfront_batch is None:
-                assert hf is not None
-                sig_tr = np.einsum("ij,egj->egi", C_ps, eps_tot - eps_p)
-                sf, dp, dg = return_mapping(
-                    sig_tr.reshape(-1, 3),
-                    ep_bar.ravel(),
-                    sy0_gp,
-                    K_gp,
-                    hf,
-                    cm11,
-                    cm12,
-                    cm33,
-                )
-                sf = sf.reshape(n_e, N_GP, 3)
-                dp = dp.reshape(n_e, N_GP, 3)
-                dg_ = dg.reshape(n_e, N_GP)
-                ep_new = ep_bar + dg_
-                mfront_tangents = None
-            else:
-                trial = mfront_batch.evaluate(
+            try:
+                trial = material_batch.evaluate(
                     eps_tot.reshape(-1, 3),
                     time_increment=dt,
                     consistent_tangent=True,
                 )
-                sf = trial.stress_mpa.reshape(n_e, N_GP, 3)
-                eps_p_trial = trial.plastic_strain.reshape(n_e, N_GP, 3)
-                ep_new = trial.equivalent_plastic_strain.reshape(n_e, N_GP)
-                dp = eps_p_trial - eps_p
-                dg = (ep_new - ep_bar).ravel()
-                mfront_tangents = trial.consistent_tangent_mpa
-                if mfront_tangents is None:
-                    raise RuntimeError("MFront did not return a consistent tangent")
+            except ConstitutiveIntegrationError as error:
+                LOGGER.warning(
+                    "constitutive trial failed",
+                    extra={
+                        "event": "constitutive_trial_failed",
+                        "increment": inc,
+                        "iteration": nrit + 1,
+                        "reason": str(error),
+                    },
+                )
+                constitutive_seconds += time.perf_counter() - constitutive_started_at
+                break
+            sf = trial.stress_in_plane_mpa.reshape(n_e, N_GP, 3)
+            eps_p_trial = trial.observables["plastic_strain_2d"].reshape(n_e, N_GP, 3)
+            ep_new = trial.observables["equivalent_plastic_strain"].reshape(n_e, N_GP)
+            material_tangents = trial.tangent_in_plane_mpa
+            if material_tangents is None:
+                raise RuntimeError("constitutive backend did not return a consistent tangent")
             constitutive_seconds += time.perf_counter() - constitutive_started_at
 
             # Save state from this iteration (used if we break here)
             sf_acc = sf
-            dp_acc = dp
+            eps_p_acc = eps_p_trial
+            constitutive_trial_acc = trial
 
             # Internal forces and residual
             R = internal_force(mesh, sf, Bs, dJs, ld)
@@ -334,8 +315,6 @@ def run_fem(
             # Converge on absolute OR relative residual
             if res < 1e-10 or rel < nr_tol:
                 converged = True
-                if mfront_batch is not None:
-                    mfront_full_state_acc = mfront_batch.current_full_tensor_state()
                 final_residual_norm = float(res)
                 final_relative_residual = float(rel)
                 final_convergence_criterion = (
@@ -345,29 +324,8 @@ def run_fem(
 
             # Build consistent tangent stiffness
             tangent_started_at = time.perf_counter()
-            if mfront_tangents is not None:
-                pl_idx = np.arange(n_e * N_GP)
-                plastic_tangents = mfront_tangents
-            else:
-                assert hf is not None
-                assert hfp is not None
-                pl_idx = np.where(dg > 0)[0]
-                if len(pl_idx):
-                    plastic_tangents = consistent_tangent(
-                        sf.reshape(-1, 3)[pl_idx],
-                        dg[pl_idx],
-                        ep_bar.ravel()[pl_idx],
-                        sy0_gp[pl_idx],
-                        K_gp[pl_idx],
-                        hf,
-                        hfp,
-                        C_ps,
-                        cm11,
-                        cm12,
-                        cm33,
-                    )
-                else:
-                    plastic_tangents = np.empty((0, 3, 3))
+            pl_idx = np.arange(n_e * N_GP)
+            plastic_tangents = material_tangents
             Ke_ep = element_tangent_stiffness(
                 Ke,
                 C_ps,
@@ -387,8 +345,7 @@ def run_fem(
             u[dof_I] += du
 
         if not converged:
-            if mfront_batch is not None:
-                mfront_batch.revert()
+            material_batch.revert()
             u = u_save
             dt *= 0.5
             cutbacks += 1
@@ -406,10 +363,11 @@ def run_fem(
                 )
             continue
 
-        if mfront_batch is not None:
-            mfront_batch.commit()
-            accepted_mfront_full_state = mfront_full_state_acc
-        eps_p += dp_acc
+        if constitutive_trial_acc is None:
+            raise RuntimeError("global Newton converged without a constitutive trial")
+        material_batch.commit()
+        accepted_constitutive_trial = constitutive_trial_acc
+        eps_p = eps_p_acc
         ep_bar = ep_new
         sig = sf_acc
         t += dt
@@ -449,30 +407,21 @@ def run_fem(
     S = tg(gm(sig))
     E = tg(gm(eps_tot))
     PE = tg(gm(eps_p))
-    if accepted_mfront_full_state is None:
-        full_state = reconstruct_python_plane_stress_state(E, PE, S, nu)
-        tensor_reconstruction_source = (
-            "python_analytical" if mfront_batch is None else "mfront_analytical_fallback"
-        )
-    else:
-        full_state = FullTensorState(
-            stress_tensor_mpa=tg(
-                gm(accepted_mfront_full_state.stress_tensor_mpa.reshape(n_e, N_GP, 3, 3))
-            ),
-            total_strain_tensor=tg(
-                gm(accepted_mfront_full_state.total_strain_tensor.reshape(n_e, N_GP, 3, 3))
-            ),
-            elastic_strain_tensor=tg(
-                gm(accepted_mfront_full_state.elastic_strain_tensor.reshape(n_e, N_GP, 3, 3))
-            ),
-            plastic_strain_tensor=tg(
-                gm(accepted_mfront_full_state.plastic_strain_tensor.reshape(n_e, N_GP, 3, 3))
-            ),
-            plane_stress_residual_mpa=tg(
-                gm(accepted_mfront_full_state.plane_stress_residual_mpa.reshape(n_e, N_GP))
-            ),
-        )
-        tensor_reconstruction_source = "mfront_native_axial_strain"
+    if accepted_constitutive_trial is None:
+        raise RuntimeError("converged solve has no accepted constitutive trial")
+    stress_3d = tg(gm(accepted_constitutive_trial.full_stress_tensor_mpa.reshape(n_e, N_GP, 3, 3)))
+    strain_3d = tg(gm(accepted_constitutive_trial.full_strain_tensor.reshape(n_e, N_GP, 3, 3)))
+    elastic_strain_3d = tg(
+        gm(accepted_constitutive_trial.elastic_strain_tensor.reshape(n_e, N_GP, 3, 3))
+    )
+    plastic_strain_3d = tg(
+        gm(accepted_constitutive_trial.plastic_strain_tensor.reshape(n_e, N_GP, 3, 3))
+    )
+    residual_vector = tg(
+        gm(accepted_constitutive_trial.plane_stress_residual_mpa.reshape(n_e, N_GP, 3))
+    )
+    residual_s33 = residual_vector[..., 0]
+    local_statistics = material_batch.statistics
 
     output_seconds = time.perf_counter() - output_started_at
     elapsed_seconds = time.perf_counter() - started_at
@@ -494,15 +443,16 @@ def run_fem(
         PE=PE,
         PEEQ=tg(gm(ep_bar)),
         RF=RF,
-        S_3D=full_state.stress_tensor_mpa,
-        E_3D=full_state.total_strain_tensor,
-        EE_3D=full_state.elastic_strain_tensor,
-        PE_3D=full_state.plastic_strain_tensor,
-        S33_RESIDUAL_MPA=full_state.plane_stress_residual_mpa,
+        S_3D=stress_3d,
+        E_3D=strain_3d,
+        EE_3D=elastic_strain_3d,
+        PE_3D=plastic_strain_3d,
+        PLANE_STRESS_RESIDUAL_MPA=residual_vector,
+        S33_RESIDUAL_MPA=residual_s33,
         mesh=mesh,
         frames=snaps,
         diagnostics=dict(
-            backend=f"{_SOLVER_NAME}; constitutive={constitutive_backend}",
+            backend=f"{_SOLVER_NAME}; constitutive={material_batch.backend_name}",
             elapsed_seconds=elapsed_seconds,
             initialization_seconds=initialization_seconds,
             elastic_assembly_seconds=elastic_assembly_seconds,
@@ -518,7 +468,18 @@ def run_fem(
             final_residual_norm=final_residual_norm,
             final_relative_residual=final_relative_residual,
             final_convergence_criterion=final_convergence_criterion,
-            tensor_reconstruction_source=tensor_reconstruction_source,
+            tensor_reconstruction_source=material_batch.completion_strategy,
+            maximum_gauss_point_plane_stress_residual_mpa=(
+                local_statistics.maximum_gauss_point_plane_stress_residual_mpa
+            ),
+            maximum_local_plane_stress_iterations=(
+                local_statistics.maximum_local_plane_stress_iterations
+            ),
+            mean_local_plane_stress_iterations=(
+                local_statistics.mean_local_plane_stress_iterations
+            ),
+            local_plane_stress_failures=local_statistics.local_plane_stress_failures,
+            maximum_cbb_condition_number=local_statistics.maximum_cbb_condition_number,
         ),
     )
 

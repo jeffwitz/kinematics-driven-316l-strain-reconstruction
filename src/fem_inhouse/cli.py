@@ -43,6 +43,7 @@ PARTITION_FIELDS = (
     "PE_3D",
     "PEEQ",
     "S33_RESIDUAL_MPA",
+    "PLANE_STRESS_RESIDUAL_MPA",
     "RF",
 )
 
@@ -61,7 +62,12 @@ def _parser() -> argparse.ArgumentParser:
     validate.add_argument("--ny", type=int, default=10)
     validate.add_argument(
         "--constitutive-backend",
-        choices=("python", "mfront"),
+        choices=(
+            "python",
+            "mfront",
+            "mfront-native-plane-stress",
+            "mfront-3d-condensed-plane-stress",
+        ),
         default="mfront",
     )
     validate.add_argument(
@@ -76,7 +82,12 @@ def _parser() -> argparse.ArgumentParser:
     example.add_argument("--ny", type=int, default=10)
     example.add_argument(
         "--constitutive-backend",
-        choices=("python", "mfront"),
+        choices=(
+            "python",
+            "mfront",
+            "mfront-native-plane-stress",
+            "mfront-3d-condensed-plane-stress",
+        ),
         default="mfront",
     )
     example.add_argument(
@@ -131,7 +142,12 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--residual-tolerance", type=float, default=1e-6)
     partition.add_argument(
         "--constitutive-backend",
-        choices=("python", "mfront"),
+        choices=(
+            "python",
+            "mfront",
+            "mfront-native-plane-stress",
+            "mfront-3d-condensed-plane-stress",
+        ),
         default="mfront",
     )
     partition.add_argument(

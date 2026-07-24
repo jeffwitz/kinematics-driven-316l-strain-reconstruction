@@ -49,7 +49,12 @@ def reduced_biaxial_case(
     target_stress_mpa: float = 400.0,
     yield_stress_mpa: float = 250.0,
     hardening_coefficient_mpa: float = 500.0,
-    constitutive_backend: Literal["python", "mfront"] = "mfront",
+    constitutive_backend: Literal[
+        "python",
+        "mfront",
+        "mfront-native-plane-stress",
+        "mfront-3d-condensed-plane-stress",
+    ] = "mfront",
     mfront_library: str = "build/mfront/src/libBehaviour.so",
     mfront_threads: int = 1,
 ) -> ReducedBiaxialCase:
@@ -141,7 +146,12 @@ def save_reduced_example(
     *,
     nx: int = 10,
     ny: int = 10,
-    constitutive_backend: Literal["python", "mfront"] = "mfront",
+    constitutive_backend: Literal[
+        "python",
+        "mfront",
+        "mfront-native-plane-stress",
+        "mfront-3d-condensed-plane-stress",
+    ] = "mfront",
     mfront_library: str = "build/mfront/src/libBehaviour.so",
     mfront_threads: int = 1,
 ) -> ValidationReport:
@@ -165,15 +175,24 @@ def save_reduced_example(
         result.elastic_strain_tensor,
         result.plastic_strain_tensor,
         result.plane_stress_residual_mpa,
+        result.plane_stress_residual_vector_mpa,
     )
     if any(field is None for field in full_fields):
         raise RuntimeError("completed reduced solve did not provide full tensor fields")
-    stress_tensor, total_tensor, elastic_tensor, plastic_tensor, residual = full_fields
+    (
+        stress_tensor,
+        total_tensor,
+        elastic_tensor,
+        plastic_tensor,
+        residual,
+        residual_vector,
+    ) = full_fields
     assert stress_tensor is not None
     assert total_tensor is not None
     assert elastic_tensor is not None
     assert plastic_tensor is not None
     assert residual is not None
+    assert residual_vector is not None
     np.save(destination / "S_3D.npy", stress_tensor)
     np.save(destination / "E_3D.npy", total_tensor)
     np.save(destination / "EE_3D.npy", elastic_tensor)
@@ -182,6 +201,7 @@ def save_reduced_example(
         destination / "S33_RESIDUAL_MPA.npy",
         residual,
     )
+    np.save(destination / "PLANE_STRESS_RESIDUAL_MPA.npy", residual_vector)
     np.save(
         destination / "equivalent_plastic_strain.npy",
         result.equivalent_plastic_strain,
@@ -195,6 +215,10 @@ def save_reduced_example(
             "EE_3D": {"components": "symmetric 3x3 elastic strain", "unit": "1"},
             "PE_3D": {"components": "symmetric 3x3 plastic strain", "unit": "1"},
             "S33_RESIDUAL_MPA": {"components": "s33", "unit": "MPa"},
+            "PLANE_STRESS_RESIDUAL_MPA": {
+                "components": "[s33, s13, s23]",
+                "unit": "MPa",
+            },
         },
         "validation": asdict(report),
     }

@@ -40,6 +40,7 @@ TENSOR_FIELD_NAMES = (
     "elastic_strain_tensor",
     "plastic_strain_tensor",
     "plane_stress_residual_mpa",
+    "plane_stress_residual_vector_mpa",
 )
 DERIVED_FIELD_NAMES = (
     "EVM_HISTORICAL",
@@ -48,7 +49,7 @@ DERIVED_FIELD_NAMES = (
     "MISES_3D_MPA",
 )
 FIELD_NAMES = HISTORICAL_FIELD_NAMES + TENSOR_FIELD_NAMES + DERIVED_FIELD_NAMES
-COMPARISON_FIELD_NAMES = HISTORICAL_FIELD_NAMES + TENSOR_FIELD_NAMES[:-1] + DERIVED_FIELD_NAMES
+COMPARISON_FIELD_NAMES = HISTORICAL_FIELD_NAMES + TENSOR_FIELD_NAMES[:-2] + DERIVED_FIELD_NAMES
 INPUT_NAMES = (
     "displacement_x_mm",
     "displacement_y_mm",
@@ -104,27 +105,31 @@ def _load_inputs(directory: Path) -> dict[str, NDArray]:
     return inputs
 
 
-def _full_tensor_arrays(result: FEMResult) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
+def _full_tensor_arrays(
+    result: FEMResult,
+) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
     values = (
         result.stress_tensor_mpa,
         result.total_strain_tensor,
         result.elastic_strain_tensor,
         result.plastic_strain_tensor,
         result.plane_stress_residual_mpa,
+        result.plane_stress_residual_vector_mpa,
     )
     if any(value is None for value in values):
         raise ValueError("the solver result does not contain a complete reconstructed state")
-    stress, total, elastic, plastic, residual = values
+    stress, total, elastic, plastic, residual, residual_vector = values
     assert stress is not None
     assert total is not None
     assert elastic is not None
     assert plastic is not None
     assert residual is not None
-    return stress, total, elastic, plastic, residual
+    assert residual_vector is not None
+    return stress, total, elastic, plastic, residual, residual_vector
 
 
 def _arrays(result: FEMResult, *, poisson_ratio: float) -> dict[str, NDArray]:
-    stress, total, elastic, plastic, residual = _full_tensor_arrays(result)
+    stress, total, elastic, plastic, residual, residual_vector = _full_tensor_arrays(result)
     arrays = {name: np.asarray(getattr(result, name)) for name in HISTORICAL_FIELD_NAMES}
     arrays.update(
         {
@@ -133,6 +138,7 @@ def _arrays(result: FEMResult, *, poisson_ratio: float) -> dict[str, NDArray]:
             "elastic_strain_tensor": elastic,
             "plastic_strain_tensor": plastic,
             "plane_stress_residual_mpa": residual,
+            "plane_stress_residual_vector_mpa": residual_vector,
         }
     )
     arrays["EVM_HISTORICAL"] = plane_stress_equivalent_strain(
@@ -166,7 +172,7 @@ def _state_consistency(
     *,
     poisson_ratio: float,
 ) -> dict[str, float]:
-    _, total, elastic, plastic, plane_stress_residual = _full_tensor_arrays(result)
+    _, total, elastic, plastic, _s33_residual, residual_vector = _full_tensor_arrays(result)
     additive_residual = total - elastic - plastic
     analytical = reconstruct_python_plane_stress_state(
         result.total_strain,
@@ -180,7 +186,7 @@ def _state_consistency(
         result.stress_mpa[..., 2],
     )
     return {
-        "maximum_abs_plane_stress_residual_mpa": float(np.max(np.abs(plane_stress_residual))),
+        "maximum_abs_plane_stress_residual_mpa": float(np.max(np.abs(residual_vector))),
         "maximum_abs_plastic_trace": float(np.max(np.abs(np.trace(plastic, axis1=-2, axis2=-1)))),
         "maximum_abs_additive_residual": float(np.max(np.abs(additive_residual))),
         "maximum_abs_mises_3d_minus_historical_mpa": float(
@@ -201,9 +207,10 @@ def _state_consistency(
 def _historical_regression(
     reference_directory: Path,
     arrays: dict[str, dict[str, NDArray]],
+    backends: tuple[str, str],
 ) -> dict[str, dict[str, dict[str, float]]]:
     regression: dict[str, dict[str, dict[str, float]]] = {}
-    for backend in ("python", "mfront"):
+    for backend in backends:
         reference_path = reference_directory / f"{backend}_fields.npz"
         if not reference_path.is_file():
             raise FileNotFoundError(f"historical reference not found: {reference_path}")
@@ -233,6 +240,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--increments", type=int, default=20)
     parser.add_argument("--max-newton-iterations", type=int, default=25)
     parser.add_argument("--residual-tolerance", type=float, default=1e-7)
+    parser.add_argument("--reference-backend", default="python")
+    parser.add_argument("--prediction-backend", default="mfront")
     parser.add_argument(
         "--historical-reference",
         type=Path,
@@ -268,7 +277,10 @@ def main() -> int:
 
     results: dict[str, FEMResult] = {}
     arrays: dict[str, dict[str, NDArray]] = {}
-    for backend in ("python", "mfront"):
+    backends = (args.reference_backend, args.prediction_backend)
+    if len(set(backends)) != 2:
+        raise ValueError("reference and prediction backends must differ")
+    for backend in backends:
         config = replace(
             base_config,
             solver=replace(base_solver, constitutive_backend=backend),
@@ -295,7 +307,10 @@ def main() -> int:
         )
 
     metrics = {
-        name: _field_metrics(arrays["python"][name], arrays["mfront"][name])
+        name: _field_metrics(
+            arrays[args.reference_backend][name],
+            arrays[args.prediction_backend][name],
+        )
         for name in COMPARISON_FIELD_NAMES
     }
     consistency = {
@@ -304,10 +319,10 @@ def main() -> int:
             arrays[backend],
             poisson_ratio=base_config.material.poisson_ratio,
         )
-        for backend in ("python", "mfront")
+        for backend in backends
     }
     historical_regression = (
-        _historical_regression(args.historical_reference, arrays)
+        _historical_regression(args.historical_reference, arrays, backends)
         if args.historical_reference is not None
         else None
     )
@@ -334,8 +349,8 @@ def main() -> int:
         "git_commit": _git_commit(),
         "configuration": asdict(base_config),
         "comparison": {
-            "reference_backend": "python",
-            "prediction_backend": "mfront",
+            "reference_backend": args.reference_backend,
+            "prediction_backend": args.prediction_backend,
         },
         "inputs": {
             name: {
@@ -378,7 +393,7 @@ def main() -> int:
                 "filename": f"{backend}_fields.npz",
                 "sha256": _sha256(args.output / f"{backend}_fields.npz"),
             }
-            for backend in ("python", "mfront")
+            for backend in backends
         },
     }
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

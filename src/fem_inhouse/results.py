@@ -47,6 +47,11 @@ class SolverDiagnostics:
     final_relative_residual: float
     final_convergence_criterion: str
     tensor_reconstruction_source: str = "unspecified"
+    maximum_gauss_point_plane_stress_residual_mpa: float = 0.0
+    maximum_local_plane_stress_iterations: int = 0
+    mean_local_plane_stress_iterations: float = 0.0
+    local_plane_stress_failures: int = 0
+    maximum_cbb_condition_number: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +69,7 @@ class FEMResult:
     elastic_strain_tensor: FloatArray | None = None
     plastic_strain_tensor: FloatArray | None = None
     plane_stress_residual_mpa: FloatArray | None = None
+    plane_stress_residual_vector_mpa: FloatArray | None = None
     frames: dict[float, FrameResult] = field(default_factory=dict)
     diagnostics: SolverDiagnostics | None = None
 
@@ -84,6 +90,7 @@ class FEMResult:
             self.elastic_strain_tensor,
             self.plastic_strain_tensor,
             self.plane_stress_residual_mpa,
+            self.plane_stress_residual_vector_mpa,
         )
         return historical + tuple(field for field in reconstructed if field is not None)
 
@@ -92,6 +99,7 @@ def load_full_tensor_state(
     directory: str | Path,
     *,
     poisson_ratio: float | None = None,
+    completion_strategy: str | None = None,
 ) -> FullTensorState:
     """Load new tensor files or reconstruct a legacy ``S/E/PE`` result set."""
 
@@ -102,13 +110,19 @@ def load_full_tensor_state(
         "elastic_strain_tensor": root / "EE_3D.npy",
         "plastic_strain_tensor": root / "PE_3D.npy",
         "plane_stress_residual_mpa": root / "S33_RESIDUAL_MPA.npy",
+        "plane_stress_residual_vector_mpa": root / "PLANE_STRESS_RESIDUAL_MPA.npy",
     }
     present = {name: path.is_file() for name, path in tensor_files.items()}
-    if any(present.values()) and not all(present.values()):
+    legacy_vector_missing = not present["plane_stress_residual_vector_mpa"] and all(
+        available
+        for name, available in present.items()
+        if name != "plane_stress_residual_vector_mpa"
+    )
+    if any(present.values()) and not all(present.values()) and not legacy_vector_missing:
         missing = sorted(name for name, available in present.items() if not available)
         raise RuntimeError(f"saved result contains an incomplete full tensor state: {missing}")
-    if all(present.values()):
-        arrays = {name: np.load(path) for name, path in tensor_files.items()}
+    if all(present.values()) or legacy_vector_missing:
+        arrays = {name: np.load(path) for name, path in tensor_files.items() if path.is_file()}
         stress_tensor = arrays["stress_tensor_mpa"]
         residual = arrays["plane_stress_residual_mpa"]
         if stress_tensor.shape[-2:] != (3, 3):
@@ -122,6 +136,14 @@ def load_full_tensor_state(
                 raise ValueError(f"{tensor_files[name].name} shape does not match S_3D.npy")
         if residual.shape != stress_tensor.shape[:-2]:
             raise ValueError("S33_RESIDUAL_MPA.npy shape does not match S_3D.npy")
+        residual_vector = arrays.get("plane_stress_residual_vector_mpa")
+        if residual_vector is None:
+            residual_vector = np.zeros((*residual.shape, 3), dtype=float)
+            residual_vector[..., 0] = residual
+        if residual_vector.shape != (*residual.shape, 3):
+            raise ValueError("PLANE_STRESS_RESIDUAL_MPA.npy shape is invalid")
+        if not np.array_equal(residual, residual_vector[..., 0]):
+            raise ValueError("S33_RESIDUAL_MPA.npy must equal PLANE_STRESS_RESIDUAL_MPA[..., 0]")
         if not all(np.isfinite(array).all() for array in arrays.values()):
             raise ValueError("saved full tensor state contains non-finite values")
         if not np.array_equal(residual, stress_tensor[..., 2, 2]):
@@ -132,8 +154,14 @@ def load_full_tensor_state(
             elastic_strain_tensor=arrays["elastic_strain_tensor"],
             plastic_strain_tensor=arrays["plastic_strain_tensor"],
             plane_stress_residual_mpa=residual,
+            plane_stress_residual_vector_mpa=residual_vector,
         )
 
+    if completion_strategy != "j2_isotropic_analytical":
+        raise ValueError(
+            "legacy S/E/PE reconstruction requires the explicit "
+            "completion_strategy='j2_isotropic_analytical'"
+        )
     if poisson_ratio is None:
         raise ValueError(
             "poisson_ratio is required to reconstruct full tensors from legacy S/E/PE files"

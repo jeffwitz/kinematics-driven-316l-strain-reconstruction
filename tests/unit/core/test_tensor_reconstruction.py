@@ -7,11 +7,13 @@ from fem_inhouse.core.tensor_reconstruction import (
     elastic_axial_strain_from_stress,
     engineering_strain_2d_to_tensor,
     engineering_stress_2d_to_tensor,
+    kelvin_3d_to_tensor,
     kelvin_plane_stress_to_tensor,
     reconstruct_native_plane_stress_state,
     reconstruct_python_plane_stress_state,
     tensor_to_engineering_strain_2d,
     tensor_to_engineering_stress_2d,
+    tensor_to_kelvin_3d,
     tensor_to_kelvin_plane_stress,
 )
 from fem_inhouse.postprocessing.tensor_measures import (
@@ -56,6 +58,37 @@ def test_kelvin_tensor_round_trip_preserves_double_contraction(quantity: str) ->
         first,
     )
     assert first_kelvin[3] == pytest.approx(np.sqrt(2.0) * first[0, 1])
+
+
+def test_kelvin_3d_round_trip_and_double_contraction() -> None:
+    strain_tensor = np.array(
+        [[0.01, 0.003, -0.002], [0.003, -0.004, 0.0015], [-0.002, 0.0015, 0.002]]
+    )
+    stress_tensor = np.array([[210.0, 35.0, -12.0], [35.0, -80.0, 9.0], [-12.0, 9.0, 40.0]])
+    strain_kelvin = tensor_to_kelvin_3d(strain_tensor, quantity="strain")
+    stress_kelvin = tensor_to_kelvin_3d(stress_tensor, quantity="stress")
+    np.testing.assert_allclose(
+        strain_kelvin,
+        [
+            0.01,
+            -0.004,
+            0.002,
+            np.sqrt(2) * 0.003,
+            -np.sqrt(2) * 0.002,
+            np.sqrt(2) * 0.0015,
+        ],
+    )
+    np.testing.assert_array_equal(
+        kelvin_3d_to_tensor(strain_kelvin, quantity="strain"),
+        strain_tensor,
+    )
+    np.testing.assert_array_equal(
+        kelvin_3d_to_tensor(stress_kelvin, quantity="stress"),
+        stress_tensor,
+    )
+    assert np.sum(strain_kelvin * stress_kelvin) == pytest.approx(
+        np.einsum("ij,ij->", strain_tensor, stress_tensor)
+    )
 
 
 def test_python_reconstruction_is_additive_isochoric_and_plane_stress() -> None:

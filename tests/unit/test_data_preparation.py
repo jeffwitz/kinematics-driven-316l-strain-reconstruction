@@ -19,8 +19,7 @@ def _raw_case(directory: Path, *, with_nan: bool = True) -> dict[str, np.ndarray
         "U_40.npy": np.arange(6, dtype=np.float32).reshape(3, 2) + 10,
         "V_40.npy": np.arange(6, dtype=np.float32).reshape(3, 2) - 3,
         "el_thresh50.npy": np.arange(6, dtype=np.float64).reshape(3, 2) + 50,
-        "Hardening_coeff_el_Thresh50.npy": np.arange(6, dtype=np.float64).reshape(3, 2)
-        + 1,
+        "Hardening_coeff_el_Thresh50.npy": np.arange(6, dtype=np.float64).reshape(3, 2) + 1,
     }
     if with_nan:
         arrays["Hardening_coeff_el_Thresh50.npy"][0, 0] = np.nan

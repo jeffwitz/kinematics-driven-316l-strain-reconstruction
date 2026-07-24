@@ -110,6 +110,14 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         elastic_strain_tensor = np.asarray(raw["EE_3D"])
         plastic_strain_tensor = np.asarray(raw["PE_3D"])
         plane_stress_residual = np.asarray(raw["S33_RESIDUAL_MPA"])
+        if "PLANE_STRESS_RESIDUAL_MPA" in raw:
+            plane_stress_residual_vector = np.asarray(raw["PLANE_STRESS_RESIDUAL_MPA"])
+        else:
+            plane_stress_residual_vector = np.zeros(
+                (*plane_stress_residual.shape, 3),
+                dtype=float,
+            )
+            plane_stress_residual_vector[..., 0] = plane_stress_residual
     else:
         legacy_state = reconstruct_python_plane_stress_state(
             total_strain,
@@ -122,6 +130,7 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         elastic_strain_tensor = legacy_state.elastic_strain_tensor
         plastic_strain_tensor = legacy_state.plastic_strain_tensor
         plane_stress_residual = legacy_state.plane_stress_residual_mpa
+        plane_stress_residual_vector = legacy_state.plane_stress_residual_vector_mpa
     result = FEMResult(
         displacement_mm=displacement,
         stress_mpa=stress,
@@ -134,6 +143,7 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         elastic_strain_tensor=elastic_strain_tensor,
         plastic_strain_tensor=plastic_strain_tensor,
         plane_stress_residual_mpa=plane_stress_residual,
+        plane_stress_residual_vector_mpa=plane_stress_residual_vector,
         frames={
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()
@@ -221,6 +231,10 @@ def run_case_study(
         constitutive_backend=config.solver.constitutive_backend,
         mfront_library=config.solver.mfront_library,
         mfront_threads=config.solver.mfront_threads,
+        local_plane_stress_tolerance_mpa=config.solver.local_plane_stress_tolerance_mpa,
+        local_plane_stress_relative_tolerance=(config.solver.local_plane_stress_relative_tolerance),
+        maximum_local_plane_stress_iterations=(config.solver.maximum_local_plane_stress_iterations),
+        maximum_cbb_condition_number=config.solver.maximum_cbb_condition_number,
         snapshot_fractions=snapshot_fractions,
         verbose=verbose,
     )

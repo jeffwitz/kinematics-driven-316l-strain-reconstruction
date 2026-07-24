@@ -36,6 +36,10 @@ RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "PE_3D": ("plastic_strain_tensor", "element"),
     "PEEQ": ("equivalent_plastic_strain", "element"),
     "S33_RESIDUAL_MPA": ("plane_stress_residual_mpa", "element"),
+    "PLANE_STRESS_RESIDUAL_MPA": (
+        "plane_stress_residual_vector_mpa",
+        "element",
+    ),
     "RF": ("reaction_force", "node"),
 }
 RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
@@ -49,6 +53,10 @@ RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
     "PE_3D": {"components": "symmetric 3x3 plastic strain", "unit": "1"},
     "PEEQ": {"components": "accumulated equivalent plastic strain", "unit": "1"},
     "S33_RESIDUAL_MPA": {"components": "s33", "unit": "MPa"},
+    "PLANE_STRESS_RESIDUAL_MPA": {
+        "components": "[s33, s13, s23]",
+        "unit": "MPa",
+    },
     "RF": {"components": "[r1, r2]", "unit": "N for implicit 1 mm thickness"},
 }
 
@@ -280,6 +288,14 @@ class PartitionWorkflow:
         for field_name, (attribute, _location) in RESULT_FIELDS.items():
             path = self._result_path(partition_id, field_name)
             values = getattr(result, attribute)
+            if (
+                values is None
+                and field_name == "PLANE_STRESS_RESIDUAL_MPA"
+                and result.plane_stress_residual_mpa is not None
+            ):
+                scalar = np.asarray(result.plane_stress_residual_mpa)
+                values = np.zeros((*scalar.shape, 3), dtype=scalar.dtype)
+                values[..., 0] = scalar
             if values is None:
                 raise RuntimeError(
                     f"completed solve did not provide required result field {field_name}"

@@ -75,9 +75,18 @@ class SolverConfig:
     minimum_step_divisor: int = 1_024
     require_pypardiso: bool = True
     hardening_mode: Literal["ludwik", "tabular"] = "ludwik"
-    constitutive_backend: Literal["python", "mfront"] = "mfront"
+    constitutive_backend: Literal[
+        "python",
+        "mfront",
+        "mfront-native-plane-stress",
+        "mfront-3d-condensed-plane-stress",
+    ] = "mfront"
     mfront_library: str = "build/mfront/src/libBehaviour.so"
     mfront_threads: int = 1
+    local_plane_stress_tolerance_mpa: float = 1e-8
+    local_plane_stress_relative_tolerance: float = 1e-10
+    maximum_local_plane_stress_iterations: int = 15
+    maximum_cbb_condition_number: float = 1e12
 
     def __post_init__(self) -> None:
         if self.increments < 1:
@@ -90,14 +99,27 @@ class SolverConfig:
             raise ValueError("minimum_step_divisor must be at least 2")
         if self.hardening_mode not in {"ludwik", "tabular"}:
             raise ValueError("hardening_mode must be 'ludwik' or 'tabular'")
-        if self.constitutive_backend not in {"python", "mfront"}:
-            raise ValueError("constitutive_backend must be 'python' or 'mfront'")
+        if self.constitutive_backend not in {
+            "python",
+            "mfront",
+            "mfront-native-plane-stress",
+            "mfront-3d-condensed-plane-stress",
+        }:
+            raise ValueError("unsupported constitutive_backend")
         if not self.mfront_library:
             raise ValueError("mfront_library must not be empty")
         if isinstance(self.mfront_threads, bool) or not isinstance(self.mfront_threads, int):
             raise TypeError("mfront_threads must be an integer")
         if self.mfront_threads < 1:
             raise ValueError("mfront_threads must be at least 1")
+        if self.local_plane_stress_tolerance_mpa <= 0:
+            raise ValueError("local_plane_stress_tolerance_mpa must be positive")
+        if self.local_plane_stress_relative_tolerance <= 0:
+            raise ValueError("local_plane_stress_relative_tolerance must be positive")
+        if self.maximum_local_plane_stress_iterations < 1:
+            raise ValueError("maximum_local_plane_stress_iterations must be positive")
+        if self.maximum_cbb_condition_number <= 1:
+            raise ValueError("maximum_cbb_condition_number must be greater than one")
 
 
 @dataclass(frozen=True, slots=True)

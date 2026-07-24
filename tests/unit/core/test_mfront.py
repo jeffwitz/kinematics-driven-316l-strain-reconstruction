@@ -7,12 +7,16 @@ import numpy as np
 import pytest
 
 from fem_inhouse.core.mfront import (
+    MFront3DCondensedPlaneStressBatch,
     MFrontMaterialPointBatch,
+    MFrontNativePlaneStressBatch,
+    condense_kelvin_tangent_to_engineering,
     engineering_strain_to_kelvin,
     kelvin_strain_to_engineering,
     kelvin_stress_to_engineering,
     kelvin_tangent_to_engineering,
 )
+from fem_inhouse.core.plane_stress_material import LocalPlaneStressConvergenceError
 
 
 def test_kelvin_strain_round_trip_preserves_engineering_shear() -> None:
@@ -36,7 +40,6 @@ def test_kelvin_stress_and_tangent_recover_plane_stress_elasticity() -> None:
             [0.0, 0.0, 0.0, young / (1 + poisson)],
         ]
     )
-
     np.testing.assert_allclose(
         kelvin_stress_to_engineering(kelvin_stress),
         [12.0, -3.0, 7.0],
@@ -52,6 +55,27 @@ def test_kelvin_stress_and_tangent_recover_plane_stress_elasticity() -> None:
             ]
         ),
     )
+
+
+def test_schur_complement_recovers_isotropic_plane_stress_elasticity() -> None:
+    young = 205_000.0
+    poisson = 0.3
+    shear = young / (2.0 * (1.0 + poisson))
+    lame = young * poisson / ((1.0 + poisson) * (1.0 - 2.0 * poisson))
+    tangent = np.zeros((2, 6, 6))
+    tangent[:, :3, :3] = lame
+    tangent[:, np.arange(3), np.arange(3)] += 2.0 * shear
+    tangent[:, 3, 3] = 2.0 * shear
+    tangent[:, 4, 4] = 2.0 * shear
+    tangent[:, 5, 5] = 2.0 * shear
+
+    condensed, condition = condense_kelvin_tangent_to_engineering(tangent)
+    factor = young / (1.0 - poisson**2)
+    expected = factor * np.array(
+        [[1.0, poisson, 0.0], [poisson, 1.0, 0.0], [0.0, 0.0, (1.0 - poisson) / 2.0]]
+    )
+    np.testing.assert_allclose(condensed, np.broadcast_to(expected, condensed.shape))
+    np.testing.assert_allclose(condition, 1.75)
 
 
 @pytest.mark.parametrize(
@@ -249,3 +273,111 @@ def test_mfront_thread_pool_matches_serial_integration() -> None:
         parallel_result.consistent_tangent_mpa,
         serial_result.consistent_tangent_mpa,
     )
+
+
+@pytest.mark.mfront
+def test_mfront_3d_condensation_matches_native_plane_stress_histories() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    material = (
+        np.array([240.0, 270.0]),
+        np.array([360.0, 420.0]),
+        np.full(2, 0.245),
+    )
+    native = MFrontNativePlaneStressBatch(library, *material)
+    condensed = MFront3DCondensedPlaneStressBatch(library, *material)
+    history = (
+        [0.001, -0.0002, 0.0005],
+        [0.008, -0.0008, 0.0015],
+        [0.008, 0.002, 0.003],
+        [0.004, 0.001, 0.001],
+    )
+    for values in history:
+        strain = np.tile(values, (2, 1))
+        native_trial = native.evaluate(strain, time_increment=0.25)
+        condensed_trial = condensed.evaluate(strain, time_increment=0.25)
+        np.testing.assert_allclose(
+            condensed_trial.stress_in_plane_mpa,
+            native_trial.stress_in_plane_mpa,
+            rtol=1e-7,
+            atol=2e-6,
+        )
+        np.testing.assert_allclose(
+            condensed_trial.full_strain_tensor,
+            native_trial.full_strain_tensor,
+            rtol=1e-7,
+            atol=5e-12,
+        )
+        np.testing.assert_allclose(
+            condensed_trial.observables["equivalent_plastic_strain"],
+            native_trial.observables["equivalent_plastic_strain"],
+            rtol=1e-7,
+            atol=1e-11,
+        )
+        np.testing.assert_allclose(
+            condensed_trial.full_strain_tensor[:, (0, 1), 2],
+            0.0,
+            atol=1e-14,
+        )
+        assert np.max(np.abs(condensed_trial.plane_stress_residual_mpa)) < 1e-6
+        native.commit()
+        condensed.commit()
+
+
+@pytest.mark.mfront
+def test_mfront_3d_condensed_tangent_matches_finite_differences() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFront3DCondensedPlaneStressBatch(
+        library,
+        np.full(2, 250.0),
+        np.full(2, 380.0),
+        np.full(2, 0.245),
+    )
+    batch.evaluate(np.tile([0.006, -0.0005, 0.001], (2, 1)), time_increment=0.5)
+    batch.commit()
+    target = np.tile([0.008, 0.0003, 0.002], (2, 1))
+    base = batch.evaluate(target, time_increment=0.5)
+    assert base.tangent_in_plane_mpa is not None
+    numerical = np.empty((2, 3, 3))
+    step = 1e-7
+    for component in range(3):
+        plus = target.copy()
+        minus = target.copy()
+        plus[:, component] += step
+        minus[:, component] -= step
+        stress_plus = batch.evaluate(plus, time_increment=0.5).stress_in_plane_mpa
+        stress_minus = batch.evaluate(minus, time_increment=0.5).stress_in_plane_mpa
+        numerical[:, :, component] = (stress_plus - stress_minus) / (2.0 * step)
+    np.testing.assert_allclose(
+        base.tangent_in_plane_mpa,
+        numerical,
+        rtol=2e-5,
+        atol=5e-2,
+    )
+
+
+@pytest.mark.mfront
+def test_failed_local_condensation_does_not_pollute_committed_state() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFront3DCondensedPlaneStressBatch(
+        library,
+        np.full(2, 250.0),
+        np.full(2, 380.0),
+        np.full(2, 0.245),
+        maximum_local_iterations=1,
+    )
+    with pytest.raises(LocalPlaneStressConvergenceError, match="did not converge"):
+        batch.evaluate(np.tile([0.01, -0.001, 0.002], (2, 1)), time_increment=1.0)
+    zero = batch.evaluate(np.zeros((2, 3)), time_increment=1.0)
+    np.testing.assert_allclose(zero.stress_in_plane_mpa, 0.0, atol=1e-14)
+    np.testing.assert_allclose(
+        zero.observables["equivalent_plastic_strain"],
+        0.0,
+        atol=1e-15,
+    )
+    assert batch.statistics.local_plane_stress_failures == 1

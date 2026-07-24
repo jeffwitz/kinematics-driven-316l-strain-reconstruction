@@ -24,25 +24,43 @@ from fem_inhouse.core.element import (
 )
 from fem_inhouse.core.mesh import StructuredMesh
 from fem_inhouse.core.mfront import (
+    MFront3DCondensedPlaneStressBatch,
     MFrontIntegrationError,
     MFrontIntegrationResult,
     MFrontMaterialPointBatch,
+    MFrontNativePlaneStressBatch,
     MFrontUnavailableError,
     engineering_strain_to_kelvin,
     kelvin_strain_to_engineering,
     kelvin_stress_to_engineering,
     kelvin_tangent_to_engineering,
 )
+from fem_inhouse.core.plane_stress_material import (
+    ConstitutiveIntegrationError,
+    ConstitutiveTrial,
+    LocalPlaneStressConvergenceError,
+    PlaneStressBatchStatistics,
+    PlaneStressMaterialBatch,
+    PythonJ2PlaneStressBatch,
+)
 
 __all__ = [
     "PLANE_STRESS_VON_MISES_METRIC",
+    "ConstitutiveIntegrationError",
+    "ConstitutiveTrial",
     "ElementOperators",
     "HardeningFunction",
     "HardeningMode",
+    "LocalPlaneStressConvergenceError",
+    "MFront3DCondensedPlaneStressBatch",
     "MFrontIntegrationError",
     "MFrontIntegrationResult",
     "MFrontMaterialPointBatch",
+    "MFrontNativePlaneStressBatch",
     "MFrontUnavailableError",
+    "PlaneStressBatchStatistics",
+    "PlaneStressMaterialBatch",
+    "PythonJ2PlaneStressBatch",
     "StructuredMesh",
     "assemble_stiffness",
     "assembly_indices",

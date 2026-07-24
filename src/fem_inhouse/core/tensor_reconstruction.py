@@ -22,6 +22,7 @@ class FullTensorState:
     elastic_strain_tensor: FloatArray
     plastic_strain_tensor: FloatArray
     plane_stress_residual_mpa: FloatArray
+    plane_stress_residual_vector_mpa: FloatArray
 
 
 def _finite_components(values: ArrayLike, *, name: str, size: int) -> FloatArray:
@@ -148,6 +149,49 @@ def tensor_to_kelvin_plane_stress(
     return kelvin
 
 
+def kelvin_3d_to_tensor(
+    values: ArrayLike,
+    *,
+    quantity: TensorQuantity,
+) -> FloatArray:
+    """Convert MGIS ``[11, 22, 33, 12, 13, 23]`` Kelvin values to tensors."""
+
+    if quantity not in {"strain", "stress"}:
+        raise ValueError("quantity must be 'strain' or 'stress'")
+    kelvin = _finite_components(values, name=f"3D Kelvin {quantity}", size=6)
+    tensor = np.zeros((*kelvin.shape[:-1], 3, 3), dtype=float)
+    tensor[..., 0, 0] = kelvin[..., 0]
+    tensor[..., 1, 1] = kelvin[..., 1]
+    tensor[..., 2, 2] = kelvin[..., 2]
+    tensor[..., 0, 1] = kelvin[..., 3] / _SQRT_TWO
+    tensor[..., 0, 2] = kelvin[..., 4] / _SQRT_TWO
+    tensor[..., 1, 2] = kelvin[..., 5] / _SQRT_TWO
+    tensor[..., 1, 0] = tensor[..., 0, 1]
+    tensor[..., 2, 0] = tensor[..., 0, 2]
+    tensor[..., 2, 1] = tensor[..., 1, 2]
+    return tensor
+
+
+def tensor_to_kelvin_3d(
+    tensor: ArrayLike,
+    *,
+    quantity: TensorQuantity,
+) -> FloatArray:
+    """Convert a symmetric 3D tensor to MGIS Kelvin notation."""
+
+    if quantity not in {"strain", "stress"}:
+        raise ValueError("quantity must be 'strain' or 'stress'")
+    values = _finite_tensor(tensor, name=f"{quantity}_tensor")
+    kelvin = np.empty((*values.shape[:-2], 6), dtype=float)
+    kelvin[..., 0] = values[..., 0, 0]
+    kelvin[..., 1] = values[..., 1, 1]
+    kelvin[..., 2] = values[..., 2, 2]
+    kelvin[..., 3] = _SQRT_TWO * values[..., 0, 1]
+    kelvin[..., 4] = _SQRT_TWO * values[..., 0, 2]
+    kelvin[..., 5] = _SQRT_TWO * values[..., 1, 2]
+    return kelvin
+
+
 def tensor_to_engineering_strain_2d(tensor: ArrayLike) -> FloatArray:
     """Extract ``[..., e11, e22, gamma12]`` from symmetric strain tensors."""
 
@@ -188,6 +232,7 @@ def reconstruct_python_plane_stress_state(
     elastic_33 = -poisson / (1.0 - poisson) * (elastic[..., 0] + elastic[..., 1])
     total_33 = elastic_33 + plastic_33
     residual = np.zeros(total.shape[:-1], dtype=float)
+    residual_vector = np.zeros((*total.shape[:-1], 3), dtype=float)
 
     return FullTensorState(
         stress_tensor_mpa=engineering_stress_2d_to_tensor(stress, residual),
@@ -195,6 +240,7 @@ def reconstruct_python_plane_stress_state(
         elastic_strain_tensor=engineering_strain_2d_to_tensor(elastic, elastic_33),
         plastic_strain_tensor=engineering_strain_2d_to_tensor(plastic, plastic_33),
         plane_stress_residual_mpa=residual,
+        plane_stress_residual_vector_mpa=residual_vector,
     )
 
 
@@ -226,6 +272,8 @@ def reconstruct_native_plane_stress_state(
         )
     plastic_kelvin = total_kelvin - elastic_kelvin
     stress_tensor = kelvin_plane_stress_to_tensor(stress_kelvin, quantity="stress")
+    residual_vector = np.zeros((*stress_tensor.shape[:-2], 3), dtype=float)
+    residual_vector[..., 0] = stress_tensor[..., 2, 2]
     return FullTensorState(
         stress_tensor_mpa=stress_tensor,
         total_strain_tensor=kelvin_plane_stress_to_tensor(total_kelvin, quantity="strain"),
@@ -238,6 +286,7 @@ def reconstruct_native_plane_stress_state(
             quantity="strain",
         ),
         plane_stress_residual_mpa=stress_tensor[..., 2, 2].copy(),
+        plane_stress_residual_vector_mpa=residual_vector,
     )
 
 
