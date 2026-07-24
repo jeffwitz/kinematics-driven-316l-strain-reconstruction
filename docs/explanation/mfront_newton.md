@@ -75,6 +75,30 @@ The $4\times4$ Kelvin tangent is reduced and scaled to the $3\times3$
 engineering-shear tangent expected by CPS4 assembly. These factors are part of
 the constitutive contract and are tested explicitly.
 
+## Native transverse state and result reconstruction
+
+The installed MGIS behaviour metadata was inspected rather than relying on a
+component-position assumption. It reports:
+
+- `Strain`: four-component Kelvin gradient;
+- `Stress`: four-component Kelvin thermodynamic force;
+- `ElasticStrain`: four-component internal state variable;
+- `AxialStrain`: scalar internal state variable;
+- `EquivalentPlasticStrain`: scalar internal state variable.
+
+A material-point probe shows that `Strain[2]` remains zero under this
+`PlaneStress` interface. The converged total transverse strain is stored in
+`AxialStrain`. After global convergence and before `commit`, the adapter reads
+that scalar, the complete native elastic strain, and the complete stress. It
+then obtains plastic strain from the additive difference and preserves the
+native `Stress[2]` as the plane-stress residual.
+
+This extraction changes only result production. It does not introduce another
+local solve, alter the consistent tangent, or feed a reconstructed quantity
+back into Newton. Metadata names, tensor sizes, and offsets are checked
+automatically. See {doc}`plane_stress_tensors` for the mechanical derivation
+and fallback policy.
+
 ## Trial, commit, and revert
 
 Global Newton evaluates several trial states before accepting one increment.
@@ -88,7 +112,8 @@ rejected iterations and produce a path-dependent numerical error.
   the committed state.
 
 `commit`
-: Promote the converged trial to the starting state of the next increment.
+: Extract the accepted output state, then promote the converged trial to the
+  starting state of the next increment.
 
 `revert`
 : Discard the trial and return to the last converged state.
@@ -160,8 +185,9 @@ The switch followed four validations:
 1. elastic and plastic material-point paths;
 2. stress, PEEQ, and tangent comparisons;
 3. a complete homogeneous MFront/Newton solve;
-4. a six-field comparison on a real DIC crop.
+4. a comparison of all historical and complete-tensor fields on a real DIC
+   crop, including the native transverse residual and a regression against
+   the pre-feature artifacts.
 
 The Python implementation remains valuable as an independent regression
 reference and historical Abaqus-table mode. It is no longer the nominal model.
-

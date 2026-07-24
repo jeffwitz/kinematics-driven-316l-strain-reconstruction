@@ -59,7 +59,10 @@ from pathlib import Path
 import numpy as np
 
 partition = Path("results/reconstruction-100/partitions/0000")
-for name in ("U", "S", "E", "PE", "PEEQ", "RF"):
+for name in (
+    "U", "S", "E", "PE", "PEEQ", "RF",
+    "S_3D", "E_3D", "EE_3D", "PE_3D", "S33_RESIDUAL_MPA",
+):
     field = np.load(partition / f"{name}.npy", mmap_mode="r")
     print(
         f"{name:4s}",
@@ -72,6 +75,36 @@ for name in ("U", "S", "E", "PE", "PEEQ", "RF"):
 PY
 ```
 
+## Check the complete plane-stress state
+
+```bash
+.venv/bin/python - <<'PY'
+from pathlib import Path
+
+import numpy as np
+
+from fem_inhouse import load_full_tensor_state
+
+partition = Path("results/reconstruction-100/partitions/0000")
+state = load_full_tensor_state(partition)
+
+additive = (
+    state.total_strain_tensor
+    - state.elastic_strain_tensor
+    - state.plastic_strain_tensor
+)
+plastic_trace = np.trace(state.plastic_strain_tensor, axis1=-2, axis2=-1)
+
+print("maximum |S33| (MPa):", np.max(np.abs(state.plane_stress_residual_mpa)))
+print("maximum |trace(PE)|:", np.max(np.abs(plastic_trace)))
+print("maximum |E - EE - PE|:", np.max(np.abs(additive)))
+PY
+```
+
+For an older directory containing only `S.npy`, `E.npy`, and `PE.npy`, call
+`load_full_tensor_state(partition, poisson_ratio=0.3)`. The material property
+is mandatory because it cannot be inferred from those arrays.
+
 ## Interpret convergence
 
 Check at least:
@@ -83,7 +116,10 @@ Check at least:
 | `maximum_newton_iterations` | below the configured limit |
 | `final_relative_residual` | below tolerance |
 | `backend` | mentions PyPardiso and MFront |
+| `tensor_reconstruction_source` | `mfront_native_axial_strain` for the nominal backend |
 | finite fields | `true` |
+| `S_3D[..., 2, 2]` | exactly equal to `S33_RESIDUAL_MPA` |
+| plastic trace and additive residual | below the declared tensor tolerances |
 | total reaction resultant | close to zero |
 | DIC boundary error | close to machine precision |
 

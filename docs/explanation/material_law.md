@@ -42,6 +42,11 @@ $$
 MFront enforces $\sigma_{33}=0$ through its `PlaneStress` modelling
 hypothesis and maintains the internal axial strain required by that constraint.
 
+Plane stress does not imply $\epsilon_{33}=0$. After convergence, total,
+elastic, and plastic transverse strains are retained in the public complete
+tensors. Their derivation and the native MFront state variables are documented
+in {doc}`plane_stress_tensors`.
+
 ## Yield criterion and flow
 
 Let
@@ -60,6 +65,16 @@ $$
 where $p$ is PEEQ and $R(p)$ is the current yield-surface radius. Associated
 flow uses the normal to the von Mises surface, so plastic flow is isochoric in
 the three-dimensional constitutive model.
+
+Consequently,
+
+$$
+\epsilon^p_{11}+\epsilon^p_{22}+\epsilon^p_{33}=0.
+$$
+
+This relation completes the plastic strain tensor in the Python backend and
+provides an independent check of the native MFront result. It does not change
+the return mapping or the accumulated PEEQ update.
 
 ## Analytical Ludwik law
 

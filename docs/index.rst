@@ -69,6 +69,7 @@ What the software guarantees
       * structured rectangular CPS4 mesh;
       * small strain and plane stress;
       * isotropic J2 plasticity with Ludwik hardening;
+      * complete 3D stress and strain tensors reconstructed after convergence;
       * DIC-prescribed boundary displacements;
       * resumable, traceable partitioned computation;
       * preserved ``U``, ``S``, ``E``, ``PE``, ``PEEQ``, and ``RF`` fields.
@@ -99,6 +100,7 @@ Start here
 * :doc:`tutorials/first_reconstruction` if this is your first visit;
 * :doc:`explanation/scientific_goal` for the scientific question;
 * :doc:`explanation/material_law` for the constitutive model;
+* :doc:`explanation/plane_stress_tensors` for complete 3D tensor reconstruction;
 * :doc:`how-to/install` to install TFEL/MFront, MGIS, and the Python package;
 * :doc:`reference/input_contract` to check input arrays;
 * :doc:`reference/results` to interpret the validated campaigns.
@@ -139,6 +141,7 @@ Start here
    explanation/index
    explanation/scientific_goal
    explanation/material_law
+   explanation/plane_stress_tensors
    explanation/mfront_newton
    explanation/partitioning
    explanation/validation

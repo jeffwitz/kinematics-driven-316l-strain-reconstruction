@@ -74,7 +74,7 @@ A partition is complete only if:
 
 - `status.json` contains `complete: true`;
 - its manifest hash matches the campaign;
-- all six files are present;
+- all six historical and five complete-tensor files are present;
 - every SHA-256 matches the status.
 
 A missing or corrupted file automatically returns the partition to the pending
@@ -133,4 +133,3 @@ For a representative partition:
 
 Keep this file with the campaign. Internal solver time and complete process wall
 time do not cover exactly the same phases.
-

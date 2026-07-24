@@ -32,8 +32,22 @@ same plane-stress J2/Ludwik material. It is connected to the
 finite-element Newton loop with trial/commit/revert state transactions and its
 consistent tangent is assembled at every Gauss point. Material-point tests and
 the saved DIC-driven `10×10` comparison both pass their declared thresholds.
+Every converged final state now also exposes complete symmetric `3×3` stress,
+total-strain, elastic-strain, and plastic-strain tensors. This is an
+output-only completion of the existing 2D plane-stress state: the mesh,
+unknowns, Newton system, constitutive updates, and in-plane results are
+unchanged. MFront retains its native `AxialStrain`, `ElasticStrain`, and
+numerical `S33` residual.
 Installation, tensor conventions, exact metrics, and reproduction commands are
 documented in [`docs/mfront.md`](docs/mfront.md).
+
+The complete-tensor DIC campaign is preserved under
+[`validation/reference_data/plane_stress_tensor_reconstruction_dic_10x10_v1`](validation/reference_data/plane_stress_tensor_reconstruction_dic_10x10_v1).
+Its maximum native MFront `|S33|` is `1.046e-14 MPa`, maximum plastic-trace
+residual is `1.406e-19`, and maximum additive-decomposition residual is
+`1.355e-19`. Regression against the earlier artifacts confirms that historical
+2D outputs changed by at most `4.263e-14 MPa` (MFront round-off; Python is
+identical).
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
@@ -131,10 +145,11 @@ The script is equivalent to:
   --solve-pending
 ```
 
-Every partition preserves all final solver fields (`U`, `S`, `E`, `PE`,
-`PEEQ`, `RF`) together with convergence diagnostics and output hashes. The full
-production run uses the same prepared contract, with padding and partition
-execution distributed according to the available memory. See
+Every partition preserves the historical final fields (`U`, `S`, `E`, `PE`,
+`PEEQ`, `RF`) and the additional complete fields (`S_3D`, `E_3D`, `EE_3D`,
+`PE_3D`, `S33_RESIDUAL_MPA`) together with convergence diagnostics and output
+hashes. The full production run uses the same prepared contract, with padding
+and partition execution distributed according to the available memory. See
 [`docs/from_dic_to_reconstruction.md`](docs/from_dic_to_reconstruction.md).
 
 ## Development setup
@@ -202,11 +217,19 @@ result = run_case_study(
     hardening_coefficient_mpa=np.full(shape_elements, 500.0),
 )
 print(result.equivalent_plastic_strain.max())
+print(result.stress_tensor_mpa.shape)
+print(result.total_strain_tensor[..., 2, 2].min())
+print(np.abs(result.plane_stress_residual_mpa).max())
 print(result.diagnostics)
 ```
 
 `result.diagnostics` records the backend, timings, converged increments,
-cutbacks, Newton iterations, and final convergence criterion.
+cutbacks, Newton iterations, final convergence criterion, and whether the
+complete tensors came from native MFront axial state or analytical
+reconstruction. See
+[`docs/explanation/plane_stress_tensors.md`](docs/explanation/plane_stress_tensors.md)
+for the derivation and the important distinction from completing a single
+plastified DIC image.
 
 The top-level `fem_pixel.py` file remains only as a compatibility entry point
 for existing case-study scripts.

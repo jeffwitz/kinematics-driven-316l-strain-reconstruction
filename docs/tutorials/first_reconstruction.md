@@ -12,7 +12,8 @@ installation procedure, see {doc}`../how-to/install`.
 At the end, `results/tutorial-dic-10x10` will contain:
 
 - a manifest describing inputs, solver settings, and 25 partitions;
-- all six fields for every partition;
+- all six historical fields and five complete-tensor fields for every
+  partition;
 - stitched global fields;
 - convergence diagnostics and SHA-256 fingerprints.
 
@@ -127,7 +128,7 @@ A complete partition whose hashes still match is not recomputed.
 ## 5. Stitch the fields
 
 ```bash
-for field in U S E PE PEEQ RF; do
+for field in U S E PE PEEQ RF S_3D E_3D EE_3D PE_3D S33_RESIDUAL_MPA; do
   fem-inhouse partition \
     --input data/processed/tutorial-dic-10x10 \
     --output results/tutorial-dic-10x10 \
@@ -152,14 +153,30 @@ result_directory = Path("results/tutorial-dic-10x10/global")
 displacement = np.load(result_directory / "U.npy")
 stress = np.load(result_directory / "S.npy")
 peeq = np.load(result_directory / "PEEQ.npy")
+stress_3d = np.load(result_directory / "S_3D.npy")
+total_strain_3d = np.load(result_directory / "E_3D.npy")
+elastic_strain_3d = np.load(result_directory / "EE_3D.npy")
+plastic_strain_3d = np.load(result_directory / "PE_3D.npy")
+s33_residual_mpa = np.load(result_directory / "S33_RESIDUAL_MPA.npy")
 
 print("U:", displacement.shape, displacement.min(), displacement.max())
 print("S:", stress.shape, stress.min(), stress.max())
 print("PEEQ:", peeq.shape, peeq.min(), peeq.max())
+print("S_3D:", stress_3d.shape)
+print("E_3D:", total_strain_3d.shape)
+print("maximum |S33| (MPa):", np.max(np.abs(s33_residual_mpa)))
+print(
+    "maximum additive residual:",
+    np.max(np.abs(total_strain_3d - elastic_strain_3d - plastic_strain_3d)),
+)
 ```
 
 `U` is nodal; `S` and `PEEQ` are element fields. Component conventions are
 listed in the {doc}`../reference/output_contract`.
+
+The solve itself was still two-dimensional. `S_3D`, `E_3D`, `EE_3D`, and
+`PE_3D` were assembled only after convergence from the accepted plane-stress
+state. Their trailing shape is `(3, 3)`.
 
 ## What this tutorial demonstrated
 

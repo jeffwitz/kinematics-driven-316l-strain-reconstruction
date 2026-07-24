@@ -116,6 +116,22 @@ MGIS stores symmetric tensors in Kelvin notation. The Python adapter converts:
 - `[s11, s22, s33, sqrt(2) s12]` to `[s11, s22, s12]`;
 - the 4×4 Kelvin tangent to the 3×3 engineering-shear tangent.
 
+The plane-stress axial state was located from MGIS metadata and a minimal
+material-point probe. For the installed behaviour:
+
+- `AxialStrain` is the native converged total `e33`;
+- `ElasticStrain` is a four-component Kelvin internal variable;
+- `Stress` is a four-component Kelvin force containing the native `s33`;
+- the third entry of the `Strain` gradient remains zero and must not be
+  mistaken for the axial strain.
+
+The adapter validates variable names, types, sizes, and offsets. After global
+convergence and before commit, it builds the complete total and elastic strain
+tensors from these native variables, obtains plastic strain by subtraction,
+and preserves native `s33` as `plane_stress_residual_mpa`. This is output-only
+post-processing; Newton, its condensed tangent, and trial/commit/revert
+semantics are unchanged.
+
 `MFrontMaterialPointBatch.evaluate` is non-committing by default. The explicit
 `commit` and `revert` operations are required for a correct global Newton
 integration. The constructor also accepts `thread_count`; values greater than
@@ -165,13 +181,15 @@ bash scripts/build_mfront_behaviour.sh
   --input data/processed/case-study-10x10 \
   --output results/mfront-newton-dic-10x10 \
   --library build/mfront/src/libBehaviour.so \
-  --threads 2
+  --threads 2 \
+  --historical-reference validation/reference_data/mfront_newton_dic_10x10_v1
 ```
 
 The command runs the same real central DIC crop with the analytical Python
-Ludwik law and MFront, then saves all six final fields, diagnostics, input and
-library hashes, metrics, thresholds, and the decision. It refuses to overwrite
-an existing `report.json`.
+Ludwik law and MFront, then saves the six historical fields, five complete
+tensor fields, four explicit invariant maps, diagnostics, input and library
+hashes, metrics, thresholds, and the decision. It refuses to overwrite a
+non-empty campaign.
 
 The versioned v1 campaign converges both backends in 20 increments without
 cutback. MFront requires 66 Newton iterations (maximum 4 per increment), versus
@@ -189,6 +207,13 @@ cutback. MFront requires 66 Newton iterations (maximum 4 per increment), versus
 On this small crop, the measured complete-solver times are `1.583 s` for
 Python and `0.669 s` for two-thread MFront. This ratio is a functional smoke
 measurement, not a production-size performance claim.
+
+The tensor-enabled campaign is preserved under
+`validation/reference_data/plane_stress_tensor_reconstruction_dic_10x10_v1`.
+Its maximum native MFront `|s33|` is `1.046e-14 MPa`, maximum
+`|trace(epsilon_p)|` is `1.406e-19`, and maximum additive-decomposition
+residual is `1.355e-19`. Python historical fields are identical to the earlier
+campaign; the largest MFront historical difference is `4.263e-14 MPa`.
 
 An exploratory run preceded threshold fixation. These are therefore transparent
 regression/acceptance thresholds for the coupling, not an independent blind

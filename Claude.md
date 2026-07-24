@@ -4,6 +4,8 @@ Dernière mise à jour : 2026-07-24
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
 MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
+tenseurs 3D complets reconstruits en post-traitement du solveur 2D et validés
+sur les deux backends sans modification des sorties historiques ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -252,6 +254,43 @@ au calcul principal ne se trouve hors du dépôt ou dans un chemin personnel.
 **Critère de sortie :** le même sous-domaine DIC converge avec les deux
 backends, les six champs sauvegardés respectent des seuils ratifiés, et aucun
 état MFront d'une itération Newton rejetée n'est commis.
+
+### Phase prioritaire A.2 — Tenseurs 3D complets en contraintes planes
+
+- [x] Maintenir strictement le solveur, les inconnues, les éléments, Newton et
+      le tangent condensé en 2D
+- [x] Centraliser les conversions engineering, tensorielle et Kelvin
+- [x] Reconstruire `ep33` par incompressibilité plastique J2 pour Python
+- [x] Reconstruire `ee33` par élasticité isotrope en contraintes planes
+- [x] Assembler `S_3D`, `E_3D`, `EE_3D`, `PE_3D` après convergence seulement
+- [x] Préserver `S`, `E`, `PE`, `PEEQ` et toutes leurs conventions historiques
+- [x] Identifier par métadonnées MGIS `AxialStrain`, `ElasticStrain` et
+      `Stress`, sans supposer leurs offsets
+- [x] Vérifier par essai matériel que le gradient Kelvin ne porte pas le
+      `e33` natif de ce comportement
+- [x] Conserver le `S33` MFront natif comme résidu de contraintes planes
+- [x] Prévoir et tracer explicitement le fallback analytique MFront
+- [x] Étendre `FEMResult`, les exports de partitions, le raccordement et le
+      chargeur des résultats anciens
+- [x] Séparer `EVM_HISTORICAL` de `EVM_RECONSTRUCTED_3D`
+- [x] Tester traction, traction équibiaxiale, cisaillement, déchargement et
+      chargement non proportionnel
+- [x] Comparer Python/MFront sur le crop DIC réel `10×10`
+- [x] Comparer les six champs historiques avec la campagne antérieure
+- [x] Finaliser la documentation Sphinx et reconstruire HTML/PDF
+
+**Preuve DIC 10×10 :**
+`validation/reference_data/plane_stress_tensor_reconstruction_dic_10x10_v1`.
+Les trois groupes de contrôles passent. Le maximum `|S33|` vaut `0` pour
+Python et `1,046e-14 MPa` pour MFront ; le maximum
+`|trace(epsilon_p)|` vaut respectivement `0` et `1,406e-19` ; le maximum de
+la décomposition additive vaut `8,132e-20` et `1,355e-19`. La différence
+maximale avec les sorties historiques est nulle pour Python et
+`4,263e-14 MPa` pour MFront.
+
+**Critère de sortie :** tout résultat FEM convergé expose les quatre tenseurs
+symétriques `3×3` et le résidu `S33`, sans nouvelle résolution mécanique et
+sans régression des sorties 2D.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -1075,3 +1114,26 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - CI complète validée sur installation fraîche, wheel inclus
 - Mise à jour de `actions/checkout` et `actions/setup-python` vers la version 7
 - Suppression attendue de l'annotation de dépréciation Node.js 20
+
+### 2026-07-24 — Reconstruction des tenseurs 3D en contraintes planes
+
+- Ajout d'une couche vectorisée de post-traitement du seul état 2D convergé
+- Conservation stricte du maillage CPS4, de Newton, du tangent et des sorties
+  historiques
+- Reconstruction analytique Python par élasticité plane-stress et
+  incompressibilité plastique J2
+- Extraction MFront native depuis `AxialStrain`, `ElasticStrain` et `Stress`
+- Conservation du résidu numérique `S33` MFront sans remplacement artificiel
+- Ajout des sorties `S_3D`, `E_3D`, `EE_3D`, `PE_3D` et
+  `S33_RESIDUAL_MPA`
+- Extension du résultat typé, des partitions, du raccordement et du chargeur
+  de campagnes anciennes
+- Ajout des invariants 3D et séparation explicite de `EVM_HISTORICAL`
+  et `EVM_RECONSTRUCTED_3D`
+- Validation des trajets proportionnels, du déchargement et du chargement non
+  proportionnel
+- Campagne DIC 10×10 sauvegardée avec non-régression des six anciens champs
+- Documentation Diátaxis anglaise reconstruite sans erreur en HTML strict et
+  en PDF de 78 pages
+- Validation finale avec le vrai backend MGIS/MFront : 199 tests réussis ;
+  Ruff sans défaut et mypy sans défaut sur le paquet et le script de campagne

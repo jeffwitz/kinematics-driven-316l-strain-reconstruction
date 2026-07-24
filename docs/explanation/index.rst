@@ -28,6 +28,13 @@ the supplied article.
       How MGIS states, tensor conventions, consistent tangents, and
       trial/commit/revert fit the global nonlinear solve.
 
+   .. grid-item-card:: Complete plane-stress tensors
+      :link: plane_stress_tensors
+      :link-type: doc
+
+      Why the transverse strain is not zero, how the accepted 2D state is
+      completed, and where MFront exposes its native axial variables.
+
    .. grid-item-card:: Partitioning
       :link: partitioning
       :link-type: doc
@@ -40,4 +47,3 @@ the supplied article.
 
       Distinguish code verification, constitutive comparison, DIC agreement,
       and external Abaqus validation.
-

@@ -3,6 +3,40 @@
 This page reports preserved evidence. It is not a promise of performance on
 another machine.
 
+## Complete-tensor reconstruction on the DIC 10×10 case
+
+Campaign:
+`validation/reference_data/plane_stress_tensor_reconstruction_dic_10x10_v1`
+
+The same real DIC crop was solved with the unchanged Python and MFront
+plane-stress paths. Historical fields were compared with the pre-feature
+campaign, while complete tensors were compared between backends.
+
+| Consistency measure | Python | MFront |
+|---|---:|---:|
+| reconstruction source | analytical | native `AxialStrain` |
+| maximum `abs(S33)` (MPa) | `0` | `1.046e-14` |
+| maximum `abs(trace(PE))` | `0` | `1.406e-19` |
+| maximum `abs(E - EE - PE)` | `8.132e-20` | `1.355e-19` |
+| maximum native/analytical total-strain difference | `0` | `1.220e-19` |
+
+Backend comparison:
+
+| Field | maximum absolute difference | relative L∞ |
+|---|---:|---:|
+| `S_3D` | `3.338e-2 MPa` | `1.437e-4` |
+| `E_3D` | `9.581e-8` | `6.654e-5` |
+| `EE_3D` | `1.979e-7` | `1.759e-4` |
+| `PE_3D` | `2.937e-7` | `3.256e-4` |
+| `EVM_RECONSTRUCTED_3D` | `1.339e-7` | `6.685e-5` |
+| 3D von Mises stress | `6.930e-2 MPa` | `2.882e-4` |
+
+All declared thresholds pass. Python historical fields are byte-for-byte
+unchanged. The largest MFront historical-field difference is
+`4.263e-14 MPa` in stress, which is floating-point round-off. The report stores
+input and library hashes, all thresholds, diagnostics, complete field NPZs,
+and the explicit `EVM_HISTORICAL`/`EVM_RECONSTRUCTED_3D` distinction.
+
 ## Article-sized MFront partition
 
 Campaign:
@@ -109,4 +143,3 @@ Not yet validated:
 - exact article mask and final whole-ROI metrics;
 - external Abaqus parity with original `.inp` and ODB data;
 - the section thickness needed for reaction parity.
-

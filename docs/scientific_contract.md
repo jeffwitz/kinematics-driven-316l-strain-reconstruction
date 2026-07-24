@@ -76,23 +76,54 @@ gamma_xy = 2 * epsilon_xy
 FE element vectors use `[epsilon_xx, epsilon_yy, gamma_xy]`. DIC invariant
 calculations use tensorial `epsilon_xy`; conversion must therefore be explicit.
 
-## Plane-stress equivalent strain
+## Complete tensors from the converged 2D state
 
-Under plane stress:
+The finite-element model remains strictly two-dimensional. It has no
+out-of-plane displacement, element, or global equation. After convergence, the
+accepted plane-stress state is completed locally for output only.
+
+The mechanical constraints are:
+
+```text
+sigma_33 = sigma_13 = sigma_23 = 0
+epsilon_13 = epsilon_23 = 0
+```
+
+Plane stress does not imply `epsilon_33 = 0`. For associative J2 plasticity:
+
+```text
+epsilon_p_33 = -(epsilon_p_11 + epsilon_p_22)
+epsilon_e_33 = -nu / (1 - nu) * (epsilon_e_11 + epsilon_e_22)
+epsilon_33 = epsilon_e_33 + epsilon_p_33
+```
+
+The public final result contains `S_3D`, `E_3D`, `EE_3D`, `PE_3D`, and
+`S33_RESIDUAL_MPA` in addition to the unchanged historical arrays. MFront
+outputs use native MGIS `AxialStrain`, `ElasticStrain`, and complete `Stress`;
+the native numerical `S33` is preserved.
+
+## Historical and reconstructed equivalent strain
+
+The article-era operation
 
 ```text
 epsilon_zz = -nu / (1 - nu) * (epsilon_xx + epsilon_yy)
 ```
 
-The equivalent strain is evaluated from the three-dimensional deviatoric
-invariant:
+applies an elastic closure directly to total in-plane strain. It is valid in
+elasticity but not generally after plastic flow. It remains available only as
+the explicitly named `EVM_HISTORICAL` comparison metric.
+
+`EVM_RECONSTRUCTED_3D` is instead evaluated from the complete converged FEM
+total-strain tensor:
 
 ```text
 epsilon_vM = sqrt(2/3 * epsilon_dev : epsilon_dev)
 ```
 
-with `epsilon_xz = epsilon_yz = 0`. The implementation computes this invariant
-directly rather than relying on a separately simplified formula.
+A single final DIC image does not contain the plastic history required for this
+completion. The historical closure must not be presented as a mechanically
+identified transverse DIC strain after yielding.
 
 ## Constitutive convention
 

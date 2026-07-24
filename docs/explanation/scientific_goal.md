@@ -86,13 +86,13 @@ reports a 2 mm specimen thickness and observes the surface, so the supported
 model uses plane stress:
 
 $$
-\sigma_{zz}=0,\qquad
-\epsilon_{zz}=-\frac{\nu}{1-\nu}
-  (\epsilon_{xx}+\epsilon_{yy}).
+\sigma_{zz}=0.
 $$
 
-The out-of-plane strain is not zero. It is required when deriving a
-three-dimensional deviatoric equivalent strain from surface components.
+The out-of-plane strain is not zero. In an elastoplastic FEM state it is the
+sum of the elastic plane-stress response and the isochoric J2 plastic response.
+It is reconstructed only after convergence, without adding a 3D unknown or
+changing the 2D solve. See {doc}`plane_stress_tensors`.
 
 ## Shared equivalent-strain measure
 
@@ -103,6 +103,7 @@ $$
 \epsilon_{yy}=\frac{\partial u_y}{\partial y},\qquad
 \epsilon_{xy}=\frac{1}{2}
 \left(\frac{\partial u_x}{\partial y}
+      +
       \frac{\partial u_y}{\partial x}\right).
 $$
 
@@ -114,9 +115,17 @@ $$
                          \boldsymbol{\epsilon}'},
 $$
 
-using the plane-stress $\epsilon_{zz}$ above. Computing both sides from nodal
-displacement avoids comparing one differentiation convention with an
-Abaqus-specific extrapolation convention.
+The historical article comparison completes both DIC and FE total strains with
+the purely elastic closure
+\(\epsilon_{zz}=-\nu(\epsilon_{xx}+\epsilon_{yy})/(1-\nu)\). Computing both
+sides from nodal displacement avoids comparing one differentiation convention
+with an Abaqus-specific extrapolation convention, but this closure does not
+identify the transverse strain after plastic flow.
+
+The software therefore keeps this scalar as `EVM_HISTORICAL` and separately
+computes `EVM_RECONSTRUCTED_3D` from the accepted complete FEM tensor. A single
+final DIC image cannot supply an analogous elastoplastic 3D tensor without its
+loading history and local constitutive integration.
 
 ## Relationship to the article
 

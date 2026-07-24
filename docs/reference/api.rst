@@ -25,6 +25,14 @@ Result objects
    :undoc-members:
    :show-inheritance:
 
+Plane-stress tensor reconstruction
+----------------------------------
+
+.. automodule:: fem_inhouse.core.tensor_reconstruction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Material helpers
 ----------------
 
@@ -62,6 +70,14 @@ Kinematic post-processing
    :undoc-members:
    :show-inheritance:
 
+Complete-tensor invariant measures
+----------------------------------
+
+.. automodule:: fem_inhouse.postprocessing.tensor_measures
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Comparison metrics
 ------------------
 
@@ -69,4 +85,3 @@ Comparison metrics
    :members:
    :undoc-members:
    :show-inheritance:
-
