@@ -1,0 +1,11 @@
+[run]
+branch = true
+source = fem_inhouse
+omit =
+    src/fem_inhouse/__main__.py
+    src/fem_inhouse/core/mfront.py
+
+[report]
+fail_under = 85
+show_missing = true
+skip_covered = true

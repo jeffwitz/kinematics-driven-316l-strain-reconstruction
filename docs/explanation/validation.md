@@ -29,6 +29,13 @@ Material-point paths and full Newton tests compare Python and MFront:
 These checks validate the adapter and nonlinear state management. They do not
 validate the material model against an experiment.
 
+The generic GitHub runner does not build TFEL/MFront or MGIS. Its coverage
+gate therefore excludes only `core/mfront.py`, while still covering the common
+material protocol, tensor conversions, factory error paths, and the 2D solver.
+The native adapter is instead exercised locally with the real compiled
+library; the complete command and numerical outputs are preserved in the
+versioned validation campaigns. Skipped MGIS tests are reported explicitly.
+
 ### 3. Does the reconstruction agree with DIC?
 
 DIC and FE displacement are differentiated with the same grid operator.
@@ -129,4 +136,3 @@ Before claiming complete reproduction:
 
 The repository’s provenance and resumption mechanisms are designed so those
 calculations can extend the evidence without invalidating saved work.
-
