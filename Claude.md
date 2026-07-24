@@ -268,11 +268,11 @@ calcul partitionné avec padding suffisant.
 - [x] Jacobien positif
 - [x] Patch test élastique
 - [x] Trois modes rigides
-- [ ] Retour plastique uniaxial, biaxial et en cisaillement
+- [x] Retour plastique uniaxial, biaxial et en cisaillement
 - [x] Tangente par différences finies
-- [ ] Cas tabulé dans chaque segment et au-delà de `ep = 0.2`
-- [ ] Équilibre des réactions
-- [ ] Convergence en nombre d'incréments
+- [x] Cas tabulé dans chaque segment et au-delà de `ep = 0.2`
+- [x] Équilibre des réactions
+- [x] Convergence en nombre d'incréments
 
 #### Niveau 2 : parité Abaqus
 
@@ -373,8 +373,8 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 - [ ] Tous les tests mathématiques critiques passent
 - [x] Tangente cohérente vérifiée automatiquement
-- [ ] Convergence robuste sur cas homogène et hétérogène
-- [ ] Échec de convergence diagnostiqué sans résultat silencieusement invalide
+- [x] Convergence robuste sur cas homogène et hétérogène
+- [x] Échec de convergence diagnostiqué sans résultat silencieusement invalide
 
 ### Validation scientifique
 
@@ -477,6 +477,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | CI sur installation fraîche | GitHub Actions `30086978438` | installation, Ruff et tests verts | Réussi |
 | 2026-07-24 | Parité monolithique/partitionnée | Cas homogène 6×6, padding 0 et 1 | `U/S/E/PEEQ` égaux aux tolérances | Réussi |
 | 2026-07-24 | Métriques de champs/interfaces | `pytest --cov=fem_inhouse --cov-branch` | 104 tests, 95,36 % | Réussi |
+| 2026-07-24 | Robustesse constitutive/globale | 3 trajets plastiques, hétérogène, cutback, réactions | 111 tests, 96,14 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -558,3 +559,13 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - BGE exact maintenu bloqué : l'article ne donne pas la formule complète et le
   script d'analyse source n'est pas livré
 - Validation complète par 104 tests avec 95,36 % de couverture
+
+### 2026-07-24 — Robustesse du solveur
+
+- Vérification des retours plastiques uniaxial, équibiaxial et en cisaillement
+- Vérification de la saturation de la table plastique au-delà de `ep = 0.2`
+- Stabilité vérifiée pour 5, 10 et 20 incréments
+- Convergence vérifiée sur un damier hétérogène de paramètres
+- Équilibre global des réactions intégré au seuil de l'exemple
+- Échec de convergence forcé et diagnostiqué après réduction de pas
+- Validation complète par 111 tests avec 96,14 % de couverture

@@ -22,7 +22,8 @@ validation applique une traction équibiaxiale homogène visant 400 MPa avec :
 - loi tabulée nominale à 1000 points.
 
 Le rapport JSON échoue si l'erreur relative sur la contrainte ou PEEQ dépasse
-0,5 %, ou si l'erreur relative du déplacement dépasse `1e-8`.
+0,5 %, si l'erreur relative du déplacement dépasse `1e-8`, ou si le déséquilibre
+relatif de la résultante des réactions dépasse `1e-10`.
 
 La commande `example` produit :
 
@@ -44,4 +45,3 @@ sans charger les données :
 fem-inhouse layout --count 25 --padding 150 --output results/layout-25.json
 fem-inhouse layout --count 100 --padding 150 --output results/layout-100.json
 ```
-

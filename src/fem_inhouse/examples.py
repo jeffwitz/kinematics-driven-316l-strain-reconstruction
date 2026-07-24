@@ -37,6 +37,7 @@ class ValidationReport:
     relative_stress_error: float
     relative_plastic_strain_error: float
     relative_displacement_error: float
+    relative_reaction_imbalance: float
     passed: bool
 
 
@@ -110,13 +111,20 @@ def validate_reduced_case(case: ReducedBiaxialCase) -> tuple[FEMResult, Validati
         abs(plastic_strain - case.target_equivalent_plastic_strain)
         / case.target_equivalent_plastic_strain
     )
+    net_reaction = np.linalg.norm(result.reaction_force.sum(axis=(0, 1)))
+    total_reaction = np.linalg.norm(result.reaction_force, axis=-1).sum()
+    reaction_imbalance = float(net_reaction / max(float(total_reaction), 1e-30))
     report = ValidationReport(
         stress_mpa=stress,
         equivalent_plastic_strain=plastic_strain,
         relative_stress_error=stress_error,
         relative_plastic_strain_error=plastic_error,
         relative_displacement_error=displacement_error,
-        passed=stress_error < 0.005 and plastic_error < 0.005 and displacement_error < 1e-8,
+        relative_reaction_imbalance=reaction_imbalance,
+        passed=stress_error < 0.005
+        and plastic_error < 0.005
+        and displacement_error < 1e-8
+        and reaction_imbalance < 1e-10,
     )
     return result, report
 

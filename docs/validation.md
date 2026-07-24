@@ -13,8 +13,14 @@ La suite automatique contrôle actuellement :
 - symétrie et trois modes rigides de la matrice élémentaire ;
 - patch affine élastique ;
 - retour élastique et retour plastique ;
+- retours plastiques uniaxial, équibiaxial et en cisaillement ;
+- comportement tabulé au-delà de la dernière valeur ;
 - tangente cohérente par différences finies ;
 - traction équibiaxiale plastique avec solution analytique ;
+- stabilité entre 5, 10 et 20 incréments ;
+- convergence d'un damier hétérogène de paramètres ;
+- équilibre de la résultante des réactions ;
+- erreur explicite après échec des réductions de pas ;
 - résultat fini et diagnostic explicite des entrées invalides.
 
 ## Parité monolithique/partitionnée
@@ -68,4 +74,3 @@ La maturité scientifique 4/5 exige encore :
 - un sous-domaine hétérogène représentatif ;
 - l'étude padding 50/100/150/200 ;
 - les champs DIC du ROI et les métriques publiées.
-

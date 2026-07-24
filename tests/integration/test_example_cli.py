@@ -18,6 +18,7 @@ def test_reduced_tabular_case_passes_declared_thresholds() -> None:
     assert report.relative_stress_error < 0.005
     assert report.relative_plastic_strain_error < 0.005
     assert report.relative_displacement_error < 1e-8
+    assert report.relative_reaction_imbalance < 1e-10
 
 
 def test_reduced_case_rejects_elastic_target() -> None:
