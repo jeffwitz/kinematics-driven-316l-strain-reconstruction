@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "outcome": "converged",
+  "scope": {
+    "description": "Single corner subdomain from the article 10x10 partition layout",
+    "global_element_shape": [3600, 3100],
+    "partition_id": 0,
+    "core_element_shape": [360, 310],
+    "padding_elements": 150,
+    "solve_element_shape": [510, 460],
+    "element_count": 234600
+  },
+  "provenance": {
+    "software_git_sha": "3e5c13299efd58fe5d840b5295aff100b01b6194",
+    "prepared_input_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "workflow_manifest_sha256": "3d78b0853ee5b736d6821b9f370866f65503c09e9bf0d35b23db7dde28e4ba65",
+    "status_sha256": "88a0d46f1bab5bdb01f45df76afdf23d0b1f4a0cc128c6ea88b345175d20926a",
+    "run_log_sha256": "bfbe77795c733e5b92d9b9f307fc4bfb2d321e7aebb594624b5fc328e955ae30",
+    "resource_usage_sha256": "c5627d24ded3118819d0368a62e9d2d59f6488c0d974e943d93e222b563ff4b9"
+  },
+  "convergence": {
+    "backend": "pypardiso (MKL, multithreaded)",
+    "attempted_increments": 20,
+    "converged_increments": 20,
+    "cutbacks": 0,
+    "total_newton_iterations": 113,
+    "maximum_newton_iterations": 6,
+    "final_convergence_criterion": "relative_residual",
+    "final_residual_norm": 8.428331003296901e-09,
+    "final_relative_residual": 3.1825068348076293e-09
+  },
+  "performance": {
+    "solver_elapsed_seconds": 1088.1258531748317,
+    "process_wall_seconds": 1089.8,
+    "average_cpu_percent": 250,
+    "maximum_resident_set_kib": 3768132,
+    "initialization_seconds": 0.6192077999003232,
+    "elastic_assembly_seconds": 0.6771382589358836,
+    "constitutive_seconds": 575.9058815836906,
+    "tangent_assembly_seconds": 157.02639280026779,
+    "linear_solve_seconds": 299.49095677398145,
+    "output_seconds": 0.38020229898393154,
+    "write_seconds": 0.13672527787275612
+  },
+  "integrity": {
+    "all_fields_finite": true,
+    "all_hashes_match_status": true,
+    "fields": {
+      "U": {
+        "shape": [511, 461, 2],
+        "dtype": "float64",
+        "sha256": "64a3d0b9ec8d5a11ab9c67540d9c5e5e23fa5f33232e839b5a760598d6fc4ca3",
+        "min": -0.001791152176856994,
+        "max": 0.0651791909790039
+      },
+      "S": {
+        "shape": [510, 460, 3],
+        "dtype": "float64",
+        "sha256": "9e24abdf5745a6ce0518857695063f280ba8181a4fb060f3a80ec6cdcbaeae03",
+        "min_mpa": -669.659838206398,
+        "max_mpa": 740.9856648460265
+      },
+      "E": {
+        "shape": [510, 460, 3],
+        "dtype": "float64",
+        "sha256": "68971b6933dd4c5cad50c1f9197fde63f0153fa06d6f1a68798cb1f26927d3c2",
+        "min": -0.05433297890107881,
+        "max": 0.06111802204055605
+      },
+      "PE": {
+        "shape": [510, 460, 3],
+        "dtype": "float64",
+        "sha256": "d2be853c06b9fd9af5b93f9d82cdd24ddf9c678d3f17c66d9cb830289895a9be",
+        "min": -0.05396702178251635,
+        "max": 0.0604142264242853
+      },
+      "PEEQ": {
+        "shape": [510, 460],
+        "dtype": "float64",
+        "sha256": "0f5b47144af83245908ed5610fbde5e22d872c229acf3d229987ba4f8894d11c",
+        "min": 0.0,
+        "max": 0.06456180162879749,
+        "mean": 0.0014244396746973078,
+        "positive_fraction": 0.7967988064791134
+      },
+      "RF": {
+        "shape": [511, 461, 2],
+        "dtype": "float64",
+        "sha256": "8ec929d8d41c7b660d8f3415aba10e7a02931b01f1cd6e996877915325f2a1da",
+        "min": -0.7382229089701327,
+        "max": 1.0330254710793276
+      }
+    }
+  },
+  "mechanical_checks": {
+    "dic_boundary_node_count": 1940,
+    "dic_boundary_max_abs_error_mm": 4.163336342344337e-17,
+    "dic_boundary_rms_error_mm": 1.830645658284818e-17,
+    "reaction_resultant": [7.841279708875604e-12, 2.9444557902991164e-11],
+    "reaction_absolute_sum": [341.6750712729232, 351.65208912460014],
+    "reaction_balance_ratio": 4.39486132999509e-14,
+    "von_mises_mpa": {
+      "min": 31.306947177718122,
+      "max": 730.4736638514808,
+      "mean": 224.9792523945153,
+      "p95": 336.40921822240625
+    }
+  },
+  "derived_fields": {
+    "method": "Small-strain gradients at 0.00184 mm spacing and 3D deviatoric equivalent strain under plane stress with nu=0.3",
+    "DIC_EVM": {
+      "shape": [511, 461],
+      "sha256": "e428addbb5e38cccfc7e7435da8f0a061d6be92afacd7a56c5ba86b041c7f5f3"
+    },
+    "FEM_EVM": {
+      "shape": [511, 461],
+      "sha256": "b0c6d1875d76750e9d967963020d5c0da38484c72a6cc75423dac83fe1ff9e6b"
+    },
+    "DIFF_EVM": {
+      "shape": [511, 461],
+      "sha256": "34c8458ff7ab6485d5b2a5f850be275c6be72008435564c26e6b235e782fd1c2"
+    },
+    "S_MISES": {
+      "shape": [510, 460],
+      "sha256": "a08ddecb7b68325baf40d9e903fbdd2fae4a51f30f92781703e9861387db3dfb"
+    },
+    "preview_png_sha256": "9695619faeeb7bca2971c24d46dc27a6d380f3c44c38fadd409ca501fbbcb805"
+  },
+  "dic_fem_comparison": {
+    "displacement": {
+      "U1_rmse_mm_full_solve": 0.00010610642871592687,
+      "U1_mae_mm_full_solve": 0.00008155123304432965,
+      "U2_rmse_mm_full_solve": 0.00009363744856663152,
+      "U2_mae_mm_full_solve": 0.00007247820480248444
+    },
+    "equivalent_strain_full_solve": {
+      "rmse_percentage_points": 0.2529349899561853,
+      "mae_percentage_points": 0.18494005958426563,
+      "bias_percentage_points": -0.06396568978836437,
+      "spatial_correlation": 0.01589876831854802,
+      "relative_l2_error": 0.7885357718551472
+    },
+    "equivalent_strain_core_nodes": {
+      "shape": [361, 311],
+      "rmse_percentage_points": 0.27566017991704744,
+      "mae_percentage_points": 0.20237220718286236,
+      "bias_percentage_points": -0.05603895515124003,
+      "spatial_correlation": -0.027755488336330868,
+      "relative_l2_error": 0.8366766749339731
+    },
+    "article_whole_roi_reference": {
+      "layout": "100 partitions with padding 150",
+      "rmse_percentage_points": 0.220,
+      "mae_percentage_points": 0.156
+    },
+    "interpretation": "The error magnitude is close to the published whole-ROI values, but this one corner partition is not sufficient to claim reproduction. The weak spatial correlation must be investigated on the stitched ROI with the exact article masking and metric conventions."
+  }
+}

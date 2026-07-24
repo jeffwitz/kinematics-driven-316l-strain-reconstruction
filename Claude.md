@@ -2,7 +2,8 @@
 
 Dernière mise à jour : 2026-07-24
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
-partitionné opérationnel sur un crop réel ; exécution du ROI complet à planifier**
+partitionné validé sur une partition article de 234 600 éléments ; exécution
+et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## 1. Rôle de ce document
@@ -492,7 +493,9 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 - [x] PyPardiso/MKL utilisé et vérifié
 - [~] Temps et mémoire mesurés : 10k, 50k et 100k terminés ; 350k reporté
-- [ ] Cas de production compatible avec la machine cible
+- [~] Cas de production compatible avec la machine cible : une partition de
+  coin de 234 600 éléments a convergé en 18 min 08 s avec 3,59 GiB de pic RSS ;
+  les partitions intérieures plus grandes restent à dimensionner
 - [x] Traitement hors mémoire du ROI complet
 - [~] Absence de régression de performance supérieure au seuil défini :
   comparaison A/B disponible, seuil global encore à ratifier
@@ -509,10 +512,10 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 | Axe | Note | Justification principale |
 |---|---:|---|
 | Noyau numérique | 4,5/5 | Cas fermés, tangente, cutback, réactions et cisaillement testés |
-| Validation scientifique | 2,5/5 | DIC finale et cartes locales retrouvées ; calcul global et métriques à produire |
+| Validation scientifique | 3,0/5 | Une partition article réelle a convergé et les métriques DIC/EF sont archivées ; ROI raccordé et conventions exactes à valider |
 | Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 156 tests, revue documentée |
 | Reproductibilité | 4,5/5 | Données LFS, préparation atomique, manifestes et smoke test DIC réel |
-| Performance | 3,5/5 | 10k–100k mesurés et mémoire optimisée ; 350k non exécuté |
+| Performance | 4,0/5 | 10k–100k mesurés et partition article de 234,6k exécutée ; plus grande partition intérieure non mesurée |
 | Documentation | 4,0/5 | Contrats, ADR, tutoriel et limites ; figures finales non reproductibles |
 
 Les notes ne doivent pas être relevées artificiellement par des cas
@@ -627,8 +630,28 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Clone distant avec Git LFS | Clone isolé, `git lfs pull`, SHA-256, crop 4×4 | Données récupérées et préparées depuis GitHub | Réussi |
 | 2026-07-24 | CI distante du pipeline DIC | GitHub Actions `30091651001` | Ruff, mypy, wheel et tests verts | Réussi |
 | 2026-07-24 | Sauvegarde exhaustive des partitions | Tests CLI et reprise | `U/S/E/PE/PEEQ/RF` atomiques et empreintés | Réussi |
+| 2026-07-24 | Partition article DIC réelle | 100 partitions, padding 150, partition 0 (`510×460`) | 20/20 incréments, 0 cutback, 18 min 08 s, 3,59 GiB RSS | Réussi |
+| 2026-07-24 | Intégrité partition article | `validation-report.json`, SHA-256 et contrôles mécaniques | 6 champs finis, bords DIC à `4,16e-17 mm`, équilibre `4,39e-14` | Réussi |
+| 2026-07-24 | Comparaison exploratoire DIC/EF | `epsilon_vM` sur la zone résolue | RMSE `0,253 %`, MAE `0,185 %`, corrélation `0,016` | À approfondir |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-24 — Première partition à la taille de l'article
+
+- Exécution de la partition de coin 0 sur la grille `10×10` de l'article avec
+  padding 150, soit `510×460` éléments résolus et `360×310` éléments de cœur
+- Conservation atomique des six champs finaux `U/S/E/PE/PEEQ/RF`, du manifeste,
+  des journaux, de la consommation de ressources et de toutes les empreintes
+- Convergence des 20 incréments sans cutback en `1088,13 s` solveur, avec
+  113 itérations de Newton et un pic RSS processus de `3 768 132 KiB`
+- Vérification des déplacements DIC prescrits à `4,16e-17 mm` et de l'équilibre
+  global relatif des réactions à `4,39e-14`
+- Archivage des cartes `epsilon_vM` DIC/EF, de leur différence, de `S_Mises` et
+  d'une synthèse graphique
+- Première comparaison exploratoire : RMSE `0,253` et MAE `0,185` points de
+  pourcentage, proches en amplitude des `0,220/0,156` du ROI complet publié,
+  mais corrélation spatiale faible (`0,016`) ; aucune revendication de parité
+  avant raccordement du ROI et vérification des conventions exactes
 
 ### 2026-07-24 — Recentrage sur le calcul autonome depuis la DIC
 

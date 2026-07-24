@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "purpose": "Reproduce one article-sized DIC-driven subdomain without Abaqus",
+  "software_git_sha": "3e5c13299efd58fe5d840b5295aff100b01b6194",
+  "prepared_input_manifest": {
+    "path": "data/processed/case_study/manifest.json",
+    "sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "layout": {
+    "global_shape": [3600, 3100],
+    "partition_count": 100,
+    "partition_id": 0,
+    "core_shape": [360, 310],
+    "padding": 150,
+    "solve_shape": [510, 460],
+    "element_count": 234600
+  },
+  "solver": {
+    "backend": "pypardiso",
+    "hardening_mode": "tabular",
+    "increments": 20,
+    "maximum_newton_iterations": 15,
+    "residual_tolerance": 1e-06
+  },
+  "environment": {
+    "MKL_NUM_THREADS": 8,
+    "OMP_NUM_THREADS": 8
+  },
+  "required_outputs": ["U", "S", "E", "PE", "PEEQ", "RF"],
+  "command": ".venv/bin/python -m fem_inhouse --verbose partition --input data/processed/case_study --output validation/reference_data/article_100p_pad150_p0000 --count 100 --padding 150 --partition-id 0"
+}

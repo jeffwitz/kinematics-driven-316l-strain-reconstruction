@@ -1,0 +1,32 @@
+{
+  "complete": true,
+  "diagnostics": {
+    "attempted_increments": 20,
+    "backend": "pypardiso (MKL, multithreaded)",
+    "constitutive_seconds": 575.9058815836906,
+    "converged_increments": 20,
+    "cutbacks": 0,
+    "elapsed_seconds": 1088.1258531748317,
+    "elastic_assembly_seconds": 0.6771382589358836,
+    "final_convergence_criterion": "relative_residual",
+    "final_relative_residual": 3.1825068348076293e-09,
+    "final_residual_norm": 8.428331003296901e-09,
+    "initialization_seconds": 0.6192077999003232,
+    "linear_solve_seconds": 299.49095677398145,
+    "maximum_newton_iterations": 6,
+    "output_seconds": 0.38020229898393154,
+    "tangent_assembly_seconds": 157.02639280026779,
+    "total_newton_iterations": 113,
+    "write_seconds": 0.13672527787275612
+  },
+  "manifest_sha256": "3d78b0853ee5b736d6821b9f370866f65503c09e9bf0d35b23db7dde28e4ba65",
+  "outputs": {
+    "E": "68971b6933dd4c5cad50c1f9197fde63f0153fa06d6f1a68798cb1f26927d3c2",
+    "PE": "d2be853c06b9fd9af5b93f9d82cdd24ddf9c678d3f17c66d9cb830289895a9be",
+    "PEEQ": "0f5b47144af83245908ed5610fbde5e22d872c229acf3d229987ba4f8894d11c",
+    "RF": "8ec929d8d41c7b660d8f3415aba10e7a02931b01f1cd6e996877915325f2a1da",
+    "S": "9e24abdf5745a6ce0518857695063f280ba8181a4fb060f3a80ec6cdcbaeae03",
+    "U": "64a3d0b9ec8d5a11ab9c67540d9c5e5e23fa5f33232e839b5a760598d6fc4ca3"
+  },
+  "partition_id": 0
+}

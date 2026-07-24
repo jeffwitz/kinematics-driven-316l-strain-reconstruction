@@ -20,10 +20,18 @@ numerical model and partition layout are documented in
 [`docs/numerical_model.md`](docs/numerical_model.md) and
 [`docs/partitioning.md`](docs/partitioning.md).
 
+An article-sized corner partition (`510×460`, 234,600 elements) has now been
+run directly from the versioned DIC inputs with the article's 100-partition,
+150-pixel-padding layout. It converged in 20 increments without cutback; all
+six raw fields, logs, hashes, resource measurements and derived comparison
+maps are preserved under
+[`validation/reference_data/article_100p_pad150_p0000`](validation/reference_data/article_100p_pad150_p0000).
+
 Known limitations at this stage:
 
-- the 11.16-million-element workflow is implemented but not yet benchmarked or
-  executed at production scale;
+- the complete 11.16-million-element ROI has not yet been executed and
+  stitched; the largest interior padded partitions are also larger than the
+  completed corner partition;
 - only DIC step 40 is available; the baseline steps 1–5 are not versioned;
 - Abaqus parity is not yet established from the original `.inp` and ODB
   extraction scripts and is intentionally deferred until the DIC-first
