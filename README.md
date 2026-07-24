@@ -47,6 +47,7 @@ The installed CLI provides the three routine entry points:
 fem-inhouse backend
 fem-inhouse validate --nx 10 --ny 10
 fem-inhouse example --nx 10 --ny 10 --output results/reduced
+fem-inhouse partition --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation
@@ -57,6 +58,8 @@ explicit `.npy` input and environment-variable contract is documented in
 [`docs/legacy_data_contract.md`](docs/legacy_data_contract.md).
 Initial PyPardiso timing and memory measurements are recorded in
 [`docs/performance.md`](docs/performance.md).
+The resumable CLI and Slurm-array workflow are documented in
+[`docs/partitioning.md`](docs/partitioning.md).
 
 ## Typed solver API
 

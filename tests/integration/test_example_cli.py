@@ -9,6 +9,8 @@ from fem_inhouse.examples import (
     save_reduced_example,
     validate_reduced_case,
 )
+from fem_inhouse.results import FEMResult
+from fem_inhouse.workflows import partitioned
 
 
 def test_reduced_tabular_case_passes_declared_thresholds() -> None:
@@ -74,3 +76,60 @@ def test_backend_validate_and_layout_commands(tmp_path, capsys) -> None:
 def test_save_example_function_returns_report(tmp_path) -> None:
     report = save_reduced_example(tmp_path / "direct", nx=4, ny=4)
     assert report.passed
+
+
+def test_partition_cli_supports_job_arrays_resume_and_stitch(
+    tmp_path,
+    capsys,
+    monkeypatch,
+) -> None:
+    input_directory = tmp_path / "input"
+    output_directory = tmp_path / "output"
+    input_directory.mkdir()
+    np.save(input_directory / "displacement_x_mm.npy", np.zeros((6, 6)))
+    np.save(input_directory / "displacement_y_mm.npy", np.zeros((6, 6)))
+    np.save(input_directory / "yield_stress_mpa.npy", np.full((5, 5), 250.0))
+    np.save(
+        input_directory / "hardening_coefficient_mpa.npy",
+        np.full((5, 5), 500.0),
+    )
+
+    def fake_solver(config, **_fields):
+        nx, ny = config.mesh.nx, config.mesh.ny
+        return FEMResult(
+            displacement_mm=np.zeros((nx + 1, ny + 1, 2)),
+            stress_mpa=np.ones((nx, ny, 3)),
+            total_strain=np.zeros((nx, ny, 3)),
+            plastic_strain=np.zeros((nx, ny, 3)),
+            equivalent_plastic_strain=np.zeros((nx, ny)),
+            reaction_force=np.zeros((nx + 1, ny + 1, 2)),
+        )
+
+    monkeypatch.setattr(partitioned, "run_case_study", fake_solver)
+    common = [
+        "partition",
+        "--input",
+        str(input_directory),
+        "--output",
+        str(output_directory),
+        "--count",
+        "25",
+        "--padding",
+        "0",
+    ]
+
+    assert main([*common, "--list-pending"]) == 0
+    assert json.loads(capsys.readouterr().out)["pending"] == list(range(25))
+
+    assert main([*common, "--partition-id", "0"]) == 0
+    assert json.loads(capsys.readouterr().out)["complete"]
+
+    assert main([*common, "--solve-pending"]) == 0
+    solve_report = json.loads(capsys.readouterr().out)
+    assert solve_report["solved"] == list(range(1, 25))
+    assert solve_report["remaining"] == []
+
+    stitched_path = tmp_path / "global_stress.npy"
+    assert main([*common, "--stitch", "S", "--field-output", str(stitched_path)]) == 0
+    assert capsys.readouterr().out.strip() == str(stitched_path)
+    np.testing.assert_array_equal(np.load(stitched_path), 1.0)

@@ -58,6 +58,52 @@ réutilisée que si le manifeste et chaque fichier correspondent encore. Un
 fichier manquant ou corrompu replace automatiquement la partition dans la liste
 des calculs en attente.
 
-Le workflow traite les partitions séquentiellement par défaut. Leur identité et
-leurs sorties ne dépendent pas de l'ordre d'exécution ; le même contrat pourra
-donc être utilisé par un job array sans modifier le format de résultats.
+## Exécution par CLI et job array
+
+La commande `partition` ouvre les quatre fichiers `.npy` du contrat de données
+en lecture mappée et infère `(nx, ny)` depuis les cartes matériau :
+
+```bash
+fem-inhouse partition \
+  --input data/case_study \
+  --output results/reconstruction-25 \
+  --count 25 \
+  --padding 150 \
+  --list-pending
+```
+
+Une partition isolée se lance avec `--partition-id N`. C'est le point d'entrée
+prévu pour un ordonnanceur ; chaque tâche écrit dans son propre répertoire et
+les écritures atomiques utilisent des fichiers temporaires uniques. Le modèle
+Slurm versionné se soumet ainsi :
+
+```bash
+export FEM_INPUT_DIR="$PWD/data/case_study"
+export FEM_OUTPUT_DIR="$PWD/results/reconstruction-25"
+mkdir -p logs
+sbatch --array=0-24 examples/slurm_partition_array.sh
+```
+
+Pour la grille de 100 partitions :
+
+```bash
+FEM_PARTITION_COUNT=100 sbatch --array=0-99 examples/slurm_partition_array.sh
+```
+
+Après succès de toutes les tâches, chaque champ global est raccordé
+indépendamment, sans le charger en mémoire :
+
+```bash
+fem-inhouse partition \
+  --input data/case_study \
+  --output results/reconstruction-25 \
+  --count 25 \
+  --padding 150 \
+  --stitch S \
+  --field-output results/reconstruction-25/global/S.npy
+```
+
+`--solve-pending` existe pour une exécution séquentielle ou un diagnostic
+local. L'identité et les sorties des partitions ne dépendent pas de l'ordre
+d'exécution. Le manifeste et les empreintes empêchent de reprendre
+silencieusement avec d'autres données ou une autre version du code.

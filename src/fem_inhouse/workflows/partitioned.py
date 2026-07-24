@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass, field, replace
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -76,16 +77,22 @@ def _canonical_json(data: Any) -> str:
 
 def _atomic_write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(f"{path.suffix}.tmp")
-    temporary.write_text(text, encoding="utf-8")
-    temporary.replace(path)
+    temporary = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+    try:
+        temporary.write_text(text, encoding="utf-8")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _atomic_save_array(path: Path, values: NDArray) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp.npy")
-    np.save(temporary, values)
-    temporary.replace(path)
+    temporary = path.with_name(f".{path.stem}.{uuid4().hex}.tmp.npy")
+    try:
+        np.save(temporary, values)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 @dataclass(slots=True)

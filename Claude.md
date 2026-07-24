@@ -242,7 +242,7 @@ commande documentée.
 - [x] Ajouter un manifeste et une empreinte des entrées
 - [x] Produire des fichiers `.npy` mappés en mémoire pour le champ global
 - [x] Rendre l'ordre d'exécution des partitions sans effet sur le résultat
-- [ ] Ajouter un modèle de job array pour le calcul parallèle si nécessaire
+- [x] Ajouter un modèle de job array pour le calcul parallèle
 
 **Critère de sortie :** domaine réduit identique entre calcul monolithique et
 calcul partitionné avec padding suffisant.
@@ -256,7 +256,7 @@ calcul partitionné avec padding suffisant.
 - [x] Réserver le repli SciPy au diagnostic ; PyPardiso reste obligatoire
 - [ ] Définir un budget mémoire et un budget de temps par partition
 - [ ] Vérifier l'absence de copies mémoire évitables
-- [~] Documenter la stratégie de parallélisation
+- [x] Documenter la stratégie de parallélisation
 
 **Critère de sortie :** dimensionnement documenté avant tout calcul sur
 11,16 millions d'éléments.
@@ -493,6 +493,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Réactions du patch affine | Sommes sur les quatre bords | Signes et résultantes analytiques | Réussi |
 | 2026-07-24 | Patch affine en cisaillement | Solution fermée | `U1/U2/E12/S12/PEEQ` conformes | Réussi |
 | 2026-07-24 | Suite après patch cisaillement | `pytest --cov=fem_inhouse --cov-branch` | 124 tests, 96,59 % | Réussi |
+| 2026-07-24 | CLI partitionnée | Reprise, partition isolée, raccordement | Workflow job array exécutable | Réussi |
+| 2026-07-24 | Suite après CLI partitionnée | Ruff, mypy, pytest et `bash -n` | 125 tests, 96,46 % | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -661,3 +663,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Vérification de la convention de cisaillement d'ingénieur `gamma12`
 - Vérification de `S12 = G gamma12` et des composantes normales nulles
 - Vérification simultanée de `U1`, `U2` et de PEEQ nulle
+
+### 2026-07-24 — CLI partitionnée et job array
+
+- Ajout d'une commande unique pour lister, résoudre, reprendre et raccorder
+- Chargement mappé des quatre champs `.npy` et inférence de la taille du ROI
+- Ajout du point d'entrée `--partition-id` adapté aux tâches indépendantes
+- Ajout d'un modèle Slurm pour les grilles de 25 et 100 partitions
+- Fichiers temporaires rendus uniques pour les écritures atomiques concurrentes
+- Documentation du lancement, de la reprise et du raccordement hors mémoire

@@ -9,6 +9,14 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
+
+from fem_inhouse.config import (
+    CaseStudyConfig,
+    MaterialConfig,
+    MeshConfig,
+    SolverConfig,
+)
 from fem_inhouse.examples import (
     reduced_biaxial_case,
     save_reduced_example,
@@ -16,6 +24,9 @@ from fem_inhouse.examples import (
 )
 from fem_inhouse.partitioning import PartitionLayout
 from fem_inhouse.solver import linear_solver_backend, require_pypardiso
+from fem_inhouse.workflows import PartitionWorkflow
+
+PARTITION_FIELDS = ("U", "S", "E", "PEEQ")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -40,11 +51,86 @@ def _parser() -> argparse.ArgumentParser:
     layout.add_argument("--count", type=int, choices=(25, 100), required=True)
     layout.add_argument("--padding", type=int, default=150)
     layout.add_argument("--output", type=Path, required=True)
+
+    partition = commands.add_parser(
+        "partition",
+        help="inspect, solve, or stitch the article partition workflow",
+    )
+    partition.add_argument("--input", type=Path, required=True)
+    partition.add_argument("--output", type=Path, required=True)
+    partition.add_argument("--count", type=int, choices=(25, 100), required=True)
+    partition.add_argument("--padding", type=int, default=150)
+    partition.add_argument("--base-pixel-mm", type=float, default=0.001)
+    partition.add_argument("--scale-factor", type=float, default=1.84)
+    partition.add_argument("--young-modulus-mpa", type=float, default=205_000.0)
+    partition.add_argument("--poisson-ratio", type=float, default=0.3)
+    partition.add_argument("--hardening-exponent", type=float, default=0.245)
+    partition.add_argument("--increments", type=int, default=20)
+    partition.add_argument("--max-newton-iterations", type=int, default=15)
+    partition.add_argument("--residual-tolerance", type=float, default=1e-6)
+    action = partition.add_mutually_exclusive_group(required=True)
+    action.add_argument("--list-pending", action="store_true")
+    action.add_argument("--partition-id", type=int)
+    action.add_argument("--solve-pending", action="store_true")
+    action.add_argument("--stitch", choices=PARTITION_FIELDS)
+    partition.add_argument(
+        "--field-output",
+        type=Path,
+        help="optional output path used with --stitch",
+    )
     return parser
 
 
 def _print_json(data) -> None:
     print(json.dumps(data, indent=2, sort_keys=True))
+
+
+def _load_partition_field(directory: Path, name: str) -> np.ndarray:
+    path = directory / f"{name}.npy"
+    if not path.is_file():
+        raise FileNotFoundError(f"missing partition input: {path}")
+    values = np.load(path, mmap_mode="r", allow_pickle=False)
+    if values.ndim != 2:
+        raise ValueError(f"{name} must be a 2D array, got shape {values.shape}")
+    return values
+
+
+def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
+    displacement_x = _load_partition_field(args.input, "displacement_x_mm")
+    displacement_y = _load_partition_field(args.input, "displacement_y_mm")
+    yield_stress = _load_partition_field(args.input, "yield_stress_mpa")
+    hardening = _load_partition_field(args.input, "hardening_coefficient_mpa")
+    if yield_stress.shape != hardening.shape:
+        raise ValueError("material maps must have the same shape")
+    nx, ny = yield_stress.shape
+    side = 5 if args.count == 25 else 10
+    config = CaseStudyConfig(
+        mesh=MeshConfig(
+            nx=nx,
+            ny=ny,
+            base_pixel_size_mm=args.base_pixel_mm,
+            scale_factor=args.scale_factor,
+        ),
+        material=MaterialConfig(
+            young_modulus_mpa=args.young_modulus_mpa,
+            poisson_ratio=args.poisson_ratio,
+            hardening_exponent=args.hardening_exponent,
+        ),
+        solver=SolverConfig(
+            increments=args.increments,
+            max_newton_iterations=args.max_newton_iterations,
+            residual_tolerance=args.residual_tolerance,
+        ),
+    )
+    return PartitionWorkflow(
+        config=config,
+        layout=PartitionLayout((nx, ny), (side, side), padding=args.padding),
+        displacement_x_mm=displacement_x,
+        displacement_y_mm=displacement_y,
+        yield_stress_mpa=yield_stress,
+        hardening_coefficient_mpa=hardening,
+        output_directory=args.output,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -73,4 +159,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         report = save_reduced_example(args.output, nx=args.nx, ny=args.ny)
         _print_json(asdict(report))
         return 0 if report.passed else 1
+    if args.command == "partition":
+        workflow = _partition_workflow(args)
+        if args.list_pending:
+            _print_json({"pending": workflow.pending_partition_ids()})
+            return 0
+        if args.partition_id is not None:
+            _print_json(workflow.solve_partition(args.partition_id))
+            return 0
+        if args.solve_pending:
+            solved = workflow.solve_pending()
+            _print_json(
+                {
+                    "remaining": workflow.pending_partition_ids(),
+                    "solved": solved,
+                }
+            )
+            return 0
+        output = workflow.stitch(args.stitch, output_path=args.field_output)
+        print(output.filename)
+        return 0
     raise AssertionError(f"unhandled command {args.command!r}")  # pragma: no cover
