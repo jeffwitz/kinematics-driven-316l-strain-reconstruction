@@ -495,6 +495,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Suite après patch cisaillement | `pytest --cov=fem_inhouse --cov-branch` | 124 tests, 96,59 % | Réussi |
 | 2026-07-24 | CLI partitionnée | Reprise, partition isolée, raccordement | Workflow job array exécutable | Réussi |
 | 2026-07-24 | Suite après CLI partitionnée | Ruff, mypy, pytest et `bash -n` | 125 tests, 96,46 % | Réussi |
+| 2026-07-24 | Qualité dépôt complet | `ruff check .` | Aucun défaut, scripts historiques inclus | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -672,3 +673,11 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Ajout d'un modèle Slurm pour les grilles de 25 et 100 partitions
 - Fichiers temporaires rendus uniques pour les écritures atomiques concurrentes
 - Documentation du lancement, de la reprise et du raccordement hors mémoire
+
+### 2026-07-24 — Qualité statique de tout le dépôt
+
+- Extension de Ruff aux scripts historiques de comparaison et visualisation
+- Formatage mécanique sans modification des formules scientifiques
+- Exceptions limitées aux noms de variables scientifiques et imports de compatibilité
+- Passage de la CI de chemins sélectionnés à `ruff check .`
+- Validation locale : Ruff, mypy et 125 tests réussis

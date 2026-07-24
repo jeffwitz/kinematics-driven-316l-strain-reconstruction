@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-visual_fem_test.py – same plot as visual_test.py but for the fem_pixel solver.
+visual_fem_test.py - same plot as visual_test.py but for the fem_pixel solver.
 
 Part 1: if the FEM frame files are missing (or FORCE_RERUN), solve the 10x10
         problem at N_FRAMES load fractions (same ramp Abaqus applies) and save
@@ -12,28 +11,44 @@ Part 2: identical plotting to visual_test.py (DIC cropped to the FEA window,
 import os
 import re
 import sys
-import numpy as np
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-CODE_DIR = os.path.dirname(os.path.abspath(__file__))       # .../fem/1_codes
-ROOT     = os.path.dirname(os.path.dirname(CODE_DIR))       # test root
-sys.path.insert(0, CODE_DIR)   # fem_pixel
-sys.path.insert(0, ROOT)       # test_config
+CODE_DIR = os.path.dirname(os.path.abspath(__file__))  # .../fem/1_codes
+ROOT = os.path.dirname(os.path.dirname(CODE_DIR))  # test root
+sys.path.insert(0, CODE_DIR)  # fem_pixel
+sys.path.insert(0, ROOT)  # test_config
 from test_config import DIC_DIR, FEM_OUT, MACRO_STRESS_STRAIN_FILE
-FEM_DIR = FEM_OUT     # all FEM outputs live here (final_validation/fem_single)
+
+FEM_DIR = FEM_OUT  # all FEM outputs live here (final_validation/fem_single)
 os.makedirs(FEM_DIR, exist_ok=True)
 
 # ═════════════════════ Part 1: generate FEM frame data ═══════════════════════
-from test_config import (X_SIZE, Y_SIZE, ELEMENT_SIZE, SCALE_FACTOR, N_EXP,
-                         FEM_TAG, JOB_NAME, NX as FEA_NX, NY as FEA_NY,
-                         load_case5_inputs)
+from test_config import (
+    ELEMENT_SIZE,
+    FEM_TAG,
+    JOB_NAME,
+    N_EXP,
+    SCALE_FACTOR,
+    X_SIZE,
+    Y_SIZE,
+    load_case5_inputs,
+)
+from test_config import (
+    NX as FEA_NX,
+)
+from test_config import (
+    NY as FEA_NY,
+)
 
-run_tag   = FEM_TAG
-N_FRAMES  = 20          # load fractions 0..1 (plus zero frame), like ODB frames
-HARDENING = 'tabular'
+run_tag = FEM_TAG
+N_FRAMES = 20  # load fractions 0..1 (plus zero frame), like ODB frames
+HARDENING = "tabular"
 FORCE_RERUN = False
 
 # s/e are per-ELEMENT (FEA_NX, FEA_NY); u1/u2 are per-NODE (FEA_NX+1, FEA_NY+1);
@@ -45,6 +60,7 @@ _frame_files = {v: os.path.join(FEM_DIR, f"{run_tag}_{v}.npy") for v in _vars}
 _nodal_frame_files = {v: os.path.join(FEM_DIR, f"{run_tag}_{v}.npy") for v in _nodal_vars}
 _time_file = os.path.join(FEM_DIR, f"{run_tag}_time.npy")
 
+
 def _cache_valid():
     """Existing frame files must match the CURRENT window size. Also requires
     the nodal (u1/u2) and time frame files - added later than s/e, so any
@@ -53,21 +69,28 @@ def _cache_valid():
         if not os.path.isfile(p):
             return False
         if np.load(p, mmap_mode="r").shape[1:] != (FEA_NX, FEA_NY):
-            print(f"[FEM frames] cached {os.path.basename(p)} has wrong shape "
-                  f"for {FEA_NX}x{FEA_NY} window -> re-solving")
+            print(
+                f"[FEM frames] cached {os.path.basename(p)} has wrong shape "
+                f"for {FEA_NX}x{FEA_NY} window -> re-solving"
+            )
             return False
     for p in _nodal_frame_files.values():
         if not os.path.isfile(p):
-            print(f"[FEM frames] {os.path.basename(p)} missing (older cache "
-                  f"predates u1/u2 frame export) -> re-solving")
+            print(
+                f"[FEM frames] {os.path.basename(p)} missing (older cache "
+                f"predates u1/u2 frame export) -> re-solving"
+            )
             return False
         if np.load(p, mmap_mode="r").shape[1:] != (FEA_NX + 1, FEA_NY + 1):
             return False
     if not os.path.isfile(_time_file):
-        print(f"[FEM frames] {os.path.basename(_time_file)} missing (older "
-              f"cache predates time export) -> re-solving")
+        print(
+            f"[FEM frames] {os.path.basename(_time_file)} missing (older "
+            f"cache predates time export) -> re-solving"
+        )
         return False
     return True
+
 
 if FORCE_RERUN or not _cache_valid():
     from fem_pixel import run_fem
@@ -77,12 +100,23 @@ if FORCE_RERUN or not _cache_valid():
     # ONE incremental solve; fields are snapshotted at each load fraction
     # (path-consistent plasticity, ~N_FRAMES x faster than re-solving per level)
     fracs = [k / N_FRAMES for k in range(1, N_FRAMES + 1)]
-    r = run_fem(center_disp_x, center_disp_y,
-                yield_cropped, K_cropped, N_EXP,
-                X_SIZE, Y_SIZE, ELEMENT_SIZE, SCALE_FACTOR,
-                E_mod=205000., nu=0.3,
-                N_inc=N_FRAMES, snapshot_fractions=fracs,
-                hardening=HARDENING, verbose=True)
+    r = run_fem(
+        center_disp_x,
+        center_disp_y,
+        yield_cropped,
+        K_cropped,
+        N_EXP,
+        X_SIZE,
+        Y_SIZE,
+        ELEMENT_SIZE,
+        SCALE_FACTOR,
+        E_mod=205000.0,
+        nu=0.3,
+        N_inc=N_FRAMES,
+        snapshot_fractions=fracs,
+        hardening=HARDENING,
+        verbose=True,
+    )
 
     # save the FINAL-state fields too (same solve endpoint) so
     # fem_test_driver.py can reuse them instead of re-solving
@@ -91,18 +125,20 @@ if FORCE_RERUN or not _cache_valid():
         np.save(os.path.join(FEM_DIR, f"{_final_tag}_{key}.npy"), r[key])
     print(f"[FEM frames] final-state fields saved with prefix {_final_tag}")
 
-    frames = {v: [np.zeros((FEA_NX, FEA_NY))] for v in _vars}   # frame 0 = zeros
+    frames = {v: [np.zeros((FEA_NX, FEA_NY))] for v in _vars}  # frame 0 = zeros
     nodal_frames = {v: [np.zeros((FEA_NX + 1, FEA_NY + 1))] for v in _nodal_vars}
     time_frames = [0.0]
     for f in fracs:
         snap = r["frames"][f]
-        frames["s11"].append(snap["S"][..., 0]); frames["s22"].append(snap["S"][..., 1])
+        frames["s11"].append(snap["S"][..., 0])
+        frames["s22"].append(snap["S"][..., 1])
         frames["s12"].append(snap["S"][..., 2])
-        frames["e11"].append(snap["E"][..., 0]); frames["e22"].append(snap["E"][..., 1])
-        frames["e12"].append(snap["E"][..., 2])   # engineering gamma12, same as ODB export
+        frames["e11"].append(snap["E"][..., 0])
+        frames["e22"].append(snap["E"][..., 1])
+        frames["e12"].append(snap["E"][..., 2])  # engineering gamma12, same as ODB export
         nodal_frames["u1"].append(snap["U"][..., 0])
         nodal_frames["u2"].append(snap["U"][..., 1])
-        time_frames.append(f)   # pseudo-time 0..1, same convention as Abaqus frameValue
+        time_frames.append(f)  # pseudo-time 0..1, same convention as Abaqus frameValue
 
     for v in _vars:
         np.save(_frame_files[v], np.array(frames[v]))
@@ -126,18 +162,19 @@ macro_path = MACRO_STRESS_STRAIN_FILE
 # same dataset the FEA BCs are built from
 dic_dir_U = DIC_DIR
 dic_dir_V = DIC_DIR
-dic_max_frame = 40   # FEM is loaded up to frame 40 -> stop the DIC curve there too
+dic_max_frame = 40  # FEM is loaded up to frame 40 -> stop the DIC curve there too
 dic_baseline_n = 5
 
-smooth_k = 7 # use odd values like 1,3,5,7...
+smooth_k = 7  # use odd values like 1,3,5,7...
 
 # crop DIC field to the SAME central window the FEM was run on
 CROP_TO_FEA_REGION = True
 
-from test_config import crop_center as crop_center_arr, window_tag
+from test_config import crop_center as crop_center_arr
+from test_config import window_tag
 
 if CROP_TO_FEA_REGION:
-    smooth_k = 1                 # no smoothing on an 11x11 window (FEM has none)
+    smooth_k = 1  # no smoothing on an 11x11 window (FEM has none)
 
 # 'affine'  : least-squares plane fit over the window; slopes = mean strains
 #             (avoids the noisy gradient-mean that made the DIC curve loop)
@@ -151,6 +188,7 @@ os.makedirs(out_dir, exist_ok=True)
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.size"] = 40
 
+
 def list_dic_frames(folder_u, folder_v, max_k=None):
     def _idxs(folder, prefix):
         idx = []
@@ -159,12 +197,14 @@ def list_dic_frames(folder_u, folder_v, max_k=None):
             if m:
                 idx.append(int(m.group(1)))
         return set(idx)
+
     iu = _idxs(folder_u, "U")
     iv = _idxs(folder_v, "V")
     inter = sorted(iu.intersection(iv))
     if max_k is not None:
         inter = [k for k in inter if k <= int(max_k)]
     return inter
+
 
 def load_dic_uv(frame_idx):
     U = np.load(os.path.join(dic_dir_U, f"U_{frame_idx}.npy")).astype(float)
@@ -174,7 +214,8 @@ def load_dic_uv(frame_idx):
         U = crop_center_arr(U, FEA_NX + 1, FEA_NY + 1)
         V = crop_center_arr(V, FEA_NX + 1, FEA_NY + 1)
         return U, V
-    return U.T, V.T   # legacy whole-field mode keeps the visual28 transpose
+    return U.T, V.T  # legacy whole-field mode keeps the visual28 transpose
+
 
 def _boxfilter_sum(a, k):
     p = k // 2
@@ -182,6 +223,7 @@ def _boxfilter_sum(a, k):
     s = a.cumsum(axis=0).cumsum(axis=1)
     s = np.pad(s, ((1, 0), (1, 0)), mode="constant", constant_values=0.0)
     return s[k:, k:] - s[:-k, k:] - s[k:, :-k] + s[:-k, :-k]
+
 
 def smooth2d_nanmean(a, k):
     k = int(k)
@@ -195,6 +237,7 @@ def smooth2d_nanmean(a, k):
     out = np.divide(num, den, out=np.full_like(num, np.nan), where=den > 0.0)
     return out
 
+
 def strain_from_disp(U, V, dx=1.0):
     # Mesh convention: axis0=x, axis1=y, V=u_x, U=u_y.
     dU_dx, dU_dy = np.gradient(U, dx, dx)
@@ -204,8 +247,10 @@ def strain_from_disp(U, V, dx=1.0):
     exy = 0.5 * (dV_dy + dU_dx)
     return exx, exy, eyy
 
+
 def stress_vm(s11, s12, s22):
-    return np.sqrt(s11**2 + s22**2 - s11*s22 + 3.0*s12**2)
+    return np.sqrt(s11**2 + s22**2 - s11 * s22 + 3.0 * s12**2)
+
 
 def plane_stress_hooke(E, nu, exx, exy, eyy):
     pref = E / (1.0 - nu**2)
@@ -215,14 +260,17 @@ def plane_stress_hooke(E, nu, exx, exy, eyy):
     sxy = 2.0 * G * exy
     return sxx, sxy, syy
 
+
 def evm_classic_ezz0(exx, exy, eyy):
     return np.sqrt((2.0 / 3.0) * (exx**2 + eyy**2 + 2.0 * exy**2))
 
+
 def evm_plane_stress_inv(exx, exy, eyy, nu):
     return np.sqrt(
-        (4.0 / (9.0 * (1.0 - nu + nu**2))) *
-        ((exx**2 + eyy**2 - exx * eyy) + 3.0 * (1.0 - nu)**2 * exy**2)
+        (4.0 / (9.0 * (1.0 - nu + nu**2)))
+        * ((exx**2 + eyy**2 - exx * eyy) + 3.0 * (1.0 - nu) ** 2 * exy**2)
     )
+
 
 def sigma_vm_from_evm_stitched_ludwik(evm, E, nu, sigma_y, K, n):
     G = E / (2.0 * (1.0 + nu))
@@ -233,6 +281,7 @@ def sigma_vm_from_evm_stitched_ludwik(evm, E, nu, sigma_y, K, n):
     sig_pl = sigma_y + K * np.power(eps_p, n)
     return np.where(evm <= eps_y, sig_el, sig_pl)
 
+
 def sigma_uniaxial_stitched_ludwik(eyy, E, sigma_y, K, n):
     eyy = np.asarray(eyy, dtype=float)
     eps_y = sigma_y / E
@@ -241,9 +290,11 @@ def sigma_uniaxial_stitched_ludwik(eyy, E, sigma_y, K, n):
     sig_pl = sigma_y + K * np.power(eps_p, n)
     return np.where(eyy <= eps_y, sig_el, sig_pl)
 
+
 def mean_masked(a, mask):
     aa = np.where(mask, a, np.nan)
     return float(np.nanmean(aa))
+
 
 def window_mean_strains(U, V, mask):
     """Window-mean (exx, exy, eyy) in the MESH frame of the transposed/cropped
@@ -256,14 +307,15 @@ def window_mean_strains(U, V, mask):
         A = np.column_stack([np.ones(ii.size), ii.astype(float), jj.astype(float)])
         bu = np.linalg.lstsq(A, U[fin], rcond=None)[0]
         bv = np.linalg.lstsq(A, V[fin], rcond=None)[0]
-        exx = bv[1]                    # d(u_x)/dx = dV/d(axis0)
-        eyy = bu[2]                    # d(u_y)/dy = dU/d(axis1)
-        exy = 0.5 * (bv[2] + bu[1])    # tensorial shear
+        exx = bv[1]  # d(u_x)/dx = dV/d(axis0)
+        eyy = bu[2]  # d(u_y)/dy = dU/d(axis1)
+        exy = 0.5 * (bv[2] + bu[1])  # tensorial shear
         return exx, exy, eyy
     Us = smooth2d_nanmean(U, smooth_k)
     Vs = smooth2d_nanmean(V, smooth_k)
     exx, exy, eyy = strain_from_disp(Us, Vs, dx=1.0)
     return mean_masked(exx, mask), mean_masked(exy, mask), mean_masked(eyy, mask)
+
 
 def load_numeric_curve(folder, run_tag, var, prefer_weighted=True):
     p = os.path.join(folder, f"{run_tag}_{var}.npy")
@@ -275,6 +327,7 @@ def load_numeric_curve(folder, run_tag, var, prefer_weighted=True):
             n = arr.shape[0]
             return np.asarray([np.nanmean(arr[k]) for k in range(n)], dtype=float)
     return None
+
 
 exp_macro = np.load(macro_path).astype(float)
 macro_eps_pct = exp_macro[0, :].astype(float)
@@ -356,7 +409,9 @@ for i, fr in enumerate(dic_frames):
     dic_sig_hooke_vm_stitched[i] = sig_vm_el if evm_ps <= eps_y_vm else sig_ep_ps
     dic_sig_3G_classic_stitched[i] = sig_ep_c
     dic_sig_3G_ps_stitched[i] = sig_ep_ps
-    dic_sig_uniax_stitched[i] = float(sigma_uniaxial_stitched_ludwik(eyy_m, E, sigma_y, K_ludwik, n_ludwik))
+    dic_sig_uniax_stitched[i] = float(
+        sigma_uniaxial_stitched_ludwik(eyy_m, E, sigma_y, K_ludwik, n_ludwik)
+    )
 
 m_dic = np.isfinite(dic_x_eyy_pct)
 dic_x_eyy_pct = dic_x_eyy_pct[m_dic]
@@ -397,8 +452,12 @@ if have_num_strains:
     num_evm_classic = evm_classic_ezz0(exx, exy, eyy)
     num_evm_ps = evm_plane_stress_inv(exx, exy, eyy, nu)
 
-    num_sig_3G_classic_stitched = sigma_vm_from_evm_stitched_ludwik(num_evm_classic, E, nu, sigma_y, K_ludwik, n_ludwik)
-    num_sig_3G_ps_stitched = sigma_vm_from_evm_stitched_ludwik(num_evm_ps, E, nu, sigma_y, K_ludwik, n_ludwik)
+    num_sig_3G_classic_stitched = sigma_vm_from_evm_stitched_ludwik(
+        num_evm_classic, E, nu, sigma_y, K_ludwik, n_ludwik
+    )
+    num_sig_3G_ps_stitched = sigma_vm_from_evm_stitched_ludwik(
+        num_evm_ps, E, nu, sigma_y, K_ludwik, n_ludwik
+    )
     num_sig_uniax_stitched = sigma_uniaxial_stitched_ludwik(eyy, E, sigma_y, K_ludwik, n_ludwik)
 
     m = np.isfinite(num_x_eyy_pct) & np.isfinite(num_evm_classic) & np.isfinite(num_evm_ps)
@@ -450,7 +509,7 @@ ax.plot(
     marker="o",
     markersize=7,
     color="#000000",
-    label="Macro measured"
+    label="Macro measured",
 )
 
 ax.plot(
@@ -461,7 +520,7 @@ ax.plot(
     marker="v",
     markersize=7,
     color="#17becf",
-    label="DIC reconstructed"
+    label="DIC reconstructed",
 )
 
 if (num_evm_ps is not None) and (num_sig_3G_ps_stitched is not None):
@@ -475,7 +534,7 @@ if (num_evm_ps is not None) and (num_sig_3G_ps_stitched is not None):
         marker="<",
         markersize=7,
         color="#8c564b",
-        label="FEM reconstructed"
+        label="FEM reconstructed",
     )
 
 if (num_evm_ps_s is not None) and (num_sig_fem_vm_direct is not None):
@@ -489,7 +548,7 @@ if (num_evm_ps_s is not None) and (num_sig_fem_vm_direct is not None):
         marker="s",
         markersize=7,
         color="#2ca02c",
-        label="FEM direct stress"
+        label="FEM direct stress",
     )
 
 ax.set_xlabel(r"$\varepsilon_{vM}$ (%)")
@@ -503,14 +562,21 @@ ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=6))
 ax.xaxis.set_major_formatter(ticker.FormatStrFormatter("%.3f"))
 ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.f"))
 
-ax.legend(frameon=True, fontsize=30, loc="lower right",facecolor="white",
+ax.legend(
+    frameon=True,
+    fontsize=30,
+    loc="lower right",
+    facecolor="white",
     edgecolor="black",
-    framealpha=0.6)
+    framealpha=0.6,
+)
 suffix = "_dic_cropped" if CROP_TO_FEA_REGION else ""
 fig.savefig(
-    os.path.join(out_dir, f"S{sigma_y}_K{K_ludwik}_{n_ludwik}_{run_tag}_{window_tag()}{suffix}.pdf"),
+    os.path.join(
+        out_dir, f"S{sigma_y}_K{K_ludwik}_{n_ludwik}_{run_tag}_{window_tag()}{suffix}.pdf"
+    ),
     dpi=300,
-    bbox_inches="tight"
+    bbox_inches="tight",
 )
 plt.close(fig)
 

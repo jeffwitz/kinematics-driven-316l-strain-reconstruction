@@ -21,7 +21,7 @@ jobs:
           python -m pip install -r requirements-lock.txt
           python -m pip install -e . --no-deps
       - name: Lint
-        run: ruff check src tests fem_pixel.py
+        run: ruff check .
       - name: Type check
         run: mypy src/fem_inhouse
       - name: Test
