@@ -1,0 +1,18 @@
+{
+  "article": {
+    "authors": [
+      "Adil Kılınç",
+      "Qi Hu",
+      "Jean-François Witz",
+      "Denis Najjar",
+      "Vincent Magnier",
+      "Ahmed El Bartali"
+    ],
+    "doi": null,
+    "file": "ArticleAdil.pdf",
+    "sha256": "482abeee48d7e8b6791bdcc308cb14a84fc8988e8360c2095d31437822aeb7b8",
+    "size_bytes": 2698182,
+    "title": "Kinematics-Driven Reconstruction of Microscale Strain Localization in 316L Stainless Steel"
+  },
+  "schema_version": 1
+}

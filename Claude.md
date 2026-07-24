@@ -501,6 +501,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-24 | Wheel typé | `pip wheel . --no-deps` et inspection | `py.typed`, cœur et métadonnées présents | Réussi |
 | 2026-07-24 | Recouvrement des localisations | Jaccard, Dice, rappel, précision | Cas identique, partiel et masqué testés | Réussi |
 | 2026-07-24 | Suite après métrique de localisation | Ruff, mypy et couverture | 127 tests, 96,55 % | Réussi |
+| 2026-07-24 | Provenance de l'article | Manifeste SHA-256 vérifié par test | PDF 2 698 182 octets identifié | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -702,3 +703,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Ajout du rappel de la zone de référence et de la précision de la prédiction
 - Conservation des seuils et effectifs pour interpréter les ex æquo
 - Tests des recouvrements identique, partiel, masqué et des contrats invalides
+
+### 2026-07-24 — Provenance de la référence scientifique
+
+- Ajout d'un manifeste versionné pour le PDF fourni
+- Enregistrement du titre, des auteurs, de la taille et du SHA-256
+- DOI maintenu explicitement nul car absent du manuscrit fourni
+- Ajout d'un test empêchant une modification silencieuse de la référence

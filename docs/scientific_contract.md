@@ -1,5 +1,10 @@
 # Scientific contract
 
+The exact manuscript used to define this contract is identified by size and
+SHA-256 in `ArticleSource/manifest.json`. The manifest deliberately records a
+null DOI because no DOI is present in the supplied manuscript; publication
+metadata must not be invented.
+
 Status: implementation baseline, 2026-07-24.
 
 This document makes the conventions used by the code explicit. It is based on
