@@ -232,3 +232,39 @@ Optional micromorphic fields are plotted only when
 `--include-optional-fields` is supplied. The local alpha=0 control uses
 explicit zero/Hchi=0 fallback values for those optional fields, and this is
 recorded in the metadata.
+
+### Recorded P154 figures
+
+The committed reference campaign is displayed below. These maps use the raw
+converged fields and the common colour limits recorded in
+`plot_metadata.json`.
+
+```{figure} ../../validation/figures/p154-alpha-comparison/p154_total_evm_comparison.png
+:name: p154-alpha-total-evm
+:alt: DIC and FEM total equivalent strain for the four coupling levels
+:align: center
+
+Total equivalent strain reconstructed from DIC and FEM displacements.
+```
+
+```{figure} ../../validation/figures/p154-alpha-comparison/p154_total_evm_difference.png
+:name: p154-alpha-evm-error
+:alt: FEM minus DIC total equivalent strain for the four coupling levels
+:align: center
+
+Signed FEM-minus-DIC EVM errors, with one symmetric scale shared by all four
+coupling levels.
+```
+
+```{figure} ../../validation/figures/p154-alpha-comparison/p154_peeq_comparison.png
+:name: p154-alpha-peeq
+:alt: PEEQ maps for the four coupling levels
+:align: center
+
+PEEQ redistribution. PEEQ is an internal variable, not an experimental DIC
+observable.
+```
+
+The complete PNG, PDF, SVG, optional-field figures, and reproducibility
+metadata are kept in
+`validation/figures/p154-alpha-comparison/`.
