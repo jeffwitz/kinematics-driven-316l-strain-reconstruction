@@ -138,6 +138,13 @@ plus the internal PEEQ redistribution. No Helmholtz filter is applied to the
 primary FEM EVM figures; `plot_metadata.json` records the hashes, limits, and
 plotting choices.
 
+Because P154 is too homogeneous to identify a coupling length robustly, the
+repository now provides `fem-inhouse select-dic-partition`. It ranks the full
+10 x 10 DIC decomposition using winsorized EVM kurtosis and complementary
+tail/gradient indicators before any FEM alpha sweep. The current diagnostic
+candidate is partition 15 `(1, 5)`; this is a prospective selection and must
+be visually checked before launching a costly campaign.
+
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and

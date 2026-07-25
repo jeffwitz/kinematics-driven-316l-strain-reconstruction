@@ -39,7 +39,9 @@ from fem_inhouse.workflows import (
     load_decision_thresholds,
     plot_coupled_alpha_fields,
     run_nonlocality_diagnostic,
+    scan_dic_partition_heterogeneity,
     validate_coupled_nonlocal_campaign,
+    write_dic_partition_heterogeneity_report,
 )
 
 PARTITION_FIELDS = (
@@ -217,6 +219,17 @@ def _parser() -> argparse.ArgumentParser:
     validate_coupled.add_argument("--partition-id", type=int, required=True)
     validate_coupled.add_argument("--output", type=Path, required=True)
     validate_coupled.add_argument("--overwrite", action="store_true")
+
+    select_dic = commands.add_parser(
+        "select-dic-partition",
+        help="rank DIC partitions by robust EVM spatial heterogeneity",
+    )
+    select_dic.add_argument("--input", type=Path, required=True)
+    select_dic.add_argument("--output", type=Path, required=True)
+    select_dic.add_argument("--parts-x", type=int, default=10)
+    select_dic.add_argument("--parts-y", type=int, default=10)
+    select_dic.add_argument("--padding", type=int, default=150)
+    select_dic.add_argument("--overwrite", action="store_true")
 
     plot_alpha = commands.add_parser(
         "plot-coupled-alpha-fields",
@@ -479,6 +492,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         _print_json(coupled_report)
         return 0 if coupled_report["passed"] else 2
+    if args.command == "select-dic-partition":
+        if args.output.exists() and not args.overwrite:
+            raise FileExistsError(f"refusing to overwrite existing report: {args.output}")
+        selection_report = scan_dic_partition_heterogeneity(
+            input_directory=args.input,
+            parts_x=args.parts_x,
+            parts_y=args.parts_y,
+            padding=args.padding,
+        )
+        write_dic_partition_heterogeneity_report(selection_report, args.output)
+        _print_json(selection_report)
+        return 0
     if args.command == "plot-coupled-alpha-fields":
         plot_report = plot_coupled_alpha_fields(
             input_directory=args.input,

@@ -201,7 +201,28 @@ The condensed 3D backend is a reduced verification run:
 It should reproduce the native plane-stress result on a reduced case, but it
 is not the production path for the P154 sweep.
 
-## 9. Plot the alpha comparison
+## 9. Select a heterogeneous DIC ROI before calibrating alpha
+
+The former P154 ROI is retained as a reproducibility example, but its DIC EVM
+is unusually homogeneous. Selecting alpha there can therefore produce an
+artificial monotone improvement as coupling increases. First rank all DIC
+partitions without using any FEM result:
+
+```bash
+.venv/bin/fem-inhouse select-dic-partition \
+  --input data/processed/case_study \
+  --output validation/dic_partition_heterogeneity_10x10.json \
+  --parts-x 10 --parts-y 10 --padding 150
+```
+
+The current 10 x 10 scan ranks partition 15, index `(1, 5)`, first by the
+1--99% winsorized Fisher kurtosis (`6.64`). Partition 53 is the strongest
+alternative by the 95%-to-median tail contrast. The report contains all 100
+partitions and must be reviewed with the DIC maps before freezing a
+calibration ROI. Do not use the old P154 alpha comparison as evidence that a
+material length has been identified.
+
+## 10. Plot the alpha comparison
 
 Once the four complete campaigns are available, generate the comparative
 maps and publication-ready vector figures:

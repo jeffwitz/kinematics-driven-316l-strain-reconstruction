@@ -34,6 +34,8 @@ Top-level commands
      - Compare raw local and coupled fields with DIC on one retained core.
    * - ``plot-coupled-alpha-fields``
      - Create reproducible raw EVM/PEEQ comparison figures for P154.
+   * - ``select-dic-partition``
+     - Rank DIC partitions by robust EVM spatial heterogeneity.
 
 Run ``fem-inhouse COMMAND --help`` for the authoritative options installed with
 the current source revision.
@@ -200,6 +202,25 @@ mechanism diagnostic, not as an experimental PEEQ comparison. The output
 ``plot_metadata.json`` records campaign hashes, core bounds, colour limits,
 metrics, alpha/Hchi values, plotting options, and the explicit no-post-filter
 contract.
+
+``select-dic-partition`` contract
+---------------------------------
+
+Before calibrating a non-local parameter, rank candidate ROIs using only the
+DIC kinematics:
+
+.. code-block:: text
+
+   fem-inhouse select-dic-partition \
+     --input data/processed/case_study \
+     --output validation/dic_partition_heterogeneity_10x10.json \
+     --parts-x 10 --parts-y 10 --padding 150
+
+The command reconstructs ``EVM_HISTORICAL`` from DIC displacements and ranks
+all partitions by 1--99% winsorized Fisher kurtosis. It also records
+coefficient of variation, quantile-tail contrast, gradient RMS, and extrema.
+This is a prospective ROI-selection diagnostic, not a material parameter fit;
+the selected map must still be checked for one-pixel artefacts.
 
 Exit behaviour
 --------------

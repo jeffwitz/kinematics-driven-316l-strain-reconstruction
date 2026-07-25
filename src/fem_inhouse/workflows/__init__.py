@@ -11,6 +11,10 @@ from fem_inhouse.workflows.coupled_nonlocal_validation import (
     CoupledValidationThresholds,
     validate_coupled_nonlocal_campaign,
 )
+from fem_inhouse.workflows.dic_partition_selection import (
+    scan_dic_partition_heterogeneity,
+    write_dic_partition_heterogeneity_report,
+)
 from fem_inhouse.workflows.nonlocal_coupling_campaign import (
     ReferenceHardeningReport,
     compute_reference_hardening_modulus,
@@ -47,6 +51,8 @@ __all__ = [
     "reconstruct_historical_evm",
     "run_field_sweep",
     "run_nonlocality_diagnostic",
+    "scan_dic_partition_heterogeneity",
     "symmetric_color_limit",
     "validate_coupled_nonlocal_campaign",
+    "write_dic_partition_heterogeneity_report",
 ]
