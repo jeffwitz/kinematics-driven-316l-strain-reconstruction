@@ -334,11 +334,10 @@ def validate_coupled_nonlocal_campaign(
             float(coupled_metrics["pearson_correlation"])
             - float(local_metrics["pearson_correlation"])
         ),
-        "relative_l2_reduction": (
-            float(local_metrics["relative_l2_error"])
-            - float(coupled_metrics["relative_l2_error"])
-        )
-        / float(local_metrics["relative_l2_error"]),
+        "relative_l2_reduction": -_relative_change(
+            float(coupled_metrics["relative_l2_error"]),
+            float(local_metrics["relative_l2_error"]),
+        ),
         "top10_iou": float(coupled_metrics["top10_iou"])
         - float(local_metrics["top10_iou"]),
         "dic_q90_iou": float(coupled_metrics["dic_q90_iou"])
