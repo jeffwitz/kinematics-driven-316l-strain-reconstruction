@@ -16,6 +16,12 @@ longueur matérielle identifiée ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
+Jalon actif au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
+partition P154 d'un découpage 20×20**. La campagne est pré-enregistrée dans
+`validation/nonlocal_p154_preregistration.md`. Le champ brut couplé, et non un
+filtrage a posteriori, sera comparé à la DIC. La longueur est figée à
+`58,88 µm` pour cette étape et seul le module `Hchi` est sélectionné.
+
 ## 1. Rôle de ce document
 
 Ce fichier est la feuille de route vivante du projet. Il doit être mis à jour à
