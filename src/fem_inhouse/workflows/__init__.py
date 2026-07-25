@@ -1,5 +1,10 @@
 """Reproducible workflows for the supported case study."""
 
+from fem_inhouse.workflows.nonlocal_coupling_campaign import (
+    ReferenceHardeningReport,
+    compute_reference_hardening_modulus,
+    estimate_reference_hardening_from_campaign,
+)
 from fem_inhouse.workflows.nonlocality_diagnostic import (
     DecisionThresholds,
     LengthScale,
@@ -17,6 +22,9 @@ __all__ = [
     "LengthScale",
     "NonlocalitySweep",
     "PartitionWorkflow",
+    "ReferenceHardeningReport",
+    "compute_reference_hardening_modulus",
+    "estimate_reference_hardening_from_campaign",
     "fingerprint_array",
     "load_decision_thresholds",
     "normalize_length_scales",

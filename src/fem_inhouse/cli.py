@@ -34,6 +34,7 @@ from fem_inhouse.postprocessing import (
 from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import (
     PartitionWorkflow,
+    estimate_reference_hardening_from_campaign,
     load_decision_thresholds,
     run_nonlocality_diagnostic,
 )
@@ -186,6 +187,22 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         help="optional output path used with --stitch",
     )
+
+    reference = commands.add_parser(
+        "estimate-nonlocal-reference",
+        help="compute H_ref from a completed local partition core",
+    )
+    reference.add_argument("--input", type=Path, required=True)
+    reference.add_argument("--campaign", type=Path, required=True)
+    reference.add_argument("--partition-id", type=int, required=True)
+    reference.add_argument("--output", type=Path, required=True)
+    reference.add_argument(
+        "--alphas",
+        nargs="+",
+        type=float,
+        default=(0.0, 0.25, 0.5, 1.0, 2.0),
+    )
+    reference.add_argument("--overwrite", action="store_true")
 
     compare = commands.add_parser(
         "compare-fields",
@@ -399,6 +416,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         output = workflow.stitch(args.stitch, output_path=args.field_output)
         print(output.filename)
+        return 0
+    if args.command == "estimate-nonlocal-reference":
+        reference_report = estimate_reference_hardening_from_campaign(
+            input_directory=args.input,
+            campaign_directory=args.campaign,
+            partition_id=args.partition_id,
+            output_path=args.output,
+            alpha_values=tuple(args.alphas),
+            overwrite=args.overwrite,
+        )
+        _print_json(asdict(reference_report))
         return 0
     if args.command == "compare-fields":
         reference = np.load(args.reference, mmap_mode="r", allow_pickle=False)
