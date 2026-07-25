@@ -4,7 +4,9 @@ import pytest
 from fem_inhouse.partitioning import PartitionLayout
 from fem_inhouse.postprocessing import (
     FieldAcceptanceThresholds,
+    absolute_threshold_overlap_metrics,
     evaluate_field_comparison,
+    field_diffusivity_metrics,
     field_error_metrics,
     interface_gradient_ratio,
     localization_overlap_metrics,
@@ -92,6 +94,96 @@ def test_localization_overlap_contracts_masks_and_ties() -> None:
         localization_overlap_metrics(np.zeros(2), np.zeros(2), mask=np.ones(3))
     with pytest.raises(ValueError, match="no valid"):
         localization_overlap_metrics([np.nan], [np.nan])
+
+
+def test_absolute_dic_threshold_measures_active_area_and_overlap() -> None:
+    reference = np.array([4.0, 3.0, 2.0, 1.0])
+    prediction = np.array([5.0, 2.4, 2.6, 0.0])
+    metrics = absolute_threshold_overlap_metrics(
+        reference,
+        prediction,
+        reference_quantile=0.5,
+    )
+
+    assert metrics.absolute_threshold == 2.5
+    assert metrics.reference_count == 2
+    assert metrics.prediction_count == 2
+    assert metrics.intersection_count == 1
+    assert metrics.reference_active_fraction == 0.5
+    assert metrics.prediction_active_fraction == 0.5
+    assert metrics.intersection_over_union == pytest.approx(1.0 / 3.0)
+    assert metrics.reference_recall == 0.5
+    assert metrics.prediction_precision == 0.5
+
+
+def test_absolute_threshold_contracts_and_empty_zones() -> None:
+    empty_prediction = absolute_threshold_overlap_metrics(
+        [1.0, 2.0],
+        [0.0, 0.0],
+        reference_quantile=1.0,
+    )
+    assert empty_prediction.reference_count == 1
+    assert empty_prediction.prediction_count == 0
+    assert empty_prediction.prediction_precision == 1.0
+    assert empty_prediction.intersection_over_union == 0.0
+
+    with pytest.raises(ValueError, match="reference_quantile"):
+        absolute_threshold_overlap_metrics([1.0], [1.0], reference_quantile=1.1)
+    with pytest.raises(ValueError, match="same shape"):
+        absolute_threshold_overlap_metrics([1.0], [1.0, 2.0], reference_quantile=0.5)
+
+
+def test_diffusivity_metrics_account_for_spacing_and_raw_field() -> None:
+    raw = np.array([[0.0, 1.0], [2.0, 3.0]])
+    filtered = np.full((2, 2), 1.5)
+    metrics = field_diffusivity_metrics(
+        filtered,
+        raw_field=raw,
+        spacing_x_mm=0.5,
+        spacing_y_mm=0.25,
+    )
+    raw_metrics = field_diffusivity_metrics(
+        raw,
+        raw_field=raw,
+        spacing_x_mm=0.5,
+        spacing_y_mm=0.25,
+    )
+
+    assert metrics.mean == 1.5
+    assert metrics.mean_drift == 0.0
+    assert metrics.standard_deviation == 0.0
+    assert metrics.standard_deviation_ratio == 0.0
+    assert metrics.peak_ratio == 0.5
+    assert metrics.gradient_rms == 0.0
+    assert metrics.total_variation == 0.0
+    assert raw_metrics.total_variation == pytest.approx(2 * 2.0 * 0.25 + 2 * 1.0 * 0.5)
+    assert raw_metrics.relative_change_norm == 0.0
+
+
+def test_diffusivity_metric_contracts() -> None:
+    with pytest.raises(ValueError, match="two-dimensional"):
+        field_diffusivity_metrics([1.0], raw_field=[1.0], spacing_x_mm=1.0, spacing_y_mm=1.0)
+    with pytest.raises(ValueError, match="same shape"):
+        field_diffusivity_metrics(
+            np.zeros((2, 2)),
+            raw_field=np.zeros((3, 2)),
+            spacing_x_mm=1.0,
+            spacing_y_mm=1.0,
+        )
+    with pytest.raises(ValueError, match="finite"):
+        field_diffusivity_metrics(
+            [[np.nan]],
+            raw_field=[[0.0]],
+            spacing_x_mm=1.0,
+            spacing_y_mm=1.0,
+        )
+    with pytest.raises(ValueError, match="spacings"):
+        field_diffusivity_metrics(
+            [[0.0]],
+            raw_field=[[0.0]],
+            spacing_x_mm=0.0,
+            spacing_y_mm=1.0,
+        )
 
 
 def test_field_acceptance_report_and_signed_difference() -> None:

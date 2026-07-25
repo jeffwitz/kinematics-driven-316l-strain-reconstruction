@@ -12,6 +12,7 @@ dependencies = [
     "matplotlib>=3.8,<4",
     "numpy>=2,<3",
     "pypardiso>=0.4.7,<0.5",
+    "PyYAML>=6,<7",
     "scipy>=1.14,<2",
 ]
 
@@ -24,6 +25,7 @@ dev = [
     "pytest>=8,<10",
     "pytest-cov>=5,<8",
     "ruff>=0.9,<1",
+    "types-PyYAML>=6,<7",
 ]
 docs = [
     "Sphinx==9.1.0",

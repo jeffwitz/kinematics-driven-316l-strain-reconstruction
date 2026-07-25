@@ -22,6 +22,7 @@ pluggy==1.6.0
 Pygments==2.20.0
 pypardiso==0.4.7
 pyparsing==3.3.2
+PyYAML==6.0.3
 pytest==9.1.1
 pytest-cov==7.1.0
 python-dateutil==2.9.0.post0
@@ -30,5 +31,6 @@ scipy==1.18.0
 six==1.17.0
 tbb==2023.1.0
 tcmlib==1.5.0
+types-PyYAML==6.0.12.20260724
 typing_extensions==4.16.0
 umf==1.1.0

@@ -11,6 +11,7 @@ from fem_inhouse.examples import (
 )
 from fem_inhouse.results import FEMResult
 from fem_inhouse.workflows import partitioned
+from fem_inhouse.workflows.nonlocality_diagnostic import DecisionThresholds
 
 
 def test_reduced_python_ludwik_case_passes_declared_thresholds() -> None:
@@ -256,3 +257,113 @@ def test_compare_fields_cli_writes_report_and_signed_map(tmp_path, capsys) -> No
     rejected_arguments[rejected_arguments.index("--max-rmse") + 1] = "0.01"
     assert main(rejected_arguments) == 1
     assert not json.loads(capsys.readouterr().out)["passed"]
+
+
+def test_nonlocality_cli_enforces_one_length_unit_and_forwards_options(
+    tmp_path,
+    capsys,
+    monkeypatch,
+) -> None:
+    captured = {}
+
+    def fake_diagnostic(**options):
+        captured.update(options)
+        return {"status": "completed"}
+
+    monkeypatch.setattr("fem_inhouse.cli.run_nonlocality_diagnostic", fake_diagnostic)
+    output = tmp_path / "diagnostic"
+    assert (
+        main(
+            [
+                "diagnose-nonlocality",
+                "--input",
+                str(tmp_path / "input"),
+                "--campaign",
+                str(tmp_path / "campaign"),
+                "--partition-id",
+                "4",
+                "--output",
+                str(output),
+                "--lengths-um",
+                "1.84",
+                "3.68",
+                "--include-peeq",
+                "--save-fields",
+                "best",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["status"] == "completed"
+    assert captured["length_values"] == [1.84, 3.68]
+    assert captured["length_unit"] == "um"
+    assert captured["partition_id"] == 4
+    assert captured["include_peeq"]
+    assert captured["save_fields"] == "best"
+
+    with pytest.raises(ValueError, match="decision-thresholds"):
+        main(
+            [
+                "diagnose-nonlocality",
+                "--input",
+                str(tmp_path / "input"),
+                "--campaign",
+                str(tmp_path / "campaign"),
+                "--partition-id",
+                "0",
+                "--output",
+                str(output),
+                "--lengths-mm",
+                "0",
+                "--mode",
+                "confirmatory",
+            ]
+        )
+
+
+def test_nonlocality_cli_loads_confirmatory_thresholds(tmp_path, monkeypatch) -> None:
+    thresholds_path = tmp_path / "thresholds.json"
+    thresholds_path.write_text(
+        json.dumps(
+            {
+                "decision_thresholds": {
+                    "minimum_correlation_gain": 0.05,
+                    "minimum_relative_l2_reduction": 0.05,
+                    "minimum_iou_gain": 0.02,
+                    "maximum_relative_mean_drift": 1e-10,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    captured = {}
+
+    def fake_diagnostic(**options):
+        captured.update(options)
+        return {"status": "completed"}
+
+    monkeypatch.setattr("fem_inhouse.cli.run_nonlocality_diagnostic", fake_diagnostic)
+    assert (
+        main(
+            [
+                "diagnose-nonlocality",
+                "--input",
+                str(tmp_path / "input"),
+                "--campaign",
+                str(tmp_path / "campaign"),
+                "--partition-id",
+                "0",
+                "--output",
+                str(tmp_path / "output"),
+                "--lengths-pixels",
+                "0",
+                "2",
+                "--mode",
+                "confirmatory",
+                "--decision-thresholds",
+                str(thresholds_path),
+            ]
+        )
+        == 0
+    )
+    assert captured["decision_thresholds"] == DecisionThresholds(0.05, 0.05, 0.02, 1e-10)

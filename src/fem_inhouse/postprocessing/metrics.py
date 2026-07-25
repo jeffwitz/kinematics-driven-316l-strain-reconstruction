@@ -40,6 +40,39 @@ class LocalizationOverlapMetrics:
 
 
 @dataclass(frozen=True, slots=True)
+class AbsoluteThresholdOverlapMetrics:
+    """Overlap obtained by applying one DIC-derived threshold to both fields."""
+
+    reference_quantile: float
+    absolute_threshold: float
+    valid_count: int
+    reference_count: int
+    prediction_count: int
+    intersection_count: int
+    reference_active_fraction: float
+    prediction_active_fraction: float
+    intersection_over_union: float
+    reference_recall: float
+    prediction_precision: float
+
+
+@dataclass(frozen=True, slots=True)
+class FieldDiffusivityMetrics:
+    """Amplitude and spatial-width indicators relative to an unfiltered field."""
+
+    mean: float
+    mean_drift: float
+    standard_deviation: float
+    standard_deviation_ratio: float
+    minimum: float
+    maximum: float
+    peak_ratio: float
+    gradient_rms: float
+    total_variation: float
+    relative_change_norm: float
+
+
+@dataclass(frozen=True, slots=True)
 class FieldAcceptanceThresholds:
     """Pre-declared scalar acceptance thresholds for one field comparison."""
 
@@ -173,6 +206,126 @@ def localization_overlap_metrics(
         dice_coefficient=2.0 * intersection_count / (reference_count + prediction_count),
         reference_recall=intersection_count / reference_count,
         prediction_precision=intersection_count / prediction_count,
+    )
+
+
+def absolute_threshold_overlap_metrics(
+    reference: ArrayLike,
+    prediction: ArrayLike,
+    *,
+    reference_quantile: float,
+    mask: ArrayLike | None = None,
+) -> AbsoluteThresholdOverlapMetrics:
+    """Compare active areas using one absolute threshold derived from the reference."""
+
+    if not 0.0 <= reference_quantile <= 1.0:
+        raise ValueError("reference_quantile must lie in [0, 1]")
+    reference_values = np.asarray(reference, dtype=float)
+    prediction_values = np.asarray(prediction, dtype=float)
+    if reference_values.shape != prediction_values.shape:
+        raise ValueError("reference and prediction must have the same shape")
+    valid = np.isfinite(reference_values) & np.isfinite(prediction_values)
+    if mask is not None:
+        mask_values = np.asarray(mask, dtype=bool)
+        if mask_values.shape != reference_values.shape:
+            raise ValueError("mask must have the same shape as the compared fields")
+        valid &= mask_values
+    if not valid.any():
+        raise ValueError("no valid values remain for comparison")
+
+    reference_valid = reference_values[valid]
+    prediction_valid = prediction_values[valid]
+    threshold = float(np.quantile(reference_valid, reference_quantile))
+    reference_zone = reference_valid >= threshold
+    prediction_zone = prediction_valid >= threshold
+    intersection_count = int(np.count_nonzero(reference_zone & prediction_zone))
+    reference_count = int(np.count_nonzero(reference_zone))
+    prediction_count = int(np.count_nonzero(prediction_zone))
+    valid_count = int(reference_valid.size)
+    union_count = reference_count + prediction_count - intersection_count
+    return AbsoluteThresholdOverlapMetrics(
+        reference_quantile=reference_quantile,
+        absolute_threshold=threshold,
+        valid_count=valid_count,
+        reference_count=reference_count,
+        prediction_count=prediction_count,
+        intersection_count=intersection_count,
+        reference_active_fraction=reference_count / valid_count,
+        prediction_active_fraction=prediction_count / valid_count,
+        intersection_over_union=intersection_count / union_count if union_count else 1.0,
+        reference_recall=intersection_count / reference_count if reference_count else 1.0,
+        prediction_precision=intersection_count / prediction_count if prediction_count else 1.0,
+    )
+
+
+def field_diffusivity_metrics(
+    field: ArrayLike,
+    *,
+    raw_field: ArrayLike,
+    spacing_x_mm: float,
+    spacing_y_mm: float,
+) -> FieldDiffusivityMetrics:
+    """Measure field amplitude and spatial diffusivity on a rectangular grid."""
+
+    values = np.asarray(field, dtype=float)
+    raw = np.asarray(raw_field, dtype=float)
+    if values.ndim != 2 or raw.ndim != 2:
+        raise ValueError("field and raw_field must be two-dimensional")
+    if values.shape != raw.shape:
+        raise ValueError("field and raw_field must have the same shape")
+    if values.size == 0:
+        raise ValueError("fields must not be empty")
+    if not np.isfinite(values).all() or not np.isfinite(raw).all():
+        raise ValueError("fields must contain only finite values")
+    if (
+        not np.isfinite(spacing_x_mm)
+        or not np.isfinite(spacing_y_mm)
+        or spacing_x_mm <= 0
+        or spacing_y_mm <= 0
+    ):
+        raise ValueError("spacings must be finite and strictly positive")
+
+    differences_x = (
+        np.diff(values, axis=0) / spacing_x_mm
+        if values.shape[0] > 1
+        else np.empty((0, values.shape[1]))
+    )
+    differences_y = (
+        np.diff(values, axis=1) / spacing_y_mm
+        if values.shape[1] > 1
+        else np.empty((values.shape[0], 0))
+    )
+    mean_square_x = float(np.mean(np.square(differences_x))) if differences_x.size else 0.0
+    mean_square_y = float(np.mean(np.square(differences_y))) if differences_y.size else 0.0
+    gradient_rms = float(np.sqrt(mean_square_x + mean_square_y))
+    total_variation = float(
+        np.sum(np.abs(np.diff(values, axis=0))) * spacing_y_mm
+        + np.sum(np.abs(np.diff(values, axis=1))) * spacing_x_mm
+    )
+
+    raw_standard_deviation = float(np.std(raw))
+    standard_deviation = float(np.std(values))
+    raw_peak = float(np.max(raw))
+    peak = float(np.max(values))
+    change_norm = float(np.linalg.norm(values - raw))
+    raw_norm = float(np.linalg.norm(raw))
+    return FieldDiffusivityMetrics(
+        mean=float(np.mean(values)),
+        mean_drift=float(np.mean(values) - np.mean(raw)),
+        standard_deviation=standard_deviation,
+        standard_deviation_ratio=(
+            standard_deviation / raw_standard_deviation
+            if raw_standard_deviation
+            else (1.0 if standard_deviation == 0.0 else float("inf"))
+        ),
+        minimum=float(np.min(values)),
+        maximum=peak,
+        peak_ratio=peak / raw_peak if raw_peak else (1.0 if peak == 0.0 else float("inf")),
+        gradient_rms=gradient_rms,
+        total_variation=total_variation,
+        relative_change_norm=(
+            change_norm / raw_norm if raw_norm else (0.0 if change_norm == 0.0 else float("inf"))
+        ),
     )
 
 

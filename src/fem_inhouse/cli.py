@@ -8,6 +8,7 @@ import logging
 from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 
@@ -30,7 +31,11 @@ from fem_inhouse.postprocessing import (
     signed_difference_field,
 )
 from fem_inhouse.solver import linear_solver_backend, require_pypardiso
-from fem_inhouse.workflows import PartitionWorkflow
+from fem_inhouse.workflows import (
+    PartitionWorkflow,
+    load_decision_thresholds,
+    run_nonlocality_diagnostic,
+)
 
 PARTITION_FIELDS = (
     "U",
@@ -180,6 +185,45 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--max-mae", type=float, required=True)
     compare.add_argument("--min-correlation", type=float, required=True)
     compare.add_argument("--min-localization-iou", type=float, required=True)
+
+    diagnose = commands.add_parser(
+        "diagnose-nonlocality",
+        help="filter one saved padded partition and compare its spatial width with DIC",
+    )
+    diagnose.add_argument("--input", type=Path, required=True)
+    diagnose.add_argument("--campaign", type=Path, required=True)
+    diagnose.add_argument("--partition-id", type=int, required=True)
+    diagnose.add_argument("--output", type=Path, required=True)
+    length_group = diagnose.add_mutually_exclusive_group(required=True)
+    length_group.add_argument("--lengths-mm", nargs="+", type=float)
+    length_group.add_argument("--lengths-um", nargs="+", type=float)
+    length_group.add_argument("--lengths-pixels", nargs="+", type=float)
+    diagnose.add_argument("--include-peeq", action="store_true")
+    diagnose.add_argument(
+        "--mode",
+        choices=("exploratory", "confirmatory"),
+        default="exploratory",
+    )
+    diagnose.add_argument("--decision-thresholds", type=Path)
+    diagnose.add_argument(
+        "--top-fractions",
+        nargs="+",
+        type=float,
+        default=(0.05, 0.1, 0.2),
+    )
+    diagnose.add_argument(
+        "--dic-quantiles",
+        nargs="+",
+        type=float,
+        default=(0.8, 0.9, 0.95),
+    )
+    diagnose.add_argument("--minimum-padding-length-ratio", type=float, default=4.0)
+    diagnose.add_argument(
+        "--save-fields",
+        choices=("all", "best", "none"),
+        default="all",
+    )
+    diagnose.add_argument("--overwrite", action="store_true")
     return parser
 
 
@@ -344,4 +388,39 @@ def main(argv: Sequence[str] | None = None) -> int:
         np.save(args.difference, difference)
         _print_json(report_data)
         return 0 if comparison_report.passed else 1
+    if args.command == "diagnose-nonlocality":
+        if args.mode == "confirmatory" and args.decision_thresholds is None:
+            raise ValueError(
+                "confirmatory mode requires --decision-thresholds supplied before calculation"
+            )
+        length_unit: Literal["mm", "um", "pixels"]
+        if args.lengths_mm is not None:
+            length_values, length_unit = args.lengths_mm, "mm"
+        elif args.lengths_um is not None:
+            length_values, length_unit = args.lengths_um, "um"
+        else:
+            length_values, length_unit = args.lengths_pixels, "pixels"
+        decision_thresholds = (
+            load_decision_thresholds(args.decision_thresholds)
+            if args.decision_thresholds is not None
+            else None
+        )
+        nonlocality_report = run_nonlocality_diagnostic(
+            input_directory=args.input,
+            campaign_directory=args.campaign,
+            partition_id=args.partition_id,
+            output_directory=args.output,
+            length_values=length_values,
+            length_unit=length_unit,
+            include_peeq=args.include_peeq,
+            mode=args.mode,
+            decision_thresholds=decision_thresholds,
+            top_fractions=args.top_fractions,
+            dic_quantiles=args.dic_quantiles,
+            minimum_padding_length_ratio=args.minimum_padding_length_ratio,
+            save_fields=args.save_fields,
+            overwrite=args.overwrite,
+        )
+        _print_json(nonlocality_report)
+        return 0
     raise AssertionError(f"unhandled command {args.command!r}")  # pragma: no cover
