@@ -289,3 +289,19 @@ observable.
 The complete PNG, PDF, SVG, optional-field figures, and reproducibility
 metadata are kept in
 `validation/figures/p154-alpha-comparison/`.
+
+### P15 alpha = 0, 1, 2, 4 diagnostic
+
+The same plotting workflow also supports an arbitrary four-value sweep through
+its Python API. The completed P15 diagnostic is stored in
+`validation/figures/p0015-alpha-comparison/`, with
+`p0015_total_evm_comparison.*`, `p0015_total_evm_difference.*`, and
+`p0015_peeq_comparison.*`. It uses `ell = 58.88 micrometres`,
+`padding = 64`, and `alpha = (0, 1, 2, 4)`.
+
+For this run, RMSE decreases from `3.454e-3` at alpha=0 to `2.187e-3` at
+alpha=4, but Pearson correlation remains negative (approximately `-0.15`).
+The result therefore demonstrates attenuation of the localized FEM field, not
+an accepted FEM-DIC spatial match. Because the padding-to-length ratio is
+below four, this campaign is diagnostic and must not be interpreted as a
+material-length identification.
