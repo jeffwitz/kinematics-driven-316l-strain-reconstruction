@@ -30,20 +30,26 @@ class LocalPlaneStressConvergenceError(ConstitutiveIntegrationError):
     """The local elimination of transverse strains did not converge."""
 
 
-@dataclass(frozen=True, slots=True)
-class ConstitutiveTrial:
-    """One non-committed constitutive response to an in-plane strain batch."""
+@dataclass(frozen=True, slots=True, kw_only=True)
+class InPlaneConstitutiveTrial:
+    """Light non-committed response required by the global Newton loop."""
 
     stress_in_plane_mpa: FloatArray
     tangent_in_plane_mpa: FloatArray | None
+    observables: dict[str, FloatArray] = field(default_factory=dict)
+    local_plane_stress_iterations: FloatArray | None = None
+    cbb_condition_number: FloatArray | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ConstitutiveTrial(InPlaneConstitutiveTrial):
+    """In-plane response enriched with the complete three-dimensional state."""
+
     full_stress_tensor_mpa: FloatArray
     full_strain_tensor: FloatArray
     elastic_strain_tensor: FloatArray
     plastic_strain_tensor: FloatArray
     plane_stress_residual_mpa: FloatArray
-    observables: dict[str, FloatArray] = field(default_factory=dict)
-    local_plane_stress_iterations: FloatArray | None = None
-    cbb_condition_number: FloatArray | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +86,16 @@ class PlaneStressMaterialBatch(Protocol):
         time_increment: float,
         consistent_tangent: bool = True,
     ) -> ConstitutiveTrial: ...
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial: ...
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial: ...
 
     def commit(self) -> None: ...
 
@@ -225,6 +241,36 @@ class PythonJ2PlaneStressBatch:
                 ),
             },
         )
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        return self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
+    def evaluate_equivalent_plastic_strain(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> FloatArray:
+        return self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        ).observables["equivalent_plastic_strain"]
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
+        if not isinstance(trial, ConstitutiveTrial):
+            raise TypeError("Python J2 in-plane trial is missing its reconstructed state")
+        return trial
 
     def commit(self) -> None:
         if self._trial_plastic is None or self._trial_peeq is None:

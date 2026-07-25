@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
@@ -13,18 +14,17 @@ from numpy.typing import ArrayLike, NDArray
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     ConstitutiveTrial,
+    InPlaneConstitutiveTrial,
     LocalPlaneStressConvergenceError,
     PlaneStressBatchStatistics,
 )
 from fem_inhouse.core.tensor_reconstruction import (
     FullTensorState,
-    engineering_strain_2d_to_tensor,
     kelvin_3d_to_tensor,
     kelvin_plane_stress_to_tensor,
     reconstruct_native_plane_stress_state,
     tensor_to_engineering_strain_2d,
     tensor_to_engineering_stress_2d,
-    tensor_to_kelvin_plane_stress,
 )
 
 _SQRT_TWO = np.sqrt(2.0)
@@ -53,11 +53,38 @@ class MFrontIntegrationResult:
     consistent_tangent_mpa: NDArray | None
 
 
-def engineering_strain_to_kelvin(strain: ArrayLike) -> NDArray:
+@dataclass(frozen=True, slots=True)
+class MFrontTimingStatistics:
+    """Accumulated wall times for the native MGIS constitutive bridge."""
+
+    integration_without_tangent_seconds: float = 0.0
+    integration_with_tangent_seconds: float = 0.0
+    kelvin_conversion_seconds: float = 0.0
+    tensor_reconstruction_seconds: float = 0.0
+    integration_without_tangent_calls: int = 0
+    integration_with_tangent_calls: int = 0
+    tensor_reconstruction_calls: int = 0
+
+
+def engineering_strain_to_kelvin(
+    strain: ArrayLike,
+    *,
+    out: NDArray | None = None,
+) -> NDArray:
     """Convert ``[e11, e22, gamma12]`` to MFront's 2D Kelvin stensor."""
 
-    tensor = engineering_strain_2d_to_tensor(strain, 0.0)
-    return tensor_to_kelvin_plane_stress(tensor, quantity="strain")
+    values = np.asarray(strain, dtype=float)
+    if values.ndim < 1 or values.shape[-1] != 3:
+        raise ValueError("engineering strain must have trailing dimension 3")
+    expected_shape = (*values.shape[:-1], 4)
+    result = np.empty(expected_shape, dtype=float) if out is None else out
+    if result.shape != expected_shape:
+        raise ValueError(f"out must have shape {expected_shape}")
+    result[..., 0] = values[..., 0]
+    result[..., 1] = values[..., 1]
+    result[..., 2] = 0.0
+    result[..., 3] = values[..., 2] / _SQRT_TWO
+    return result
 
 
 def kelvin_strain_to_engineering(strain: ArrayLike) -> NDArray:
@@ -350,6 +377,14 @@ class MFrontMaterialPointBatch:
         self._equivalent_plastic_strain_offset = equivalent_plastic_strain_offset
         self._yield_surface_radius_offset = yield_surface_radius_offset
         self._elastic_strain_offset = elastic_strain_offset
+        self._total_kelvin_buffer = np.empty((self._point_count, 4), dtype=float)
+        self._integration_without_tangent_seconds = 0.0
+        self._integration_with_tangent_seconds = 0.0
+        self._kelvin_conversion_seconds = 0.0
+        self._tensor_reconstruction_seconds = 0.0
+        self._integration_without_tangent_calls = 0
+        self._integration_with_tangent_calls = 0
+        self._tensor_reconstruction_calls = 0
         self._has_trial_state = False
 
     @property
@@ -369,6 +404,24 @@ class MFrontMaterialPointBatch:
         """Whether this behaviour declares the micromorphic external field."""
 
         return self._trial_nonlocal_values is not None
+
+    @property
+    def timing_statistics(self) -> MFrontTimingStatistics:
+        """Return immutable accumulated timings for this material batch."""
+
+        return MFrontTimingStatistics(
+            integration_without_tangent_seconds=(
+                self._integration_without_tangent_seconds
+            ),
+            integration_with_tangent_seconds=self._integration_with_tangent_seconds,
+            kelvin_conversion_seconds=self._kelvin_conversion_seconds,
+            tensor_reconstruction_seconds=self._tensor_reconstruction_seconds,
+            integration_without_tangent_calls=(
+                self._integration_without_tangent_calls
+            ),
+            integration_with_tangent_calls=self._integration_with_tangent_calls,
+            tensor_reconstruction_calls=self._tensor_reconstruction_calls,
+        )
 
     @property
     def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
@@ -395,27 +448,34 @@ class MFrontMaterialPointBatch:
             raise MFrontUnavailableError(
                 f"{self._behaviour_name} does not expose NonlocalEquivalentPlasticStrain"
             )
-        trial = _broadcast_point_property(
-            values,
-            self._point_count,
-            name="nonlocal_equivalent_plastic_strain",
-            nonnegative=True,
-        )
+        supplied = np.asarray(values, dtype=float)
+        if supplied.shape == (self._point_count,):
+            if not np.isfinite(supplied).all() or np.any(supplied < 0):
+                raise ValueError(
+                    "nonlocal_equivalent_plastic_strain must be finite and nonnegative"
+                )
+            trial = supplied
+        else:
+            trial = _broadcast_point_property(
+                supplied,
+                self._point_count,
+                name="nonlocal_equivalent_plastic_strain",
+                nonnegative=True,
+            )
         if self._has_trial_state:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
         self._trial_nonlocal_values[:] = trial
         self._apply_trial_nonlocal_values()
 
-    def evaluate(
+    def _integrate_trial(
         self,
         total_strain: ArrayLike,
         *,
-        time_increment: float = 1.0,
-        consistent_tangent: bool = True,
-        commit: bool = False,
-    ) -> MFrontIntegrationResult:
-        """Integrate a trial total strain from the last committed state."""
+        time_increment: float,
+        consistent_tangent: bool,
+    ) -> NDArray:
+        """Integrate one trial and return the reusable Kelvin gradient buffer."""
 
         if not np.isfinite(time_increment) or time_increment <= 0:
             raise ValueError("time_increment must be finite and positive")
@@ -433,13 +493,19 @@ class MFrontMaterialPointBatch:
             self._has_trial_state = False
         self._apply_trial_nonlocal_values()
 
-        total_kelvin = engineering_strain_to_kelvin(strain)
+        conversion_started = time.perf_counter()
+        total_kelvin = engineering_strain_to_kelvin(
+            strain,
+            out=self._total_kelvin_buffer,
+        )
         self._manager.s1.gradients[:, :] = total_kelvin
+        self._kelvin_conversion_seconds += time.perf_counter() - conversion_started
         integration_type = (
             self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
             if consistent_tangent
             else self._mgis.IntegrationType.IntegrationWithoutTangentOperator
         )
+        integration_started = time.perf_counter()
         if self._thread_pool is None:
             status = self._mgis.integrate(
                 self._manager,
@@ -455,11 +521,54 @@ class MFrontMaterialPointBatch:
                 integration_type,
                 float(time_increment),
             )
+        integration_seconds = time.perf_counter() - integration_started
+        if consistent_tangent:
+            self._integration_with_tangent_seconds += integration_seconds
+            self._integration_with_tangent_calls += 1
+        else:
+            self._integration_without_tangent_seconds += integration_seconds
+            self._integration_without_tangent_calls += 1
         if status != 1:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
             raise MFrontIntegrationError(f"MFront integration failed with status {status}")
+        self._has_trial_state = True
+        return total_kelvin
 
+    def evaluate_equivalent_plastic_strain(
+        self,
+        total_strain: ArrayLike,
+        *,
+        time_increment: float = 1.0,
+    ) -> NDArray:
+        """Integrate without tangent and expose only the ephemeral PEEQ view."""
+
+        self._integrate_trial(
+            total_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        )
+        return self._manager.s1.internal_state_variables[
+            :, self._equivalent_plastic_strain_offset
+        ]
+
+    def evaluate(
+        self,
+        total_strain: ArrayLike,
+        *,
+        time_increment: float = 1.0,
+        consistent_tangent: bool = True,
+        commit: bool = False,
+    ) -> MFrontIntegrationResult:
+        """Integrate a trial total strain from the last committed state."""
+
+        total_kelvin = self._integrate_trial(
+            total_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
+        conversion_started = time.perf_counter()
         stress = kelvin_stress_to_engineering(
             self._manager.s1.thermodynamic_forces,
         ).copy()
@@ -477,6 +586,7 @@ class MFrontMaterialPointBatch:
         tangent = (
             kelvin_tangent_to_engineering(self._manager.K).copy() if consistent_tangent else None
         )
+        self._kelvin_conversion_seconds += time.perf_counter() - conversion_started
         result = MFrontIntegrationResult(
             stress_mpa=stress,
             plastic_strain=plastic_strain,
@@ -484,7 +594,6 @@ class MFrontMaterialPointBatch:
             yield_surface_radius_mpa=yield_surface_radius,
             consistent_tangent_mpa=tangent,
         )
-        self._has_trial_state = True
         if commit:
             self.commit()
         return result
@@ -496,6 +605,7 @@ class MFrontMaterialPointBatch:
             raise RuntimeError("no successful MFront trial state is available")
         if self._axial_strain_offset is None:
             return None
+        reconstruction_started = time.perf_counter()
         total_kelvin = self._manager.s1.gradients.copy()
         total_kelvin[:, 2] = self._manager.s1.internal_state_variables[:, self._axial_strain_offset]
         elastic_offset = self._elastic_strain_offset
@@ -503,11 +613,16 @@ class MFrontMaterialPointBatch:
             :, elastic_offset : elastic_offset + 4
         ].copy()
         stress_kelvin = self._manager.s1.thermodynamic_forces.copy()
-        return reconstruct_native_plane_stress_state(
+        state = reconstruct_native_plane_stress_state(
             total_kelvin,
             elastic_kelvin,
             stress_kelvin,
         )
+        self._tensor_reconstruction_seconds += (
+            time.perf_counter() - reconstruction_started
+        )
+        self._tensor_reconstruction_calls += 1
+        return state
 
     def commit(self) -> None:
         """Commit the latest successful trial state."""
@@ -564,18 +679,44 @@ class MFrontNativePlaneStressBatch:
             maximum_gauss_point_plane_stress_residual_mpa=self._maximum_residual
         )
 
-    def evaluate(
+    @property
+    def timing_statistics(self) -> MFrontTimingStatistics:
+        return self._bridge.timing_statistics
+
+    def evaluate_equivalent_plastic_strain(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> NDArray:
+        return self._bridge.evaluate_equivalent_plastic_strain(
+            in_plane_strain,
+            time_increment=time_increment,
+        )
+
+    def evaluate_in_plane(
         self,
         in_plane_strain: ArrayLike,
         *,
         time_increment: float,
         consistent_tangent: bool = True,
-    ) -> ConstitutiveTrial:
+    ) -> InPlaneConstitutiveTrial:
         result = self._bridge.evaluate(
             in_plane_strain,
             time_increment=time_increment,
             consistent_tangent=consistent_tangent,
         )
+        return InPlaneConstitutiveTrial(
+            stress_in_plane_mpa=result.stress_mpa,
+            tangent_in_plane_mpa=result.consistent_tangent_mpa,
+            observables={
+                "plastic_strain_2d": result.plastic_strain,
+                "equivalent_plastic_strain": result.equivalent_plastic_strain,
+                "yield_surface_radius_mpa": result.yield_surface_radius_mpa,
+            },
+        )
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
         full = self._bridge.current_full_tensor_state()
         if full is None:
             raise MFrontUnavailableError("native MFront plane-stress state is unavailable")
@@ -584,19 +725,31 @@ class MFrontNativePlaneStressBatch:
             float(np.max(np.abs(full.plane_stress_residual_vector_mpa))),
         )
         return ConstitutiveTrial(
-            stress_in_plane_mpa=result.stress_mpa,
-            tangent_in_plane_mpa=result.consistent_tangent_mpa,
+            stress_in_plane_mpa=trial.stress_in_plane_mpa,
+            tangent_in_plane_mpa=trial.tangent_in_plane_mpa,
             full_stress_tensor_mpa=full.stress_tensor_mpa,
             full_strain_tensor=full.total_strain_tensor,
             elastic_strain_tensor=full.elastic_strain_tensor,
             plastic_strain_tensor=full.plastic_strain_tensor,
             plane_stress_residual_mpa=full.plane_stress_residual_vector_mpa,
-            observables={
-                "plastic_strain_2d": result.plastic_strain,
-                "equivalent_plastic_strain": result.equivalent_plastic_strain,
-                "yield_surface_radius_mpa": result.yield_surface_radius_mpa,
-            },
+            observables=trial.observables,
+            local_plane_stress_iterations=trial.local_plane_stress_iterations,
+            cbb_condition_number=trial.cbb_condition_number,
         )
+
+    def evaluate(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> ConstitutiveTrial:
+        trial = self.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+        return self.complete_trial(trial)
 
     def commit(self) -> None:
         self._bridge.commit()
@@ -1083,6 +1236,37 @@ class MFront3DCondensedPlaneStressBatch:
             local_plane_stress_iterations=first_converged,
             cbb_condition_number=condition,
         )
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        return self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
+    def evaluate_equivalent_plastic_strain(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> NDArray:
+        trial = self.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        )
+        return trial.observables["equivalent_plastic_strain"]
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
+        if not isinstance(trial, ConstitutiveTrial):
+            raise TypeError("3D condensed trial is missing its reconstructed state")
+        return trial
 
     def commit(self) -> None:
         self._bridge.commit()

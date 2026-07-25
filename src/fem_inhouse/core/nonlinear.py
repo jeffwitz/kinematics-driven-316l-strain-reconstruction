@@ -47,12 +47,14 @@ from fem_inhouse.core.element import (
 from fem_inhouse.core.mesh import StructuredMesh
 from fem_inhouse.core.nonlocal_plasticity import (
     NonlocalCouplingEvaluation,
+    NonlocalFixedPointWorkspace,
     NonlocalPlaneStressMaterialBatch,
     evaluate_nonlocal_fixed_point,
 )
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     ConstitutiveTrial,
+    InPlaneConstitutiveTrial,
     create_plane_stress_material_batch,
 )
 
@@ -188,10 +190,13 @@ def run_fem(
         nonlocal_material_batch = cast(NonlocalPlaneStressMaterialBatch, material_batch)
 
     C_ps = plane_stress_elasticity(E_mod, nu)
+    element_matrix_started_at = time.perf_counter()
     operators = precompute_element(mesh, C_ps)
     Ke = operators.elastic_stiffness
     Bs = operators.strain_displacement
     dJs = operators.jacobian_determinants
+    element_matrix_seconds = time.perf_counter() - element_matrix_started_at
+    plastic_point_indices = np.arange(n_e * N_GP)
 
     # DOF maps
     nd_all = mesh.node_ids
@@ -205,13 +210,18 @@ def run_fem(
     _rc = assembly_indices(ld)
 
     # Elastic predictor matrix; PyPardiso reuses its factorization for each RHS.
+    sparse_assembly_started_at = time.perf_counter()
     K_el = assemble_stiffness(mesh, Ke, ld, _rc)
+    sparse_assembly_seconds = time.perf_counter() - sparse_assembly_started_at
+    extraction_started_at = time.perf_counter()
     KII_el = K_el[dof_I][:, dof_I].tocsr()
     KIB_el = K_el[dof_I][:, dof_B].tocsr()
+    free_system_extraction_seconds = time.perf_counter() - extraction_started_at
     elastic_assembly_seconds = time.perf_counter() - assembly_started_at
     linear_solve_seconds = 0.0
     constitutive_seconds = 0.0
     tangent_assembly_seconds = 0.0
+    internal_force_seconds = 0.0
 
     def timed_solve(matrix, right_hand_side):
         nonlocal linear_solve_seconds
@@ -227,6 +237,7 @@ def run_fem(
     u_bc = np.zeros(mesh.n_dof)
     u_bc[2 * nd_all.ravel(order="F")] = disp_x.ravel(order="F")
     u_bc[2 * nd_all.ravel(order="F") + 1] = disp_y.ravel(order="F")
+    elastic_predictor_direction = solve_el(-KIB_el @ u_bc[dof_B])
 
     # State
     u = np.zeros(mesh.n_dof)
@@ -237,6 +248,11 @@ def run_fem(
     accepted_constitutive_trial: ConstitutiveTrial | None = None
     chi_committed = np.zeros((nx, ny), dtype=np.float64)
     chi_trial_guess = chi_committed.copy()
+    nonlocal_workspace = (
+        NonlocalFixedPointWorkspace.create((nx, ny), N_GP)
+        if nonlocal_plasticity_enabled
+        else None
+    )
     accepted_nonlocal_evaluation: NonlocalCouplingEvaluation | None = None
 
     # Incremental loading with automatic cutback (Abaqus-style):
@@ -262,6 +278,8 @@ def run_fem(
     nonlocal_maximum_helmholtz_residual_observed = 0.0
     nonlocal_maximum_absolute_mean_drift = 0.0
     nonlocal_mfront_seconds = 0.0
+    nonlocal_mfront_without_tangent_seconds = 0.0
+    nonlocal_mfront_with_tangent_seconds = 0.0
     helmholtz_seconds = 0.0
     snaps = {}
     pending = sorted(snapshot_fractions) if snapshot_fractions else []
@@ -275,7 +293,7 @@ def run_fem(
 
         u[dof_B] += du_B
         # Elastic predictor (reused factorization)
-        u[dof_I] += solve_el(-KIB_el @ du_B)
+        u[dof_I] += elastic_predictor_direction * dt
 
         KII = KII_el  # start with elastic tangent, replaced after 1st iter
 
@@ -283,7 +301,7 @@ def run_fem(
         sf_acc = sig.copy()
         eps_p_acc = eps_p.copy()
         ep_new = ep_bar.copy()
-        constitutive_trial_acc: ConstitutiveTrial | None = None
+        constitutive_trial_acc: InPlaneConstitutiveTrial | None = None
         nonlocal_evaluation_acc: NonlocalCouplingEvaluation | None = None
         increment_nonlocal_iterations = 0
         converged = False
@@ -316,9 +334,10 @@ def run_fem(
                         relative_tolerance=nonlocal_relative_tolerance,
                         maximum_iterations=nonlocal_maximum_iterations,
                         maximum_helmholtz_residual=nonlocal_maximum_helmholtz_residual,
+                        workspace=nonlocal_workspace,
                     )
                     trial = nonlocal_evaluation.constitutive_trial
-                    chi_trial_guess = nonlocal_evaluation.nonlocal_peeq.copy()
+                    np.copyto(chi_trial_guess, nonlocal_evaluation.nonlocal_peeq)
                     nonlocal_evaluation_acc = nonlocal_evaluation
                     nonlocal_iterations_per_newton.append(nonlocal_evaluation.iterations)
                     increment_nonlocal_iterations += nonlocal_evaluation.iterations
@@ -337,9 +356,20 @@ def run_fem(
                         abs(nonlocal_evaluation.mean_drift),
                     )
                     nonlocal_mfront_seconds += nonlocal_evaluation.mfront_seconds
+                    nonlocal_mfront_without_tangent_seconds += (
+                        nonlocal_evaluation.mfront_without_tangent_seconds
+                    )
+                    nonlocal_mfront_with_tangent_seconds += (
+                        nonlocal_evaluation.mfront_with_tangent_seconds
+                    )
                     helmholtz_seconds += nonlocal_evaluation.helmholtz_seconds
                 else:
-                    trial = material_batch.evaluate(
+                    evaluate_in_plane = getattr(
+                        material_batch,
+                        "evaluate_in_plane",
+                        material_batch.evaluate,
+                    )
+                    trial = evaluate_in_plane(
                         eps_tot.reshape(-1, 3),
                         time_increment=dt,
                         consistent_tangent=True,
@@ -373,7 +403,9 @@ def run_fem(
             constitutive_trial_acc = trial
 
             # Internal forces and residual
+            internal_force_started_at = time.perf_counter()
             R = internal_force(mesh, sf, Bs, dJs, ld)
+            internal_force_seconds += time.perf_counter() - internal_force_started_at
             R_I = R[dof_I]
             res = float(np.linalg.norm(R_I))
             if not np.isfinite(res):
@@ -406,19 +438,26 @@ def run_fem(
 
             # Build consistent tangent stiffness
             tangent_started_at = time.perf_counter()
-            pl_idx = np.arange(n_e * N_GP)
             plastic_tangents = material_tangents
+            element_matrix_started_at = time.perf_counter()
             Ke_ep = element_tangent_stiffness(
                 Ke,
                 C_ps,
                 plastic_tangents,
-                pl_idx,
+                plastic_point_indices,
                 Bs,
                 dJs,
                 element_count=n_e,
             )
+            element_matrix_seconds += time.perf_counter() - element_matrix_started_at
+            sparse_assembly_started_at = time.perf_counter()
             K_tang = assemble_stiffness(mesh, Ke_ep, ld, _rc)
+            sparse_assembly_seconds += time.perf_counter() - sparse_assembly_started_at
+            extraction_started_at = time.perf_counter()
             KII = K_tang[dof_I][:, dof_I].tocsr()
+            free_system_extraction_seconds += (
+                time.perf_counter() - extraction_started_at
+            )
             tangent_assembly_seconds += time.perf_counter() - tangent_started_at
 
             du = timed_solve(KII, -R_I)
@@ -428,7 +467,7 @@ def run_fem(
 
         if not converged:
             material_batch.revert()
-            chi_trial_guess = chi_committed.copy()
+            np.copyto(chi_trial_guess, chi_committed)
             u = u_save
             dt *= 0.5
             cutbacks += 1
@@ -448,14 +487,25 @@ def run_fem(
 
         if constitutive_trial_acc is None:
             raise RuntimeError("global Newton converged without a constitutive trial")
+        if t + dt >= 1.0 - 1e-12:
+            complete_trial = getattr(material_batch, "complete_trial", None)
+            if complete_trial is None:
+                if not isinstance(constitutive_trial_acc, ConstitutiveTrial):
+                    raise RuntimeError(
+                        "constitutive backend cannot complete the final tensor state"
+                    )
+                accepted_constitutive_trial = constitutive_trial_acc
+            else:
+                accepted_constitutive_trial = complete_trial(
+                    constitutive_trial_acc
+                )
         material_batch.commit()
-        accepted_constitutive_trial = constitutive_trial_acc
         if nonlocal_plasticity_enabled:
             if nonlocal_evaluation_acc is None:
                 raise RuntimeError("coupled Newton converged without a nonlocal evaluation")
             accepted_nonlocal_evaluation = nonlocal_evaluation_acc
-            chi_committed = nonlocal_evaluation_acc.nonlocal_peeq.copy()
-            chi_trial_guess = chi_committed.copy()
+            np.copyto(chi_committed, nonlocal_evaluation_acc.nonlocal_peeq)
+            np.copyto(chi_trial_guess, chi_committed)
             nonlocal_iterations_per_increment.append(increment_nonlocal_iterations)
         eps_p = eps_p_acc
         ep_bar = ep_new
@@ -483,7 +533,9 @@ def run_fem(
 
     # Output
     output_started_at = time.perf_counter()
+    internal_force_started_at = time.perf_counter()
     F_all = internal_force(mesh, sig, Bs, dJs, ld)
+    internal_force_seconds += time.perf_counter() - internal_force_started_at
     bc_m = np.zeros(mesh.n_dof, dtype=bool)
     bc_m[dof_B] = True
 
@@ -512,6 +564,28 @@ def run_fem(
     )
     residual_s33 = residual_vector[..., 0]
     local_statistics = material_batch.statistics
+    material_timing = getattr(material_batch, "timing_statistics", None)
+    mfront_integration_without_tangent_seconds = float(
+        getattr(material_timing, "integration_without_tangent_seconds", 0.0)
+    )
+    mfront_integration_with_tangent_seconds = float(
+        getattr(material_timing, "integration_with_tangent_seconds", 0.0)
+    )
+    kelvin_conversion_seconds = float(
+        getattr(material_timing, "kelvin_conversion_seconds", 0.0)
+    )
+    tensor_reconstruction_seconds = float(
+        getattr(material_timing, "tensor_reconstruction_seconds", 0.0)
+    )
+    mfront_integration_without_tangent_calls = int(
+        getattr(material_timing, "integration_without_tangent_calls", 0)
+    )
+    mfront_integration_with_tangent_calls = int(
+        getattr(material_timing, "integration_with_tangent_calls", 0)
+    )
+    tensor_reconstruction_calls = int(
+        getattr(material_timing, "tensor_reconstruction_calls", 0)
+    )
     nonlocal_fields = {}
     if nonlocal_plasticity_enabled:
         if accepted_nonlocal_evaluation is None:
@@ -614,6 +688,32 @@ def run_fem(
             helmholtz_seconds=helmholtz_seconds,
             nonlocal_mfront_seconds=nonlocal_mfront_seconds,
             nonlocal_coupling_failures=nonlocal_coupling_failures,
+            mfront_integration_without_tangent_seconds=(
+                mfront_integration_without_tangent_seconds
+            ),
+            mfront_integration_with_tangent_seconds=(
+                mfront_integration_with_tangent_seconds
+            ),
+            kelvin_conversion_seconds=kelvin_conversion_seconds,
+            tensor_reconstruction_seconds=tensor_reconstruction_seconds,
+            internal_force_seconds=internal_force_seconds,
+            element_matrix_seconds=element_matrix_seconds,
+            sparse_assembly_seconds=sparse_assembly_seconds,
+            free_system_extraction_seconds=free_system_extraction_seconds,
+            pardiso_seconds=linear_solve_seconds,
+            nonlocal_mfront_without_tangent_seconds=(
+                nonlocal_mfront_without_tangent_seconds
+            ),
+            nonlocal_mfront_with_tangent_seconds=(
+                nonlocal_mfront_with_tangent_seconds
+            ),
+            mfront_integration_without_tangent_calls=(
+                mfront_integration_without_tangent_calls
+            ),
+            mfront_integration_with_tangent_calls=(
+                mfront_integration_with_tangent_calls
+            ),
+            tensor_reconstruction_calls=tensor_reconstruction_calls,
         ),
     )
 

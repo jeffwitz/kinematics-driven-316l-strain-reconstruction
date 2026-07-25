@@ -220,6 +220,9 @@ def test_zero_micromorphic_coupling_reproduces_local_newton_solution() -> None:
     assert coupled.diagnostics is not None
     assert coupled.diagnostics.nonlocal_plasticity_enabled
     assert coupled.diagnostics.nonlocal_coupling_failures == 0
+    assert coupled.diagnostics.mfront_integration_without_tangent_calls > 0
+    assert coupled.diagnostics.mfront_integration_with_tangent_calls > 0
+    assert coupled.diagnostics.tensor_reconstruction_calls == 1
 
 
 @pytest.mark.mfront

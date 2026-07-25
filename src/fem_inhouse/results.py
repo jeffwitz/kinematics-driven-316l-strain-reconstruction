@@ -68,6 +68,20 @@ class SolverDiagnostics:
     helmholtz_seconds: float = 0.0
     nonlocal_mfront_seconds: float = 0.0
     nonlocal_coupling_failures: int = 0
+    mfront_integration_without_tangent_seconds: float = 0.0
+    mfront_integration_with_tangent_seconds: float = 0.0
+    kelvin_conversion_seconds: float = 0.0
+    tensor_reconstruction_seconds: float = 0.0
+    internal_force_seconds: float = 0.0
+    element_matrix_seconds: float = 0.0
+    sparse_assembly_seconds: float = 0.0
+    free_system_extraction_seconds: float = 0.0
+    pardiso_seconds: float = 0.0
+    nonlocal_mfront_without_tangent_seconds: float = 0.0
+    nonlocal_mfront_with_tangent_seconds: float = 0.0
+    mfront_integration_without_tangent_calls: int = 0
+    mfront_integration_with_tangent_calls: int = 0
+    tensor_reconstruction_calls: int = 0
 
 
 @dataclass(frozen=True, slots=True)

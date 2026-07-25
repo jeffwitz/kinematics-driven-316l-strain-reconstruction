@@ -53,6 +53,31 @@ class _FakeNonlocalBatch:
             },
         )
 
+    def evaluate_equivalent_plastic_strain(
+        self,
+        in_plane_strain,
+        *,
+        time_increment: float,
+    ):
+        return self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        ).observables["equivalent_plastic_strain"]
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ):
+        return self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
     def commit(self) -> None:
         raise AssertionError("the fixed-point solver must never commit material state")
 

@@ -21,8 +21,10 @@ from fem_inhouse.core.plane_stress_material import LocalPlaneStressConvergenceEr
 
 def test_kelvin_strain_round_trip_preserves_engineering_shear() -> None:
     engineering = np.array([[1e-3, -2e-3, 4e-3], [0.0, 3e-4, -8e-4]])
-    kelvin = engineering_strain_to_kelvin(engineering)
+    buffer = np.empty((2, 4))
+    kelvin = engineering_strain_to_kelvin(engineering, out=buffer)
 
+    assert kelvin is buffer
     assert kelvin.shape == (2, 4)
     np.testing.assert_allclose(kelvin_strain_to_engineering(kelvin), engineering)
 
@@ -203,6 +205,45 @@ def test_mfront_native_plastic_state_is_additive_isochoric_and_plane_stress() ->
     batch.commit()
     with pytest.raises(RuntimeError, match="no successful MFront trial"):
         batch.current_full_tensor_state()
+
+
+@pytest.mark.mfront
+def test_native_light_paths_defer_tangent_and_tensor_reconstruction() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFrontNativePlaneStressBatch(
+        library,
+        [250.0, 270.0],
+        [380.0, 420.0],
+        [0.245, 0.245],
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa=4_000.0,
+    )
+    batch.set_nonlocal_equivalent_plastic_strain([0.001, 0.002])
+    strain = np.tile([0.008, -0.0008, 0.0015], (2, 1))
+
+    peeq = batch.evaluate_equivalent_plastic_strain(strain, time_increment=0.1)
+    first_timing = batch.timing_statistics
+    assert np.all(peeq > 0)
+    assert first_timing.integration_without_tangent_seconds > 0
+    assert first_timing.integration_without_tangent_calls == 1
+    assert first_timing.integration_with_tangent_seconds == 0
+    assert first_timing.integration_with_tangent_calls == 0
+    assert first_timing.tensor_reconstruction_seconds == 0
+    assert first_timing.tensor_reconstruction_calls == 0
+
+    in_plane = batch.evaluate_in_plane(strain, time_increment=0.1)
+    second_timing = batch.timing_statistics
+    assert in_plane.tangent_in_plane_mpa is not None
+    assert second_timing.integration_with_tangent_seconds > 0
+    assert second_timing.integration_with_tangent_calls == 1
+    assert second_timing.tensor_reconstruction_seconds == 0
+
+    full = batch.complete_trial(in_plane)
+    assert full.full_stress_tensor_mpa.shape == (2, 3, 3)
+    assert batch.timing_statistics.tensor_reconstruction_seconds > 0
+    assert batch.timing_statistics.tensor_reconstruction_calls == 1
 
 
 @pytest.mark.mfront
