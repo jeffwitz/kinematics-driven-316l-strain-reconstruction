@@ -24,9 +24,32 @@
     "results/constitutive-nonlocal-p0154-pad128-a200"
   ],
   "color_limits": {
+    "NONLOCAL_HARDENING_MPA": {
+      "percentile": null,
+      "real_max": 66.25959774130818,
+      "real_min": -37.104791746489276,
+      "vmax": 66.25959774130818,
+      "vmin": -66.25959774130818
+    },
+    "PEEQ_MISMATCH": {
+      "percentile": null,
+      "real_max": 0.010803011481747466,
+      "real_min": -0.003184776321269307,
+      "vmax": 0.010803011481747466,
+      "vmin": -0.010803011481747466
+    },
+    "PEEQ_NONLOCAL": {
+      "percentile": null,
+      "real_max": 0.02429574464981352,
+      "real_min": 0.0,
+      "vmax": 0.02429574464981352,
+      "vmin": 0.0
+    },
     "difference": {
       "percentile": null,
       "real_absolute_max": 0.01634134430473936,
+      "real_max": 0.01634134430473936,
+      "real_min": -0.005624644285442179,
       "vmax": 0.01634134430473936,
       "vmin": -0.01634134430473936
     },
@@ -105,8 +128,8 @@
       "validation/figures/p154-alpha-comparison/p154_total_evm_difference.svg"
     ]
   },
-  "generated_at_utc": "2026-07-25T13:51:06.622683+00:00",
-  "git_commit": "cb77b3ae61648fdf87fd70863be3bdde9f02e713",
+  "generated_at_utc": "2026-07-25T13:59:18.020455+00:00",
+  "git_commit": "a46152345175a92fde23f239d35149a32452aaf9",
   "h_ref_mpa": 6547.530616602937,
   "hchi_by_alpha_mpa": [
     0.0,
@@ -186,6 +209,16 @@
       "standard_deviation": 0.0017746437785387714
     }
   ],
+  "plot_options": {
+    "dpi": 180,
+    "formats": [
+      "png",
+      "pdf",
+      "svg"
+    ],
+    "helmholtz_filter_applied_to_evm": false,
+    "include_optional_fields": true
+  },
   "solve_shape": [
     436,
     411
