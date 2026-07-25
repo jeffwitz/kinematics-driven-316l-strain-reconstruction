@@ -5,6 +5,7 @@ import pytest
 
 from fem_inhouse.config import CaseStudyConfig, SolverConfig
 from fem_inhouse.core import nonlinear
+from fem_inhouse.core.nonlocal_plasticity import NonlocalCouplingConvergenceError
 from fem_inhouse.core.plane_stress_material import (
     LocalPlaneStressConvergenceError,
     PlaneStressBatchStatistics,
@@ -154,4 +155,77 @@ def test_local_constitutive_failure_triggers_clean_global_cutback(monkeypatch) -
     assert result.diagnostics.cutbacks == 1
     assert result.diagnostics.local_plane_stress_failures == 1
     assert wrapper.reverts >= 1
+    assert all(np.isfinite(field).all() for field in result.arrays())
+
+
+def test_nonlocal_failure_restarts_from_committed_chi_after_cutback(monkeypatch) -> None:
+    case = reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
+    config = replace(
+        case.config,
+        solver=replace(
+            case.config.solver,
+            constitutive_backend="mfront-native-plane-stress",
+        ),
+        nonlocal_plasticity=replace(
+            case.config.nonlocal_plasticity,
+            enabled=True,
+            coupling_modulus_mpa=0.0,
+        ),
+    )
+    original_factory = nonlinear.create_plane_stress_material_batch
+    original_fixed_point = nonlinear.evaluate_nonlocal_fixed_point
+    wrapper_holder = {}
+    initial_fields = []
+
+    class NonlocalPythonWrapper:
+        def __init__(self, delegate):
+            self.delegate = delegate
+            self.reverts = 0
+            self.external_chi = np.zeros(delegate.point_count)
+            self.committed_chi = self.external_chi.copy()
+
+        def __getattr__(self, name):
+            return getattr(self.delegate, name)
+
+        def set_nonlocal_equivalent_plastic_strain(self, values):
+            self.external_chi = np.asarray(values, dtype=float).copy()
+
+        def commit(self):
+            self.delegate.commit()
+            self.committed_chi = self.external_chi.copy()
+
+        def revert(self):
+            self.reverts += 1
+            self.delegate.revert()
+            self.external_chi = self.committed_chi.copy()
+
+    def factory(*args, **kwargs):
+        delegate = original_factory("python", *args[1:], **kwargs)
+        wrapper = NonlocalPythonWrapper(delegate)
+        wrapper_holder["batch"] = wrapper
+        return wrapper
+
+    def fail_first_fixed_point(*args, **kwargs):
+        initial_fields.append(np.asarray(kwargs["initial_nonlocal_peeq"]).copy())
+        if len(initial_fields) == 1:
+            raise NonlocalCouplingConvergenceError("injected coupling failure")
+        return original_fixed_point(*args, **kwargs)
+
+    monkeypatch.setattr(nonlinear, "create_plane_stress_material_batch", factory)
+    monkeypatch.setattr(
+        nonlinear,
+        "evaluate_nonlocal_fixed_point",
+        fail_first_fixed_point,
+    )
+
+    result = _solve_case(case, config=config)
+
+    wrapper = wrapper_holder["batch"]
+    assert result.diagnostics is not None
+    assert result.diagnostics.cutbacks == 1
+    assert result.diagnostics.nonlocal_coupling_failures == 1
+    assert wrapper.reverts >= 1
+    np.testing.assert_array_equal(initial_fields[0], 0.0)
+    np.testing.assert_array_equal(initial_fields[1], 0.0)
+    assert result.nonlocal_equivalent_plastic_strain is not None
     assert all(np.isfinite(field).all() for field in result.arrays())
