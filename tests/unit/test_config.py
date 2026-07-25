@@ -1,6 +1,12 @@
 import pytest
 
-from fem_inhouse.config import CaseStudyConfig, MaterialConfig, MeshConfig, SolverConfig
+from fem_inhouse.config import (
+    CaseStudyConfig,
+    MaterialConfig,
+    MeshConfig,
+    NonlocalPlasticityConfig,
+    SolverConfig,
+)
 
 
 def test_article_case_defaults_are_explicit() -> None:
@@ -50,6 +56,20 @@ def test_mesh_uses_article_pixel_scale() -> None:
         ),
         (lambda: SolverConfig(mfront_library=""), "mfront_library"),
         (lambda: SolverConfig(mfront_threads=0), "mfront_threads"),
+        (lambda: NonlocalPlasticityConfig(length_scale_mm=0), "length_scale_mm"),
+        (
+            lambda: NonlocalPlasticityConfig(coupling_modulus_mpa=-1),
+            "coupling_modulus_mpa",
+        ),
+        (lambda: NonlocalPlasticityConfig(relaxation=0), "relaxation"),
+        (
+            lambda: NonlocalPlasticityConfig(relative_tolerance=1),
+            "relative_tolerance",
+        ),
+        (
+            lambda: NonlocalPlasticityConfig(maximum_iterations=0),
+            "maximum_iterations",
+        ),
     ],
 )
 def test_invalid_configuration_is_rejected(factory, message: str) -> None:
@@ -62,3 +82,5 @@ def test_complete_case_configuration_composes_validated_parts() -> None:
     assert config.mesh.physical_size_mm == pytest.approx((0.0184, 0.02208))
     assert config.material.plastic_table_points == 1_000
     assert config.solver.require_pypardiso is True
+    assert config.nonlocal_plasticity.enabled is False
+    assert config.nonlocal_plasticity.length_scale_mm == pytest.approx(0.05888)

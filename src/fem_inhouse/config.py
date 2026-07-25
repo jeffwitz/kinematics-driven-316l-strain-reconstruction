@@ -123,9 +123,43 @@ class SolverConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class NonlocalPlasticityConfig:
+    """Micromorphic J2 coupling controls.
+
+    The length is expressed in millimetres, the coupling modulus in MPa, and
+    ``relative_tolerance`` controls the staggered ``p``--``chi`` fixed point.
+    """
+
+    enabled: bool = False
+    length_scale_mm: float = 0.05888
+    coupling_modulus_mpa: float = 0.0
+    relaxation: float = 0.5
+    relative_tolerance: float = 1e-6
+    maximum_iterations: int = 15
+    maximum_helmholtz_residual: float = 1e-10
+
+    def __post_init__(self) -> None:
+        if self.length_scale_mm <= 0:
+            raise ValueError("length_scale_mm must be positive")
+        if self.coupling_modulus_mpa < 0:
+            raise ValueError("coupling_modulus_mpa must be nonnegative")
+        if not 0 < self.relaxation <= 1:
+            raise ValueError("relaxation must lie in (0, 1]")
+        if not 0 < self.relative_tolerance < 1:
+            raise ValueError("relative_tolerance must lie in (0, 1)")
+        if self.maximum_iterations < 1:
+            raise ValueError("maximum_iterations must be positive")
+        if self.maximum_helmholtz_residual <= 0:
+            raise ValueError("maximum_helmholtz_residual must be positive")
+
+
+@dataclass(frozen=True, slots=True)
 class CaseStudyConfig:
     """Complete configuration for one structured case-study solve."""
 
     mesh: MeshConfig
     material: MaterialConfig = field(default_factory=MaterialConfig)
     solver: SolverConfig = field(default_factory=SolverConfig)
+    nonlocal_plasticity: NonlocalPlasticityConfig = field(
+        default_factory=NonlocalPlasticityConfig
+    )

@@ -16,6 +16,7 @@ from fem_inhouse.config import (
     CaseStudyConfig,
     MaterialConfig,
     MeshConfig,
+    NonlocalPlasticityConfig,
     SolverConfig,
 )
 from fem_inhouse.data_preparation import PreparationConfig, prepare_case_study
@@ -49,6 +50,11 @@ PARTITION_FIELDS = (
     "PEEQ",
     "S33_RESIDUAL_MPA",
     "PLANE_STRESS_RESIDUAL_MPA",
+    "PEEQ_NONLOCAL",
+    "PEEQ_MISMATCH",
+    "NONLOCAL_HARDENING_MPA",
+    "YIELD_SURFACE_RADIUS_MPA",
+    "NONLOCAL_RESIDUAL",
     "RF",
 )
 
@@ -125,7 +131,9 @@ def _parser() -> argparse.ArgumentParser:
     )
 
     layout = commands.add_parser("layout", help="write an article partition manifest")
-    layout.add_argument("--count", type=int, choices=(25, 100), required=True)
+    layout.add_argument("--count", type=int, choices=(25, 100))
+    layout.add_argument("--parts-x", type=int)
+    layout.add_argument("--parts-y", type=int)
     layout.add_argument("--padding", type=int, default=150)
     layout.add_argument("--output", type=Path, required=True)
 
@@ -135,7 +143,9 @@ def _parser() -> argparse.ArgumentParser:
     )
     partition.add_argument("--input", type=Path, required=True)
     partition.add_argument("--output", type=Path, required=True)
-    partition.add_argument("--count", type=int, choices=(25, 100), required=True)
+    partition.add_argument("--count", type=int, choices=(25, 100))
+    partition.add_argument("--parts-x", type=int)
+    partition.add_argument("--parts-y", type=int)
     partition.add_argument("--padding", type=int, default=150)
     partition.add_argument("--base-pixel-mm", type=float, default=0.001)
     partition.add_argument("--scale-factor", type=float, default=1.84)
@@ -160,6 +170,12 @@ def _parser() -> argparse.ArgumentParser:
         default="build/mfront/src/libBehaviour.so",
     )
     partition.add_argument("--mfront-threads", type=int, default=1)
+    partition.add_argument("--nonlocal-plasticity", action="store_true")
+    partition.add_argument("--nonlocal-length-um", type=float, default=58.88)
+    partition.add_argument("--nonlocal-coupling-modulus-mpa", type=float, default=0.0)
+    partition.add_argument("--nonlocal-relaxation", type=float, default=0.5)
+    partition.add_argument("--nonlocal-tolerance", type=float, default=1e-6)
+    partition.add_argument("--nonlocal-max-iterations", type=int, default=15)
     action = partition.add_mutually_exclusive_group(required=True)
     action.add_argument("--list-pending", action="store_true")
     action.add_argument("--partition-id", type=int)
@@ -241,6 +257,21 @@ def _load_partition_field(directory: Path, name: str) -> np.ndarray:
     return values
 
 
+def _partition_shape(args: argparse.Namespace) -> tuple[int, int]:
+    """Resolve legacy square counts or an explicit rectangular layout."""
+
+    if args.count is not None:
+        if args.parts_x is not None or args.parts_y is not None:
+            raise ValueError("--count cannot be combined with --parts-x/--parts-y")
+        side = 5 if args.count == 25 else 10
+        return side, side
+    if args.parts_x is None or args.parts_y is None:
+        raise ValueError("provide either --count or both --parts-x and --parts-y")
+    if args.parts_x < 1 or args.parts_y < 1:
+        raise ValueError("--parts-x and --parts-y must be positive")
+    return args.parts_x, args.parts_y
+
+
 def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
     displacement_x = _load_partition_field(args.input, "displacement_x_mm")
     displacement_y = _load_partition_field(args.input, "displacement_y_mm")
@@ -249,7 +280,7 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
     if yield_stress.shape != hardening.shape:
         raise ValueError("material maps must have the same shape")
     nx, ny = yield_stress.shape
-    side = 5 if args.count == 25 else 10
+    partition_shape = _partition_shape(args)
     config = CaseStudyConfig(
         mesh=MeshConfig(
             nx=nx,
@@ -270,10 +301,18 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             mfront_library=args.mfront_library,
             mfront_threads=args.mfront_threads,
         ),
+        nonlocal_plasticity=NonlocalPlasticityConfig(
+            enabled=args.nonlocal_plasticity,
+            length_scale_mm=args.nonlocal_length_um / 1_000.0,
+            coupling_modulus_mpa=args.nonlocal_coupling_modulus_mpa,
+            relaxation=args.nonlocal_relaxation,
+            relative_tolerance=args.nonlocal_tolerance,
+            maximum_iterations=args.nonlocal_max_iterations,
+        ),
     )
     return PartitionWorkflow(
         config=config,
-        layout=PartitionLayout((nx, ny), (side, side), padding=args.padding),
+        layout=PartitionLayout((nx, ny), partition_shape, padding=args.padding),
         displacement_x_mm=displacement_x,
         displacement_y_mm=displacement_y,
         yield_stress_mpa=yield_stress,
@@ -295,8 +334,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(linear_solver_backend())
         return 0
     if args.command == "layout":
-        side = 5 if args.count == 25 else 10
-        layout = PartitionLayout((3_600, 3_100), (side, side), padding=args.padding)
+        layout = PartitionLayout(
+            (3_600, 3_100),
+            _partition_shape(args),
+            padding=args.padding,
+        )
         layout.write_manifest(args.output)
         print(args.output)
         return 0

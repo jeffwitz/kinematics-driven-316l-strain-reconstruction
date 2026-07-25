@@ -104,6 +104,31 @@ def test_backend_validate_and_layout_commands(tmp_path, capsys) -> None:
     assert manifest["partition_shape"] == [5, 5]
     assert len(manifest["partitions"]) == 25
 
+    rectangular_path = tmp_path / "layout-20x20.json"
+    assert (
+        main(
+            [
+                "layout",
+                "--parts-x",
+                "20",
+                "--parts-y",
+                "20",
+                "--padding",
+                "128",
+                "--output",
+                str(rectangular_path),
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+    rectangular = json.loads(rectangular_path.read_text(encoding="utf-8"))
+    assert rectangular["partition_shape"] == [20, 20]
+    p154 = rectangular["partitions"][154]
+    assert p154["index"] == [7, 14]
+    assert p154["core_bounds"] == [1260, 1440, 2170, 2325]
+    assert p154["solve_bounds"] == [1132, 1568, 2042, 2453]
+
 
 def test_save_example_function_returns_report(tmp_path) -> None:
     destination = tmp_path / "direct"
