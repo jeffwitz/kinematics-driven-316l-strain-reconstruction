@@ -18,6 +18,7 @@ def _write_campaign(
     layout: PartitionLayout,
     displacement: np.ndarray,
     enabled: bool,
+    coupling_modulus_mpa: float | None = None,
 ) -> None:
     partition_directory = directory / "partitions" / "0000"
     partition_directory.mkdir(parents=True)
@@ -61,7 +62,11 @@ def _write_campaign(
             "nonlocal_plasticity": {
                 "enabled": enabled,
                 "length_scale_mm": 0.05,
-                "coupling_modulus_mpa": 3000.0 if enabled else 0.0,
+                "coupling_modulus_mpa": (
+                    3000.0 if enabled else 0.0
+                )
+                if coupling_modulus_mpa is None
+                else coupling_modulus_mpa,
             },
         },
     }
@@ -146,3 +151,41 @@ def test_raw_coupled_validation_rejects_mismatched_layouts(tmp_path) -> None:
             partition_id=0,
             output_path=tmp_path / "report.json",
         )
+
+
+def test_hchi_zero_campaign_is_accepted_as_mechanically_local_reference(
+    tmp_path,
+) -> None:
+    inputs = tmp_path / "inputs"
+    inputs.mkdir()
+    coordinates = np.arange(5, dtype=float)
+    x, y = np.meshgrid(coordinates, coordinates, indexing="ij")
+    displacement = np.stack((0.01 * x**2, 0.01 * y**2), axis=-1)
+    np.save(inputs / "displacement_x_mm.npy", displacement[..., 0])
+    np.save(inputs / "displacement_y_mm.npy", displacement[..., 1])
+    layout = PartitionLayout((4, 4), (1, 1), padding=0)
+    local = tmp_path / "hchi-zero"
+    coupled = tmp_path / "coupled"
+    _write_campaign(
+        local,
+        layout=layout,
+        displacement=0.8 * displacement,
+        enabled=True,
+        coupling_modulus_mpa=0.0,
+    )
+    _write_campaign(
+        coupled,
+        layout=layout,
+        displacement=0.9 * displacement,
+        enabled=True,
+    )
+
+    report = validate_coupled_nonlocal_campaign(
+        input_directory=inputs,
+        local_campaign_directory=local,
+        coupled_campaign_directory=coupled,
+        partition_id=0,
+        output_path=tmp_path / "report.json",
+    )
+
+    assert report["status"] == "completed"

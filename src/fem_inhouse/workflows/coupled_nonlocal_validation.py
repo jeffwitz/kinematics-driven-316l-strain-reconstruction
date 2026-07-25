@@ -146,8 +146,11 @@ def _validate_campaign_pair(
     coupled_solver.pop("mfront_threads", None)
     if local_solver != coupled_solver:
         raise ValueError("local and coupled campaigns differ in mechanical solver configuration")
-    if bool(local_config.get("nonlocal_plasticity", {}).get("enabled", False)):
-        raise ValueError("the reference campaign must use the local constitutive model")
+    local_nonlocal = local_config.get("nonlocal_plasticity", {})
+    if bool(local_nonlocal.get("enabled", False)) and float(
+        local_nonlocal.get("coupling_modulus_mpa", 0.0)
+    ) != 0.0:
+        raise ValueError("the reference campaign must be local or use H_chi=0")
     if not bool(coupled_config.get("nonlocal_plasticity", {}).get("enabled", False)):
         raise ValueError("the candidate campaign must enable nonlocal plasticity")
 
