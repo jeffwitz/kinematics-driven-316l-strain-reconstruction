@@ -1,0 +1,6 @@
+decision_thresholds:
+  minimum_correlation_gain: 0.05
+  minimum_relative_l2_reduction: 0.05
+  minimum_iou_gain: 0.02
+  maximum_relative_mean_drift: 1.0e-10
+

@@ -410,6 +410,14 @@ active q90 reste `14,09 %` contre `10 %` DIC, sans collapsus. Le candidat étant
 à la borne supérieure, l'optimum n'est pas encadré. Il est figé pour une
 application sans ajustement aux partitions de confirmation.
 
+**Confirmation tenue à l'écart :** P42, proposée avant l'exécution P48, est
+pré-enregistrée comme premier cas de transfert. Seules les longueurs `0` et
+`58,88 µm` seront comparées. Les seuils automatiques sont fixés avant calcul :
+gain de corrélation `>=0,05`, réduction L2 relative `>=5 %`, gain d'IoU top-10
+`>=0,02`, dérive moyenne relative `<=1e-10`. Au seuil absolu DIC 90 %, le gain
+d'IoU doit être `>=0,02` et l'aire active filtrée rester entre 5 % et 20 %.
+Voir `validation/nonlocality_p42_confirmation_preregistration.md`.
+
 **Critère de sortie :** un résultat FEM sauvegardé peut faire l'objet d'une
 campagne de largeur spatiale traçable sans modifier le calcul mécanique, et le
 rapport sépare faits numériques, sélection diagnostique et interprétation
