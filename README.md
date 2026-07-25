@@ -79,6 +79,21 @@ path is the validated extension point for a future three-dimensional law.
 Every raw run and full result field is preserved under
 [`validation/reference_data/plane_stress_backend_performance_100x100_v1`](validation/reference_data/plane_stress_backend_performance_100x100_v1).
 
+An output-only Helmholtz diagnostic has also been run on the saved
+article-sized partition. It filters the complete padded `510×460` element
+field and evaluates metrics only on the `360×310` retained core. Across
+`0–58.88 µm`, the largest tested length reduces both RMSE and relative L2 error
+by 49.45%, raises top-10% IoU from `0.0503` to `0.1312`, but leaves a weak
+Pearson correlation of `0.0926` and strongly attenuates peaks. The correct
+exploratory conclusion is therefore **spatial-width hypothesis partially
+supported**, not identification of a material internal length. All inputs,
+filtered fields, metrics, figures and hashes are preserved under
+[`validation/reference_data/nonlocality_helmholtz_article_p0000_v1`](validation/reference_data/nonlocality_helmholtz_article_p0000_v1);
+the method and command are documented in
+[`docs/explanation/nonlocality_diagnostic.md`](docs/explanation/nonlocality_diagnostic.md)
+and
+[`docs/how-to/diagnose_nonlocality.md`](docs/how-to/diagnose_nonlocality.md).
+
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and
@@ -214,6 +229,7 @@ fem-inhouse example --nx 10 --ny 10 --output results/reduced
 fem-inhouse prepare-case --help
 fem-inhouse partition --help
 fem-inhouse compare-fields --help
+fem-inhouse diagnose-nonlocality --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation

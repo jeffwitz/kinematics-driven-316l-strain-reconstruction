@@ -34,3 +34,9 @@ start with :doc:`../tutorials/first_reconstruction`.
       Check statuses, fingerprints, residuals, DIC boundary conditions, and
       saved maps.
 
+   .. grid-item-card:: Diagnose spatial width
+      :link: diagnose_nonlocality
+      :link-type: doc
+
+      Filter an existing padded partition, sweep Helmholtz lengths, and
+      compare the retained core with DIC.

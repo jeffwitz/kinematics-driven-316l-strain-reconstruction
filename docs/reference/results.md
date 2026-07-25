@@ -3,6 +3,52 @@
 This page reports preserved evidence. It is not a promise of performance on
 another machine.
 
+## Helmholtz spatial-width diagnostic
+
+Campaign:
+`validation/reference_data/nonlocality_helmholtz_article_p0000_v1`
+
+The saved article partition-0 solution is filtered on its complete
+`510×460`-element solved region, including 150 pixels of padding. All
+comparison metrics are evaluated only on the `360×310` retained core. The
+sweep uses 0, 1, 2, 4, 8, 16, and 32 physical pixels
+(`0–58.88 µm`). Every positive length satisfies the declared
+`padding / length >= 4` criterion.
+
+Both DIC and FEM `EVM_HISTORICAL` are reconstructed from nodal displacement
+with the same strain, plane-stress invariant, and cell-average operators.
+Only FEM is filtered. PEEQ is reported separately as an internal localization
+indicator; no amplitude error against DIC EVM is computed.
+
+| Metric | Raw FEM | FEM at `58.88 µm` | Change |
+|---|---:|---:|---:|
+| RMSE | `2.6859e-3` | `1.3577e-3` | `-49.45%` |
+| relative L2 | `0.81743` | `0.41319` | `-49.45%` |
+| Pearson correlation | `-0.02920` | `0.09257` | `+0.12177` |
+| top-10% IoU | `0.05030` | `0.13116` | `+0.08085` |
+| standard-deviation ratio | `1.000` | `0.2316` | — |
+| peak ratio | `1.000` | `0.1225` | — |
+
+All three exploratory rankings select `58.88 µm`, the upper sweep boundary;
+the optimum is therefore not bracketed. At the absolute DIC 90th-percentile
+threshold, `14.72 µm` gives the best IoU (`0.07740`) and predicts an active
+fraction of `9.98%` against the DIC reference `10%`. At `58.88 µm`, no FEM
+cell remains above that threshold.
+
+The full-domain mean drift is at most `8.674e-19`, the maximum relative
+discrete residual is `5.575e-13`, and the smallest padding-to-length ratio is
+`4.6875`.
+
+The recorded interpretation is **spatial-width hypothesis partially
+supported on this exploratory partition**. Smoothing reduces excessive
+concentration and improves the main errors and quantile overlap, but the
+remaining correlation is weak and the strongest candidate over-attenuates
+peaks. No material internal length is identified. A confirmatory decision
+requires an unchanged length on held-out partitions.
+
+See {doc}`../explanation/nonlocality_diagnostic` for the rationale and
+{doc}`../how-to/diagnose_nonlocality` for the command.
+
 ## Three-backend FEM benchmark
 
 Campaign:

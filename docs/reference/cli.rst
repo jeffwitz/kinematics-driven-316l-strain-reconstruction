@@ -26,6 +26,8 @@ Top-level commands
      - Prepare, inspect, solve, resume, or stitch a partition campaign.
    * - ``compare-fields``
      - Compare co-registered fields against pre-declared thresholds.
+   * - ``diagnose-nonlocality``
+     - Sweep element-centred Helmholtz filters over a saved padded partition.
 
 Run ``fem-inhouse COMMAND --help`` for the authoritative options installed with
 the current source revision.
@@ -87,6 +89,36 @@ Solver options include ``--increments``, ``--max-newton-iterations``,
 ``--residual-tolerance``,
 ``--constitutive-backend {python,mfront,mfront-native-plane-stress,mfront-3d-condensed-plane-stress}``,
 ``--mfront-library``, and ``--mfront-threads``.
+
+``diagnose-nonlocality`` contract
+---------------------------------
+
+Required paths and identifiers are:
+
+.. code-block:: text
+
+   --input PREPARED_CASE
+   --campaign SAVED_PARTITION_CAMPAIGN
+   --partition-id N
+   --output DIRECTORY
+
+Exactly one length unit is required:
+
+.. code-block:: text
+
+   --lengths-mm VALUES...
+   --lengths-um VALUES...
+   --lengths-pixels VALUES...
+
+The command adds zero, sorts and deduplicates valid lengths. Optional controls
+are ``--include-peeq``, ``--mode {exploratory,confirmatory}``,
+``--decision-thresholds FILE``, ``--top-fractions``, ``--dic-quantiles``,
+``--minimum-padding-length-ratio``, ``--save-fields {all,best,none}``, and
+``--overwrite``. Confirmatory mode requires a YAML or JSON thresholds file.
+Existing non-empty output is never replaced unless ``--overwrite`` is present.
+
+Filtered fields are post-processing products and are not valid
+``partition --stitch`` field names.
 
 Exit behaviour
 --------------

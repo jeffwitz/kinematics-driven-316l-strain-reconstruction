@@ -48,6 +48,13 @@ the supplied article.
 
       Why overlap is used, how cores are owned, and how fields are stitched.
 
+   .. grid-item-card:: Spatial-width diagnostic
+      :link: nonlocality_diagnostic
+      :link-type: doc
+
+      Why an element-centred Helmholtz filter can test a localization-width
+      hypothesis without changing the mechanical solution.
+
    .. grid-item-card:: Validation strategy
       :link: validation
       :link-type: doc

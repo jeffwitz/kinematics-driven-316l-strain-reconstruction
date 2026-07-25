@@ -9,7 +9,9 @@ sur les deux backends sans modification des sorties historiques ;
 loi J2 tridimensionnelle condensée localement en contraintes planes et validée
 contre le backend MFront natif, les trois backends mesurés sur un crop DIC
 100×100 avec neuf exécutions intégralement sauvegardées, interface prête à
-recevoir une loi 3D ;
+recevoir une loi 3D ; diagnostic de largeur spatiale par filtre de Helmholtz
+implémenté et exécuté sur la partition article sauvegardée, avec hypothèse
+partiellement soutenue mais aucune longueur matérielle identifiée ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -347,6 +349,54 @@ détails MGIS ; les chemins J2 MFront natif et J2 3D condensé sont équivalents
 aux tolérances numériques sur le cas DIC, et la substitution future d'une loi
 3D petites déformations reste confinée à l'adaptateur constitutif.
 
+### Phase prioritaire A.4 — Diagnostic de non-localité par Helmholtz
+
+- [x] Ajouter un filtre scalaire de Helmholtz aux centres des éléments
+      structurés, avec flux nul et résolution DCT orthonormale
+- [x] Garantir que `ell=0` restitue une copie exacte, sans DCT ni projection
+      élément-nœud-élément
+- [x] Vérifier conservation de la moyenne, principe du maximum, décroissance
+      de variance, anisotropie `hx != hy`, résidu et référence sparse directe
+- [x] Reconstruire séparément EVM DIC et EVM FEM avec la chaîne commune
+      `strain_from_displacement → plane_stress_equivalent_strain →
+      cell_average`
+- [x] Filtrer le domaine résolu complet avec padding et calculer les métriques
+      uniquement sur le cœur issu des métadonnées
+- [x] Signaler les longueurs dont le rapport padding/longueur est inférieur au
+      seuil numérique configurable
+- [x] Ajouter les erreurs de champ, recouvrements par quantile, seuils absolus
+      DIC et métriques de diffusivité
+- [x] Conserver PEEQ comme indicateur interne séparé, sans RMSE ou MAE
+      d'amplitude contre EVM DIC
+- [x] Ajouter les modes exploratoire et confirmatoire, avec seuils
+      confirmatoires fournis en YAML ou JSON avant calcul
+- [x] Ajouter `fem-inhouse diagnose-nonlocality`, les rapports atomiques,
+      manifestes, champs et figures reproductibles
+- [x] Exécuter le balayage `0–58,88 µm` sur la partition article 0 sauvegardée
+      avec padding 150 pixels
+- [x] Documenter la méthode et la campagne selon Diátaxis
+
+**Preuve partition article :**
+`validation/reference_data/nonlocality_helmholtz_article_p0000_v1`.
+Le filtre porte sur les `510×460` éléments résolus et les métriques sur le
+cœur `360×310`. À `58,88 µm`, RMSE et erreur L2 relative diminuent de
+`49,45 %`, la corrélation passe de `-0,0292` à `0,0926` et l'IoU des 10 %
+les plus élevés de `0,0503` à `0,1312`. La moyenne dérive au plus de
+`8,674e-19`, le résidu relatif au plus de `5,575e-13`, et toutes les longueurs
+respectent `padding/ell >= 4`.
+
+**Interprétation :** hypothèse de largeur spatiale **partiellement soutenue**
+sur cette partition exploratoire. Le meilleur point des critères principaux
+est la borne supérieure du balayage et atténue fortement les pics ; la
+corrélation reste faible. Aucune longueur interne matérielle n'est identifiée.
+Une confirmation devra fixer la longueur sur une partition puis l'appliquer
+sans ajustement à des partitions tenues à l'écart.
+
+**Critère de sortie :** un résultat FEM sauvegardé peut faire l'objet d'une
+campagne de largeur spatiale traçable sans modifier le calcul mécanique, et le
+rapport sépare faits numériques, sélection diagnostique et interprétation
+physique.
+
 ### Phase différée B — Validation externe Abaqus
 
 - [ ] Récupérer ou régénérer un petit `.inp` de référence
@@ -632,13 +682,13 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 - [x] Les hypothèses et limites sont visibles
 - [x] Les descripteurs locaux ne sont pas présentés comme propriétés de grains
 
-### Évaluation provisoire au 2026-07-24
+### Évaluation provisoire au 2026-07-25
 
 | Axe | Note | Justification principale |
 |---|---:|---|
 | Noyau numérique | 4,5/5 | Cas fermés, tangente, cutback, réactions et cisaillement testés |
-| Validation scientifique | 3,0/5 | Une partition article réelle a convergé et les métriques DIC/EF sont archivées ; ROI raccordé et conventions exactes à valider |
-| Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 156 tests, revue documentée |
+| Validation scientifique | 3,5/5 | Une partition article et un diagnostic Helmholtz complet sont archivés ; l'accord s'améliore mais la confirmation hors sélection et le ROI raccordé manquent |
+| Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 230 tests, revue documentée |
 | Reproductibilité | 4,5/5 | Données LFS, préparation atomique, manifestes et smoke test DIC réel |
 | Performance | 4,0/5 | 10k–100k mesurés et partition article de 234,6k exécutée ; plus grande partition intérieure non mesurée |
 | Documentation | 4,5/5 | Site Sphinx anglais structuré avec Diátaxis, PDF, contrats, API et figures vectorielles reproductibles ; revue externe encore requise |
@@ -647,8 +697,9 @@ Les notes ne doivent pas être relevées artificiellement par des cas
 synthétiques. Pour atteindre 4/5 partout, les chemins critiques sont désormais :
 
 1. terminer et vérifier le pipeline autonome depuis les données DIC versionnées ;
-2. exécuter un calcul réel partitionné, raccorder les champs et reproduire les
-   métriques expérimentales accessibles ;
+2. sélectionner une longueur diagnostique sur une partition, la tester sans
+   ajustement sur des partitions tenues à l'écart, puis raccorder les champs
+   du calcul réel et reproduire les métriques expérimentales accessibles ;
 3. réserver une fenêtre machine permettant les mesures 350k et le
    dimensionnement d'une partition de production ;
 4. réaliser ensuite la validation externe Abaqus lorsqu'une référence
@@ -775,6 +826,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Suite architecture constitutive commune | Ruff, mypy et MGIS/MFront réel | 206 tests | Réussi |
 | 2026-07-25 | Performance EF des trois backends | Crop DIC 100×100, 20 incréments, 3 répétitions | Python `134,36 s / 248,96 MiB` ; natif `27,03 s / 269,65 MiB` ; condensé `83,43 s / 320,30 MiB` | Réussi |
 | 2026-07-25 | Équivalence des trois backends à échelle 100×100 | Comparaison des champs complets sauvegardés | MFront/MFront `2,307e-07 MPa` ; Python/MFront `6,763e-02 MPa`, tous seuils réussis | Réussi |
+| 2026-07-25 | Filtre Helmholtz élémentaire | DCT, référence sparse et invariants | 12 tests dédiés, résidu `< 1e-11` | Réussi |
+| 2026-07-25 | Workflow de diagnostic non local | Cas synthétique, padding, seuils et non-régression `ell=0` | Sélection cohérente et sorties atomiques | Réussi |
+| 2026-07-25 | Campagne Helmholtz partition article 0 | `0–58,88 µm`, cœur `360×310`, padding 150 | RMSE/L2 `-49,45 %`, hypothèse partiellement soutenue | Réussi |
+| 2026-07-25 | Suite après diagnostic Helmholtz | Ruff, mypy et MGIS/MFront réel | 230 tests | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -1236,3 +1291,25 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   `83,43 s / 320,30 MiB`
 - Confirmation que MFront natif et condensé sont équivalents à la précision
   numérique et que Python respecte les tolérances scientifiques déclarées
+
+### 2026-07-25 — Diagnostic de non-localité par filtre de Helmholtz
+
+- Ajout d'un filtre DCT élémentaire à flux nul, sans matrice globale ni
+  modification du solveur mécanique
+- Ajout des invariants numériques, de la comparaison sparse directe et d'une
+  non-régression exacte pour `ell=0`
+- Ajout d'une campagne CLI atomique retrouvant domaine résolu, cœur et padding
+  depuis les métadonnées
+- Reconstruction commune d'EVM depuis les déplacements DIC et FEM, puis
+  filtrage du seul champ FEM
+- Séparation stricte de PEEQ et d'EVM DIC dans les métriques d'amplitude
+- Ajout des métriques de diffusivité, quantiles égaux, seuils absolus DIC,
+  sélection Pareto et modes exploratoire/confirmatoire
+- Sauvegarde de tous les champs, rapports, tableaux, figures et empreintes de
+  la campagne réelle sur la partition article 0
+- Diminution de `49,45 %` de RMSE et L2 relative à `58,88 µm`, mais
+  corrélation finale `0,0926` et pics trop atténués
+- Conclusion limitée à « hypothèse de largeur spatiale partiellement soutenue
+  sur cette partition exploratoire », sans identification de longueur matériau
+- Validation complète avec MGIS/MFront réel : 230 tests réussis ; Ruff et mypy
+  sans défaut

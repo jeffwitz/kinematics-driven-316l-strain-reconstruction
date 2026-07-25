@@ -72,6 +72,7 @@ What the software guarantees
       * complete 3D stress and strain tensors reconstructed after convergence;
       * DIC-prescribed boundary displacements;
       * resumable, traceable partitioned computation;
+      * output-only Helmholtz spatial-width diagnostics on padded partitions;
       * preserved ``U``, ``S``, ``E``, ``PE``, ``PEEQ``, and ``RF`` fields.
 
    .. grid-item::
@@ -92,7 +93,10 @@ Validated state
    The **510 × 460-element** corner partition has converged with the analytical
    MFront law in **10 min 50.08 s**, over 20 increments without a cutback. All
    six fields, logs, hashes, and control maps are preserved. The complete
-   11.16-million-element ROI has not yet been stitched.
+   11.16-million-element ROI has not yet been stitched. On this saved
+   partition, a Helmholtz width sweep reduces the retained-core equivalent-
+   strain RMSE by **49.45%**, but the weak final spatial correlation and peak
+   attenuation support only a partial, exploratory conclusion.
 
 Start here
 ----------
@@ -103,6 +107,8 @@ Start here
 * :doc:`explanation/plane_stress_tensors` for complete 3D tensor reconstruction;
 * :doc:`explanation/mfront_3d_condensation` for the experimental generic
   condensation of a 3D material law;
+* :doc:`how-to/diagnose_nonlocality` to test a localization-width hypothesis
+  on an existing padded partition;
 * :doc:`how-to/install` to install TFEL/MFront, MGIS, and the Python package;
 * :doc:`reference/input_contract` to check input arrays;
 * :doc:`reference/results` to interpret the validated campaigns.
@@ -122,6 +128,7 @@ Start here
    how-to/prepare_data
    how-to/run_partitioned
    how-to/inspect_results
+   how-to/diagnose_nonlocality
 
 .. toctree::
    :hidden:
@@ -147,4 +154,5 @@ Start here
    explanation/mfront_newton
    explanation/mfront_3d_condensation
    explanation/partitioning
+   explanation/nonlocality_diagnostic
    explanation/validation
