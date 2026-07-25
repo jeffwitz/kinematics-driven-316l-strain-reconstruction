@@ -76,7 +76,10 @@ def _write_campaign(
             {
                 "complete": True,
                 "outputs": hashes,
-                "diagnostics": {"cutbacks": 0},
+                "diagnostics": {
+                    "cutbacks": 0,
+                    "maximum_gauss_point_plane_stress_residual_mpa": 0.0,
+                },
             }
         )
     )

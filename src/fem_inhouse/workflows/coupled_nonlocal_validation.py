@@ -298,7 +298,17 @@ def validate_coupled_nonlocal_campaign(
     )
     vm_core = von_mises_from_stress_tensor(stress_3d[core])
     residual_core = plane_stress_residual[core]
-    maximum_plane_stress_residual_mpa = float(np.max(np.abs(residual_core)))
+    averaged_maximum_residual_mpa = float(np.max(np.abs(residual_core)))
+    diagnostics = statuses["coupled"].get("diagnostics", {})
+    if "maximum_gauss_point_plane_stress_residual_mpa" not in diagnostics:
+        raise ValueError("coupled diagnostics lack the Gauss-point plane-stress residual")
+    gauss_point_maximum_residual_mpa = float(
+        diagnostics["maximum_gauss_point_plane_stress_residual_mpa"]
+    )
+    maximum_plane_stress_residual_mpa = max(
+        averaged_maximum_residual_mpa,
+        gauss_point_maximum_residual_mpa,
+    )
     plane_stress_limit_mpa = thresholds.plane_stress_relative_tolerance * max(
         1.0,
         float(np.max(vm_core)),
@@ -385,6 +395,12 @@ def validate_coupled_nonlocal_campaign(
         "gains": gains,
         "mechanical_checks": {
             "maximum_plane_stress_residual_mpa": maximum_plane_stress_residual_mpa,
+            "maximum_gauss_point_plane_stress_residual_mpa": (
+                gauss_point_maximum_residual_mpa
+            ),
+            "maximum_element_averaged_plane_stress_residual_mpa": (
+                averaged_maximum_residual_mpa
+            ),
             "plane_stress_limit_mpa": plane_stress_limit_mpa,
             "maximum_von_mises_mpa": float(np.max(vm_core)),
         },
