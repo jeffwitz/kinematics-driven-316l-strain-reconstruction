@@ -1,0 +1,228 @@
+{
+  "actual_alpha_by_campaign": [
+    0.0,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "alphas": [
+    0.0,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "campaign_manifest_sha256": {
+    "alpha0": "efab7c406fbb77726e7696a1b4761004500bef23be5ac810769926524fc61817",
+    "alpha1": "d25f77d005c81bec27c4f7882c84ef0912b3c708f7e10e5318fbe31b1bcacf43",
+    "alpha2": "0d02344ed4218f78e5353c917323e8262416d199258a412e9a1a894910d5754b",
+    "alpha3": "0f477ac082bc0b303ab676bea17397a299996fe57cacf36fbc40273e57796369"
+  },
+  "campaign_paths": [
+    "results/constitutive-local-p0015-pad64",
+    "results/constitutive-nonlocal-p0015-pad64-a100",
+    "results/constitutive-nonlocal-p0015-pad64-a200",
+    "results/constitutive-nonlocal-p0015-pad64-a400"
+  ],
+  "color_limits": {
+    "NONLOCAL_HARDENING_MPA": {
+      "percentile": null,
+      "real_max": 143.02747038153743,
+      "real_min": -89.80940585414888,
+      "vmax": 143.02747038153743,
+      "vmin": -143.02747038153743
+    },
+    "PEEQ_MISMATCH": {
+      "percentile": null,
+      "real_max": 0.015418313360201486,
+      "real_min": -0.004353975221313153,
+      "vmax": 0.015418313360201486,
+      "vmin": -0.015418313360201486
+    },
+    "PEEQ_NONLOCAL": {
+      "percentile": null,
+      "real_max": 0.052772298060661346,
+      "real_min": 0.0,
+      "vmax": 0.052772298060661346,
+      "vmin": 0.0
+    },
+    "difference": {
+      "percentile": null,
+      "real_absolute_max": 0.04084855996833322,
+      "real_max": 0.04084855996833322,
+      "real_min": -0.03380979200312109,
+      "vmax": 0.04084855996833322,
+      "vmin": -0.04084855996833322
+    },
+    "evm": {
+      "percentile": null,
+      "real_max": 0.04447038294822418,
+      "real_min": 0.00033611473534337505,
+      "vmax": 0.04447038294822418,
+      "vmin": 0.0
+    },
+    "peeq": {
+      "percentile": null,
+      "real_max": 0.052772298060661346,
+      "real_min": 0.0,
+      "vmax": 0.052772298060661346,
+      "vmin": 0.0
+    }
+  },
+  "core_bounds": [
+    360,
+    720,
+    1550,
+    1860
+  ],
+  "core_shape": [
+    360,
+    310
+  ],
+  "evm_construction": "reconstruct_historical_evm from DIC/FEM nodal displacements",
+  "evm_post_filter_applied": false,
+  "extent_mm": [
+    0.6624,
+    1.3248,
+    2.852,
+    3.4224
+  ],
+  "figure_paths": {
+    "alpha_summary": [
+      "validation/figures/p0015-alpha-comparison/p0015_alpha_summary.png",
+      "validation/figures/p0015-alpha-comparison/p0015_alpha_summary.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_alpha_summary.svg"
+    ],
+    "nonlocal_hardening_mpa": [
+      "validation/figures/p0015-alpha-comparison/p0015_nonlocal_hardening_mpa.png",
+      "validation/figures/p0015-alpha-comparison/p0015_nonlocal_hardening_mpa.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_nonlocal_hardening_mpa.svg"
+    ],
+    "peeq_comparison": [
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_comparison.png",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_comparison.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_comparison.svg"
+    ],
+    "peeq_distributions": [
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_distributions.png",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_distributions.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_distributions.svg"
+    ],
+    "peeq_mismatch": [
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_mismatch.png",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_mismatch.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_mismatch.svg"
+    ],
+    "peeq_nonlocal": [
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_nonlocal.png",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_nonlocal.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_peeq_nonlocal.svg"
+    ],
+    "total_evm_comparison": [
+      "validation/figures/p0015-alpha-comparison/p0015_total_evm_comparison.png",
+      "validation/figures/p0015-alpha-comparison/p0015_total_evm_comparison.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_total_evm_comparison.svg"
+    ],
+    "total_evm_difference": [
+      "validation/figures/p0015-alpha-comparison/p0015_total_evm_difference.png",
+      "validation/figures/p0015-alpha-comparison/p0015_total_evm_difference.pdf",
+      "validation/figures/p0015-alpha-comparison/p0015_total_evm_difference.svg"
+    ]
+  },
+  "generated_at_utc": "2026-07-25T21:24:04.735383+00:00",
+  "git_commit": "6240c8de3d47ced926d84dc22232cfad277f910a",
+  "h_ref_mpa": 5814.864768512529,
+  "hchi_by_alpha_mpa": [
+    0.0,
+    5814.864768512529,
+    11629.729537025058,
+    23259.459074050115
+  ],
+  "input_directory": "data/processed/case_study",
+  "metrics": [
+    {
+      "alpha": 0.0,
+      "mae": 0.0025233864274255544,
+      "pearson_correlation": -0.14823513632828464,
+      "relative_l2_error": 0.8939113294388441,
+      "rmse": 0.003453925884376683,
+      "signed_mean_error": -0.0003533455473125201
+    },
+    {
+      "alpha": 1.0,
+      "mae": 0.002043888184484838,
+      "pearson_correlation": -0.15547911588835725,
+      "relative_l2_error": 0.6995010052819531,
+      "rmse": 0.0027027564689302195,
+      "signed_mean_error": -0.0003676915236667043
+    },
+    {
+      "alpha": 2.0,
+      "mae": 0.0018110704121844677,
+      "pearson_correlation": -0.1527812335941666,
+      "relative_l2_error": 0.6329327645081465,
+      "rmse": 0.0024455477701318677,
+      "signed_mean_error": -0.0003753171203166924
+    },
+    {
+      "alpha": 4.0,
+      "mae": 0.0015483937608766548,
+      "pearson_correlation": -0.14495405264443018,
+      "relative_l2_error": 0.5659821583449497,
+      "rmse": 0.002186861674558006,
+      "signed_mean_error": -0.0003837844090466698
+    }
+  ],
+  "optional_field_fallbacks": {
+    "NONLOCAL_HARDENING_MPA": "zero MPa (Hchi=0 control)",
+    "PEEQ_MISMATCH": "zero (Hchi=0 control)",
+    "PEEQ_NONLOCAL": "local PEEQ (Hchi=0 control)"
+  },
+  "partition_id": 15,
+  "peeq_interpretation": "internal plasticity variable; no experimental PEEQ comparison",
+  "peeq_statistics": [
+    {
+      "alpha": 0.0,
+      "maximum": 0.052772298060661346,
+      "mean": 0.002393406800860064,
+      "minimum": 0.0,
+      "standard_deviation": 0.0031514689529677526
+    },
+    {
+      "alpha": 1.0,
+      "maximum": 0.018264027400622464,
+      "mean": 0.0023317588389268483,
+      "minimum": 0.0,
+      "standard_deviation": 0.00220327437138127
+    },
+    {
+      "alpha": 2.0,
+      "maximum": 0.01269946325416229,
+      "mean": 0.0023019854849483626,
+      "minimum": 0.0,
+      "standard_deviation": 0.001877884945503894
+    },
+    {
+      "alpha": 4.0,
+      "maximum": 0.008561559984527062,
+      "mean": 0.002268077069950023,
+      "minimum": 0.0,
+      "standard_deviation": 0.001539659265619096
+    }
+  ],
+  "plot_options": {
+    "dpi": 180,
+    "formats": [
+      "png",
+      "pdf",
+      "svg"
+    ],
+    "helmholtz_filter_applied_to_evm": false,
+    "include_optional_fields": true
+  },
+  "solve_shape": [
+    488,
+    438
+  ],
+  "spacing_x_mm": 0.00184,
+  "spacing_y_mm": 0.00184
+}

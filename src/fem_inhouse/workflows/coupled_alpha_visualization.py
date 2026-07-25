@@ -160,11 +160,15 @@ def prepare_coupled_alpha_fields(
     peeq_vmax_percentile: float | None = None,
     difference_vmax_percentile: float | None = None,
     include_optional_fields: bool = False,
+    alpha_values: Sequence[float] = ALPHAS,
 ) -> tuple[CoupledAlphaVisualizationData, dict[str, Any]]:
     """Load, validate, crop and derive the four raw P154 alpha states."""
 
-    if len(campaigns) != 4:
-        raise ValueError("exactly four campaigns are required for alpha=0,0.5,1,2")
+    if len(campaigns) != 4 or len(alpha_values) != 4:
+        raise ValueError("exactly four campaigns and four alpha values are required")
+    alphas = tuple(float(value) for value in alpha_values)
+    if not np.isfinite(alphas).all() or min(alphas) < 0.0 or len(set(alphas)) != 4:
+        raise ValueError("alpha_values must contain four distinct finite nonnegative values")
     strain_vmax_percentile = _validate_percentile(
         strain_vmax_percentile,
         name="strain_vmax_percentile",
@@ -199,7 +203,7 @@ def prepare_coupled_alpha_fields(
     for index, (campaign, _manifest, status) in enumerate(
         zip(campaign_paths, manifests, statuses, strict=True)
     ):
-        manifest_hashes[CAMPAIGN_LABELS[index]] = _manifest_hash(campaign / "manifest.json")
+        manifest_hashes[f"alpha{index}"] = _manifest_hash(campaign / "manifest.json")
         u = _load_verified_field(campaign, partition_id=partition_id, status=status, name="U")
         if u.shape != expected_u_shape:
             raise ValueError(f"U shape {u.shape} does not match {expected_u_shape}")
@@ -283,7 +287,7 @@ def prepare_coupled_alpha_fields(
         raise ValueError("H_ref must be finite and strictly positive")
     hchi_values: list[float] = []
     actual_alpha: list[float] = []
-    for expected_alpha, manifest in zip(ALPHAS, manifests, strict=True):
+    for expected_alpha, manifest in zip(alphas, manifests, strict=True):
         nonlocal_config = manifest.get("config", {}).get("nonlocal_plasticity", {})
         hchi = float(nonlocal_config.get("coupling_modulus_mpa", 0.0))
         enabled = bool(nonlocal_config.get("enabled", False))
@@ -327,7 +331,7 @@ def prepare_coupled_alpha_fields(
         "spacing_x_mm": spacing_x_mm,
         "spacing_y_mm": spacing_y_mm,
         "extent_mm": list(extent_mm),
-        "alphas": list(ALPHAS),
+        "alphas": list(alphas),
         "actual_alpha_by_campaign": list(actual_alpha),
         "h_ref_mpa": h_ref_mpa,
         "hchi_by_alpha_mpa": list(hchi_values),
@@ -349,7 +353,7 @@ def prepare_coupled_alpha_fields(
                 "pearson_correlation": metric.pearson_correlation,
                 "signed_mean_error": metric.signed_mean_error,
             }
-            for alpha, metric in zip(ALPHAS, metrics, strict=True)
+            for alpha, metric in zip(alphas, metrics, strict=True)
         ],
         "peeq_statistics": [
             {
@@ -359,7 +363,7 @@ def prepare_coupled_alpha_fields(
                 "mean": float(np.mean(field)),
                 "standard_deviation": float(np.std(field)),
             }
-            for alpha, field in zip(ALPHAS, peeq_fields, strict=True)
+            for alpha, field in zip(alphas, peeq_fields, strict=True)
         ],
         "color_limits": {},
     }
@@ -420,6 +424,7 @@ def plot_coupled_alpha_fields(
     difference_vmax_percentile: float | None = None,
     include_optional_fields: bool = False,
     overwrite: bool = False,
+    alpha_values: Sequence[float] = ALPHAS,
 ) -> dict[str, Any]:
     """Create all comparative P154 figures and write reproducibility metadata."""
 
@@ -443,7 +448,9 @@ def plot_coupled_alpha_fields(
         peeq_vmax_percentile=peeq_vmax_percentile,
         difference_vmax_percentile=difference_vmax_percentile,
         include_optional_fields=include_optional_fields,
+        alpha_values=alpha_values,
     )
+    alphas = tuple(float(value) for value in alpha_values)
 
     import matplotlib
 
@@ -490,7 +497,8 @@ def plot_coupled_alpha_fields(
     }
     figure_paths: dict[str, list[str]] = {}
     extent = data.extent_mm
-    alpha_titles = ["DIC", "alpha = 0", "alpha = 0.5", "alpha = 1", "alpha = 2"]
+    figure_prefix = f"p{data.partition_id:04d}"
+    alpha_titles = ["DIC", *(f"alpha = {alpha:g}" for alpha in alphas)]
 
     figure, axes = plt.subplots(2, 3, figsize=(14, 8), squeeze=False, constrained_layout=True)
     flat_axes = list(axes.ravel())
@@ -501,7 +509,7 @@ def plot_coupled_alpha_fields(
     flat_axes[-1].axis("off")
     _add_common_colorbar(figure, flat_axes[:-1], image, "Total equivalent strain, EVM")
     figure_paths["total_evm_comparison"] = _save_figure(
-        figure, output / "p154_total_evm_comparison", normalized_formats, dpi
+        figure, output / f"{figure_prefix}_total_evm_comparison", normalized_formats, dpi
     )
     plt.close(figure)
 
@@ -509,7 +517,7 @@ def plot_coupled_alpha_fields(
     flat_axes = list(axes.ravel())
     for axis, alpha, field, metric in zip(
         flat_axes,
-        ALPHAS,
+        alphas,
         differences,
         data.metrics_by_alpha,
         strict=True,
@@ -527,13 +535,13 @@ def plot_coupled_alpha_fields(
         )
     _add_common_colorbar(figure, flat_axes, image, "FEM EVM - DIC EVM")
     figure_paths["total_evm_difference"] = _save_figure(
-        figure, output / "p154_total_evm_difference", normalized_formats, dpi
+        figure, output / f"{figure_prefix}_total_evm_difference", normalized_formats, dpi
     )
     plt.close(figure)
 
     figure, axes = plt.subplots(2, 2, figsize=(11, 8), squeeze=False, constrained_layout=True)
     flat_axes = list(axes.ravel())
-    for axis, alpha, field in zip(flat_axes, ALPHAS, data.peeq_by_alpha, strict=True):
+    for axis, alpha, field in zip(flat_axes, alphas, data.peeq_by_alpha, strict=True):
         image = _draw_field(
             axis,
             field,
@@ -544,13 +552,13 @@ def plot_coupled_alpha_fields(
         )
     _add_common_colorbar(figure, flat_axes, image, "PEEQ (internal variable)")
     figure_paths["peeq_comparison"] = _save_figure(
-        figure, output / "p154_peeq_comparison", normalized_formats, dpi
+        figure, output / f"{figure_prefix}_peeq_comparison", normalized_formats, dpi
     )
     plt.close(figure)
 
     figure, (hist_axis, cdf_axis) = plt.subplots(1, 2, figsize=(12, 4.5), constrained_layout=True)
     bins = np.linspace(0.0, peeq_limits[1], 51)
-    for alpha, field in zip(ALPHAS, data.peeq_by_alpha, strict=True):
+    for alpha, field in zip(alphas, data.peeq_by_alpha, strict=True):
         values = field.ravel()
         hist_axis.hist(
             values,
@@ -575,7 +583,7 @@ def plot_coupled_alpha_fields(
     hist_axis.legend()
     cdf_axis.legend()
     figure_paths["peeq_distributions"] = _save_figure(
-        figure, output / "p154_peeq_distributions", normalized_formats, dpi
+        figure, output / f"{figure_prefix}_peeq_distributions", normalized_formats, dpi
     )
     plt.close(figure)
 
@@ -596,13 +604,13 @@ def plot_coupled_alpha_fields(
         va="center",
         fontsize=11,
     )
-    for axis, alpha, field in zip(bottom_axes[1:], ALPHAS, data.peeq_by_alpha, strict=True):
+    for axis, alpha, field in zip(bottom_axes[1:], alphas, data.peeq_by_alpha, strict=True):
         image_peeq = _draw_field(
             axis, field, title=f"alpha = {alpha:g}", extent=extent, limits=peeq_limits, cmap="magma"
         )
     _add_common_colorbar(figure, bottom_axes[1:], image_peeq, "PEEQ")
     figure_paths["alpha_summary"] = _save_figure(
-        figure, output / "p154_alpha_summary", normalized_formats, dpi
+        figure, output / f"{figure_prefix}_alpha_summary", normalized_formats, dpi
     )
     plt.close(figure)
 
@@ -634,7 +642,7 @@ def plot_coupled_alpha_fields(
                     "percentile": peeq_vmax_percentile,
                 }
             cmap = "coolwarm" if is_divergent else "viridis"
-            for axis, alpha, field in zip(flat_axes, ALPHAS, fields, strict=True):
+            for axis, alpha, field in zip(flat_axes, alphas, fields, strict=True):
                 image = _draw_field(
                     axis,
                     field,
@@ -646,7 +654,7 @@ def plot_coupled_alpha_fields(
             _add_common_colorbar(figure, flat_axes, image, field_name)
             key = field_name.lower()
             figure_paths[key] = _save_figure(
-                figure, output / f"p154_{key}", normalized_formats, dpi
+                figure, output / f"{figure_prefix}_{key}", normalized_formats, dpi
             )
             plt.close(figure)
 
