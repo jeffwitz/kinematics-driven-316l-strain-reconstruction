@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "selection_partition_id": 48,
+  "preregistration": "validation/nonlocality_p48_preregistration.md",
+  "source_metrics_csv_sha256": "b3d221a82114b09777c3635bcba33f6e565843a41b9081fb4e7cdef6e4ed3ae0",
+  "selected_length": {
+    "mm": 0.05888,
+    "um": 58.88,
+    "pixels": 32.0,
+    "at_upper_sweep_boundary": true
+  },
+  "baseline": {
+    "rmse": 0.0026896749281628,
+    "relative_l2": 0.8095577634879191,
+    "pearson": 0.2982833775990541,
+    "iou_top_10pct": 0.1598420286842652,
+    "iou_dic_q_90pct": 0.1675660423941029,
+    "predicted_active_fraction_dic_q_90pct": 0.1966308243727598,
+    "dic_active_fraction_dic_q_90pct": 0.1
+  },
+  "selected_candidate": {
+    "rmse": 0.0009518246362792,
+    "relative_l2": 0.2864870455944801,
+    "pearson": 0.6159672911078314,
+    "iou_top_10pct": 0.282242775894755,
+    "iou_dic_q_90pct": 0.3085235846760453,
+    "predicted_active_fraction_dic_q_90pct": 0.1408691756272401,
+    "dic_active_fraction_dic_q_90pct": 0.1,
+    "std_ratio": 0.4038859722447807,
+    "peak_ratio": 0.1139725902541637,
+    "padding_to_length_ratio": 4.6875
+  },
+  "gains": {
+    "rmse_reduction_fraction": 0.6461190806692205,
+    "relative_l2_reduction_fraction": 0.6461190806692136,
+    "pearson_gain": 0.31768391350877734,
+    "iou_top_10pct_gain": 0.1224007472104898,
+    "iou_dic_q_90pct_gain": 0.1409575422819424
+  },
+  "primary_metrics_select_same_candidate": true,
+  "boundary_status": "usable",
+  "identified_material_length": null,
+  "mechanical_solution_modified": false,
+  "selection_decision": "Use 58.88 um unchanged for held-out confirmation. The selected point is the upper sweep boundary, so the optimum is not bracketed.",
+  "stage_interpretation": "Strong selection-partition evidence, but the spatial-width hypothesis remains only partially supported until held-out confirmation."
+}

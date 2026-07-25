@@ -400,6 +400,16 @@ priorité à la corrélation, à l'IoU top-10 % et au seuil absolu DIC 90 %, ave
 RMSE/L2 comme métriques d'amplitude secondaires. Le protocole complet est figé
 dans `validation/nonlocality_p48_preregistration.md` avant le calcul.
 
+**Résultat de sélection P48 :** le calcul MFront converge sur 402 600 éléments
+en `1335,97 s` de temps processus, avec 20/20 incréments, zéro cutback et
+`7 869 356 KiB` de RSS maximal. Les trois métriques spatiales
+pré-enregistrées sélectionnent `ell=58,88 µm` : corrélation
+`0,2983 → 0,6160`, IoU top-10 % `0,1598 → 0,2822` et IoU au seuil absolu DIC
+90 % `0,1676 → 0,3085`. RMSE et L2 relative diminuent de `64,61 %`. L'aire
+active q90 reste `14,09 %` contre `10 %` DIC, sans collapsus. Le candidat étant
+à la borne supérieure, l'optimum n'est pas encadré. Il est figé pour une
+application sans ajustement aux partitions de confirmation.
+
 **Critère de sortie :** un résultat FEM sauvegardé peut faire l'objet d'une
 campagne de largeur spatiale traçable sans modifier le calcul mécanique, et le
 rapport sépare faits numériques, sélection diagnostique et interprétation
