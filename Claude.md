@@ -392,6 +392,14 @@ corrélation reste faible. Aucune longueur interne matérielle n'est identifiée
 Une confirmation devra fixer la longueur sur une partition puis l'appliquer
 sans ajustement à des partitions tenues à l'écart.
 
+**Révision pré-enregistrée avant nouveau calcul :** la partition 0 est jugée
+peu représentative à partir des figures 6 et 8. La partition 48, cœur
+`x=[1440,1800)`, `y=[2480,2790)` et domaine paddé `660×610`, devient l'unique
+partition de sélection. P0 est exclue de la sélection. La décision donnera la
+priorité à la corrélation, à l'IoU top-10 % et au seuil absolu DIC 90 %, avec
+RMSE/L2 comme métriques d'amplitude secondaires. Le protocole complet est figé
+dans `validation/nonlocality_p48_preregistration.md` avant le calcul.
+
 **Critère de sortie :** un résultat FEM sauvegardé peut faire l'objet d'une
 campagne de largeur spatiale traçable sans modifier le calcul mécanique, et le
 rapport sépare faits numériques, sélection diagnostique et interprétation
