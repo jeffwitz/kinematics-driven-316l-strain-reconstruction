@@ -477,7 +477,7 @@ physique.
 - [x] Exécuter P154 local à 20 incréments et produire `HREF.json`
 - [x] Ajouter un validateur empreinté local/couplé qui reconstruit les EVM
       depuis les déplacements bruts sur le cœur, sans post-filtrage
-- [ ] Exécuter les smoke tests à 5 incréments pour `alpha=0,0.5,1`
+- [x] Exécuter les smoke tests à 5 incréments pour `alpha=0,0.5,1`
 - [ ] Exécuter les candidats retenus à 20 incréments avec padding 128
 - [ ] Comparer les champs bruts couplés à la DIC sur le cœur P154
 - [ ] Figer `Hchi` avant tout transfert vers P42 ou P48
@@ -495,6 +495,14 @@ en `793,98 s`, 20/20 incréments, 119 Newton et zéro cutback. Le cœur contient
 24 507 éléments plastifiés sur 27 900. La médiane pré-enregistrée donne
 `Href = 6547,530617 MPa`, donc `Hchi = 3273,765308 MPa` pour `alpha=0,5` et
 `6547,530617 MPa` pour `alpha=1`.
+
+**Smoke P154 :** `validation/nonlocal_p154_smoke_results.md`. Après
+pré-enregistrement d'une norme mixte \(L_\infty\) indépendante du maillage,
+`alpha=0,5` converge en `406,28 s` et `alpha=1` en `503,04 s`, sans aucun
+échec du point fixe. Les deux passent tous les critères bruts sur le cœur ;
+`alpha=1` donne les meilleurs gains (`+0,1148` de corrélation, `28,39 %` de
+réduction L2 et `+0,0504` d'IoU q90) et passe en premier au profil de
+validation padding 128.
 
 **Critère de sortie :** P154 padding 128 converge à 20 incréments pour au
 moins un `Hchi>0`, un candidat passe les critères scientifiques sur les champs
@@ -943,6 +951,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Outil de sélection `Href` | Médiane du tangent de Ludwik sur le cœur plastifié | Tests synthétiques, empreintes et refus d'écrasement | Réussi |
 | 2026-07-25 | Référence locale P154 padding 128 | 179 196 éléments, 20 incréments | `793,98 s`, 119 Newton, zéro cutback | Réussi |
 | 2026-07-25 | Estimation `Href` sur le cœur P154 | 24 507 éléments plastifiés sur 27 900 | `Href=6547,530617 MPa` | Réussi |
+| 2026-07-25 | Smoke micromorphique P154 `alpha=0,5` | 87 164 éléments, norme mixte L∞ | `406,28 s`, 3 cutbacks, tous critères smoke réussis | Réussi |
+| 2026-07-25 | Smoke micromorphique P154 `alpha=1` | 87 164 éléments, norme mixte L∞ | `503,04 s`, 2 cutbacks, tous critères smoke réussis | Réussi |
 
 ## 14. Journal des mises à jour
 
