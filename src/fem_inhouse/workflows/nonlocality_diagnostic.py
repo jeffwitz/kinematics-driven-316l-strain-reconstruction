@@ -6,6 +6,7 @@ import csv
 import json
 import shutil
 import subprocess
+import time
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -123,7 +124,7 @@ def _git_state(repository: Path) -> dict[str, Any]:
     try:
         return {
             "commit": run("rev-parse", "HEAD"),
-            "dirty": bool(run("status", "--porcelain")),
+            "dirty": bool(run("status", "--porcelain", "--untracked-files=no")),
         }
     except (OSError, subprocess.CalledProcessError):
         return {"commit": None, "dirty": None}
@@ -990,6 +991,7 @@ def run_nonlocality_diagnostic(
 ) -> dict[str, Any]:
     """Run one immutable diagnostic from a saved padded partition."""
 
+    started_at = time.perf_counter()
     if save_fields not in {"all", "best", "none"}:
         raise ValueError("save_fields must be 'all', 'best', or 'none'")
     if mode == "confirmatory" and decision_thresholds is None:
@@ -997,6 +999,8 @@ def run_nonlocality_diagnostic(
     input_path = Path(input_directory)
     campaign_path = Path(campaign_directory)
     destination = Path(output_directory)
+    repository = Path(__file__).resolve().parents[3]
+    source_git_state = _git_state(repository)
     manifest_path = campaign_path / "manifest.json"
     campaign_manifest = _load_json(manifest_path)
     layout_data = campaign_manifest.get("layout")
@@ -1132,7 +1136,6 @@ def run_nonlocality_diagnostic(
             core_slice=partition.core_element_slice_local,
         )
 
-        repository = Path(__file__).resolve().parents[3]
         input_files = {
             "prepared_manifest": input_path / "manifest.json",
             "displacement_x_mm": input_path / "displacement_x_mm.npy",
@@ -1151,13 +1154,21 @@ def run_nonlocality_diagnostic(
             for name, path in input_files.items()
             if path.is_file()
         }
+        figure_metadata = {
+            path.name: {
+                "bytes": path.stat().st_size,
+                "sha256": fingerprint_file(path),
+            }
+            for path in sorted((temporary / "figures").iterdir())
+            if path.is_file()
+        }
         manifest = {
             "schema_version": 1,
             "created_at_utc": datetime.now(UTC).isoformat(),
             "software": {
                 "name": "kinematics-driven-316l-strain-reconstruction",
                 "version": __version__,
-                "git": _git_state(repository),
+                "git": source_git_state,
                 "numpy": np.__version__,
                 "scipy": scipy.__version__,
             },
@@ -1212,6 +1223,7 @@ def run_nonlocality_diagnostic(
                 ),
             },
             "saved_fields": saved_fields,
+            "figures": figure_metadata,
         }
         _atomic_write_text(
             temporary / "manifest.json",
@@ -1228,6 +1240,7 @@ def run_nonlocality_diagnostic(
                 "filter_checks": list(sweep.filter_checks),
                 "metrics_csv_sha256": fingerprint_file(temporary / "metrics.csv"),
                 "metric_row_count": len(sweep.metrics),
+                "elapsed_seconds": time.perf_counter() - started_at,
                 "all_lengths": [asdict(length) for length in sweep.lengths],
                 "boundary_contaminated_lengths_mm": sorted(
                     {
