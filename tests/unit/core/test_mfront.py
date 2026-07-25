@@ -276,6 +276,51 @@ def test_mfront_thread_pool_matches_serial_integration() -> None:
 
 
 @pytest.mark.mfront
+def test_micromorphic_thread_pool_is_reproducible() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    point_count = 64
+    material = (
+        np.linspace(230.0, 270.0, point_count),
+        np.linspace(330.0, 430.0, point_count),
+        np.full(point_count, 0.245),
+    )
+    options = {
+        "behaviour_name": "PixelMicromorphicLudwikJ2Plasticity",
+        "micromorphic_coupling_modulus_mpa": 2_000.0,
+    }
+    serial = MFrontMaterialPointBatch(library, *material, **options)
+    parallel = MFrontMaterialPointBatch(
+        library,
+        *material,
+        thread_count=4,
+        **options,
+    )
+    chi = np.linspace(0.0, 0.004, point_count)
+    strain = np.tile([0.006, -0.0006, 0.002], (point_count, 1))
+    serial.set_nonlocal_equivalent_plastic_strain(chi)
+    parallel.set_nonlocal_equivalent_plastic_strain(chi)
+
+    serial_result = serial.evaluate(strain)
+    parallel_result = parallel.evaluate(strain)
+
+    np.testing.assert_array_equal(parallel_result.stress_mpa, serial_result.stress_mpa)
+    np.testing.assert_array_equal(
+        parallel_result.equivalent_plastic_strain,
+        serial_result.equivalent_plastic_strain,
+    )
+    np.testing.assert_array_equal(
+        parallel_result.yield_surface_radius_mpa,
+        serial_result.yield_surface_radius_mpa,
+    )
+    np.testing.assert_array_equal(
+        parallel_result.consistent_tangent_mpa,
+        serial_result.consistent_tangent_mpa,
+    )
+
+
+@pytest.mark.mfront
 def test_micromorphic_hchi_zero_exactly_matches_reference_behaviour() -> None:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     if library is None:
