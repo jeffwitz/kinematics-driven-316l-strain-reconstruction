@@ -474,7 +474,7 @@ physique.
       l'équivalence natif/3D condensé sur cas réduit
 - [x] Ajouter une commande empreintée calculant
       `Href = median(K*n*p**(n-1))` sur le cœur plastifié local
-- [~] Exécuter P154 local à 20 incréments et produire `HREF.json`
+- [x] Exécuter P154 local à 20 incréments et produire `HREF.json`
 - [ ] Exécuter les smoke tests à 5 incréments pour `alpha=0,0.5,1`
 - [ ] Exécuter les candidats retenus à 20 incréments avec padding 128
 - [ ] Comparer les champs bruts couplés à la DIC sur le cœur P154
@@ -486,6 +486,13 @@ physique.
 verts ; les 247 tests, dont MGIS/MFront réel, réussissent en `18,11 s`. Le cas
 homogène couplé converge sans cutback. La norme du point fixe utilise
 `max(1, ||chi||)` afin de rester bien posée lors de l'apparition de plasticité.
+
+**Référence locale P154 :**
+`validation/nonlocal_p154_local_reference.md`. Les 179 196 éléments convergent
+en `793,98 s`, 20/20 incréments, 119 Newton et zéro cutback. Le cœur contient
+24 507 éléments plastifiés sur 27 900. La médiane pré-enregistrée donne
+`Href = 6547,530617 MPa`, donc `Hchi = 3273,765308 MPa` pour `alpha=0,5` et
+`6547,530617 MPa` pour `alpha=1`.
 
 **Critère de sortie :** P154 padding 128 converge à 20 incréments pour au
 moins un `Hchi>0`, un candidat passe les critères scientifiques sur les champs
@@ -932,6 +939,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Comportements MFront micromorphiques | Natif PlaneStress et Tridimensional, `Hchi*(p-chi)` | Compilation, métadonnées, signe, tangente et transactions | Réussi |
 | 2026-07-25 | Couplage `p ↔ chi` dans Newton | DCT existante, relaxation, commit unique, cutback conjoint | 247 tests avec MGIS réel | Réussi |
 | 2026-07-25 | Outil de sélection `Href` | Médiane du tangent de Ludwik sur le cœur plastifié | Tests synthétiques, empreintes et refus d'écrasement | Réussi |
+| 2026-07-25 | Référence locale P154 padding 128 | 179 196 éléments, 20 incréments | `793,98 s`, 119 Newton, zéro cutback | Réussi |
+| 2026-07-25 | Estimation `Href` sur le cœur P154 | 24 507 éléments plastifiés sur 27 900 | `Href=6547,530617 MPa` | Réussi |
 
 ## 14. Journal des mises à jour
 
