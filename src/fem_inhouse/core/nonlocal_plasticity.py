@@ -82,6 +82,29 @@ def _gauss_values(element_values: FloatArray, gauss_points_per_element: int) -> 
     return np.repeat(element_values.ravel(order="F"), gauss_points_per_element)
 
 
+def _mixed_relative_maximum_norm(
+    difference: ArrayLike,
+    *states: ArrayLike,
+) -> float:
+    """Return a mesh-independent mixed relative maximum norm.
+
+    PEEQ is dimensionless and remains far below one in the supported case.
+    The unit reference therefore supplies the absolute branch of the mixed
+    criterion, while the state maximum supplies its relative branch. Unlike a
+    raw global L2 norm, this definition does not tighten when the ROI contains
+    more elements.
+    """
+
+    delta = np.asarray(difference, dtype=np.float64)
+    scale = 1.0
+    for state in states:
+        values = np.asarray(state, dtype=np.float64)
+        if values.shape != delta.shape:
+            raise ValueError("fixed-point states must have identical shapes")
+        scale = max(scale, float(np.max(np.abs(values), initial=0.0)))
+    return float(np.max(np.abs(delta), initial=0.0) / scale)
+
+
 def evaluate_nonlocal_fixed_point(
     material_batch: NonlocalPlaneStressMaterialBatch,
     in_plane_strain: ArrayLike,
@@ -169,14 +192,15 @@ def evaluate_nonlocal_fixed_point(
             if coupling_modulus_mpa == 0.0
             else (1.0 - relaxation) * chi + relaxation * chi_star
         )
-        scale = max(
-            float(np.linalg.norm(next_chi)),
-            float(np.linalg.norm(chi_star)),
-            1.0,
+        relative_change = _mixed_relative_maximum_norm(
+            next_chi - chi,
+            next_chi,
+            chi_star,
         )
-        relative_change = float(np.linalg.norm(next_chi - chi) / scale)
         chi = next_chi
-        if coupling_modulus_mpa == 0.0 or relative_change <= relative_tolerance:
+        if coupling_modulus_mpa == 0.0 or relative_change <= (
+            relaxation * relative_tolerance
+        ):
             break
     else:
         raise NonlocalCouplingConvergenceError(
@@ -225,16 +249,15 @@ def evaluate_nonlocal_fixed_point(
             f"{maximum_helmholtz_residual:.3e}"
         )
     residual_field = chi - final_filter.filtered_element_field
-    scale = max(
-        float(np.linalg.norm(chi)),
-        float(np.linalg.norm(final_filter.filtered_element_field)),
-        1.0,
+    coupling_residual = _mixed_relative_maximum_norm(
+        residual_field,
+        chi,
+        final_filter.filtered_element_field,
     )
-    coupling_residual = float(np.linalg.norm(residual_field) / scale)
-    if coupling_modulus_mpa > 0 and coupling_residual > relative_tolerance / relaxation:
+    if coupling_modulus_mpa > 0 and coupling_residual > relative_tolerance:
         raise NonlocalCouplingConvergenceError(
             f"final micromorphic residual {coupling_residual:.3e} exceeds "
-            f"{relative_tolerance / relaxation:.3e}"
+            f"{relative_tolerance:.3e}"
         )
     mismatch = local_peeq - chi
     return NonlocalCouplingEvaluation(

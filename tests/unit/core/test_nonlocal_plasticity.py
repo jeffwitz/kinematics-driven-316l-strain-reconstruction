@@ -5,6 +5,7 @@ import pytest
 
 from fem_inhouse.core.nonlocal_plasticity import (
     NonlocalCouplingConvergenceError,
+    _mixed_relative_maximum_norm,
     evaluate_nonlocal_fixed_point,
 )
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial
@@ -107,6 +108,27 @@ def test_zero_coupling_uses_one_source_evaluation_and_produces_outputs() -> None
     assert batch.evaluate_calls == 2
     np.testing.assert_array_equal(result.nonlocal_hardening_mpa, 0.0)
     np.testing.assert_allclose(result.nonlocal_peeq, 0.03, rtol=0.0, atol=1e-14)
+
+
+def test_mixed_maximum_norm_is_independent_of_field_size() -> None:
+    small_delta = np.full((3, 2), 4.0e-7)
+    large_delta = np.full((300, 200), 4.0e-7)
+
+    assert _mixed_relative_maximum_norm(
+        small_delta,
+        np.zeros_like(small_delta),
+    ) == pytest.approx(4.0e-7)
+    assert _mixed_relative_maximum_norm(
+        large_delta,
+        np.zeros_like(large_delta),
+    ) == pytest.approx(4.0e-7)
+
+
+def test_mixed_maximum_norm_uses_relative_branch_above_unit_state() -> None:
+    state = np.full((2, 2), 4.0)
+    difference = np.full((2, 2), 2.0e-5)
+
+    assert _mixed_relative_maximum_norm(difference, state) == pytest.approx(5.0e-6)
 
 
 def test_nonconvergent_constitutive_feedback_is_reported() -> None:

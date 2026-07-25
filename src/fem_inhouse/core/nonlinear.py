@@ -587,6 +587,7 @@ def run_fem(
             local_plane_stress_failures=local_statistics.local_plane_stress_failures,
             maximum_cbb_condition_number=local_statistics.maximum_cbb_condition_number,
             nonlocal_plasticity_enabled=nonlocal_plasticity_enabled,
+            nonlocal_convergence_norm="mixed_relative_linf",
             nonlocal_length_scale_mm=nonlocal_length_scale_mm,
             nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
             nonlocal_relaxation=nonlocal_relaxation,

@@ -49,13 +49,35 @@ registered length.
 - native MFront plane stress for the primary campaign;
 - eight MGIS threads;
 - fixed-point relaxation `omega=0.5`;
-- relative fixed-point tolerance `1e-6`;
+- mesh-independent mixed relative maximum-norm fixed-point tolerance `1e-6`;
 - at most 15 micromorphic iterations per global Newton evaluation;
 - Helmholtz residual at most `1e-10`;
 - existing global Newton and cutback settings;
 - homogeneous Neumann flux for `chi` at the padded-domain boundary.
 
 No constitutive state may be committed during a micromorphic fixed point.
+
+## Numerical amendment before candidate inspection
+
+The first positive-coupling smoke execution exposed a missing norm definition:
+the initial implementation accumulated pointwise changes in one global
+\(L_2\) norm. During the five-increment `alpha=0.5` run this produced repeated
+cutbacks for changes only slightly above `1e-6`; the acceptance difficulty
+therefore depended on the number of elements in the ROI.
+
+Before inspecting any positive-\(H_\chi\) DIC metric or selecting a candidate,
+the stopping criterion was frozen as the mesh-independent mixed maximum norm
+
+```text
+max(abs(chi_next - chi)) /
+max(1, max(abs(chi_next)), max(abs(chi_star)))
+```
+
+The relaxed change must be at most `omega * 1e-6`, which guarantees that the
+final unrelaxed fixed-point residual is at most `1e-6`. Diagnostics record
+`nonlocal_convergence_norm = mixed_relative_linf`. The original long-running
+smoke is retained as a numerical diagnostic; all candidate comparisons use
+fresh campaigns produced after this amendment.
 
 ## Coupling sweep
 

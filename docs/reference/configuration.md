@@ -75,7 +75,7 @@ extension. It does not alter a campaign when `enabled=false`.
 | `length_scale_mm` | `0.05888` | mm | Helmholtz interaction length |
 | `coupling_modulus_mpa` | `0.0` | MPa | energetic coupling modulus \(H_\chi\) |
 | `relaxation` | `0.5` | — | fixed-point relaxation \(\omega\) |
-| `relative_tolerance` | `1e-6` | — | mixed relative tolerance on \(\chi\) |
+| `relative_tolerance` | `1e-6` | — | mesh-independent mixed relative maximum-norm tolerance on \(\chi\) |
 | `maximum_iterations` | `15` | — | fixed-point iteration limit per mechanical Newton trial |
 | `maximum_helmholtz_residual` | `1e-10` | — | accepted relative DCT equation residual |
 

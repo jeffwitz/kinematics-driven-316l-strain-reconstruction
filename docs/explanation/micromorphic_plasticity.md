@@ -124,6 +124,21 @@ Helmholtz-coupled system. Convergence and cutback diagnostics must therefore
 remain visible; the implementation does not claim monolithic quadratic
 convergence.
 
+The fixed point uses the mesh-independent mixed maximum norm
+
+$$
+\eta_\chi =
+\frac{\lVert\chi^{k+1}-\chi^k\rVert_\infty}
+{\max\left(1,\lVert\chi^{k+1}\rVert_\infty,
+\lVert\chi^\star\rVert_\infty\right)}.
+$$
+
+The unit scale is the absolute branch for the dimensionless PEEQ field; the
+state magnitude is the relative branch. A raw global \(L_2\) norm is not used
+because it makes the same pointwise error harder to accept when the ROI gains
+elements. The saved diagnostics identify this choice as
+`mixed_relative_linf`.
+
 ## Two MFront behaviours
 
 `PixelMicromorphicLudwikJ2Plasticity` uses the native `PlaneStress`

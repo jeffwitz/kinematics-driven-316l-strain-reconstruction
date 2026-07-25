@@ -53,6 +53,7 @@ class SolverDiagnostics:
     local_plane_stress_failures: int = 0
     maximum_cbb_condition_number: float = 0.0
     nonlocal_plasticity_enabled: bool = False
+    nonlocal_convergence_norm: str = "mixed_relative_linf"
     nonlocal_length_scale_mm: float = 0.0
     nonlocal_coupling_modulus_mpa: float = 0.0
     nonlocal_relaxation: float = 0.0
