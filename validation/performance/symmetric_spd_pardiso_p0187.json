@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "purpose": "Isolate upper-triangular mtype=2 from full-storage mtype=11 on the same J2 micromorphic P187 gate.",
+  "baseline_commit": "970abe0b35c19d5c80f716a331f551cfaeb9ecf4",
+  "optimized_commit": "682b594cf963c4043caa5ccf816defdff1ca2b17",
+  "inputs": {
+    "partition_id": 187,
+    "partition_layout": [20, 20],
+    "padding_pixels": 16,
+    "solve_shape_elements": [212, 187],
+    "element_count": 39644,
+    "requested_increments": 5,
+    "mfront_threads": 8,
+    "constitutive_backend": "mfront-native-plane-stress",
+    "nonlocal_length_scale_mm": 0.05888,
+    "nonlocal_coupling_modulus_mpa": 6000.0,
+    "nonlocal_relaxation": 0.5,
+    "nonlocal_relative_tolerance": 1e-06,
+    "nonlocal_maximum_iterations": 15
+  },
+  "artifacts": {
+    "baseline_manifest_sha256": "6e13e5caece86a7c1bd272a3815640aa0a26cddd689100a26b227295e8fea49d",
+    "baseline_status_sha256": "5cde27220bc6307f0cafaf7ae06a86cec241a963eb4cf297a42805e5cbf30ae1",
+    "optimized_manifest_sha256": "de7136a868bd4d8eec3af95888641b09a69d6a12e9b3a98d65ec8376e6440e8f",
+    "optimized_status_sha256": "b8183f88e0da9ff3b57671b154f5c40f7e65d063a5f2342967382fb36ce3d791"
+  },
+  "matrix_contract": {
+    "baseline": {
+      "mathematical_type": "nonsymmetric",
+      "pardiso_mtype": 11,
+      "csr_storage": "full"
+    },
+    "optimized": {
+      "mathematical_type": "symmetric_positive_definite",
+      "pardiso_mtype": 2,
+      "csr_storage": "upper"
+    },
+    "maximum_relative_constitutive_tangent_asymmetry": 6.459630662348212e-16,
+    "runtime_rejection_tolerance": 1e-12,
+    "silent_tangent_symmetrization": false
+  },
+  "external_process": {
+    "baseline_elapsed_seconds": 244.67,
+    "optimized_elapsed_seconds": 227.34,
+    "speedup": 1.0762294360869182,
+    "elapsed_reduction_fraction": 0.07083009768259282,
+    "baseline_peak_rss_kib": 960384,
+    "optimized_peak_rss_kib": 876672,
+    "peak_rss_reduction_fraction": 0.08716513394642143
+  },
+  "timings_seconds": {
+    "baseline_inner_elapsed": 242.19685890898108,
+    "optimized_inner_elapsed": 224.864187580999,
+    "inner_elapsed_reduction_fraction": 0.07156439355184128,
+    "baseline_sparse_assembly": 1.9698849176056683,
+    "optimized_sparse_assembly": 2.4153841275256127,
+    "baseline_pardiso": 33.824605921050534,
+    "optimized_pardiso": 20.963687509298325,
+    "pardiso_reduction_fraction": 0.38022374722622554,
+    "baseline_pardiso_analysis": 0.3132210639305413,
+    "optimized_pardiso_analysis": 0.3552435729652643,
+    "baseline_pardiso_factorization": 24.90912003070116,
+    "optimized_pardiso_factorization": 13.409440087154508,
+    "factorization_reduction_fraction": 0.46166544339474813,
+    "baseline_pardiso_solve": 8.602264826418832,
+    "optimized_pardiso_solve": 7.199003849178553,
+    "solve_reduction_fraction": 0.16312692128829337
+  },
+  "pardiso_phase_calls": {
+    "analysis_11": 1,
+    "factorization_22": 139,
+    "solve_33": 139
+  },
+  "convergence_identity": {
+    "attempted_increments": 20,
+    "converged_increments": 13,
+    "cutbacks": 7,
+    "total_newton_iterations": 156,
+    "maximum_newton_iterations": 15,
+    "total_nonlocal_iterations": 623,
+    "maximum_nonlocal_iterations": 12,
+    "nonlocal_iterations_per_increment_identical": true,
+    "nonlocal_iterations_per_newton_identical": true,
+    "final_convergence_criterion_identical": true,
+    "nonlocal_coupling_failures": 5,
+    "mfront_integration_with_tangent_calls": 151,
+    "baseline_mfront_integration_without_tangent_calls": 635,
+    "optimized_mfront_integration_without_tangent_calls": 642,
+    "without_tangent_call_difference_note": "The seven extra calls occur only inside rejected increment attempts. Accepted increments, Newton decisions, fixed-point iteration sequences, and final fields remain unchanged within tolerance."
+  },
+  "field_errors": {
+    "U": {"maximum_absolute": 4.163336342344337e-17, "relative_to_global_amplitude": 5.890277625154513e-16},
+    "S": {"maximum_absolute": 3.522885094753292e-09, "relative_to_global_amplitude": 8.673280521416192e-12},
+    "E": {"maximum_absolute": 2.5757174171303632e-14, "relative_to_global_amplitude": 1.195053288995633e-12},
+    "PE": {"maximum_absolute": 1.854788024557852e-14, "relative_to_global_amplitude": 9.021655422058852e-13},
+    "PEEQ": {"maximum_absolute": 1.4509227153070015e-14, "relative_to_global_amplitude": 6.860796909935819e-13},
+    "RF": {"maximum_absolute": 2.809696919570115e-12, "relative_to_global_amplitude": 4.50548867397784e-12},
+    "S_3D": {"maximum_absolute": 3.522885094753292e-09, "relative_to_global_amplitude": 8.673280521416192e-12},
+    "E_3D": {"maximum_absolute": 2.5757174171303632e-14, "relative_to_global_amplitude": 1.195053288995633e-12},
+    "EE_3D": {"maximum_absolute": 1.5168720229538635e-14, "relative_to_global_amplitude": 7.763054374647051e-12},
+    "PE_3D": {"maximum_absolute": 1.711478181398718e-14, "relative_to_global_amplitude": 8.324598935574793e-13},
+    "PEEQ_NONLOCAL": {"maximum_absolute": 2.949029909160572e-17, "relative_to_global_amplitude": 5.223741730369288e-15},
+    "PEEQ_MISMATCH": {"maximum_absolute": 1.4493614641786223e-14, "relative_to_global_amplitude": 8.991269018531067e-13},
+    "NONLOCAL_HARDENING_MPA": {"maximum_absolute": 8.696332542967866e-11, "relative_to_global_amplitude": 8.991438333471291e-13},
+    "YIELD_SURFACE_RADIUS_MPA": {"maximum_absolute": 1.7549268704897258e-09, "relative_to_global_amplitude": 2.0035989819339977e-12},
+    "PLANE_STRESS_RESIDUAL_MPA": {"maximum_absolute": 3.480519158139785e-14},
+    "NONLOCAL_RESIDUAL": {"maximum_absolute": 2.949029909160572e-17}
+  },
+  "acceptance": {
+    "technical_relative_tolerance": 1e-10,
+    "physical_fields_pass": true,
+    "near_zero_residuals_pass_absolute_check": true,
+    "convergence_sequence_pass": true,
+    "scientific_parameters_changed": false,
+    "newton_changed": false,
+    "fixed_point_changed": false,
+    "constitutive_tangent_changed": false,
+    "j2_default_is_symmetric_positive_definite": true,
+    "unclassified_behaviour_default_is_nonsymmetric": true,
+    "future_crystal_plasticity_uses_mtype_11_unless_verified": true
+  }
+}

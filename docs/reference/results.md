@@ -373,6 +373,37 @@ remain within `3.7e-14 MPa` and `2.4e-17` in absolute terms. The complete
 configuration, hashes, errors, phase counts, and timings are preserved in
 `validation/performance/fixed_csr_explicit_pardiso_p0187.json`.
 
+### Symmetric positive-definite J2 gate
+
+A third run keeps the same fixed graph and explicit phase lifecycle but uses
+the verified J2 matrix capability: upper-triangular CSR storage and PARDISO
+`mtype=2`.
+
+| Quantity | Full CSR, `mtype=11` | Upper CSR, `mtype=2` | Change |
+|---|---:|---:|---:|
+| process wall time | 244.67 s | 227.34 s | -7.1% |
+| peak RSS | 960,384 KiB | 876,672 KiB | -8.7% |
+| inner elapsed time | 242.20 s | 224.86 s | -7.2% |
+| PARDISO total | 33.825 s | 20.964 s | -38.0% |
+| numerical factorization | 24.909 s | 13.409 s | -46.2% |
+| solve | 8.602 s | 7.199 s | -16.3% |
+
+The run performs one phase 11 and 139 phase 22/33 pairs. Maximum relative
+constitutive-tangent asymmetry is `6.46e-16`; no tangent is symmetrized.
+Increment attempts, accepted increments, cutbacks, Newton iterations, and
+successful micromorphic fixed-point sequences are identical. Relative field
+differences remain below `8.7e-12`; the plane-stress and nonlocal residual
+differences remain below `3.5e-14 MPa` and `3.0e-17` in absolute value.
+
+Seven additional tangent-free MFront calls occur only inside increments that
+are rejected in both runs. They do not change accepted convergence decisions
+or final fields. This difference is recorded rather than hidden in
+`validation/performance/symmetric_spd_pardiso_p0187.json`.
+
+The capability is deliberately narrow. Known J2 behaviours use `mtype=2`;
+unclassified and future crystal-plasticity behaviours use `mtype=11` until
+their exact algorithmic tangent has been verified.
+
 ## Current evidence boundary
 
 Validated:

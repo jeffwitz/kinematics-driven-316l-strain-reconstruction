@@ -15,6 +15,8 @@ This directory preserves the paired measurements used to validate commit
 - `fixed_csr_explicit_pardiso_p0187.json` is the second full-solver gate. It
   compares the optimized constitutive baseline with the fixed free-free CSR
   structure and explicit PARDISO phases 11/22/33 on the same P187 problem.
+- `symmetric_spd_pardiso_p0187.json` is the third gate. It compares full CSR
+  `mtype=11` with upper-triangular CSR `mtype=2` for the verified J2 tangent.
 
 The large NumPy field snapshots remain under `results/performance/` and are
 excluded from Git. The committed reports retain their hashes and numerical
@@ -22,7 +24,7 @@ comparisons without duplicating those binary arrays.
 
 These results compare the same DIC zone, material maps, MFront thread count,
 length, coupling modulus, tolerances, fixed point, Newton settings, increment
-request, and nonsymmetric PARDISO matrix type. The first comparison changes
-only the constitutive hot path. The second changes only sparse assembly and
-the PARDISO phase cycle. They must not be used to attribute gains caused by
-changing any scientific or numerical parameter.
+request. The first comparison changes only the constitutive hot path. The
+second changes only sparse assembly and the PARDISO phase cycle. The third
+changes only matrix storage and PARDISO matrix type. They must not be used to
+attribute gains caused by changing any scientific or numerical parameter.

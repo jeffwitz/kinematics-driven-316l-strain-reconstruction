@@ -126,7 +126,8 @@ historical snapshot payload remains unchanged.
 
 | Group | Fields |
 |---|---|
-| identity | `backend`, `tensor_reconstruction_source` |
+| identity | `backend`, `tensor_reconstruction_source`, `linear_system_matrix_type` |
+| matrix contract | maximum relative constitutive-tangent asymmetry |
 | timing | `elapsed_seconds`, initialization, elastic assembly, constitutive, tangent assembly, fixed sparse assembly, free-system extraction, linear solve, output |
 | PARDISO phases | analysis (11), numerical factorization (22), solve (33): elapsed time and call count for each phase |
 | increments | attempted, converged, cutbacks |

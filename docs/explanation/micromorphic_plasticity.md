@@ -147,14 +147,23 @@ explicitly:
 2. phase 22 factorizes every new tangent numerically;
 3. phase 33 solves the current right-hand side.
 
-The matrix remains `mtype=11`, real and nonsymmetric. No symmetry assumption,
-Newton modification, fixed-point acceleration, or coupled micromorphic
-tangent is introduced. Phase counts and timings are saved in
+The first validated version deliberately retained `mtype=11`. Matrix type is
+now selected from the material capability. The current J2 behaviours use an
+upper-triangular fixed CSR graph and symmetric positive-definite `mtype=2`.
+Unclassified behaviours keep the complete graph and `mtype=11`.
+
+No Newton modification, fixed-point acceleration, or coupled micromorphic
+tangent is introduced. Phase counts, matrix type, and timings are saved in
 `SolverDiagnostics`.
 
 The P187 complete-solver gate records one phase 11 and 139 phase 22/33 pairs.
 It reduces sparse assembly by 73.4%, free-system extraction by 99.4%, and
 PARDISO time by 48.3%. See {doc}`../reference/results`.
+
+The subsequent `mtype=2` gate reduces PARDISO time from `33.825 s` to
+`20.964 s`, including a `46.2%` reduction in numerical factorization. Total
+wall time falls from `244.67 s` to `227.34 s`, and peak RSS falls by `8.7%`.
+The maximum observed relative tangent asymmetry is `6.46e-16`.
 
 ## Tangent scope
 

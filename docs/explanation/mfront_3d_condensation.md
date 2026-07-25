@@ -81,6 +81,21 @@ Only after this condensation are Kelvin shear factors converted to the
 engineering-shear convention used by the finite-element kernel. Selecting the
 in-plane block of a three-dimensional tangent would be incorrect.
 
+## Matrix symmetry is a behaviour capability
+
+For the current associative J2 law with non-negative isotropic hardening, the
+three-dimensional Kelvin tangent is symmetric positive definite. The Schur
+complement and energy-conjugate engineering conversion preserve that
+property. Both the native and 3D-condensed J2 adapters therefore opt into the
+upper-triangular PARDISO `mtype=2` path.
+
+This is not inferred merely from the use of MFront or from the tensor being
+symmetric. A future crystal-plasticity behaviour defaults to the complete
+`mtype=11` path. It may opt into a symmetric matrix type only after its
+algorithmic tangent, finite- or small-strain measures, local condensation, and
+representative non-proportional histories have been verified. The solver
+never replaces a tangent by \((C+C^T)/2\).
+
 ## Transactional state management
 
 There are three distinct levels of state:

@@ -170,6 +170,16 @@ PARDISO time by `48.3%`. The solver performs phase 11 once and 139 phase 22/33
 pairs while retaining nonsymmetric `mtype=11`; Newton, the fixed point, and the
 tangent are unchanged. Evidence is preserved in
 [`validation/performance/fixed_csr_explicit_pardiso_p0187.json`](validation/performance/fixed_csr_explicit_pardiso_p0187.json).
+The verified J2 behaviours now declare their tangent symmetric positive
+definite. Their fixed free-system CSR stores only the upper triangle and
+PARDISO uses `mtype=2` by default. On the identical P187 gate this reduces
+wall time again from `244.67 s` to `227.34 s` (`-7.1%`), PARDISO time by
+`38.0%`, factorization time by `46.2%`, and peak RSS by `8.7%`. The largest
+measured relative tangent asymmetry is `6.46e-16`, against a runtime rejection
+threshold of `1e-12`. Unclassified behaviours retain full CSR storage and
+`mtype=11`; a future crystal-plasticity adapter therefore remains
+nonsymmetric until its own tangent contract has been verified. Evidence is in
+[`validation/performance/symmetric_spd_pardiso_p0187.json`](validation/performance/symmetric_spd_pardiso_p0187.json).
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current

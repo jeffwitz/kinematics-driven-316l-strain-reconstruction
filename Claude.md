@@ -21,7 +21,9 @@ aucun `Hchi` admissible à figer selon tous les critères pré-enregistrés ;
 P43 retenue après inspection visuelle comme prochaine ROI scientifique à deux
 bandes ; chemin constitutif micromorphique allégé et validé avant campagne,
 avec `1,89×` de gain sur le cœur P43 et `1,45×` sur un calcul EF complet
-intermédiaire sans changement scientifique ;
+intermédiaire sans changement scientifique ; CSR triangulaire et PARDISO
+symétrique `mtype=2` activés par défaut pour les comportements J2 vérifiés,
+avec `mtype=11` conservé pour les comportements non classifiés ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -543,7 +545,9 @@ protocole prospectif.
       mêmes paramètres
 - [x] Figer la structure CSR libre-libre et mettre à jour uniquement `data`
 - [x] Piloter explicitement PARDISO : phase 11 unique, puis phases 22/33
-- [x] Vérifier que la matrice reste en `mtype=11` sans hypothèse de symétrie
+- [x] Conserver et tester le chemin générique `mtype=11`
+- [x] Activer le CSR triangulaire et `mtype=2` uniquement pour le J2 vérifié
+- [x] Rejeter tout tangent J2 dont l'asymétrie relative dépasse `1e-12`
 - [ ] Lancer la référence locale P43 avec le profil scientifique retenu
 - [ ] Estimer `Href` sur le cœur P43, puis pré-enregistrer le balayage
       `alpha=0,1,2,4`
@@ -565,7 +569,9 @@ scientifique P43 n'a encore été lancé ; cette phase ne modifie ni la loi, ni
 tangente. Le second lot modifie seulement l'assemblage sparse et le cycle
 PARDISO. Sur P187, il ajoute `-10,6 %` de temps processus et `-16,7 %` de pic
 RSS par rapport au chemin constitutif déjà optimisé ; une phase 11 et 139
-paires 22/33 sont enregistrées.
+paires 22/33 sont enregistrées. Le troisième lot J2 symétrique réduit encore
+le temps `244,67→227,34 s`, PARDISO de `38,0 %` et le pic RSS de `8,7 %`.
+La plasticité cristalline reste par défaut sur le chemin complet `mtype=11`.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -1022,6 +1028,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-26 | Gate EF complet avant/après | P187 paddée, 39 644 éléments, paramètres identiques | `396,78→273,56 s`, RSS `-12,7 %`, convergence identique | Réussi |
 | 2026-07-26 | Validation après optimisation | Ruff, mypy, 271 tests MGIS/MFront, Sphinx strict | HTML et PDF 144 pages | Réussi |
 | 2026-07-26 | CSR fixe et phases PARDISO explicites | Même P187, chemin constitutif optimisé inchangé | `273,56→244,67 s`, RSS `-16,7 %`, une phase 11 et 139 phases 22/33 | Réussi |
+| 2026-07-26 | J2 symétrique défini positif | Même P187, CSR supérieur et `mtype=2` | `244,67→227,34 s`, PARDISO `-38,0 %`, RSS `-8,7 %` | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -1035,9 +1042,14 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Chronométrages détaillés ajoutés jusqu'à PARDISO
 - Équivalence constitutive bit à bit et équivalence EF sous `1e-10` validées
 - Structure CSR libre-libre figée et buffers numériques mis à jour en place
-- PARDISO piloté en phases 11/22/33 explicites, avec `mtype=11` conservé
+- PARDISO piloté en phases 11/22/33 explicites
+- J2 vérifié en CSR supérieur `mtype=2`; comportement inconnu en CSR complet
+  `mtype=11`, notamment la future plasticité cristalline par défaut
+- Contrôle runtime de l'asymétrie tangentielle sans symétrisation artificielle
 - Gate P187 : `-10,6 %` de temps processus et `-16,7 %` de pic RSS
   supplémentaires, sans modifier Newton, le point fixe ou la tangente
+- Gate symétrique P187 : `-7,1 %` de temps, `-38,0 %` dans PARDISO et
+  `-8,7 %` de pic RSS supplémentaires
 - Rapports reproductibles ajoutés sous `validation/performance/`
 
 ### 2026-07-24 — Documentation Sphinx anglaise avec Diátaxis

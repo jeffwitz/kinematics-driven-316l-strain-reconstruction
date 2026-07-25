@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The repository records seven accepted architecture decisions. This page is the
+The repository records eight accepted architecture decisions. This page is the
 English public summary; the original ADR files remain the authoritative
 versioned records.
 
@@ -72,3 +72,20 @@ phase 33 for every new tangent.
 repeated symbolic analysis are removed from the Newton loop. This decision
 does not assume matrix symmetry and does not modify Newton or the constitutive
 tangent.
+
+## ADR 0008 — Select PARDISO matrix type from a material capability
+
+The verified Python and MFront J2/Ludwik behaviours declare their algorithmic
+tangent symmetric positive definite. Their free--free matrix therefore stores
+only its upper CSR triangle and uses PARDISO `mtype=2`. The constitutive
+tangent is not symmetrized: its relative skew part is measured at runtime and
+the solve is rejected above `1e-12`.
+
+Any unclassified behaviour uses complete CSR storage and `mtype=11`. This is
+the default contract for future crystal plasticity, anisotropic plasticity, or
+other behaviours until symmetry and positive definiteness have been
+demonstrated for their exact stress/strain measures, integration algorithm,
+plane-stress condensation, and loading paths.
+
+**Consequence:** current J2 solves benefit from symmetric factorization
+without turning symmetry into a global assumption of the FEM kernel.
