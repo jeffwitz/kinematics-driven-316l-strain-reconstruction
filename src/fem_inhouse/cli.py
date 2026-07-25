@@ -33,10 +33,12 @@ from fem_inhouse.postprocessing import (
 )
 from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import (
+    CoupledValidationThresholds,
     PartitionWorkflow,
     estimate_reference_hardening_from_campaign,
     load_decision_thresholds,
     run_nonlocality_diagnostic,
+    validate_coupled_nonlocal_campaign,
 )
 
 PARTITION_FIELDS = (
@@ -203,6 +205,17 @@ def _parser() -> argparse.ArgumentParser:
         default=(0.0, 0.25, 0.5, 1.0, 2.0),
     )
     reference.add_argument("--overwrite", action="store_true")
+
+    validate_coupled = commands.add_parser(
+        "validate-coupled-nonlocal",
+        help="compare raw local and coupled partition fields with DIC on the core",
+    )
+    validate_coupled.add_argument("--input", type=Path, required=True)
+    validate_coupled.add_argument("--local-campaign", type=Path, required=True)
+    validate_coupled.add_argument("--coupled-campaign", type=Path, required=True)
+    validate_coupled.add_argument("--partition-id", type=int, required=True)
+    validate_coupled.add_argument("--output", type=Path, required=True)
+    validate_coupled.add_argument("--overwrite", action="store_true")
 
     compare = commands.add_parser(
         "compare-fields",
@@ -428,6 +441,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         _print_json(asdict(reference_report))
         return 0
+    if args.command == "validate-coupled-nonlocal":
+        coupled_report = validate_coupled_nonlocal_campaign(
+            input_directory=args.input,
+            local_campaign_directory=args.local_campaign,
+            coupled_campaign_directory=args.coupled_campaign,
+            partition_id=args.partition_id,
+            output_path=args.output,
+            thresholds=CoupledValidationThresholds(),
+            overwrite=args.overwrite,
+        )
+        _print_json(coupled_report)
+        return 0 if coupled_report["passed"] else 2
     if args.command == "compare-fields":
         reference = np.load(args.reference, mmap_mode="r", allow_pickle=False)
         prediction = np.load(args.prediction, mmap_mode="r", allow_pickle=False)
