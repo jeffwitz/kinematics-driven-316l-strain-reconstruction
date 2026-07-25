@@ -1,0 +1,378 @@
+{
+  "created_at_utc": "2026-07-25T00:53:34.817783+00:00",
+  "figures": {
+    "best_candidates.png": {
+      "bytes": 332802,
+      "sha256": "842f54a94b364d81e20adc90d160c04c0d03667e6ab7306ffc893022f0cd1f11"
+    },
+    "diffusivity_curves.svg": {
+      "bytes": 74226,
+      "sha256": "0e752721c3850ff76023032af90bb04163afc32b852f00fc7091e314f55bf0ee"
+    },
+    "evm_baseline.png": {
+      "bytes": 753673,
+      "sha256": "df612448d62b6d6ee99824a7776ef849f84e7fcbbc592922d8f468b5fb88524e"
+    },
+    "evm_comparison_ell_000000um.png": {
+      "bytes": 777947,
+      "sha256": "80abcda685a4a353e2720fe6f8f3c8f8a0096513a02c62546e60dec34098761e"
+    },
+    "evm_comparison_ell_000184um.png": {
+      "bytes": 827183,
+      "sha256": "8b2ab1a9cf43cc554e474f123288fae990dd5b837245e9f546ac83020706ae86"
+    },
+    "evm_comparison_ell_000368um.png": {
+      "bytes": 794376,
+      "sha256": "99f7636bc3e9d24563e5e7897ed4b84c6915e9bf3488864355d421b0850b525a"
+    },
+    "evm_comparison_ell_000736um.png": {
+      "bytes": 765011,
+      "sha256": "e8370185c670c7d168dea9be0c10abe466d7c0c7159750d0e7b1141fc8bb6d18"
+    },
+    "evm_comparison_ell_001472um.png": {
+      "bytes": 737889,
+      "sha256": "d932cb6e068c92b49e64d67a12bde126d5fa0b191d6e42aac5cee82ededca799"
+    },
+    "evm_comparison_ell_002944um.png": {
+      "bytes": 709623,
+      "sha256": "7f842282a7756053716f126b44555eecb2067b8de139680ba9c12df8486652d4"
+    },
+    "evm_comparison_ell_005888um.png": {
+      "bytes": 685819,
+      "sha256": "983371f8375b23855ede223e21e44e76f275abd95f4ba5dbd70e118624e6acce"
+    },
+    "metric_curves.svg": {
+      "bytes": 77721,
+      "sha256": "1bf6579acf2a7f1798343e944b2647a79168beb5ca3e5597d45a7bba8f5faf43"
+    },
+    "peeq_comparison_ell_000000um.png": {
+      "bytes": 337288,
+      "sha256": "b2641bc0592f6d3b277207eba8640fd6a8f2ce365bd7a42c99f4ff069c14977a"
+    },
+    "peeq_comparison_ell_000184um.png": {
+      "bytes": 517697,
+      "sha256": "edf1fd07f62107a3b19de1224e878e825b3d90f7b90018ea8fc44f6a8aa50142"
+    },
+    "peeq_comparison_ell_000368um.png": {
+      "bytes": 506931,
+      "sha256": "a67757d2451ea6da5494b8a6b695d24f54068ecf79e9e78ea27ec7d2dc92498b"
+    },
+    "peeq_comparison_ell_000736um.png": {
+      "bytes": 489592,
+      "sha256": "6b666ce58a9f851dfbc1eed0ac0329949fab693078b1ab069ba8d9e19f13f2ef"
+    },
+    "peeq_comparison_ell_001472um.png": {
+      "bytes": 472667,
+      "sha256": "2c60cd633648bd28ec737d5e6c622291025eb3a7b42a0326cb399100d5755507"
+    },
+    "peeq_comparison_ell_002944um.png": {
+      "bytes": 455259,
+      "sha256": "5ca9a285bc2b4e8054901433a6069c3b92528c5b27ff70aab5949e505a9f3ff0"
+    },
+    "peeq_comparison_ell_005888um.png": {
+      "bytes": 436897,
+      "sha256": "ae458dd89fe1974be20eaed54e4d65ccbe9d33cae75d8413ab7da4c32aedc9bc"
+    }
+  },
+  "filter": {
+    "axis_convention": "axis 0 = x, axis 1 = y",
+    "boundary_condition": "homogeneous Neumann flux",
+    "equation": "(I + ell^2 L_h) q_bar = q",
+    "operator": "positive cell-centred finite-difference -Laplacian",
+    "solver": "orthonormal scipy.fft DCT-II"
+  },
+  "inputs": {
+    "campaign_manifest": {
+      "bytes": 43959,
+      "path": "validation/reference_data/article_100p_pad150_p0000_mfront_v1/manifest.json",
+      "sha256": "098772c27beb8547329c7737c985140514ca69a1544c4b525ae05c2eb4c40613"
+    },
+    "displacement_x_mm": {
+      "bytes": 89333736,
+      "path": "data/processed/case_study/displacement_x_mm.npy",
+      "sha256": "d385a5f36a891fb990eb641d4808b93d1e2307bd68699d45f07a21704286a2b3"
+    },
+    "displacement_y_mm": {
+      "bytes": 89333736,
+      "path": "data/processed/case_study/displacement_y_mm.npy",
+      "sha256": "177ef78472722afbee27f7f0a89ae8ec0f0c4bfdca9f12460863b463dea633ee"
+    },
+    "partition_PEEQ": {
+      "bytes": 1876928,
+      "path": "validation/reference_data/article_100p_pad150_p0000_mfront_v1/partitions/0000/PEEQ.npy",
+      "sha256": "1f1579c070748b92ba812e781756e02cb685faffc7434322904c935eadff733a"
+    },
+    "partition_U": {
+      "bytes": 3769264,
+      "path": "validation/reference_data/article_100p_pad150_p0000_mfront_v1/partitions/0000/U.npy",
+      "sha256": "1c1c2259b3104e1fd44d2bb3e615269b5876f20bea81792600908d44377f2dd5"
+    },
+    "partition_status": {
+      "bytes": 1403,
+      "path": "validation/reference_data/article_100p_pad150_p0000_mfront_v1/partitions/0000/status.json",
+      "sha256": "b88d6736a2f4e842ddf78a6df36494d7e5a871b74196370e4b5614805899e111"
+    },
+    "prepared_manifest": {
+      "bytes": 2592,
+      "path": "data/processed/case_study/manifest.json",
+      "sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+    }
+  },
+  "length_scales": [
+    {
+      "length_mm": 0.0,
+      "length_pixels": 0.0,
+      "length_um": 0.0
+    },
+    {
+      "length_mm": 0.00184,
+      "length_pixels": 1.0,
+      "length_um": 1.84
+    },
+    {
+      "length_mm": 0.00368,
+      "length_pixels": 2.0,
+      "length_um": 3.68
+    },
+    {
+      "length_mm": 0.00736,
+      "length_pixels": 4.0,
+      "length_um": 7.36
+    },
+    {
+      "length_mm": 0.01472,
+      "length_pixels": 8.0,
+      "length_um": 14.72
+    },
+    {
+      "length_mm": 0.02944,
+      "length_pixels": 16.0,
+      "length_um": 29.44
+    },
+    {
+      "length_mm": 0.05888,
+      "length_pixels": 32.0,
+      "length_um": 58.88
+    }
+  ],
+  "observable": {
+    "construction": [
+      "strain_from_displacement",
+      "plane_stress_equivalent_strain(engineering shear)",
+      "cell_average"
+    ],
+    "dic_filtered": false,
+    "peeq_amplitude_compared_to_dic_evm": false,
+    "primary": "EVM_HISTORICAL",
+    "secondary": "PEEQ"
+  },
+  "options": {
+    "decision_thresholds": null,
+    "dic_quantiles": [
+      0.8,
+      0.9,
+      0.95
+    ],
+    "include_peeq": true,
+    "minimum_padding_length_ratio": 4.0,
+    "mode": "exploratory",
+    "save_fields": "all",
+    "top_fractions": [
+      0.05,
+      0.1,
+      0.2
+    ]
+  },
+  "partition": {
+    "core_bounds": [
+      0,
+      360,
+      0,
+      310
+    ],
+    "core_shape": [
+      360,
+      310
+    ],
+    "global_shape": [
+      3600,
+      3100
+    ],
+    "index": [
+      0,
+      0
+    ],
+    "minimum_artificial_padding_pixels": 150,
+    "nominal_padding_pixels": 150,
+    "padding_sides": {
+      "x_minus": {
+        "mm": 0.0,
+        "pixels": 0,
+        "um": 0.0
+      },
+      "x_plus": {
+        "mm": 0.276,
+        "pixels": 150,
+        "um": 276.0
+      },
+      "y_minus": {
+        "mm": 0.0,
+        "pixels": 0,
+        "um": 0.0
+      },
+      "y_plus": {
+        "mm": 0.276,
+        "pixels": 150,
+        "um": 276.0
+      }
+    },
+    "partition_id": 0,
+    "solve_bounds": [
+      0,
+      510,
+      0,
+      460
+    ],
+    "solve_shape": [
+      510,
+      460
+    ]
+  },
+  "saved_fields": {
+    "evm_dic_reference.npy": {
+      "sha256": "fdf71374889017d2c41b5fe4d430d90b7b981aa4472f805d83519b13a3748cbe",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_000000um.npy": {
+      "sha256": "0b445f9c66012da2b090a83396e2f89e749f36c40a6bcaac730cc50043d3aaa1",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_000184um.npy": {
+      "sha256": "b0b2c2d89e4b2c4a38636a6720252450d7526b378d00a4612ac493efc034e85d",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_000368um.npy": {
+      "sha256": "f8fa5f2bffebfbb30df3c82575b19d6af24ce516c0e63f3e3349568afbfd8d75",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_000736um.npy": {
+      "sha256": "fe576e197258484f19c3c5c60fd845c59ebf890bc02f559674300611db64d75f",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_001472um.npy": {
+      "sha256": "6b867a1ba2179440e72f72f3f364ff64603e7e2d74601c6d044d1f3ef985ded9",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_002944um.npy": {
+      "sha256": "198a2026638df8e6fb3892bb229b7df7f5a758ba10bd38998eae5af228f3f264",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_ell_005888um.npy": {
+      "sha256": "9dcb917b60099ebe2ddc500466890efc52150a5e7ae43dda4cc3605bce9bc094",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "evm_fe_raw.npy": {
+      "sha256": "0b445f9c66012da2b090a83396e2f89e749f36c40a6bcaac730cc50043d3aaa1",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_000000um.npy": {
+      "sha256": "d3c5d26e68660e2d0f16fd7e727a3796f8e9f1fad94607f1442011fc2d4c1d17",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_000184um.npy": {
+      "sha256": "9446801573ee33053cd87e109c956210f5c84fe26685752fd369201cbdae8028",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_000368um.npy": {
+      "sha256": "9cb928df32baa82a5ad4b4636fac8bcd1910fc96be9260edb5083a4ccd16c5f0",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_000736um.npy": {
+      "sha256": "8e5119769a69e34478ade0c3daeb15bb5f9685e6232d8751dd71f9512abce766",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_001472um.npy": {
+      "sha256": "1a132dbda9a5a2b7ff3552438e938411caa5ef478670dc1175868a5720ce7203",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_002944um.npy": {
+      "sha256": "66a59a01f2ad9cbeab0ceb0c3dda18517a9107377cb6a7000d1c4c070d904616",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_ell_005888um.npy": {
+      "sha256": "de2ca72fe88472790a899bde70befbf18c6db07e4c0df8c1fdf517eeb85e002d",
+      "shape": [
+        510,
+        460
+      ]
+    },
+    "peeq_raw.npy": {
+      "sha256": "1f1579c070748b92ba812e781756e02cb685faffc7434322904c935eadff733a",
+      "shape": [
+        510,
+        460
+      ]
+    }
+  },
+  "schema_version": 1,
+  "software": {
+    "git": {
+      "commit": "7af134a08f5ed70acd2a3ba80885b94b4880ae09",
+      "dirty": false
+    },
+    "name": "kinematics-driven-316l-strain-reconstruction",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "version": "0.1.0"
+  },
+  "spacing": {
+    "pixel_size_um": 1.84,
+    "spacing_x_mm": 0.00184,
+    "spacing_y_mm": 0.00184
+  }
+}

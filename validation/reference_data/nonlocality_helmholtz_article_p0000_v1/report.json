@@ -1,0 +1,156 @@
+{
+  "diagnostic_result": {
+    "automatic_physical_conclusion": null,
+    "best_by_correlation_mm": 0.05888,
+    "best_by_iou_mm": 0.05888,
+    "best_by_rmse_mm": 0.05888,
+    "interpretation": "Exploratory rankings only; no material length or nonlocal hypothesis is automatically validated.",
+    "pareto_length_scales_mm": [
+      0.05888
+    ],
+    "selection_iou_top_fraction": 0.1
+  },
+  "facts": {
+    "all_lengths": [
+      {
+        "length_mm": 0.0,
+        "length_pixels": 0.0,
+        "length_um": 0.0
+      },
+      {
+        "length_mm": 0.00184,
+        "length_pixels": 1.0,
+        "length_um": 1.84
+      },
+      {
+        "length_mm": 0.00368,
+        "length_pixels": 2.0,
+        "length_um": 3.68
+      },
+      {
+        "length_mm": 0.00736,
+        "length_pixels": 4.0,
+        "length_um": 7.36
+      },
+      {
+        "length_mm": 0.01472,
+        "length_pixels": 8.0,
+        "length_um": 14.72
+      },
+      {
+        "length_mm": 0.02944,
+        "length_pixels": 16.0,
+        "length_um": 29.44
+      },
+      {
+        "length_mm": 0.05888,
+        "length_pixels": 32.0,
+        "length_um": 58.88
+      }
+    ],
+    "boundary_contaminated_lengths_mm": [],
+    "elapsed_seconds": 20.648859148146585,
+    "filter_checks": [
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.0,
+        "mean_drift_full": 0.0,
+        "residual_relative": 0.0
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.0,
+        "mean_drift_full": 0.0,
+        "residual_relative": 0.0
+      },
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.00184,
+        "mean_drift_full": 0.0,
+        "residual_relative": 1.1471730707369187e-15
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.00184,
+        "mean_drift_full": 4.336808689942018e-19,
+        "residual_relative": 1.2397591511291288e-15
+      },
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.00368,
+        "mean_drift_full": 4.336808689942018e-19,
+        "residual_relative": 3.481334987549825e-15
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.00368,
+        "mean_drift_full": 4.336808689942018e-19,
+        "residual_relative": 3.666083685582526e-15
+      },
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.00736,
+        "mean_drift_full": 4.336808689942018e-19,
+        "residual_relative": 1.211782809300423e-14
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.00736,
+        "mean_drift_full": 8.673617379884035e-19,
+        "residual_relative": 1.2332562580706182e-14
+      },
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.01472,
+        "mean_drift_full": 0.0,
+        "residual_relative": 4.3346001751152344e-14
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.01472,
+        "mean_drift_full": 8.673617379884035e-19,
+        "residual_relative": 4.089705571195636e-14
+      },
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.02944,
+        "mean_drift_full": 0.0,
+        "residual_relative": 1.5081531214503953e-13
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.02944,
+        "mean_drift_full": 8.673617379884035e-19,
+        "residual_relative": 1.3034350152522664e-13
+      },
+      {
+        "field": "EVM_HISTORICAL",
+        "length_mm": 0.05888,
+        "mean_drift_full": 4.336808689942018e-19,
+        "residual_relative": 5.575263097906369e-13
+      },
+      {
+        "field": "PEEQ",
+        "length_mm": 0.05888,
+        "mean_drift_full": 4.336808689942018e-19,
+        "residual_relative": 4.084658703096342e-13
+      }
+    ],
+    "metric_row_count": 14,
+    "metrics_csv_sha256": "d7017ea2410c573d876eac5ed5b1afb5981c5f41f02ddcfc2a9c7d5b2c68611f"
+  },
+  "physical_interpretation": {
+    "allowed_final_conclusions": [
+      "spatial_width_hypothesis_supported",
+      "spatial_width_hypothesis_partially_supported",
+      "spatial_width_hypothesis_insufficient"
+    ],
+    "automatic_conclusion": null,
+    "identified_material_length": null,
+    "mechanical_solution_modified": false,
+    "statement": "This scalar post-processing experiment diagnoses spatial width only. It does not identify an internal material length or validate a coupled nonlocal constitutive model."
+  },
+  "schema_version": 1,
+  "scientific_question": "Does a scalar spatial regularization length improve FEM-DIC agreement without changing the mechanical solution?",
+  "status": "completed"
+}
