@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "purpose": "Solve held-out partition 42 for confirmation of the P48 Helmholtz candidate",
+  "software_git_sha": "659c05bea52af372713dff9f9f10a2da5c1bcc9e",
+  "prepared_input_manifest": {
+    "path": "data/processed/case_study/manifest.json",
+    "sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "mfront": {
+    "behaviour": "PixelLudwikJ2Plasticity",
+    "source": "mfront/PixelLudwikJ2Plasticity.mfront",
+    "source_sha256": "6d40bbdeab5b6c829b5e2b89a00366a6fd04db598ac78359990561691c3d01ff",
+    "library": "build/mfront/src/libBehaviour.so",
+    "library_sha256": "bad769e3db0b9f810c10f8ef6717263cbcdcc87e9f82f2a58823c594321ed031",
+    "tfel_version": "5.1.0"
+  },
+  "layout": {
+    "global_shape": [3600, 3100],
+    "partition_count": 100,
+    "partition_id": 42,
+    "partition_index": [4, 2],
+    "core_bounds": [1440, 1800, 620, 930],
+    "core_shape": [360, 310],
+    "padding": 150,
+    "solve_bounds": [1290, 1950, 470, 1080],
+    "solve_shape": [660, 610],
+    "element_count": 402600
+  },
+  "solver": {
+    "linear_backend": "pypardiso",
+    "constitutive_backend": "mfront-native-plane-stress",
+    "hardening_mode": "ludwik",
+    "peeq_cap": null,
+    "increments": 20,
+    "maximum_newton_iterations": 15,
+    "residual_tolerance": 1e-06
+  },
+  "environment": {
+    "MGIS_THREADS": 8,
+    "MKL_NUM_THREADS": null,
+    "OMP_NUM_THREADS": null
+  },
+  "required_outputs": [
+    "U",
+    "S",
+    "S_3D",
+    "E",
+    "E_3D",
+    "EE_3D",
+    "PE",
+    "PE_3D",
+    "PEEQ",
+    "PLANE_STRESS_RESIDUAL_MPA",
+    "S33_RESIDUAL_MPA",
+    "RF"
+  ],
+  "interrupted_attempt": {
+    "exit_status": 143,
+    "mechanical_failure": false,
+    "partial_partition_written": false,
+    "preserved_log": "attempt1-interrupted.log"
+  },
+  "command": "source /home/jeff/.local/share/tfel/env/env.sh && .venv/bin/fem-inhouse --verbose partition --input data/processed/case_study --output results/reconstruction-100 --count 100 --padding 150 --increments 20 --mfront-threads 8 --partition-id 42"
+}

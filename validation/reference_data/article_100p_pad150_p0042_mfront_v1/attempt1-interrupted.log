@@ -1,0 +1,3 @@
+2026-07-25 09:29:10,947 INFO fem_inhouse.workflows.partitioned Solving partition 42 of 100
+2026-07-25 09:29:10,952 INFO fem_inhouse.solver Starting 660x610 element solve with pypardiso (MKL, multithreaded)
+2026-07-25 09:29:12,149 INFO fem_inhouse.core.nonlinear nonlinear solve started
