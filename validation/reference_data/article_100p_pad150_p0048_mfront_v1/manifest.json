@@ -1,0 +1,2822 @@
+{
+  "config": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 3600,
+      "ny": 3100,
+      "scale_factor": 1.84
+    },
+    "solver": {
+      "constitutive_backend": "mfront",
+      "hardening_mode": "ludwik",
+      "increments": 20,
+      "local_plane_stress_relative_tolerance": 1e-10,
+      "local_plane_stress_tolerance_mpa": 1e-08,
+      "max_newton_iterations": 15,
+      "maximum_cbb_condition_number": 1000000000000.0,
+      "maximum_local_plane_stress_iterations": 15,
+      "mfront_library": "build/mfront/src/libBehaviour.so",
+      "mfront_threads": 8,
+      "minimum_step_divisor": 1024,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-06
+    }
+  },
+  "inputs": {
+    "displacement_x_mm": "db0f2dcb528b92572c9f6a9391558bd015ff1769dfb00940b5add6725b210ea4",
+    "displacement_y_mm": "606d4d24e50333296ae6b82d2ab21c8083176ff4bef80acacd1bcd164ca142a4",
+    "hardening_coefficient_mpa": "dac7120f78e12421601d8c6ff0bc8005efc4a7746e126f571674cb502bf89294",
+    "yield_stress_mpa": "54107110aa3b1d005af2d6124b778fefc61fbb74110c64b0c065b812294ddaa6"
+  },
+  "layout": {
+    "global_shape": [
+      3600,
+      3100
+    ],
+    "padding": 150,
+    "partition_shape": [
+      10,
+      10
+    ],
+    "partitions": [
+      {
+        "core_bounds": [
+          0,
+          360,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          0
+        ],
+        "partition_id": 0,
+        "solve_bounds": [
+          0,
+          510,
+          0,
+          460
+        ],
+        "solve_shape": [
+          510,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          1
+        ],
+        "partition_id": 1,
+        "solve_bounds": [
+          0,
+          510,
+          160,
+          770
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          2
+        ],
+        "partition_id": 2,
+        "solve_bounds": [
+          0,
+          510,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          3
+        ],
+        "partition_id": 3,
+        "solve_bounds": [
+          0,
+          510,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          4
+        ],
+        "partition_id": 4,
+        "solve_bounds": [
+          0,
+          510,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          5
+        ],
+        "partition_id": 5,
+        "solve_bounds": [
+          0,
+          510,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          6
+        ],
+        "partition_id": 6,
+        "solve_bounds": [
+          0,
+          510,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          7
+        ],
+        "partition_id": 7,
+        "solve_bounds": [
+          0,
+          510,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          8
+        ],
+        "partition_id": 8,
+        "solve_bounds": [
+          0,
+          510,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          0,
+          360,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          0,
+          9
+        ],
+        "partition_id": 9,
+        "solve_bounds": [
+          0,
+          510,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          510,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          0
+        ],
+        "partition_id": 10,
+        "solve_bounds": [
+          210,
+          870,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          1
+        ],
+        "partition_id": 11,
+        "solve_bounds": [
+          210,
+          870,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          2
+        ],
+        "partition_id": 12,
+        "solve_bounds": [
+          210,
+          870,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          3
+        ],
+        "partition_id": 13,
+        "solve_bounds": [
+          210,
+          870,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          4
+        ],
+        "partition_id": 14,
+        "solve_bounds": [
+          210,
+          870,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          5
+        ],
+        "partition_id": 15,
+        "solve_bounds": [
+          210,
+          870,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          6
+        ],
+        "partition_id": 16,
+        "solve_bounds": [
+          210,
+          870,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          7
+        ],
+        "partition_id": 17,
+        "solve_bounds": [
+          210,
+          870,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          8
+        ],
+        "partition_id": 18,
+        "solve_bounds": [
+          210,
+          870,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          360,
+          720,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          1,
+          9
+        ],
+        "partition_id": 19,
+        "solve_bounds": [
+          210,
+          870,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          0
+        ],
+        "partition_id": 20,
+        "solve_bounds": [
+          570,
+          1230,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          1
+        ],
+        "partition_id": 21,
+        "solve_bounds": [
+          570,
+          1230,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          2
+        ],
+        "partition_id": 22,
+        "solve_bounds": [
+          570,
+          1230,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          3
+        ],
+        "partition_id": 23,
+        "solve_bounds": [
+          570,
+          1230,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          4
+        ],
+        "partition_id": 24,
+        "solve_bounds": [
+          570,
+          1230,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          5
+        ],
+        "partition_id": 25,
+        "solve_bounds": [
+          570,
+          1230,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          6
+        ],
+        "partition_id": 26,
+        "solve_bounds": [
+          570,
+          1230,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          7
+        ],
+        "partition_id": 27,
+        "solve_bounds": [
+          570,
+          1230,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          8
+        ],
+        "partition_id": 28,
+        "solve_bounds": [
+          570,
+          1230,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          720,
+          1080,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          2,
+          9
+        ],
+        "partition_id": 29,
+        "solve_bounds": [
+          570,
+          1230,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          0
+        ],
+        "partition_id": 30,
+        "solve_bounds": [
+          930,
+          1590,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          1
+        ],
+        "partition_id": 31,
+        "solve_bounds": [
+          930,
+          1590,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          2
+        ],
+        "partition_id": 32,
+        "solve_bounds": [
+          930,
+          1590,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          3
+        ],
+        "partition_id": 33,
+        "solve_bounds": [
+          930,
+          1590,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          4
+        ],
+        "partition_id": 34,
+        "solve_bounds": [
+          930,
+          1590,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          5
+        ],
+        "partition_id": 35,
+        "solve_bounds": [
+          930,
+          1590,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          6
+        ],
+        "partition_id": 36,
+        "solve_bounds": [
+          930,
+          1590,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          7
+        ],
+        "partition_id": 37,
+        "solve_bounds": [
+          930,
+          1590,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          8
+        ],
+        "partition_id": 38,
+        "solve_bounds": [
+          930,
+          1590,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1080,
+          1440,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          3,
+          9
+        ],
+        "partition_id": 39,
+        "solve_bounds": [
+          930,
+          1590,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          0
+        ],
+        "partition_id": 40,
+        "solve_bounds": [
+          1290,
+          1950,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          1
+        ],
+        "partition_id": 41,
+        "solve_bounds": [
+          1290,
+          1950,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          2
+        ],
+        "partition_id": 42,
+        "solve_bounds": [
+          1290,
+          1950,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          3
+        ],
+        "partition_id": 43,
+        "solve_bounds": [
+          1290,
+          1950,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          4
+        ],
+        "partition_id": 44,
+        "solve_bounds": [
+          1290,
+          1950,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          5
+        ],
+        "partition_id": 45,
+        "solve_bounds": [
+          1290,
+          1950,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          6
+        ],
+        "partition_id": 46,
+        "solve_bounds": [
+          1290,
+          1950,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          7
+        ],
+        "partition_id": 47,
+        "solve_bounds": [
+          1290,
+          1950,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          8
+        ],
+        "partition_id": 48,
+        "solve_bounds": [
+          1290,
+          1950,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1440,
+          1800,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          4,
+          9
+        ],
+        "partition_id": 49,
+        "solve_bounds": [
+          1290,
+          1950,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          0
+        ],
+        "partition_id": 50,
+        "solve_bounds": [
+          1650,
+          2310,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          1
+        ],
+        "partition_id": 51,
+        "solve_bounds": [
+          1650,
+          2310,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          2
+        ],
+        "partition_id": 52,
+        "solve_bounds": [
+          1650,
+          2310,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          3
+        ],
+        "partition_id": 53,
+        "solve_bounds": [
+          1650,
+          2310,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          4
+        ],
+        "partition_id": 54,
+        "solve_bounds": [
+          1650,
+          2310,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          5
+        ],
+        "partition_id": 55,
+        "solve_bounds": [
+          1650,
+          2310,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          6
+        ],
+        "partition_id": 56,
+        "solve_bounds": [
+          1650,
+          2310,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          7
+        ],
+        "partition_id": 57,
+        "solve_bounds": [
+          1650,
+          2310,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          8
+        ],
+        "partition_id": 58,
+        "solve_bounds": [
+          1650,
+          2310,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          1800,
+          2160,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          5,
+          9
+        ],
+        "partition_id": 59,
+        "solve_bounds": [
+          1650,
+          2310,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          0
+        ],
+        "partition_id": 60,
+        "solve_bounds": [
+          2010,
+          2670,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          1
+        ],
+        "partition_id": 61,
+        "solve_bounds": [
+          2010,
+          2670,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          2
+        ],
+        "partition_id": 62,
+        "solve_bounds": [
+          2010,
+          2670,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          3
+        ],
+        "partition_id": 63,
+        "solve_bounds": [
+          2010,
+          2670,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          4
+        ],
+        "partition_id": 64,
+        "solve_bounds": [
+          2010,
+          2670,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          5
+        ],
+        "partition_id": 65,
+        "solve_bounds": [
+          2010,
+          2670,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          6
+        ],
+        "partition_id": 66,
+        "solve_bounds": [
+          2010,
+          2670,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          7
+        ],
+        "partition_id": 67,
+        "solve_bounds": [
+          2010,
+          2670,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          8
+        ],
+        "partition_id": 68,
+        "solve_bounds": [
+          2010,
+          2670,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2160,
+          2520,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          6,
+          9
+        ],
+        "partition_id": 69,
+        "solve_bounds": [
+          2010,
+          2670,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          0
+        ],
+        "partition_id": 70,
+        "solve_bounds": [
+          2370,
+          3030,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          1
+        ],
+        "partition_id": 71,
+        "solve_bounds": [
+          2370,
+          3030,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          2
+        ],
+        "partition_id": 72,
+        "solve_bounds": [
+          2370,
+          3030,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          3
+        ],
+        "partition_id": 73,
+        "solve_bounds": [
+          2370,
+          3030,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          4
+        ],
+        "partition_id": 74,
+        "solve_bounds": [
+          2370,
+          3030,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          5
+        ],
+        "partition_id": 75,
+        "solve_bounds": [
+          2370,
+          3030,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          6
+        ],
+        "partition_id": 76,
+        "solve_bounds": [
+          2370,
+          3030,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          7
+        ],
+        "partition_id": 77,
+        "solve_bounds": [
+          2370,
+          3030,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          8
+        ],
+        "partition_id": 78,
+        "solve_bounds": [
+          2370,
+          3030,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2520,
+          2880,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          7,
+          9
+        ],
+        "partition_id": 79,
+        "solve_bounds": [
+          2370,
+          3030,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          0
+        ],
+        "partition_id": 80,
+        "solve_bounds": [
+          2730,
+          3390,
+          0,
+          460
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          1
+        ],
+        "partition_id": 81,
+        "solve_bounds": [
+          2730,
+          3390,
+          160,
+          770
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          2
+        ],
+        "partition_id": 82,
+        "solve_bounds": [
+          2730,
+          3390,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          3
+        ],
+        "partition_id": 83,
+        "solve_bounds": [
+          2730,
+          3390,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          4
+        ],
+        "partition_id": 84,
+        "solve_bounds": [
+          2730,
+          3390,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          5
+        ],
+        "partition_id": 85,
+        "solve_bounds": [
+          2730,
+          3390,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          6
+        ],
+        "partition_id": 86,
+        "solve_bounds": [
+          2730,
+          3390,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          7
+        ],
+        "partition_id": 87,
+        "solve_bounds": [
+          2730,
+          3390,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          8
+        ],
+        "partition_id": 88,
+        "solve_bounds": [
+          2730,
+          3390,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          660,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          2880,
+          3240,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          8,
+          9
+        ],
+        "partition_id": 89,
+        "solve_bounds": [
+          2730,
+          3390,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          660,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          0,
+          310
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          0
+        ],
+        "partition_id": 90,
+        "solve_bounds": [
+          3090,
+          3600,
+          0,
+          460
+        ],
+        "solve_shape": [
+          510,
+          460
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          310,
+          620
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          1
+        ],
+        "partition_id": 91,
+        "solve_bounds": [
+          3090,
+          3600,
+          160,
+          770
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          620,
+          930
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          2
+        ],
+        "partition_id": 92,
+        "solve_bounds": [
+          3090,
+          3600,
+          470,
+          1080
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          930,
+          1240
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          3
+        ],
+        "partition_id": 93,
+        "solve_bounds": [
+          3090,
+          3600,
+          780,
+          1390
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          1240,
+          1550
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          4
+        ],
+        "partition_id": 94,
+        "solve_bounds": [
+          3090,
+          3600,
+          1090,
+          1700
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          1550,
+          1860
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          5
+        ],
+        "partition_id": 95,
+        "solve_bounds": [
+          3090,
+          3600,
+          1400,
+          2010
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          1860,
+          2170
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          6
+        ],
+        "partition_id": 96,
+        "solve_bounds": [
+          3090,
+          3600,
+          1710,
+          2320
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          2170,
+          2480
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          7
+        ],
+        "partition_id": 97,
+        "solve_bounds": [
+          3090,
+          3600,
+          2020,
+          2630
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          2480,
+          2790
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          8
+        ],
+        "partition_id": 98,
+        "solve_bounds": [
+          3090,
+          3600,
+          2330,
+          2940
+        ],
+        "solve_shape": [
+          510,
+          610
+        ]
+      },
+      {
+        "core_bounds": [
+          3240,
+          3600,
+          2790,
+          3100
+        ],
+        "core_shape": [
+          360,
+          310
+        ],
+        "index": [
+          9,
+          9
+        ],
+        "partition_id": 99,
+        "solve_bounds": [
+          3090,
+          3600,
+          2640,
+          3100
+        ],
+        "solve_shape": [
+          510,
+          460
+        ]
+      }
+    ]
+  },
+  "result_field_metadata": {
+    "E": {
+      "components": "[e11, e22, gamma12]",
+      "unit": "1"
+    },
+    "EE_3D": {
+      "components": "symmetric 3x3 elastic strain",
+      "unit": "1"
+    },
+    "E_3D": {
+      "components": "symmetric 3x3 total strain",
+      "unit": "1"
+    },
+    "PE": {
+      "components": "[ep11, ep22, gamma_p12]",
+      "unit": "1"
+    },
+    "PEEQ": {
+      "components": "accumulated equivalent plastic strain",
+      "unit": "1"
+    },
+    "PE_3D": {
+      "components": "symmetric 3x3 plastic strain",
+      "unit": "1"
+    },
+    "PLANE_STRESS_RESIDUAL_MPA": {
+      "components": "[s33, s13, s23]",
+      "unit": "MPa"
+    },
+    "RF": {
+      "components": "[r1, r2]",
+      "unit": "N for implicit 1 mm thickness"
+    },
+    "S": {
+      "components": "[s11, s22, s12]",
+      "unit": "MPa"
+    },
+    "S33_RESIDUAL_MPA": {
+      "components": "s33",
+      "unit": "MPa"
+    },
+    "S_3D": {
+      "components": "symmetric 3x3 Cauchy stress",
+      "unit": "MPa"
+    },
+    "U": {
+      "components": "[u1, u2]",
+      "unit": "mm"
+    }
+  },
+  "result_fields": [
+    "E",
+    "EE_3D",
+    "E_3D",
+    "PE",
+    "PEEQ",
+    "PE_3D",
+    "PLANE_STRESS_RESIDUAL_MPA",
+    "RF",
+    "S",
+    "S33_RESIDUAL_MPA",
+    "S_3D",
+    "U"
+  ],
+  "schema_version": 1,
+  "software": {
+    "name": "kinematics-driven-316l-strain-reconstruction",
+    "source_sha256": "87de09d927dd72b6270e8e6aaf067454aed68a9f2c839261e17c521511700be0",
+    "version": "0.1.0"
+  }
+}

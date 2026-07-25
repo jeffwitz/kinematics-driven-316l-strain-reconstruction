@@ -1,0 +1,226 @@
+{
+  "comparison_to_saved_campaign": null,
+  "constitutive_model": {
+    "backend": "mfront",
+    "hardening_mode": "ludwik",
+    "mfront": {
+      "behaviour": "PixelLudwikJ2Plasticity",
+      "library": "build/mfront/src/libBehaviour.so",
+      "library_sha256": "bad769e3db0b9f810c10f8ef6717263cbcdcc87e9f82f2a58823c594321ed031",
+      "source": "mfront/PixelLudwikJ2Plasticity.mfront",
+      "source_sha256": "6d40bbdeab5b6c829b5e2b89a00366a6fd04db598ac78359990561691c3d01ff",
+      "tfel_version": "5.1.0"
+    },
+    "peeq_cap": null
+  },
+  "convergence": {
+    "attempted_increments": 20,
+    "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-native-plane-stress",
+    "converged_increments": 20,
+    "cutbacks": 0,
+    "final_convergence_criterion": "relative_residual",
+    "final_relative_residual": 9.04546826278125e-07,
+    "final_residual_norm": 4.323653894781236e-06,
+    "maximum_newton_iterations": 7,
+    "total_newton_iterations": 121
+  },
+  "derived_fields": {
+    "DIC_EVM": {
+      "sha256": "c28520c4dd566d4be5be0ea0de3fb149bd6cfedf36a4ca36e06a8a06603698e2",
+      "shape": [
+        661,
+        611
+      ]
+    },
+    "DIFF_EVM": {
+      "sha256": "76908539c3ec3a776f2e9fa97fbc27d31159aa119d8534ec1c5d065096978eec",
+      "shape": [
+        661,
+        611
+      ]
+    },
+    "FEM_EVM": {
+      "sha256": "577d54385b1a7bf6ccc9166b78b5aa35a384fd87a36a4863f6493caf7135946d",
+      "shape": [
+        661,
+        611
+      ]
+    },
+    "S_MISES": {
+      "sha256": "6e751148be989deb59d9d1332f69db8c2bac7e62948c482ef738b9818ab514e4",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "preview_png_sha256": "068b29b3e3ea2e35ceaacb23f682a427b2749f830d822a37dfd07c8836c79217"
+  },
+  "dic_fem_comparison": {
+    "displacement": {
+      "U1_mae_mm_full_solve": 8.685266925162226e-05,
+      "U1_rmse_mm_full_solve": 0.00011727081878667723,
+      "U2_mae_mm_full_solve": 0.00015488212775773837,
+      "U2_rmse_mm_full_solve": 0.00021732082538681403
+    },
+    "equivalent_strain_core_nodes": {
+      "bias_percentage_points": -0.02231429017330003,
+      "mae_percentage_points": 0.1944861743520486,
+      "relative_l2_error": 0.8313308318301099,
+      "rmse_percentage_points": 0.2766581394144718,
+      "shape": [
+        361,
+        311
+      ],
+      "spatial_correlation": 0.28686800908150184
+    },
+    "equivalent_strain_full_solve": {
+      "bias_percentage_points": -0.009583657550032936,
+      "mae_percentage_points": 0.18065275286542562,
+      "relative_l2_error": 0.7925386607665175,
+      "rmse_percentage_points": 0.2706259642692027,
+      "spatial_correlation": 0.37783275466440197
+    }
+  },
+  "integrity": {
+    "all_fields_finite": true,
+    "all_hashes_match_status": true,
+    "fields": {
+      "E": {
+        "dtype": "float64",
+        "max": 0.10325265437768572,
+        "min": -0.050399531139687814,
+        "sha256": "92c9fa47c4bde36a48eb25c2cd9f577839aed7f41a239ca552a60a31d530ae6b",
+        "shape": [
+          660,
+          610,
+          3
+        ]
+      },
+      "PE": {
+        "dtype": "float64",
+        "max": 0.10274457195785022,
+        "min": -0.050012759717018386,
+        "sha256": "88b5aa28b8ce9646b66946c6ad490a8325c7658f57c51dbc7194a4767e1e62a3",
+        "shape": [
+          660,
+          610,
+          3
+        ]
+      },
+      "PEEQ": {
+        "dtype": "float64",
+        "max": 0.11289889325660095,
+        "min": 0.0,
+        "sha256": "ff550ee5afbb64dac469e5570eb54525ec44f926eb35cdc79496122fd05d2a03",
+        "shape": [
+          660,
+          610
+        ]
+      },
+      "RF": {
+        "dtype": "float64",
+        "max": 0.8409705537850354,
+        "min": -0.9051091665290404,
+        "sha256": "7e6010269fe0a1b126780acacf183ea54a61b94a09157a6bd6369a942a4c85d6",
+        "shape": [
+          661,
+          611,
+          2
+        ]
+      },
+      "S": {
+        "dtype": "float64",
+        "max": 580.297156180997,
+        "min": -521.8395545401212,
+        "sha256": "f4441b9b2e038aec3fc44cb863ed1eea93ed1d3d361c9513e79a0645a90d6fec",
+        "shape": [
+          660,
+          610,
+          3
+        ]
+      },
+      "U": {
+        "dtype": "float64",
+        "max": 0.07755885253906247,
+        "min": -0.009737763099670406,
+        "sha256": "1f61b05e67ce19e0662401d8a4a91a617d833c00f6ac445efd59b9d7ff57d17a",
+        "shape": [
+          661,
+          611,
+          2
+        ]
+      }
+    }
+  },
+  "mechanical_checks": {
+    "dic_boundary_max_abs_error_mm": 5.551115123125783e-17,
+    "dic_boundary_node_count": 2540,
+    "dic_boundary_rms_error_mm": 1.8469561018533373e-17,
+    "peeq": {
+      "above_legacy_0_2_cap_fraction": 0.0,
+      "max": 0.11289889325660095,
+      "mean": 0.002286372266940844,
+      "min": 0.0,
+      "positive_fraction": 0.8881892697466468
+    },
+    "reaction_absolute_sum": [
+      304.4777209787288,
+      486.56767506788236
+    ],
+    "reaction_balance_ratio": 3.1815418368501014e-12,
+    "reaction_resultant": [
+      4.4834896906209565e-10,
+      2.476486155034152e-09
+    ],
+    "von_mises_mpa": {
+      "max": 662.1325350831717,
+      "mean": 222.1386003250907,
+      "min": 34.492178477948976,
+      "p95": 322.6401454604574
+    }
+  },
+  "outcome": "converged",
+  "performance": {
+    "average_cpu_percent": 342,
+    "constitutive_seconds": 333.02421728125773,
+    "elastic_assembly_seconds": 2.6329809301532805,
+    "exit_status": 0,
+    "initialization_seconds": 1.6096179001033306,
+    "linear_solve_seconds": 546.4441225586925,
+    "maximum_resident_set_kib": 7869356,
+    "output_seconds": 1.3009387888014317,
+    "process_wall_seconds": 1335.97,
+    "solver_elapsed_seconds": 1332.7391896701884,
+    "swaps": 0,
+    "system_seconds": 468.92,
+    "tangent_assembly_seconds": 360.072240133537,
+    "user_seconds": 4112.88,
+    "write_seconds": 1.2959209349937737
+  },
+  "provenance": {
+    "prepared_input_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "resource_usage_sha256": "20932d6b84eb360be194282b1430b413e1978c515e1f37f39c0ae9810351400b",
+    "run_log_sha256": "6cebc7608425fdad9fc5b6ba8219fce122052754f43b073221194a44bada9484",
+    "software_git_sha": "051b412d35e3f08d245dd83af87aa06c428ab52b",
+    "status_sha256": "364e18f6b038982d87c8f48fb7019685575d86cedba7a472858df36e79044938",
+    "workflow_manifest_sha256": "fa199107e16f641dbb281dd10d9305fd43b12cdc4f9ab88bce33e74b6eb2dd2e"
+  },
+  "schema_version": 1,
+  "scope": {
+    "core_element_shape": [
+      360,
+      310
+    ],
+    "element_count": 402600,
+    "global_element_shape": [
+      3600,
+      3100
+    ],
+    "padding_elements": 150,
+    "partition_id": 48,
+    "solve_element_shape": [
+      660,
+      610
+    ]
+  }
+}
