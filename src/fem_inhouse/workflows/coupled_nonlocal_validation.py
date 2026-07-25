@@ -15,6 +15,7 @@ from fem_inhouse.partitioning import PartitionLayout
 from fem_inhouse.partitioning.stitch import extract_partition_field
 from fem_inhouse.postprocessing.metrics import (
     absolute_threshold_overlap_metrics,
+    field_diffusivity_metrics,
     field_error_metrics,
     localization_overlap_metrics,
 )
@@ -314,6 +315,13 @@ def validate_coupled_nonlocal_campaign(
         float(np.max(vm_core)),
     )
 
+    local_peeq = _load_verified_field(
+        local_campaign,
+        partition_id=partition_id,
+        status=statuses["local"],
+        name="PEEQ",
+    )
+    coupled_internal_fields: dict[str, FloatArray] = {}
     for name in (
         "PEEQ",
         "PEEQ_NONLOCAL",
@@ -322,12 +330,30 @@ def validate_coupled_nonlocal_campaign(
         "YIELD_SURFACE_RADIUS_MPA",
         "NONLOCAL_RESIDUAL",
     ):
-        _load_verified_field(
+        coupled_internal_fields[name] = _load_verified_field(
             coupled_campaign,
             partition_id=partition_id,
             status=statuses["coupled"],
             name=name,
         )
+    local_peeq_core = local_peeq[core]
+    coupled_peeq_core = coupled_internal_fields["PEEQ"][core]
+    local_peeq_diffusivity = field_diffusivity_metrics(
+        local_peeq_core,
+        raw_field=local_peeq_core,
+        spacing_x_mm=spacing_mm,
+        spacing_y_mm=spacing_mm,
+    )
+    coupled_peeq_diffusivity = field_diffusivity_metrics(
+        coupled_peeq_core,
+        raw_field=local_peeq_core,
+        spacing_x_mm=spacing_mm,
+        spacing_y_mm=spacing_mm,
+    )
+    mismatch_core = coupled_internal_fields["PEEQ_MISMATCH"][core]
+    hardening_core = coupled_internal_fields["NONLOCAL_HARDENING_MPA"][core]
+    yield_radius_core = coupled_internal_fields["YIELD_SURFACE_RADIUS_MPA"][core]
+    nonlocal_residual_core = coupled_internal_fields["NONLOCAL_RESIDUAL"][core]
 
     gains = {
         "correlation": (
@@ -390,6 +416,8 @@ def validate_coupled_nonlocal_campaign(
             "coupled": coupled_metrics,
             "local_displacement": asdict(local_u_metrics),
             "coupled_displacement": asdict(coupled_u_metrics),
+            "local_peeq_diffusivity": asdict(local_peeq_diffusivity),
+            "coupled_peeq_diffusivity": asdict(coupled_peeq_diffusivity),
         },
         "gains": gains,
         "mechanical_checks": {
@@ -402,6 +430,17 @@ def validate_coupled_nonlocal_campaign(
             ),
             "plane_stress_limit_mpa": plane_stress_limit_mpa,
             "maximum_von_mises_mpa": float(np.max(vm_core)),
+        },
+        "internal_field_checks": {
+            "maximum_absolute_peeq_mismatch": float(np.max(np.abs(mismatch_core))),
+            "mean_peeq_mismatch": float(np.mean(mismatch_core)),
+            "minimum_nonlocal_hardening_mpa": float(np.min(hardening_core)),
+            "maximum_nonlocal_hardening_mpa": float(np.max(hardening_core)),
+            "minimum_yield_surface_radius_mpa": float(np.min(yield_radius_core)),
+            "maximum_absolute_nonlocal_residual": float(
+                np.max(np.abs(nonlocal_residual_core))
+            ),
+            "peeq_amplitude_compared_to_dic_evm": False,
         },
         "solver_diagnostics": {
             "local": statuses["local"].get("diagnostics", {}),

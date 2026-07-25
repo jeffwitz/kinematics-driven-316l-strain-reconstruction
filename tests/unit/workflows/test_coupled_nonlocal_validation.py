@@ -114,6 +114,8 @@ def test_raw_coupled_validation_uses_core_and_records_no_post_filter(tmp_path) -
         "relative_l2_error"
     ]
     assert report["mechanical_checks"]["maximum_plane_stress_residual_mpa"] == 0.0
+    assert report["internal_field_checks"]["peeq_amplitude_compared_to_dic_evm"] is False
+    assert "coupled_peeq_diffusivity" in report["metrics"]
     assert json.loads(output.read_text())["partition_id"] == 0
     with pytest.raises(FileExistsError, match="refusing to overwrite"):
         validate_coupled_nonlocal_campaign(
