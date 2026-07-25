@@ -159,3 +159,112 @@ def test_3d_condensed_backend_matches_native_plane_stress_fem() -> None:
     assert condensed.diagnostics.maximum_local_plane_stress_iterations >= 2
     assert condensed.diagnostics.local_plane_stress_failures == 0
     assert condensed.diagnostics.maximum_cbb_condition_number > 1.0
+
+
+@pytest.mark.mfront
+def test_zero_micromorphic_coupling_reproduces_local_newton_solution() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    case = reduced_biaxial_case(nx=4, ny=4)
+    solver = replace(
+        case.config.solver,
+        hardening_mode="ludwik",
+        residual_tolerance=1e-8,
+        constitutive_backend="mfront-native-plane-stress",
+        mfront_library=library,
+        mfront_threads=2,
+    )
+    local_config = replace(case.config, solver=solver)
+    coupled_config = replace(
+        local_config,
+        nonlocal_plasticity=replace(
+            local_config.nonlocal_plasticity,
+            enabled=True,
+            coupling_modulus_mpa=0.0,
+        ),
+    )
+    local = run_case_study(
+        local_config,
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+    )
+    coupled = run_case_study(
+        coupled_config,
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+    )
+
+    for field_name in (
+        "displacement_mm",
+        "stress_mpa",
+        "total_strain",
+        "plastic_strain",
+        "equivalent_plastic_strain",
+        "reaction_force",
+    ):
+        np.testing.assert_allclose(
+            getattr(coupled, field_name),
+            getattr(local, field_name),
+            rtol=1e-10,
+            atol=1e-12,
+        )
+    assert coupled.nonlocal_equivalent_plastic_strain is not None
+    assert coupled.equivalent_plastic_strain_mismatch is not None
+    assert coupled.nonlocal_hardening_mpa is not None
+    np.testing.assert_array_equal(coupled.nonlocal_hardening_mpa, 0.0)
+    assert coupled.diagnostics is not None
+    assert coupled.diagnostics.nonlocal_plasticity_enabled
+    assert coupled.diagnostics.nonlocal_coupling_failures == 0
+
+
+@pytest.mark.mfront
+def test_uniform_traction_has_no_spatial_nonlocal_correction() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    case = reduced_biaxial_case(nx=4, ny=4)
+    config = replace(
+        case.config,
+        solver=replace(
+            case.config.solver,
+            hardening_mode="ludwik",
+            residual_tolerance=1e-8,
+            constitutive_backend="mfront-native-plane-stress",
+            mfront_library=library,
+            mfront_threads=2,
+        ),
+        nonlocal_plasticity=replace(
+            case.config.nonlocal_plasticity,
+            enabled=True,
+            coupling_modulus_mpa=5_000.0,
+            relaxation=0.5,
+            relative_tolerance=1e-6,
+            maximum_iterations=15,
+        ),
+    )
+
+    result = run_case_study(
+        config,
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+    )
+
+    assert result.nonlocal_equivalent_plastic_strain is not None
+    assert result.equivalent_plastic_strain_mismatch is not None
+    np.testing.assert_allclose(
+        result.nonlocal_equivalent_plastic_strain,
+        result.nonlocal_equivalent_plastic_strain[0, 0],
+        rtol=0.0,
+        atol=1e-12,
+    )
+    assert np.max(np.abs(result.equivalent_plastic_strain_mismatch)) < 5e-7
+    assert result.diagnostics is not None
+    assert result.diagnostics.nonlocal_coupling_failures == 0
+    assert result.diagnostics.maximum_helmholtz_residual_relative <= 1e-10

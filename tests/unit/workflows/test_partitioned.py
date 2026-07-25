@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -67,6 +68,11 @@ def _fake_solver(calls):
             elastic_strain_tensor=tensor_state.elastic_strain_tensor,
             plastic_strain_tensor=tensor_state.plastic_strain_tensor,
             plane_stress_residual_mpa=tensor_state.plane_stress_residual_mpa,
+            nonlocal_equivalent_plastic_strain=np.asarray(yield_stress_mpa),
+            equivalent_plastic_strain_mismatch=np.zeros_like(yield_stress_mpa),
+            nonlocal_hardening_mpa=np.zeros_like(yield_stress_mpa),
+            yield_surface_radius_mpa=np.asarray(yield_stress_mpa),
+            nonlocal_residual=np.zeros_like(yield_stress_mpa),
         )
 
     return solve
@@ -103,9 +109,33 @@ def test_manifest_is_deterministic_and_rejects_changed_inputs(tmp_path) -> None:
         "hardening_coefficient_mpa",
     }
     assert manifest["result_field_metadata"]["S_3D"]["unit"] == "MPa"
+    assert "PEEQ_NONLOCAL" not in manifest["result_fields"]
 
     with pytest.raises(RuntimeError, match="manifest does not match"):
         _workflow(tmp_path, yield_offset=1.0).prepare()
+
+
+def test_nonlocal_campaign_persists_and_stitches_coupling_fields(
+    tmp_path, monkeypatch
+) -> None:
+    workflow = _workflow(tmp_path)
+    workflow.config = replace(
+        workflow.config,
+        nonlocal_plasticity=replace(
+            workflow.config.nonlocal_plasticity,
+            enabled=True,
+            coupling_modulus_mpa=1_000.0,
+        ),
+    )
+    workflow.output_directory = tmp_path / "nonlocal-run"
+    monkeypatch.setattr(partitioned, "run_case_study", _fake_solver([]))
+
+    manifest = workflow._manifest_data()
+    assert "PEEQ_NONLOCAL" in manifest["result_fields"]
+    workflow.solve_pending()
+    stitched = workflow.stitch("PEEQ_NONLOCAL")
+
+    np.testing.assert_array_equal(stitched, workflow.yield_stress_mpa)
 
 
 def test_partition_solves_are_resumable_and_stitchable(tmp_path, monkeypatch) -> None:

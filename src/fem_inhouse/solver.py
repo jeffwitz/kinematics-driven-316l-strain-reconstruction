@@ -131,6 +131,26 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         plastic_strain_tensor = legacy_state.plastic_strain_tensor
         plane_stress_residual = legacy_state.plane_stress_residual_mpa
         plane_stress_residual_vector = legacy_state.plane_stress_residual_vector_mpa
+    nonlocal_keys = (
+        "PEEQ_NONLOCAL",
+        "PEEQ_MISMATCH",
+        "NONLOCAL_HARDENING_MPA",
+        "YIELD_SURFACE_RADIUS_MPA",
+        "NONLOCAL_RESIDUAL",
+    )
+    nonlocal_present = tuple(key in raw for key in nonlocal_keys)
+    if any(nonlocal_present) and not all(nonlocal_present):
+        missing = [
+            key
+            for key, available in zip(nonlocal_keys, nonlocal_present, strict=True)
+            if not available
+        ]
+        raise RuntimeError(f"solver returned an incomplete nonlocal state: {missing}")
+    nonlocal_arrays = (
+        tuple(np.asarray(raw[key]) for key in nonlocal_keys)
+        if all(nonlocal_present)
+        else (None, None, None, None, None)
+    )
     result = FEMResult(
         displacement_mm=displacement,
         stress_mpa=stress,
@@ -144,6 +164,11 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         plastic_strain_tensor=plastic_strain_tensor,
         plane_stress_residual_mpa=plane_stress_residual,
         plane_stress_residual_vector_mpa=plane_stress_residual_vector,
+        nonlocal_equivalent_plastic_strain=nonlocal_arrays[0],
+        equivalent_plastic_strain_mismatch=nonlocal_arrays[1],
+        nonlocal_hardening_mpa=nonlocal_arrays[2],
+        yield_surface_radius_mpa=nonlocal_arrays[3],
+        nonlocal_residual=nonlocal_arrays[4],
         frames={
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()
@@ -235,6 +260,19 @@ def run_case_study(
         local_plane_stress_relative_tolerance=(config.solver.local_plane_stress_relative_tolerance),
         maximum_local_plane_stress_iterations=(config.solver.maximum_local_plane_stress_iterations),
         maximum_cbb_condition_number=config.solver.maximum_cbb_condition_number,
+        nonlocal_plasticity_enabled=config.nonlocal_plasticity.enabled,
+        nonlocal_length_scale_mm=config.nonlocal_plasticity.length_scale_mm,
+        nonlocal_coupling_modulus_mpa=(
+            config.nonlocal_plasticity.coupling_modulus_mpa
+        ),
+        nonlocal_relaxation=config.nonlocal_plasticity.relaxation,
+        nonlocal_relative_tolerance=(
+            config.nonlocal_plasticity.relative_tolerance
+        ),
+        nonlocal_maximum_iterations=config.nonlocal_plasticity.maximum_iterations,
+        nonlocal_maximum_helmholtz_residual=(
+            config.nonlocal_plasticity.maximum_helmholtz_residual
+        ),
         snapshot_fractions=snapshot_fractions,
         verbose=verbose,
     )

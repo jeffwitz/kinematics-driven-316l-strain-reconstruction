@@ -25,7 +25,7 @@ from fem_inhouse.solver import run_case_study
 
 LOGGER = logging.getLogger(__name__)
 FieldLocation = Literal["element", "node"]
-RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
+BASE_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "U": ("displacement_mm", "node"),
     "S": ("stress_mpa", "element"),
     "S_3D": ("stress_tensor_mpa", "element"),
@@ -42,6 +42,14 @@ RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     ),
     "RF": ("reaction_force", "node"),
 }
+NONLOCAL_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
+    "PEEQ_NONLOCAL": ("nonlocal_equivalent_plastic_strain", "element"),
+    "PEEQ_MISMATCH": ("equivalent_plastic_strain_mismatch", "element"),
+    "NONLOCAL_HARDENING_MPA": ("nonlocal_hardening_mpa", "element"),
+    "YIELD_SURFACE_RADIUS_MPA": ("yield_surface_radius_mpa", "element"),
+    "NONLOCAL_RESIDUAL": ("nonlocal_residual", "element"),
+}
+RESULT_FIELDS = {**BASE_RESULT_FIELDS, **NONLOCAL_RESULT_FIELDS}
 RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
     "U": {"components": "[u1, u2]", "unit": "mm"},
     "S": {"components": "[s11, s22, s12]", "unit": "MPa"},
@@ -58,6 +66,23 @@ RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
         "unit": "MPa",
     },
     "RF": {"components": "[r1, r2]", "unit": "N for implicit 1 mm thickness"},
+    "PEEQ_NONLOCAL": {
+        "components": "element-centred micromorphic equivalent plastic strain chi",
+        "unit": "1",
+    },
+    "PEEQ_MISMATCH": {"components": "p_e - chi", "unit": "1"},
+    "NONLOCAL_HARDENING_MPA": {
+        "components": "H_chi (p_e - chi)",
+        "unit": "MPa",
+    },
+    "YIELD_SURFACE_RADIUS_MPA": {
+        "components": "final element-averaged yield surface radius",
+        "unit": "MPa",
+    },
+    "NONLOCAL_RESIDUAL": {
+        "components": "chi - Helmholtz(p_e)",
+        "unit": "1",
+    },
 }
 
 
@@ -159,7 +184,14 @@ class PartitionWorkflow:
     def manifest_path(self) -> Path:
         return self.output_directory / "manifest.json"
 
+    @property
+    def _result_fields(self) -> dict[str, tuple[str, FieldLocation]]:
+        if self.config.nonlocal_plasticity.enabled:
+            return RESULT_FIELDS
+        return BASE_RESULT_FIELDS
+
     def _manifest_data(self) -> dict[str, Any]:
+        result_fields = self._result_fields
         return {
             "schema_version": 1,
             "software": {
@@ -175,8 +207,10 @@ class PartitionWorkflow:
                 "yield_stress_mpa": fingerprint_array(self.yield_stress_mpa),
                 "hardening_coefficient_mpa": fingerprint_array(self.hardening_coefficient_mpa),
             },
-            "result_fields": sorted(RESULT_FIELDS),
-            "result_field_metadata": RESULT_FIELD_METADATA,
+            "result_fields": sorted(result_fields),
+            "result_field_metadata": {
+                name: RESULT_FIELD_METADATA[name] for name in result_fields
+            },
         }
 
     def prepare(self) -> str:
@@ -215,7 +249,7 @@ class PartitionWorkflow:
             if not status.get("complete") or status.get("manifest_sha256") != manifest_digest:
                 return None
             expected_outputs = status["outputs"]
-            for field_name in RESULT_FIELDS:
+            for field_name in self._result_fields:
                 path = self._result_path(partition_id, field_name)
                 if not path.is_file() or _fingerprint_file(path) != expected_outputs[field_name]:
                     return None
@@ -285,7 +319,7 @@ class PartitionWorkflow:
         )
         write_started_at = time.perf_counter()
         outputs: dict[str, str] = {}
-        for field_name, (attribute, _location) in RESULT_FIELDS.items():
+        for field_name, (attribute, _location) in self._result_fields.items():
             path = self._result_path(partition_id, field_name)
             values = getattr(result, attribute)
             if (
@@ -326,12 +360,12 @@ class PartitionWorkflow:
     def stitch(self, field_name: str, *, output_path: str | Path | None = None) -> np.memmap:
         """Stitch a complete result field into one global memory-mapped array."""
 
-        if field_name not in RESULT_FIELDS:
+        if field_name not in self._result_fields:
             raise KeyError(f"unknown result field {field_name!r}")
         pending = self.pending_partition_ids()
         if pending:
             raise RuntimeError(f"cannot stitch incomplete partitions: {pending}")
-        _attribute, location = RESULT_FIELDS[field_name]
+        _attribute, location = self._result_fields[field_name]
         files = {
             partition.partition_id: self._result_path(partition.partition_id, field_name)
             for partition in self.layout

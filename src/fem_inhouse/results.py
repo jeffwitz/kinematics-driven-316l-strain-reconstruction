@@ -52,6 +52,21 @@ class SolverDiagnostics:
     mean_local_plane_stress_iterations: float = 0.0
     local_plane_stress_failures: int = 0
     maximum_cbb_condition_number: float = 0.0
+    nonlocal_plasticity_enabled: bool = False
+    nonlocal_length_scale_mm: float = 0.0
+    nonlocal_coupling_modulus_mpa: float = 0.0
+    nonlocal_relaxation: float = 0.0
+    nonlocal_iterations_per_newton: tuple[int, ...] = ()
+    nonlocal_iterations_per_increment: tuple[int, ...] = ()
+    total_nonlocal_iterations: int = 0
+    maximum_nonlocal_iterations: int = 0
+    mean_nonlocal_iterations: float = 0.0
+    final_nonlocal_relative_residual: float = 0.0
+    maximum_helmholtz_residual_relative: float = 0.0
+    maximum_absolute_nonlocal_mean_drift: float = 0.0
+    helmholtz_seconds: float = 0.0
+    nonlocal_mfront_seconds: float = 0.0
+    nonlocal_coupling_failures: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +85,11 @@ class FEMResult:
     plastic_strain_tensor: FloatArray | None = None
     plane_stress_residual_mpa: FloatArray | None = None
     plane_stress_residual_vector_mpa: FloatArray | None = None
+    nonlocal_equivalent_plastic_strain: FloatArray | None = None
+    equivalent_plastic_strain_mismatch: FloatArray | None = None
+    nonlocal_hardening_mpa: FloatArray | None = None
+    yield_surface_radius_mpa: FloatArray | None = None
+    nonlocal_residual: FloatArray | None = None
     frames: dict[float, FrameResult] = field(default_factory=dict)
     diagnostics: SolverDiagnostics | None = None
 
@@ -91,6 +111,11 @@ class FEMResult:
             self.plastic_strain_tensor,
             self.plane_stress_residual_mpa,
             self.plane_stress_residual_vector_mpa,
+            self.nonlocal_equivalent_plastic_strain,
+            self.equivalent_plastic_strain_mismatch,
+            self.nonlocal_hardening_mpa,
+            self.yield_surface_radius_mpa,
+            self.nonlocal_residual,
         )
         return historical + tuple(field for field in reconstructed if field is not None)
 

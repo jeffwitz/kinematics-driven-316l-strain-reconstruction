@@ -25,6 +25,7 @@ Usage:
 
 import logging
 import time
+from typing import cast
 
 import numpy as np
 from scipy.sparse.linalg import spsolve
@@ -44,6 +45,11 @@ from fem_inhouse.core.element import (
     precompute_element,
 )
 from fem_inhouse.core.mesh import StructuredMesh
+from fem_inhouse.core.nonlocal_plasticity import (
+    NonlocalCouplingEvaluation,
+    NonlocalPlaneStressMaterialBatch,
+    evaluate_nonlocal_fixed_point,
+)
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     ConstitutiveTrial,
@@ -101,6 +107,13 @@ def run_fem(
     local_plane_stress_relative_tolerance=1e-10,
     maximum_local_plane_stress_iterations=15,
     maximum_cbb_condition_number=1e12,
+    nonlocal_plasticity_enabled=False,
+    nonlocal_length_scale_mm=0.05888,
+    nonlocal_coupling_modulus_mpa=0.0,
+    nonlocal_relaxation=0.5,
+    nonlocal_relative_tolerance=1e-6,
+    nonlocal_maximum_iterations=15,
+    nonlocal_maximum_helmholtz_residual=1e-10,
     snapshot_fractions=None,
     verbose=True,
 ):
@@ -115,6 +128,8 @@ def run_fem(
     constitutive_backend : 'python' uses the in-house return mapping; 'mfront'
                 delegates stress, state update and consistent tangent to MGIS.
     """
+    if nonlocal_plasticity_enabled and constitutive_backend == "python":
+        raise ValueError("nonlocal plasticity currently requires an MFront backend")
     started_at = time.perf_counter()
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
@@ -162,7 +177,15 @@ def run_fem(
             "maximum_local_iterations": maximum_local_plane_stress_iterations,
             "maximum_cbb_condition_number": maximum_cbb_condition_number,
         },
+        nonlocal_coupling_modulus_mpa=(
+            nonlocal_coupling_modulus_mpa if nonlocal_plasticity_enabled else None
+        ),
     )
+    nonlocal_material_batch: NonlocalPlaneStressMaterialBatch | None = None
+    if nonlocal_plasticity_enabled:
+        if not hasattr(material_batch, "set_nonlocal_equivalent_plastic_strain"):
+            raise TypeError("selected constitutive backend does not expose the nonlocal field")
+        nonlocal_material_batch = cast(NonlocalPlaneStressMaterialBatch, material_batch)
 
     C_ps = plane_stress_elasticity(E_mod, nu)
     operators = precompute_element(mesh, C_ps)
@@ -212,6 +235,9 @@ def run_fem(
     sig = np.zeros((n_e, N_GP, 3))
     eps_tot = np.zeros((n_e, N_GP, 3))
     accepted_constitutive_trial: ConstitutiveTrial | None = None
+    chi_committed = np.zeros((nx, ny), dtype=np.float64)
+    chi_trial_guess = chi_committed.copy()
+    accepted_nonlocal_evaluation: NonlocalCouplingEvaluation | None = None
 
     # Incremental loading with automatic cutback (Abaqus-style):
     # pseudo-time t: 0 -> 1, initial/maximum step 1/N_inc, halved on failure.
@@ -227,6 +253,16 @@ def run_fem(
     final_residual_norm = float("nan")
     final_relative_residual = float("nan")
     final_convergence_criterion = "none"
+    nonlocal_iterations_per_newton: list[int] = []
+    nonlocal_iterations_per_increment: list[int] = []
+    nonlocal_total_iterations = 0
+    nonlocal_maximum_iterations_observed = 0
+    nonlocal_coupling_failures = 0
+    nonlocal_final_relative_residual = 0.0
+    nonlocal_maximum_helmholtz_residual_observed = 0.0
+    nonlocal_maximum_absolute_mean_drift = 0.0
+    nonlocal_mfront_seconds = 0.0
+    helmholtz_seconds = 0.0
     snaps = {}
     pending = sorted(snapshot_fractions) if snapshot_fractions else []
     while t < 1.0 - 1e-12:
@@ -248,6 +284,8 @@ def run_fem(
         eps_p_acc = eps_p.copy()
         ep_new = ep_bar.copy()
         constitutive_trial_acc: ConstitutiveTrial | None = None
+        nonlocal_evaluation_acc: NonlocalCouplingEvaluation | None = None
+        increment_nonlocal_iterations = 0
         converged = False
 
         for nrit in range(max_nr):
@@ -260,14 +298,58 @@ def run_fem(
             # Constitutive trial from the last converged material state.
             constitutive_started_at = time.perf_counter()
             try:
-                trial = material_batch.evaluate(
-                    eps_tot.reshape(-1, 3),
-                    time_increment=dt,
-                    consistent_tangent=True,
-                )
+                if nonlocal_plasticity_enabled:
+                    if nonlocal_material_batch is None:
+                        raise RuntimeError("nonlocal material adapter was not initialised")
+                    nonlocal_evaluation = evaluate_nonlocal_fixed_point(
+                        nonlocal_material_batch,
+                        eps_tot.reshape(-1, 3),
+                        time_increment=dt,
+                        element_shape=(nx, ny),
+                        gauss_points_per_element=N_GP,
+                        initial_nonlocal_peeq=chi_trial_guess,
+                        length_scale_mm=nonlocal_length_scale_mm,
+                        spacing_x_mm=mesh.element_size,
+                        spacing_y_mm=mesh.element_size,
+                        coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
+                        relaxation=nonlocal_relaxation,
+                        relative_tolerance=nonlocal_relative_tolerance,
+                        maximum_iterations=nonlocal_maximum_iterations,
+                        maximum_helmholtz_residual=nonlocal_maximum_helmholtz_residual,
+                    )
+                    trial = nonlocal_evaluation.constitutive_trial
+                    chi_trial_guess = nonlocal_evaluation.nonlocal_peeq.copy()
+                    nonlocal_evaluation_acc = nonlocal_evaluation
+                    nonlocal_iterations_per_newton.append(nonlocal_evaluation.iterations)
+                    increment_nonlocal_iterations += nonlocal_evaluation.iterations
+                    nonlocal_total_iterations += nonlocal_evaluation.iterations
+                    nonlocal_maximum_iterations_observed = max(
+                        nonlocal_maximum_iterations_observed,
+                        nonlocal_evaluation.iterations,
+                    )
+                    nonlocal_final_relative_residual = nonlocal_evaluation.relative_residual
+                    nonlocal_maximum_helmholtz_residual_observed = max(
+                        nonlocal_maximum_helmholtz_residual_observed,
+                        nonlocal_evaluation.helmholtz_residual_relative,
+                    )
+                    nonlocal_maximum_absolute_mean_drift = max(
+                        nonlocal_maximum_absolute_mean_drift,
+                        abs(nonlocal_evaluation.mean_drift),
+                    )
+                    nonlocal_mfront_seconds += nonlocal_evaluation.mfront_seconds
+                    helmholtz_seconds += nonlocal_evaluation.helmholtz_seconds
+                else:
+                    trial = material_batch.evaluate(
+                        eps_tot.reshape(-1, 3),
+                        time_increment=dt,
+                        consistent_tangent=True,
+                    )
             except ConstitutiveIntegrationError as error:
+                if nonlocal_plasticity_enabled:
+                    nonlocal_coupling_failures += 1
                 LOGGER.warning(
-                    "constitutive trial failed",
+                    "constitutive trial failed: %s",
+                    error,
                     extra={
                         "event": "constitutive_trial_failed",
                         "increment": inc,
@@ -346,6 +428,7 @@ def run_fem(
 
         if not converged:
             material_batch.revert()
+            chi_trial_guess = chi_committed.copy()
             u = u_save
             dt *= 0.5
             cutbacks += 1
@@ -367,6 +450,13 @@ def run_fem(
             raise RuntimeError("global Newton converged without a constitutive trial")
         material_batch.commit()
         accepted_constitutive_trial = constitutive_trial_acc
+        if nonlocal_plasticity_enabled:
+            if nonlocal_evaluation_acc is None:
+                raise RuntimeError("coupled Newton converged without a nonlocal evaluation")
+            accepted_nonlocal_evaluation = nonlocal_evaluation_acc
+            chi_committed = nonlocal_evaluation_acc.nonlocal_peeq.copy()
+            chi_trial_guess = chi_committed.copy()
+            nonlocal_iterations_per_increment.append(increment_nonlocal_iterations)
         eps_p = eps_p_acc
         ep_bar = ep_new
         sig = sf_acc
@@ -422,6 +512,21 @@ def run_fem(
     )
     residual_s33 = residual_vector[..., 0]
     local_statistics = material_batch.statistics
+    nonlocal_fields = {}
+    if nonlocal_plasticity_enabled:
+        if accepted_nonlocal_evaluation is None:
+            raise RuntimeError("converged coupled solve has no accepted nonlocal evaluation")
+        nonlocal_fields = {
+            "PEEQ_NONLOCAL": accepted_nonlocal_evaluation.nonlocal_peeq,
+            "PEEQ_MISMATCH": accepted_nonlocal_evaluation.mismatch,
+            "NONLOCAL_HARDENING_MPA": (
+                accepted_nonlocal_evaluation.nonlocal_hardening_mpa
+            ),
+            "YIELD_SURFACE_RADIUS_MPA": (
+                accepted_nonlocal_evaluation.yield_surface_radius_mpa
+            ),
+            "NONLOCAL_RESIDUAL": accepted_nonlocal_evaluation.residual_field,
+        }
 
     output_seconds = time.perf_counter() - output_started_at
     elapsed_seconds = time.perf_counter() - started_at
@@ -449,6 +554,7 @@ def run_fem(
         PE_3D=plastic_strain_3d,
         PLANE_STRESS_RESIDUAL_MPA=residual_vector,
         S33_RESIDUAL_MPA=residual_s33,
+        **nonlocal_fields,
         mesh=mesh,
         frames=snaps,
         diagnostics=dict(
@@ -480,6 +586,29 @@ def run_fem(
             ),
             local_plane_stress_failures=local_statistics.local_plane_stress_failures,
             maximum_cbb_condition_number=local_statistics.maximum_cbb_condition_number,
+            nonlocal_plasticity_enabled=nonlocal_plasticity_enabled,
+            nonlocal_length_scale_mm=nonlocal_length_scale_mm,
+            nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
+            nonlocal_relaxation=nonlocal_relaxation,
+            nonlocal_iterations_per_newton=tuple(nonlocal_iterations_per_newton),
+            nonlocal_iterations_per_increment=tuple(nonlocal_iterations_per_increment),
+            total_nonlocal_iterations=nonlocal_total_iterations,
+            maximum_nonlocal_iterations=nonlocal_maximum_iterations_observed,
+            mean_nonlocal_iterations=(
+                float(np.mean(nonlocal_iterations_per_newton))
+                if nonlocal_iterations_per_newton
+                else 0.0
+            ),
+            final_nonlocal_relative_residual=nonlocal_final_relative_residual,
+            maximum_helmholtz_residual_relative=(
+                nonlocal_maximum_helmholtz_residual_observed
+            ),
+            maximum_absolute_nonlocal_mean_drift=(
+                nonlocal_maximum_absolute_mean_drift
+            ),
+            helmholtz_seconds=helmholtz_seconds,
+            nonlocal_mfront_seconds=nonlocal_mfront_seconds,
+            nonlocal_coupling_failures=nonlocal_coupling_failures,
         ),
     )
 
