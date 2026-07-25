@@ -28,6 +28,8 @@ Top-level commands
      - Compare co-registered fields against pre-declared thresholds.
    * - ``diagnose-nonlocality``
      - Sweep element-centred Helmholtz filters over a saved padded partition.
+   * - ``estimate-nonlocal-reference``
+     - Derive the pre-registered coupling-modulus sweep from a local partition.
 
 Run ``fem-inhouse COMMAND --help`` for the authoritative options installed with
 the current source revision.
@@ -69,6 +71,9 @@ Required campaign options:
    --count {25,100}
    --padding ELEMENTS
 
+``--parts-x N --parts-y M`` can replace ``--count`` for an explicit layout;
+the two forms are mutually exclusive.
+
 Exactly one action is required:
 
 .. list-table::
@@ -89,6 +94,27 @@ Solver options include ``--increments``, ``--max-newton-iterations``,
 ``--residual-tolerance``,
 ``--constitutive-backend {python,mfront,mfront-native-plane-stress,mfront-3d-condensed-plane-stress}``,
 ``--mfront-library``, and ``--mfront-threads``.
+
+Coupled MFront campaigns add ``--nonlocal-plasticity``,
+``--nonlocal-length-um``, ``--nonlocal-coupling-modulus-mpa``,
+``--nonlocal-relaxation``, ``--nonlocal-tolerance``, and
+``--nonlocal-max-iterations``.
+
+``estimate-nonlocal-reference`` contract
+-----------------------------------------
+
+.. code-block:: text
+
+   --input PREPARED_CASE
+   --campaign COMPLETED_LOCAL_CAMPAIGN
+   --partition-id N
+   --output REPORT.json
+   --alphas 0 0.25 0.5 1 2
+
+The command verifies the hardening-map fingerprint, reads ``PEEQ`` only from
+the retained core, and reports the median Ludwik tangent together with every
+``alpha * H_ref`` candidate. It refuses a genuinely coupled source campaign
+and does not overwrite an existing report without ``--overwrite``.
 
 ``diagnose-nonlocality`` contract
 ---------------------------------

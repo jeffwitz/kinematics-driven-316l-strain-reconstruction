@@ -18,6 +18,11 @@ For a solved element grid `(nx, ny)`, the public arrays are:
 | `PE_3D` | `plastic_strain_tensor` | elements `(nx, ny, 3, 3)` | — |
 | `PLANE_STRESS_RESIDUAL_MPA` | `plane_stress_residual_vector_mpa` | elements `(nx, ny, 3)` | MPa |
 | `S33_RESIDUAL_MPA` | `plane_stress_residual_mpa` | elements `(nx, ny)` | MPa |
+| `PEEQ_NONLOCAL` | `nonlocal_equivalent_plastic_strain` | elements `(nx, ny)` | — |
+| `PEEQ_MISMATCH` | `equivalent_plastic_strain_mismatch` | elements `(nx, ny)` | — |
+| `NONLOCAL_HARDENING_MPA` | `nonlocal_hardening_mpa` | elements `(nx, ny)` | MPa |
+| `YIELD_SURFACE_RADIUS_MPA` | `yield_surface_radius_mpa` | elements `(nx, ny)` | MPa |
+| `NONLOCAL_RESIDUAL` | `nonlocal_residual` | elements `(nx, ny)` | — |
 
 The component order is:
 
@@ -36,6 +41,13 @@ $\gamma_{12}=2\epsilon_{12}$. Shear stress is tensorial $S_{12}$.
 The historical six arrays retain their previous shapes, values, and component
 conventions. The six new arrays are additional fields; no 2D result is
 replaced.
+
+The five nonlocal fields are present only when micromorphic plasticity is
+enabled. `PEEQ` remains the local Gauss-point-averaged accumulated plastic
+strain \(p_e\). `PEEQ_NONLOCAL` is \(\chi\), `PEEQ_MISMATCH` is
+\(p_e-\chi\), and `NONLOCAL_RESIDUAL` is
+\(\chi-\mathcal H_\ell(p_e)\). They are products of the coupled constitutive
+solve, not output-only filtered EVM fields.
 
 ## Complete tensor contract
 
@@ -120,6 +132,7 @@ historical snapshot payload remains unchanged.
 | Newton | total iterations, maximum iterations |
 | convergence | final norm, final relative residual, criterion name |
 | local plane stress | maximum Gauss-point residual, maximum and mean local iterations, local failures, maximum `cond(Cbb)` |
+| micromorphic coupling | enabled flag, \(\ell\), \(H_\chi\), \(\omega\), iterations per Newton and increment, total/maximum/mean iterations, final coupling residual, maximum Helmholtz residual, mean drift, Helmholtz/MFront time, failures |
 
 Campaign status also records write time because filesystem output occurs after
 the typed solver result has been returned.
@@ -143,6 +156,11 @@ campaign/
         ├── PE_3D.npy
         ├── PLANE_STRESS_RESIDUAL_MPA.npy
         ├── S33_RESIDUAL_MPA.npy
+        ├── PEEQ_NONLOCAL.npy          # coupled campaigns only
+        ├── PEEQ_MISMATCH.npy          # coupled campaigns only
+        ├── NONLOCAL_HARDENING_MPA.npy # coupled campaigns only
+        ├── YIELD_SURFACE_RADIUS_MPA.npy
+        ├── NONLOCAL_RESIDUAL.npy
         └── status.json
 ```
 

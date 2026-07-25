@@ -40,3 +40,10 @@ start with :doc:`../tutorials/first_reconstruction`.
 
       Filter an existing padded partition, sweep Helmholtz lengths, and
       compare the retained core with DIC.
+
+   .. grid-item-card:: Run coupled P154
+      :link: run_coupled_nonlocal_p154
+      :link-type: doc
+
+      Derive H-ref, execute the smoke and validation profiles, and preserve
+      every coupled field and diagnostic.

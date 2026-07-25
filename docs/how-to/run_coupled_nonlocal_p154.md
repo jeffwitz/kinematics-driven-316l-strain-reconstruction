@@ -1,0 +1,161 @@
+# Run the coupled P154 campaign
+
+This guide runs the pre-registered reduced-ROI campaign. Read
+{doc}`../explanation/micromorphic_plasticity` first for the model and
+transaction rules.
+
+## 1. Build and test the MFront behaviours
+
+Source the pinned TFEL/MGIS environment, compile all four behaviours, and run
+the MFront tests:
+
+```bash
+source "$HOME/.local/share/tfel/env/env.sh"
+bash scripts/build_mfront.sh
+MFRONT_BEHAVIOUR_LIBRARY=build/mfront/src/libBehaviour.so \
+  .venv/bin/pytest -q -m mfront
+```
+
+The coupled campaign requires PyPardiso. Confirm the active sparse backend:
+
+```bash
+.venv/bin/fem-inhouse backend
+```
+
+## 2. Run the local P154 reference
+
+P154 belongs to a `20 × 20` decomposition. The validation profile contains a
+`180 × 155` core and a `436 × 411` solved grid with 128 pixels of padding.
+
+```bash
+.venv/bin/fem-inhouse --verbose partition \
+  --input data/processed/case_study \
+  --output results/constitutive-local-p0154-pad128 \
+  --parts-x 20 \
+  --parts-y 20 \
+  --padding 128 \
+  --increments 20 \
+  --constitutive-backend mfront-native-plane-stress \
+  --partition-id 154 \
+  --mfront-threads 8
+```
+
+The partition writer saves every field atomically and writes `status.json`
+last. Repeating the command reuses a complete partition whose manifest and
+output hashes still match.
+
+## 3. Derive the coupling sweep
+
+Compute
+
+$$
+H_{\mathrm{ref}}
+=\operatorname{median}_{e\in\text{plastic core}}
+\left(K_e n p_e^{n-1}\right),
+\qquad p_e>p_0.
+$$
+
+```bash
+.venv/bin/fem-inhouse estimate-nonlocal-reference \
+  --input data/processed/case_study \
+  --campaign results/constitutive-local-p0154-pad128 \
+  --partition-id 154 \
+  --output results/constitutive-local-p0154-pad128/HREF.json \
+  --alphas 0 0.25 0.5 1 2
+```
+
+`HREF.json` records the source hashes, plastic element count, derivative
+quartiles, \(H_{\mathrm{ref}}\), and every
+\(H_\chi=\alpha H_{\mathrm{ref}}\). Do not edit or recompute the selected
+candidate after inspecting DIC metrics.
+
+## 4. Run a smoke profile
+
+Use 64 pixels of padding only to verify compilation, transactions, and
+convergence. It is not valid scientific evidence at
+\(\ell=58.88\,\mu\mathrm m\).
+
+Replace `<HCHI_MPA>` with a value from `HREF.json`:
+
+```bash
+.venv/bin/fem-inhouse --verbose partition \
+  --input data/processed/case_study \
+  --output results/constitutive-nonlocal-p0154-smoke-a050 \
+  --parts-x 20 \
+  --parts-y 20 \
+  --padding 64 \
+  --increments 5 \
+  --constitutive-backend mfront-native-plane-stress \
+  --nonlocal-plasticity \
+  --nonlocal-length-um 58.88 \
+  --nonlocal-coupling-modulus-mpa <HCHI_MPA> \
+  --nonlocal-relaxation 0.5 \
+  --nonlocal-tolerance 1e-6 \
+  --nonlocal-max-iterations 15 \
+  --partition-id 154 \
+  --mfront-threads 8
+```
+
+Check `nonlocal_coupling_failures`, cutbacks, the maximum Helmholtz residual,
+iteration counts, and finite output arrays before launching the validation
+profile.
+
+## 5. Run the validation profile
+
+Use 128 pixels of padding and 20 increments:
+
+```bash
+.venv/bin/fem-inhouse --verbose partition \
+  --input data/processed/case_study \
+  --output results/constitutive-nonlocal-p0154-pad128-a050 \
+  --parts-x 20 \
+  --parts-y 20 \
+  --padding 128 \
+  --increments 20 \
+  --constitutive-backend mfront-native-plane-stress \
+  --nonlocal-plasticity \
+  --nonlocal-length-um 58.88 \
+  --nonlocal-coupling-modulus-mpa <HCHI_MPA> \
+  --nonlocal-relaxation 0.5 \
+  --nonlocal-tolerance 1e-6 \
+  --nonlocal-max-iterations 15 \
+  --partition-id 154 \
+  --mfront-threads 8
+```
+
+Use distinct output directories for every alpha. The immutable manifest
+includes all nonlocal parameters and prevents accidental campaign reuse.
+
+## 6. Inspect the coupled fields
+
+In addition to the historical and complete-tensor outputs, a coupled
+partition contains:
+
+```text
+PEEQ_NONLOCAL.npy
+PEEQ_MISMATCH.npy
+NONLOCAL_HARDENING_MPA.npy
+YIELD_SURFACE_RADIUS_MPA.npy
+NONLOCAL_RESIDUAL.npy
+```
+
+Metrics must be computed on the `180 × 155` core from the manifest, never on
+the complete padded array. The primary comparison uses raw coupled FEM EVM
+against DIC EVM. Do not Helmholtz-filter the final EVM field before reporting
+the primary acceptance metrics.
+
+## 7. Freeze and transfer
+
+Select one alpha using the pre-registered P154 criteria in
+`validation/nonlocal_p154_preregistration.md`. Record the criterion and the
+selected value. Apply the same \(\ell\) and \(H_\chi\), without adjustment, to
+P42 or P48.
+
+The condensed 3D backend is a reduced verification run:
+
+```bash
+--constitutive-backend mfront-3d-condensed-plane-stress
+```
+
+It should reproduce the native plane-stress result on a reduced case, but it
+is not the production path for the P154 sweep.

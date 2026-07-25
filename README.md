@@ -97,6 +97,29 @@ the method and command are documented in
 and
 [`docs/how-to/diagnose_nonlocality.md`](docs/how-to/diagnose_nonlocality.md).
 
+The next pre-registered stage is now implemented at software level. Two new
+MFront behaviours add the energetic micromorphic correction
+`Hchi * (PEEQ - chi)` while preserving the reference behaviours. The existing
+element-centred Helmholtz solver computes `chi` inside every mechanical Newton
+trial; MGIS state remains transactional and is committed only after global
+convergence. Both native plane stress and condensed 3D adapters are supported.
+Five optional fields preserve the nonlocal state, mismatch, hardening
+correction, yield radius, and final coupling residual. With `Hchi=0`, a
+complete-Newton regression reproduces the local MFront solution to the declared
+`1e-10` relative tolerance.
+
+The development ROI is P154 in a `20×20` layout. Its retained core is
+`180×155`; its validation domain is `436×411` with 128 pixels of padding,
+exactly four times the candidate length of `58.88 µm`. The protocol is frozen
+in
+[`validation/nonlocal_p154_preregistration.md`](validation/nonlocal_p154_preregistration.md).
+The model and operational sequence are documented in
+[`docs/explanation/micromorphic_plasticity.md`](docs/explanation/micromorphic_plasticity.md)
+and
+[`docs/how-to/run_coupled_nonlocal_p154.md`](docs/how-to/run_coupled_nonlocal_p154.md).
+Scientific P154 results are not claimed until the local reference, `H_ref`
+sweep, and raw coupled-field comparisons have completed.
+
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and
@@ -233,6 +256,7 @@ fem-inhouse prepare-case --help
 fem-inhouse partition --help
 fem-inhouse compare-fields --help
 fem-inhouse diagnose-nonlocality --help
+fem-inhouse estimate-nonlocal-reference --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation

@@ -49,6 +49,27 @@ MFront adapters and condensation
    :undoc-members:
    :show-inheritance:
 
+Micromorphic fixed point
+------------------------
+
+.. automodule:: fem_inhouse.core.nonlocal_plasticity
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Helmholtz operator and coupling campaign
+----------------------------------------
+
+.. automodule:: fem_inhouse.postprocessing.helmholtz
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: fem_inhouse.workflows.nonlocal_coupling_campaign
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Material helpers
 ----------------
 

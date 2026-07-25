@@ -64,6 +64,26 @@ Supported backend values are:
 
 The local plane-stress controls are used only by the condensed 3D backend.
 
+## NonlocalPlasticityConfig
+
+This optional configuration activates the staggered micromorphic J2
+extension. It does not alter a campaign when `enabled=false`.
+
+| Field | Default | Unit | Meaning |
+|---|---:|---|---|
+| `enabled` | `false` | — | select the micromorphic MFront behaviours and fixed point |
+| `length_scale_mm` | `0.05888` | mm | Helmholtz interaction length |
+| `coupling_modulus_mpa` | `0.0` | MPa | energetic coupling modulus \(H_\chi\) |
+| `relaxation` | `0.5` | — | fixed-point relaxation \(\omega\) |
+| `relative_tolerance` | `1e-6` | — | mixed relative tolerance on \(\chi\) |
+| `maximum_iterations` | `15` | — | fixed-point iteration limit per mechanical Newton trial |
+| `maximum_helmholtz_residual` | `1e-10` | — | accepted relative DCT equation residual |
+
+The current implementation requires an MFront backend. The Python J2 backend
+is retained as an independent local reference and rejects nonlocal activation.
+The MFront tangent is consistent at fixed \(\chi\); it is not a monolithic
+coupled tangent.
+
 ## PreparationConfig
 
 | Field | Default | Meaning |
@@ -83,6 +103,7 @@ The production CLI supports:
 | Parameter | Values | Nominal article value |
 |---|---|---:|
 | `count` | `25` or `100` | `100` |
+| `parts_x`, `parts_y` | positive integers supplied together | unset |
 | `padding` | non-negative integer | `150` |
 | `partition_id` | `0 <= id < count` | task-specific |
 
@@ -93,3 +114,5 @@ partition_id = index_x * 10 + index_y
 ```
 
 The complete `(3600, 3100)` domain is divided into `(10, 10)` balanced cores.
+`--parts-x 20 --parts-y 20` selects the P154 development layout while the
+legacy `--count` interface remains unchanged.

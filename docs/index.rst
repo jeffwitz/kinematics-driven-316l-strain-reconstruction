@@ -73,6 +73,7 @@ What the software guarantees
       * DIC-prescribed boundary displacements;
       * resumable, traceable partitioned computation;
       * output-only Helmholtz spatial-width diagnostics on padded partitions;
+      * experimental energetic micromorphic J2 coupling on padded partitions;
       * preserved ``U``, ``S``, ``E``, ``PE``, ``PEEQ``, and ``RF`` fields.
 
    .. grid-item::
@@ -111,6 +112,9 @@ Start here
   condensation of a 3D material law;
 * :doc:`how-to/diagnose_nonlocality` to test a localization-width hypothesis
   on an existing padded partition;
+* :doc:`explanation/micromorphic_plasticity` for the coupled constitutive
+  extension and its transaction model;
+* :doc:`how-to/run_coupled_nonlocal_p154` for the pre-registered P154 campaign;
 * :doc:`how-to/install` to install TFEL/MFront, MGIS, and the Python package;
 * :doc:`reference/input_contract` to check input arrays;
 * :doc:`reference/results` to interpret the validated campaigns.
@@ -131,6 +135,7 @@ Start here
    how-to/run_partitioned
    how-to/inspect_results
    how-to/diagnose_nonlocality
+   how-to/run_coupled_nonlocal_p154
 
 .. toctree::
    :hidden:
@@ -157,4 +162,5 @@ Start here
    explanation/mfront_3d_condensation
    explanation/partitioning
    explanation/nonlocality_diagnostic
+   explanation/micromorphic_plasticity
    explanation/validation

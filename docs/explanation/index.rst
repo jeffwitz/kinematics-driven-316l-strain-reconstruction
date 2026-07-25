@@ -55,6 +55,13 @@ the supplied article.
       Why an element-centred Helmholtz filter can test a localization-width
       hypothesis without changing the mechanical solution.
 
+   .. grid-item-card:: Coupled micromorphic plasticity
+      :link: micromorphic_plasticity
+      :link-type: doc
+
+      How the energetic H-chi coupling feeds the Helmholtz field back into
+      J2 plastic evolution while preserving transactional Newton updates.
+
    .. grid-item-card:: Validation strategy
       :link: validation
       :link-type: doc

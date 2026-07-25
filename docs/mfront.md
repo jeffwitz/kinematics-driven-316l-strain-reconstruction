@@ -307,3 +307,26 @@ All raw fields, hashes, logs, derived maps and comparison metrics are under
 `validation/reference_data/article_100p_pad150_p0000_mfront_v1`. The report can
 be regenerated without repeating the solve using
 `scripts/validate_saved_article_partition.py`.
+
+## Micromorphic behaviours
+
+The library now also contains:
+
+- `PixelMicromorphicLudwikJ2Plasticity` under `PlaneStress`;
+- `PixelMicromorphicLudwikJ2Plasticity3D` under `Tridimensional`.
+
+They preserve the reference internal variables and add material property
+`MicromorphicCouplingModulus` plus external state variable
+`NonlocalEquivalentPlasticStrain`. The adapter writes the current trial value
+to both MGIS state endpoints so that MFront sees a fixed external value during
+one constitutive integration. The Python bridge separately tracks committed
+and trial copies for `commit()` and `revert()`.
+
+At zero coupling, material-point outputs are bitwise identical to the
+reference behaviours. At positive coupling, tests verify the correction sign,
+the consistent tangent by finite differences at fixed `chi`, and native versus
+3D-condensed agreement. The global solver then repeats these integrations
+inside a Helmholtz fixed point without committing intermediate plastic states.
+
+See {doc}`explanation/micromorphic_plasticity` for the algorithm and
+{doc}`how-to/run_coupled_nonlocal_p154` for the reproducible P154 sequence.

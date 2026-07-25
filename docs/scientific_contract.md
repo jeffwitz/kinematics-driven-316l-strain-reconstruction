@@ -169,6 +169,29 @@ The default MFront law regularises only the first interval
 upper PEEQ cap. This avoids introducing a non-physical plateau outside the
 tabulated Abaqus range.
 
+## Optional coupled micromorphic extension
+
+The experimental coupled mode retains the same local J2 flow and regularized
+Ludwik law. It introduces one element-centred scalar field `chi` and augments
+the yield radius by
+
+```text
+Hchi * (PEEQ - chi)
+```
+
+where `chi` solves the existing discrete Helmholtz equation using the
+element-average local PEEQ as its source. This field is solved inside every
+mechanical Newton trial. It is not an output filter, a phase-field damage
+variable, an additional displacement, or a replacement of PEEQ in the Ludwik
+power law.
+
+The MFront tangent is evaluated at fixed `chi`. Constitutive trials remain
+uncommitted throughout the micromorphic fixed point and are committed only
+after global convergence. The initial P154 campaign fixes
+`ell = 0.05888 mm`; it selects only `Hchi`. Neither parameter is considered an
+identified material property until a frozen pair transfers successfully to a
+held-out partition.
+
 ## Four macroscopic curves
 
 The workflow must keep these four curves distinct:

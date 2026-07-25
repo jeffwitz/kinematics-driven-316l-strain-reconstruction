@@ -13,6 +13,9 @@ recevoir une loi 3D ; diagnostic de largeur spatiale par filtre de Helmholtz
 implémenté avec sélection pré-enregistrée sur P48 et confirmation sans
 ajustement sur P42, avec hypothèse de largeur spatiale soutenue mais aucune
 longueur matérielle identifiée ;
+deux comportements MFront micromorphiques ajoutés, point fixe
+`p ↔ chi` transactionnel branché dans chaque Newton mécanique, sorties et
+diagnostics non locaux sauvegardés, 247 tests réussis avec MGIS réel ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -443,6 +446,51 @@ confirmation est disponible.
 campagne de largeur spatiale traçable sans modifier le calcul mécanique, et le
 rapport sépare faits numériques, sélection diagnostique et interprétation
 physique.
+
+### Phase prioritaire A.5 — Couplage constitutif micromorphique J2
+
+- [x] Pré-enregistrer P154, le profil `20×20`, le padding 128, la longueur
+      `58,88 µm`, le balayage de `Hchi` et les critères scientifiques
+- [x] Ajouter la configuration typée et les options CLI non locales
+- [x] Conserver la compatibilité `--count 25/100` et ajouter
+      `--parts-x/--parts-y`
+- [x] Ajouter les comportements MFront natif et tridimensionnel sans modifier
+      les deux comportements de référence
+- [x] Exposer `MicromorphicCouplingModulus` et
+      `NonlocalEquivalentPlasticStrain`
+- [x] Ajouter `Hchi*(p-chi)` au rayon de charge et `Hchi` à sa dérivée locale
+- [x] Réutiliser le solveur DCT Helmholtz existant aux centres des éléments
+- [x] Imbriquer le point fixe relaxé dans chaque essai Newton, sans `commit`
+      intermédiaire
+- [x] Restaurer conjointement déplacement, état MFront et `chi` lors d'un
+      cutback
+- [x] Sauvegarder `PEEQ_NONLOCAL`, `PEEQ_MISMATCH`,
+      `NONLOCAL_HARDENING_MPA`, `YIELD_SURFACE_RADIUS_MPA` et
+      `NONLOCAL_RESIDUAL`
+- [x] Ajouter les temps MFront/Helmholtz, itérations, résidus, dérive de
+      moyenne et échecs aux diagnostics
+- [x] Vérifier que `Hchi=0` reproduit le calcul MFront local dans Newton
+- [x] Vérifier le cas homogène, la tangente à `chi` fixé, les transactions et
+      l'équivalence natif/3D condensé sur cas réduit
+- [x] Ajouter une commande empreintée calculant
+      `Href = median(K*n*p**(n-1))` sur le cœur plastifié local
+- [~] Exécuter P154 local à 20 incréments et produire `HREF.json`
+- [ ] Exécuter les smoke tests à 5 incréments pour `alpha=0,0.5,1`
+- [ ] Exécuter les candidats retenus à 20 incréments avec padding 128
+- [ ] Comparer les champs bruts couplés à la DIC sur le cœur P154
+- [ ] Figer `Hchi` avant tout transfert vers P42 ou P48
+- [ ] Rejouer un cas réduit avec le backend 3D condensé
+
+**Preuve logicielle intermédiaire :** commits `3fe01d9`, `2102520` et
+`d3dfd33`. Ruff et mypy sont
+verts ; les 247 tests, dont MGIS/MFront réel, réussissent en `18,11 s`. Le cas
+homogène couplé converge sans cutback. La norme du point fixe utilise
+`max(1, ||chi||)` afin de rester bien posée lors de l'apparition de plasticité.
+
+**Critère de sortie :** P154 padding 128 converge à 20 incréments pour au
+moins un `Hchi>0`, un candidat passe les critères scientifiques sur les champs
+bruts, sa valeur est figée, et la voie 3D condensée reproduit la voie native
+sur le cas réduit.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -881,6 +929,9 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Sélection Helmholtz P48 | Balayage pré-enregistré `0–58,88 µm` | Corrélation `0,2983→0,6160`, IoU top-10 `0,1598→0,2822` | Réussi |
 | 2026-07-25 | Calcul MFront confirmation P42 | 402 600 éléments, padding 150, 20 incréments | `1484,55 s`, `8 079 896 KiB`, zéro cutback | Réussi |
 | 2026-07-25 | Confirmation Helmholtz tenue à l'écart P42 | `ell=58,88 µm` sans ajustement, seuils pré-déclarés | Corrélation `0,4007→0,7036`, tous critères réussis | Réussi |
+| 2026-07-25 | Comportements MFront micromorphiques | Natif PlaneStress et Tridimensional, `Hchi*(p-chi)` | Compilation, métadonnées, signe, tangente et transactions | Réussi |
+| 2026-07-25 | Couplage `p ↔ chi` dans Newton | DCT existante, relaxation, commit unique, cutback conjoint | 247 tests avec MGIS réel | Réussi |
+| 2026-07-25 | Outil de sélection `Href` | Médiane du tangent de Ludwik sur le cœur plastifié | Tests synthétiques, empreintes et refus d'écrasement | Réussi |
 
 ## 14. Journal des mises à jour
 
