@@ -35,12 +35,14 @@ output contract with the positive candidates.
 | 0 | 0 | 201.15 | 3 | 66 | 63 | 0 |
 | 0.5 | 3273.765308 | 406.28 | 3 | 71 | 353 | \(1.9622\,10^{-8}\) |
 | 1 | 6547.530617 | 503.04 | 2 | 84 | 441 | \(2.5700\,10^{-8}\) |
+| 2 | 13095.061233 | 226.30 | 0 | 46 | 173 | \(1.7892\,10^{-8}\) |
 
-Both positive candidates had zero fixed-point failures with the corrected
-norm. Their maximum Helmholtz residuals were respectively
-\(1.2424\,10^{-12}\) and \(1.2807\,10^{-12}\). Their maximum Gauss-point
-plane-stress residuals were \(1.3849\,10^{-13}\) MPa and
-\(1.9859\,10^{-13}\) MPa.
+All positive candidates had zero fixed-point failures with the corrected
+norm. For `alpha=2`, the maximum Helmholtz residual was
+\(1.3098\,10^{-12}\), and the maximum Gauss-point plane-stress residual was
+\(1.1448\,10^{-13}\) MPa. The lower elapsed time of this particular smoke
+run follows from its absence of cutbacks and lower number of global Newton
+trials; it is not interpreted as monotonic performance scaling with \(H_\chi\).
 
 ## Raw FEM-DIC comparison on the core
 
@@ -48,29 +50,32 @@ The validator reconstructs `EVM_HISTORICAL` independently from the DIC and FEM
 displacements. It applies no post-filter and evaluates only the
 `180 x 155` core.
 
-| Metric | local, alpha=0 | alpha=0.5 | alpha=1 |
-|---|---:|---:|---:|
-| Pearson correlation | 0.366580 | 0.434710 | 0.481387 |
-| relative L2 | 0.635581 | 0.518425 | 0.455124 |
-| top-10% IoU | 0.229888 | 0.253933 | 0.264159 |
-| absolute DIC-q90 IoU | 0.210687 | 0.240086 | 0.261117 |
-| DIC-q90 predicted active fraction | 19.885% | 18.806% | 17.749% |
-| displacement relative L2 | 0.001250 | 0.001148 | 0.001087 |
+| Metric | local, alpha=0 | alpha=0.5 | alpha=1 | alpha=2 |
+|---|---:|---:|---:|---:|
+| Pearson correlation | 0.366580 | 0.434710 | 0.481387 | 0.547805 |
+| relative L2 | 0.635581 | 0.518425 | 0.455124 | 0.381023 |
+| top-10% IoU | 0.229888 | 0.253933 | 0.264159 | 0.278351 |
+| absolute DIC-q90 IoU | 0.210687 | 0.240086 | 0.261117 | 0.296064 |
+| DIC-q90 predicted active fraction | 19.885% | 18.806% | 17.749% | 15.968% |
+| displacement relative L2 | 0.001250 | 0.001148 | 0.001087 | 0.001023 |
 
 Relative to the local smoke result:
 
-| Registered gain | alpha=0.5 | alpha=1 |
-|---|---:|---:|
-| correlation | +0.06813 | +0.11481 |
-| relative-L2 reduction | 18.43% | 28.39% |
-| top-10% IoU | +0.02404 | +0.03427 |
-| absolute DIC-q90 IoU | +0.02940 | +0.05043 |
-| displacement-error change | -8.19% | -13.03% |
+| Registered gain | alpha=0.5 | alpha=1 | alpha=2 |
+|---|---:|---:|---:|
+| correlation | +0.06813 | +0.11481 | +0.18123 |
+| relative-L2 reduction | 18.43% | 28.39% | 40.05% |
+| top-10% IoU | +0.02404 | +0.03427 | +0.04846 |
+| absolute DIC-q90 IoU | +0.02940 | +0.05043 | +0.08538 |
+| displacement-error change | -8.19% | -13.03% | -18.15% |
 
-Both candidates pass every smoke-level acceptance check. `alpha=1` improves
-every registered DIC metric more than `alpha=0.5`, so it is launched first on
-the 128-pixel, 20-increment validation profile. The alpha value is not frozen
-for transfer until the validation-profile comparison is complete.
+All candidates pass every smoke-level acceptance check. `alpha=1` improved
+every registered metric over `alpha=0.5`, but missed two criteria on the
+validation profile. Because the best result lay at the upper boundary of the
+initial registered interval, the pre-registration allowed the additional
+`alpha=2` smoke. It again improved every registered metric and was therefore
+promoted to the 128-pixel, 20-increment validation profile. The alpha value is
+not frozen for transfer until that validation-profile comparison is complete.
 
 ## Saved evidence
 
@@ -78,6 +83,7 @@ for transfer until the validation-profile comparison is complete.
 - `results/constitutive-nonlocal-p0154-smoke-a050` (original L2 diagnostic)
 - `results/constitutive-nonlocal-p0154-smoke-a050-linf`
 - `results/constitutive-nonlocal-p0154-smoke-a100-linf`
+- `results/constitutive-nonlocal-p0154-smoke-a200-linf`
 - each corrected positive campaign contains `validation-vs-a000.json`
 
 Every calculation directory contains its manifest, status, hashes, historical
