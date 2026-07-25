@@ -269,6 +269,26 @@ points over 20 increments, twice:
 Eight-thread MFront is `3.500×` faster than Python for this constitutive kernel.
 This benchmark excludes finite-element assembly and PyPardiso.
 
+## Coupled P154 campaign
+
+The 20-increment micromorphic sweep on the `436 x 411` padded P154 domain
+completed for `alpha=0.5`, `1`, and `2`, always with zero cutbacks. The best
+tested candidate, `alpha=2`, changed the raw core comparison as follows:
+
+| Metric | Local | Coupled | Change |
+|---|---:|---:|---:|
+| Pearson correlation | 0.40345 | 0.56779 | +0.16434 |
+| relative L2 | 0.74978 | 0.43361 | -42.17% |
+| top-10% IoU | 0.25591 | 0.28898 | +0.03307 |
+| absolute DIC-q90 IoU | 0.23303 | 0.30518 | +0.07216 |
+| DIC-q90 active fraction | 22.68% | 21.85% | -0.82 points |
+
+The coupled field passes seven of eight registered checks. Its active fraction
+still exceeds the registered 20% maximum, so the result is classified as
+*partially supported* and no `Hchi` is frozen. Full timings, PEEQ diffusivity
+diagnostics, residuals, and manifest hashes are preserved in
+`validation/nonlocal_p154_validation_results.md`.
+
 ## Current evidence boundary
 
 Validated:
@@ -276,12 +296,14 @@ Validated:
 - material-point paths;
 - consistent-tangent integration;
 - complete MFront/Newton coupling;
+- converged P154 micromorphic sweeps and raw core-only DIC comparisons;
 - a real 10 × 10 DIC crop;
 - one article-sized corner partition;
 - atomic persistence and resumption.
 
 Not yet validated:
 
+- a frozen micromorphic coupling modulus transferred to P42 or P48;
 - all 100 article partitions and global stitching;
 - padding sensitivity at 50/100/150/200;
 - exact article mask and final whole-ROI metrics;

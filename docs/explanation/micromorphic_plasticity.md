@@ -93,17 +93,6 @@ point:
 6. repeat until the mixed relative residual is below tolerance;
 7. reevaluate MFront once with the converged \(\chi\).
 
-The convergence norm is
-
-$$
-\frac{\lVert\chi^{(k+1)}-\chi^{(k)}\rVert_2}
-{\max(1,\lVert\chi^{(k+1)}\rVert_2,\lVert\chi^\star\rVert_2)}.
-$$
-
-The unit floor avoids a meaningless relative singularity when plasticity first
-appears and both fields are close to zero. It is the same mixed scaling used
-by the project's other constitutive invariants.
-
 MFront is never committed inside this fixed point. Every evaluation starts
 from the same accepted material state. The final trial is committed exactly
 once, and only after the global mechanical Newton iteration converges. A
@@ -174,3 +163,20 @@ confirmation campaign. It remains a diagnostic candidate until the coupled
 model passes held-out spatial tests. Similarly, \(H_\chi\) is selected only
 within the pre-registered P154 sweep and must be frozen before transfer to P42
 or P48.
+
+## P154 validation outcome
+
+The 20-increment, 128-pixel-padding sweep tested
+\(\alpha=H_\chi/H_\mathrm{ref}\) equal to 0.5, 1, and 2. All candidates
+converged without cutback and progressively reduced the raw FEM--DIC field
+error. The best tested point, \(\alpha=2\), increased Pearson correlation by
+0.164, reduced relative L2 by 42.17%, and increased top-10% IoU by 0.033.
+It passed seven of eight pre-registered criteria.
+
+The failed criterion is physically informative: the area above the absolute
+DIC-q90 threshold remained 21.85%, above the registered 20% maximum. The
+model therefore demonstrably diffuses the local plastic zone, but the current
+parameter sweep does not fully reproduce its measured width. The conclusion
+is **partially supported**, and no \(H_\chi\) is frozen for transfer. See
+`validation/nonlocal_p154_validation_results.md` for the complete numerical
+record.

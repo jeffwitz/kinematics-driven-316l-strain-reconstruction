@@ -192,6 +192,12 @@ after global convergence. The initial P154 campaign fixes
 identified material property until a frozen pair transfers successfully to a
 held-out partition.
 
+The completed P154 sweep did not freeze a pair: the best tested candidate
+passed seven of eight registered checks but exceeded the absolute DIC-q90
+active-area limit (`21.85%` predicted versus `20%` maximum). The current
+scientific status is therefore *partially supported*, with no confirmatory
+transfer authorized by this contract.
+
 ## Four macroscopic curves
 
 The workflow must keep these four curves distinct:

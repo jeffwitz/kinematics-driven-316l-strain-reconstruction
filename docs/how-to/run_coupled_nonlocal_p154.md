@@ -183,6 +183,15 @@ Select one alpha using the pre-registered P154 criteria in
 selected value. Apply the same \(\ell\) and \(H_\chi\), without adjustment, to
 P42 or P48.
 
+The completed validation sweep is reported in
+`validation/nonlocal_p154_validation_results.md`. No tested value passed all
+criteria: `alpha=2` passed seven of eight but predicted `21.85%` active area
+at the absolute DIC-q90 threshold, above the registered `20%` maximum.
+Therefore no transfer parameter is frozen in the current campaign. The
+`alpha=2` fields remain the best diagnostic candidate, not a validated
+material calibration. Do not launch or label a P42/P48 run as confirmatory
+without a new prospective protocol.
+
 The condensed 3D backend is a reduced verification run:
 
 ```bash

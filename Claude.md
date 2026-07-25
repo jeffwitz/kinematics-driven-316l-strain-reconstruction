@@ -15,15 +15,19 @@ ajustement sur P42, avec hypothèse de largeur spatiale soutenue mais aucune
 longueur matérielle identifiée ;
 deux comportements MFront micromorphiques ajoutés, point fixe
 `p ↔ chi` transactionnel branché dans chaque Newton mécanique, sorties et
-diagnostics non locaux sauvegardés, 247 tests réussis avec MGIS réel ;
+diagnostics non locaux sauvegardés ; campagne P154 padding 128 terminée pour
+`alpha=0,5`, `1` et `2`, avec interaction spatiale partiellement soutenue mais
+aucun `Hchi` admissible à figer selon tous les critères pré-enregistrés ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
-Jalon actif au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
-partition P154 d'un découpage 20×20**. La campagne est pré-enregistrée dans
-`validation/nonlocal_p154_preregistration.md`. Le champ brut couplé, et non un
-filtrage a posteriori, sera comparé à la DIC. La longueur est figée à
-`58,88 µm` pour cette étape et seul le module `Hchi` est sélectionné.
+Jalon atteint au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
+partition P154 d'un découpage 20×20**. Le protocole et les résultats sont
+respectivement dans `validation/nonlocal_p154_preregistration.md` et
+`validation/nonlocal_p154_validation_results.md`. Le meilleur point testé
+(`alpha=2`) passe sept critères sur huit, mais l'aire active q90 reste à
+`21,85 %` pour une borne pré-enregistrée de `20 %`. La conclusion est donc
+« interaction spatiale partiellement soutenue » et aucun `Hchi` n'est figé.
 
 ## 1. Rôle de ce document
 
@@ -478,16 +482,17 @@ physique.
 - [x] Ajouter un validateur empreinté local/couplé qui reconstruit les EVM
       depuis les déplacements bruts sur le cœur, sans post-filtrage
 - [x] Exécuter les smoke tests à 5 incréments pour `alpha=0,0.5,1`
-- [ ] Exécuter les candidats retenus à 20 incréments avec padding 128
-- [ ] Comparer les champs bruts couplés à la DIC sur le cœur P154
-- [ ] Figer `Hchi` avant tout transfert vers P42 ou P48
-- [ ] Rejouer un cas réduit avec le backend 3D condensé
+- [x] Exécuter les candidats retenus à 20 incréments avec padding 128
+- [x] Comparer les champs bruts couplés à la DIC sur le cœur P154
+- [!] Figer `Hchi` avant tout transfert vers P42 ou P48 : aucun candidat ne
+      passe les huit critères pré-enregistrés
+- [x] Rejouer un cas réduit avec le backend 3D condensé
 
-**Preuve logicielle intermédiaire :** commits `3fe01d9`, `2102520` et
-`d3dfd33`. Ruff et mypy sont
-verts ; les 247 tests, dont MGIS/MFront réel, réussissent en `18,11 s`. Le cas
-homogène couplé converge sans cutback. La norme du point fixe utilise
-`max(1, ||chi||)` afin de rester bien posée lors de l'apparition de plasticité.
+**Preuve logicielle :** commits `3fe01d9`, `2102520`, `d3dfd33` et les commits
+de validation ultérieurs. Le cas homogène couplé converge sans cutback. La
+norme du point fixe est la norme mixte relative \(L_\infty\), indépendante du
+nombre d'éléments, et utilise une branche absolue unitaire lors de
+l'apparition de plasticité.
 
 **Référence locale P154 :**
 `validation/nonlocal_p154_local_reference.md`. Les 179 196 éléments convergent
@@ -498,16 +503,23 @@ en `793,98 s`, 20/20 incréments, 119 Newton et zéro cutback. Le cœur contient
 
 **Smoke P154 :** `validation/nonlocal_p154_smoke_results.md`. Après
 pré-enregistrement d'une norme mixte \(L_\infty\) indépendante du maillage,
-`alpha=0,5` converge en `406,28 s` et `alpha=1` en `503,04 s`, sans aucun
-échec du point fixe. Les deux passent tous les critères bruts sur le cœur ;
-`alpha=1` donne les meilleurs gains (`+0,1148` de corrélation, `28,39 %` de
-réduction L2 et `+0,0504` d'IoU q90) et passe en premier au profil de
-validation padding 128.
+`alpha=0,5` converge en `406,28 s`, `alpha=1` en `503,04 s` et `alpha=2` en
+`226,30 s`, sans aucun échec du point fixe. Les trois passent tous les
+critères smoke ; le prolongement à `alpha=2` était autorisé parce que le
+meilleur point se trouvait à la borne supérieure du balayage initial.
 
-**Critère de sortie :** P154 padding 128 converge à 20 incréments pour au
-moins un `Hchi>0`, un candidat passe les critères scientifiques sur les champs
-bruts, sa valeur est figée, et la voie 3D condensée reproduit la voie native
-sur le cas réduit.
+**Validation P154 :** `validation/nonlocal_p154_validation_results.md`. Les
+trois candidats positifs convergent à 20 incréments, padding 128, sans cutback.
+`alpha=2` est le meilleur point testé : `+0,1643` de corrélation, `42,17 %`
+de réduction L2, `+0,0331` d'IoU top-10 et `+0,0722` d'IoU q90. Il échoue
+seulement sur l'aire active q90 (`21,85 %` au lieu de `<=20 %`). Le seuil
+n'est pas déplacé a posteriori et aucun transfert confirmatoire n'est lancé.
+
+**Critère de sortie :** partiellement atteint. P154 padding 128 converge à 20
+incréments pour trois `Hchi>0` et la voie 3D condensée reproduit la voie native
+sur le cas réduit. Aucun candidat ne passe toutefois tous les critères
+scientifiques ; `Hchi` ne peut donc pas être figé ni transféré sans nouveau
+protocole prospectif.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -953,6 +965,12 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Estimation `Href` sur le cœur P154 | 24 507 éléments plastifiés sur 27 900 | `Href=6547,530617 MPa` | Réussi |
 | 2026-07-25 | Smoke micromorphique P154 `alpha=0,5` | 87 164 éléments, norme mixte L∞ | `406,28 s`, 3 cutbacks, tous critères smoke réussis | Réussi |
 | 2026-07-25 | Smoke micromorphique P154 `alpha=1` | 87 164 éléments, norme mixte L∞ | `503,04 s`, 2 cutbacks, tous critères smoke réussis | Réussi |
+| 2026-07-25 | Smoke micromorphique P154 `alpha=2` | 87 164 éléments, norme mixte L∞ | `226,30 s`, zéro cutback, tous critères smoke réussis | Réussi |
+| 2026-07-25 | Validation P154 `alpha=0,5` | 179 196 éléments, padding 128, 20 incréments | `1453,77 s`, zéro cutback, 6/8 critères | Partiel |
+| 2026-07-25 | Validation P154 `alpha=1` | 179 196 éléments, padding 128, 20 incréments | `1680,46 s`, zéro cutback, 6/8 critères | Partiel |
+| 2026-07-25 | Validation P154 `alpha=2` | 179 196 éléments, padding 128, 20 incréments | `1867,20 s`, zéro cutback, 7/8 critères | Partiel |
+| 2026-07-25 | Rejeu micromorphique natif/3D condensé | MFront réel, tangente FD et régression `Hchi=0` | 3 tests ciblés en `1,27 s` | Réussi |
+| 2026-07-25 | Validation finale après campagne P154 | Ruff, mypy, MGIS/MFront réel, Sphinx strict | 257 tests en `14,38 s`, HTML et PDF 131 pages | Réussi |
 
 ## 14. Journal des mises à jour
 

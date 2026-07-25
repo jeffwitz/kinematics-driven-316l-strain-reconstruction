@@ -120,8 +120,15 @@ and
 The `validate-coupled-nonlocal` command compares the raw coupled displacement
 solution with DIC on the manifest-declared core and evaluates the
 pre-registered P154 criteria without post-filtering. Scientific P154 results
-are not claimed until the positive-`Hchi` validation runs and raw
-coupled-field comparisons have completed.
+are recorded in
+[`validation/nonlocal_p154_validation_results.md`](validation/nonlocal_p154_validation_results.md).
+All positive candidates converged without cutback. The best tested candidate,
+`alpha=2` (`Hchi=13095.061233 MPa`), improves correlation by `0.1643`,
+reduces relative L2 by `42.17%`, and raises top-10% IoU by `0.0331`.
+It nevertheless predicts `21.85%` active area at the DIC-q90 threshold,
+outside the pre-registered `[5%, 20%]` interval. The defensible conclusion is
+therefore **coupled spatial interaction partially supported**; no coupling
+modulus is frozen for transfer.
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
