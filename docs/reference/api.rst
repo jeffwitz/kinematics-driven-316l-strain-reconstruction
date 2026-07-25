@@ -57,6 +57,19 @@ Micromorphic fixed point
    :undoc-members:
    :show-inheritance:
 
+Fixed sparse assembly and linear solver
+---------------------------------------
+
+.. automodule:: fem_inhouse.core.assembly
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: fem_inhouse.core.linear_solver
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Helmholtz operator and coupling campaign
 ----------------------------------------
 

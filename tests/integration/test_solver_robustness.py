@@ -73,6 +73,12 @@ def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
     }
     assert result.diagnostics.elapsed_seconds > 0
     assert result.diagnostics.linear_solve_seconds > 0
+    assert result.diagnostics.pardiso_analysis_calls == 1
+    assert result.diagnostics.pardiso_factorization_calls >= 1
+    assert (
+        result.diagnostics.pardiso_factorization_calls
+        == result.diagnostics.pardiso_solve_calls
+    )
     assert result.diagnostics.constitutive_seconds > 0
     assert result.diagnostics.output_seconds > 0
     net_reaction = np.linalg.norm(result.reaction_force.sum(axis=(0, 1)))

@@ -541,6 +541,9 @@ protocole prospectif.
 - [x] Comparer les états constitutifs bit à bit sur un crop réel et sur P43
 - [x] Comparer un solveur EF complet avant/après sur la même zone et avec les
       mêmes paramètres
+- [x] Figer la structure CSR libre-libre et mettre à jour uniquement `data`
+- [x] Piloter explicitement PARDISO : phase 11 unique, puis phases 22/33
+- [x] Vérifier que la matrice reste en `mtype=11` sans hypothèse de symétrie
 - [ ] Lancer la référence locale P43 avec le profil scientifique retenu
 - [ ] Estimer `Href` sur le cœur P43, puis pré-enregistrer le balayage
       `alpha=0,1,2,4`
@@ -558,7 +561,11 @@ leur amplitude globale.
 
 **Critère de sortie :** atteint pour l'optimisation technique. Aucun calcul
 scientifique P43 n'a encore été lancé ; cette phase ne modifie ni la loi, ni
-`ell`, ni `Hchi`, ni les tolérances, ni Newton, ni l'assemblage, ni PARDISO.
+`ell`, ni `Hchi`, ni les tolérances, ni Newton, ni le point fixe, ni la
+tangente. Le second lot modifie seulement l'assemblage sparse et le cycle
+PARDISO. Sur P187, il ajoute `-10,6 %` de temps processus et `-16,7 %` de pic
+RSS par rapport au chemin constitutif déjà optimisé ; une phase 11 et 139
+paires 22/33 sont enregistrées.
 
 ### Phase différée B — Validation externe Abaqus
 
@@ -1014,6 +1021,7 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-26 | Benchmark constitutif léger P43 | 446 400 points de Gauss, 14 itérations | `14,357→7,605 s`, RSS `-29,2 %`, champs identiques | Réussi |
 | 2026-07-26 | Gate EF complet avant/après | P187 paddée, 39 644 éléments, paramètres identiques | `396,78→273,56 s`, RSS `-12,7 %`, convergence identique | Réussi |
 | 2026-07-26 | Validation après optimisation | Ruff, mypy, 271 tests MGIS/MFront, Sphinx strict | HTML et PDF 144 pages | Réussi |
+| 2026-07-26 | CSR fixe et phases PARDISO explicites | Même P187, chemin constitutif optimisé inchangé | `273,56→244,67 s`, RSS `-16,7 %`, une phase 11 et 139 phases 22/33 | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -1026,6 +1034,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 - Buffers réutilisables et prédicteur proportionnel préassemblé
 - Chronométrages détaillés ajoutés jusqu'à PARDISO
 - Équivalence constitutive bit à bit et équivalence EF sous `1e-10` validées
+- Structure CSR libre-libre figée et buffers numériques mis à jour en place
+- PARDISO piloté en phases 11/22/33 explicites, avec `mtype=11` conservé
+- Gate P187 : `-10,6 %` de temps processus et `-16,7 %` de pic RSS
+  supplémentaires, sans modifier Newton, le point fixe ou la tangente
 - Rapports reproductibles ajoutés sous `validation/performance/`
 
 ### 2026-07-24 — Documentation Sphinx anglaise avec Diátaxis

@@ -131,6 +131,31 @@ The benchmark evidence and numerical equivalence checks are preserved in
 `validation/performance/nonlocal_hot_path_optimization.json` and summarised in
 {doc}`../reference/results`.
 
+## Fixed CSR and explicit PARDISO phases
+
+The subsequent linear-solver optimization keeps the free--free stiffness
+graph fixed for the whole calculation. Element contributions are mapped once
+to CSR `data` positions; every Newton assembly updates only the values of the
+same matrix object. The former COO-to-CSR reconstruction and repeated
+free-system extraction are no longer present in the hot loop.
+
+PyPardiso 0.4.7 normally combines symbolic analysis and numerical
+factorization when matrix values change. The adapter now drives MKL PARDISO
+explicitly:
+
+1. phase 11 analyses the fixed graph once;
+2. phase 22 factorizes every new tangent numerically;
+3. phase 33 solves the current right-hand side.
+
+The matrix remains `mtype=11`, real and nonsymmetric. No symmetry assumption,
+Newton modification, fixed-point acceleration, or coupled micromorphic
+tangent is introduced. Phase counts and timings are saved in
+`SolverDiagnostics`.
+
+The P187 complete-solver gate records one phase 11 and 139 phase 22/33 pairs.
+It reduces sparse assembly by 73.4%, free-system extraction by 99.4%, and
+PARDISO time by 48.3%. See {doc}`../reference/results`.
+
 ## Tangent scope
 
 The MFront consistent tangent contains the derivative of the local J2 update

@@ -343,6 +343,36 @@ The machine-readable reports, hashes, field errors, convergence sequences,
 and per-post timings are preserved in
 `validation/performance/nonlocal_hot_path_optimization.json`.
 
+### Fixed CSR and explicit PARDISO phase gate
+
+A second paired run changes only sparse assembly and linear-solver lifecycle.
+The baseline is the lightweight constitutive result above. The optimized path
+uses one immutable free--free CSR graph, one PARDISO phase 11, and a phase
+22/33 pair for each new tangent and right-hand side. It deliberately retains
+the nonsymmetric `mtype=11`.
+
+| Quantity | Lightweight baseline | Fixed CSR + 11/22/33 | Change |
+|---|---:|---:|---:|
+| process wall time | 273.56 s | 244.67 s | -10.6% |
+| peak RSS | 1,152,684 KiB | 960,384 KiB | -16.7% |
+| inner elapsed time | 271.07 s | 242.20 s | -10.7% |
+| sparse assembly | 7.414 s | 1.970 s | -73.4% |
+| free-system extraction | 1.769 s | 0.010 s | -99.4% |
+| PARDISO total | 65.389 s | 33.825 s | -48.3% |
+
+The optimized PARDISO time is split into `0.313 s` for one symbolic analysis,
+`24.909 s` for 139 numerical factorizations, and `8.602 s` for 139 solves.
+Building the fixed graph and contribution map costs `2.972 s` once and is
+included in the reported wall time.
+
+The two runs retain exactly the same 20 increment attempts, 13 accepted
+increments, seven cutbacks, 156 Newton iterations, 623 nonlocal iterations,
+and per-iteration nonlocal sequence. Maximum field differences relative to
+global amplitude remain below `9.6e-12`; plane-stress and coupling residuals
+remain within `3.7e-14 MPa` and `2.4e-17` in absolute terms. The complete
+configuration, hashes, errors, phase counts, and timings are preserved in
+`validation/performance/fixed_csr_explicit_pardiso_p0187.json`.
+
 ## Current evidence boundary
 
 Validated:

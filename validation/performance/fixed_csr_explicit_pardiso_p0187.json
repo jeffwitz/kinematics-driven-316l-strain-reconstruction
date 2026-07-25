@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "purpose": "Isolate fixed-CSR assembly and explicit PARDISO phases 11/22/33",
+  "baseline_commit": "d5b0e7e",
+  "optimized_commit": "970abe0b35c19d5c80f716a331f551cfaeb9ecf4",
+  "configuration": {
+    "partition_id": 187,
+    "partition_shape": [20, 20],
+    "padding_pixels": 16,
+    "solved_element_shape": [212, 187],
+    "element_count": 39644,
+    "requested_increments": 5,
+    "mfront_threads": 8,
+    "constitutive_backend": "mfront-native-plane-stress",
+    "nonlocal_length_scale_mm": 0.05888,
+    "nonlocal_coupling_modulus_mpa": 6000.0,
+    "nonlocal_relaxation": 0.5,
+    "nonlocal_relative_tolerance": 1e-6,
+    "nonlocal_maximum_iterations": 15,
+    "matrix_type": 11
+  },
+  "inputs": {
+    "baseline_manifest_sha256": "f746c0bfae96acef402c69bb28a89aa1844c66a2a4fcadd8563ccd2dc6d45f45",
+    "optimized_manifest_sha256": "6e13e5caece86a7c1bd272a3815640aa0a26cddd689100a26b227295e8fea49d"
+  },
+  "external_process": {
+    "baseline_elapsed_seconds": 273.56,
+    "optimized_elapsed_seconds": 244.67,
+    "speedup": 1.1180774103895044,
+    "elapsed_reduction_fraction": 0.10560754496271385,
+    "baseline_peak_rss_kib": 1152684,
+    "optimized_peak_rss_kib": 960384,
+    "peak_rss_reduction_fraction": 0.16682802919100115
+  },
+  "timings_seconds": {
+    "baseline_inner_elapsed": 271.0700664629694,
+    "optimized_inner_elapsed": 242.19685890898108,
+    "baseline_sparse_assembly": 7.4142585205845535,
+    "optimized_sparse_assembly": 1.9698849176056683,
+    "sparse_assembly_reduction_fraction": 0.7343112717021419,
+    "baseline_free_system_extraction": 1.7685250451322645,
+    "optimized_free_system_extraction": 0.009972746949642897,
+    "free_system_extraction_reduction_fraction": 0.9943609806504623,
+    "baseline_pardiso": 65.38930857856758,
+    "optimized_pardiso": 33.824605921050534,
+    "pardiso_reduction_fraction": 0.48271962716337535,
+    "optimized_pardiso_analysis": 0.3132210639305413,
+    "optimized_pardiso_factorization": 24.90912003070116,
+    "optimized_pardiso_solve": 8.602264826418832,
+    "optimized_fixed_structure_initialization": 2.9723234558478
+  },
+  "pardiso_phase_calls": {
+    "analysis_11": 1,
+    "factorization_22": 139,
+    "solve_33": 139
+  },
+  "convergence_identity": {
+    "attempted_increments": true,
+    "converged_increments": true,
+    "cutbacks": true,
+    "total_newton_iterations": true,
+    "maximum_newton_iterations": true,
+    "total_nonlocal_iterations": true,
+    "maximum_nonlocal_iterations": true,
+    "nonlocal_iterations_per_increment": true,
+    "nonlocal_iterations_per_newton": true,
+    "final_convergence_criterion": true,
+    "values": {
+      "attempted_increments": 20,
+      "converged_increments": 13,
+      "cutbacks": 7,
+      "total_newton_iterations": 156,
+      "maximum_newton_iterations": 15,
+      "total_nonlocal_iterations": 623,
+      "maximum_nonlocal_iterations": 12,
+      "final_convergence_criterion": "relative_residual"
+    }
+  },
+  "field_errors": {
+    "U": {"maximum_absolute": 4.163336342344337e-17, "maximum_relative_to_global_amplitude": 5.890277625154513e-16},
+    "S": {"maximum_absolute": 3.876664322888246e-9, "maximum_relative_to_global_amplitude": 9.544278696416115e-12},
+    "E": {"maximum_absolute": 2.398081733190338e-14, "maximum_relative_to_global_amplitude": 1.1126358207890232e-12},
+    "PE": {"maximum_absolute": 1.8622256514611024e-14, "maximum_relative_to_global_amplitude": 9.057831904864727e-13},
+    "PEEQ": {"maximum_absolute": 1.6465995233971853e-14, "maximum_relative_to_global_amplitude": 7.786069376985987e-13},
+    "RF": {"maximum_absolute": 2.681410649074678e-12, "maximum_relative_to_global_amplitude": 4.299775262428639e-12},
+    "PEEQ_NONLOCAL": {"maximum_absolute": 2.42861286636753e-17, "maximum_relative_to_global_amplitude": 4.301904954421761e-15},
+    "PEEQ_MISMATCH": {"maximum_absolute": 1.6446913275736108e-14, "maximum_relative_to_global_amplitude": 1.0203018739041657e-12},
+    "NONLOCAL_HARDENING_MPA": {"maximum_absolute": 9.868017514236271e-11, "maximum_relative_to_global_amplitude": 1.0202883861038425e-12},
+    "YIELD_SURFACE_RADIUS_MPA": {"maximum_absolute": 2.0276615941838827e-9, "maximum_relative_to_global_amplitude": 2.3149800565078753e-12},
+    "S_3D": {"maximum_absolute": 3.876664322888246e-9, "maximum_relative_to_global_amplitude": 9.544278696416115e-12},
+    "E_3D": {"maximum_absolute": 2.398081733190338e-14, "maximum_relative_to_global_amplitude": 1.1126358207890232e-12},
+    "EE_3D": {"maximum_absolute": 1.496350786334144e-14, "maximum_relative_to_global_amplitude": 7.658030698751405e-12},
+    "PE_3D": {"maximum_absolute": 1.8622256514611024e-14, "maximum_relative_to_global_amplitude": 9.057831904864727e-13},
+    "PLANE_STRESS_RESIDUAL_MPA": {"maximum_absolute": 3.603289208140917e-14, "comparison": "absolute because both fields are numerical zero"},
+    "S33_RESIDUAL_MPA": {"maximum_absolute": 3.603289208140917e-14, "comparison": "absolute because both fields are numerical zero"},
+    "NONLOCAL_RESIDUAL": {"maximum_absolute": 2.3418766925686896e-17, "comparison": "absolute because both fields are near the coupling tolerance"}
+  },
+  "acceptance": {
+    "technical_relative_tolerance": 1e-10,
+    "physical_fields_pass": true,
+    "near_zero_residuals_pass_absolute_check": true,
+    "scientific_parameters_changed": false,
+    "newton_changed": false,
+    "fixed_point_changed": false,
+    "tangent_changed": false,
+    "matrix_symmetry_exploited": false
+  }
+}

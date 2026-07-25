@@ -127,6 +127,8 @@ class ExplicitPardisoSolver:
             raise TypeError("matrix must be a scipy.sparse.csr_matrix")
         if matrix.shape[0] != matrix.shape[1]:
             raise ValueError("matrix must be square")
+        if matrix.data.dtype != np.float64:
+            raise TypeError("matrix data must use float64")
         rhs = np.asarray(right_hand_side, dtype=np.float64)
         if rhs.shape not in {(matrix.shape[0],), (matrix.shape[0], 1)}:
             raise ValueError("right_hand_side has an incompatible shape")

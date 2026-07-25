@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The repository records six accepted architecture decisions. This page is the
+The repository records seven accepted architecture decisions. This page is the
 English public summary; the original ADR files remain the authoritative
 versioned records.
 
@@ -58,3 +58,17 @@ tangent to the unchanged 2D Newton solve.
 **Consequence:** a future small-strain 3D crystal-plasticity behaviour can
 replace J2 within the constitutive adapter. The native MFront plane-stress path
 remains the faster production default for the current isotropic law.
+
+## ADR 0007 — Reuse a fixed free-system CSR graph
+
+The free--free stiffness matrix is represented by one CSR object whose
+`indptr` and `indices` arrays never change during a solve. A precomputed
+element-contribution map updates only `data`. PARDISO keeps this graph under
+the real nonsymmetric matrix type (`mtype=11`), performs symbolic analysis
+phase 11 once, and executes numerical factorization phase 22 followed by solve
+phase 33 for every new tangent.
+
+**Consequence:** COO construction, CSR conversion, free-system slicing, and
+repeated symbolic analysis are removed from the Newton loop. This decision
+does not assume matrix symmetry and does not modify Newton or the constitutive
+tangent.

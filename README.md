@@ -163,6 +163,13 @@ and peak RSS by `12.7%`, while preserving convergence decisions exactly and
 all physical fields below the declared `1e-10` relative threshold. The
 versioned evidence is reported in
 [`validation/performance/nonlocal_hot_path_optimization.json`](validation/performance/nonlocal_hot_path_optimization.json).
+The following fixed-CSR/PARDISO phase optimization reduces the same complete
+P187 gate from `273.56 s` to `244.67 s` (`-10.6%`) and peak RSS by `16.7%`.
+Sparse assembly falls by `73.4%`, free-system extraction by `99.4%`, and
+PARDISO time by `48.3%`. The solver performs phase 11 once and 139 phase 22/33
+pairs while retaining nonsymmetric `mtype=11`; Newton, the fixed point, and the
+tangent are unchanged. Evidence is preserved in
+[`validation/performance/fixed_csr_explicit_pardiso_p0187.json`](validation/performance/fixed_csr_explicit_pardiso_p0187.json).
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current

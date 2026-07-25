@@ -127,7 +127,8 @@ historical snapshot payload remains unchanged.
 | Group | Fields |
 |---|---|
 | identity | `backend`, `tensor_reconstruction_source` |
-| timing | `elapsed_seconds`, initialization, elastic assembly, constitutive, tangent assembly, linear solve, output |
+| timing | `elapsed_seconds`, initialization, elastic assembly, constitutive, tangent assembly, fixed sparse assembly, free-system extraction, linear solve, output |
+| PARDISO phases | analysis (11), numerical factorization (22), solve (33): elapsed time and call count for each phase |
 | increments | attempted, converged, cutbacks |
 | Newton | total iterations, maximum iterations |
 | convergence | final norm, final relative residual, criterion name |
