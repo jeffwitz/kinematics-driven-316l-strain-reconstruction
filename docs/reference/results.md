@@ -3,6 +3,49 @@
 This page reports preserved evidence. It is not a promise of performance on
 another machine.
 
+## Three-backend FEM benchmark
+
+Campaign:
+`validation/reference_data/plane_stress_backend_performance_100x100_v1`
+
+All three material paths were run on the same central `100×100`-element crop
+of the versioned DIC data, with 20 increments. Each measurement starts in a
+fresh process; the order is alternated over three repetitions per backend.
+All runs use two MKL threads and, where applicable, two MGIS threads. GNU
+`time` records complete-process peak RSS. Complete fields and diagnostics are
+preserved for every run.
+
+| Backend | Median process wall | Median FEM solver | Median constitutive | Median peak RSS | Global Newton |
+|---|---:|---:|---:|---:|---:|
+| Python J2 | `134.36 s` | `133.31 s` | `99.33 s` | `248.96 MiB` | 183 |
+| native MFront plane stress | `27.03 s` | `25.89 s` | `9.52 s` | `269.65 MiB` | 93 |
+| condensed 3D MFront | `83.43 s` | `82.30 s` | `65.44 s` | `320.30 MiB` | 93 |
+
+All nine runs converge without cutback or local failure. Relative to native
+MFront, Python takes `4.97×` more wall time and uses `7.7%` less peak RSS; the
+condensed path takes `3.09×` more wall time and uses `18.8%` more peak RSS.
+The condensed path is nevertheless `1.61×` faster than Python because both
+MFront paths converge in 93 global Newton iterations, versus 183 for Python.
+
+Native and condensed MFront are equivalent to numerical precision: their
+maximum differences are `9.171e-15 mm` in displacement, `2.307e-07 MPa` in
+stress, `3.197e-12` in total strain, `3.267e-12` in plastic strain, and
+`2.427e-12` in PEEQ. The Python backend is an independent implementation and
+is equivalent within the declared case-study tolerances rather than bitwise:
+its corresponding maximum differences from native MFront are
+`2.121e-09 mm`, `6.763e-02 MPa`, `4.471e-07`, `6.037e-07`, and `4.759e-07`.
+
+The maximum Gauss-point transverse residual is `0` for Python,
+`9.107e-14 MPa` for native MFront, and `3.745e-08 MPa` for condensed MFront.
+The condensed local solve needs at most four iterations, with maximum observed
+`cond(Cbb) = 3.984`.
+
+For the current isotropic J2 law, native MFront is therefore the production
+choice. Python remains useful as an independent scientific and regression
+oracle. Condensed 3D MFront is usable and validated, but its purpose is to
+accept a genuinely three-dimensional constitutive law without changing the
+two-dimensional FEM solver.
+
 ## Native versus condensed 3D J2 on the DIC 10×10 case
 
 Campaign:

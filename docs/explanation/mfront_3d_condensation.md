@@ -160,3 +160,20 @@ path is `2.705e-08 MPa`; no local solve fails. Preserved evidence is in
 This establishes the adapter with isotropic J2. It does not yet validate a
 crystal-plasticity behaviour, its material parameters, or its orientation
 data.
+
+## Performance position
+
+A separate `100×100` DIC benchmark, with three fresh processes per backend,
+measures median complete-process wall times of `27.03 s` for native MFront
+plane stress, `83.43 s` for condensed 3D MFront, and `134.36 s` for Python.
+Median peak RSS values are `269.65`, `320.30`, and `248.96 MiB`,
+respectively.
+
+The condensed path performs an additional local Newton solve and integrates a
+six-component state repeatedly, so its `3.09×` wall-time and `18.8%` memory
+cost relative to native MFront are expected for the present isotropic law. It
+is not intended to replace the native path for J2. Its value is architectural:
+it is the validated route for a constitutive law whose transverse couplings
+cannot be represented by MFront's four-component native `PlaneStress`
+interface. Full measurements and all result fields are preserved in
+`validation/reference_data/plane_stress_backend_performance_100x100_v1`.

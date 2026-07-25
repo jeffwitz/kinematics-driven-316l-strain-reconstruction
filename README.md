@@ -65,6 +65,20 @@ without cutback. Their maximum in-plane stress difference is
 residual of `2.705e-08 MPa` in at most four local iterations, with no local
 failure.
 
+All three backends were also timed in fresh processes on the same central
+`100×100` DIC crop, with 20 increments and three repetitions per backend.
+Median complete-process wall times are `134.36 s` for Python, `27.03 s` for
+native MFront plane stress, and `83.43 s` for condensed 3D MFront. Median peak
+RSS values are respectively `248.96`, `269.65`, and `320.30 MiB`. All nine
+runs converge without cutback. Native and condensed MFront agree to
+`2.307e-07 MPa` maximum stress difference; the independent Python
+implementation agrees within the declared case-study tolerances, with a
+maximum stress difference of `6.763e-02 MPa`. The native path therefore
+remains the production default for the present J2 law, while the condensed
+path is the validated extension point for a future three-dimensional law.
+Every raw run and full result field is preserved under
+[`validation/reference_data/plane_stress_backend_performance_100x100_v1`](validation/reference_data/plane_stress_backend_performance_100x100_v1).
+
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and

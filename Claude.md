@@ -7,7 +7,9 @@ MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
 tenseurs 3D complets reconstruits en post-traitement du solveur 2D et validés
 sur les deux backends sans modification des sorties historiques ;
 loi J2 tridimensionnelle condensée localement en contraintes planes et validée
-contre le backend MFront natif, interface prête à recevoir une loi 3D ;
+contre le backend MFront natif, les trois backends mesurés sur un crop DIC
+100×100 avec neuf exécutions intégralement sauvegardées, interface prête à
+recevoir une loi 3D ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -317,6 +319,8 @@ sans régression des sorties 2D.
 - [x] Tester l'échec local et l'absence de pollution de l'état validé
 - [x] Comparer les deux chemins sur les trajets matériels et un maillage 4×4
 - [x] Comparer et sauvegarder les deux chemins sur le crop DIC réel 10×10
+- [x] Comparer temps complet, temps constitutif et pic RSS des trois backends
+      sur le même crop DIC 100×100, trois processus frais par backend
 - [x] Documenter l'architecture, ses limites et le contrat pour une future loi
       cristalline 3D
 
@@ -327,6 +331,16 @@ la contrainte dans le plan vaut `4,804e-08 MPa`. Le backend condensé atteint
 un résidu transverse maximal au point de Gauss de `2,705e-08 MPa` en quatre
 itérations locales au plus, avec zéro échec et
 `max(cond(Cbb)) = 1,896`.
+
+**Preuve de performance DIC 100×100 :**
+`validation/reference_data/plane_stress_backend_performance_100x100_v1`.
+Les neuf calculs convergent sans cutback. Les médianes
+temps mur / pic RSS sont `134,36 s / 248,96 MiB` pour Python,
+`27,03 s / 269,65 MiB` pour MFront natif et
+`83,43 s / 320,30 MiB` pour MFront 3D condensé. Les deux chemins MFront
+diffèrent au maximum de `2,307e-07 MPa` sur la contrainte ; Python diffère au
+maximum de `6,763e-02 MPa` et respecte tous les seuils déclarés du cas
+d'étude.
 
 **Critère de sortie :** le solveur global ne connaît plus la loi J2 ou les
 détails MGIS ; les chemins J2 MFront natif et J2 3D condensé sont équivalents
@@ -759,6 +773,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Parité MFront natif/J2 3D condensé | Crop DIC 10×10, 20 incréments | 66 Newton chacun, contrainte max `4,804e-08 MPa`, 0 échec local | Réussi |
 | 2026-07-25 | Résolution locale de contraintes planes | Résidu GP, itérations et `Cbb` | `2,705e-08 MPa`, 4 itérations max, `cond(Cbb)=1,896` | Réussi |
 | 2026-07-25 | Suite architecture constitutive commune | Ruff, mypy et MGIS/MFront réel | 206 tests | Réussi |
+| 2026-07-25 | Performance EF des trois backends | Crop DIC 100×100, 20 incréments, 3 répétitions | Python `134,36 s / 248,96 MiB` ; natif `27,03 s / 269,65 MiB` ; condensé `83,43 s / 320,30 MiB` | Réussi |
+| 2026-07-25 | Équivalence des trois backends à échelle 100×100 | Comparaison des champs complets sauvegardés | MFront/MFront `2,307e-07 MPa` ; Python/MFront `6,763e-02 MPa`, tous seuils réussis | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -1203,3 +1219,20 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   `validation/reference_data/mfront_3d_condensed_dic_10x10_v1` sauvegardée
 - Validation avec MGIS/MFront réel : 206 tests réussis ; Ruff, mypy et
   contrôle des différences Git sans défaut
+
+### 2026-07-25 — Benchmark EF comparatif des trois backends
+
+- Ajout d'un pilote reproductible exécutant `python`,
+  `mfront-native-plane-stress` et `mfront-3d-condensed-plane-stress` dans des
+  processus frais et un ordre alterné
+- Mesure du temps mur complet par GNU `time`, du temps solveur, du temps
+  constitutif et du pic RSS sur le même crop DIC central 100×100
+- Trois répétitions par backend, 20 incréments, deux threads MKL et deux
+  threads MGIS ; neuf convergences sans cutback ni échec local
+- Sauvegarde systématique de tous les champs, diagnostics, journaux,
+  mesures de ressources, configuration et rapport agrégé
+- Médianes temps mur / RSS : Python `134,36 s / 248,96 MiB`, MFront natif
+  `27,03 s / 269,65 MiB`, MFront 3D condensé
+  `83,43 s / 320,30 MiB`
+- Confirmation que MFront natif et condensé sont équivalents à la précision
+  numérique et que Python respecte les tolérances scientifiques déclarées
