@@ -117,8 +117,11 @@ The model and operational sequence are documented in
 [`docs/explanation/micromorphic_plasticity.md`](docs/explanation/micromorphic_plasticity.md)
 and
 [`docs/how-to/run_coupled_nonlocal_p154.md`](docs/how-to/run_coupled_nonlocal_p154.md).
-Scientific P154 results are not claimed until the local reference, `H_ref`
-sweep, and raw coupled-field comparisons have completed.
+The `validate-coupled-nonlocal` command compares the raw coupled displacement
+solution with DIC on the manifest-declared core and evaluates the
+pre-registered P154 criteria without post-filtering. Scientific P154 results
+are not claimed until the positive-`Hchi` validation runs and raw
+coupled-field comparisons have completed.
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
@@ -257,6 +260,7 @@ fem-inhouse partition --help
 fem-inhouse compare-fields --help
 fem-inhouse diagnose-nonlocality --help
 fem-inhouse estimate-nonlocal-reference --help
+fem-inhouse validate-coupled-nonlocal --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation

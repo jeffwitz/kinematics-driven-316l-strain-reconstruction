@@ -126,7 +126,39 @@ Use 128 pixels of padding and 20 increments:
 Use distinct output directories for every alpha. The immutable manifest
 includes all nonlocal parameters and prevents accidental campaign reuse.
 
-## 6. Inspect the coupled fields
+## 6. Validate raw coupled fields
+
+After a coupled validation campaign has completed, compare it with the local
+campaign using the pre-registered P154 criteria:
+
+```bash
+.venv/bin/fem-inhouse validate-coupled-nonlocal \
+  --input data/processed/case_study \
+  --local-campaign results/constitutive-local-p0154-pad128 \
+  --coupled-campaign results/constitutive-nonlocal-p0154-pad128-a050 \
+  --partition-id 154 \
+  --output results/constitutive-nonlocal-p0154-pad128-a050/validation.json
+```
+
+The command verifies campaign compatibility and saved-field hashes before
+loading the arrays. It reconstructs `EVM_HISTORICAL` independently from the
+DIC, local FEM, and coupled FEM displacements, then evaluates every metric on
+the manifest-declared core. It also checks the displacement error, all three
+plane-stress residual components, required finite fields, and the frozen
+acceptance thresholds.
+
+`validation.json` states both
+`post_filter_applied: false` and
+`mechanical_solution_modified_by_candidate: true`. A non-zero exit code means
+that at least one scientific criterion failed; it does not mean that the
+calculation or report generation failed.
+
+For the smoke sweep, the `Hchi=0` coupled campaign may be used as the
+mechanically local reference because it has the same 64-pixel layout and
+five-increment schedule. The final scientific comparison must use the local
+128-pixel, 20-increment reference.
+
+## 7. Inspect the coupled fields
 
 In addition to the historical and complete-tensor outputs, a coupled
 partition contains:
@@ -144,7 +176,7 @@ the complete padded array. The primary comparison uses raw coupled FEM EVM
 against DIC EVM. Do not Helmholtz-filter the final EVM field before reporting
 the primary acceptance metrics.
 
-## 7. Freeze and transfer
+## 8. Freeze and transfer
 
 Select one alpha using the pre-registered P154 criteria in
 `validation/nonlocal_p154_preregistration.md`. Record the criterion and the

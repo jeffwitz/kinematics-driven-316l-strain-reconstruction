@@ -475,6 +475,8 @@ physique.
 - [x] Ajouter une commande empreintée calculant
       `Href = median(K*n*p**(n-1))` sur le cœur plastifié local
 - [x] Exécuter P154 local à 20 incréments et produire `HREF.json`
+- [x] Ajouter un validateur empreinté local/couplé qui reconstruit les EVM
+      depuis les déplacements bruts sur le cœur, sans post-filtrage
 - [ ] Exécuter les smoke tests à 5 incréments pour `alpha=0,0.5,1`
 - [ ] Exécuter les candidats retenus à 20 incréments avec padding 128
 - [ ] Comparer les champs bruts couplés à la DIC sur le cœur P154

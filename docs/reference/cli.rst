@@ -30,6 +30,8 @@ Top-level commands
      - Sweep element-centred Helmholtz filters over a saved padded partition.
    * - ``estimate-nonlocal-reference``
      - Derive the pre-registered coupling-modulus sweep from a local partition.
+   * - ``validate-coupled-nonlocal``
+     - Compare raw local and coupled fields with DIC on one retained core.
 
 Run ``fem-inhouse COMMAND --help`` for the authoritative options installed with
 the current source revision.
@@ -115,6 +117,27 @@ The command verifies the hardening-map fingerprint, reads ``PEEQ`` only from
 the retained core, and reports the median Ludwik tangent together with every
 ``alpha * H_ref`` candidate. It refuses a genuinely coupled source campaign
 and does not overwrite an existing report without ``--overwrite``.
+
+``validate-coupled-nonlocal`` contract
+--------------------------------------
+
+.. code-block:: text
+
+   --input PREPARED_CASE
+   --local-campaign COMPLETED_LOCAL_CAMPAIGN
+   --coupled-campaign COMPLETED_COUPLED_CAMPAIGN
+   --partition-id N
+   --output REPORT.json
+
+The two campaigns must use identical input hashes, layout, material,
+mechanical settings, and increment schedule. A nonlocal campaign with
+``Hchi=0`` is accepted as a mechanically local smoke-test reference.
+
+The command verifies every loaded output hash, reconstructs the DIC and FEM
+historical EVM fields with the same displacement operator, and evaluates the
+frozen P154 criteria only on the retained core. It never applies a Helmholtz
+filter to the final FEM field. A complete report that fails one or more
+scientific criteria is still written; the command then returns status 2.
 
 ``diagnose-nonlocality`` contract
 ---------------------------------

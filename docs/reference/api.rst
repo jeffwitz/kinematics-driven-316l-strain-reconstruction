@@ -70,6 +70,11 @@ Helmholtz operator and coupling campaign
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: fem_inhouse.workflows.coupled_nonlocal_validation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Material helpers
 ----------------
 
