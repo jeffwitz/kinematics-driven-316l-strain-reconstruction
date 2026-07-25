@@ -5,14 +5,24 @@ from __future__ import annotations
 import time
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, tril
 from scipy.sparse.linalg import spsolve
 
 FloatArray = NDArray[np.float64]
+LinearSystemMatrixType = Literal[
+    "symmetric_positive_definite",
+    "nonsymmetric",
+]
+MatrixStorage = Literal["upper", "full"]
+
+_MATRIX_TYPES: tuple[LinearSystemMatrixType, ...] = (
+    "symmetric_positive_definite",
+    "nonsymmetric",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,16 +63,28 @@ class ExplicitPardisoSolver:
 
     PyPardiso 0.4.7 exposes phase selection but its public ``spsolve`` helper
     combines analysis and numerical factorization whenever matrix values
-    change. This adapter deliberately keeps ``mtype=11`` and calls the
-    underlying phase interface so a fixed CSR pattern is analysed once.
+    change. This adapter calls the underlying phase interface so a fixed CSR
+    pattern is analysed once.
+
+    Symmetric positive-definite systems use PARDISO ``mtype=2`` and require
+    upper-triangular CSR storage. Generic or potentially nonsymmetric
+    behaviours retain the complete CSR graph and ``mtype=11``.
     """
 
-    backend_name = "pypardiso explicit phases 11/22/33 (mtype=11)"
-
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        matrix_type: LinearSystemMatrixType = "nonsymmetric",
+    ) -> None:
         import pypardiso
 
-        self._solver: Any = pypardiso.PyPardisoSolver(mtype=11)
+        if matrix_type not in _MATRIX_TYPES:
+            raise ValueError(f"unsupported linear-system matrix type: {matrix_type}")
+        self._matrix_type = matrix_type
+        self._mtype = 2 if matrix_type == "symmetric_positive_definite" else 11
+        self._matrix_storage: MatrixStorage = (
+            "upper" if matrix_type == "symmetric_positive_definite" else "full"
+        )
+        self._solver: Any = pypardiso.PyPardisoSolver(mtype=self._mtype)
         self._shape: tuple[int, int] | None = None
         self._indptr: NDArray[np.int32] | None = None
         self._indices: NDArray[np.int32] | None = None
@@ -73,6 +95,27 @@ class ExplicitPardisoSolver:
         self._factorization_calls = 0
         self._solve_calls = 0
         self._closed = False
+
+    @property
+    def backend_name(self) -> str:
+        """Return the PARDISO phase cycle and matrix contract."""
+
+        return (
+            "pypardiso explicit phases 11/22/33 "
+            f"(mtype={self._mtype}, storage={self._matrix_storage})"
+        )
+
+    @property
+    def matrix_type(self) -> LinearSystemMatrixType:
+        """Return the mathematical matrix contract used by PARDISO."""
+
+        return self._matrix_type
+
+    @property
+    def matrix_storage(self) -> MatrixStorage:
+        """Return the CSR storage required by the selected PARDISO type."""
+
+        return self._matrix_storage
 
     @property
     def statistics(self) -> LinearSolverStatistics:
@@ -106,6 +149,10 @@ class ExplicitPardisoSolver:
                     "PARDISO matrix sparsity changed after symbolic analysis"
                 )
             return
+        if self._matrix_storage == "upper" and tril(matrix, k=-1).nnz:
+            raise ValueError(
+                "symmetric PARDISO requires upper-triangular CSR storage"
+            )
         started = time.perf_counter()
         self._call_phase(11, matrix, np.zeros(matrix.shape[0], dtype=np.float64))
         self._analysis_seconds += time.perf_counter() - started
@@ -170,11 +217,28 @@ class ExplicitPardisoSolver:
 class ScipySparseSolver:
     """Compatibility fallback when PyPardiso is unavailable."""
 
-    backend_name = "scipy SuperLU (single-threaded)"
+    backend_name = "scipy SuperLU (single-threaded, full storage)"
+    matrix_storage: MatrixStorage = "full"
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        matrix_type: LinearSystemMatrixType = "nonsymmetric",
+    ) -> None:
+        if matrix_type not in _MATRIX_TYPES:
+            raise ValueError(f"unsupported linear-system matrix type: {matrix_type}")
+        self._matrix_type = matrix_type
         self._solve_seconds = 0.0
         self._solve_calls = 0
+
+    @property
+    def matrix_type(self) -> LinearSystemMatrixType:
+        """Return the requested matrix contract.
+
+        SuperLU still receives the complete matrix because SciPy's generic
+        sparse solve does not infer symmetry from triangular storage.
+        """
+
+        return self._matrix_type
 
     @property
     def statistics(self) -> LinearSolverStatistics:
@@ -198,11 +262,13 @@ class ScipySparseSolver:
         return None
 
 
-def create_linear_solver() -> ExplicitPardisoSolver | ScipySparseSolver:
-    """Create the explicit PARDISO adapter or the compatibility fallback."""
+def create_linear_solver(
+    matrix_type: LinearSystemMatrixType = "nonsymmetric",
+) -> ExplicitPardisoSolver | ScipySparseSolver:
+    """Create a solver honoring the constitutive matrix capability."""
 
     try:
         import pypardiso  # noqa: F401
     except Exception:
-        return ScipySparseSolver()
-    return ExplicitPardisoSolver()
+        return ScipySparseSolver(matrix_type)
+    return ExplicitPardisoSolver(matrix_type)

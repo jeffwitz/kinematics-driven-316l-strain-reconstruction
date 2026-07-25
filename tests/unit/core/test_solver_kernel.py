@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.sparse import triu
 
 from fem_inhouse.core import (
     PLANE_STRESS_VON_MISES_METRIC,
@@ -17,6 +18,10 @@ from fem_inhouse.core import (
 )
 from fem_inhouse.core.assembly import FixedCSRAssembler, internal_force
 from fem_inhouse.core.element import GAUSS_POINT_COUNT
+from fem_inhouse.core.plane_stress_material import (
+    PythonJ2PlaneStressBatch,
+    relative_tangent_asymmetry,
+)
 
 
 def test_shape_derivatives_and_element_matrix() -> None:
@@ -42,6 +47,37 @@ def test_shape_derivatives_and_element_matrix() -> None:
     np.testing.assert_allclose(element_matrix, element_matrix.T, atol=1e-10)
     eigenvalues = np.linalg.eigvalsh(element_matrix)
     assert np.count_nonzero(np.abs(eigenvalues) < 1e-7) == 3
+
+
+def test_python_j2_declares_and_respects_symmetric_positive_definite_tangent() -> None:
+    batch = PythonJ2PlaneStressBatch(
+        [250.0, 270.0],
+        [380.0, 420.0],
+        0.245,
+        young_modulus_mpa=205_000.0,
+        poisson_ratio=0.3,
+    )
+    trial = batch.evaluate(
+        np.array([[0.008, -0.0008, 0.0015], [0.006, 0.001, -0.002]]),
+        time_increment=1.0,
+    )
+
+    assert batch.linear_system_matrix_type == "symmetric_positive_definite"
+    assert trial.tangent_in_plane_mpa is not None
+    assert relative_tangent_asymmetry(trial.tangent_in_plane_mpa) < 1e-14
+    eigenvalues = np.linalg.eigvalsh(trial.tangent_in_plane_mpa)
+    assert np.min(eigenvalues) > 0.0
+
+
+def test_relative_tangent_asymmetry_detects_contract_violation() -> None:
+    tangent = np.broadcast_to(np.eye(3), (2, 3, 3)).copy()
+    tangent[1, 0, 2] = 0.25
+
+    assert relative_tangent_asymmetry(tangent) == pytest.approx(0.25)
+    with pytest.raises(ValueError, match="trailing dimensions"):
+        relative_tangent_asymmetry(np.eye(2))
+    with pytest.raises(ValueError, match="finite"):
+        relative_tangent_asymmetry(np.full((1, 3, 3), np.nan))
 
 
 def test_assembly_and_internal_force_contracts() -> None:
@@ -124,6 +160,48 @@ def test_fixed_csr_assembler_preserves_structure_and_values() -> None:
     )
 
 
+def test_fixed_csr_assembler_stores_only_the_upper_triangle() -> None:
+    mesh = StructuredMesh(0.004, 0.003, 0.001, 1.0)
+    elasticity = plane_stress_elasticity(205_000.0, 0.3)
+    element_matrix = precompute_element(mesh, elasticity).elastic_stiffness
+    location = mesh.location_matrix()
+    free = mesh.dofs_free
+    assembler = FixedCSRAssembler.from_location_matrix(
+        location,
+        free,
+        chunk_size=2,
+        storage="upper",
+    )
+
+    first = assembler.assemble(element_matrix)
+    reference = assemble_stiffness(
+        mesh,
+        element_matrix,
+        location,
+    )[free][:, free].tocsr()
+    matrix_identity = id(first)
+    indptr = first.indptr.copy()
+    indices = first.indices.copy()
+
+    np.testing.assert_allclose(
+        first.toarray(),
+        triu(reference).toarray(),
+        atol=1e-9,
+    )
+    for row in range(first.shape[0]):
+        assert np.all(first.indices[first.indptr[row] : first.indptr[row + 1]] >= row)
+
+    second = assembler.assemble(1.1 * element_matrix)
+    assert id(second) == matrix_identity
+    assert np.array_equal(second.indptr, indptr)
+    assert np.array_equal(second.indices, indices)
+    np.testing.assert_allclose(
+        second.toarray(),
+        triu(1.1 * reference).toarray(),
+        atol=1e-9,
+    )
+
+
 @pytest.mark.parametrize(
     ("location", "dofs", "message"),
     [
@@ -139,6 +217,15 @@ def test_fixed_csr_assembler_rejects_invalid_contracts(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         FixedCSRAssembler.from_location_matrix(location, dofs)
+
+
+def test_fixed_csr_assembler_rejects_unknown_storage() -> None:
+    with pytest.raises(ValueError, match="storage"):
+        FixedCSRAssembler.from_location_matrix(
+            np.zeros((1, 8), dtype=int),
+            np.array([0]),
+            storage="diagonal",  # type: ignore[arg-type]
+        )
 
 
 def test_chunked_plastic_tangent_matches_dense_gauss_tensor() -> None:

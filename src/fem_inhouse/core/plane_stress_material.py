@@ -17,9 +17,28 @@ from fem_inhouse.core.constitutive import (
     consistent_tangent as python_consistent_tangent,
 )
 from fem_inhouse.core.element import plane_stress_elasticity
+from fem_inhouse.core.linear_solver import LinearSystemMatrixType
 from fem_inhouse.core.tensor_reconstruction import reconstruct_python_plane_stress_state
 
 FloatArray = NDArray[np.float64]
+SYMMETRIC_TANGENT_RELATIVE_TOLERANCE = 1e-12
+
+
+def relative_tangent_asymmetry(tangent: ArrayLike) -> float:
+    """Return the maximum skew part relative to the tangent amplitude."""
+
+    values = np.asarray(tangent, dtype=np.float64)
+    if values.ndim < 2 or values.shape[-2:] != (3, 3):
+        raise ValueError("tangent must have trailing dimensions (3, 3)")
+    if not np.isfinite(values).all():
+        raise ValueError("tangent must be finite")
+    scale = max(float(np.max(np.abs(values))), 1.0)
+    maximum_skew = max(
+        float(np.max(np.abs(values[..., 0, 1] - values[..., 1, 0]))),
+        float(np.max(np.abs(values[..., 0, 2] - values[..., 2, 0]))),
+        float(np.max(np.abs(values[..., 1, 2] - values[..., 2, 1]))),
+    )
+    return maximum_skew / scale
 
 
 class ConstitutiveIntegrationError(RuntimeError):
@@ -75,6 +94,9 @@ class PlaneStressMaterialBatch(Protocol):
 
     @property
     def completion_strategy(self) -> str: ...
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType: ...
 
     @property
     def statistics(self) -> PlaneStressBatchStatistics: ...
@@ -160,6 +182,12 @@ class PythonJ2PlaneStressBatch:
     @property
     def completion_strategy(self) -> str:
         return "j2_isotropic_analytical"
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        """J2 with non-negative isotropic hardening gives an SPD tangent."""
+
+        return "symmetric_positive_definite"
 
     @property
     def statistics(self) -> PlaneStressBatchStatistics:

@@ -314,6 +314,8 @@ def test_mfront_thread_pool_matches_serial_integration() -> None:
         parallel_result.consistent_tangent_mpa,
         serial_result.consistent_tangent_mpa,
     )
+    assert serial.linear_system_matrix_type == "symmetric_positive_definite"
+    assert parallel.linear_system_matrix_type == "symmetric_positive_definite"
 
 
 @pytest.mark.mfront
@@ -541,6 +543,8 @@ def test_micromorphic_3d_condensation_matches_native_plane_stress() -> None:
     native_trial = native.evaluate(strain, time_increment=1.0)
     condensed_trial = condensed.evaluate(strain, time_increment=1.0)
 
+    assert native.linear_system_matrix_type == "symmetric_positive_definite"
+    assert condensed.linear_system_matrix_type == "symmetric_positive_definite"
     np.testing.assert_allclose(
         condensed_trial.stress_in_plane_mpa,
         native_trial.stress_in_plane_mpa,

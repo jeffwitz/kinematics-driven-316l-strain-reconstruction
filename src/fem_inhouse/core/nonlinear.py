@@ -25,7 +25,6 @@ Usage:
 
 import logging
 import time
-from importlib import import_module
 from typing import cast
 
 import numpy as np
@@ -45,8 +44,7 @@ from fem_inhouse.core.element import (
     precompute_element,
 )
 from fem_inhouse.core.linear_solver import (
-    ExplicitPardisoSolver,
-    ScipySparseSolver,
+    LinearSystemMatrixType,
     create_linear_solver,
 )
 from fem_inhouse.core.mesh import StructuredMesh
@@ -57,19 +55,15 @@ from fem_inhouse.core.nonlocal_plasticity import (
     evaluate_nonlocal_fixed_point,
 )
 from fem_inhouse.core.plane_stress_material import (
+    SYMMETRIC_TANGENT_RELATIVE_TOLERANCE,
     ConstitutiveIntegrationError,
     ConstitutiveTrial,
     InPlaneConstitutiveTrial,
     create_plane_stress_material_batch,
+    relative_tangent_asymmetry,
 )
 
 LOGGER = logging.getLogger(__name__)
-
-try:
-    import_module("pypardiso")
-    _SOLVER_NAME = ExplicitPardisoSolver.backend_name
-except Exception:
-    _SOLVER_NAME = ScipySparseSolver.backend_name
 
 GP_XI = GAUSS_POINTS
 GP_W = GAUSS_WEIGHTS
@@ -129,20 +123,9 @@ def run_fem(
         raise ValueError("nonlocal plasticity currently requires an MFront backend")
     started_at = time.perf_counter()
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
-    linear_solver = create_linear_solver()
     nx, ny = mesh.nx, mesh.ny
     nxn, nyn = nx + 1, ny + 1
     n_e = mesh.n_elems
-
-    LOGGER.info(
-        "nonlinear solve started",
-        extra={
-            "event": "nonlinear_solve_started",
-            "elements": n_e,
-            "free_dofs": len(mesh.dofs_free),
-            "backend": linear_solver.backend_name,
-        },
-    )
 
     # element->grid output helpers (also used for snapshots)
     def gm(a):
@@ -184,6 +167,27 @@ def run_fem(
         if not hasattr(material_batch, "set_nonlocal_equivalent_plastic_strain"):
             raise TypeError("selected constitutive backend does not expose the nonlocal field")
         nonlocal_material_batch = cast(NonlocalPlaneStressMaterialBatch, material_batch)
+    linear_system_matrix_type = cast(
+        LinearSystemMatrixType,
+        getattr(
+            material_batch,
+            "linear_system_matrix_type",
+            "nonsymmetric",
+        ),
+    )
+    linear_solver = create_linear_solver(linear_system_matrix_type)
+
+    LOGGER.info(
+        "nonlinear solve started",
+        extra={
+            "event": "nonlinear_solve_started",
+            "elements": n_e,
+            "free_dofs": len(mesh.dofs_free),
+            "backend": linear_solver.backend_name,
+            "linear_system_matrix_type": linear_system_matrix_type,
+            "matrix_storage": linear_solver.matrix_storage,
+        },
+    )
 
     C_ps = plane_stress_elasticity(E_mod, nu)
     element_matrix_started_at = time.perf_counter()
@@ -203,7 +207,11 @@ def run_fem(
 
     # The reduced stiffness graph and contribution mapping remain fixed.
     assembly_started_at = time.perf_counter()
-    fixed_free_assembler = FixedCSRAssembler.from_location_matrix(ld, dof_I)
+    fixed_free_assembler = FixedCSRAssembler.from_location_matrix(
+        ld,
+        dof_I,
+        storage=linear_solver.matrix_storage,
+    )
 
     # Assemble KIB once. KII is the fixed CSR object later updated in place.
     sparse_assembly_started_at = time.perf_counter()
@@ -218,6 +226,7 @@ def run_fem(
     constitutive_seconds = 0.0
     tangent_assembly_seconds = 0.0
     internal_force_seconds = 0.0
+    maximum_relative_constitutive_tangent_asymmetry = 0.0
 
     def timed_solve(matrix, right_hand_side):
         return linear_solver.factorize_and_solve(matrix, right_hand_side)
@@ -387,6 +396,17 @@ def run_fem(
             material_tangents = trial.tangent_in_plane_mpa
             if material_tangents is None:
                 raise RuntimeError("constitutive backend did not return a consistent tangent")
+            if linear_system_matrix_type == "symmetric_positive_definite":
+                tangent_asymmetry = relative_tangent_asymmetry(material_tangents)
+                maximum_relative_constitutive_tangent_asymmetry = max(
+                    maximum_relative_constitutive_tangent_asymmetry,
+                    tangent_asymmetry,
+                )
+                if tangent_asymmetry > SYMMETRIC_TANGENT_RELATIVE_TOLERANCE:
+                    raise RuntimeError(
+                        "constitutive backend declared a symmetric tangent but "
+                        f"its relative asymmetry is {tangent_asymmetry:.3e}"
+                    )
             constitutive_seconds += time.perf_counter() - constitutive_started_at
 
             # Save state from this iteration (used if we break here)
@@ -643,6 +663,10 @@ def run_fem(
             final_relative_residual=final_relative_residual,
             final_convergence_criterion=final_convergence_criterion,
             tensor_reconstruction_source=material_batch.completion_strategy,
+            linear_system_matrix_type=linear_system_matrix_type,
+            maximum_relative_constitutive_tangent_asymmetry=(
+                maximum_relative_constitutive_tangent_asymmetry
+            ),
             maximum_gauss_point_plane_stress_residual_mpa=(
                 local_statistics.maximum_gauss_point_plane_stress_residual_mpa
             ),

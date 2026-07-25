@@ -81,6 +81,11 @@ def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
     )
     assert result.diagnostics.constitutive_seconds > 0
     assert result.diagnostics.output_seconds > 0
+    assert result.diagnostics.linear_system_matrix_type == (
+        "symmetric_positive_definite"
+    )
+    assert result.diagnostics.maximum_relative_constitutive_tangent_asymmetry < 1e-12
+    assert "mtype=2" in result.diagnostics.backend
     net_reaction = np.linalg.norm(result.reaction_force.sum(axis=(0, 1)))
     reaction_scale = np.linalg.norm(result.reaction_force, axis=-1).sum()
     assert net_reaction / reaction_scale < 1e-10
@@ -103,6 +108,7 @@ def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
 
     class NonfiniteLinearSolver:
         backend_name = "test non-finite solver"
+        matrix_storage = "full"
         statistics = LinearSolverStatistics()
 
         @staticmethod
@@ -116,7 +122,7 @@ def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
     monkeypatch.setattr(
         nonlinear,
         "create_linear_solver",
-        NonfiniteLinearSolver,
+        lambda _matrix_type: NonfiniteLinearSolver(),
     )
     with pytest.raises(RuntimeError, match="increment cutback below minimum"):
         _solve_case(case, config=config)

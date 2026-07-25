@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +13,7 @@ from fem_inhouse.core.element import GAUSS_WEIGHTS
 from fem_inhouse.core.mesh import StructuredMesh
 
 AssemblyIndices = tuple[NDArray, NDArray]
+CSRStorage = Literal["full", "upper"]
 
 
 @dataclass(slots=True)
@@ -21,6 +23,7 @@ class FixedCSRAssembler:
     matrix: csr_matrix
     contribution_positions: NDArray[np.int32]
     element_count: int
+    storage: CSRStorage
 
     @classmethod
     def from_location_matrix(
@@ -29,6 +32,7 @@ class FixedCSRAssembler:
         selected_dofs: NDArray,
         *,
         chunk_size: int = 8_192,
+        storage: CSRStorage = "full",
     ) -> FixedCSRAssembler:
         """Build a reduced CSR pattern and element-to-data mapping once."""
 
@@ -42,6 +46,8 @@ class FixedCSRAssembler:
             raise ValueError("selected_dofs must contain unique nonnegative indices")
         if chunk_size < 1:
             raise ValueError("chunk_size must be positive")
+        if storage not in {"full", "upper"}:
+            raise ValueError("storage must be 'full' or 'upper'")
         maximum_dof = int(max(np.max(location), np.max(dofs)))
         global_to_reduced = np.full(maximum_dof + 1, -1, dtype=np.int64)
         global_to_reduced[dofs] = np.arange(len(dofs), dtype=np.int64)
@@ -59,6 +65,8 @@ class FixedCSRAssembler:
         invalid = (reduced_location[:, :, None] < 0) | (
             reduced_location[:, None, :] < 0
         )
+        if storage == "upper":
+            invalid |= reduced_location[:, :, None] > reduced_location[:, None, :]
         keys[invalid] = sentinel_key
         unique_keys = np.unique(keys)
         if unique_keys[-1] == sentinel_key:
@@ -94,6 +102,8 @@ class FixedCSRAssembler:
             np.multiply(local[:, :, None], reduced_size, out=chunk_keys)
             np.add(chunk_keys, local[:, None, :], out=chunk_keys)
             chunk_invalid = (local[:, :, None] < 0) | (local[:, None, :] < 0)
+            if storage == "upper":
+                chunk_invalid |= local[:, :, None] > local[:, None, :]
             chunk_keys[chunk_invalid] = sentinel_key
             chunk_positions = np.searchsorted(unique_keys, chunk_keys)
             chunk_positions[chunk_invalid] = sentinel_position
@@ -103,6 +113,7 @@ class FixedCSRAssembler:
             matrix=matrix,
             contribution_positions=positions,
             element_count=len(location),
+            storage=storage,
         )
 
     def assemble(self, element_stiffness: NDArray) -> csr_matrix:

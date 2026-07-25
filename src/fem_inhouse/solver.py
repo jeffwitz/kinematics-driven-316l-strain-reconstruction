@@ -30,9 +30,16 @@ def require_pypardiso() -> None:
 
 
 def linear_solver_backend() -> str:
-    """Return the backend selected by the numerical kernel."""
+    """Return the available sparse backend and its matrix-selection policy."""
 
-    return nonlinear._SOLVER_NAME
+    try:
+        import_module("pypardiso")
+    except Exception:
+        return "scipy SuperLU (single-threaded, full storage)"
+    return (
+        "pypardiso explicit phases 11/22/33 "
+        "(J2 mtype=2 upper; generic mtype=11 full)"
+    )
 
 
 def _validated_field(

@@ -47,6 +47,8 @@ class SolverDiagnostics:
     final_relative_residual: float
     final_convergence_criterion: str
     tensor_reconstruction_source: str = "unspecified"
+    linear_system_matrix_type: str = "unspecified"
+    maximum_relative_constitutive_tangent_asymmetry: float = 0.0
     maximum_gauss_point_plane_stress_residual_mpa: float = 0.0
     maximum_local_plane_stress_iterations: int = 0
     mean_local_plane_stress_iterations: float = 0.0

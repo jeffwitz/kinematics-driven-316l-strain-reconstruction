@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from fem_inhouse.core.linear_solver import LinearSystemMatrixType
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     ConstitutiveTrial,
@@ -32,6 +33,14 @@ _PLANE_STRESS_COMPONENTS = np.array([0, 1, 3])
 _TRANSVERSE_COMPONENTS_3D = np.array([2, 4, 5])
 _KELVIN_TO_ENGINEERING_STRESS_SCALE = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
 _ENGINEERING_TO_KELVIN_STRAIN_SCALE = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
+_SYMMETRIC_POSITIVE_DEFINITE_J2_BEHAVIOURS = frozenset(
+    {
+        "PixelLudwikJ2Plasticity",
+        "PixelMicromorphicLudwikJ2Plasticity",
+        "PixelLudwikJ2Plasticity3D",
+        "PixelMicromorphicLudwikJ2Plasticity3D",
+    }
+)
 
 
 class MFrontUnavailableError(RuntimeError):
@@ -394,6 +403,20 @@ class MFrontMaterialPointBatch:
         return self._point_count
 
     @property
+    def behaviour_name(self) -> str:
+        """Return the exact MFront behaviour selected by this bridge."""
+
+        return self._behaviour_name
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        """Return the verified matrix capability of the selected behaviour."""
+
+        if self._behaviour_name in _SYMMETRIC_POSITIVE_DEFINITE_J2_BEHAVIOURS:
+            return "symmetric_positive_definite"
+        return "nonsymmetric"
+
+    @property
     def has_native_plane_stress_state(self) -> bool:
         """Whether MGIS exposes the native axial strain used by plane stress."""
 
@@ -674,6 +697,12 @@ class MFrontNativePlaneStressBatch:
         return "mfront_native_plane_stress"
 
     @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        """Use symmetry only for behaviours explicitly verified by this project."""
+
+        return self._bridge.linear_system_matrix_type
+
+    @property
     def statistics(self) -> PlaneStressBatchStatistics:
         return PlaneStressBatchStatistics(
             maximum_gauss_point_plane_stress_residual_mpa=self._maximum_residual
@@ -925,6 +954,20 @@ class _MFront3DMaterialPointBatch:
         return self._point_count
 
     @property
+    def behaviour_name(self) -> str:
+        """Return the exact MFront behaviour selected by this bridge."""
+
+        return self._behaviour_name
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        """Return the verified matrix capability of the selected behaviour."""
+
+        if self._behaviour_name in _SYMMETRIC_POSITIVE_DEFINITE_J2_BEHAVIOURS:
+            return "symmetric_positive_definite"
+        return "nonsymmetric"
+
+    @property
     def committed_transverse_strain_kelvin(self) -> NDArray:
         return self._manager.s0.gradients[:, _TRANSVERSE_COMPONENTS_3D].copy()
 
@@ -1108,6 +1151,12 @@ class MFront3DCondensedPlaneStressBatch:
     @property
     def completion_strategy(self) -> str:
         return "mfront_3d_local_condensation"
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        """Use symmetry only for behaviours explicitly verified by this project."""
+
+        return self._bridge.linear_system_matrix_type
 
     @property
     def statistics(self) -> PlaneStressBatchStatistics:
