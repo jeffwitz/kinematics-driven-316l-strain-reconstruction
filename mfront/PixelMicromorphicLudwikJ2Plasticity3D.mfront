@@ -1,0 +1,50 @@
+@DSL Implicit;
+@Behaviour PixelMicromorphicLudwikJ2Plasticity3D;
+@Author Adil case-study contributors;
+@Date 25 / 07 / 2026;
+@Description {
+  Tridimensional form of the small-strain micromorphic J2/Ludwik law.
+
+  Plane stress is imposed by the Python/MGIS local Newton solve. The yield
+  radius and its local derivative are evaluated at fixed nonlocal equivalent
+  plastic strain chi.
+};
+
+@ModellingHypothesis Tridimensional;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 100;
+@Theta 1;
+
+@MaterialProperty stress sy0;
+sy0.setEntryName("InitialYieldStress");
+
+@MaterialProperty stress K;
+K.setEntryName("HardeningCoefficient");
+
+@MaterialProperty real ludwik_n;
+ludwik_n.setEntryName("HardeningExponent");
+
+@MaterialProperty stress Hchi;
+Hchi.setEntryName("MicromorphicCouplingModulus");
+
+@ExternalStateVariable strain chi;
+chi.setEntryName("NonlocalEquivalentPlasticStrain");
+
+@Parameter real p0 = 1.e-6;
+p0.setEntryName("FirstPositivePlasticStrain");
+
+@Brick StandardElastoViscoPlasticity {
+  stress_potential : "Hooke" {
+    young_modulus : 205000,
+    poisson_ratio : 0.3
+  },
+  inelastic_flow : "Plastic" {
+    criterion : "Mises",
+    isotropic_hardening : "UserDefined" {
+      R : "p <= p0 ? sy0+K*p*p0**(ludwik_n-1)+Hchi*(p-chi) : sy0+K*p**ludwik_n+Hchi*(p-chi)",
+      dR_dp : "p < p0 ? K*p0**(ludwik_n-1)+Hchi : K*ludwik_n*p**(ludwik_n-1)+Hchi"
+    },
+    save_yield_surface_radius : true
+  }
+};

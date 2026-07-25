@@ -254,6 +254,7 @@ def create_plane_stress_material_batch(
     mfront_library: str,
     mfront_threads: int,
     local_plane_stress_options: dict[str, Any] | None = None,
+    nonlocal_coupling_modulus_mpa: float | None = None,
 ) -> PlaneStressMaterialBatch:
     """Construct a backend without exposing its implementation to global Newton."""
 
@@ -291,14 +292,31 @@ def create_plane_stress_material_batch(
             hardening_coefficient_mpa,
             np.full(np.asarray(initial_yield_stress_mpa).size, hardening_exponent),
         )
+        micromorphic_options: dict[str, Any] = {}
+        if nonlocal_coupling_modulus_mpa is not None:
+            micromorphic_options = {
+                "micromorphic_coupling_modulus_mpa": nonlocal_coupling_modulus_mpa,
+            }
         if backend in {"mfront", "mfront-native-plane-stress"}:
             return MFrontNativePlaneStressBatch(
                 *common,
                 thread_count=mfront_threads,
+                behaviour_name=(
+                    "PixelMicromorphicLudwikJ2Plasticity"
+                    if nonlocal_coupling_modulus_mpa is not None
+                    else "PixelLudwikJ2Plasticity"
+                ),
+                **micromorphic_options,
             )
         return MFront3DCondensedPlaneStressBatch(
             *common,
             thread_count=mfront_threads,
+            behaviour_name=(
+                "PixelMicromorphicLudwikJ2Plasticity3D"
+                if nonlocal_coupling_modulus_mpa is not None
+                else "PixelLudwikJ2Plasticity3D"
+            ),
+            **micromorphic_options,
             **(local_plane_stress_options or {}),
         )
     raise ValueError(

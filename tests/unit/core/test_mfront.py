@@ -276,6 +276,110 @@ def test_mfront_thread_pool_matches_serial_integration() -> None:
 
 
 @pytest.mark.mfront
+def test_micromorphic_hchi_zero_exactly_matches_reference_behaviour() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    material = (np.array([240.0, 270.0]), np.array([360.0, 420.0]), np.full(2, 0.245))
+    reference = MFrontMaterialPointBatch(library, *material)
+    micromorphic = MFrontMaterialPointBatch(
+        library,
+        *material,
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa=0.0,
+    )
+    micromorphic.set_nonlocal_equivalent_plastic_strain([0.0, 0.02])
+    strain = np.tile([0.008, -0.0008, 0.0015], (2, 1))
+
+    reference_trial = reference.evaluate(strain)
+    coupled_trial = micromorphic.evaluate(strain)
+
+    np.testing.assert_array_equal(coupled_trial.stress_mpa, reference_trial.stress_mpa)
+    np.testing.assert_array_equal(
+        coupled_trial.equivalent_plastic_strain,
+        reference_trial.equivalent_plastic_strain,
+    )
+    np.testing.assert_array_equal(
+        coupled_trial.yield_surface_radius_mpa,
+        reference_trial.yield_surface_radius_mpa,
+    )
+    np.testing.assert_array_equal(
+        coupled_trial.consistent_tangent_mpa,
+        reference_trial.consistent_tangent_mpa,
+    )
+
+
+@pytest.mark.mfront
+def test_micromorphic_correction_has_registered_sign_and_is_transactional() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFrontMaterialPointBatch(
+        library,
+        [250.0, 250.0],
+        [500.0, 500.0],
+        [0.245, 0.245],
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa=5_000.0,
+    )
+    batch.set_nonlocal_equivalent_plastic_strain([0.0, 0.01])
+    trial = batch.evaluate(np.tile([0.005, 0.0, 0.0], (2, 1)))
+    mismatch = trial.equivalent_plastic_strain - np.array([0.0, 0.01])
+
+    assert mismatch[0] > 0
+    assert mismatch[1] < 0
+    assert trial.yield_surface_radius_mpa[0] > trial.yield_surface_radius_mpa[1]
+    batch.commit()
+    np.testing.assert_array_equal(
+        batch.committed_nonlocal_equivalent_plastic_strain,
+        [0.0, 0.01],
+    )
+
+    batch.set_nonlocal_equivalent_plastic_strain([0.02, 0.02])
+    batch.evaluate(np.tile([0.006, 0.0, 0.0], (2, 1)))
+    batch.revert()
+    np.testing.assert_array_equal(
+        batch.committed_nonlocal_equivalent_plastic_strain,
+        [0.0, 0.01],
+    )
+
+
+@pytest.mark.mfront
+def test_micromorphic_native_tangent_matches_finite_differences_at_fixed_chi() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    batch = MFrontNativePlaneStressBatch(
+        library,
+        [250.0],
+        [380.0],
+        [0.245],
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa=2_000.0,
+    )
+    batch.set_nonlocal_equivalent_plastic_strain([0.002])
+    target = np.array([[0.008, 0.0003, 0.002]])
+    base = batch.evaluate(target, time_increment=1.0)
+    assert base.tangent_in_plane_mpa is not None
+    numerical = np.empty((1, 3, 3))
+    step = 1e-7
+    for component in range(3):
+        plus = target.copy()
+        minus = target.copy()
+        plus[:, component] += step
+        minus[:, component] -= step
+        stress_plus = batch.evaluate(plus, time_increment=1.0).stress_in_plane_mpa
+        stress_minus = batch.evaluate(minus, time_increment=1.0).stress_in_plane_mpa
+        numerical[:, :, component] = (stress_plus - stress_minus) / (2.0 * step)
+    np.testing.assert_allclose(
+        base.tangent_in_plane_mpa,
+        numerical,
+        rtol=2e-5,
+        atol=5e-2,
+    )
+
+
+@pytest.mark.mfront
 def test_mfront_3d_condensation_matches_native_plane_stress_histories() -> None:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     if library is None:
@@ -323,6 +427,47 @@ def test_mfront_3d_condensation_matches_native_plane_stress_histories() -> None:
         assert np.max(np.abs(condensed_trial.plane_stress_residual_mpa)) < 1e-6
         native.commit()
         condensed.commit()
+
+
+@pytest.mark.mfront
+def test_micromorphic_3d_condensation_matches_native_plane_stress() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    material = (np.full(2, 250.0), np.full(2, 380.0), np.full(2, 0.245))
+    native = MFrontNativePlaneStressBatch(
+        library,
+        *material,
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa=1_000.0,
+    )
+    condensed = MFront3DCondensedPlaneStressBatch(
+        library,
+        *material,
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity3D",
+        micromorphic_coupling_modulus_mpa=1_000.0,
+    )
+    nonlocal_peeq = np.array([0.001, 0.003])
+    native.set_nonlocal_equivalent_plastic_strain(nonlocal_peeq)
+    condensed.set_nonlocal_equivalent_plastic_strain(nonlocal_peeq)
+    strain = np.tile([0.008, -0.0008, 0.0015], (2, 1))
+
+    native_trial = native.evaluate(strain, time_increment=1.0)
+    condensed_trial = condensed.evaluate(strain, time_increment=1.0)
+
+    np.testing.assert_allclose(
+        condensed_trial.stress_in_plane_mpa,
+        native_trial.stress_in_plane_mpa,
+        rtol=1e-7,
+        atol=2e-6,
+    )
+    np.testing.assert_allclose(
+        condensed_trial.observables["equivalent_plastic_strain"],
+        native_trial.observables["equivalent_plastic_strain"],
+        rtol=1e-7,
+        atol=1e-11,
+    )
+    assert np.max(np.abs(condensed_trial.plane_stress_residual_mpa)) < 1e-6
 
 
 @pytest.mark.mfront

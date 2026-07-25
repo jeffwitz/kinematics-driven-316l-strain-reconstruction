@@ -132,6 +132,27 @@ def _broadcast_material_properties(
     return yield_stress, coefficient, exponent
 
 
+def _broadcast_point_property(
+    values: ArrayLike,
+    point_count: int,
+    *,
+    name: str,
+    nonnegative: bool = False,
+) -> NDArray:
+    """Broadcast one scalar material-point property to external storage."""
+
+    array = np.asarray(values, dtype=float)
+    try:
+        broadcast = np.broadcast_to(array, (point_count,)).copy()
+    except ValueError as error:
+        raise ValueError(f"{name} must be scalar or have shape {(point_count,)}") from error
+    if not np.isfinite(broadcast).all():
+        raise ValueError(f"{name} must be finite")
+    if nonnegative and np.any(broadcast < 0):
+        raise ValueError(f"{name} must be nonnegative")
+    return broadcast
+
+
 def _variable_offset(
     mgis: Any,
     variables: Any,
@@ -174,6 +195,8 @@ class MFrontMaterialPointBatch:
         *,
         temperature_k: float = 293.15,
         thread_count: int = 1,
+        behaviour_name: str = "PixelLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa: ArrayLike | None = None,
     ) -> None:
         library = Path(library_path)
         if not library.is_file():
@@ -194,7 +217,7 @@ class MFrontMaterialPointBatch:
         hypothesis = mgis.Hypothesis.PlaneStress
         behaviour = mgis.load(
             str(library.resolve()),
-            "PixelLudwikJ2Plasticity",
+            behaviour_name,
             hypothesis,
         )
         _variable_offset(
@@ -218,6 +241,36 @@ class MFrontMaterialPointBatch:
             "HardeningCoefficient": coefficient,
             "HardeningExponent": exponent,
         }
+        nonlocal_values_s0: NDArray | None = None
+        nonlocal_values_s1: NDArray | None = None
+        committed_nonlocal_values: NDArray | None = None
+        trial_nonlocal_values: NDArray | None = None
+        if micromorphic_coupling_modulus_mpa is not None:
+            coupling = _broadcast_point_property(
+                micromorphic_coupling_modulus_mpa,
+                yield_stress.size,
+                name="micromorphic_coupling_modulus_mpa",
+                nonnegative=True,
+            )
+            _variable_offset(
+                mgis,
+                behaviour.mps,
+                "MicromorphicCouplingModulus",
+                hypothesis,
+                expected_size=1,
+            )
+            _variable_offset(
+                mgis,
+                behaviour.esvs,
+                "NonlocalEquivalentPlasticStrain",
+                hypothesis,
+                expected_size=1,
+            )
+            material_values["MicromorphicCouplingModulus"] = coupling
+            nonlocal_values_s0 = np.zeros(yield_stress.size)
+            nonlocal_values_s1 = np.zeros(yield_stress.size)
+            committed_nonlocal_values = np.zeros(yield_stress.size)
+            trial_nonlocal_values = np.zeros(yield_stress.size)
         storage_mode = mgis.MaterialStateManagerStorageMode.ExternalStorage
         for name, property_values in material_values.items():
             mgis.setMaterialProperty(manager.s0, name, property_values, storage_mode)
@@ -236,6 +289,19 @@ class MFrontMaterialPointBatch:
             temperature_values,
             storage_mode,
         )
+        if nonlocal_values_s0 is not None and nonlocal_values_s1 is not None:
+            mgis.setExternalStateVariable(
+                manager.s0,
+                "NonlocalEquivalentPlasticStrain",
+                nonlocal_values_s0,
+                storage_mode,
+            )
+            mgis.setExternalStateVariable(
+                manager.s1,
+                "NonlocalEquivalentPlasticStrain",
+                nonlocal_values_s1,
+                storage_mode,
+            )
 
         self._mgis = mgis
         self._behaviour = behaviour
@@ -243,6 +309,11 @@ class MFrontMaterialPointBatch:
         self._point_count = yield_stress.size
         self._material_values = material_values
         self._temperature_values = temperature_values
+        self._behaviour_name = behaviour_name
+        self._nonlocal_values_s0 = nonlocal_values_s0
+        self._nonlocal_values_s1 = nonlocal_values_s1
+        self._committed_nonlocal_values = committed_nonlocal_values
+        self._trial_nonlocal_values = trial_nonlocal_values
         self._thread_pool = _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
         equivalent_plastic_strain_offset = _variable_offset(
             mgis,
@@ -293,6 +364,49 @@ class MFrontMaterialPointBatch:
 
         return self._axial_strain_offset is not None
 
+    @property
+    def supports_nonlocal_equivalent_plastic_strain(self) -> bool:
+        """Whether this behaviour declares the micromorphic external field."""
+
+        return self._trial_nonlocal_values is not None
+
+    @property
+    def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
+        """Return the committed external field without exposing mutable storage."""
+
+        if self._committed_nonlocal_values is None:
+            raise MFrontUnavailableError(
+                f"{self._behaviour_name} does not expose NonlocalEquivalentPlasticStrain"
+            )
+        return self._committed_nonlocal_values.copy()
+
+    def _apply_trial_nonlocal_values(self) -> None:
+        if self._trial_nonlocal_values is None:
+            return
+        assert self._nonlocal_values_s0 is not None
+        assert self._nonlocal_values_s1 is not None
+        self._nonlocal_values_s0[:] = self._trial_nonlocal_values
+        self._nonlocal_values_s1[:] = self._trial_nonlocal_values
+
+    def set_nonlocal_equivalent_plastic_strain(self, values: ArrayLike) -> None:
+        """Set the fixed external ``chi`` value for the next trial integration."""
+
+        if self._trial_nonlocal_values is None:
+            raise MFrontUnavailableError(
+                f"{self._behaviour_name} does not expose NonlocalEquivalentPlasticStrain"
+            )
+        trial = _broadcast_point_property(
+            values,
+            self._point_count,
+            name="nonlocal_equivalent_plastic_strain",
+            nonnegative=True,
+        )
+        if self._has_trial_state:
+            self._mgis.revert(self._manager)
+            self._has_trial_state = False
+        self._trial_nonlocal_values[:] = trial
+        self._apply_trial_nonlocal_values()
+
     def evaluate(
         self,
         total_strain: ArrayLike,
@@ -317,6 +431,7 @@ class MFrontMaterialPointBatch:
         if self._has_trial_state:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
+        self._apply_trial_nonlocal_values()
 
         total_kelvin = engineering_strain_to_kelvin(strain)
         self._manager.s1.gradients[:, :] = total_kelvin
@@ -400,12 +515,20 @@ class MFrontMaterialPointBatch:
         if not self._has_trial_state:
             raise RuntimeError("no successful MFront trial state to commit")
         self._mgis.update(self._manager)
+        if self._committed_nonlocal_values is not None:
+            assert self._trial_nonlocal_values is not None
+            self._committed_nonlocal_values[:] = self._trial_nonlocal_values
+            self._apply_trial_nonlocal_values()
         self._has_trial_state = False
 
     def revert(self) -> None:
         """Discard the latest trial and restore the committed state."""
 
         self._mgis.revert(self._manager)
+        if self._committed_nonlocal_values is not None:
+            assert self._trial_nonlocal_values is not None
+            self._trial_nonlocal_values[:] = self._committed_nonlocal_values
+            self._apply_trial_nonlocal_values()
         self._has_trial_state = False
 
 
@@ -427,6 +550,8 @@ class MFrontNativePlaneStressBatch:
 
     @property
     def backend_name(self) -> str:
+        if self._bridge.supports_nonlocal_equivalent_plastic_strain:
+            return "mfront-native-plane-stress-micromorphic"
         return "mfront-native-plane-stress"
 
     @property
@@ -479,6 +604,13 @@ class MFrontNativePlaneStressBatch:
     def revert(self) -> None:
         self._bridge.revert()
 
+    def set_nonlocal_equivalent_plastic_strain(self, values: ArrayLike) -> None:
+        self._bridge.set_nonlocal_equivalent_plastic_strain(values)
+
+    @property
+    def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
+        return self._bridge.committed_nonlocal_equivalent_plastic_strain
+
 
 @dataclass(frozen=True, slots=True)
 class _MFront3DTrial:
@@ -502,6 +634,8 @@ class _MFront3DMaterialPointBatch:
         *,
         temperature_k: float = 293.15,
         thread_count: int = 1,
+        behaviour_name: str = "PixelLudwikJ2Plasticity3D",
+        micromorphic_coupling_modulus_mpa: ArrayLike | None = None,
     ) -> None:
         library = Path(library_path)
         if not library.is_file():
@@ -521,7 +655,7 @@ class _MFront3DMaterialPointBatch:
         hypothesis = mgis.Hypothesis.Tridimensional
         behaviour = mgis.load(
             str(library.resolve()),
-            "PixelLudwikJ2Plasticity3D",
+            behaviour_name,
             hypothesis,
         )
         _variable_offset(mgis, behaviour.gradients, "Strain", hypothesis, expected_size=6)
@@ -562,6 +696,36 @@ class _MFront3DMaterialPointBatch:
             "HardeningCoefficient": coefficient,
             "HardeningExponent": exponent,
         }
+        nonlocal_values_s0: NDArray | None = None
+        nonlocal_values_s1: NDArray | None = None
+        committed_nonlocal_values: NDArray | None = None
+        trial_nonlocal_values: NDArray | None = None
+        if micromorphic_coupling_modulus_mpa is not None:
+            coupling = _broadcast_point_property(
+                micromorphic_coupling_modulus_mpa,
+                yield_stress.size,
+                name="micromorphic_coupling_modulus_mpa",
+                nonnegative=True,
+            )
+            _variable_offset(
+                mgis,
+                behaviour.mps,
+                "MicromorphicCouplingModulus",
+                hypothesis,
+                expected_size=1,
+            )
+            _variable_offset(
+                mgis,
+                behaviour.esvs,
+                "NonlocalEquivalentPlasticStrain",
+                hypothesis,
+                expected_size=1,
+            )
+            material_values["MicromorphicCouplingModulus"] = coupling
+            nonlocal_values_s0 = np.zeros(yield_stress.size)
+            nonlocal_values_s1 = np.zeros(yield_stress.size)
+            committed_nonlocal_values = np.zeros(yield_stress.size)
+            trial_nonlocal_values = np.zeros(yield_stress.size)
         temperature_values = np.full(yield_stress.size, temperature_k)
         storage_mode = mgis.MaterialStateManagerStorageMode.ExternalStorage
         for state in (manager.s0, manager.s1):
@@ -573,12 +737,30 @@ class _MFront3DMaterialPointBatch:
                 temperature_values,
                 storage_mode,
             )
+        if nonlocal_values_s0 is not None and nonlocal_values_s1 is not None:
+            mgis.setExternalStateVariable(
+                manager.s0,
+                "NonlocalEquivalentPlasticStrain",
+                nonlocal_values_s0,
+                storage_mode,
+            )
+            mgis.setExternalStateVariable(
+                manager.s1,
+                "NonlocalEquivalentPlasticStrain",
+                nonlocal_values_s1,
+                storage_mode,
+            )
         self._mgis = mgis
         self._behaviour = behaviour
         self._manager = manager
         self._point_count = yield_stress.size
         self._material_values = material_values
         self._temperature_values = temperature_values
+        self._behaviour_name = behaviour_name
+        self._nonlocal_values_s0 = nonlocal_values_s0
+        self._nonlocal_values_s1 = nonlocal_values_s1
+        self._committed_nonlocal_values = committed_nonlocal_values
+        self._trial_nonlocal_values = trial_nonlocal_values
         self._elastic_offset = elastic_offset
         self._peeq_offset = peeq_offset
         self._radius_offset = radius_offset
@@ -593,6 +775,43 @@ class _MFront3DMaterialPointBatch:
     def committed_transverse_strain_kelvin(self) -> NDArray:
         return self._manager.s0.gradients[:, _TRANSVERSE_COMPONENTS_3D].copy()
 
+    @property
+    def supports_nonlocal_equivalent_plastic_strain(self) -> bool:
+        return self._trial_nonlocal_values is not None
+
+    @property
+    def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
+        if self._committed_nonlocal_values is None:
+            raise MFrontUnavailableError(
+                f"{self._behaviour_name} does not expose NonlocalEquivalentPlasticStrain"
+            )
+        return self._committed_nonlocal_values.copy()
+
+    def _apply_trial_nonlocal_values(self) -> None:
+        if self._trial_nonlocal_values is None:
+            return
+        assert self._nonlocal_values_s0 is not None
+        assert self._nonlocal_values_s1 is not None
+        self._nonlocal_values_s0[:] = self._trial_nonlocal_values
+        self._nonlocal_values_s1[:] = self._trial_nonlocal_values
+
+    def set_nonlocal_equivalent_plastic_strain(self, values: ArrayLike) -> None:
+        if self._trial_nonlocal_values is None:
+            raise MFrontUnavailableError(
+                f"{self._behaviour_name} does not expose NonlocalEquivalentPlasticStrain"
+            )
+        trial = _broadcast_point_property(
+            values,
+            self._point_count,
+            name="nonlocal_equivalent_plastic_strain",
+            nonnegative=True,
+        )
+        if self._has_trial_state:
+            self._mgis.revert(self._manager)
+            self._has_trial_state = False
+        self._trial_nonlocal_values[:] = trial
+        self._apply_trial_nonlocal_values()
+
     def evaluate(self, total_strain_kelvin: ArrayLike, *, time_increment: float) -> _MFront3DTrial:
         strain = np.asarray(total_strain_kelvin, dtype=float)
         if strain.shape != (self._point_count, 6):
@@ -604,6 +823,7 @@ class _MFront3DMaterialPointBatch:
         if self._has_trial_state:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
+        self._apply_trial_nonlocal_values()
         self._manager.s1.gradients[:, :] = strain
         integration_type = self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
         if self._thread_pool is None:
@@ -645,10 +865,18 @@ class _MFront3DMaterialPointBatch:
         if not self._has_trial_state:
             raise RuntimeError("no successful 3D MFront trial state to commit")
         self._mgis.update(self._manager)
+        if self._committed_nonlocal_values is not None:
+            assert self._trial_nonlocal_values is not None
+            self._committed_nonlocal_values[:] = self._trial_nonlocal_values
+            self._apply_trial_nonlocal_values()
         self._has_trial_state = False
 
     def revert(self) -> None:
         self._mgis.revert(self._manager)
+        if self._committed_nonlocal_values is not None:
+            assert self._trial_nonlocal_values is not None
+            self._trial_nonlocal_values[:] = self._committed_nonlocal_values
+            self._apply_trial_nonlocal_values()
         self._has_trial_state = False
 
 
@@ -720,6 +948,8 @@ class MFront3DCondensedPlaneStressBatch:
 
     @property
     def backend_name(self) -> str:
+        if self._bridge.supports_nonlocal_equivalent_plastic_strain:
+            return "mfront-3d-condensed-plane-stress-micromorphic"
         return "mfront-3d-condensed-plane-stress"
 
     @property
@@ -859,3 +1089,10 @@ class MFront3DCondensedPlaneStressBatch:
 
     def revert(self) -> None:
         self._bridge.revert()
+
+    def set_nonlocal_equivalent_plastic_strain(self, values: ArrayLike) -> None:
+        self._bridge.set_nonlocal_equivalent_plastic_strain(values)
+
+    @property
+    def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
+        return self._bridge.committed_nonlocal_equivalent_plastic_strain

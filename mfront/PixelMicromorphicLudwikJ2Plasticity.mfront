@@ -1,0 +1,55 @@
+@DSL Implicit;
+@Behaviour PixelMicromorphicLudwikJ2Plasticity;
+@Author Adil case-study contributors;
+@Date 25 / 07 / 2026;
+@Description {
+  Native plane-stress form of the small-strain micromorphic J2/Ludwik law.
+
+  The nonlocal equivalent plastic strain is supplied by the global
+  element-centred Helmholtz solve. The local constitutive correction derives
+  from 0.5 * Hchi * (p-chi)^2:
+
+    R(p,chi) = sy0 + K*h(p) + Hchi*(p-chi).
+
+  The MFront tangent is consistent at fixed chi. Coupling derivatives are not
+  condensed into a monolithic mechanical-micromorphic tangent.
+};
+
+@ModellingHypothesis PlaneStress;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 100;
+@Theta 1;
+
+@MaterialProperty stress sy0;
+sy0.setEntryName("InitialYieldStress");
+
+@MaterialProperty stress K;
+K.setEntryName("HardeningCoefficient");
+
+@MaterialProperty real ludwik_n;
+ludwik_n.setEntryName("HardeningExponent");
+
+@MaterialProperty stress Hchi;
+Hchi.setEntryName("MicromorphicCouplingModulus");
+
+@ExternalStateVariable strain chi;
+chi.setEntryName("NonlocalEquivalentPlasticStrain");
+
+@Parameter real p0 = 1.e-6;
+p0.setEntryName("FirstPositivePlasticStrain");
+
+@Brick StandardElastoViscoPlasticity {
+  stress_potential : "Hooke" {
+    young_modulus : 205000,
+    poisson_ratio : 0.3
+  },
+  inelastic_flow : "Plastic" {
+    criterion : "Mises",
+    isotropic_hardening : "UserDefined" {
+      R : "p <= p0 ? sy0+K*p*p0**(ludwik_n-1)+Hchi*(p-chi) : sy0+K*p**ludwik_n+Hchi*(p-chi)",
+      dR_dp : "p < p0 ? K*p0**(ludwik_n-1)+Hchi : K*ludwik_n*p**(ludwik_n-1)+Hchi"
+    },
+    save_yield_surface_radius : true
+  }
+};
