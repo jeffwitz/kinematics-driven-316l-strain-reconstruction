@@ -1,5 +1,9 @@
 """Post-processing functions with explicit scientific conventions."""
 
+from fem_inhouse.postprocessing.helmholtz import (
+    HelmholtzFilterResult,
+    helmholtz_filter_element_field,
+)
 from fem_inhouse.postprocessing.kinematics import (
     StrainComponents,
     cell_average,
@@ -33,12 +37,14 @@ __all__ = [
     "FieldAcceptanceThresholds",
     "FieldComparisonReport",
     "FieldErrorMetrics",
+    "HelmholtzFilterResult",
     "LocalizationOverlapMetrics",
     "StrainComponents",
     "cell_average",
     "direct_fe_equivalent_stress_curve",
     "evaluate_field_comparison",
     "field_error_metrics",
+    "helmholtz_filter_element_field",
     "instantaneous_equivalent_plastic_strain",
     "interface_gradient_ratio",
     "localization_overlap_metrics",
