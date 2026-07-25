@@ -1,0 +1,82 @@
+{
+  "coupling_modulus_mpa": 6000.0,
+  "elapsed_seconds": 4.374534061178565,
+  "element_shape": [
+    180,
+    155
+  ],
+  "hashes": {
+    "equivalent_plastic_strain": "047af348cacbfabe6154c39df52e22a6e292f8f98b76014d858b0d4b1cca4b79",
+    "nonlocal_equivalent_plastic_strain": "a543264d1bc7e6fb6abf2572a5d896320d386b3fd10a2c51796d9b259fe45ff5",
+    "stress_in_plane_mpa": "96d3d4f23b177149a38d44d6713c43b1c86a615ce5a4678c5ef5ff5cf79c229e",
+    "tangent_in_plane_mpa": "9e30d3b5d79d88e12dcba35da9711e9bbc4100d7d4bbd839734b30f65d820c41"
+  },
+  "iterations": 14,
+  "length_scale_mm": 0.05888,
+  "mode": "legacy",
+  "partition": {
+    "core_bounds": [
+      1620,
+      1800,
+      1085,
+      1240
+    ],
+    "core_shape": [
+      180,
+      155
+    ],
+    "index": [
+      9,
+      7
+    ],
+    "partition_id": 187,
+    "solve_bounds": [
+      1620,
+      1800,
+      1085,
+      1240
+    ],
+    "solve_shape": [
+      180,
+      155
+    ]
+  },
+  "peak_rss_kib": 256384,
+  "point_count": 111600,
+  "relative_residual": 4.3348317731173314e-07,
+  "relaxation": 0.5,
+  "threads": 8,
+  "timing": {
+    "integration_with_tangent_calls": 15,
+    "integration_with_tangent_seconds": 2.615880744997412,
+    "integration_without_tangent_calls": 0,
+    "integration_without_tangent_seconds": 0.0,
+    "kelvin_conversion_seconds": 1.0709132256451994,
+    "tensor_reconstruction_calls": 15,
+    "tensor_reconstruction_seconds": 0.4359112395904958
+  },
+  "tolerance": 1e-06
+}
+	Command being timed: ".venv/bin/python scripts/benchmark_nonlocal_constitutive_path.py --input data/processed/case_study --library build/mfront/src/libBehaviour.so --partition-id 187 --parts-x 20 --parts-y 20 --mode legacy --output validation/performance/nonlocal-hot-path-p0187/legacy --threads 8 --coupling-modulus-mpa 6000 --overwrite"
+	User time (seconds): 17.57
+	System time (seconds): 0.42
+	Percent of CPU this job got: 328%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 256384
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 51297
+	Voluntary context switches: 1040
+	Involuntary context switches: 8791
+	Swaps: 0
+	File system inputs: 40
+	File system outputs: 23136
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

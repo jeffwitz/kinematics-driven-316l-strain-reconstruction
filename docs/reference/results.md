@@ -289,6 +289,60 @@ still exceeds the registered 20% maximum, so the result is classified as
 diagnostics, residuals, and manifest hashes are preserved in
 `validation/nonlocal_p154_validation_results.md`.
 
+## Lightweight micromorphic hot-path benchmark
+
+The optimization changes only the amount of constitutive output requested in
+the hot loop. Intermediate fixed-point evaluations integrate MFront without a
+tangent and read PEEQ only. A single tangent is requested after fixed-point
+convergence, and full 3D tensors are completed only for the final accepted FEM
+state. Scientific parameters, tolerances, Newton, sparse assembly, and
+PyPardiso are unchanged.
+
+The constitutive benchmark uses real DIC strains and heterogeneous material
+maps. P187 is an intermediate `180 x 155` crop containing part of the selected
+P43 band; P43 is the complete `360 x 310` scientific core.
+
+| Domain | Legacy | Lightweight | Speedup | Peak RSS reduction | State check |
+|---|---:|---:|---:|---:|---|
+| P187 constitutive crop | 4.375 s | 3.084 s | 1.42x | 22.9% | hashes identical |
+| P43 complete core | 14.357 s | 7.605 s | 1.89x | 29.2% | hashes identical |
+
+Both modes required 14 fixed-point iterations. The hash comparison covers
+in-plane stress, consistent tangent, PEEQ, and the nonlocal field.
+
+A complete FEM gate was then run on P187 with 16 pixels of padding, 39,644
+elements, five requested load increments, `Hchi=6000 MPa`,
+`ell=58.88 micrometres`, and eight MFront threads:
+
+| Quantity | Legacy commit | Optimized commit | Change |
+|---|---:|---:|---:|
+| process wall time | 396.78 s | 273.56 s | -31.1% |
+| peak RSS | 1,320,872 KiB | 1,152,684 KiB | -12.7% |
+| constitutive time | 267.61 s | 141.51 s | -47.1% |
+| nonlocal MFront time | 249.78 s | 120.81 s | -51.6% |
+| PyPardiso time | 64.99 s | 65.39 s | +0.6% |
+
+The two runs made exactly the same 20 increment attempts, accepted 13
+increments, made seven cutbacks, used 156 Newton iterations and 623 nonlocal
+iterations, and selected the same convergence criteria. In the optimized run,
+635 no-tangent MFront calls cost 81.07 s and 151 tangent calls cost 21.57 s.
+Kelvin conversions cost 18.91 s; the single final 3D reconstruction cost
+0.044 s. Internal forces, element matrices, sparse assembly, free-system
+extraction, and PyPardiso cost 12.57, 39.80, 7.41, 1.77, and 65.39 s,
+respectively.
+
+The proportional elastic-predictor reuse changes floating-point operation
+ordering. Consequently the complete FEM arrays are not byte-identical, but
+their maximum errors relative to each field's global amplitude are below
+`1.1e-12` for `U`, `S`, `E`, `PE`, `PEEQ`, `RF`, \(\chi\), and the
+micromorphic mismatch/correction fields. Near-zero plane-stress and nonlocal
+residuals are checked in absolute terms. This is comfortably below the
+declared `1e-10` technical-equivalence threshold.
+
+The machine-readable reports, hashes, field errors, convergence sequences,
+and per-post timings are preserved in
+`validation/performance/nonlocal_hot_path_optimization.json`.
+
 ## Current evidence boundary
 
 Validated:
@@ -303,7 +357,8 @@ Validated:
 
 Not yet validated:
 
-- a frozen micromorphic coupling modulus transferred to P42 or P48;
+- a frozen micromorphic coupling modulus transferred from the selected P43
+  calibration ROI;
 - all 100 article partitions and global stitching;
 - padding sensitivity at 50/100/150/200;
 - exact article mask and final whole-ROI metrics;

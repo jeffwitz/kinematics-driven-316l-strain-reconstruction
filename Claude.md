@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-07-25
+Dernière mise à jour : 2026-07-26
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
 MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
@@ -18,6 +18,10 @@ deux comportements MFront micromorphiques ajoutés, point fixe
 diagnostics non locaux sauvegardés ; campagne P154 padding 128 terminée pour
 `alpha=0,5`, `1` et `2`, avec interaction spatiale partiellement soutenue mais
 aucun `Hchi` admissible à figer selon tous les critères pré-enregistrés ;
+P43 retenue après inspection visuelle comme prochaine ROI scientifique à deux
+bandes ; chemin constitutif micromorphique allégé et validé avant campagne,
+avec `1,89×` de gain sur le cœur P43 et `1,45×` sur un calcul EF complet
+intermédiaire sans changement scientifique ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -521,6 +525,41 @@ sur le cas réduit. Aucun candidat ne passe toutefois tous les critères
 scientifiques ; `Hchi` ne peut donc pas être figé ni transféré sans nouveau
 protocole prospectif.
 
+### Phase prioritaire A.6 — ROI P43 et chemin constitutif léger
+
+- [x] Conserver le classement morphologique automatisé comme outil de
+      présélection, sans lui déléguer le choix scientifique
+- [x] Retenir P43 `(4,3)` après inspection visuelle de ses deux bandes
+      diagonales ; cœur `360×310`, `x=[1440,1800)`, `y=[930,1240)`
+- [x] Séparer les essais MFront sans tangente, avec tangente, puis la
+      complétion tensorielle 3D finale
+- [x] Préallouer les buffers Kelvin, PEEQ et `chi` du point fixe
+- [x] Précalculer la direction du prédicteur pour le chargement DIC
+      proportionnel
+- [x] Chronométrer MFront avec/sans tangente, Kelvin, tenseurs 3D, forces
+      internes, matrices élémentaires, assemblage, extraction et PARDISO
+- [x] Comparer les états constitutifs bit à bit sur un crop réel et sur P43
+- [x] Comparer un solveur EF complet avant/après sur la même zone et avec les
+      mêmes paramètres
+- [ ] Lancer la référence locale P43 avec le profil scientifique retenu
+- [ ] Estimer `Href` sur le cœur P43, puis pré-enregistrer le balayage
+      `alpha=0,1,2,4`
+- [ ] Lancer et visualiser les campagnes P43 sans ajustement rétroactif
+
+**Preuve :** commit `d5b0e7e` et
+`validation/performance/nonlocal_hot_path_optimization.json`. Sur P43, le
+benchmark constitutif passe de `14,357 s` à `7,605 s` et de `796 856` à
+`564 508 KiB`, avec quatre empreintes de champs identiques. Sur le gate EF
+P187, le temps processus passe de `396,78 s` à `273,56 s` et le pic RSS baisse
+de `12,7 %`. Les deux versions conservent exactement 20 tentatives,
+13 incréments acceptés, 7 cutbacks, 156 Newton et 623 itérations non locales.
+Les écarts des champs physiques restent inférieurs à `1,1e-12` relativement à
+leur amplitude globale.
+
+**Critère de sortie :** atteint pour l'optimisation technique. Aucun calcul
+scientifique P43 n'a encore été lancé ; cette phase ne modifie ni la loi, ni
+`ell`, ni `Hchi`, ni les tolérances, ni Newton, ni l'assemblage, ni PARDISO.
+
 ### Phase différée B — Validation externe Abaqus
 
 - [ ] Récupérer ou régénérer un petit `.inp` de référence
@@ -971,8 +1010,23 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Validation P154 `alpha=2` | 179 196 éléments, padding 128, 20 incréments | `1867,20 s`, zéro cutback, 7/8 critères | Partiel |
 | 2026-07-25 | Rejeu micromorphique natif/3D condensé | MFront réel, tangente FD et régression `Hchi=0` | 3 tests ciblés en `1,27 s` | Réussi |
 | 2026-07-25 | Validation finale après campagne P154 | Ruff, mypy, MGIS/MFront réel, Sphinx strict | 257 tests en `14,38 s`, HTML et PDF 131 pages | Réussi |
+| 2026-07-26 | Sélection scientifique P43 après classement morphologique | Cœur DIC `360×310`, deux bandes diagonales | P43 retenue, aucun calcul lourd lancé | Réussi |
+| 2026-07-26 | Benchmark constitutif léger P43 | 446 400 points de Gauss, 14 itérations | `14,357→7,605 s`, RSS `-29,2 %`, champs identiques | Réussi |
+| 2026-07-26 | Gate EF complet avant/après | P187 paddée, 39 644 éléments, paramètres identiques | `396,78→273,56 s`, RSS `-12,7 %`, convergence identique | Réussi |
+| 2026-07-26 | Validation après optimisation | Ruff, mypy, 271 tests MGIS/MFront, Sphinx strict | HTML et PDF 144 pages | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-26 — P43 et optimisation du chemin chaud micromorphique
+
+- P43 retenue comme prochaine ROI de calibration après inspection des bandes
+- Évaluations intermédiaires limitées à PEEQ, sans tangent ni tenseurs 3D
+- Une seule évaluation tangentielle par point fixe convergé et une seule
+  reconstruction 3D par calcul FEM convergé
+- Buffers réutilisables et prédicteur proportionnel préassemblé
+- Chronométrages détaillés ajoutés jusqu'à PARDISO
+- Équivalence constitutive bit à bit et équivalence EF sous `1e-10` validées
+- Rapports reproductibles ajoutés sous `validation/performance/`
 
 ### 2026-07-24 — Documentation Sphinx anglaise avec Diátaxis
 

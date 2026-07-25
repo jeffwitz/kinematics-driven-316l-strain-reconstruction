@@ -219,12 +219,19 @@ The initial kurtosis-only scan selected P15, but visual inspection showed that
 it contains an isolated hotspot rather than a deformation band. That criterion
 is therefore rejected for length identification. The current 10 x 10 scan
 ranks coherent q85 components by aspect ratio, occupied area, contrast, and
-boundary contacts. It selects partition 17, index `(1, 7)`, whose dominant
-diagonal band is approximately 668 micrometres long and 70 micrometres wide
-under the registered threshold convention. P84 and P58 are retained as
-secondary cases. Review the candidate montage and the full report before
-freezing a calibration ROI. Do not use either P154 or P15 as evidence that a
-material length has been identified.
+boundary contacts. The numerical score ranks P17 first, but this is a
+screening result rather than an automatic scientific decision.
+
+The mandatory visual review selects **P43**, index `(4, 3)`, for the next
+coupled campaign. Its `360 x 310` core spans global element coordinates
+`x=[1440,1800)` and `y=[930,1240)`, or
+`x=[2.6496,3.3120] mm` and `y=[1.7112,2.2816] mm`. It contains two distinct
+diagonal high-strain bands and is therefore better suited to testing both a
+characteristic width and the effect of coupling strength. The automated score
+penalises its boundary contacts, but those contacts do not outweigh the
+scientific value of its internal two-band structure. Do not use P154, P15, or
+an automated rank alone as evidence that a material length has been
+identified.
 
 ![DIC deformation-band candidate montage](../../validation/dic_band_candidates_10x10.png)
 
@@ -232,6 +239,30 @@ The white contour is the dominant q85 component used only for morphological
 ranking. All panels share the same EVM colour scale. The reported width is the
 component area divided by its principal-axis extent; it is a reproducible
 selection diagnostic, not yet an identified material length.
+
+Before launching P43, the micromorphic constitutive hot path was benchmarked
+on the complete P43 core with:
+
+```bash
+source /home/jeff/.local/share/tfel/env/env.sh
+.venv/bin/python scripts/benchmark_nonlocal_constitutive_path.py \
+  --input data/processed/case_study \
+  --library build/mfront/src/libBehaviour.so \
+  --partition-id 43 --parts-x 10 --parts-y 10 --padding 0 \
+  --mode lightweight \
+  --output results/performance/nonlocal-hot-path-p0043/lightweight \
+  --threads 8 --length-scale-mm 0.05888 \
+  --coupling-modulus-mpa 6000 \
+  --overwrite
+```
+
+Run the same command with `--mode legacy` and a separate output directory for
+the paired reference. The benchmark is intentionally configured from the CLI;
+no partition number is embedded in the implementation. The recorded P43
+result is `14.36 -> 7.61 s` and `796,856 -> 564,508 KiB`, with identical
+hashes for in-plane stress, tangent, PEEQ, and \(\chi\). See
+{doc}`../reference/results` for the complete-solver gate that was run before
+the costly P43 campaign.
 
 ## 10. Plot the alpha comparison
 

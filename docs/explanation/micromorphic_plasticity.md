@@ -99,6 +99,38 @@ once, and only after the global mechanical Newton iteration converges. A
 cutback reverts the MFront state, displacement trial, and micromorphic field
 together.
 
+## Lightweight constitutive hot path
+
+The fixed point needs only the updated local PEEQ until \(\chi\) converges.
+The production native-plane-stress adapter therefore separates three
+operations:
+
+1. intermediate fixed-point integrations use MFront without a tangent and
+   expose only PEEQ;
+2. one integration with the consistent tangent produces the in-plane stress
+   and tangent needed by the mechanical Newton assembly;
+3. full 3D stress and strain tensors are reconstructed once, after final FEM
+   convergence, immediately before the accepted state is committed.
+
+This split does not alter the constitutive equations, fixed-point tolerance,
+Newton algorithm, increment sequence, sparse assembly, or PyPardiso solve. The
+committed MGIS state remains transactional: intermediate calls never
+accumulate plastic strain. Reusable Kelvin-strain, Gauss-point PEEQ, and
+nonlocal-field workspaces remove repeated allocations from the same loops. For
+the proportional DIC loading used here, the elastic predictor direction is
+also assembled once and scaled at each requested load factor.
+
+The detailed timers distinguish MFront calls with and without a tangent,
+Kelvin conversion, final tensor completion, internal forces, element matrices,
+sparse assembly, free-system extraction, and PyPardiso. The condensed 3D
+adapter retains its existing local transverse Newton and tangent requirement:
+the lightweight no-tangent path primarily benefits the native `PlaneStress`
+backend used for the micromorphic campaign.
+
+The benchmark evidence and numerical equivalence checks are preserved in
+`validation/performance/nonlocal_hot_path_optimization.json` and summarised in
+{doc}`../reference/results`.
+
 ## Tangent scope
 
 The MFront consistent tangent contains the derivative of the local J2 update
@@ -160,9 +192,11 @@ field is allowed only as a secondary diagnostic.
 
 The initial \(\ell=58.88\,\mu\mathrm m\) comes from the P48 selection and P42
 confirmation campaign. It remains a diagnostic candidate until the coupled
-model passes held-out spatial tests. Similarly, \(H_\chi\) is selected only
-within the pre-registered P154 sweep and must be frozen before transfer to P42
-or P48.
+model passes held-out spatial tests. Similarly, \(H_\chi\) was explored only
+within the pre-registered P154 sweep. Because that ROI proved too homogeneous
+for identification, no value was frozen. The next calibration target is P43,
+selected after a morphology scan and explicit visual confirmation of two
+diagonal deformation bands.
 
 ## P154 validation outcome
 

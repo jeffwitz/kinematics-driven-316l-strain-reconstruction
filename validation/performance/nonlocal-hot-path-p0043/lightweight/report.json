@@ -1,0 +1,59 @@
+{
+  "coupling_modulus_mpa": 6000.0,
+  "elapsed_seconds": 7.605490837013349,
+  "element_shape": [
+    360,
+    310
+  ],
+  "hashes": {
+    "equivalent_plastic_strain": "748928d09051822ed5dbbaccd6e3a54cac3868dac94b81813f9f46be02c356b0",
+    "nonlocal_equivalent_plastic_strain": "63ca73c6ce997c0a3b1efba6cd6f7f9241b05a4bea97997b4aa7dfe14afcf46a",
+    "stress_in_plane_mpa": "91a4179a41bbe02d590d7a947aedd6f43dc41aadf034e4771b8ac7e36c3745e6",
+    "tangent_in_plane_mpa": "da22248e03738dc5ef5fa1cf4e461963e65109f54e2ece31704b0488ac4a061d"
+  },
+  "iterations": 14,
+  "length_scale_mm": 0.05888,
+  "mode": "lightweight",
+  "partition": {
+    "core_bounds": [
+      1440,
+      1800,
+      930,
+      1240
+    ],
+    "core_shape": [
+      360,
+      310
+    ],
+    "index": [
+      4,
+      3
+    ],
+    "partition_id": 43,
+    "solve_bounds": [
+      1440,
+      1800,
+      930,
+      1240
+    ],
+    "solve_shape": [
+      360,
+      310
+    ]
+  },
+  "peak_rss_kib": 564508,
+  "point_count": 446400,
+  "relative_residual": 4.2266144102687253e-07,
+  "relaxation": 0.5,
+  "threads": 8,
+  "timing": {
+    "integration_with_tangent_calls": 1,
+    "integration_with_tangent_seconds": 0.553568801144138,
+    "integration_without_tangent_calls": 14,
+    "integration_without_tangent_seconds": 5.696406417759135,
+    "kelvin_conversion_seconds": 0.5577309089712799,
+    "tensor_reconstruction_calls": 1,
+    "tensor_reconstruction_seconds": 0.12418026314117014
+  },
+  "tolerance": 1e-06
+}

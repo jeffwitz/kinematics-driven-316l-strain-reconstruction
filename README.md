@@ -143,9 +143,26 @@ repository now provides `fem-inhouse select-dic-partition`. It ranks the full
 10 x 10 DIC decomposition using the morphology of coherent high-strain bands:
 elongation, occupied area, contrast, continuity, and boundary contacts.
 Distribution-only indicators such as kurtosis remain diagnostics but no longer
-drive the selection. The current primary candidate is partition 17 `(1, 7)`;
-P84 and P58 are retained as independent secondary cases. Candidate maps must
-be visually checked before launching a costly campaign.
+drive the selection. The automated score ranks P17 first, but the required
+visual review showed that P43 `(4, 3)` is the better scientific calibration
+ROI: its core contains two distinct diagonal deformation bands rather than one
+component selected mainly by the ranking heuristic. P43 is therefore the
+registered target for the next coupled campaign. No P43 alpha sweep has been
+launched yet.
+
+Before that campaign, the native MFront micromorphic hot path was made
+lightweight. Fixed-point evaluations now request only PEEQ and do not compute
+a tangent or reconstruct full 3D tensors. One tangent evaluation is performed
+after fixed-point convergence, and full tensors are completed only for the
+final converged FEM state. On the complete `360 x 310` P43 core this reduces
+the constitutive benchmark from `14.36 s` to `7.61 s` (`1.89x`) and peak RSS
+from `796,856` to `564,508 KiB` (`-29.2%`), with bit-identical stress, tangent,
+PEEQ, and nonlocal fields. A complete FEM benchmark on a real band-containing
+intermediate crop reduces wall time from `396.78 s` to `273.56 s` (`1.45x`)
+and peak RSS by `12.7%`, while preserving convergence decisions exactly and
+all physical fields below the declared `1e-10` relative threshold. The
+versioned evidence is reported in
+[`validation/performance/nonlocal_hot_path_optimization.json`](validation/performance/nonlocal_hot_path_optimization.json).
 
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
