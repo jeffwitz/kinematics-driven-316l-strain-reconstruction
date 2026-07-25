@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.sparse import coo_matrix, csr_matrix
@@ -10,6 +12,122 @@ from fem_inhouse.core.element import GAUSS_WEIGHTS
 from fem_inhouse.core.mesh import StructuredMesh
 
 AssemblyIndices = tuple[NDArray, NDArray]
+
+
+@dataclass(slots=True)
+class FixedCSRAssembler:
+    """Assemble changing element values into one immutable CSR structure."""
+
+    matrix: csr_matrix
+    contribution_positions: NDArray[np.int32]
+    element_count: int
+
+    @classmethod
+    def from_location_matrix(
+        cls,
+        location_matrix: NDArray,
+        selected_dofs: NDArray,
+        *,
+        chunk_size: int = 8_192,
+    ) -> FixedCSRAssembler:
+        """Build a reduced CSR pattern and element-to-data mapping once."""
+
+        location = np.asarray(location_matrix, dtype=np.int64)
+        dofs = np.asarray(selected_dofs, dtype=np.int64)
+        if location.ndim != 2 or location.shape[1] != 8:
+            raise ValueError("location_matrix must have shape (n_elements, 8)")
+        if dofs.ndim != 1 or dofs.size == 0:
+            raise ValueError("selected_dofs must be a non-empty one-dimensional array")
+        if np.any(dofs < 0) or len(np.unique(dofs)) != len(dofs):
+            raise ValueError("selected_dofs must contain unique nonnegative indices")
+        if chunk_size < 1:
+            raise ValueError("chunk_size must be positive")
+        maximum_dof = int(max(np.max(location), np.max(dofs)))
+        global_to_reduced = np.full(maximum_dof + 1, -1, dtype=np.int64)
+        global_to_reduced[dofs] = np.arange(len(dofs), dtype=np.int64)
+        reduced_location = global_to_reduced[location]
+        reduced_size = len(dofs)
+        sentinel_key = reduced_size * reduced_size
+
+        keys = np.empty((len(location), 8, 8), dtype=np.int64)
+        np.multiply(
+            reduced_location[:, :, None],
+            reduced_size,
+            out=keys,
+        )
+        np.add(keys, reduced_location[:, None, :], out=keys)
+        invalid = (reduced_location[:, :, None] < 0) | (
+            reduced_location[:, None, :] < 0
+        )
+        keys[invalid] = sentinel_key
+        unique_keys = np.unique(keys)
+        if unique_keys[-1] == sentinel_key:
+            unique_keys = unique_keys[:-1]
+        del keys, invalid
+        if unique_keys.size == 0:
+            raise ValueError("selected_dofs produce an empty stiffness pattern")
+        if unique_keys.size >= np.iinfo(np.int32).max:
+            raise ValueError("fixed CSR pattern exceeds int32 mapping capacity")
+
+        rows = unique_keys // reduced_size
+        indices = np.asarray(unique_keys % reduced_size, dtype=np.int32)
+        row_counts = np.bincount(rows, minlength=reduced_size)
+        indptr = np.empty(reduced_size + 1, dtype=np.int32)
+        indptr[0] = 0
+        np.cumsum(row_counts, dtype=np.int64, out=indptr[1:])
+        matrix = csr_matrix(
+            (
+                np.zeros(unique_keys.size, dtype=np.float64),
+                indices,
+                indptr,
+            ),
+            shape=(reduced_size, reduced_size),
+        )
+        matrix.has_sorted_indices = True
+
+        positions = np.empty((len(location), 8, 8), dtype=np.int32)
+        sentinel_position = int(unique_keys.size)
+        for start in range(0, len(location), chunk_size):
+            stop = min(start + chunk_size, len(location))
+            local = reduced_location[start:stop]
+            chunk_keys = np.empty((stop - start, 8, 8), dtype=np.int64)
+            np.multiply(local[:, :, None], reduced_size, out=chunk_keys)
+            np.add(chunk_keys, local[:, None, :], out=chunk_keys)
+            chunk_invalid = (local[:, :, None] < 0) | (local[:, None, :] < 0)
+            chunk_keys[chunk_invalid] = sentinel_key
+            chunk_positions = np.searchsorted(unique_keys, chunk_keys)
+            chunk_positions[chunk_invalid] = sentinel_position
+            positions[start:stop] = chunk_positions.astype(np.int32, copy=False)
+
+        return cls(
+            matrix=matrix,
+            contribution_positions=positions,
+            element_count=len(location),
+        )
+
+    def assemble(self, element_stiffness: NDArray) -> csr_matrix:
+        """Update only ``matrix.data`` and return the same CSR object."""
+
+        values = np.asarray(element_stiffness, dtype=np.float64)
+        if values.shape == (8, 8):
+            flat_values = np.broadcast_to(
+                values,
+                (self.element_count, 8, 8),
+            ).reshape(-1)
+        elif values.shape == (self.element_count, 8, 8):
+            flat_values = values.reshape(-1)
+        else:
+            raise ValueError(
+                "element_stiffness must have shape (8, 8) "
+                "or (n_elements, 8, 8)"
+            )
+        sums = np.bincount(
+            self.contribution_positions.reshape(-1),
+            weights=flat_values,
+            minlength=self.matrix.nnz + 1,
+        )
+        np.copyto(self.matrix.data, sums[: self.matrix.nnz])
+        return self.matrix
 
 
 def assembly_indices(location_matrix: NDArray) -> AssemblyIndices:

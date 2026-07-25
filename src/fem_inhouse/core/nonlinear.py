@@ -25,14 +25,14 @@ Usage:
 
 import logging
 import time
+from importlib import import_module
 from typing import cast
 
 import numpy as np
-from scipy.sparse.linalg import spsolve
 
 from fem_inhouse.core.assembly import (
+    FixedCSRAssembler,
     assemble_stiffness,
-    assembly_indices,
     element_tangent_stiffness,
     internal_force,
 )
@@ -43,6 +43,11 @@ from fem_inhouse.core.element import (
     GAUSS_WEIGHTS,
     plane_stress_elasticity,
     precompute_element,
+)
+from fem_inhouse.core.linear_solver import (
+    ExplicitPardisoSolver,
+    ScipySparseSolver,
+    create_linear_solver,
 )
 from fem_inhouse.core.mesh import StructuredMesh
 from fem_inhouse.core.nonlocal_plasticity import (
@@ -60,21 +65,11 @@ from fem_inhouse.core.plane_stress_material import (
 
 LOGGER = logging.getLogger(__name__)
 
-# Optional fast multithreaded direct solver (MKL Pardiso).
-#   pip install pypardiso
 try:
-    import pypardiso
-
-    def _solve(A, b):
-        return pypardiso.spsolve(A.tocsr(), b)
-
-    _SOLVER_NAME = "pypardiso (MKL, multithreaded)"
+    import_module("pypardiso")
+    _SOLVER_NAME = ExplicitPardisoSolver.backend_name
 except Exception:
-
-    def _solve(A, b):
-        return spsolve(A.tocsr(), b)
-
-    _SOLVER_NAME = "scipy SuperLU (single-threaded; 'pip install pypardiso' for a large speed-up)"
+    _SOLVER_NAME = ScipySparseSolver.backend_name
 
 GP_XI = GAUSS_POINTS
 GP_W = GAUSS_WEIGHTS
@@ -134,6 +129,7 @@ def run_fem(
         raise ValueError("nonlocal plasticity currently requires an MFront backend")
     started_at = time.perf_counter()
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
+    linear_solver = create_linear_solver()
     nx, ny = mesh.nx, mesh.ny
     nxn, nyn = nx + 1, ny + 1
     n_e = mesh.n_elems
@@ -144,7 +140,7 @@ def run_fem(
             "event": "nonlinear_solve_started",
             "elements": n_e,
             "free_dofs": len(mesh.dofs_free),
-            "backend": _SOLVER_NAME,
+            "backend": linear_solver.backend_name,
         },
     )
 
@@ -205,30 +201,26 @@ def run_fem(
     dof_B = mesh.dofs_bc
     initialization_seconds = time.perf_counter() - started_at
 
-    # constant assembly index arrays (reused for every tangent assembly)
+    # The reduced stiffness graph and contribution mapping remain fixed.
     assembly_started_at = time.perf_counter()
-    _rc = assembly_indices(ld)
+    fixed_free_assembler = FixedCSRAssembler.from_location_matrix(ld, dof_I)
 
-    # Elastic predictor matrix; PyPardiso reuses its factorization for each RHS.
+    # Assemble KIB once. KII is the fixed CSR object later updated in place.
     sparse_assembly_started_at = time.perf_counter()
-    K_el = assemble_stiffness(mesh, Ke, ld, _rc)
+    K_el = assemble_stiffness(mesh, Ke, ld)
+    KII_el = fixed_free_assembler.assemble(Ke)
     sparse_assembly_seconds = time.perf_counter() - sparse_assembly_started_at
     extraction_started_at = time.perf_counter()
-    KII_el = K_el[dof_I][:, dof_I].tocsr()
     KIB_el = K_el[dof_I][:, dof_B].tocsr()
+    del K_el
     free_system_extraction_seconds = time.perf_counter() - extraction_started_at
     elastic_assembly_seconds = time.perf_counter() - assembly_started_at
-    linear_solve_seconds = 0.0
     constitutive_seconds = 0.0
     tangent_assembly_seconds = 0.0
     internal_force_seconds = 0.0
 
     def timed_solve(matrix, right_hand_side):
-        nonlocal linear_solve_seconds
-        solve_started_at = time.perf_counter()
-        solution = _solve(matrix, right_hand_side)
-        linear_solve_seconds += time.perf_counter() - solve_started_at
-        return solution
+        return linear_solver.factorize_and_solve(matrix, right_hand_side)
 
     def solve_el(b):
         return timed_solve(KII_el, b)
@@ -451,13 +443,9 @@ def run_fem(
             )
             element_matrix_seconds += time.perf_counter() - element_matrix_started_at
             sparse_assembly_started_at = time.perf_counter()
-            K_tang = assemble_stiffness(mesh, Ke_ep, ld, _rc)
+            K_tang = fixed_free_assembler.assemble(Ke_ep)
             sparse_assembly_seconds += time.perf_counter() - sparse_assembly_started_at
-            extraction_started_at = time.perf_counter()
-            KII = K_tang[dof_I][:, dof_I].tocsr()
-            free_system_extraction_seconds += (
-                time.perf_counter() - extraction_started_at
-            )
+            KII = K_tang
             tangent_assembly_seconds += time.perf_counter() - tangent_started_at
 
             du = timed_solve(KII, -R_I)
@@ -603,6 +591,9 @@ def run_fem(
         }
 
     output_seconds = time.perf_counter() - output_started_at
+    linear_solver_statistics = linear_solver.statistics
+    linear_solver.close()
+    linear_solve_seconds = linear_solver_statistics.total_seconds
     elapsed_seconds = time.perf_counter() - started_at
     LOGGER.info(
         "nonlinear solve completed",
@@ -632,7 +623,10 @@ def run_fem(
         mesh=mesh,
         frames=snaps,
         diagnostics=dict(
-            backend=f"{_SOLVER_NAME}; constitutive={material_batch.backend_name}",
+            backend=(
+                f"{linear_solver.backend_name}; constitutive="
+                f"{material_batch.backend_name}"
+            ),
             elapsed_seconds=elapsed_seconds,
             initialization_seconds=initialization_seconds,
             elastic_assembly_seconds=elastic_assembly_seconds,
@@ -701,6 +695,18 @@ def run_fem(
             sparse_assembly_seconds=sparse_assembly_seconds,
             free_system_extraction_seconds=free_system_extraction_seconds,
             pardiso_seconds=linear_solve_seconds,
+            pardiso_analysis_seconds=(
+                linear_solver_statistics.analysis_seconds
+            ),
+            pardiso_factorization_seconds=(
+                linear_solver_statistics.factorization_seconds
+            ),
+            pardiso_solve_seconds=linear_solver_statistics.solve_seconds,
+            pardiso_analysis_calls=linear_solver_statistics.analysis_calls,
+            pardiso_factorization_calls=(
+                linear_solver_statistics.factorization_calls
+            ),
+            pardiso_solve_calls=linear_solver_statistics.solve_calls,
             nonlocal_mfront_without_tangent_seconds=(
                 nonlocal_mfront_without_tangent_seconds
             ),

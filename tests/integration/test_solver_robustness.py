@@ -5,6 +5,7 @@ import pytest
 
 from fem_inhouse.config import CaseStudyConfig, SolverConfig
 from fem_inhouse.core import nonlinear
+from fem_inhouse.core.linear_solver import LinearSolverStatistics
 from fem_inhouse.core.nonlocal_plasticity import NonlocalCouplingConvergenceError
 from fem_inhouse.core.plane_stress_material import (
     LocalPlaneStressConvergenceError,
@@ -94,10 +95,23 @@ def test_nonconvergence_raises_diagnostic_error(monkeypatch) -> None:
         ),
     )
 
-    def nonfinite_solution(_matrix, right_hand_side):
-        return np.full_like(right_hand_side, np.nan)
+    class NonfiniteLinearSolver:
+        backend_name = "test non-finite solver"
+        statistics = LinearSolverStatistics()
 
-    monkeypatch.setattr(nonlinear, "_solve", nonfinite_solution)
+        @staticmethod
+        def factorize_and_solve(_matrix, right_hand_side):
+            return np.full_like(right_hand_side, np.nan)
+
+        @staticmethod
+        def close() -> None:
+            return None
+
+    monkeypatch.setattr(
+        nonlinear,
+        "create_linear_solver",
+        NonfiniteLinearSolver,
+    )
     with pytest.raises(RuntimeError, match="increment cutback below minimum"):
         _solve_case(case, config=config)
 

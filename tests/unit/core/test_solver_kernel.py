@@ -15,7 +15,7 @@ from fem_inhouse.core import (
     strain_displacement_matrix,
     von_mises,
 )
-from fem_inhouse.core.assembly import internal_force
+from fem_inhouse.core.assembly import FixedCSRAssembler, internal_force
 from fem_inhouse.core.element import GAUSS_POINT_COUNT
 
 
@@ -77,6 +77,68 @@ def test_assembly_and_internal_force_contracts() -> None:
     assert stiffness.shape == (mesh.n_dof, mesh.n_dof)
     np.testing.assert_allclose(stiffness.toarray(), stiffness_precomputed.toarray())
     np.testing.assert_allclose(force, 0.0)
+
+
+def test_fixed_csr_assembler_preserves_structure_and_values() -> None:
+    mesh = StructuredMesh(0.004, 0.003, 0.001, 1.0)
+    elasticity = plane_stress_elasticity(205_000.0, 0.3)
+    element_matrix = precompute_element(mesh, elasticity).elastic_stiffness
+    location = mesh.location_matrix()
+    free = mesh.dofs_free
+    assembler = FixedCSRAssembler.from_location_matrix(
+        location,
+        free,
+        chunk_size=2,
+    )
+
+    first = assembler.assemble(element_matrix)
+    reference_first = assemble_stiffness(
+        mesh,
+        element_matrix,
+        location,
+    )[free][:, free].tocsr()
+    first_values = first.toarray().copy()
+    matrix_identity = id(first)
+    indptr = first.indptr.copy()
+    indices = first.indices.copy()
+
+    element_matrices = np.broadcast_to(
+        1.1 * element_matrix,
+        (mesh.n_elems, 8, 8),
+    ).copy()
+    second = assembler.assemble(element_matrices)
+    reference_second = assemble_stiffness(
+        mesh,
+        element_matrices,
+        location,
+    )[free][:, free].tocsr()
+
+    assert id(second) == matrix_identity
+    assert np.array_equal(second.indptr, indptr)
+    assert np.array_equal(second.indices, indices)
+    np.testing.assert_allclose(first_values, reference_first.toarray(), atol=1e-9)
+    np.testing.assert_allclose(
+        second.toarray(),
+        reference_second.toarray(),
+        atol=1e-9,
+    )
+
+
+@pytest.mark.parametrize(
+    ("location", "dofs", "message"),
+    [
+        (np.zeros((2, 7), dtype=int), np.array([0]), "location_matrix"),
+        (np.zeros((2, 8), dtype=int), np.array([], dtype=int), "selected_dofs"),
+        (np.zeros((2, 8), dtype=int), np.array([0, 0]), "unique"),
+    ],
+)
+def test_fixed_csr_assembler_rejects_invalid_contracts(
+    location,
+    dofs,
+    message,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        FixedCSRAssembler.from_location_matrix(location, dofs)
 
 
 def test_chunked_plastic_tangent_matches_dense_gauss_tensor() -> None:
