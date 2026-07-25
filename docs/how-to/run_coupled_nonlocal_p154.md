@@ -200,3 +200,35 @@ The condensed 3D backend is a reduced verification run:
 
 It should reproduce the native plane-stress result on a reduced case, but it
 is not the production path for the P154 sweep.
+
+## 9. Plot the alpha comparison
+
+Once the four complete campaigns are available, generate the comparative
+maps and publication-ready vector figures:
+
+```bash
+.venv/bin/fem-inhouse plot-coupled-alpha-fields \
+  --input data/processed/case_study \
+  --local-campaign results/constitutive-local-p0154-pad128 \
+  --campaign-a050 results/constitutive-nonlocal-p0154-pad128-a050 \
+  --campaign-a100 results/constitutive-nonlocal-p0154-pad128-a100 \
+  --campaign-a200 results/constitutive-nonlocal-p0154-pad128-a200 \
+  --partition-id 154 \
+  --output validation/figures/p154-alpha-comparison \
+  --include-optional-fields
+```
+
+The command verifies all four manifests and saved-field hashes, reconstructs
+the DIC and FEM `Total equivalent strain, EVM` fields from nodal displacement,
+and crops only after loading the padded solutions. It writes PNG, PDF, and
+SVG versions of the EVM comparison, FEM-minus-DIC error maps, PEEQ maps,
+PEEQ distributions, and a compact summary. The common colour limits and
+metrics are recorded in `plot_metadata.json`.
+
+The main EVM figures contain raw converged FEM fields. No Helmholtz filtering
+is applied before plotting or comparing them. `PEEQ` remains an internal
+plasticity variable; the figures do not claim an experimental PEEQ field.
+Optional micromorphic fields are plotted only when
+`--include-optional-fields` is supplied. The local alpha=0 control uses
+explicit zero/Hchi=0 fallback values for those optional fields, and this is
+recorded in the metadata.

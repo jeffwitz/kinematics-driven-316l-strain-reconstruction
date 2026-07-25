@@ -130,6 +130,14 @@ outside the pre-registered `[5%, 20%]` interval. The defensible conclusion is
 therefore **coupled spatial interaction partially supported**; no coupling
 modulus is frozen for transfer.
 
+The reproducible P154 alpha visualisation is documented in
+[`docs/how-to/run_coupled_nonlocal_p154.md`](docs/how-to/run_coupled_nonlocal_p154.md)
+and is available as `fem-inhouse plot-coupled-alpha-fields`. It compares the
+raw EVM reconstructed from DIC/FEM displacements for alpha = 0, 0.5, 1, and 2,
+plus the internal PEEQ redistribution. No Helmholtz filter is applied to the
+primary FEM EVM figures; `plot_metadata.json` records the hashes, limits, and
+plotting choices.
+
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and
@@ -268,6 +276,7 @@ fem-inhouse compare-fields --help
 fem-inhouse diagnose-nonlocality --help
 fem-inhouse estimate-nonlocal-reference --help
 fem-inhouse validate-coupled-nonlocal --help
+fem-inhouse plot-coupled-alpha-fields --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation

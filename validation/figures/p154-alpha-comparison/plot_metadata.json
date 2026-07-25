@@ -1,0 +1,195 @@
+{
+  "actual_alpha_by_campaign": [
+    0.0,
+    0.5,
+    1.0,
+    2.0
+  ],
+  "alphas": [
+    0.0,
+    0.5,
+    1.0,
+    2.0
+  ],
+  "campaign_manifest_sha256": {
+    "alpha0": "8193f94cfe15124b3dfd5bd2522e099cec645cfe54ad7f143bc238b21a0dd35c",
+    "alpha05": "55537ff45986cda2b1687c0def446356935d3b32937d7dc450f191ee6c3db073",
+    "alpha1": "0b833eb915731f511a4d283949bbf19029500fe7a0354412c01492caa5a956b6",
+    "alpha2": "4384d460205b1af0118fe158debea4cedf776bc00b9393f7ae9819e62d6f2569"
+  },
+  "campaign_paths": [
+    "results/constitutive-local-p0154-pad128",
+    "results/constitutive-nonlocal-p0154-pad128-a050",
+    "results/constitutive-nonlocal-p0154-pad128-a100",
+    "results/constitutive-nonlocal-p0154-pad128-a200"
+  ],
+  "color_limits": {
+    "difference": {
+      "percentile": null,
+      "real_absolute_max": 0.01634134430473936,
+      "vmax": 0.01634134430473936,
+      "vmin": -0.01634134430473936
+    },
+    "evm": {
+      "percentile": null,
+      "real_max": 0.02042217815853356,
+      "real_min": 0.00046992660090031156,
+      "vmax": 0.02042217815853356,
+      "vmin": 0.0
+    },
+    "peeq": {
+      "percentile": null,
+      "real_max": 0.02429574464981352,
+      "real_min": 0.0,
+      "vmax": 0.02429574464981352,
+      "vmin": 0.0
+    }
+  },
+  "core_bounds": [
+    1260,
+    1440,
+    2170,
+    2325
+  ],
+  "core_shape": [
+    180,
+    155
+  ],
+  "evm_construction": "reconstruct_historical_evm from DIC/FEM nodal displacements",
+  "evm_post_filter_applied": false,
+  "extent_mm": [
+    2.3184,
+    2.6496,
+    3.9928,
+    4.2780000000000005
+  ],
+  "figure_paths": {
+    "alpha_summary": [
+      "validation/figures/p154-alpha-comparison/p154_alpha_summary.png",
+      "validation/figures/p154-alpha-comparison/p154_alpha_summary.pdf",
+      "validation/figures/p154-alpha-comparison/p154_alpha_summary.svg"
+    ],
+    "nonlocal_hardening_mpa": [
+      "validation/figures/p154-alpha-comparison/p154_nonlocal_hardening_mpa.png",
+      "validation/figures/p154-alpha-comparison/p154_nonlocal_hardening_mpa.pdf",
+      "validation/figures/p154-alpha-comparison/p154_nonlocal_hardening_mpa.svg"
+    ],
+    "peeq_comparison": [
+      "validation/figures/p154-alpha-comparison/p154_peeq_comparison.png",
+      "validation/figures/p154-alpha-comparison/p154_peeq_comparison.pdf",
+      "validation/figures/p154-alpha-comparison/p154_peeq_comparison.svg"
+    ],
+    "peeq_distributions": [
+      "validation/figures/p154-alpha-comparison/p154_peeq_distributions.png",
+      "validation/figures/p154-alpha-comparison/p154_peeq_distributions.pdf",
+      "validation/figures/p154-alpha-comparison/p154_peeq_distributions.svg"
+    ],
+    "peeq_mismatch": [
+      "validation/figures/p154-alpha-comparison/p154_peeq_mismatch.png",
+      "validation/figures/p154-alpha-comparison/p154_peeq_mismatch.pdf",
+      "validation/figures/p154-alpha-comparison/p154_peeq_mismatch.svg"
+    ],
+    "peeq_nonlocal": [
+      "validation/figures/p154-alpha-comparison/p154_peeq_nonlocal.png",
+      "validation/figures/p154-alpha-comparison/p154_peeq_nonlocal.pdf",
+      "validation/figures/p154-alpha-comparison/p154_peeq_nonlocal.svg"
+    ],
+    "total_evm_comparison": [
+      "validation/figures/p154-alpha-comparison/p154_total_evm_comparison.png",
+      "validation/figures/p154-alpha-comparison/p154_total_evm_comparison.pdf",
+      "validation/figures/p154-alpha-comparison/p154_total_evm_comparison.svg"
+    ],
+    "total_evm_difference": [
+      "validation/figures/p154-alpha-comparison/p154_total_evm_difference.png",
+      "validation/figures/p154-alpha-comparison/p154_total_evm_difference.pdf",
+      "validation/figures/p154-alpha-comparison/p154_total_evm_difference.svg"
+    ]
+  },
+  "generated_at_utc": "2026-07-25T13:51:06.622683+00:00",
+  "git_commit": "cb77b3ae61648fdf87fd70863be3bdde9f02e713",
+  "h_ref_mpa": 6547.530616602937,
+  "hchi_by_alpha_mpa": [
+    0.0,
+    3273.7653083014684,
+    6547.530616602937,
+    13095.061233205874
+  ],
+  "input_directory": "data/processed/case_study",
+  "metrics": [
+    {
+      "alpha": 0.0,
+      "mae": 0.0016933906580970175,
+      "pearson_correlation": 0.40345059529236166,
+      "relative_l2_error": 0.7497777185965093,
+      "rmse": 0.002385989461409823,
+      "signed_mean_error": 0.00029611650608593674
+    },
+    {
+      "alpha": 0.5,
+      "mae": 0.0014375223549883936,
+      "pearson_correlation": 0.46923735824806534,
+      "relative_l2_error": 0.5991358689372589,
+      "rmse": 0.0019066075635227235,
+      "signed_mean_error": 0.00027803973829105367
+    },
+    {
+      "alpha": 1.0,
+      "mae": 0.0012775207646471365,
+      "pearson_correlation": 0.5115342937826124,
+      "relative_l2_error": 0.5217348435913743,
+      "rmse": 0.0016602971888648986,
+      "signed_mean_error": 0.0002711666156467894
+    },
+    {
+      "alpha": 2.0,
+      "mae": 0.0010822260695072107,
+      "pearson_correlation": 0.5677883039807049,
+      "relative_l2_error": 0.43361099088087013,
+      "rmse": 0.0013798639635889062,
+      "signed_mean_error": 0.0002649162207390508
+    }
+  ],
+  "optional_field_fallbacks": {
+    "NONLOCAL_HARDENING_MPA": "zero MPa (Hchi=0 control)",
+    "PEEQ_MISMATCH": "zero (Hchi=0 control)",
+    "PEEQ_NONLOCAL": "local PEEQ (Hchi=0 control)"
+  },
+  "partition_id": 154,
+  "peeq_interpretation": "internal plasticity variable; no experimental PEEQ comparison",
+  "peeq_statistics": [
+    {
+      "alpha": 0.0,
+      "maximum": 0.02429574464981352,
+      "mean": 0.0025836733647523675,
+      "minimum": 0.0,
+      "standard_deviation": 0.002783757832763271
+    },
+    {
+      "alpha": 0.5,
+      "maximum": 0.013769016498287585,
+      "mean": 0.0025457623381917593,
+      "minimum": 0.0,
+      "standard_deviation": 0.0022962687707259893
+    },
+    {
+      "alpha": 1.0,
+      "maximum": 0.01102159098487818,
+      "mean": 0.0025265598949909054,
+      "minimum": 0.0,
+      "standard_deviation": 0.002052364861387511
+    },
+    {
+      "alpha": 2.0,
+      "maximum": 0.008618680485628223,
+      "mean": 0.0025030614899659164,
+      "minimum": 0.0,
+      "standard_deviation": 0.0017746437785387714
+    }
+  ],
+  "solve_shape": [
+    436,
+    411
+  ],
+  "spacing_x_mm": 0.00184,
+  "spacing_y_mm": 0.00184
+}

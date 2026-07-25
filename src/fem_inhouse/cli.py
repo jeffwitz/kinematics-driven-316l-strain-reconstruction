@@ -37,6 +37,7 @@ from fem_inhouse.workflows import (
     PartitionWorkflow,
     estimate_reference_hardening_from_campaign,
     load_decision_thresholds,
+    plot_coupled_alpha_fields,
     run_nonlocality_diagnostic,
     validate_coupled_nonlocal_campaign,
 )
@@ -216,6 +217,31 @@ def _parser() -> argparse.ArgumentParser:
     validate_coupled.add_argument("--partition-id", type=int, required=True)
     validate_coupled.add_argument("--output", type=Path, required=True)
     validate_coupled.add_argument("--overwrite", action="store_true")
+
+    plot_alpha = commands.add_parser(
+        "plot-coupled-alpha-fields",
+        help="plot raw P154 EVM and PEEQ fields for alpha=0,0.5,1,2",
+    )
+    plot_alpha.add_argument("--input", type=Path, required=True)
+    plot_alpha.add_argument("--local-campaign", type=Path, required=True)
+    plot_alpha.add_argument("--campaign-a050", type=Path, required=True)
+    plot_alpha.add_argument("--campaign-a100", type=Path, required=True)
+    plot_alpha.add_argument("--campaign-a200", type=Path, required=True)
+    plot_alpha.add_argument("--partition-id", type=int, required=True)
+    plot_alpha.add_argument("--output", type=Path, required=True)
+    plot_alpha.add_argument("--dpi", type=int, default=180)
+    plot_alpha.add_argument(
+        "--format",
+        dest="formats",
+        nargs="+",
+        choices=("png", "pdf", "svg"),
+        default=("png", "pdf", "svg"),
+    )
+    plot_alpha.add_argument("--strain-vmax-percentile", type=float)
+    plot_alpha.add_argument("--peeq-vmax-percentile", type=float)
+    plot_alpha.add_argument("--difference-vmax-percentile", type=float)
+    plot_alpha.add_argument("--include-optional-fields", action="store_true")
+    plot_alpha.add_argument("--overwrite", action="store_true")
 
     compare = commands.add_parser(
         "compare-fields",
@@ -453,6 +479,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         _print_json(coupled_report)
         return 0 if coupled_report["passed"] else 2
+    if args.command == "plot-coupled-alpha-fields":
+        plot_report = plot_coupled_alpha_fields(
+            input_directory=args.input,
+            local_campaign=args.local_campaign,
+            campaign_a050=args.campaign_a050,
+            campaign_a100=args.campaign_a100,
+            campaign_a200=args.campaign_a200,
+            partition_id=args.partition_id,
+            output_directory=args.output,
+            dpi=args.dpi,
+            formats=args.formats,
+            strain_vmax_percentile=args.strain_vmax_percentile,
+            peeq_vmax_percentile=args.peeq_vmax_percentile,
+            difference_vmax_percentile=args.difference_vmax_percentile,
+            include_optional_fields=args.include_optional_fields,
+            overwrite=args.overwrite,
+        )
+        _print_json(plot_report)
+        return 0
     if args.command == "compare-fields":
         reference = np.load(args.reference, mmap_mode="r", allow_pickle=False)
         prediction = np.load(args.prediction, mmap_mode="r", allow_pickle=False)
