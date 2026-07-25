@@ -215,12 +215,23 @@ partitions without using any FEM result:
   --parts-x 10 --parts-y 10 --padding 150
 ```
 
-The current 10 x 10 scan ranks partition 15, index `(1, 5)`, first by the
-1--99% winsorized Fisher kurtosis (`6.64`). Partition 53 is the strongest
-alternative by the 95%-to-median tail contrast. The report contains all 100
-partitions and must be reviewed with the DIC maps before freezing a
-calibration ROI. Do not use the old P154 alpha comparison as evidence that a
+The initial kurtosis-only scan selected P15, but visual inspection showed that
+it contains an isolated hotspot rather than a deformation band. That criterion
+is therefore rejected for length identification. The current 10 x 10 scan
+ranks coherent q85 components by aspect ratio, occupied area, contrast, and
+boundary contacts. It selects partition 17, index `(1, 7)`, whose dominant
+diagonal band is approximately 668 micrometres long and 70 micrometres wide
+under the registered threshold convention. P84 and P58 are retained as
+secondary cases. Review the candidate montage and the full report before
+freezing a calibration ROI. Do not use either P154 or P15 as evidence that a
 material length has been identified.
+
+![DIC deformation-band candidate montage](../../validation/dic_band_candidates_10x10.png)
+
+The white contour is the dominant q85 component used only for morphological
+ranking. All panels share the same EVM colour scale. The reported width is the
+component area divided by its principal-axis extent; it is a reproducible
+selection diagnostic, not yet an identified material length.
 
 ## 10. Plot the alpha comparison
 
@@ -302,6 +313,9 @@ its Python API. The completed P15 diagnostic is stored in
 For this run, RMSE decreases from `3.454e-3` at alpha=0 to `2.187e-3` at
 alpha=4, but Pearson correlation remains negative (approximately `-0.15`).
 The result therefore demonstrates attenuation of the localized FEM field, not
-an accepted FEM-DIC spatial match. Because the padding-to-length ratio is
-below four, this campaign is diagnostic and must not be interpreted as a
-material-length identification.
+an accepted FEM-DIC spatial match. More importantly, the DIC structure is an
+isolated hotspot: P15 was selected by kurtosis, which is blind to morphology,
+and is not suitable for identifying a band width. Because the
+padding-to-length ratio is also below four, this campaign is retained only as a
+negative diagnostic and must not be interpreted as a material-length
+identification. No further alpha sweep should be launched on P15.

@@ -217,10 +217,13 @@ DIC kinematics:
      --parts-x 10 --parts-y 10 --padding 150
 
 The command reconstructs ``EVM_HISTORICAL`` from DIC displacements and ranks
-all partitions by 1--99% winsorized Fisher kurtosis. It also records
-coefficient of variation, quantile-tail contrast, gradient RMS, and extrema.
-This is a prospective ROI-selection diagnostic, not a material parameter fit;
-the selected map must still be checked for one-pixel artefacts.
+all partitions from the dominant coherent q85 high-strain component. The
+primary score combines its aspect ratio, occupied area, contrast, and boundary
+contacts after light denoising and binary cleanup. It also records kurtosis,
+coefficient of variation, quantile-tail contrast, gradient RMS, and extrema as
+secondary diagnostics. This is a prospective ROI-selection diagnostic, not a
+material parameter fit; the selected maps must still be inspected before any
+costly FEM campaign.
 
 Exit behaviour
 --------------

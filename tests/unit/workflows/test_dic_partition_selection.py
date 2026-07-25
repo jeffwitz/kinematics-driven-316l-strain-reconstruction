@@ -31,8 +31,10 @@ def test_scan_ranks_dic_partitions_and_records_indicators(tmp_path) -> None:
 
     assert report["observable"].startswith("EVM_HISTORICAL")
     assert len(report["partitions"]) == 4
-    assert report["selection_indicator"] == "winsorized_kurtosis_1_99"
+    assert report["selection_indicator"] == "dic_band_morphology_score_q85"
     assert "q95_minus_q50_over_iqr" in report["partitions"][0]
+    assert "band_aspect_ratio" in report["partitions"][0]
+    assert report["partitions"][0]["band_score"] >= report["partitions"][-1]["band_score"]
 
 
 def test_write_dic_partition_heterogeneity_report(tmp_path) -> None:

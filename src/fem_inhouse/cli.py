@@ -222,7 +222,7 @@ def _parser() -> argparse.ArgumentParser:
 
     select_dic = commands.add_parser(
         "select-dic-partition",
-        help="rank DIC partitions by robust EVM spatial heterogeneity",
+        help="rank DIC partitions by coherent EVM band morphology",
     )
     select_dic.add_argument("--input", type=Path, required=True)
     select_dic.add_argument("--output", type=Path, required=True)
