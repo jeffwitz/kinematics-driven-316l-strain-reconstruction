@@ -49,6 +49,32 @@ requires an unchanged length on held-out partitions.
 See {doc}`../explanation/nonlocality_diagnostic` for the rationale and
 {doc}`../how-to/diagnose_nonlocality` for the command.
 
+### Representative selection and held-out confirmation
+
+The later pre-registered design uses P48 for selection and P42 for held-out
+confirmation. Both are interior partitions with a `360×310` core, a
+`660×610` solved region, and 150 pixels of padding on all sides.
+
+| Metric | P48 raw | P48 at `58.88 µm` | P42 raw | P42 at `58.88 µm` |
+|---|---:|---:|---:|---:|
+| RMSE | `2.6897e-3` | `9.5182e-4` | `2.6677e-3` | `9.2209e-4` |
+| relative L2 | `0.80956` | `0.28649` | `0.80047` | `0.27669` |
+| Pearson | `0.29828` | `0.61597` | `0.40068` | `0.70360` |
+| top-10% IoU | `0.15984` | `0.28224` | `0.13340` | `0.27594` |
+| DIC-q90 IoU | `0.16757` | `0.30852` | `0.17735` | `0.25726` |
+| predicted q90 active fraction | `19.66%` | `14.09%` | `20.41%` | `7.74%` |
+
+P48 selects `58.88 µm` with all three primary spatial metrics. Applied
+unchanged to P42, it passes the pre-declared minimum correlation gain `0.05`,
+relative-L2 reduction `5%`, top-10% IoU gain `0.02`, and relative mean-drift
+limit `1e-10`. The additional absolute-q90 IoU gain and active-area
+requirements also pass.
+
+The stage-1 conclusion is **spatial-width hypothesis supported**. This is
+evidence for a width contribution, not identification of a material internal
+length. The candidate is the upper sweep boundary and only one held-out
+partition has been tested.
+
 ## Three-backend FEM benchmark
 
 Campaign:

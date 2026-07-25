@@ -1,0 +1,248 @@
+{
+  "created_at_utc": "2026-07-25T08:05:10.589164+00:00",
+  "figures": {
+    "best_candidates.png": {
+      "bytes": 311763,
+      "sha256": "9e6c761a537fc6a7ff9c5d2d6429ef9b1bc78beb970dd61a4670716d27b65613"
+    },
+    "diffusivity_curves.svg": {
+      "bytes": 71677,
+      "sha256": "00109a2960ffc48fd4552ca68dac8a2b81d21cb41604fe7d4057e14583d7a61a"
+    },
+    "evm_baseline.png": {
+      "bytes": 901154,
+      "sha256": "46f4b34021830d75b9671fe0f173d6069034aeb2203881eeee66d4036cc5a0a6"
+    },
+    "evm_comparison_ell_000000um.png": {
+      "bytes": 960867,
+      "sha256": "e8c365d62e98ffb682d025c663e894125ecd584806c2ad09301051657a0e77a4"
+    },
+    "evm_comparison_ell_005888um.png": {
+      "bytes": 719997,
+      "sha256": "f94aa9e68615330532ed3b5b3b5a66a61269648edec568d12f50bac9da6ef18d"
+    },
+    "metric_curves.svg": {
+      "bytes": 72833,
+      "sha256": "2a3ad7dbfab301145ca4bfab3472e5ea97f971596ca1c7dc8ef64e7f4560a9e5"
+    },
+    "peeq_comparison_ell_000000um.png": {
+      "bytes": 344461,
+      "sha256": "79854358f2dc71d30eac1502aa2f0c83f54741f03b4615ac5eaf97e7db7fd1a8"
+    },
+    "peeq_comparison_ell_005888um.png": {
+      "bytes": 462281,
+      "sha256": "749ce9ec52fe65ea402d3798881381322f70553dd0050295bf45c3355095651b"
+    }
+  },
+  "filter": {
+    "axis_convention": "axis 0 = x, axis 1 = y",
+    "boundary_condition": "homogeneous Neumann flux",
+    "equation": "(I + ell^2 L_h) q_bar = q",
+    "operator": "positive cell-centred finite-difference -Laplacian",
+    "solver": "orthonormal scipy.fft DCT-II"
+  },
+  "inputs": {
+    "campaign_manifest": {
+      "bytes": 45360,
+      "path": "results/reconstruction-100/manifest.json",
+      "sha256": "fa199107e16f641dbb281dd10d9305fd43b12cdc4f9ab88bce33e74b6eb2dd2e"
+    },
+    "displacement_x_mm": {
+      "bytes": 89333736,
+      "path": "data/processed/case_study/displacement_x_mm.npy",
+      "sha256": "d385a5f36a891fb990eb641d4808b93d1e2307bd68699d45f07a21704286a2b3"
+    },
+    "displacement_y_mm": {
+      "bytes": 89333736,
+      "path": "data/processed/case_study/displacement_y_mm.npy",
+      "sha256": "177ef78472722afbee27f7f0a89ae8ec0f0c4bfdca9f12460863b463dea633ee"
+    },
+    "partition_PEEQ": {
+      "bytes": 3220928,
+      "path": "results/reconstruction-100/partitions/0042/PEEQ.npy",
+      "sha256": "7c7a72b54228c7b260c1e1218725fc767aae4110f2e0f41ea21b780e9d2b7061"
+    },
+    "partition_U": {
+      "bytes": 6462064,
+      "path": "results/reconstruction-100/partitions/0042/U.npy",
+      "sha256": "22cfd68a81f9abcebf0bc7287c4deae4cc5bb6f4e423aec8b7bc4afe8dea1d6b"
+    },
+    "partition_status": {
+      "bytes": 2250,
+      "path": "results/reconstruction-100/partitions/0042/status.json",
+      "sha256": "457b79ce3b48ec6ccd6e2484de79250fd69a214fcb6a02b1067a2feeef9702c0"
+    },
+    "prepared_manifest": {
+      "bytes": 2592,
+      "path": "data/processed/case_study/manifest.json",
+      "sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+    }
+  },
+  "length_scales": [
+    {
+      "length_mm": 0.0,
+      "length_pixels": 0.0,
+      "length_um": 0.0
+    },
+    {
+      "length_mm": 0.05888,
+      "length_pixels": 32.0,
+      "length_um": 58.88
+    }
+  ],
+  "observable": {
+    "construction": [
+      "strain_from_displacement",
+      "plane_stress_equivalent_strain(engineering shear)",
+      "cell_average"
+    ],
+    "dic_filtered": false,
+    "peeq_amplitude_compared_to_dic_evm": false,
+    "primary": "EVM_HISTORICAL",
+    "secondary": "PEEQ"
+  },
+  "options": {
+    "decision_thresholds": {
+      "maximum_relative_mean_drift": 1e-10,
+      "minimum_correlation_gain": 0.05,
+      "minimum_iou_gain": 0.02,
+      "minimum_relative_l2_reduction": 0.05
+    },
+    "dic_quantiles": [
+      0.8,
+      0.9,
+      0.95
+    ],
+    "include_peeq": true,
+    "minimum_padding_length_ratio": 4.0,
+    "mode": "confirmatory",
+    "save_fields": "all",
+    "top_fractions": [
+      0.05,
+      0.1,
+      0.2
+    ]
+  },
+  "partition": {
+    "core_bounds": [
+      1440,
+      1800,
+      620,
+      930
+    ],
+    "core_shape": [
+      360,
+      310
+    ],
+    "global_shape": [
+      3600,
+      3100
+    ],
+    "index": [
+      4,
+      2
+    ],
+    "minimum_artificial_padding_pixels": 150,
+    "nominal_padding_pixels": 150,
+    "padding_sides": {
+      "x_minus": {
+        "mm": 0.276,
+        "pixels": 150,
+        "um": 276.0
+      },
+      "x_plus": {
+        "mm": 0.276,
+        "pixels": 150,
+        "um": 276.0
+      },
+      "y_minus": {
+        "mm": 0.276,
+        "pixels": 150,
+        "um": 276.0
+      },
+      "y_plus": {
+        "mm": 0.276,
+        "pixels": 150,
+        "um": 276.0
+      }
+    },
+    "partition_id": 42,
+    "solve_bounds": [
+      1290,
+      1950,
+      470,
+      1080
+    ],
+    "solve_shape": [
+      660,
+      610
+    ]
+  },
+  "saved_fields": {
+    "evm_dic_reference.npy": {
+      "sha256": "6256a120850360fd0f857cd0b462b00b59bd0f2d611140c1a34019baf2ac70a0",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "evm_fe_ell_000000um.npy": {
+      "sha256": "d26516668f68c652db86b53066915fe3e4fc3f4ba51b6b11ed253f51caf946a9",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "evm_fe_ell_005888um.npy": {
+      "sha256": "da2c9cfe3d9599adb212965caa1c3339cad2754c30f87a326ec12bbef61362cf",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "evm_fe_raw.npy": {
+      "sha256": "d26516668f68c652db86b53066915fe3e4fc3f4ba51b6b11ed253f51caf946a9",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "peeq_ell_000000um.npy": {
+      "sha256": "674594bce030dcbc1023422f658f8ec39c18da2090eb7bba8718ed069af8bcb1",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "peeq_ell_005888um.npy": {
+      "sha256": "17461fd72979d3e228a6b4edc0cbccf816815701172457684a42d32a0ff2a9e7",
+      "shape": [
+        660,
+        610
+      ]
+    },
+    "peeq_raw.npy": {
+      "sha256": "7c7a72b54228c7b260c1e1218725fc767aae4110f2e0f41ea21b780e9d2b7061",
+      "shape": [
+        660,
+        610
+      ]
+    }
+  },
+  "schema_version": 1,
+  "software": {
+    "git": {
+      "commit": "659c05bea52af372713dff9f9f10a2da5c1bcc9e",
+      "dirty": false
+    },
+    "name": "kinematics-driven-316l-strain-reconstruction",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "version": "0.1.0"
+  },
+  "spacing": {
+    "pixel_size_um": 1.84,
+    "spacing_x_mm": 0.00184,
+    "spacing_y_mm": 0.00184
+  }
+}

@@ -139,7 +139,7 @@ and the largest length suppresses every FEM value above the DIC 90th
 percentile threshold. The more balanced absolute-threshold overlap occurs at
 \(14.72\,\mu\mathrm m\).
 
-The allowed conclusion is therefore:
+The initial implementation-partition conclusion was therefore:
 
 > **The spatial-width hypothesis is partially supported on this exploratory
 > partition.**
@@ -151,4 +151,42 @@ partitions.
 
 The complete fields, metrics, figures, hashes, and reports are preserved in
 `validation/reference_data/nonlocality_helmholtz_article_p0000_v1`.
+
+## Pre-registered selection and confirmation
+
+Partition 0 was subsequently excluded from length selection because it is not
+representative of the agreement visible in the published figures. Partition
+48 was declared as the selection region before its in-house solve. On P48,
+`58.88 µm` improves all three primary pre-registered spatial metrics:
+
+| Metric | Raw P48 | Filtered P48 |
+|---|---:|---:|
+| Pearson correlation | `0.29828` | `0.61597` |
+| top-10% IoU | `0.15984` | `0.28224` |
+| DIC-q90 absolute-threshold IoU | `0.16757` | `0.30852` |
+| relative L2 | `0.80956` | `0.28649` |
+
+The candidate was then frozen and applied without adjustment to partition 42,
+which had been declared as held out before P48 was calculated:
+
+| Metric | Raw P42 | Filtered P42 |
+|---|---:|---:|
+| Pearson correlation | `0.40068` | `0.70360` |
+| top-10% IoU | `0.13340` | `0.27594` |
+| DIC-q90 absolute-threshold IoU | `0.17735` | `0.25726` |
+| relative L2 | `0.80047` | `0.27669` |
+
+All automatic confirmatory thresholds pass. The filtered q90 active fraction
+is `7.74%`, inside the pre-declared `[5%,20%]` anti-collapse interval for the
+10% DIC reference.
+
+The stage-1 conclusion is now:
+
+> **The spatial-width hypothesis is supported.**
+
+The same candidate improves amplitude and localization metrics on the
+selection and held-out partitions. This does not identify a material internal
+length: `58.88 µm` is still the upper boundary of the original sweep, only one
+held-out partition has been tested, and the mechanical solution remains
+strictly local and unchanged.
 

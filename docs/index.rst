@@ -93,10 +93,12 @@ Validated state
    The **510 × 460-element** corner partition has converged with the analytical
    MFront law in **10 min 50.08 s**, over 20 increments without a cutback. All
    six fields, logs, hashes, and control maps are preserved. The complete
-   11.16-million-element ROI has not yet been stitched. On this saved
-   partition, a Helmholtz width sweep reduces the retained-core equivalent-
-   strain RMSE by **49.45%**, but the weak final spatial correlation and peak
-   attenuation support only a partial, exploratory conclusion.
+   11.16-million-element ROI has not yet been stitched. A later pre-registered
+   Helmholtz campaign selects **58.88 µm** on representative partition 48 and
+   applies it unchanged to held-out partition 42. Relative L2 falls by
+   **64.61%** and **65.43%**, while correlation rises to **0.616** and
+   **0.704**. Stage 1 therefore supports a spatial-width contribution without
+   identifying a material internal length.
 
 Start here
 ----------

@@ -10,8 +10,9 @@ loi J2 tridimensionnelle condensée localement en contraintes planes et validée
 contre le backend MFront natif, les trois backends mesurés sur un crop DIC
 100×100 avec neuf exécutions intégralement sauvegardées, interface prête à
 recevoir une loi 3D ; diagnostic de largeur spatiale par filtre de Helmholtz
-implémenté et exécuté sur la partition article sauvegardée, avec hypothèse
-partiellement soutenue mais aucune longueur matérielle identifiée ;
+implémenté avec sélection pré-enregistrée sur P48 et confirmation sans
+ajustement sur P42, avec hypothèse de largeur spatiale soutenue mais aucune
+longueur matérielle identifiée ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -418,6 +419,20 @@ gain de corrélation `>=0,05`, réduction L2 relative `>=5 %`, gain d'IoU top-10
 d'IoU doit être `>=0,02` et l'aire active filtrée rester entre 5 % et 20 %.
 Voir `validation/nonlocality_p42_confirmation_preregistration.md`.
 
+**Résultat confirmatoire P42 :** le calcul MFront converge sur 402 600
+éléments en `1484,55 s` de temps processus, 20/20 incréments et zéro cutback.
+Sans aucun ajustement de longueur, `58,88 µm` passe tous les seuils :
+corrélation `0,4007 → 0,7036`, réduction L2 `65,43 %`, IoU top-10 %
+`0,1334 → 0,2759`, IoU au seuil DIC 90 % `0,1774 → 0,2573`, et aire active
+q90 `7,74 %` dans la plage pré-déclarée `[5 %,20 %]`.
+
+**Conclusion de l'étape 1 : hypothèse de largeur spatiale soutenue.** Le même
+candidat améliore les métriques d'amplitude et de localisation sur la
+partition de sélection P48 et sur la partition P42 tenue à l'écart. Cette
+conclusion ne transforme pas `58,88 µm` en longueur interne matérielle : le
+point reste la borne supérieure du balayage et une seule partition de
+confirmation est disponible.
+
 **Critère de sortie :** un résultat FEM sauvegardé peut faire l'objet d'une
 campagne de largeur spatiale traçable sans modifier le calcul mécanique, et le
 rapport sépare faits numériques, sélection diagnostique et interprétation
@@ -694,9 +709,9 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 
 - [x] PyPardiso/MKL utilisé et vérifié
 - [~] Temps et mémoire mesurés : 10k, 50k et 100k terminés ; 350k reporté
-- [~] Cas de production compatible avec la machine cible : une partition de
-  coin de 234 600 éléments a convergé en 18 min 08 s avec 3,59 GiB de pic RSS ;
-  les partitions intérieures plus grandes restent à dimensionner
+- [x] Cas de production compatible avec la machine cible : les partitions
+  intérieures P48 et P42 de 402 600 éléments ont convergé en 22 min 16 s et
+  24 min 45 s, avec respectivement 7,51 GiB et 7,71 GiB de pic RSS
 - [x] Traitement hors mémoire du ROI complet
 - [~] Absence de régression de performance supérieure au seuil défini :
   comparaison A/B disponible, seuil global encore à ratifier
@@ -713,10 +728,10 @@ de plugins pour des éléments ou matériaux non prévus n'est demandé.
 | Axe | Note | Justification principale |
 |---|---:|---|
 | Noyau numérique | 4,5/5 | Cas fermés, tangente, cutback, réactions et cisaillement testés |
-| Validation scientifique | 3,5/5 | Une partition article et un diagnostic Helmholtz complet sont archivés ; l'accord s'améliore mais la confirmation hors sélection et le ROI raccordé manquent |
+| Validation scientifique | 4,0/5 | Sélection P48 et confirmation P42 pré-enregistrées et archivées ; la même longueur améliore amplitude et localisation, mais le ROI raccordé et la comparaison Abaqus globale manquent |
 | Ingénierie logicielle | 4,5/5 | API typée, modules séparés, CI, 230 tests, revue documentée |
 | Reproductibilité | 4,5/5 | Données LFS, préparation atomique, manifestes et smoke test DIC réel |
-| Performance | 4,0/5 | 10k–100k mesurés et partition article de 234,6k exécutée ; plus grande partition intérieure non mesurée |
+| Performance | 4,0/5 | 10k–100k mesurés ; deux partitions intérieures de 402,6k exécutées avec temps et mémoire archivés |
 | Documentation | 4,5/5 | Site Sphinx anglais structuré avec Diátaxis, PDF, contrats, API et figures vectorielles reproductibles ; revue externe encore requise |
 
 Les notes ne doivent pas être relevées artificiellement par des cas
@@ -856,6 +871,10 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-25 | Workflow de diagnostic non local | Cas synthétique, padding, seuils et non-régression `ell=0` | Sélection cohérente et sorties atomiques | Réussi |
 | 2026-07-25 | Campagne Helmholtz partition article 0 | `0–58,88 µm`, cœur `360×310`, padding 150 | RMSE/L2 `-49,45 %`, hypothèse partiellement soutenue | Réussi |
 | 2026-07-25 | Suite après diagnostic Helmholtz | Ruff, mypy et MGIS/MFront réel | 230 tests | Réussi |
+| 2026-07-25 | Calcul MFront partition de sélection P48 | 402 600 éléments, padding 150, 20 incréments | `1335,97 s`, `7 869 356 KiB`, zéro cutback | Réussi |
+| 2026-07-25 | Sélection Helmholtz P48 | Balayage pré-enregistré `0–58,88 µm` | Corrélation `0,2983→0,6160`, IoU top-10 `0,1598→0,2822` | Réussi |
+| 2026-07-25 | Calcul MFront confirmation P42 | 402 600 éléments, padding 150, 20 incréments | `1484,55 s`, `8 079 896 KiB`, zéro cutback | Réussi |
+| 2026-07-25 | Confirmation Helmholtz tenue à l'écart P42 | `ell=58,88 µm` sans ajustement, seuils pré-déclarés | Corrélation `0,4007→0,7036`, tous critères réussis | Réussi |
 
 ## 14. Journal des mises à jour
 
@@ -1339,3 +1358,24 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   sur cette partition exploratoire », sans identification de longueur matériau
 - Validation complète avec MGIS/MFront réel : 230 tests réussis ; Ruff et mypy
   sans défaut
+
+### 2026-07-25 — Sélection P48 et confirmation tenue à l'écart P42
+
+- Pré-enregistrement de P48 comme unique partition de sélection avant calcul
+- Convergence de P48 sur 402 600 éléments en 22 min 16 s de processus, zéro
+  cutback et 7,51 GiB de RSS maximal
+- Sélection commune de `58,88 µm` par corrélation, IoU top-10 et seuils
+  absolus DIC
+- Réduction de `64,61 %` de RMSE/L2 sur P48 et corrélation finale `0,6160`
+- Pré-enregistrement de P42 comme partition tenue à l'écart avec longueur et
+  seuils figés
+- Conservation d'une première tentative P42 interrompue par un SIGTERM externe
+  avant toute écriture partielle
+- Relance P42 inchangée dans une unité utilisateur isolée, puis convergence en
+  24 min 45 s, zéro cutback et 7,71 GiB de RSS maximal
+- Réussite de tous les seuils confirmatoires sur P42 : corrélation finale
+  `0,7036`, réduction L2 `65,43 %`, gains d'IoU quantile et absolu
+- Conclusion d'étape 1 relevée à « hypothèse de largeur spatiale soutenue »,
+  sans interprétation de `58,88 µm` comme longueur interne matérielle
+- Sauvegarde exhaustive des deux calculs mécaniques, champs filtrés, figures,
+  journaux, rapports, seuils et empreintes

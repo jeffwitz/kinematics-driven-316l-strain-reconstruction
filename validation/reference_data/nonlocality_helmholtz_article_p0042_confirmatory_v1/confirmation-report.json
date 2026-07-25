@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "selection_partition_id": 48,
+  "confirmation_partition_id": 42,
+  "preregistration": "validation/nonlocality_p42_confirmation_preregistration.md",
+  "source_metrics_csv_sha256": "34509fd4cc3dd75220849834c615205950d6747a07b1d3b0e06639dd42343284",
+  "tested_length": {
+    "mm": 0.05888,
+    "um": 58.88,
+    "pixels": 32.0,
+    "changed_after_selection": false
+  },
+  "baseline": {
+    "rmse": 0.0026676688914602,
+    "relative_l2": 0.8004654780171553,
+    "pearson": 0.4006801198161794,
+    "iou_top_10pct": 0.1333976539887269,
+    "iou_dic_q_90pct": 0.1773522064945878,
+    "predicted_active_fraction_dic_q_90pct": 0.2040860215053763,
+    "dic_active_fraction_dic_q_90pct": 0.1
+  },
+  "filtered": {
+    "rmse": 0.0009220946453342,
+    "relative_l2": 0.2766853612970409,
+    "pearson": 0.70360253379006,
+    "iou_top_10pct": 0.2759389470073743,
+    "iou_dic_q_90pct": 0.2572571936733786,
+    "predicted_active_fraction_dic_q_90pct": 0.0773566308243727,
+    "dic_active_fraction_dic_q_90pct": 0.1,
+    "std_ratio": 0.4005285476001421,
+    "peak_ratio": 0.135807105042372,
+    "padding_to_length_ratio": 4.6875
+  },
+  "gains": {
+    "rmse_reduction_fraction": 0.654344417222831,
+    "relative_l2_reduction_fraction": 0.6543444172228111,
+    "pearson_gain": 0.3029224139738806,
+    "iou_top_10pct_gain": 0.1425412930186474,
+    "iou_dic_q_90pct_gain": 0.07990498717879083
+  },
+  "automatic_thresholds_passed": true,
+  "absolute_q90_requirements": {
+    "minimum_iou_gain": 0.02,
+    "minimum_active_fraction": 0.05,
+    "maximum_active_fraction": 0.2,
+    "passed": true
+  },
+  "all_preregistered_requirements_passed": true,
+  "identified_material_length": null,
+  "mechanical_solution_modified": false,
+  "stage_conclusion": "spatial_width_hypothesis_supported",
+  "interpretation": "The P48 candidate transfers unchanged to held-out P42 and improves amplitude, correlation, equal-fraction localization, and absolute-threshold localization. This supports the spatial-width hypothesis for stage 1 but does not identify a material internal length."
+}
+
