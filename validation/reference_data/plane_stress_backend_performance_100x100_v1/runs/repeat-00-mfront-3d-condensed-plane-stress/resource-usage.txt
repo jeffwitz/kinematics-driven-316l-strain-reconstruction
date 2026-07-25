@@ -1,0 +1,5 @@
+wall_seconds=83.43
+user_seconds=135.74
+system_seconds=1.15
+maximum_resident_set_kib=326552
+exit_status=0

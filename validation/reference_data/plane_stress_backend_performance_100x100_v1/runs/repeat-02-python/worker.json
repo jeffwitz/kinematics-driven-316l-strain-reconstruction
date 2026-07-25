@@ -1,0 +1,77 @@
+{
+  "backend": "python",
+  "configuration": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 100,
+      "ny": 100,
+      "scale_factor": 1.84
+    },
+    "solver": {
+      "constitutive_backend": "python",
+      "hardening_mode": "ludwik",
+      "increments": 20,
+      "local_plane_stress_relative_tolerance": 1e-10,
+      "local_plane_stress_tolerance_mpa": 1e-08,
+      "max_newton_iterations": 25,
+      "maximum_cbb_condition_number": 1000000000000.0,
+      "maximum_local_plane_stress_iterations": 15,
+      "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+      "mfront_threads": 2,
+      "minimum_step_divisor": 1024,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-07
+    }
+  },
+  "diagnostics": {
+    "attempted_increments": 20,
+    "backend": "pypardiso (MKL, multithreaded); constitutive=python-j2-plane-stress",
+    "constitutive_seconds": 99.50092673883773,
+    "converged_increments": 20,
+    "cutbacks": 0,
+    "elapsed_seconds": 133.31178934080526,
+    "elastic_assembly_seconds": 0.0390071040019393,
+    "final_convergence_criterion": "relative_residual",
+    "final_relative_residual": 7.92575978626211e-08,
+    "final_residual_norm": 3.3905829005428834e-08,
+    "initialization_seconds": 0.012469385983422399,
+    "linear_solve_seconds": 16.06668081902899,
+    "local_plane_stress_failures": 0,
+    "maximum_cbb_condition_number": 0.0,
+    "maximum_gauss_point_plane_stress_residual_mpa": 0.0,
+    "maximum_local_plane_stress_iterations": 0,
+    "maximum_newton_iterations": 17,
+    "mean_local_plane_stress_iterations": 0.0,
+    "output_seconds": 0.032292853109538555,
+    "tangent_assembly_seconds": 14.349186280509457,
+    "tensor_reconstruction_source": "j2_isotropic_analytical",
+    "total_newton_iterations": 183
+  },
+  "fields": {
+    "filename": "fields.npz",
+    "names": [
+      "U",
+      "S",
+      "E",
+      "PE",
+      "PEEQ",
+      "RF",
+      "S_3D",
+      "E_3D",
+      "EE_3D",
+      "PE_3D",
+      "PLANE_STRESS_RESIDUAL_MPA",
+      "S33_RESIDUAL_MPA"
+    ],
+    "sha256": "7c6e0d0d605a82cc32444be1b180dbec166199747475cb9e3b11d0b74e8e628e"
+  },
+  "repeat": 2
+}

@@ -1,0 +1,57 @@
+{
+  "crop_element_bounds": {
+    "x": [
+      1750,
+      1850
+    ],
+    "y": [
+      1500,
+      1600
+    ]
+  },
+  "crop_element_shape": [
+    100,
+    100
+  ],
+  "files": {
+    "displacement_x_mm": {
+      "filename": "displacement_x_mm.npy",
+      "sha256": "8f87d2db9d8eea0c4f911507f0c6ce6248b597101468e694f53f767ad5041037",
+      "shape": [
+        101,
+        101
+      ]
+    },
+    "displacement_y_mm": {
+      "filename": "displacement_y_mm.npy",
+      "sha256": "9153dd4131b2cb9044ad26c7f1a2089eecb49d9883001a527409bbba6558124a",
+      "shape": [
+        101,
+        101
+      ]
+    },
+    "hardening_coefficient_mpa": {
+      "filename": "hardening_coefficient_mpa.npy",
+      "sha256": "e4a2cda1300cc6119756f6849986ba0c87eaa15b2b9c95aba0429f0bbb409cee",
+      "shape": [
+        100,
+        100
+      ]
+    },
+    "yield_stress_mpa": {
+      "filename": "yield_stress_mpa.npy",
+      "sha256": "1bb4f2929a5e78fc0d95201733a23004c794747a665e2737ca3c702339482c97",
+      "shape": [
+        100,
+        100
+      ]
+    }
+  },
+  "schema_version": 1,
+  "source_directory": "data/processed/case_study",
+  "source_element_shape": [
+    3600,
+    3100
+  ],
+  "source_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+}

@@ -1,0 +1,77 @@
+{
+  "backend": "mfront-native-plane-stress",
+  "configuration": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 100,
+      "ny": 100,
+      "scale_factor": 1.84
+    },
+    "solver": {
+      "constitutive_backend": "mfront-native-plane-stress",
+      "hardening_mode": "ludwik",
+      "increments": 20,
+      "local_plane_stress_relative_tolerance": 1e-10,
+      "local_plane_stress_tolerance_mpa": 1e-08,
+      "max_newton_iterations": 25,
+      "maximum_cbb_condition_number": 1000000000000.0,
+      "maximum_local_plane_stress_iterations": 15,
+      "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+      "mfront_threads": 2,
+      "minimum_step_divisor": 1024,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-07
+    }
+  },
+  "diagnostics": {
+    "attempted_increments": 20,
+    "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-native-plane-stress",
+    "constitutive_seconds": 9.517068419605494,
+    "converged_increments": 20,
+    "cutbacks": 0,
+    "elapsed_seconds": 25.885793671011925,
+    "elastic_assembly_seconds": 0.04143374599516392,
+    "final_convergence_criterion": "relative_residual",
+    "final_relative_residual": 5.334092667750552e-10,
+    "final_residual_norm": 2.28242131023459e-10,
+    "initialization_seconds": 0.04050557594746351,
+    "linear_solve_seconds": 8.208123916294426,
+    "local_plane_stress_failures": 0,
+    "maximum_cbb_condition_number": 0.0,
+    "maximum_gauss_point_plane_stress_residual_mpa": 9.10667885424793e-14,
+    "maximum_local_plane_stress_iterations": 0,
+    "maximum_newton_iterations": 5,
+    "mean_local_plane_stress_iterations": 0.0,
+    "output_seconds": 0.030971158994361758,
+    "tangent_assembly_seconds": 6.329548690002412,
+    "tensor_reconstruction_source": "mfront_native_plane_stress",
+    "total_newton_iterations": 93
+  },
+  "fields": {
+    "filename": "fields.npz",
+    "names": [
+      "U",
+      "S",
+      "E",
+      "PE",
+      "PEEQ",
+      "RF",
+      "S_3D",
+      "E_3D",
+      "EE_3D",
+      "PE_3D",
+      "PLANE_STRESS_RESIDUAL_MPA",
+      "S33_RESIDUAL_MPA"
+    ],
+    "sha256": "0ef51d242c4891f273270e221dd02e25ba7fc99a6c2a11045ce3665d1c4959ef"
+  },
+  "repeat": 0
+}

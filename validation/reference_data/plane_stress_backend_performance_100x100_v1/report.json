@@ -1,0 +1,1096 @@
+{
+  "backends": [
+    "python",
+    "mfront-native-plane-stress",
+    "mfront-3d-condensed-plane-stress"
+  ],
+  "checks": {
+    "convergence_passed": true,
+    "parity_passed": true
+  },
+  "comparison_against_mfront_native": {
+    "mfront-3d-condensed-plane-stress": {
+      "E": {
+        "maximum_absolute_error": 3.1973867997692196e-12,
+        "relative_l2": 1.529605966674324e-10,
+        "relative_linf": 1.9035481237906077e-10
+      },
+      "EE_3D": {
+        "maximum_absolute_error": 1.213031845109791e-12,
+        "relative_l2": 7.250701680987756e-11,
+        "relative_linf": 6.444197055772497e-10
+      },
+      "E_3D": {
+        "maximum_absolute_error": 4.456250581215404e-12,
+        "relative_l2": 2.109772600510577e-10,
+        "relative_linf": 5.203927883777213e-10
+      },
+      "PE": {
+        "maximum_absolute_error": 3.2673811573014078e-12,
+        "relative_l2": 2.903373443662599e-10,
+        "relative_linf": 2.0209639485883054e-10
+      },
+      "PEEQ": {
+        "maximum_absolute_error": 2.4273734064439445e-12,
+        "relative_l2": 2.3820801550586706e-10,
+        "relative_linf": 1.9320380970228126e-10
+      },
+      "PE_3D": {
+        "maximum_absolute_error": 4.803027875595334e-12,
+        "relative_l2": 4.1590005539216247e-10,
+        "relative_linf": 5.850138078584147e-10
+      },
+      "RF": {
+        "maximum_absolute_error": 1.9961121644485047e-10,
+        "relative_l2": 9.353513570744298e-11,
+        "relative_linf": 4.789900332182735e-10
+      },
+      "S": {
+        "maximum_absolute_error": 2.306775002125505e-07,
+        "relative_l2": 9.21042159286556e-11,
+        "relative_linf": 6.553263945517132e-10
+      },
+      "S_3D": {
+        "maximum_absolute_error": 2.306775002125505e-07,
+        "relative_l2": 8.906383591067264e-11,
+        "relative_linf": 6.553263945517132e-10
+      },
+      "U": {
+        "maximum_absolute_error": 9.17061565575139e-15,
+        "relative_l2": 2.370443893345949e-14,
+        "relative_linf": 1.281516123785389e-13
+      }
+    },
+    "python": {
+      "E": {
+        "maximum_absolute_error": 4.4705141505341217e-07,
+        "relative_l2": 2.5942116721853554e-05,
+        "relative_linf": 2.6614980784441882e-05
+      },
+      "EE_3D": {
+        "maximum_absolute_error": 3.526421300615928e-07,
+        "relative_l2": 3.606909809443568e-05,
+        "relative_linf": 0.00018734012511259138
+      },
+      "E_3D": {
+        "maximum_absolute_error": 3.0098839903791585e-07,
+        "relative_l2": 2.7221781615131805e-05,
+        "relative_linf": 3.514887446072819e-05
+      },
+      "PE": {
+        "maximum_absolute_error": 6.036713776746178e-07,
+        "relative_l2": 6.647122190025548e-05,
+        "relative_linf": 3.733871355500677e-05
+      },
+      "PEEQ": {
+        "maximum_absolute_error": 4.7593876267040717e-07,
+        "relative_l2": 6.997687261356845e-05,
+        "relative_linf": 3.788176219151309e-05
+      },
+      "PE_3D": {
+        "maximum_absolute_error": 4.4233816890169627e-07,
+        "relative_l2": 7.125961873879534e-05,
+        "relative_linf": 5.387725061208914e-05
+      },
+      "RF": {
+        "maximum_absolute_error": 8.820145795868095e-05,
+        "relative_l2": 5.394091829800885e-05,
+        "relative_linf": 0.00021164952566280818
+      },
+      "S": {
+        "maximum_absolute_error": 0.0676315246149386,
+        "relative_l2": 4.1845573891718744e-05,
+        "relative_linf": 0.00019213283975725947
+      },
+      "S_3D": {
+        "maximum_absolute_error": 0.0676315246149386,
+        "relative_l2": 4.003296714304757e-05,
+        "relative_linf": 0.00019213283975725947
+      },
+      "U": {
+        "maximum_absolute_error": 2.1213974327194407e-09,
+        "relative_l2": 7.983552364554836e-09,
+        "relative_linf": 2.964473833642683e-08
+      }
+    }
+  },
+  "created_at_utc": "2026-07-25T00:02:13.376761+00:00",
+  "environment": {
+    "cpu_model": "Intel(R) Core(TM) Ultra 5 228V",
+    "logical_cpu_count": 8,
+    "numpy": "2.4.4",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "git_commit": "a79d32b4911aa27019174cf3b754e00cd675dc0e",
+  "increments": 20,
+  "input": {
+    "crop_element_bounds": {
+      "x": [
+        1750,
+        1850
+      ],
+      "y": [
+        1500,
+        1600
+      ]
+    },
+    "crop_element_shape": [
+      100,
+      100
+    ],
+    "files": {
+      "displacement_x_mm": {
+        "filename": "displacement_x_mm.npy",
+        "sha256": "8f87d2db9d8eea0c4f911507f0c6ce6248b597101468e694f53f767ad5041037",
+        "shape": [
+          101,
+          101
+        ]
+      },
+      "displacement_y_mm": {
+        "filename": "displacement_y_mm.npy",
+        "sha256": "9153dd4131b2cb9044ad26c7f1a2089eecb49d9883001a527409bbba6558124a",
+        "shape": [
+          101,
+          101
+        ]
+      },
+      "hardening_coefficient_mpa": {
+        "filename": "hardening_coefficient_mpa.npy",
+        "sha256": "e4a2cda1300cc6119756f6849986ba0c87eaa15b2b9c95aba0429f0bbb409cee",
+        "shape": [
+          100,
+          100
+        ]
+      },
+      "yield_stress_mpa": {
+        "filename": "yield_stress_mpa.npy",
+        "sha256": "1bb4f2929a5e78fc0d95201733a23004c794747a665e2737ca3c702339482c97",
+        "shape": [
+          100,
+          100
+        ]
+      }
+    },
+    "schema_version": 1,
+    "source_directory": "data/processed/case_study",
+    "source_element_shape": [
+      3600,
+      3100
+    ],
+    "source_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "linear_threads": 2,
+  "max_newton_iterations": 25,
+  "maximum_plane_stress_residual_mpa": {
+    "mfront-3d-condensed-plane-stress": 2.0619284251630088e-08,
+    "mfront-native-plane-stress": 2.62213207355642e-14,
+    "python": 0.0
+  },
+  "mfront_library": {
+    "path": "build/mfront/src/libBehaviour.so",
+    "sha256": "bad769e3db0b9f810c10f8ef6717263cbcdcc87e9f82f2a58823c594321ed031"
+  },
+  "mfront_threads": 2,
+  "orders": [
+    [
+      "python",
+      "mfront-native-plane-stress",
+      "mfront-3d-condensed-plane-stress"
+    ],
+    [
+      "mfront-3d-condensed-plane-stress",
+      "mfront-native-plane-stress",
+      "python"
+    ],
+    [
+      "mfront-native-plane-stress",
+      "mfront-3d-condensed-plane-stress",
+      "python"
+    ]
+  ],
+  "passed": true,
+  "ratios": {
+    "mfront-3d-condensed-plane-stress": {
+      "constitutive_time_vs_native": 6.875548427402905,
+      "peak_rss_vs_native": 1.1878141704451624,
+      "process_wall_vs_native": 3.086570477247503,
+      "solver_time_vs_native": 3.1794026859630247
+    },
+    "mfront-native-plane-stress": {
+      "constitutive_time_vs_native": 1.0,
+      "peak_rss_vs_native": 1.0,
+      "process_wall_vs_native": 1.0,
+      "solver_time_vs_native": 1.0
+    },
+    "python": {
+      "constitutive_time_vs_native": 10.436605165315818,
+      "peak_rss_vs_native": 0.9232808448378265,
+      "process_wall_vs_native": 4.970773214946356,
+      "solver_time_vs_native": 5.149998143193646
+    }
+  },
+  "raw_runs": {
+    "mfront-3d-condensed-plane-stress": [
+      {
+        "backend": "mfront-3d-condensed-plane-stress",
+        "repeat": 0,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 326552,
+          "system_seconds": 1.15,
+          "user_seconds": 135.74,
+          "wall_seconds": 83.43
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "mfront-3d-condensed-plane-stress",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "mfront-3d-condensed-plane-stress",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-3d-condensed-plane-stress",
+            "constitutive_seconds": 65.4350648059044,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 82.30136192589998,
+            "elastic_assembly_seconds": 0.05268740491010249,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 5.399298199889373e-10,
+            "final_residual_norm": 2.310322306928675e-10,
+            "initialization_seconds": 0.04972824198193848,
+            "linear_solve_seconds": 8.302901973482221,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 3.984438789383338,
+            "maximum_gauss_point_plane_stress_residual_mpa": 3.74510030578933e-08,
+            "maximum_local_plane_stress_iterations": 4,
+            "maximum_newton_iterations": 5,
+            "mean_local_plane_stress_iterations": 2.630830376344086,
+            "output_seconds": 0.04003455489873886,
+            "tangent_assembly_seconds": 6.5950254537165165,
+            "tensor_reconstruction_source": "mfront_3d_local_condensation",
+            "total_newton_iterations": 93
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "fd51fe055808ad6c86ed18980398f417d641d2b24ddb97e1c356c7220b376c71"
+          },
+          "repeat": 0
+        }
+      },
+      {
+        "backend": "mfront-3d-condensed-plane-stress",
+        "repeat": 1,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 327984,
+          "system_seconds": 1.24,
+          "user_seconds": 138.58,
+          "wall_seconds": 85.62
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "mfront-3d-condensed-plane-stress",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "mfront-3d-condensed-plane-stress",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-3d-condensed-plane-stress",
+            "constitutive_seconds": 67.34768678038381,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 84.56814167206176,
+            "elastic_assembly_seconds": 0.04446215694770217,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 5.322738350481062e-10,
+            "final_residual_norm": 2.277562877586921e-10,
+            "initialization_seconds": 0.048389733070507646,
+            "linear_solve_seconds": 8.478628009790555,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 3.9844387893826827,
+            "maximum_gauss_point_plane_stress_residual_mpa": 3.745104283516932e-08,
+            "maximum_local_plane_stress_iterations": 4,
+            "maximum_newton_iterations": 5,
+            "mean_local_plane_stress_iterations": 2.630830376344086,
+            "output_seconds": 0.031928311102092266,
+            "tangent_assembly_seconds": 6.652244449825957,
+            "tensor_reconstruction_source": "mfront_3d_local_condensation",
+            "total_newton_iterations": 93
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "6b277926432e53f34624fb0d327468dcb43e75309f1a9e6ace22716976925673"
+          },
+          "repeat": 1
+        }
+      },
+      {
+        "backend": "mfront-3d-condensed-plane-stress",
+        "repeat": 2,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 329152,
+          "system_seconds": 1.14,
+          "user_seconds": 131.67,
+          "wall_seconds": 79.99
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "mfront-3d-condensed-plane-stress",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "mfront-3d-condensed-plane-stress",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-3d-condensed-plane-stress",
+            "constitutive_seconds": 62.531319139990956,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 78.93049431988038,
+            "elastic_assembly_seconds": 0.04378348705358803,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 5.364803620890821e-10,
+            "final_residual_norm": 2.295562315476544e-10,
+            "initialization_seconds": 0.044143036007881165,
+            "linear_solve_seconds": 8.086499302182347,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 3.9844387893852544,
+            "maximum_gauss_point_plane_stress_residual_mpa": 3.7451010163320657e-08,
+            "maximum_local_plane_stress_iterations": 4,
+            "maximum_newton_iterations": 5,
+            "mean_local_plane_stress_iterations": 2.630830376344086,
+            "output_seconds": 0.03255765722133219,
+            "tangent_assembly_seconds": 6.393526017665863,
+            "tensor_reconstruction_source": "mfront_3d_local_condensation",
+            "total_newton_iterations": 93
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "07f6452ddb6cd6b0660b29b787ab6e05894b7a34ab57d8355c677a46f68e9fd3"
+          },
+          "repeat": 2
+        }
+      }
+    ],
+    "mfront-native-plane-stress": [
+      {
+        "backend": "mfront-native-plane-stress",
+        "repeat": 0,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 275516,
+          "system_seconds": 1.17,
+          "user_seconds": 54.8,
+          "wall_seconds": 27.03
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "mfront-native-plane-stress",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "mfront-native-plane-stress",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-native-plane-stress",
+            "constitutive_seconds": 9.517068419605494,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 25.885793671011925,
+            "elastic_assembly_seconds": 0.04143374599516392,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 5.334092667750552e-10,
+            "final_residual_norm": 2.28242131023459e-10,
+            "initialization_seconds": 0.04050557594746351,
+            "linear_solve_seconds": 8.208123916294426,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 0.0,
+            "maximum_gauss_point_plane_stress_residual_mpa": 9.10667885424793e-14,
+            "maximum_local_plane_stress_iterations": 0,
+            "maximum_newton_iterations": 5,
+            "mean_local_plane_stress_iterations": 0.0,
+            "output_seconds": 0.030971158994361758,
+            "tangent_assembly_seconds": 6.329548690002412,
+            "tensor_reconstruction_source": "mfront_native_plane_stress",
+            "total_newton_iterations": 93
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "0ef51d242c4891f273270e221dd02e25ba7fc99a6c2a11045ce3665d1c4959ef"
+          },
+          "repeat": 0
+        }
+      },
+      {
+        "backend": "mfront-native-plane-stress",
+        "repeat": 1,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 276124,
+          "system_seconds": 1.07,
+          "user_seconds": 55.21,
+          "wall_seconds": 27.34
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "mfront-native-plane-stress",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "mfront-native-plane-stress",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-native-plane-stress",
+            "constitutive_seconds": 9.689108633901924,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 26.266519631026313,
+            "elastic_assembly_seconds": 0.0454429320525378,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 5.255724346522513e-10,
+            "final_residual_norm": 2.2488880483319305e-10,
+            "initialization_seconds": 0.04412398999556899,
+            "linear_solve_seconds": 8.18671158887446,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 0.0,
+            "maximum_gauss_point_plane_stress_residual_mpa": 6.071081610740082e-14,
+            "maximum_local_plane_stress_iterations": 0,
+            "maximum_newton_iterations": 5,
+            "mean_local_plane_stress_iterations": 0.0,
+            "output_seconds": 0.0334761890117079,
+            "tangent_assembly_seconds": 6.487726164981723,
+            "tensor_reconstruction_source": "mfront_native_plane_stress",
+            "total_newton_iterations": 93
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "2e674e6ded354db1db714f8b601543eb80d09c0f3bb8cff9dc901e53c99b9bd6"
+          },
+          "repeat": 1
+        }
+      },
+      {
+        "backend": "mfront-native-plane-stress",
+        "repeat": 2,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 277864,
+          "system_seconds": 0.98,
+          "user_seconds": 54.43,
+          "wall_seconds": 26.53
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "mfront-native-plane-stress",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "mfront-native-plane-stress",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=mfront-native-plane-stress",
+            "constitutive_seconds": 9.428977976553142,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 25.490441167959943,
+            "elastic_assembly_seconds": 0.04502248903736472,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 5.26592085245459e-10,
+            "final_residual_norm": 2.253251062607985e-10,
+            "initialization_seconds": 0.043165070936083794,
+            "linear_solve_seconds": 7.938221729360521,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 0.0,
+            "maximum_gauss_point_plane_stress_residual_mpa": 7.248993099494872e-14,
+            "maximum_local_plane_stress_iterations": 0,
+            "maximum_newton_iterations": 5,
+            "mean_local_plane_stress_iterations": 0.0,
+            "output_seconds": 0.03122126800008118,
+            "tangent_assembly_seconds": 6.218275437830016,
+            "tensor_reconstruction_source": "mfront_native_plane_stress",
+            "total_newton_iterations": 93
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "67bf09f39e9aa4e834244baac0b89fb6a9fd39ebfdce32ae25b652e64f231f06"
+          },
+          "repeat": 2
+        }
+      }
+    ],
+    "python": [
+      {
+        "backend": "python",
+        "repeat": 0,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 256340,
+          "system_seconds": 1.9,
+          "user_seconds": 179.7,
+          "wall_seconds": 133.01
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "python",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "python",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=python-j2-plane-stress",
+            "constitutive_seconds": 98.08169958880171,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 132.00884153693914,
+            "elastic_assembly_seconds": 0.039092158898711205,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 7.925781327384337e-08,
+            "final_residual_norm": 3.390592115682311e-08,
+            "initialization_seconds": 0.012391834985464811,
+            "linear_solve_seconds": 16.134571274509653,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 0.0,
+            "maximum_gauss_point_plane_stress_residual_mpa": 0.0,
+            "maximum_local_plane_stress_iterations": 0,
+            "maximum_newton_iterations": 17,
+            "mean_local_plane_stress_iterations": 0.0,
+            "output_seconds": 0.03232368407770991,
+            "tangent_assembly_seconds": 14.353461774997413,
+            "tensor_reconstruction_source": "j2_isotropic_analytical",
+            "total_newton_iterations": 183
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "21f1808283e8f6f050ca0fe59162091889491dbab8c43e4c1e378c013b95814a"
+          },
+          "repeat": 0
+        }
+      },
+      {
+        "backend": "python",
+        "repeat": 1,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 254564,
+          "system_seconds": 1.75,
+          "user_seconds": 181.61,
+          "wall_seconds": 134.55
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "python",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "python",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=python-j2-plane-stress",
+            "constitutive_seconds": 99.32588542671874,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 133.51183433295228,
+            "elastic_assembly_seconds": 0.04496274492703378,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 7.925702231424834e-08,
+            "final_residual_norm": 3.390558278996954e-08,
+            "initialization_seconds": 0.01522233197465539,
+            "linear_solve_seconds": 16.32399569172412,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 0.0,
+            "maximum_gauss_point_plane_stress_residual_mpa": 0.0,
+            "maximum_local_plane_stress_iterations": 0,
+            "maximum_newton_iterations": 17,
+            "mean_local_plane_stress_iterations": 0.0,
+            "output_seconds": 0.03189827292226255,
+            "tangent_assembly_seconds": 14.423253213753924,
+            "tensor_reconstruction_source": "j2_isotropic_analytical",
+            "total_newton_iterations": 183
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "6fe45162c25a1543b10ce39c3753f919bfbd4ac2fd989870c03d790caf966875"
+          },
+          "repeat": 1
+        }
+      },
+      {
+        "backend": "python",
+        "repeat": 2,
+        "resource": {
+          "exit_status": 0,
+          "maximum_resident_set_kib": 254940,
+          "system_seconds": 1.72,
+          "user_seconds": 181.23,
+          "wall_seconds": 134.36
+        },
+        "returncode": 0,
+        "worker": {
+          "backend": "python",
+          "configuration": {
+            "material": {
+              "first_positive_plastic_strain": 1e-06,
+              "hardening_exponent": 0.245,
+              "plastic_strain_max": 0.2,
+              "plastic_table_points": 1000,
+              "poisson_ratio": 0.3,
+              "young_modulus_mpa": 205000.0
+            },
+            "mesh": {
+              "base_pixel_size_mm": 0.001,
+              "nx": 100,
+              "ny": 100,
+              "scale_factor": 1.84
+            },
+            "solver": {
+              "constitutive_backend": "python",
+              "hardening_mode": "ludwik",
+              "increments": 20,
+              "local_plane_stress_relative_tolerance": 1e-10,
+              "local_plane_stress_tolerance_mpa": 1e-08,
+              "max_newton_iterations": 25,
+              "maximum_cbb_condition_number": 1000000000000.0,
+              "maximum_local_plane_stress_iterations": 15,
+              "mfront_library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+              "mfront_threads": 2,
+              "minimum_step_divisor": 1024,
+              "require_pypardiso": true,
+              "residual_tolerance": 1e-07
+            }
+          },
+          "diagnostics": {
+            "attempted_increments": 20,
+            "backend": "pypardiso (MKL, multithreaded); constitutive=python-j2-plane-stress",
+            "constitutive_seconds": 99.50092673883773,
+            "converged_increments": 20,
+            "cutbacks": 0,
+            "elapsed_seconds": 133.31178934080526,
+            "elastic_assembly_seconds": 0.0390071040019393,
+            "final_convergence_criterion": "relative_residual",
+            "final_relative_residual": 7.92575978626211e-08,
+            "final_residual_norm": 3.3905829005428834e-08,
+            "initialization_seconds": 0.012469385983422399,
+            "linear_solve_seconds": 16.06668081902899,
+            "local_plane_stress_failures": 0,
+            "maximum_cbb_condition_number": 0.0,
+            "maximum_gauss_point_plane_stress_residual_mpa": 0.0,
+            "maximum_local_plane_stress_iterations": 0,
+            "maximum_newton_iterations": 17,
+            "mean_local_plane_stress_iterations": 0.0,
+            "output_seconds": 0.032292853109538555,
+            "tangent_assembly_seconds": 14.349186280509457,
+            "tensor_reconstruction_source": "j2_isotropic_analytical",
+            "total_newton_iterations": 183
+          },
+          "fields": {
+            "filename": "fields.npz",
+            "names": [
+              "U",
+              "S",
+              "E",
+              "PE",
+              "PEEQ",
+              "RF",
+              "S_3D",
+              "E_3D",
+              "EE_3D",
+              "PE_3D",
+              "PLANE_STRESS_RESIDUAL_MPA",
+              "S33_RESIDUAL_MPA"
+            ],
+            "sha256": "7c6e0d0d605a82cc32444be1b180dbec166199747475cb9e3b11d0b74e8e628e"
+          },
+          "repeat": 2
+        }
+      }
+    ]
+  },
+  "relative_linf_limits": {
+    "E": 0.0005,
+    "EE_3D": 0.0005,
+    "E_3D": 0.0005,
+    "PE": 0.001,
+    "PEEQ": 0.001,
+    "PE_3D": 0.001,
+    "RF": 0.0005,
+    "S": 0.0005,
+    "S_3D": 0.0005,
+    "U": 1e-06
+  },
+  "repeats": 3,
+  "residual_tolerance": 1e-07,
+  "schema_version": 2,
+  "summary": {
+    "mfront-3d-condensed-plane-stress": {
+      "maximum_peak_rss_kib": 329152.0,
+      "maximum_peak_rss_mib": 321.4375,
+      "maximum_process_wall_seconds": 85.62,
+      "median_constitutive_seconds": 65.4350648059044,
+      "median_newton_iterations": 93.0,
+      "median_peak_rss_kib": 327984.0,
+      "median_peak_rss_mib": 320.296875,
+      "median_process_wall_seconds": 83.43,
+      "median_solver_seconds": 82.30136192589998,
+      "minimum_process_wall_seconds": 79.99
+    },
+    "mfront-native-plane-stress": {
+      "maximum_peak_rss_kib": 277864.0,
+      "maximum_peak_rss_mib": 271.3515625,
+      "maximum_process_wall_seconds": 27.34,
+      "median_constitutive_seconds": 9.517068419605494,
+      "median_newton_iterations": 93.0,
+      "median_peak_rss_kib": 276124.0,
+      "median_peak_rss_mib": 269.65234375,
+      "median_process_wall_seconds": 27.03,
+      "median_solver_seconds": 25.885793671011925,
+      "minimum_process_wall_seconds": 26.53
+    },
+    "python": {
+      "maximum_peak_rss_kib": 256340.0,
+      "maximum_peak_rss_mib": 250.33203125,
+      "maximum_process_wall_seconds": 134.55,
+      "median_constitutive_seconds": 99.32588542671874,
+      "median_newton_iterations": 183.0,
+      "median_peak_rss_kib": 254940.0,
+      "median_peak_rss_mib": 248.96484375,
+      "median_process_wall_seconds": 134.36,
+      "median_solver_seconds": 133.31178934080526,
+      "minimum_process_wall_seconds": 133.01
+    }
+  }
+}
