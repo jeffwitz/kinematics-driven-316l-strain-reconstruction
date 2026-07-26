@@ -1,1 +1,413 @@
-<TOO_LARGE>
+{
+  "schema_version": 2,
+  "current_conclusion": "The local finite-element baseline is numerically verified within its declared structured plane-stress scope, but it produces overly concentrated localization. A coupled micromorphic model introduces a spatial length and redistributes plasticity. Current reduced-fidelity evidence supports a length effect distinct from coupling strength, but no transferable material internal length has yet been identified.",
+  "claims": [
+    {
+      "question": "Finite-element discretization verified",
+      "status": "verified",
+      "boundary": "Structured small-strain plane-stress Q4 scope",
+      "evidence_ids": [
+        "E-FE-001"
+      ]
+    },
+    {
+      "question": "Historical Abaqus-oriented table definition implemented in InHouse/Table",
+      "status": "verified",
+      "boundary": "Constitutive table definition only; this is not an Abaqus mesh, boundary-condition or ODB parity claim",
+      "evidence_ids": [
+        "E-TABLE-001"
+      ]
+    },
+    {
+      "question": "Complete Abaqus model reproduced",
+      "status": "not demonstrated",
+      "boundary": "Original input model, ODB and extraction procedure are unavailable",
+      "evidence_ids": [
+        "E-TABLE-001"
+      ]
+    },
+    {
+      "question": "InHouse/Table and analytical MFront response coherent",
+      "status": "verified",
+      "boundary": "Declared material-point and finite-element tolerances below the table cap",
+      "evidence_ids": [
+        "E-LOCAL-001",
+        "E-LOCAL-002"
+      ]
+    },
+    {
+      "question": "Micromorphic interaction redistributes plasticity",
+      "status": "verified",
+      "boundary": "Converged band-containing reconstruction campaigns at fixed length",
+      "evidence_ids": [
+        "E-NL-002"
+      ]
+    },
+    {
+      "question": "Spatial length affects morphology independently of coupling strength",
+      "status": "supported",
+      "boundary": "Reduced-fidelity constant-Achi and fixed-alpha experiments; uncertainty envelopes and F2 transfer remain absent",
+      "evidence_ids": [
+        "E-ID-001"
+      ]
+    },
+    {
+      "question": "Hchi and ell statistically identified",
+      "status": "not demonstrated",
+      "boundary": "Short-length high-coupling region remains numerically censored",
+      "evidence_ids": [
+        "E-ID-001"
+      ]
+    },
+    {
+      "question": "Transferable material internal length identified",
+      "status": "not claimed",
+      "boundary": "Requires unchanged-parameter transfer to independent observations",
+      "evidence_ids": [
+        "E-ID-001"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E-FE-001",
+      "question": "Does the finite-element kernel satisfy its numerical contract?",
+      "fidelity": "unit and integration",
+      "parameters": "local baseline",
+      "status": "verified",
+      "conclusion": "Patch, material-point, tensor and nonlinear regression tests cover the supported Q4 plane-stress scope.",
+      "sources": [
+        {
+          "path": "tests",
+          "role": "test suite"
+        }
+      ]
+    },
+    {
+      "id": "E-TABLE-001",
+      "question": "What part of the historical Abaqus-oriented definition is reproduced?",
+      "fidelity": "constitutive definition",
+      "parameters": "1000-knot table, p <= 0.2, explicit clamp",
+      "status": "verified",
+      "conclusion": "InHouse/Table implements the available historical tabulated hardening definition. No complete Abaqus solve parity is inferred.",
+      "sources": [
+        {
+          "path": "src/fem_inhouse/core/constitutive.py",
+          "role": "implementation"
+        },
+        {
+          "path": "docs/archive/explanation/material_law.md",
+          "role": "historical contract"
+        }
+      ]
+    },
+    {
+      "id": "E-LOCAL-001",
+      "question": "Does analytical MFront reproduce InHouse/Table at material points?",
+      "fidelity": "material point",
+      "parameters": "three loading paths, 200 steps, below the historical cap",
+      "status": "verified",
+      "conclusion": "Stress and PEEQ differences remain within the pre-declared comparison thresholds.",
+      "sources": [
+        {
+          "path": "validation/reference_data/mfront_material_point_v1/report.json",
+          "role": "primary"
+        }
+      ],
+      "assertions": [
+        {
+          "source": "validation/reference_data/mfront_material_point_v1/report.json",
+          "path": "passed",
+          "operator": "equals",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "id": "E-LOCAL-002",
+      "question": "Do InHouse/Table and MFront produce coherent finite-element fields?",
+      "fidelity": "small DIC-driven FEM",
+      "parameters": "10 by 10 elements, 20 increments",
+      "status": "verified",
+      "conclusion": "All historical fields pass the declared relative error thresholds.",
+      "sources": [
+        {
+          "path": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+          "role": "primary"
+        }
+      ],
+      "assertions": [
+        {
+          "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+          "path": "passed",
+          "operator": "equals",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "id": "E-3D-001",
+      "question": "Can a three-dimensional law be condensed without changing the 2D solver?",
+      "fidelity": "small DIC-driven FEM",
+      "parameters": "native plane stress versus 3D condensation",
+      "status": "verified",
+      "conclusion": "Native and condensed MFront paths agree within numerical tolerances while the global finite-element problem remains two-dimensional.",
+      "sources": [
+        {
+          "path": "validation/reference_data/mfront_3d_condensed_dic_10x10_v1/report.json",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "id": "E-DIAG-001",
+      "question": "Does output-only spatial broadening improve DIC agreement?",
+      "fidelity": "saved full-resolution fields",
+      "parameters": "selection ROI and held-out ROI",
+      "status": "supported",
+      "conclusion": "A positive Helmholtz length improves amplitude and localization metrics on selection and held-out regions without modifying mechanics.",
+      "sources": [
+        {
+          "path": "validation/reference_data/nonlocality_helmholtz_article_p0042_confirmatory_v1/confirmation-report.json",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "id": "E-NL-002",
+      "question": "Does constitutive micromorphic coupling redistribute plastic localization?",
+      "fidelity": "full-resolution band-containing ROI",
+      "parameters": "fixed ell, alpha 0, 1, 2 and 4",
+      "status": "verified",
+      "conclusion": "Coupling strongly lowers concentrated PEEQ peaks while preserving most mean PEEQ; the raw mechanical EVM improves without post-filtering.",
+      "sources": [
+        {
+          "path": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "role": "metrics and figure provenance"
+        },
+        {
+          "path": "validation/nonlocal_p0043_validation_results.md",
+          "role": "campaign report"
+        }
+      ],
+      "assertions": [
+        {
+          "source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "path": "evm_post_filter_applied",
+          "operator": "equals",
+          "expected": false
+        },
+        {
+          "source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "path": "metrics.3.relative_l2_error",
+          "operator": "less_than_path",
+          "other_source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "other_path": "metrics.0.relative_l2_error",
+          "factor": 1.0
+        },
+        {
+          "source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "path": "peeq_statistics.3.maximum",
+          "operator": "less_than_path",
+          "other_source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "other_path": "peeq_statistics.0.maximum",
+          "factor": 0.25
+        },
+        {
+          "source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "path": "peeq_statistics.3.mean",
+          "operator": "greater_than_path",
+          "other_source": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
+          "other_path": "peeq_statistics.0.mean",
+          "factor": 0.8
+        }
+      ]
+    },
+    {
+      "id": "E-ID-001",
+      "question": "Can coupling strength and spatial length be separated?",
+      "fidelity": "F0 and F1",
+      "parameters": "23-point homogeneous Newton-25 design",
+      "status": "provisional",
+      "conclusion": "Versioned constant-Achi and fixed-alpha comparisons support an independent length effect, but two short-length points fail and no F2 confirmation or transfer has been performed.",
+      "sources": [
+        {
+          "path": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+          "role": "execution attestation"
+        },
+        {
+          "path": "docs/_static/joint_identification/joint_identification_constant_a_fields.svg",
+          "role": "constant-Achi field comparison"
+        },
+        {
+          "path": "docs/archive/explanation/joint_nonlocal_identification.md",
+          "role": "versioned interpretation"
+        }
+      ],
+      "assertions": [
+        {
+          "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+          "path": "execution.converged_points",
+          "operator": "equals",
+          "expected": 21
+        },
+        {
+          "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+          "path": "execution.failed_points",
+          "operator": "equals",
+          "expected": 2
+        },
+        {
+          "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+          "path": "scientific_status.design_status",
+          "operator": "equals",
+          "expected": "numerically_censored"
+        },
+        {
+          "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+          "path": "scientific_status.separate_identifiability_demonstrated",
+          "operator": "equals",
+          "expected": false
+        },
+        {
+          "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+          "path": "scientific_status.f2_manifest_generated",
+          "operator": "equals",
+          "expected": false
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "output": "local_baseline_metrics.inc",
+      "columns": [
+        "Comparison",
+        "Metric",
+        "Observed value"
+      ],
+      "rows": [
+        [
+          "Material point",
+          "maximum stress relative L2 over three paths",
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "paths": [
+              "paths.equibiaxial_strain.stress_relative_l2",
+              "paths.simple_shear.stress_relative_l2",
+              "paths.uniaxial_strain.stress_relative_l2"
+            ],
+            "aggregate": "max",
+            "format": ".3e"
+          }
+        ],
+        [
+          "Material point",
+          "maximum absolute PEEQ difference",
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "paths": [
+              "paths.equibiaxial_strain.maximum_peeq_absolute_error",
+              "paths.simple_shear.maximum_peeq_absolute_error",
+              "paths.uniaxial_strain.maximum_peeq_absolute_error"
+            ],
+            "aggregate": "max",
+            "format": ".3e"
+          }
+        ],
+        [
+          "Finite element",
+          "stress relative Linf",
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "metrics.stress_mpa.relative_linf",
+            "format": ".3e"
+          }
+        ],
+        [
+          "Finite element",
+          "PEEQ relative Linf",
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "metrics.equivalent_plastic_strain.relative_linf",
+            "format": ".3e"
+          }
+        ]
+      ]
+    },
+    {
+      "output": "current_identification_metrics.inc",
+      "columns": [
+        "Observation",
+        "Value"
+      ],
+      "rows": [
+        [
+          "Converged homogeneous F1 points",
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "paths": [
+              "execution.converged_points",
+              "execution.requested_points"
+            ],
+            "template": "{0:g} / {1:g}"
+          }
+        ],
+        [
+          "Interior sampled amplitude optimum at 40 µm",
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "path": "scientific_status.interior_amplitude_optima.0.alpha",
+            "prefix": "α = ",
+            "format": "g"
+          }
+        ],
+        [
+          "Interior sampled amplitude optimum at 60 µm",
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "path": "scientific_status.interior_amplitude_optima.1.alpha",
+            "prefix": "α = ",
+            "format": "g"
+          }
+        ],
+        [
+          "First censored short-length trial",
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "paths": [
+              "failed_points.0.alpha",
+              "failed_points.0.cutbacks"
+            ],
+            "template": "α = {0:g}; {1:g} cutbacks"
+          }
+        ],
+        [
+          "Second censored short-length trial",
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "paths": [
+              "failed_points.1.alpha",
+              "failed_points.1.cutbacks"
+            ],
+            "template": "α = {0:g}; {1:g} cutbacks"
+          }
+        ]
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "source": "validation/figures/p0043-alpha-comparison/p0043_alpha_summary.png",
+      "target": "evidence/band_roi_alpha_summary.png"
+    },
+    {
+      "source": "validation/figures/p0043-alpha-comparison/p0043_total_evm_comparison.png",
+      "target": "evidence/band_roi_evm_comparison.png"
+    },
+    {
+      "source": "validation/reference_data/nonlocality_helmholtz_article_p0048_v1/figures/best_candidates.png",
+      "target": "evidence/helmholtz_diagnostic.png"
+    }
+  ]
+}
