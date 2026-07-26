@@ -40,6 +40,7 @@ from fem_inhouse.workflows import (
     load_decision_thresholds,
     load_joint_identification_config,
     plot_coupled_alpha_fields,
+    run_low_fidelity,
     run_nonlocality_diagnostic,
     scan_dic_partition_heterogeneity,
     screen_frozen_field,
@@ -643,6 +644,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 screen_frozen_field(
                     identification_config,
                     dry_run=args.dry_run,
+                )
+            )
+            return 0
+        if args.action == "run-low-fidelity":
+            _print_json(
+                run_low_fidelity(
+                    identification_config,
+                    point_selectors=tuple(args.point or ()),
+                    dry_run=args.dry_run,
+                    maximum_workers=args.workers,
                 )
             )
             return 0

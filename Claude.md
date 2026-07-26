@@ -625,7 +625,7 @@ sans déclarer prématurément une longueur matérielle. Le domaine initial est
       énergétiques/spectraux
 - [ ] Valider les tendances F0 contre les F2 P43 existants
       `alpha=0,1,2,4`, `ell=58,88 µm`
-- [ ] Implémenter F1 avec réduction spatiale configurable, historique complet,
+- [x] Implémenter F1 avec réduction spatiale configurable, historique complet,
       reprise, cache strict et statuts individuels
 - [ ] Valider le classement F1 contre les quatre points F2 P43 existants
 - [ ] Implémenter le profil `Hchi*(ell)`, PCHIP/sécante contrôlée et la courbe
@@ -704,6 +704,29 @@ diagnostic scientifique de départ.
 - énergies locale et de gradient, multiplicateur spectral, normes, quantiles,
   gradient, variation totale, résidu Helmholtz et dérive de moyenne ;
 - aucune résolution mécanique et aucune exécution F2 dans cette action.
+
+**Résultat F0 P43 :** 22 longueurs et 21 niveaux positifs de `alpha`, soit
+463 points avec le témoin local, sont évalués en `7,84 s` mur et `141404 KiB`
+de pic RSS. À `ell=58,88 µm`, l'intensité du proxy présente une corrélation de
+rang `-1` avec l'erreur L2 F2, le maximum, l'écart-type et la variation totale
+PEEQ sur `alpha=0,1,2,4`. Cette monotonie justifie un criblage, mais ne valide
+pas les amplitudes mécaniques prédites.
+
+**F1 implémenté :**
+
+- réduction surfacique des cartes élémentaires et sous-échantillonnage des
+  déplacements aux nœuds physiquement coïncidents ;
+- étendue physique, découpage et séparation cœur/padding conservés ;
+- contrôle obligatoire `ell/h_F1 >= 3` ;
+- reprise du `PartitionWorkflow` de production, sans second solveur ;
+- historique rejoué depuis l'état initial avec 10 incréments, cutbacks
+  conservés et tolérance F1 explicitement enregistrée ;
+- manifestes et rapports individuels cache-stricts, métriques EVM/PEEQ sur le
+  cœur et validation automatique du classement contre F2 ;
+- plan P43 initial : quatre F1 à `ell=58,88 µm`,
+  `alpha=0,1,2,4`, grille `1800x1550`, padding `75`, résolution
+  `ell/h_F1=16`. Le lancement reste explicite via
+  `identify-nonlocal run-low-fidelity`.
 
 ### Phase différée B — Validation externe Abaqus
 

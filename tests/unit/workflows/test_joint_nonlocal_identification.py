@@ -12,6 +12,7 @@ from fem_inhouse.data_preparation import fingerprint_file
 from fem_inhouse.workflows.joint_nonlocal_identification import (
     inspect_joint_identification,
     load_joint_identification_config,
+    run_low_fidelity,
     screen_frozen_field,
 )
 
@@ -82,6 +83,24 @@ def _synthetic_configuration(tmp_path: Path) -> Path:
             "reference_hardening_modulus_mpa": 4_000.0,
         },
     )
+    prepared = tmp_path / "inputs"
+    prepared.mkdir()
+    prepared_arrays = {
+        "displacement_x_mm": np.zeros((9, 7)),
+        "displacement_y_mm": np.zeros((9, 7)),
+        "yield_stress_mpa": np.ones((8, 6)) * 200.0,
+        "hardening_coefficient_mpa": np.ones((8, 6)) * 400.0,
+    }
+    prepared_outputs: dict[str, object] = {}
+    for name, values in prepared_arrays.items():
+        path = prepared / f"{name}.npy"
+        np.save(path, values)
+        prepared_outputs[name] = {
+            "filename": path.name,
+            "sha256": fingerprint_file(path),
+            "shape": list(values.shape),
+        }
+    _json(prepared / "manifest.json", {"outputs": prepared_outputs})
     config = tmp_path / "configs" / "identification.yaml"
     config.parent.mkdir()
     config.write_text(
@@ -99,6 +118,12 @@ parameters:
   ell_um: {min: 20.0, max: 40.0, samples: 2}
   alpha: {min: 1.0, max: 2.0, samples: 2}
   h_ref_source: campaign_metadata
+fidelity:
+  low:
+    spatial_reduction: 2
+    temporal_increments: 2
+    minimum_elements_per_ell: 3
+    residual_tolerance: 3.0e-6
 observation:
   grid_mapping: identity
   grid_reduction: 1
@@ -140,6 +165,27 @@ def test_frozen_screen_dry_run_performs_no_output_write(tmp_path: Path) -> None:
     report = screen_frozen_field(config, dry_run=True)
     assert report["status"] == "dry_run"
     assert not config.output_directory.exists()
+
+
+def test_low_fidelity_dry_run_preserves_extent_and_reduces_padding(
+    tmp_path: Path,
+) -> None:
+    config = load_joint_identification_config(_synthetic_configuration(tmp_path))
+    report = screen_frozen_field(config, dry_run=True)
+    assert report["status"] == "dry_run"
+
+    plan = run_low_fidelity(
+        config,
+        point_selectors=("local", "1:20"),
+        dry_run=True,
+    )
+    assert plan["status"] == "dry_run"
+    assert plan["point_count"] == 2
+    reduction = plan["reduction"]
+    assert reduction["source_element_shape"] == [8, 6]
+    assert reduction["reduced_element_shape"] == [4, 3]
+    assert reduction["reduced_spacing_mm"] == pytest.approx(0.004)
+    assert reduction["physical_extent_preserved"] is True
 
 
 def test_configuration_rejects_local_alpha_in_positive_domain(tmp_path: Path) -> None:
