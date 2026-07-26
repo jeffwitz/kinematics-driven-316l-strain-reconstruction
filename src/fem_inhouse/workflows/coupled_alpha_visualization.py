@@ -1,4 +1,4 @@
-"""Comparative raw-field visualisation for the P154 coupling campaigns."""
+"""Comparative raw-field visualisation for coupling campaigns."""
 
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ from fem_inhouse.workflows.partitioned import fingerprint_array
 
 FloatArray = NDArray[np.float64]
 ALPHAS = (0.0, 0.5, 1.0, 2.0)
-CAMPAIGN_LABELS = ("alpha0", "alpha05", "alpha1", "alpha2")
 OPTIONAL_FIELDS = ("PEEQ_NONLOCAL", "PEEQ_MISMATCH", "NONLOCAL_HARDENING_MPA")
 
 
@@ -162,7 +161,7 @@ def prepare_coupled_alpha_fields(
     include_optional_fields: bool = False,
     alpha_values: Sequence[float] = ALPHAS,
 ) -> tuple[CoupledAlphaVisualizationData, dict[str, Any]]:
-    """Load, validate, crop and derive the four raw P154 alpha states."""
+    """Load, validate, crop and derive four raw coupling states."""
 
     if len(campaigns) != 4 or len(alpha_values) != 4:
         raise ValueError("exactly four campaigns and four alpha values are required")
@@ -203,7 +202,8 @@ def prepare_coupled_alpha_fields(
     for index, (campaign, _manifest, status) in enumerate(
         zip(campaign_paths, manifests, statuses, strict=True)
     ):
-        manifest_hashes[f"alpha{index}"] = _manifest_hash(campaign / "manifest.json")
+        alpha_token = f"{alphas[index]:g}".replace(".", "p")
+        manifest_hashes[f"alpha_{alpha_token}"] = _manifest_hash(campaign / "manifest.json")
         u = _load_verified_field(campaign, partition_id=partition_id, status=status, name="U")
         if u.shape != expected_u_shape:
             raise ValueError(f"U shape {u.shape} does not match {expected_u_shape}")
@@ -412,9 +412,10 @@ def plot_coupled_alpha_fields(
     *,
     input_directory: str | Path,
     local_campaign: str | Path,
-    campaign_a050: str | Path,
-    campaign_a100: str | Path,
-    campaign_a200: str | Path,
+    coupled_campaigns: Sequence[tuple[float, str | Path]] | None = None,
+    campaign_a050: str | Path | None = None,
+    campaign_a100: str | Path | None = None,
+    campaign_a200: str | Path | None = None,
     partition_id: int,
     output_directory: str | Path,
     dpi: int = 180,
@@ -424,12 +425,36 @@ def plot_coupled_alpha_fields(
     difference_vmax_percentile: float | None = None,
     include_optional_fields: bool = False,
     overwrite: bool = False,
-    alpha_values: Sequence[float] = ALPHAS,
 ) -> dict[str, Any]:
-    """Create all comparative P154 figures and write reproducibility metadata."""
+    """Create comparative figures and write reproducibility metadata.
+
+    ``coupled_campaigns`` is the generic interface and must contain three
+    ``(alpha, path)`` pairs.  The three named campaign arguments remain
+    available for compatibility with the original alpha=0.5,1,2 workflow.
+    """
 
     if dpi <= 0:
         raise ValueError("dpi must be strictly positive")
+    legacy_campaigns = (campaign_a050, campaign_a100, campaign_a200)
+    if coupled_campaigns is not None and any(path is not None for path in legacy_campaigns):
+        raise ValueError("use either coupled_campaigns or the legacy campaign arguments")
+    if coupled_campaigns is None:
+        if any(path is None for path in legacy_campaigns):
+            raise ValueError(
+                "provide exactly three coupled campaigns, "
+                "either generically or via legacy arguments"
+            )
+        legacy_paths = tuple(path for path in legacy_campaigns if path is not None)
+        selected_campaigns: tuple[tuple[float, str | Path], ...] = tuple(
+            zip((0.5, 1.0, 2.0), legacy_paths, strict=True)
+        )
+    else:
+        selected_campaigns = tuple(coupled_campaigns)
+    if len(selected_campaigns) != 3:
+        raise ValueError("exactly three coupled campaigns are required")
+    coupled_alphas = tuple(float(alpha) for alpha, _path in selected_campaigns)
+    coupled_paths = tuple(path for _alpha, path in selected_campaigns)
+    alpha_values = (0.0, *coupled_alphas)
     normalized_formats = tuple(
         dict.fromkeys(format_value.lower().lstrip(".") for format_value in formats)
     )
@@ -442,7 +467,7 @@ def plot_coupled_alpha_fields(
     output.mkdir(parents=True, exist_ok=True)
     data, metadata = prepare_coupled_alpha_fields(
         input_directory=input_directory,
-        campaigns=(local_campaign, campaign_a050, campaign_a100, campaign_a200),
+        campaigns=(local_campaign, *coupled_paths),
         partition_id=partition_id,
         strain_vmax_percentile=strain_vmax_percentile,
         peeq_vmax_percentile=peeq_vmax_percentile,
@@ -576,7 +601,7 @@ def plot_coupled_alpha_fields(
         )
     hist_axis.set_xlabel("PEEQ")
     hist_axis.set_ylabel("Empirical density")
-    hist_axis.set_title("PEEQ distributions on P154 core")
+    hist_axis.set_title(f"PEEQ distributions on P{partition_id} core")
     cdf_axis.set_xlabel("PEEQ")
     cdf_axis.set_ylabel("Cumulative fraction")
     cdf_axis.set_title("PEEQ empirical CDF")

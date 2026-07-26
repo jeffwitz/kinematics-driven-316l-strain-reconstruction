@@ -233,13 +233,20 @@ def _parser() -> argparse.ArgumentParser:
 
     plot_alpha = commands.add_parser(
         "plot-coupled-alpha-fields",
-        help="plot raw P154 EVM and PEEQ fields for alpha=0,0.5,1,2",
+        help="plot raw EVM and PEEQ fields for one local and three coupled campaigns",
     )
     plot_alpha.add_argument("--input", type=Path, required=True)
     plot_alpha.add_argument("--local-campaign", type=Path, required=True)
-    plot_alpha.add_argument("--campaign-a050", type=Path, required=True)
-    plot_alpha.add_argument("--campaign-a100", type=Path, required=True)
-    plot_alpha.add_argument("--campaign-a200", type=Path, required=True)
+    plot_alpha.add_argument(
+        "--coupled-campaign",
+        action="append",
+        nargs=2,
+        metavar=("ALPHA", "PATH"),
+        help="repeat exactly three times; for example: --coupled-campaign 4 results/...-a400",
+    )
+    plot_alpha.add_argument("--campaign-a050", type=Path)
+    plot_alpha.add_argument("--campaign-a100", type=Path)
+    plot_alpha.add_argument("--campaign-a200", type=Path)
     plot_alpha.add_argument("--partition-id", type=int, required=True)
     plot_alpha.add_argument("--output", type=Path, required=True)
     plot_alpha.add_argument("--dpi", type=int, default=180)
@@ -505,9 +512,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         _print_json(selection_report)
         return 0
     if args.command == "plot-coupled-alpha-fields":
+        coupled_campaigns = (
+            tuple((float(alpha), Path(path)) for alpha, path in args.coupled_campaign)
+            if args.coupled_campaign is not None
+            else None
+        )
         plot_report = plot_coupled_alpha_fields(
             input_directory=args.input,
             local_campaign=args.local_campaign,
+            coupled_campaigns=coupled_campaigns,
             campaign_a050=args.campaign_a050,
             campaign_a100=args.campaign_a100,
             campaign_a200=args.campaign_a200,

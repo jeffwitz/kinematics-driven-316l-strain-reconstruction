@@ -5,6 +5,7 @@ import pytest
 
 from fem_inhouse.workflows.coupled_alpha_visualization import (
     common_color_limits,
+    plot_coupled_alpha_fields,
     symmetric_color_limit,
 )
 
@@ -72,3 +73,26 @@ def test_limits_reject_non_finite_fields(function) -> None:
 def test_common_color_limits_reject_invalid_percentile() -> None:
     with pytest.raises(ValueError, match="percentile"):
         common_color_limits((np.ones((2, 2)),), percentile=0.0)
+
+
+def test_plot_requires_exactly_three_generic_coupled_campaigns() -> None:
+    with pytest.raises(ValueError, match="exactly three coupled campaigns"):
+        plot_coupled_alpha_fields(
+            input_directory="input",
+            local_campaign="local",
+            coupled_campaigns=((1.0, "alpha1"), (2.0, "alpha2")),
+            partition_id=43,
+            output_directory="output",
+        )
+
+
+def test_plot_rejects_mixed_generic_and_legacy_campaigns() -> None:
+    with pytest.raises(ValueError, match="either coupled_campaigns"):
+        plot_coupled_alpha_fields(
+            input_directory="input",
+            local_campaign="local",
+            coupled_campaigns=((1.0, "alpha1"), (2.0, "alpha2"), (4.0, "alpha4")),
+            campaign_a050="alpha05",
+            partition_id=43,
+            output_directory="output",
+        )
