@@ -1431,8 +1431,13 @@ def _f1_point_manifest(
     case_config: CaseStudyConfig,
     *,
     design_roles: tuple[str, ...] = (),
+    git_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    git = _git_state(_repository_root(config.source_path))
+    git = (
+        _git_state(_repository_root(config.source_path))
+        if git_state is None
+        else dict(git_state)
+    )
     data = {
         "schema_version": 1,
         "campaign": config.name,
@@ -1790,6 +1795,7 @@ def run_low_fidelity(
 
     results: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
+    run_git_state = _git_state(_repository_root(config.source_path))
     for point, design_roles in unique_records.values():
         point_id = _point_identifier(point)
         point_directory = config.output_directory / "f1" / "points" / point_id
@@ -1808,6 +1814,7 @@ def run_low_fidelity(
             reduced_inputs,
             case_config,
             design_roles=design_roles,
+            git_state=run_git_state,
         )
         if manifest_path.exists():
             existing = load_json_object(manifest_path)
@@ -2707,6 +2714,7 @@ def _analyze_discriminating_f1_design(
     if design is None:
         return {"status": "not_configured"}
     f1_rows = [row for row in rows if row["fidelity"] == "F1_low"]
+    _, _, _, h_ref_mpa, _ = _load_local_context(config)
 
     saturation_profiles: list[dict[str, Any]] = []
     for ell_um in design.saturation_ell_um:
@@ -2719,6 +2727,49 @@ def _analyze_discriminating_f1_design(
             ),
             key=lambda row: float(row["alpha"]),
         )
+        all_profile_rows = sorted(
+            (
+                row
+                for row in f1_rows
+                if row["length_scale_um"] is not None
+                and np.isclose(float(row["length_scale_um"]), ell_um)
+            ),
+            key=lambda row: float(row["alpha"]),
+        )
+        numerical_failures: list[dict[str, Any]] = []
+        for alpha in design.saturation_alpha:
+            if any(
+                np.isclose(float(row["alpha"]), alpha) for row in profile_rows
+            ):
+                continue
+            point = NonlocalIdentificationPoint.from_alpha_and_length_um(
+                alpha=alpha,
+                length_scale_um=ell_um,
+                h_ref_mpa=h_ref_mpa,
+            )
+            failure_path = (
+                config.output_directory
+                / "f1"
+                / "points"
+                / _point_identifier(point)
+                / "failure.json"
+            )
+            if failure_path.is_file():
+                failure = load_json_object(failure_path)
+                diagnostics = failure.get("diagnostics", {})
+                numerical_failures.append(
+                    {
+                        "alpha": alpha,
+                        "path": str(failure_path),
+                        "error_type": failure.get("error_type"),
+                        "error": failure.get("error"),
+                        "cutbacks": diagnostics.get("cutbacks"),
+                        "converged_increments": diagnostics.get(
+                            "converged_increments"
+                        ),
+                        "last_cutback": diagnostics.get("last_cutback"),
+                    }
+                )
         steps: list[dict[str, Any]] = []
         for previous, current in pairwise(profile_rows):
             previous_amplitude = float(previous["j_amplitude"])
@@ -2770,14 +2821,43 @@ def _analyze_discriminating_f1_design(
                     "saturated": all(checks.values()),
                 }
             )
+        complete = len(profile_rows) == len(design.saturation_alpha)
+        amplitude_optimum = (
+            min(all_profile_rows, key=lambda row: float(row["j_amplitude"]))
+            if all_profile_rows
+            else None
+        )
+        sampled_alpha = [float(row["alpha"]) for row in all_profile_rows]
+        optimum_alpha = (
+            None if amplitude_optimum is None else float(amplitude_optimum["alpha"])
+        )
+        interior_optimum = bool(
+            complete
+            and optimum_alpha is not None
+            and sampled_alpha
+            and min(sampled_alpha) < optimum_alpha < max(sampled_alpha)
+        )
+        plateau_reached = bool(steps and steps[-1]["saturated"])
         saturation_profiles.append(
             {
                 "length_scale_um": ell_um,
                 "required_alpha": list(design.saturation_alpha),
                 "available_alpha": [float(row["alpha"]) for row in profile_rows],
-                "complete": len(profile_rows) == len(design.saturation_alpha),
+                "complete": complete,
+                "numerically_censored": bool(numerical_failures),
+                "numerical_failures": numerical_failures,
                 "steps": steps,
-                "plateau_reached": bool(steps and steps[-1]["saturated"]),
+                "sampled_profile_alpha": sampled_alpha,
+                "amplitude_optimum_alpha": optimum_alpha,
+                "amplitude_optimum": (
+                    None
+                    if amplitude_optimum is None
+                    else float(amplitude_optimum["j_amplitude"])
+                ),
+                "interior_amplitude_optimum": interior_optimum,
+                "plateau_reached": plateau_reached,
+                "strength_bounded": complete
+                and (plateau_reached or interior_optimum),
                 "plateau_lower_bound_alpha": (
                     float(steps[-1]["alpha_from"])
                     if steps and steps[-1]["saturated"]
@@ -2925,12 +3005,21 @@ def _analyze_discriminating_f1_design(
         load_history[str(row["campaign_id"])] = compact_history
 
     complete = (
-        all(profile["complete"] for profile in saturation_profiles)
-        and constant_a_report["complete"]
-        and fixed_alpha_report["complete"]
+        all(bool(profile["complete"]) for profile in saturation_profiles)
+        and bool(constant_a_report["complete"])
+        and bool(fixed_alpha_report["complete"])
+    )
+    numerically_censored = any(
+        bool(profile["numerically_censored"]) for profile in saturation_profiles
     )
     return {
-        "status": "complete" if complete else "incomplete",
+        "status": (
+            "complete"
+            if complete
+            else "numerically_censored"
+            if numerically_censored
+            else "incomplete"
+        ),
         "numerical_policy": {
             "maximum_newton_iterations": config.low_maximum_newton_iterations,
             "temporal_increments": config.low_temporal_increments,
@@ -2944,6 +3033,10 @@ def _analyze_discriminating_f1_design(
             "plateau_reached_for_all_lengths": bool(
                 saturation_profiles
                 and all(profile["plateau_reached"] for profile in saturation_profiles)
+            ),
+            "strength_bounded_for_all_lengths": bool(
+                saturation_profiles
+                and all(profile["strength_bounded"] for profile in saturation_profiles)
             ),
         },
         "constant_a": constant_a_report,
@@ -2971,6 +3064,36 @@ def analyze_joint_identifiability(
         for item in profile["profiles"]
         if item["optimum_on_sampled_boundary"]
     ]
+    discriminating = _analyze_discriminating_f1_design(
+        config,
+        collection["rows"],
+    )
+    if discriminating["status"] == "numerically_censored":
+        reason = (
+            "The homogeneous design reveals interior amplitude optima at the "
+            "resolved longer lengths, but at least one short-length saturation "
+            "profile is numerically censored. H_chi and ell cannot yet be "
+            "declared separately identifiable, and no F2 proposal is allowed."
+        )
+    elif discriminating["status"] == "complete":
+        if discriminating["saturation"]["strength_bounded_for_all_lengths"]:
+            reason = (
+                "Every coupling-strength profile is bounded by an interior "
+                "amplitude optimum or a pre-registered plateau. The constant-"
+                "A_chi and fixed-alpha experiments may now be used to assess "
+                "parameter separation, subject to F2 and transfer validation."
+            )
+        else:
+            reason = (
+                "At least one complete coupling-strength profile remains "
+                "unbounded on the sampled range. The current data do not yet "
+                "separate H_chi from ell."
+            )
+    else:
+        reason = (
+            "The homogeneous discriminating F1 design is incomplete. No "
+            "parameter-separation or material-length conclusion is allowed."
+        )
     report = {
         "schema_version": 1,
         "collection_key_sha256": collection["collection_key_sha256"],
@@ -2990,21 +3113,13 @@ def analyze_joint_identifiability(
                 objective="j_localization",
             ),
         },
-        "discriminating_f1_design": _analyze_discriminating_f1_design(
-            config,
-            collection["rows"],
-        ),
+        "discriminating_f1_design": discriminating,
         "profiled_lengths_um": [
             item["length_scale_um"] for item in profile["profiles"]
         ],
         "amplitude_optimum_on_sampled_alpha_boundary_um": boundary_profiles,
         "separate_identifiability_demonstrated": False,
-        "reason": (
-            "Every available H profile is still monotone and reaches its "
-            "amplitude minimum at the largest converged alpha. The current "
-            "F1 samples therefore constrain a useful region and a Pareto "
-            "front, but they do not close an interior ell/H optimum."
-        ),
+        "reason": reason,
         "material_length_claim_allowed": False,
     }
     path = directory / "identifiability.json"
@@ -3288,15 +3403,16 @@ def generate_high_fidelity_manifest(
                 "candidates": [],
                 "executed": False,
             }
-        if not discriminating["saturation"]["plateau_reached_for_all_lengths"]:
+        if not discriminating["saturation"]["strength_bounded_for_all_lengths"]:
             return {
                 "status": "needs_alpha_saturation",
                 "selection": selection,
                 "identifiability": identifiability,
                 "reason": (
-                    "At least one alpha profile still improves at the sampled "
-                    "upper bound. Extend the low-fidelity saturation experiment "
-                    "before selecting high-fidelity candidates."
+                    "At least one alpha profile has neither an interior optimum "
+                    "nor a pre-registered plateau. Extend or numerically resolve "
+                    "the low-fidelity saturation experiment before selecting "
+                    "high-fidelity candidates."
                 ),
                 "candidates": [],
                 "executed": False,
@@ -3469,6 +3585,114 @@ def _save_identification_figure(
     return paths
 
 
+def _load_f1_report_fields(
+    config: JointIdentificationConfig,
+    rows: list[dict[str, Any]],
+) -> tuple[FloatArray, dict[str, tuple[FloatArray, FloatArray]], tuple[float, ...]]:
+    """Load reduced F1 core fields for descriptive, no-mechanics figures."""
+
+    reduced_inputs = prepare_low_fidelity_inputs(config)
+    local_manifest, _, _, _, _ = _load_local_context(config)
+    partition = reduced_inputs.layout.get(config.partition_id)
+    dic_u = np.stack(
+        (
+            extract_partition_field(
+                reduced_inputs.displacement_x_mm,
+                layout=reduced_inputs.layout,
+                partition=partition,
+                location="node",
+            ),
+            extract_partition_field(
+                reduced_inputs.displacement_y_mm,
+                layout=reduced_inputs.layout,
+                partition=partition,
+                location="node",
+            ),
+        ),
+        axis=-1,
+    )
+    observation = DICObservationOperator(
+        DICObservationOperatorConfig(),
+        poisson_ratio=float(local_manifest["config"]["material"]["poisson_ratio"]),
+    )
+    dic_evm = observation.observe_displacement(
+        dic_u,
+        spacing_x_mm=reduced_inputs.spacing_mm,
+        spacing_y_mm=reduced_inputs.spacing_mm,
+        core_slice=partition.core_element_slice_local,
+    ).element_field
+    fields: dict[str, tuple[FloatArray, FloatArray]] = {}
+    for row in rows:
+        point_id = str(row["campaign_id"])
+        if point_id in fields:
+            continue
+        campaign = Path(str(row["source"])) / "campaign"
+        manifest_path = campaign / "manifest.json"
+        status = load_partition_status(
+            campaign,
+            partition_id=config.partition_id,
+            manifest_sha256=_manifest_sha256(manifest_path),
+        )
+        displacement = load_verified_partition_field(
+            campaign,
+            partition_id=config.partition_id,
+            status=status,
+            name="U",
+        )
+        peeq = load_verified_partition_field(
+            campaign,
+            partition_id=config.partition_id,
+            status=status,
+            name="PEEQ",
+        )
+        fem_evm = observation.observe_displacement(
+            displacement,
+            spacing_x_mm=reduced_inputs.spacing_mm,
+            spacing_y_mm=reduced_inputs.spacing_mm,
+            core_slice=partition.core_element_slice_local,
+        ).element_field
+        fields[point_id] = (
+            np.asarray(fem_evm, dtype=np.float64),
+            np.asarray(
+                peeq[partition.core_element_slice_local],
+                dtype=np.float64,
+            ),
+        )
+    x0, x1, y0, y1 = partition.core_bounds
+    extent = (
+        x0 * reduced_inputs.spacing_mm,
+        x1 * reduced_inputs.spacing_mm,
+        y0 * reduced_inputs.spacing_mm,
+        y1 * reduced_inputs.spacing_mm,
+    )
+    return np.asarray(dic_evm, dtype=np.float64), fields, extent
+
+
+def _draw_identification_field(
+    axis: Any,
+    field: FloatArray,
+    *,
+    extent: tuple[float, ...],
+    title: str,
+    limits: tuple[float, float],
+    cmap: str,
+) -> Any:
+    image = axis.imshow(
+        field.T,
+        origin="lower",
+        extent=extent,
+        aspect="equal",
+        interpolation="nearest",
+        cmap=cmap,
+        vmin=limits[0],
+        vmax=limits[1],
+    )
+    axis.set_title(title)
+    axis.set_xlabel("x (mm)")
+    axis.set_ylabel("y (mm)")
+    return image
+
+
 def _identification_report_markdown(
     *,
     collection: dict[str, Any],
@@ -3478,6 +3702,7 @@ def _identification_report_markdown(
 ) -> str:
     f1 = [row for row in collection["rows"] if row["fidelity"] == "F1_low"]
     f2 = [row for row in collection["rows"] if row["fidelity"] == "F2_high"]
+    design = identifiability["discriminating_f1_design"]
     lines = [
         "# Joint nonlocal identification report",
         "",
@@ -3487,9 +3712,9 @@ def _identification_report_markdown(
         "reduced coupled solve (F1), and unchanged full-resolution mechanics "
         "(F2). Only F2 is a scientific result. No proposed F2 command was run.",
         "",
-        "The present design does **not** identify a material length. All sampled "
-        "amplitude profiles remain monotone and end at their largest converged "
-        "coupling, so the optimum is not interior.",
+        "The present design does **not** identify a material length.",
+        "",
+        identifiability["reason"],
         "",
         "## Cost hierarchy",
         "",
@@ -3497,13 +3722,44 @@ def _identification_report_markdown(
         f"- Available F1 results: {len(f1)}.",
         f"- Reused F2 results: {len(f2)}.",
         "",
-        "## Proposed F2 runs — human gate",
+        "## Homogeneous discriminating F1 status",
         "",
-        "| # | ell (um) | alpha | H_chi (MPa) | A_chi (MPa mm2) | "
-        "estimated h | discriminator |",
-        "|---:|---:|---:|---:|---:|---:|---|",
+        f"- Design status: `{design['status']}`.",
+        f"- Strength bounded at all requested lengths: "
+        f"`{design['saturation']['strength_bounded_for_all_lengths']}`.",
+        f"- Constant-A experiment complete: `{design['constant_a']['complete']}`.",
+        f"- Fixed-alpha experiment complete: `{design['fixed_alpha']['complete']}`.",
+        "",
+        "| ell (um) | complete | numerical censoring | amplitude optimum alpha | "
+        "interior optimum | plateau |",
+        "|---:|---|---|---:|---|---|",
     ]
-    for candidate in proposal["candidates"]:
+    for profile in design["saturation"]["profiles"]:
+        lines.append(
+            "| {length_scale_um:g} | {complete} | {numerically_censored} | "
+            "{optimum} | {interior_amplitude_optimum} | {plateau_reached} |".format(
+                **profile,
+                optimum=profile["amplitude_optimum_alpha"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Proposed F2 runs — human gate",
+            "",
+            f"Proposal status: `{proposal['status']}`.",
+            "",
+            proposal.get(
+                "reason",
+                "The candidate list below remains subject to explicit human approval.",
+            ),
+            "",
+            "| # | ell (um) | alpha | H_chi (MPa) | A_chi (MPa mm2) | "
+            "estimated h | discriminator |",
+            "|---:|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    for candidate in proposal.get("candidates", ()):
         lines.append(
             "| {proposal_index} | {length_scale_um:.3f} | {alpha:.3g} | "
             "{h_chi_mpa:.3f} | {a_chi_mpa_mm2:.6g} | {hours:.3f} | "
@@ -3519,9 +3775,9 @@ def _identification_report_markdown(
             "",
             identifiability["reason"],
             "",
-            "The next action is a human review of the proposal. Transfer to a "
-            "second band-containing ROI must use frozen parameters and the same "
-            "DIC observation operator.",
+            "If candidates are eventually proposed, the next action is human "
+            "review. Transfer to a second band-containing ROI must use frozen "
+            "parameters and the same DIC observation operator.",
             "",
         )
     )
@@ -3573,6 +3829,162 @@ def generate_joint_identification_report(
     output_directories = (report_directory, documentation_directory)
 
     selection = select_identification_candidates(config)
+    field_groups: list[tuple[str, str, list[dict[str, Any]]]] = []
+    constant_a_rows = sorted(
+        [
+            row
+            for row in f1_rows
+            if "constant_a_chi" in row.get("design_roles", ())
+        ],
+        key=lambda row: float(row["length_scale_um"]),
+    )
+    fixed_alpha_rows = sorted(
+        [
+            row
+            for row in f1_rows
+            if "fixed_alpha_length_discrimination" in row.get("design_roles", ())
+        ],
+        key=lambda row: float(row["length_scale_um"]),
+    )
+    if constant_a_rows:
+        field_groups.append(
+            (
+                "joint_identification_constant_a_fields",
+                r"Constant $A_\chi$: does length remain observable?",
+                constant_a_rows,
+            )
+        )
+    if fixed_alpha_rows:
+        field_groups.append(
+            (
+                "joint_identification_fixed_alpha_fields",
+                rf"Fixed $\alpha={float(fixed_alpha_rows[0]['alpha']):g}$: "
+                r"length discrimination",
+                fixed_alpha_rows,
+            )
+        )
+    for ell_um in (40.0, 60.0):
+        saturation_rows = sorted(
+            [
+                row
+                for row in f1_rows
+                if "alpha_saturation" in row.get("design_roles", ())
+                and np.isclose(float(row["length_scale_um"]), ell_um)
+            ],
+            key=lambda row: float(row["alpha"]),
+        )
+        if saturation_rows:
+            field_groups.append(
+                (
+                    f"joint_identification_saturation_ell_{ell_um:g}um_fields",
+                    rf"Coupling profile at $\ell={ell_um:g}$ um",
+                    saturation_rows,
+                )
+            )
+    field_rows = [
+        row
+        for _stem, _title, group_rows in field_groups
+        for row in group_rows
+    ]
+    if field_rows:
+        dic_evm, f1_fields, field_extent = _load_f1_report_fields(
+            config,
+            field_rows,
+        )
+        for stem, title, group_rows in field_groups:
+            evm_fields = [
+                f1_fields[str(row["campaign_id"])][0] for row in group_rows
+            ]
+            peeq_fields = [
+                f1_fields[str(row["campaign_id"])][1] for row in group_rows
+            ]
+            evm_max = max(
+                float(np.max(dic_evm)),
+                *(float(np.max(field)) for field in evm_fields),
+            )
+            peeq_max = max(float(np.max(field)) for field in peeq_fields)
+            figure, axes = plt.subplots(
+                2,
+                len(group_rows) + 1,
+                figsize=(4.0 * (len(group_rows) + 1), 7.2),
+                constrained_layout=True,
+                squeeze=False,
+            )
+            dic_image = _draw_identification_field(
+                axes[0, 0],
+                dic_evm,
+                extent=field_extent,
+                title="DIC total equivalent strain",
+                limits=(0.0, evm_max),
+                cmap="viridis",
+            )
+            axes[1, 0].axis("off")
+            axes[1, 0].text(
+                0.03,
+                0.97,
+                "F1 reduced coupled mechanics\n"
+                "Raw EVM from displacement\n"
+                "PEEQ is an internal variable\n"
+                "No post-filtering",
+                ha="left",
+                va="top",
+                transform=axes[1, 0].transAxes,
+            )
+            peeq_image = None
+            for column, (row, evm_field, peeq_field) in enumerate(
+                zip(group_rows, evm_fields, peeq_fields, strict=True),
+                start=1,
+            ):
+                parameter_title = (
+                    rf"$\ell={float(row['length_scale_um']):g}$ um, "
+                    rf"$\alpha={float(row['alpha']):g}$"
+                )
+                _draw_identification_field(
+                    axes[0, column],
+                    evm_field,
+                    extent=field_extent,
+                    title=(
+                        f"{parameter_title}\n"
+                        f"r={float(row['correlation']):.3f}, "
+                        f"L2={float(row['relative_l2']):.3f}"
+                    ),
+                    limits=(0.0, evm_max),
+                    cmap="viridis",
+                )
+                peeq_image = _draw_identification_field(
+                    axes[1, column],
+                    peeq_field,
+                    extent=field_extent,
+                    title=(
+                        f"PEEQ, max={float(row['peeq_max']):.4f}\n"
+                        f"band width={float(row['band_width_prediction_mm']):.4f} mm"
+                    ),
+                    limits=(0.0, peeq_max),
+                    cmap="magma",
+                )
+            figure.colorbar(
+                dic_image,
+                ax=list(axes[0, :]),
+                shrink=0.85,
+                label="total equivalent strain, EVM",
+            )
+            if peeq_image is not None:
+                figure.colorbar(
+                    peeq_image,
+                    ax=list(axes[1, 1:]),
+                    shrink=0.85,
+                    label="PEEQ (internal variable)",
+                )
+            figure.suptitle(title)
+            figures.extend(
+                _save_identification_figure(
+                    figure,
+                    stem=stem,
+                    directories=output_directories,
+                )
+            )
+            plt.close(figure)
+
     figure, axis = plt.subplots(figsize=(7.2, 5.0), constrained_layout=True)
     axis.scatter(
         [row["j_amplitude"] for row in f1_rows],
@@ -3675,7 +4087,13 @@ def generate_joint_identification_report(
         )
     axis.set_xlabel(r"$\alpha$")
     axis.set_ylabel(r"$J_{\rm amp}$")
-    axis.set_title("Profiled coupling modulus: all minima remain on a boundary")
+    boundary_count = sum(
+        bool(item["optimum_on_sampled_boundary"]) for item in profile["profiles"]
+    )
+    axis.set_title(
+        "Profiled coupling modulus: "
+        f"{boundary_count}/{len(profile['profiles'])} minima on a sampled boundary"
+    )
     axis.grid(alpha=0.25)
     axis.legend()
     figures.extend(
@@ -3696,8 +4114,13 @@ def generate_joint_identification_report(
             wall = f0_manifest.get("wall_time_seconds")
         if wall is not None:
             f0_wall_seconds = float(wall)
-    benchmark_path = (
-        repository / "validation" / f"{config.name}_benchmarks.json"
+    benchmark_candidates = (
+        repository / "validation" / f"{config.name}_benchmarks.json",
+        repository / "validation" / "joint_nonlocal_identification_p0043_benchmarks.json",
+    )
+    benchmark_path = next(
+        (path for path in benchmark_candidates if path.is_file()),
+        benchmark_candidates[0],
     )
     if f0_wall_seconds is None and benchmark_path.is_file():
         benchmark = load_json_object(benchmark_path)
@@ -3754,7 +4177,8 @@ def generate_joint_identification_report(
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "collection_key_sha256": collection["collection_key_sha256"],
         "configuration_sha256": config.source_sha256,
-        "proposal_manifest": proposal["path"],
+        "proposal_status": proposal["status"],
+        "proposal_manifest": proposal.get("path"),
         "identifiability_report": identifiability["path"],
         "benchmark_record": (
             str(benchmark_path) if benchmark_path.is_file() else None

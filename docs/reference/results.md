@@ -133,6 +133,54 @@ See {doc}`../explanation/joint_nonlocal_identification` for the causal
 analysis and {doc}`../explanation/micromorphic_plasticity` for the fixed-point
 diagnostics and optional Aitken algorithm.
 
+## Homogeneous Newton-25 identifiability experiment on P43
+
+Execution record:
+`validation/joint_nonlocal_identifiability_p0043_newton25_execution.json`
+
+Collection key:
+`a084774ae9940c6fdfc0da16473464dc84549d83bc774873bd117e433176905f`
+
+The registered 23-point factor-two F1 design ran sequentially in approximately
+2 h 58 min. Twenty-one points converged. The only failures were
+\((20\,\mu\mathrm m,9)\) and \((20\,\mu\mathrm m,12)\), each after 11
+cutbacks caused by exhaustion of the 25-iteration mechanical Newton ceiling.
+No Aitken acceleration or point-specific solver setting was activated.
+
+The unchanged F1/F2 validation still passes all six gates: L2 and correlation
+rankings, correlation error, relative-L2 error, relative top-10 IoU and
+absolute-q90 IoU.
+
+| ell (µm) | amplitude optimum alpha | \(J_{\mathrm{amp}}\) | status |
+|---:|---:|---:|---|
+| 20 | 6 | `0.399884` | higher alpha numerically censored |
+| 40 | 9 | `0.0437629` | interior optimum |
+| 60 | 6 | `0.0484263` | interior optimum |
+
+At 40 and 60 µm, relative L2 and Pearson correlation continue improving after
+the amplitude optimum, while absolute-q90 overlap and visible band support
+degrade. For example:
+
+| ell (µm) | alpha | relative L2 | Pearson | absolute-q90 IoU | apparent band width (mm) | PEEQ max |
+|---:|---:|---:|---:|---:|---:|---:|
+| 40 | 6 | `0.39725` | `0.55051` | `0.27596` | `0.11586` | `0.00974` |
+| 40 | 9 | `0.35251` | `0.57017` | `0.26623` | `0.10957` | `0.00808` |
+| 40 | 12 | `0.32665` | `0.58327` | `0.24618` | `0.06859` | `0.00711` |
+| 60 | 6 | `0.36746` | `0.54922` | `0.26824` | `0.10614` | `0.00902` |
+| 60 | 9 | `0.32756` | `0.56798` | `0.23711` | `0.06172` | `0.00734` |
+| 60 | 12 | `0.30769` | `0.57983` | `0.17865` | `0.05255` | `0.00637` |
+
+The exact constant-\(A_\chi\) line
+\((20,6),(30,2.666666\ldots),(40,1.5)\) has zero numerical \(A_\chi\)
+spread but a 17.0% relative-L2 response spread, a 65.1% amplitude-objective
+spread and a 34.6% radial-spectrum-error spread. P43 therefore observes more
+than the asymptotic product \(H_\chi\ell^2\), although comparison with mesh,
+DIC-resolution and between-ROI variability is still required before claiming
+separate identifiability.
+
+The workflow classifies this design `numerically_censored`, generates no F2
+manifest and forbids a material-length claim.
+
 ## Three-backend FEM benchmark
 
 Campaign:

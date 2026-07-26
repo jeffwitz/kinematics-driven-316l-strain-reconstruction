@@ -52,5 +52,5 @@ start with :doc:`../tutorials/first_reconstruction`.
       :link: run_joint_nonlocal_identification
       :link-type: doc
 
-      Run the staged F0/F1 design, build the Pareto front, and generate an
-      approval-gated F2 proposal without launching it.
+      Run the staged F0/F1 design, test constant A-chi, and stop before F2
+      whenever strength or length remains numerically unresolved.

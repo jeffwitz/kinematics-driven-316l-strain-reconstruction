@@ -103,6 +103,12 @@ Every converged point records `U`, `E` and `PEEQ` at 25%, 50%, 75% and 100%
 loading. These snapshots are part of the cache fingerprint and are checked
 when a point is reused.
 
+The recorded reference execution completed 21 of 23 points in approximately
+2 h 58 min. The two cached failures are 20 µm at alpha 9 and 12. Re-running
+the same design reuses all complete points and reports these failures without
+starting mechanics. Use an explicit `--point` only for a separately justified
+numerical investigation; do not mutate the homogeneous collection policy.
+
 Run targeted adaptive points with selectors of the form `alpha:ell_um`:
 
 ```bash
@@ -230,6 +236,10 @@ complete command for each candidate. The action returns
 `needs_alpha_saturation` while any profile still improves at the upper alpha
 bound. It cannot execute candidate commands. Review and explicit human
 approval are mandatory.
+
+For the current reference execution the expected status is
+`needs_discriminating_f1_points`, because the 20 µm saturation profile is
+numerically censored. No F2 manifest is written.
 
 ## Generate the report and documentation figures
 

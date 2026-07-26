@@ -397,7 +397,7 @@ Newton-25 confirmation uses
 The compact evidence record is
 `validation/joint_nonlocal_fixed_point_diagnostic_p0043.json`.
 
-## Profiles and Pareto front
+## Historical profiles and Pareto front
 
 At each sampled length, a monotone PCHIP is fitted only inside the converged
 alpha interval. No monotonicity is assumed before checking the samples.
@@ -412,14 +412,8 @@ alpha interval. No monotonicity is assumed before checking the samples.
 diagnostic policy. They supersede the old numerical boundary but have not yet
 been folded into a regenerated immutable collection.
 
-```{image} ../_static/joint_identification/joint_identification_h_profiles.*
-:alt: Profiles of the amplitude objective at each sampled length.
-:align: center
-:width: 90%
-```
-
-Every amplitude profile is still decreasing at its largest converged
-coupling. Consequently:
+In that historical collection, every amplitude profile was still decreasing
+at its largest converged coupling. Consequently, at that stage:
 
 - there is no interior amplitude optimum;
 - \(H_\chi\) and \(\ell\) are not yet separately identified;
@@ -436,7 +430,8 @@ describe locally. They do **not** establish identifiability: the direct
 profiles still place every amplitude minimum on a boundary, which is the
 stronger and more transparent result.
 
-The non-dominated front keeps amplitude and localization visible:
+The non-dominated front below is regenerated from the homogeneous
+Newton-25 collection and keeps amplitude and localization visible:
 
 ```{image} ../_static/joint_identification/joint_identification_pareto.*
 :alt: Amplitude-localization Pareto front for F1 and reused F2 points.
@@ -444,11 +439,12 @@ The non-dominated front keeps amplitude and localization visible:
 :width: 90%
 ```
 
-The current F1 front contains:
+The regenerated F1 front contains:
 
-- 60 µm, α=6: lowest \(J_{\mathrm{amp}}\);
+- 40 µm, α=9: lowest \(J_{\mathrm{amp}}\);
 - 58.88 µm, α=4: best absolute-q90 localization, already available in F2;
-- 40 µm, α=6: normalized Pareto knee.
+- 40 µm, α=6: normalized Pareto knee;
+- 60 µm, α=6: a different spatial-scale compromise.
 
 The fact that different points optimize amplitude and localization is exactly
 why no a-posteriori weighted scalar objective is introduced.
@@ -503,6 +499,48 @@ improvement remains strong through 12, \(H_\chi\) may be compensating for a
 deficiency of the local J2 model rather than representing an independently
 identified physical parameter.
 
+The homogeneous run produced a more informative outcome than a monotone
+extension:
+
+| ell (µm) | alpha samples | minimum \(J_{\mathrm{amp}}\) | status |
+|---:|---|---:|---|
+| 20 | 1, 2, 2.5, 3.5, 6; 9 and 12 failed | 0.3999 at 6 | numerically censored |
+| 40 | 1, 1.5, 3.5, 6, 9, 12 | 0.04376 at 9 | interior amplitude optimum |
+| 60 | 1, 3.5, 6, 9, 12 | 0.04843 at 6 | interior amplitude optimum |
+
+```{image} ../_static/joint_identification/joint_identification_h_profiles.*
+:alt: Homogeneous Newton-25 amplitude profiles showing interior optima at 40 and 60 micrometres and a censored 20 micrometre profile.
+:align: center
+:width: 90%
+```
+
+At 40 and 60 µm, increasing alpha beyond the amplitude optimum continues to
+decrease relative L2 and increase correlation, but it degrades absolute-q90
+overlap and collapses the apparent active-band width. This is not a
+contradiction: the quantile amplitude objective, global field error and band
+support measure different aspects of the comparison.
+
+```{image} ../_static/joint_identification/joint_identification_saturation_ell_40um_fields.*
+:alt: DIC and F1 EVM and PEEQ fields at ell 40 micrometres and alpha 6, 9 and 12.
+:align: center
+:width: 100%
+```
+
+At 40 µm, alpha 9 balances the EVM distribution best. Alpha 12 lowers the
+global L2 further, but the bright localized structures and PEEQ support are
+visibly suppressed.
+
+```{image} ../_static/joint_identification/joint_identification_saturation_ell_60um_fields.*
+:alt: DIC and F1 EVM and PEEQ fields at ell 60 micrometres and alpha 6, 9 and 12.
+:align: center
+:width: 100%
+```
+
+The same mechanism is stronger at 60 µm. The amplitude objective is already
+minimal at alpha 6; alpha 9 and 12 progressively wash out the two computed
+bands even though Pearson correlation and global L2 continue to improve.
+This visual result is why alpha cannot be selected from L2 alone.
+
 ### Experiment 2 — hold \(A_\chi\) constant
 
 The decisive degeneracy test uses the anchor
@@ -531,6 +569,23 @@ then \(\ell\) carries independent observable information. F1 records these
 differences; it does not by itself establish the required uncertainty
 thresholds.
 
+```{image} ../_static/joint_identification/joint_identification_constant_a_fields.*
+:alt: DIC and three F1 EVM and PEEQ fields sharing exactly the same A chi.
+:align: center
+:width: 100%
+```
+
+The three fields are not numerically interchangeable. Their \(A_\chi\) spread
+is exactly zero, while final relative L2 ranges from 0.4787 to 0.5678,
+correlation changes by up to 0.0352, band width differs by up to
+0.00640 mm, and the radial-spectrum error differs by up to 0.0385. The
+response spread of the amplitude objective is 65.1%.
+
+This is evidence that the current P43 F1 observation is not sensitive only to
+\(A_\chi\). It is not yet proof of separate identifiability, because these
+differences have not been compared with mesh sensitivity, DIC-resolution
+sensitivity and between-ROI variability.
+
 ### Experiment 3 — hold alpha constant
 
 The orthogonal check compares
@@ -545,6 +600,18 @@ At fixed coupling strength, an observable variation of apparent band width,
 axis position, autocorrelation length or directional spectral content is the
 signature expected from a spatial length. Global L2 alone is insufficient:
 it can prefer a field with the right amplitude but the wrong morphology.
+
+```{image} ../_static/joint_identification/joint_identification_fixed_alpha_fields.*
+:alt: DIC and F1 EVM and PEEQ fields for ell 20, 40 and 60 micrometres at alpha 6.
+:align: center
+:width: 100%
+```
+
+At alpha 6, increasing ell from 20 to 60 µm reduces relative L2 from 0.4787
+to 0.3675 and the PEEQ maximum from 0.0120 to 0.0090. Simultaneously, the
+absolute-q90 apparent band width falls from 0.1248 to 0.1061 mm and the
+radial-spectrum distance rises from 0.1320 to 0.2066. The length therefore
+changes spatial structure, not only a scalar amplitude.
 
 ### Three distinct metric families
 
@@ -582,7 +649,14 @@ The workflow cannot write a new high-fidelity manifest until:
 1. all homogeneous saturation profiles are complete;
 2. all constant-\(A_\chi\) points are complete;
 3. all fixed-alpha length points are complete;
-4. every alpha profile reaches the pre-registered plateau.
+4. every alpha profile reaches the pre-registered plateau or an interior
+   amplitude optimum.
+
+In the current collection the 40 and 60 µm profiles satisfy the last
+condition. The 20 µm profile does not: alpha 9 and 12 both reached the
+Newton-25 cutback floor after 11 cutbacks. The campaign is consequently
+classified `numerically_censored`, and F2 generation returns
+`needs_discriminating_f1_points`.
 
 Even after those gates pass, at most three F2 points may be proposed:
 
@@ -617,13 +691,13 @@ The bars compare the dense F0 screen with a median converged F1 point and a
 median positive F2 point on the same workstation:
 
 - F0: 7.84 s for 463 frozen-field pairs;
-- F1: 271.4 s for one reduced coupled point;
+- F1: 372.0 s for the median converged point in the homogeneous design;
 - F2: 1,792.4 s for one full-resolution coupled point.
 
 The levels answer different questions, so this is not a claim that F0 is
-228 times faster for the *same result*. F0 cheaply rejects or groups
-parameters. F1 pays for coupled mechanics to validate the ranking. F2 is paid
-only for a small, justified set of scientific points.
+faster for the *same result*. F0 cheaply rejects or groups parameters. F1
+pays for coupled mechanics to validate the ranking. F2 is paid only for a
+small, justified set of scientific points.
 
 ## Historical full-resolution proposal — superseded, not launched
 
@@ -665,16 +739,19 @@ The present evidence supports the following statements:
    portions of parameter space;
 2. factor-two F1 mechanics preserves the ranking of the existing P43 F2
    calculations within the pre-declared error gates;
-3. stronger coupling continues to improve the amplitude objective over every
-   converged profile;
-4. localization is not monotone in exactly the same way, producing a genuine
-   Pareto trade-off;
-5. short-length/high-coupling points require more mechanical Newton
-   iterations, but the former \(\alpha=2.5\) boundary was not a physical or
-   micromorphic convergence limit;
-6. the current data do not provide an interior optimum or demonstrate
-   separate identifiability of \(H_\chi\) and \(\ell\);
-7. no material-length conclusion is allowed.
+3. the homogeneous Newton-25 collection contains interior amplitude optima
+   at \((40\,\mu\mathrm m,9)\) and \((60\,\mu\mathrm m,6)\);
+4. global L2 and correlation continue improving beyond those optima while
+   absolute localization and visible band structure degrade, producing a
+   genuine multi-objective conflict;
+5. equal-\(A_\chi\) points are distinguishable in EVM, band and spectral
+   metrics, so P43 is not observing only the asymptotic product
+   \(H_\chi\ell^2\);
+6. the 20 µm profile remains numerically censored at alpha 9 and 12, so the
+   complete two-parameter domain is not yet resolved;
+7. the current F1 evidence supports an independent length sensitivity but
+   does not yet demonstrate separate parameter identifiability;
+8. no F2 proposal and no material-length conclusion are allowed.
 
 After approved F2 calculations, at most three non-dominated pairs may be
 frozen and transferred to another band-containing ROI. That transfer must use

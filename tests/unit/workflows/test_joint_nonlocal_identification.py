@@ -307,7 +307,11 @@ identifiability_design:
             fidelity="F1_low",
             ell_um=float(point["length_scale_um"]),
             alpha=float(point["alpha"]),
-            amplitude=1.0 / float(point["alpha"]),
+            amplitude=(
+                0.2
+                if np.isclose(float(point["alpha"]), 12.0)
+                else 1.0 / float(point["alpha"])
+            ),
             localization=0.5,
         )
         row.update(
@@ -318,6 +322,13 @@ identifiability_design:
             }
         )
         rows.append(row)
+    rows.append(
+        {
+            "fidelity": "F1_low",
+            "length_scale_um": None,
+            "design_roles": [],
+        }
+    )
     analysis = _analyze_discriminating_f1_design(config, rows)
     assert analysis["status"] == "complete"
     assert analysis["constant_a"]["complete"] is True
@@ -326,6 +337,7 @@ identifiability_design:
         abs=1.0e-15,
     )
     assert analysis["saturation"]["plateau_reached_for_all_lengths"] is False
+    assert analysis["saturation"]["strength_bounded_for_all_lengths"] is True
 
 
 def test_pareto_detection_excludes_dominated_points_and_finds_knee() -> None:

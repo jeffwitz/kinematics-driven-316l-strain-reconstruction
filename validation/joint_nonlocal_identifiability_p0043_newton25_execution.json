@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "campaign": "joint-nonlocal-identifiability-p0043-newton25",
+  "configuration": "configs/joint_nonlocal_identifiability_p0043_newton25.yaml",
+  "configuration_sha256": "cb1eafd7635f25dd6f52f9698a6ed514b9fe328006b396b951850b2b0f400cf3",
+  "collection_key_sha256": "a084774ae9940c6fdfc0da16473464dc84549d83bc774873bd117e433176905f",
+  "execution": {
+    "started_at_local": "2026-07-26T16:48:25+02:00",
+    "finished_at_local": "2026-07-26T19:46:50+02:00",
+    "approximate_wall_time_seconds": 10705,
+    "requested_points": 23,
+    "converged_points": 21,
+    "failed_points": 2,
+    "high_fidelity_runs_started": 0
+  },
+  "failed_points": [
+    {
+      "length_scale_um": 20.0,
+      "alpha": 9.0,
+      "converged_increments": 10,
+      "cutbacks": 11,
+      "failure_reason": "newton_iterations_exhausted at the minimum cutback"
+    },
+    {
+      "length_scale_um": 20.0,
+      "alpha": 12.0,
+      "converged_increments": 6,
+      "cutbacks": 11,
+      "failure_reason": "newton_iterations_exhausted at the minimum cutback"
+    }
+  ],
+  "runtime_code_provenance": {
+    "python_process_launch_git_commit": "f5596d1ff071d6a55e5db0ef92aba73eb47ae36a",
+    "evidence": "The first point manifest records the clean launch commit. The single Python process imported the workflow once before the sequential point loop.",
+    "head_changed_while_process_was_running": true,
+    "later_manifest_git_commit": "bb8b31e6f03087c16bcf6b145b2d070f7fd582df",
+    "later_commits_scope": "analysis and documentation; they were not imported into the already-running Python process",
+    "per_point_manifest_git_observation": {
+      "f5596d1_clean": 1,
+      "f5596d1_dirty": 1,
+      "bb8b31e_clean": 21
+    },
+    "interpretation": "All numerical solves used the launch-time in-memory implementation from f5596d1. The differing per-point Git observations are a provenance defect, not a numerical-policy difference.",
+    "future_policy": "run_low_fidelity captures Git state once before the point loop and injects the same state into every point manifest"
+  },
+  "scientific_status": {
+    "f1_ranking_validation_passed": true,
+    "design_status": "numerically_censored",
+    "interior_amplitude_optima": [
+      {
+        "length_scale_um": 40.0,
+        "alpha": 9.0
+      },
+      {
+        "length_scale_um": 60.0,
+        "alpha": 6.0
+      }
+    ],
+    "separate_identifiability_demonstrated": false,
+    "material_length_claim_allowed": false,
+    "f2_manifest_generated": false
+  }
+}

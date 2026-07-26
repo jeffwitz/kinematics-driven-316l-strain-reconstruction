@@ -924,10 +924,41 @@ sur une grille arbitraire. Il doit tester :
 **État :**
 
 - [x] architecture, configuration, garde F2 et tests synthétiques ;
-- [~] exécuter les 23 points F1 homogènes (campagne en cours) ;
-- [ ] consolider saturation, ligne `Achi` constante et évolution temporelle ;
-- [ ] régénérer le front de Pareto et les conclusions ;
-- [ ] seulement ensuite proposer au plus trois F2 discriminants.
+- [x] exécuter les 23 points F1 homogènes : 21 convergences en environ
+  `2 h 58 min`, échecs propres uniquement pour `(20 µm,9)` et `(20 µm,12)` ;
+- [x] consolider saturation, ligne `Achi` constante et évolution temporelle ;
+- [x] régénérer le front de Pareto, les cartes EVM/PEEQ et les conclusions ;
+- [x] bloquer toute proposition F2 : statut `numerically_censored`.
+
+**Résultats temporaires :**
+
+- optimum d'amplitude intérieur à `(40 µm, alpha=9)`,
+  `Jamp=0.0437629` ;
+- optimum d'amplitude intérieur à `(60 µm, alpha=6)`,
+  `Jamp=0.0484263` ;
+- à `alpha>alpha*`, L2 et corrélation continuent de s'améliorer mais l'IoU
+  absolue, la largeur apparente et la structure PEEQ se dégradent fortement ;
+- la ligne exacte `Achi` constant
+  `(20,6)/(30,2.666666...)/(40,1.5)` n'est pas dégénérée : dispersion
+  relative `17.0 %` sur L2, `65.1 %` sur l'objectif d'amplitude et `34.6 %`
+  sur l'erreur spectrale radiale ;
+- la sensibilité propre à `ell` est donc observable en F1 sur P43, mais la
+  séparation statistique des deux paramètres n'est pas démontrée tant que la
+  sensibilité maillage/DIC/inter-ROI et la censure à `20 µm` ne sont pas
+  résolues ;
+- aucun manifeste F2 nouveau et aucune conclusion de longueur matériau.
+
+**Traçabilité :**
+
+- collection :
+  `a084774ae9940c6fdfc0da16473464dc84549d83bc774873bd117e433176905f` ;
+- attestation d'exécution :
+  `validation/joint_nonlocal_identifiability_p0043_newton25_execution.json` ;
+- le processus a chargé le code `f5596d1` au lancement ; des commits de
+  documentation pendant la boucle ont fait dériver le `HEAD` observé par
+  certains manifestes sans changer le code Python en mémoire ;
+- correction ajoutée : les prochaines campagnes épinglent l'état Git une
+  seule fois avant la boucle des points.
 
 ### Phase différée B — Validation externe Abaqus
 
