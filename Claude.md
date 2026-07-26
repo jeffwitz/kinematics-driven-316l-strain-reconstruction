@@ -40,8 +40,8 @@ conclusions, claims et preuves synthétiques ; le script
 les figures de preuve. Validation du jalon : Ruff vert, mypy vert sur les 44
 fichiers du périmètre CI, 320 tests verts avec MFront réel, HTML Sphinx strict
 vert, linkcheck strict vert, PDF LuaLaTeX strict de 48 pages compilé et rendu
-inspecté. Le README compte 85 lignes. Le commit et la publication sont le
-dernier point administratif du jalon.
+inspecté. Le README compte 85 lignes. La réécriture a été publiée dans le
+commit `094b009`.
 
 Jalon atteint au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
 partition P154 d'un découpage 20×20**. Le protocole et les résultats sont
