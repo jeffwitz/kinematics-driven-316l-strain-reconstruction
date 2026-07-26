@@ -16,8 +16,6 @@ and what remains unresolved?
   the final EVM.
 - Excessive coupling can reduce global L2 while suppressing relevant band
   morphology.
-- Equal-$A_\chi$ pairs do not produce identical reduced-fidelity responses.
-  Spatial length therefore has an observable effect beyond amplitude alone.
 
 ```{figure} ../_static/evidence/band_roi_evm_comparison.png
 :alt: DIC and raw FEM equivalent total strain on a band-containing calibration region for increasing coupling.
@@ -29,14 +27,28 @@ post-filter is applied to the FEM EVM.
 
 ## Supported, but not final
 
-- $H_\chi$ and $\ell$ play distinct roles in the present reduced-fidelity
-  observations.
+- Versioned constant-$A_\chi$ and fixed-alpha comparisons produce distinct
+  reduced-fidelity fields and spatial metrics. This supports a length effect
+  beyond coupling strength alone.
+- $H_\chi$ and $\ell$ therefore play distinct roles in the present
+  reduced-fidelity observations.
 - Some explored regions show interior compromises between amplitude and
   localization objectives.
 - Reproducing measured band width requires an effective spatial scale.
 
-These statements are **supported**, not yet independently confirmed at high
-fidelity and transferred.
+These statements are **supported**, not statistically identified. The
+constant-$A_\chi$ differences have not yet been compared with complete mesh,
+DIC-resolution and between-region uncertainty envelopes.
+
+## Current discriminating campaign
+
+The table below is generated from the immutable execution attestation:
+
+```{include} ../_generated/current_identification_metrics.inc
+```
+
+The short-length failures are numerical censoring, not a physical boundary.
+No high-fidelity manifest was generated from this incomplete objective surface.
 
 ## Not demonstrated
 
@@ -50,18 +62,18 @@ fidelity and transferred.
 ## Current numerical limitation
 
 The short-length, high-coupling corner is censored by mechanical convergence in
-the homogeneous F1 design. This is not interpreted as a physical boundary.
-Until that part of the parameter domain is either solved robustly or excluded
-for a physical reason, the objective surface is incomplete.
+the homogeneous F1 design. Until that part of the parameter domain is either
+solved robustly or excluded for a physical reason, the objective surface is
+incomplete.
 
 The generated {doc}`../reference/claims_matrix` and
-{doc}`../reference/evidence_registry` are the source of detailed status and
-provenance. Historical campaign narratives are retained outside the public
-reading path.
+{doc}`../reference/evidence_registry` record detailed status, machine-checked
+assertions and provenance. Historical campaign narratives are retained outside
+the public reading path.
 
 ## Conclusion
 
-> Current evidence distinguishes a spatial-length effect from coupling
+> Current evidence supports a spatial-length effect distinct from coupling
 > strength, but it does not identify a transferable material length.
 
 The final chapter, {doc}`scope_and_prediction`, states what the software can
