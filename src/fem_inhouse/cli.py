@@ -37,10 +37,13 @@ from fem_inhouse.workflows import (
     PartitionWorkflow,
     collect_identification_results,
     estimate_reference_hardening_from_campaign,
+    generate_high_fidelity_manifest,
+    generate_joint_identification_report,
     inspect_joint_identification,
     load_decision_thresholds,
     load_joint_identification_config,
     plot_coupled_alpha_fields,
+    prepare_transfer_validation,
     profile_coupling_modulus,
     run_low_fidelity,
     run_nonlocality_diagnostic,
@@ -673,6 +676,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.action == "select-candidates":
             _print_json(select_identification_candidates(identification_config))
+            return 0
+        if args.action == "generate-high-fidelity-manifest":
+            _print_json(
+                generate_high_fidelity_manifest(
+                    identification_config,
+                    dry_run=args.dry_run,
+                )
+            )
+            return 0
+        if args.action == "report":
+            _print_json(
+                generate_joint_identification_report(
+                    identification_config,
+                    dry_run=args.dry_run,
+                )
+            )
+            return 0
+        if args.action == "prepare-transfer-validation":
+            _print_json(
+                prepare_transfer_validation(
+                    identification_config,
+                    dry_run=args.dry_run,
+                )
+            )
             return 0
         raise RuntimeError(
             f"identification action {args.action!r} is not implemented yet; "

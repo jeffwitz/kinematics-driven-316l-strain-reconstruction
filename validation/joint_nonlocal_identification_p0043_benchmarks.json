@@ -1,0 +1,72 @@
+{
+  "campaign": "joint_nonlocal_identification_p0043",
+  "measurement_scope": "same workstation; elapsed wall time and maximum resident set size recorded around explicit CLI commands",
+  "f0_dense_screen": {
+    "couples": 463,
+    "helmholtz_dct_solves": 22,
+    "wall_time_seconds": 7.84,
+    "maximum_rss_kib": 141404
+  },
+  "f1_validation_four_points": {
+    "points": [
+      {
+        "alpha": 0.0,
+        "ell_um": null,
+        "mechanical_wall_time_seconds": 127.06
+      },
+      {
+        "alpha": 1.0,
+        "ell_um": 58.88,
+        "mechanical_wall_time_seconds": 217.32
+      },
+      {
+        "alpha": 2.0,
+        "ell_um": 58.88,
+        "mechanical_wall_time_seconds": 243.72
+      },
+      {
+        "alpha": 4.0,
+        "ell_um": 58.88,
+        "mechanical_wall_time_seconds": 289.60
+      }
+    ],
+    "command_wall_time_seconds": 883.21,
+    "maximum_rss_kib": 1428156
+  },
+  "f1_sparse_initial_design": {
+    "requested_points": 9,
+    "converged_points": 7,
+    "clean_failures": 2,
+    "command_wall_time_seconds": 2967.86,
+    "maximum_rss_kib": 1443392,
+    "failed_points": [
+      {
+        "alpha": 3.5,
+        "ell_um": 20.0,
+        "reason": "cutback below minimum"
+      },
+      {
+        "alpha": 6.0,
+        "ell_um": 20.0,
+        "reason": "cutback below minimum"
+      }
+    ]
+  },
+  "f1_adaptive_short_length_bracket": {
+    "points": [
+      {
+        "alpha": 2.0,
+        "ell_um": 20.0,
+        "mechanical_wall_time_seconds": 300.38
+      },
+      {
+        "alpha": 2.5,
+        "ell_um": 20.0,
+        "mechanical_wall_time_seconds": 326.33
+      }
+    ],
+    "command_wall_time_seconds": 630.0,
+    "maximum_rss_kib": 1403376
+  },
+  "interpretation": "F0 timing demonstrates screening speed only. F1 timings include coupled mechanics and are used for ranking. F2 campaign status files remain the source of scientific full-resolution costs."
+}

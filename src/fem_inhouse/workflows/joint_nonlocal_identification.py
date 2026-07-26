@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import subprocess
 import time
 from dataclasses import asdict, dataclass, replace
@@ -2101,3 +2102,896 @@ def select_identification_candidates(
     path = directory / "pareto_selection.json"
     _atomic_write(path, _canonical_json(report))
     return {**report, "path": str(path)}
+
+
+def _same_physical_point(
+    first: dict[str, Any],
+    second: dict[str, Any],
+) -> bool:
+    """Return whether two result rows represent the same positive parameter point."""
+
+    first_length = first.get("length_scale_um")
+    second_length = second.get("length_scale_um")
+    if first_length is None or second_length is None:
+        return bool(first.get("is_local")) and bool(second.get("is_local"))
+    return bool(
+        np.isclose(float(first["alpha"]), float(second["alpha"]), rtol=0.0, atol=1e-10)
+        and np.isclose(
+            float(first_length),
+            float(second_length),
+            rtol=0.0,
+            atol=1e-8,
+        )
+    )
+
+
+def _quadratic_identifiability_fit(
+    rows: list[dict[str, Any]],
+    *,
+    objective: str,
+) -> dict[str, Any]:
+    """Fit a documented local quadratic diagnostic in log(H, A) coordinates."""
+
+    usable = [
+        row
+        for row in rows
+        if not row["is_local"]
+        and row["theta_h_log_mpa"] is not None
+        and row["theta_a_log_mpa_mm2"] is not None
+        and np.isfinite(float(row[objective]))
+    ]
+    if len(usable) < 6:
+        return {
+            "status": "insufficient_points",
+            "point_count": len(usable),
+            "minimum_required": 6,
+        }
+    coordinates = np.asarray(
+        [
+            [float(row["theta_h_log_mpa"]), float(row["theta_a_log_mpa_mm2"])]
+            for row in usable
+        ],
+        dtype=float,
+    )
+    center = coordinates.mean(axis=0)
+    scale = np.maximum(coordinates.std(axis=0), np.finfo(float).eps)
+    normalized = (coordinates - center) / scale
+    x = normalized[:, 0]
+    y = normalized[:, 1]
+    design = np.column_stack(
+        (
+            np.ones_like(x),
+            x,
+            y,
+            0.5 * x * x,
+            x * y,
+            0.5 * y * y,
+        )
+    )
+    values = np.asarray([float(row[objective]) for row in usable], dtype=float)
+    coefficients, _, rank, singular_values = np.linalg.lstsq(
+        design,
+        values,
+        rcond=None,
+    )
+    fitted = design @ coefficients
+    residual = values - fitted
+    hessian = np.asarray(
+        [
+            [coefficients[3], coefficients[4]],
+            [coefficients[4], coefficients[5]],
+        ],
+        dtype=float,
+    )
+    eigenvalues = np.linalg.eigvalsh(hessian)
+    absolute_eigenvalues = np.abs(eigenvalues)
+    smallest = float(absolute_eigenvalues.min())
+    condition = (
+        math.inf
+        if smallest <= np.finfo(float).eps
+        else float(absolute_eigenvalues.max() / smallest)
+    )
+    positive_definite = bool(np.all(eigenvalues > 0.0))
+    parameter_correlation: float | None = None
+    if positive_definite:
+        covariance = np.linalg.inv(hessian)
+        denominator = math.sqrt(float(covariance[0, 0] * covariance[1, 1]))
+        parameter_correlation = float(covariance[0, 1] / denominator)
+    total = float(np.sum((values - values.mean()) ** 2))
+    r_squared = 1.0 if total == 0.0 else float(1.0 - np.sum(residual**2) / total)
+    return {
+        "status": "diagnostic_only",
+        "point_count": len(usable),
+        "coordinate_system": ["log_H_chi_MPa", "log_A_chi_MPa_mm2"],
+        "coordinate_center": center.tolist(),
+        "coordinate_scale": scale.tolist(),
+        "design_rank": int(rank),
+        "design_singular_values": singular_values.tolist(),
+        "coefficients": coefficients.tolist(),
+        "hessian_normalized_coordinates": hessian.tolist(),
+        "hessian_eigenvalues": eigenvalues.tolist(),
+        "absolute_condition_number": condition,
+        "positive_definite": positive_definite,
+        "parameter_correlation_if_positive_definite": parameter_correlation,
+        "r_squared": r_squared,
+        "limitation": (
+            "A quadratic fit to the sparse F1 design is an identifiability "
+            "diagnostic, not an uncertainty interval or an F2 optimum."
+        ),
+    }
+
+
+def analyze_joint_identifiability(
+    config: JointIdentificationConfig,
+) -> dict[str, Any]:
+    """Diagnose parameter separation without claiming a material length."""
+
+    collection, directory = _load_current_collection(config)
+    f1_rows = [
+        row
+        for row in collection["rows"]
+        if row["fidelity"] == "F1_low" and not row["is_local"]
+    ]
+    profile = profile_coupling_modulus(config)
+    boundary_profiles = [
+        item["length_scale_um"]
+        for item in profile["profiles"]
+        if item["optimum_on_sampled_boundary"]
+    ]
+    report = {
+        "schema_version": 1,
+        "collection_key_sha256": collection["collection_key_sha256"],
+        "status": "provisional",
+        "coordinate_definition": {
+            "theta_H": "log(H_chi / MPa)",
+            "theta_A": "log(A_chi / (MPa mm2))",
+            "A_chi": "H_chi * ell**2",
+        },
+        "quadratic_diagnostics": {
+            "amplitude": _quadratic_identifiability_fit(
+                f1_rows,
+                objective="j_amplitude",
+            ),
+            "localization": _quadratic_identifiability_fit(
+                f1_rows,
+                objective="j_localization",
+            ),
+        },
+        "profiled_lengths_um": [
+            item["length_scale_um"] for item in profile["profiles"]
+        ],
+        "amplitude_optimum_on_sampled_alpha_boundary_um": boundary_profiles,
+        "separate_identifiability_demonstrated": False,
+        "reason": (
+            "Every available H profile is still monotone and reaches its "
+            "amplitude minimum at the largest converged alpha. The current "
+            "F1 samples therefore constrain a useful region and a Pareto "
+            "front, but they do not close an interior ell/H optimum."
+        ),
+        "material_length_claim_allowed": False,
+    }
+    path = directory / "identifiability.json"
+    _atomic_write(path, _canonical_json(report))
+    return {**report, "path": str(path)}
+
+
+def _existing_f2_rows(collection: dict[str, Any]) -> list[dict[str, Any]]:
+    return [row for row in collection["rows"] if row["fidelity"] == "F2_high"]
+
+
+def _candidate_is_new(
+    row: dict[str, Any],
+    existing: list[dict[str, Any]],
+) -> bool:
+    return not any(_same_physical_point(row, other) for other in existing)
+
+
+def _append_unique_candidate(
+    selected: list[tuple[dict[str, Any], str, str]],
+    row: dict[str, Any],
+    *,
+    reason: str,
+    discriminator: str,
+    existing: list[dict[str, Any]],
+) -> None:
+    if not _candidate_is_new(row, existing):
+        return
+    if any(_same_physical_point(row, current[0]) for current in selected):
+        return
+    if any(
+        np.isclose(float(row["alpha"]), float(current[0]["alpha"]), atol=1e-10)
+        and abs(
+            float(row["length_scale_um"]) - float(current[0]["length_scale_um"])
+        )
+        / max(float(row["length_scale_um"]), float(current[0]["length_scale_um"]))
+        <= 0.025
+        for current in selected
+    ):
+        return
+    selected.append((row, reason, discriminator))
+
+
+def _estimated_f2_wall_time_seconds(
+    candidate: dict[str, Any],
+    *,
+    f2_rows: list[dict[str, Any]],
+    f1_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    positive_f2 = [
+        row
+        for row in f2_rows
+        if not row["is_local"]
+        and row.get("wall_time") is not None
+        and float(row["wall_time"]) > 0.0
+    ]
+    alpha = float(candidate["alpha"])
+    regression_estimate = math.nan
+    if len(positive_f2) >= 2:
+        coefficients = np.polyfit(
+            [float(row["alpha"]) for row in positive_f2],
+            [float(row["wall_time"]) for row in positive_f2],
+            1,
+        )
+        regression_estimate = float(np.polyval(coefficients, alpha))
+    ratios: list[float] = []
+    for f2 in positive_f2:
+        matches = [
+            f1
+            for f1 in f1_rows
+            if np.isclose(float(f1["alpha"]), float(f2["alpha"]), atol=1e-10)
+            and f1.get("length_scale_um") is not None
+            and f2.get("length_scale_um") is not None
+            and np.isclose(
+                float(f1["length_scale_um"]),
+                float(f2["length_scale_um"]),
+                atol=1e-8,
+            )
+            and f1.get("wall_time") is not None
+            and float(f1["wall_time"]) > 0.0
+        ]
+        if matches:
+            ratios.append(float(f2["wall_time"]) / float(matches[0]["wall_time"]))
+    matching_f1 = min(
+        f1_rows,
+        key=lambda row: (
+            abs(float(row["alpha"]) - alpha)
+            + abs(
+                float(row["length_scale_um"]) - float(candidate["length_scale_um"])
+            )
+            / 20.0
+        ),
+    )
+    scale_estimate = (
+        float(matching_f1["wall_time"]) * float(np.median(ratios))
+        if ratios and matching_f1.get("wall_time") is not None
+        else math.nan
+    )
+    finite = [
+        value for value in (regression_estimate, scale_estimate) if np.isfinite(value)
+    ]
+    estimate = max(finite) if finite else math.nan
+    return {
+        "seconds": estimate,
+        "hours": estimate / 3_600.0 if np.isfinite(estimate) else None,
+        "method": (
+            "conservative maximum of alpha-linear F2 extrapolation and "
+            "median F2/F1 scaling applied to the nearest F1 point"
+        ),
+        "alpha_linear_seconds": (
+            regression_estimate if np.isfinite(regression_estimate) else None
+        ),
+        "f1_scaled_seconds": scale_estimate if np.isfinite(scale_estimate) else None,
+    }
+
+
+def _candidate_command(
+    config: JointIdentificationConfig,
+    *,
+    row: dict[str, Any],
+    output_directory: Path,
+) -> str:
+    local_manifest = load_json_object(config.local_campaign / "manifest.json")
+    solver = local_manifest["config"]["solver"]
+    nonlocal_config = local_manifest["config"]["nonlocal_plasticity"]
+    layout = local_manifest["layout"]
+    parts_x, parts_y = layout["partition_shape"]
+    return " ".join(
+        (
+            ".venv/bin/fem-inhouse --verbose partition",
+            f"--input {config.input_directory}",
+            f"--output {output_directory}",
+            f"--parts-x {parts_x}",
+            f"--parts-y {parts_y}",
+            f"--padding {layout['padding']}",
+            f"--partition-id {config.partition_id}",
+            f"--increments {solver['increments']}",
+            f"--max-newton-iterations {solver['max_newton_iterations']}",
+            f"--residual-tolerance {solver['residual_tolerance']}",
+            f"--constitutive-backend {solver['constitutive_backend']}",
+            f"--mfront-library {solver['mfront_library']}",
+            f"--mfront-threads {solver['mfront_threads']}",
+            "--nonlocal-plasticity",
+            f"--nonlocal-length-um {float(row['length_scale_um']):.12g}",
+            f"--nonlocal-coupling-modulus-mpa {float(row['h_chi_mpa']):.12g}",
+            f"--nonlocal-relaxation {nonlocal_config['relaxation']}",
+            f"--nonlocal-tolerance {nonlocal_config['relative_tolerance']}",
+            f"--nonlocal-max-iterations {nonlocal_config['maximum_iterations']}",
+        )
+    )
+
+
+def _proposed_f2_candidates(
+    collection: dict[str, Any],
+    *,
+    h_ref_mpa: float,
+    maximum: int,
+) -> list[tuple[dict[str, Any], str, str]]:
+    f1_rows = [
+        row
+        for row in collection["rows"]
+        if row["fidelity"] == "F1_low" and not row["is_local"]
+    ]
+    existing = _existing_f2_rows(collection)
+    if not f1_rows:
+        raise ValueError("F1 points are required before F2 candidate selection")
+    selected: list[tuple[dict[str, Any], str, str]] = []
+
+    mandatory_point = NonlocalIdentificationPoint.from_alpha_and_length_um(
+        alpha=6.0,
+        length_scale_um=58.88,
+        h_ref_mpa=h_ref_mpa,
+    )
+    mandatory = {
+        **mandatory_point.as_dict(),
+        "fidelity": "F1_interpolated_candidate",
+        "j_amplitude": None,
+        "j_localization": None,
+    }
+    _append_unique_candidate(
+        selected,
+        mandatory,
+        reason=(
+            "Close the current alpha boundary at the previously tested length. "
+            "This also represents the F1 best-amplitude point at ell=60 um: "
+            "the 1.9% length difference is deliberately not charged as a "
+            "second full-resolution run."
+        ),
+        discriminator="Does the F2 amplitude improvement continue beyond alpha=4?",
+        existing=existing,
+    )
+
+    available = [row for row in f1_rows if _candidate_is_new(row, existing)]
+    best_amplitude = min(available, key=lambda row: float(row["j_amplitude"]))
+    _append_unique_candidate(
+        selected,
+        best_amplitude,
+        reason="Lowest F1 amplitude objective in the validated sparse design.",
+        discriminator="Amplitude preservation at the long-length/high-coupling corner.",
+        existing=existing,
+    )
+
+    amplitude_constraint = max(0.25, 4.0 * float(best_amplitude["j_amplitude"]))
+    localization_pool = [
+        row for row in available if float(row["j_amplitude"]) <= amplitude_constraint
+    ]
+    best_localization = min(
+        localization_pool,
+        key=lambda row: float(row["j_localization"]),
+    )
+    _append_unique_candidate(
+        selected,
+        best_localization,
+        reason=(
+            "Best absolute-DIC-q90 localization among new F1 points satisfying "
+            f"J_amp <= {amplitude_constraint:.3g}."
+        ),
+        discriminator="Localization gain without accepting a large amplitude error.",
+        existing=existing,
+    )
+
+    pareto_indices = _pareto_indices(available)
+    knee_index = _pareto_knee(available, pareto_indices)
+    if knee_index is not None:
+        _append_unique_candidate(
+            selected,
+            available[knee_index],
+            reason="Knee of the normalized F1 amplitude-localization Pareto front.",
+            discriminator="Balanced amplitude/localization compromise.",
+            existing=existing,
+        )
+
+    shortest = min(float(row["length_scale_um"]) for row in available)
+    short_length = [
+        row
+        for row in available
+        if np.isclose(float(row["length_scale_um"]), shortest, atol=1e-8)
+    ]
+    information = min(short_length, key=lambda row: float(row["j_amplitude"]))
+    _append_unique_candidate(
+        selected,
+        information,
+        reason=(
+            "Highest converged coupling at the shortest sampled length; retained "
+            "to distinguish H_chi from A_chi after stronger short-length points "
+            "failed cleanly."
+        ),
+        discriminator="Parameter separation along a direction not covered by long lengths.",
+        existing=existing,
+    )
+    return selected[:maximum]
+
+
+def generate_high_fidelity_manifest(
+    config: JointIdentificationConfig,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Write, but never execute, the first bounded set of proposed F2 runs."""
+
+    selection = select_identification_candidates(config)
+    if not selection.get("candidate_generation_ready", False):
+        return {
+            "status": "needs_f1_points",
+            "selection": selection,
+            "executed": False,
+        }
+    identifiability = analyze_joint_identifiability(config)
+    collection, _ = _load_current_collection(config)
+    _, _, _, h_ref, _ = _load_local_context(config)
+    selected = _proposed_f2_candidates(
+        collection,
+        h_ref_mpa=h_ref,
+        maximum=config.maximum_new_high_fidelity_runs,
+    )
+    f1_rows = [
+        row
+        for row in collection["rows"]
+        if row["fidelity"] == "F1_low" and not row["is_local"]
+    ]
+    f2_rows = _existing_f2_rows(collection)
+    candidates: list[dict[str, Any]] = []
+    for index, (row, reason, discriminator) in enumerate(selected, start=1):
+        alpha = float(row["alpha"])
+        ell_um = float(row["length_scale_um"])
+        point = NonlocalIdentificationPoint.from_alpha_and_length_um(
+            alpha=alpha,
+            length_scale_um=ell_um,
+            h_ref_mpa=h_ref,
+        )
+        output = (
+            config.output_directory
+            / "f2"
+            / f"ell-{ell_um:07.3f}um-alpha-{alpha:05.2f}"
+        )
+        candidates.append(
+            {
+                "proposal_index": index,
+                **point.as_dict(),
+                "reason": reason,
+                "primary_discriminator": discriminator,
+                "source_fidelity": row["fidelity"],
+                "source_metrics": {
+                    key: row.get(key)
+                    for key in (
+                        "j_amplitude",
+                        "j_localization",
+                        "relative_l2",
+                        "correlation",
+                        "absolute_q90_iou",
+                    )
+                },
+                "estimated_cost": _estimated_f2_wall_time_seconds(
+                    row,
+                    f2_rows=f2_rows,
+                    f1_rows=f1_rows,
+                ),
+                "output_directory": str(output),
+                "command": _candidate_command(config, row=point.as_dict(), output_directory=output),
+                "status": "proposed_not_run",
+            }
+        )
+    payload = {
+        "schema_version": 1,
+        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "configuration": str(config.source_path),
+        "configuration_sha256": config.source_sha256,
+        "collection_key_sha256": collection["collection_key_sha256"],
+        "selection_report": selection["path"],
+        "identifiability_report": identifiability["path"],
+        "human_approval_required": True,
+        "automatic_execution": False,
+        "candidate_count": len(candidates),
+        "maximum_allowed": config.maximum_new_high_fidelity_runs,
+        "candidates": candidates,
+        "total_estimated_wall_time_seconds": float(
+            sum(candidate["estimated_cost"]["seconds"] for candidate in candidates)
+        ),
+        "scientific_stop": (
+            "No proposed command is executed. Review the candidate table and "
+            "approve an explicit subset before any F2 calculation."
+        ),
+    }
+    proposal_key = sha256(_canonical_json(payload["candidates"]).encode()).hexdigest()
+    directory = config.output_directory / "f2-proposals" / proposal_key
+    path = directory / "manifest.json"
+    if dry_run:
+        return {**payload, "status": "dry_run", "path": str(path), "executed": False}
+    if path.is_file():
+        existing = load_json_object(path)
+        return {**existing, "status": "reused", "path": str(path), "executed": False}
+    if directory.exists() and any(directory.iterdir()):
+        raise RuntimeError(f"incomplete immutable F2 proposal: {directory}")
+    _atomic_write(path, _canonical_json(payload))
+    return {**payload, "status": "completed", "path": str(path), "executed": False}
+
+
+def prepare_transfer_validation(
+    config: JointIdentificationConfig,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Prepare an immutable, no-recalibration transfer protocol without running it."""
+
+    proposal = generate_high_fidelity_manifest(config, dry_run=dry_run)
+    candidates = proposal["candidates"][:3]
+    payload = {
+        "schema_version": 1,
+        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "calibration_roi": f"partition-{config.partition_id}",
+        "validation_cases": [],
+        "parameters_frozen": True,
+        "recalibration_allowed": False,
+        "maximum_candidates": 3,
+        "selected_candidates": [
+            {
+                key: candidate[key]
+                for key in (
+                    "alpha",
+                    "h_chi_mpa",
+                    "length_scale_mm",
+                    "a_chi_mpa_mm2",
+                    "reason",
+                )
+            }
+            for candidate in candidates
+        ],
+        "status": "awaiting_validation_roi",
+        "automatic_execution": False,
+        "acceptance_rule": (
+            "Use the identical DIC operator and metrics, compare rankings, and "
+            "do not reinterpret ell as a material length before transfer."
+        ),
+    }
+    path = config.output_directory / "transfer-validation" / "manifest.json"
+    if dry_run:
+        return {**payload, "path": str(path), "executed": False}
+    if path.is_file():
+        return {
+            **load_json_object(path),
+            "path": str(path),
+            "executed": False,
+        }
+    _atomic_write(path, _canonical_json(payload))
+    return {**payload, "path": str(path), "executed": False}
+
+
+def _save_identification_figure(
+    figure: Any,
+    *,
+    stem: str,
+    directories: tuple[Path, ...],
+) -> list[str]:
+    paths: list[str] = []
+    for directory in directories:
+        directory.mkdir(parents=True, exist_ok=True)
+        for extension in ("svg", "png", "pdf"):
+            path = directory / f"{stem}.{extension}"
+            metadata = {"Date": None} if extension in {"svg", "pdf"} else None
+            figure.savefig(
+                path,
+                dpi=180,
+                bbox_inches="tight",
+                metadata=metadata,
+            )
+            paths.append(str(path))
+    return paths
+
+
+def _identification_report_markdown(
+    *,
+    collection: dict[str, Any],
+    proposal: dict[str, Any],
+    identifiability: dict[str, Any],
+    f0_wall_seconds: float | None,
+) -> str:
+    f1 = [row for row in collection["rows"] if row["fidelity"] == "F1_low"]
+    f2 = [row for row in collection["rows"] if row["fidelity"] == "F2_high"]
+    lines = [
+        "# Joint nonlocal identification report",
+        "",
+        "## Scope and scientific status",
+        "",
+        "This report separates a frozen-field DCT heuristic (F0), a validated "
+        "reduced coupled solve (F1), and unchanged full-resolution mechanics "
+        "(F2). Only F2 is a scientific result. No proposed F2 command was run.",
+        "",
+        "The present design does **not** identify a material length. All sampled "
+        "amplitude profiles remain monotone and end at their largest converged "
+        "coupling, so the optimum is not interior.",
+        "",
+        "## Cost hierarchy",
+        "",
+        f"- F0 dense screen wall time: {f0_wall_seconds!r} s.",
+        f"- Available F1 results: {len(f1)}.",
+        f"- Reused F2 results: {len(f2)}.",
+        "",
+        "## Proposed F2 runs — human gate",
+        "",
+        "| # | ell (um) | alpha | H_chi (MPa) | A_chi (MPa mm2) | "
+        "estimated h | discriminator |",
+        "|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for candidate in proposal["candidates"]:
+        lines.append(
+            "| {proposal_index} | {length_scale_um:.3f} | {alpha:.3g} | "
+            "{h_chi_mpa:.3f} | {a_chi_mpa_mm2:.6g} | {hours:.3f} | "
+            "{primary_discriminator} |".format(
+                **candidate,
+                hours=candidate["estimated_cost"]["hours"],
+            )
+        )
+    lines.extend(
+        (
+            "",
+            "## Identifiability conclusion",
+            "",
+            identifiability["reason"],
+            "",
+            "The next action is a human review of the proposal. Transfer to a "
+            "second band-containing ROI must use frozen parameters and the same "
+            "DIC observation operator.",
+            "",
+        )
+    )
+    return "\n".join(lines)
+
+
+def generate_joint_identification_report(
+    config: JointIdentificationConfig,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Generate reproducible DOE figures and a report without running mechanics."""
+
+    collection, _ = _load_current_collection(config)
+    proposal = generate_high_fidelity_manifest(config, dry_run=dry_run)
+    identifiability = analyze_joint_identifiability(config)
+    report_directory = (
+        config.output_directory
+        / "reports"
+        / str(collection["collection_key_sha256"])
+    )
+    repository = _repository_root(config.source_path)
+    documentation_directory = repository / "docs" / "_static" / "joint_identification"
+    planned = {
+        "status": "dry_run" if dry_run else "planned",
+        "report_directory": str(report_directory),
+        "documentation_assets_directory": str(documentation_directory),
+        "automatic_mechanical_execution": False,
+    }
+    if dry_run:
+        return planned
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    f1_rows = [
+        row
+        for row in collection["rows"]
+        if row["fidelity"] == "F1_low" and not row["is_local"]
+    ]
+    f2_rows = [
+        row
+        for row in collection["rows"]
+        if row["fidelity"] == "F2_high" and not row["is_local"]
+    ]
+    figures: list[str] = []
+    output_directories = (report_directory, documentation_directory)
+
+    selection = select_identification_candidates(config)
+    figure, axis = plt.subplots(figsize=(7.2, 5.0), constrained_layout=True)
+    axis.scatter(
+        [row["j_amplitude"] for row in f1_rows],
+        [row["j_localization"] for row in f1_rows],
+        label="F1 reduced coupled mechanics",
+        marker="o",
+        color="#0072B2",
+        alpha=0.8,
+    )
+    axis.scatter(
+        [row["j_amplitude"] for row in f2_rows],
+        [row["j_localization"] for row in f2_rows],
+        label="F2 full-resolution reused",
+        marker="s",
+        color="#D55E00",
+        s=60,
+    )
+    pareto = sorted(
+        [
+            row
+            for row in selection["pareto_points"]
+            if row["fidelity"] == "F1_low"
+        ],
+        key=lambda row: float(row["j_amplitude"]),
+    )
+    axis.plot(
+        [row["j_amplitude"] for row in pareto],
+        [row["j_localization"] for row in pareto],
+        color="#009E73",
+        linewidth=1.5,
+        label="non-dominated F1 points",
+    )
+    for row in f1_rows:
+        axis.annotate(
+            f"{float(row['length_scale_um']):g} um, a={float(row['alpha']):g}",
+            (float(row["j_amplitude"]), float(row["j_localization"])),
+            xytext=(3, 3),
+            textcoords="offset points",
+            fontsize=6.5,
+        )
+    axis.set_xlabel(r"amplitude objective $J_{\rm amp}$ (lower is better)")
+    axis.set_ylabel(r"localization objective $1-\mathrm{IoU}_{q90}$")
+    axis.set_title("Validated F1 ranking and reused F2 results on P43")
+    axis.grid(alpha=0.25)
+    axis.legend(fontsize=8)
+    figures.extend(
+        _save_identification_figure(
+            figure,
+            stem="joint_identification_pareto",
+            directories=output_directories,
+        )
+    )
+    plt.close(figure)
+
+    figure, axes = plt.subplots(1, 2, figsize=(10.5, 4.5), constrained_layout=True)
+    amplitude = np.asarray([row["j_amplitude"] for row in f1_rows], dtype=float)
+    scatter = axes[0].scatter(
+        [row["length_scale_um"] for row in f1_rows],
+        [row["alpha"] for row in f1_rows],
+        c=amplitude,
+        cmap="viridis",
+        s=90,
+        edgecolor="black",
+        linewidth=0.4,
+    )
+    axes[0].set_xlabel(r"$\ell$ (um)")
+    axes[0].set_ylabel(r"$\alpha=H_\chi/H_{\rm ref}$")
+    axes[0].set_title("Sparse sequential design")
+    figure.colorbar(scatter, ax=axes[0], label=r"$J_{\rm amp}$")
+    scatter_log = axes[1].scatter(
+        [row["theta_h_log_mpa"] for row in f1_rows],
+        [row["theta_a_log_mpa_mm2"] for row in f1_rows],
+        c=amplitude,
+        cmap="viridis",
+        s=90,
+        edgecolor="black",
+        linewidth=0.4,
+    )
+    axes[1].set_xlabel(r"$\log(H_\chi/\mathrm{MPa})$")
+    axes[1].set_ylabel(r"$\log(A_\chi/(\mathrm{MPa\,mm^2}))$")
+    axes[1].set_title("Identifiability coordinates")
+    figure.colorbar(scatter_log, ax=axes[1], label=r"$J_{\rm amp}$")
+    figures.extend(
+        _save_identification_figure(
+            figure,
+            stem="joint_identification_parameter_maps",
+            directories=output_directories,
+        )
+    )
+    plt.close(figure)
+
+    profile = profile_coupling_modulus(config)
+    figure, axis = plt.subplots(figsize=(7.2, 4.8), constrained_layout=True)
+    for item in profile["profiles"]:
+        axis.plot(
+            item["sampled_alpha"],
+            item["sampled_j_amplitude"],
+            marker="o",
+            label=rf"$\ell={float(item['length_scale_um']):g}$ um",
+        )
+    axis.set_xlabel(r"$\alpha$")
+    axis.set_ylabel(r"$J_{\rm amp}$")
+    axis.set_title("Profiled coupling modulus: all minima remain on a boundary")
+    axis.grid(alpha=0.25)
+    axis.legend()
+    figures.extend(
+        _save_identification_figure(
+            figure,
+            stem="joint_identification_h_profiles",
+            directories=output_directories,
+        )
+    )
+    plt.close(figure)
+
+    f0_manifest_path = config.output_directory / "f0" / "manifest.json"
+    f0_wall_seconds: float | None = None
+    if f0_manifest_path.is_file():
+        f0_manifest = load_json_object(f0_manifest_path)
+        wall = f0_manifest.get("timing", {}).get("wall_time_seconds")
+        if wall is None:
+            wall = f0_manifest.get("wall_time_seconds")
+        if wall is not None:
+            f0_wall_seconds = float(wall)
+    benchmark_path = (
+        repository / "validation" / f"{config.name}_benchmarks.json"
+    )
+    if f0_wall_seconds is None and benchmark_path.is_file():
+        benchmark = load_json_object(benchmark_path)
+        measured_f0 = benchmark.get("f0_dense_screen", {}).get("wall_time_seconds")
+        if measured_f0 is not None:
+            f0_wall_seconds = float(measured_f0)
+    f1_times = [
+        float(row["wall_time"])
+        for row in f1_rows
+        if row.get("wall_time") is not None
+    ]
+    f2_times = [
+        float(row["wall_time"])
+        for row in f2_rows
+        if row.get("wall_time") is not None
+    ]
+    cost_labels: list[str] = []
+    cost_values: list[float] = []
+    if f0_wall_seconds is not None:
+        cost_labels.append("F0 dense screen\n463 pairs")
+        cost_values.append(f0_wall_seconds)
+    if f1_times:
+        cost_labels.append("F1 coupled\nmedian point")
+        cost_values.append(float(np.median(f1_times)))
+    if f2_times:
+        cost_labels.append("F2 full\nmedian point")
+        cost_values.append(float(np.median(f2_times)))
+    figure, axis = plt.subplots(figsize=(7.0, 4.6), constrained_layout=True)
+    bars = axis.bar(cost_labels, cost_values, color=("#009E73", "#0072B2", "#D55E00"))
+    axis.set_yscale("log")
+    axis.set_ylabel("wall time (s, logarithmic scale)")
+    axis.set_title("Why the staged design avoids an exhaustive F2 grid")
+    axis.bar_label(bars, labels=[f"{value:.1f} s" for value in cost_values])
+    axis.grid(axis="y", alpha=0.25)
+    figures.extend(
+        _save_identification_figure(
+            figure,
+            stem="joint_identification_cost_hierarchy",
+            directories=output_directories,
+        )
+    )
+    plt.close(figure)
+
+    report_markdown = _identification_report_markdown(
+        collection=collection,
+        proposal=proposal,
+        identifiability=identifiability,
+        f0_wall_seconds=f0_wall_seconds,
+    )
+    report_path = report_directory / "report.md"
+    _atomic_write(report_path, report_markdown)
+    metadata = {
+        "schema_version": 1,
+        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "collection_key_sha256": collection["collection_key_sha256"],
+        "configuration_sha256": config.source_sha256,
+        "proposal_manifest": proposal["path"],
+        "identifiability_report": identifiability["path"],
+        "benchmark_record": (
+            str(benchmark_path) if benchmark_path.is_file() else None
+        ),
+        "figures": figures,
+        "report": str(report_path),
+        "automatic_mechanical_execution": False,
+        "scientific_status": "provisional; material length not identified",
+    }
+    metadata_path = report_directory / "report.json"
+    _atomic_write(metadata_path, _canonical_json(metadata))
+    return {**metadata, "status": "completed", "path": str(metadata_path)}

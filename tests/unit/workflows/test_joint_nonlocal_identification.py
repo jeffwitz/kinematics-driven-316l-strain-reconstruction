@@ -12,6 +12,9 @@ from fem_inhouse.data_preparation import fingerprint_file
 from fem_inhouse.workflows.joint_nonlocal_identification import (
     _pareto_indices,
     _pareto_knee,
+    _proposed_f2_candidates,
+    _quadratic_identifiability_fit,
+    _same_physical_point,
     inspect_joint_identification,
     load_joint_identification_config,
     run_low_fidelity,
@@ -217,3 +220,108 @@ def test_configuration_rejects_local_alpha_in_positive_domain(tmp_path: Path) ->
     path.write_text(text, encoding="utf-8")
     with pytest.raises(ValueError, match="start above zero"):
         load_joint_identification_config(path)
+
+
+def _identification_row(
+    *,
+    fidelity: str,
+    ell_um: float,
+    alpha: float,
+    amplitude: float,
+    localization: float,
+) -> dict[str, object]:
+    h_ref = 4_000.0
+    h_chi = alpha * h_ref
+    ell_mm = ell_um / 1_000.0
+    a_chi = h_chi * ell_mm**2
+    return {
+        "fidelity": fidelity,
+        "is_local": False,
+        "alpha": alpha,
+        "h_ref_mpa": h_ref,
+        "h_chi_mpa": h_chi,
+        "length_scale_um": ell_um,
+        "length_scale_mm": ell_mm,
+        "a_chi_mpa_mm2": a_chi,
+        "a_chi_mpa_um2": h_chi * ell_um**2,
+        "theta_h_log_mpa": np.log(h_chi),
+        "theta_a_log_mpa_mm2": np.log(a_chi),
+        "j_amplitude": amplitude,
+        "j_localization": localization,
+        "relative_l2": amplitude,
+        "correlation": 1.0 - amplitude,
+        "absolute_q90_iou": 1.0 - localization,
+        "wall_time": 100.0 + 10.0 * alpha,
+    }
+
+
+def test_f2_proposal_is_bounded_deduplicated_and_closes_alpha_boundary() -> None:
+    rows = [
+        _identification_row(
+            fidelity="F2_high",
+            ell_um=58.88,
+            alpha=4.0,
+            amplitude=0.2,
+            localization=0.7,
+        ),
+        *[
+            _identification_row(
+                fidelity="F1_low",
+                ell_um=ell,
+                alpha=alpha,
+                amplitude=1.2 / alpha / (ell / 20.0),
+                localization=0.75 - 0.01 * alpha + 0.001 * abs(ell - 40.0),
+            )
+            for ell in (20.0, 40.0, 60.0)
+            for alpha in (1.0, 3.5, 6.0)
+        ],
+    ]
+    candidates = _proposed_f2_candidates(
+        {"rows": rows},
+        h_ref_mpa=4_000.0,
+        maximum=5,
+    )
+    assert 1 <= len(candidates) <= 5
+    physical = [
+        (float(row["length_scale_um"]), float(row["alpha"]))
+        for row, _, _ in candidates
+    ]
+    assert (58.88, 6.0) in physical
+    assert len(set(physical)) == len(physical)
+    assert (58.88, 4.0) not in physical
+
+
+def test_quadratic_identifiability_fit_is_explicitly_diagnostic() -> None:
+    rows = [
+        _identification_row(
+            fidelity="F1_low",
+            ell_um=ell,
+            alpha=alpha,
+            amplitude=(np.log(alpha * 4_000.0) - 9.5) ** 2
+            + 0.5 * (np.log(alpha * 4_000.0 * (ell / 1_000.0) ** 2) + 1.0) ** 2,
+            localization=0.7,
+        )
+        for ell in (20.0, 40.0, 60.0)
+        for alpha in (1.0, 3.5, 6.0)
+    ]
+    report = _quadratic_identifiability_fit(rows, objective="j_amplitude")
+    assert report["status"] == "diagnostic_only"
+    assert report["design_rank"] == 6
+    assert report["positive_definite"] is True
+    assert report["r_squared"] == pytest.approx(1.0)
+
+
+def test_physical_point_comparison_uses_both_length_and_alpha() -> None:
+    reference = _identification_row(
+        fidelity="F1_low",
+        ell_um=40.0,
+        alpha=2.0,
+        amplitude=0.5,
+        localization=0.7,
+    )
+    same = dict(reference)
+    different_length = {**reference, "length_scale_um": 60.0}
+    different_alpha = {**reference, "alpha": 3.0}
+    assert _same_physical_point(reference, same)
+    assert not _same_physical_point(reference, different_length)
+    assert not _same_physical_point(reference, different_alpha)
