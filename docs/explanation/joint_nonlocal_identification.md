@@ -453,6 +453,158 @@ The current F1 front contains:
 The fact that different points optimize amplitude and localization is exactly
 why no a-posteriori weighted scalar objective is introduced.
 
+## Homogeneous experiment for separating strength and length
+
+The profiles above mix the historical Newton-15 collection with two
+cache-isolated Newton-25 diagnostic replays. They are enough to disprove the
+old short-length boundary, but they are not a valid dataset for comparing
+parameters quantitatively. The replacement experiment therefore replays
+**every** F1 point with one immutable numerical policy:
+
+- 25 mechanical Newton iterations maximum;
+- 10 imposed loading increments;
+- relative Newton tolerance \(3\times10^{-6}\);
+- fixed Picard relaxation 0.5;
+- 15 micromorphic iterations maximum;
+- no opportunistic Aitken acceleration;
+- identical cutback policy and factor-two spatial reduction.
+
+The versioned configuration is
+`configs/joint_nonlocal_identifiability_p0043_newton25.yaml`. It produces 23
+unique F1 calculations including the single local control. A point may carry
+several experimental roles, but it is solved only once.
+
+### Experiment 1 — find a plateau in coupling strength
+
+At each of \(\ell=20,40,60\,\mu\mathrm m\), the profile contains
+
+$$
+\alpha=6,\ 9,\ 12.
+$$
+
+The purpose is not to force a minimum. An asymptotic plateau is sufficient to
+bound the identifiable coupling strength. Between successive levels the
+workflow records:
+
+- relative decrease of \(J_{\mathrm{amp}}\);
+- Pearson-correlation gain;
+- relative change of L2 error;
+- degradation of the apparent band-width error;
+- PEEQ peak and spatial redistribution.
+
+The pre-registered plateau thresholds are respectively 3%, 0.005, 2% and 5%.
+They are stored in the configuration, not selected after seeing the fields.
+If any length still improves at \(\alpha=12\), the workflow reports
+`needs_alpha_saturation` and refuses to generate an F2 proposal.
+
+This distinction matters scientifically. A best result at the last sampled
+alpha is a lower bound on useful coupling, not an identified modulus. If the
+improvement remains strong through 12, \(H_\chi\) may be compensating for a
+deficiency of the local J2 model rather than representing an independently
+identified physical parameter.
+
+### Experiment 2 — hold \(A_\chi\) constant
+
+The decisive degeneracy test uses the anchor
+
+$$
+(\ell,\alpha)=(20\,\mu\mathrm m,6)
+$$
+
+and the two equal-\(A_\chi\) points
+
+$$
+(30\,\mu\mathrm m,2.666666\ldots),
+\qquad
+(40\,\mu\mathrm m,1.5).
+$$
+
+Because the same \(H_{\mathrm{ref}}\) applies to all three,
+\(\alpha\ell^2\), and therefore \(A_\chi\), is identical. The implementation
+checks the numerical spread of \(A_\chi\) before interpreting the response.
+
+If EVM, band width, band orientation, correlation lengths and spectra remain
+indistinguishable, the present experiment identifies only
+\(A_\chi=H_\chi\ell^2\). If amplitudes remain similar but spatial scales
+differ beyond numerical, mesh, DIC-resolution and between-ROI variability,
+then \(\ell\) carries independent observable information. F1 records these
+differences; it does not by itself establish the required uncertainty
+thresholds.
+
+### Experiment 3 — hold alpha constant
+
+The orthogonal check compares
+
+$$
+\alpha=6,
+\qquad
+\ell=20,\ 40,\ 60\,\mu\mathrm m.
+$$
+
+At fixed coupling strength, an observable variation of apparent band width,
+axis position, autocorrelation length or directional spectral content is the
+signature expected from a spatial length. Global L2 alone is insufficient:
+it can prefer a field with the right amplitude but the wrong morphology.
+
+### Three distinct metric families
+
+The redesigned analysis keeps three families separate:
+
+| Family | Quantities | Main sensitivity |
+|---|---|---|
+| amplitude | EVM quantiles 50/75/90/95/99, standard deviation, RMSE, L2 | mostly \(H_\chi\) |
+| localization | relative top-10 IoU, absolute DIC q80/q90/q95 overlap, active area, band-axis offset | position and support |
+| spatial scale | band width and extent, orientation, x/y correlation lengths, gradient RMS, total variation, spectral centroid and radial-spectrum distance | mostly \(\ell\) |
+
+The same absolute DIC threshold is applied to DIC and FEM for the absolute
+overlap and band measurements. This prevents peak suppression from appearing
+as a localization improvement merely because each field selects its own top
+fraction.
+
+### Use the loading history, not only the final image
+
+Every F1 point stores converged `U`, `E` and `PEEQ` snapshots at 25%, 50%, 75%
+and 100% of the proportional loading history. The DIC reference at a fraction
+is reconstructed by scaling the imposed displacement, then passing it through
+the same observation operator as the FEM snapshot. No final constitutive
+state is transferred between parameter points.
+
+The history tests whether one length describes band initiation, broadening,
+merging and propagation consistently. A strength parameter can alter the
+rate at which amplitudes grow while a spatial length should leave a more
+persistent signature on morphology. This extra axis of observation is
+essential because a single final image can hide that distinction.
+
+### Explicit decision gate before F2
+
+The workflow cannot write a new high-fidelity manifest until:
+
+1. all homogeneous saturation profiles are complete;
+2. all constant-\(A_\chi\) points are complete;
+3. all fixed-alpha length points are complete;
+4. every alpha profile reaches the pre-registered plateau.
+
+Even after those gates pass, at most three F2 points may be proposed:
+
+1. an amplitude candidate on the plateau;
+2. a different-length candidate testing the same \(A_\chi\);
+3. the candidate best reproducing localization or band scale.
+
+The three points must discriminate hypotheses; they must not be neighbouring
+samples from the same Pareto branch. Their commands remain inert until
+explicit human approval. Transfer to a second band-containing ROI uses the
+same parameters and observation operator without recalibration.
+
+The possible scientific outcomes are deliberately limited:
+
+- \(H_\chi\) and \(\ell\) are separately identifiable;
+- only \(A_\chi\) is identifiable, in which case any reported effective
+  length depends on a stated convention;
+- alpha does not saturate, suggesting that coupling is acting as an amplitude
+  corrector or that the current data/model do not identify it.
+
+None of these F1 outcomes authorizes the phrase *material internal length*.
+
 ## Why the staged calculation is faster
 
 ```{image} ../_static/joint_identification/joint_identification_cost_hierarchy.*

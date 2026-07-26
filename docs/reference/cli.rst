@@ -195,8 +195,11 @@ Every action requires a versioned ``--config``. The supported actions are:
    * - ``screen-frozen``
      - Run or reuse the DCT-only frozen-PEEQ screen.
    * - ``run-low-fidelity``
-     - Replay reduced coupled mechanics; ``--design`` selects the sparse DOE
-       and repeated ``--point alpha:ell_um`` selects explicit points.
+     - Replay reduced coupled mechanics; ``--design`` selects the historical
+       sparse DOE, ``--identifiability-design`` selects the homogeneous
+       saturation/constant-A/fixed-alpha experiment, and repeated
+       ``--point alpha:ell_um`` selects explicit points. These selectors are
+       mutually exclusive.
    * - ``collect-results``
      - Build an immutable consolidated F1/F2 CSV and JSON table.
    * - ``profile-h``
@@ -205,7 +208,9 @@ Every action requires a versioned ``--config``. The supported actions are:
    * - ``select-candidates``
      - Construct the amplitude-localization Pareto front and its knee.
    * - ``generate-high-fidelity-manifest``
-     - Write at most five proposed F2 commands. It cannot execute them.
+     - Write the configured bounded set of proposed F2 commands. For a
+       discriminating design it refuses while points are incomplete or an
+       alpha profile has no plateau. It cannot execute them.
    * - ``report``
      - Generate the DOE report and SVG/PNG/PDF figures without mechanics.
    * - ``prepare-transfer-validation``
@@ -217,6 +222,11 @@ Every action requires a versioned ``--config``. The supported actions are:
 when their complete physical, numerical, observation and Git fingerprints
 match. A point failure receives an individual status; the F1 design continues
 and the command returns status 2.
+
+The homogeneous P43 configuration additionally saves converged ``U``, ``E``,
+and ``PEEQ`` snapshots at configured load fractions. Snapshot names, hashes and
+fractions belong to the immutable point manifest; missing or altered
+snapshots prevent cache reuse.
 
 See :doc:`../how-to/run_joint_nonlocal_identification` for the complete P43
 sequence and :doc:`../explanation/joint_nonlocal_identification` for the
