@@ -614,7 +614,7 @@ sans déclarer prématurément une longueur matérielle. Le domaine initial est
 
 **Ordre imposé et suivi :**
 
-- [ ] Auditer les solveurs Helmholtz, métriques, validateurs, partitions,
+- [x] Auditer les solveurs Helmholtz, métriques, validateurs, partitions,
       formats de campagne et commandes réutilisables
 - [ ] Formaliser les unités et les conversions
       `(alpha,ell) <-> (Hchi,Achi)`, y compris le cas local canonique
@@ -650,6 +650,30 @@ nécessitera également une commande explicite.
 `HREF.json` ou les métadonnées de campagne ; la valeur numérique n'est jamais
 codée en dur. La page `docs/explanation/p43_coupled_results.md` constitue le
 diagnostic scientifique de départ.
+
+**Audit d'architecture (terminé) :**
+
+- F0 réutilise directement
+  `postprocessing.helmholtz.helmholtz_filter_element_field`; une seule
+  résolution DCT est effectuée par longueur, puis tous les `Hchi` réemploient
+  le même écart `p-chi`.
+- L'observable principale réutilise
+  `workflows.nonlocality_diagnostic.reconstruct_historical_evm` et les
+  métriques existantes de `postprocessing.metrics`.
+- Les lectures de campagnes doivent reprendre les contrôles de manifeste,
+  statut et empreinte de `coupled_nonlocal_validation`; les fonctions
+  génériques seront extraites dans un module partagé au lieu d'être copiées.
+- F1 ne constitue pas un nouveau solveur : les champs globaux sont réduits
+  de façon déterministe, puis transmis au `PartitionWorkflow` existant, qui
+  conserve MFront/MGIS, Newton, PARDISO, les cutbacks, les sorties atomiques
+  et la reprise.
+- Le cache d'identification complète, sans remplacer, les manifestes du
+  `PartitionWorkflow`. Sa clé inclut les empreintes de maillage, DIC,
+  paramètres locaux, historique, opérateur DIC, fidélité, paramètres
+  micromorphiques et commit.
+- La CLI est une sous-commande unique avec actions explicites. Seule l'action
+  F1 peut lancer des calculs réduits ; la génération F2 écrit uniquement un
+  manifeste et des commandes reproductibles.
 
 ### Phase différée B — Validation externe Abaqus
 

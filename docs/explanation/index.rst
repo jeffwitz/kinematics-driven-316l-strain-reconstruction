@@ -69,6 +69,13 @@ the supplied article.
       Detailed visual and quantitative interpretation of the first
       band-containing coupled campaign, including temporary conclusions.
 
+   .. grid-item-card:: Joint nonlocal identification
+      :link: joint_nonlocal_identification
+      :link-type: doc
+
+      How frozen-field screening, reduced mechanical ranking and explicit
+      full-resolution proposals separate coupling strength from spatial length.
+
    .. grid-item-card:: Validation strategy
       :link: validation
       :link-type: doc
