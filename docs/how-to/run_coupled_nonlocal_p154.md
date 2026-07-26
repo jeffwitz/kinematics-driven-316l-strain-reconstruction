@@ -332,10 +332,53 @@ The complete PNG, PDF, SVG, optional-field figures, and reproducibility
 metadata are kept in
 `validation/figures/p154-alpha-comparison/`.
 
+### Recorded P43 figures
+
+P43 uses the generic repeated campaign option because its registered sweep is
+alpha = 0, 1, 2, 4:
+
+```bash
+.venv/bin/fem-inhouse plot-coupled-alpha-fields \
+  --input data/processed/case_study \
+  --local-campaign results/constitutive-local-p0043-pad150 \
+  --coupled-campaign 1 results/constitutive-nonlocal-p0043-pad150-a100 \
+  --coupled-campaign 2 results/constitutive-nonlocal-p0043-pad150-a200 \
+  --coupled-campaign 4 results/constitutive-nonlocal-p0043-pad150-a400 \
+  --partition-id 43 \
+  --output validation/figures/p0043-alpha-comparison \
+  --strain-vmax-percentile 99.5 \
+  --peeq-vmax-percentile 99.5 \
+  --difference-vmax-percentile 99.5
+```
+
+```{figure} ../../validation/figures/p0043-alpha-comparison/p0043_total_evm_comparison.png
+:name: p0043-alpha-total-evm
+:alt: P43 DIC and raw FEM total equivalent strain for alpha 0, 1, 2 and 4
+:align: center
+
+P43 raw total equivalent strain. The two diagonal FEM structures broaden as
+the energetic coupling increases.
+```
+
+```{figure} ../../validation/figures/p0043-alpha-comparison/p0043_peeq_comparison.png
+:name: p0043-alpha-peeq
+:alt: P43 internal PEEQ fields for alpha 0, 1, 2 and 4
+:align: center
+
+P43 PEEQ redistribution on one common scale. The peak falls strongly while
+the mean changes much less.
+```
+
+All positive candidates pass the registered checks. Alpha 2 maximises top-10%
+IoU, whereas alpha 4 gives the best correlation, relative L2 and absolute
+DIC-q90 IoU. Neither value is frozen because the tested set does not define a
+unique optimum and the length was held fixed. The numerical record is
+`validation/nonlocal_p0043_validation_results.md`.
+
 ### P15 alpha = 0, 1, 2, 4 diagnostic
 
-The same plotting workflow also supports an arbitrary four-value sweep through
-its Python API. The completed P15 diagnostic is stored in
+The same plotting workflow supports a registered four-value sweep through the
+repeated CLI option. The completed P15 diagnostic is stored in
 `validation/figures/p0015-alpha-comparison/`, with
 `p0015_total_evm_comparison.*`, `p0015_total_evm_difference.*`, and
 `p0015_peeq_comparison.*`. It uses `ell = 58.88 micrometres`,

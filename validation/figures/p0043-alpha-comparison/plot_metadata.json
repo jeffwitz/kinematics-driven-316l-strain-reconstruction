@@ -1,0 +1,188 @@
+{
+  "actual_alpha_by_campaign": [
+    0.0,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "alphas": [
+    0.0,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "campaign_manifest_sha256": {
+    "alpha_0": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+    "alpha_1": "a911aa9b792fa36860756e548e2fed1f2066ddd5e014b7046b20cd99fbd72c66",
+    "alpha_2": "078ae0546c73347b839abcdab63acc5349f970df5d3ff4f978c8af1c5084fff1",
+    "alpha_4": "9e9dc8149bbafa0a5d7a45f4c89f5f88e45c933ab2306bd78300de8eab5a26bb"
+  },
+  "campaign_paths": [
+    "results/constitutive-local-p0043-pad150",
+    "results/constitutive-nonlocal-p0043-pad150-a100",
+    "results/constitutive-nonlocal-p0043-pad150-a200",
+    "results/constitutive-nonlocal-p0043-pad150-a400"
+  ],
+  "color_limits": {
+    "difference": {
+      "percentile": 99.5,
+      "real_absolute_max": 0.044647842215006804,
+      "real_max": 0.044647842215006804,
+      "real_min": -0.009635181981132033,
+      "vmax": 0.012494075053165419,
+      "vmin": -0.012494075053165419
+    },
+    "evm": {
+      "percentile": 99.5,
+      "real_max": 0.04963800341569268,
+      "real_min": 0.0003998118605907509,
+      "vmax": 0.016712769821334652,
+      "vmin": 0.0
+    },
+    "peeq": {
+      "percentile": 99.5,
+      "real_max": 0.0641909513152619,
+      "real_min": 0.0,
+      "vmax": 0.0186978994105605,
+      "vmin": 0.0
+    }
+  },
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "core_shape": [
+    360,
+    310
+  ],
+  "evm_construction": "reconstruct_historical_evm from DIC/FEM nodal displacements",
+  "evm_post_filter_applied": false,
+  "extent_mm": [
+    2.6496,
+    3.3120000000000003,
+    1.7112,
+    2.2816
+  ],
+  "figure_paths": {
+    "alpha_summary": [
+      "validation/figures/p0043-alpha-comparison/p0043_alpha_summary.png",
+      "validation/figures/p0043-alpha-comparison/p0043_alpha_summary.pdf",
+      "validation/figures/p0043-alpha-comparison/p0043_alpha_summary.svg"
+    ],
+    "peeq_comparison": [
+      "validation/figures/p0043-alpha-comparison/p0043_peeq_comparison.png",
+      "validation/figures/p0043-alpha-comparison/p0043_peeq_comparison.pdf",
+      "validation/figures/p0043-alpha-comparison/p0043_peeq_comparison.svg"
+    ],
+    "peeq_distributions": [
+      "validation/figures/p0043-alpha-comparison/p0043_peeq_distributions.png",
+      "validation/figures/p0043-alpha-comparison/p0043_peeq_distributions.pdf",
+      "validation/figures/p0043-alpha-comparison/p0043_peeq_distributions.svg"
+    ],
+    "total_evm_comparison": [
+      "validation/figures/p0043-alpha-comparison/p0043_total_evm_comparison.png",
+      "validation/figures/p0043-alpha-comparison/p0043_total_evm_comparison.pdf",
+      "validation/figures/p0043-alpha-comparison/p0043_total_evm_comparison.svg"
+    ],
+    "total_evm_difference": [
+      "validation/figures/p0043-alpha-comparison/p0043_total_evm_difference.png",
+      "validation/figures/p0043-alpha-comparison/p0043_total_evm_difference.pdf",
+      "validation/figures/p0043-alpha-comparison/p0043_total_evm_difference.svg"
+    ]
+  },
+  "generated_at_utc": "2026-07-26T07:04:50.781776+00:00",
+  "git_commit": "8413761a4568efc1e80852430ce8efc555ba919a",
+  "h_ref_mpa": 5168.147582748343,
+  "hchi_by_alpha_mpa": [
+    0.0,
+    5168.147582748343,
+    10336.295165496686,
+    20672.59033099337
+  ],
+  "input_directory": "data/processed/case_study",
+  "metrics": [
+    {
+      "alpha": 0.0,
+      "mae": 0.002616069194416671,
+      "pearson_correlation": 0.37910328816632,
+      "relative_l2_error": 0.9515604378263605,
+      "rmse": 0.00398779312299634,
+      "signed_mean_error": -0.0001504736833885825
+    },
+    {
+      "alpha": 1.0,
+      "mae": 0.001988569023204779,
+      "pearson_correlation": 0.46243020546253133,
+      "relative_l2_error": 0.6173908380463329,
+      "rmse": 0.0025873573976930935,
+      "signed_mean_error": -0.00021882078218425508
+    },
+    {
+      "alpha": 2.0,
+      "mae": 0.0017299498977148857,
+      "pearson_correlation": 0.48136062696265325,
+      "relative_l2_error": 0.5255719166883995,
+      "rmse": 0.002202563275746923,
+      "signed_mean_error": -0.00025763283525914065
+    },
+    {
+      "alpha": 4.0,
+      "mae": 0.001433749469673033,
+      "pearson_correlation": 0.5035829730906514,
+      "relative_l2_error": 0.43413304102623257,
+      "rmse": 0.0018193618467624976,
+      "signed_mean_error": -0.0003047041283299809
+    }
+  ],
+  "optional_field_fallbacks": {},
+  "partition_id": 43,
+  "peeq_interpretation": "internal plasticity variable; no experimental PEEQ comparison",
+  "peeq_statistics": [
+    {
+      "alpha": 0.0,
+      "maximum": 0.0641909513152619,
+      "mean": 0.003079907846196098,
+      "minimum": 0.0,
+      "standard_deviation": 0.004675880034203134
+    },
+    {
+      "alpha": 1.0,
+      "maximum": 0.021939973630418365,
+      "mean": 0.0029457620963166398,
+      "minimum": 0.0,
+      "standard_deviation": 0.0031364615627084984
+    },
+    {
+      "alpha": 2.0,
+      "maximum": 0.016154274039348833,
+      "mean": 0.0028763738152910736,
+      "minimum": 0.0,
+      "standard_deviation": 0.002669450893663318
+    },
+    {
+      "alpha": 4.0,
+      "maximum": 0.01160658109876423,
+      "mean": 0.0027941846621500357,
+      "minimum": 0.0,
+      "standard_deviation": 0.002163809616707344
+    }
+  ],
+  "plot_options": {
+    "dpi": 180,
+    "formats": [
+      "png",
+      "pdf",
+      "svg"
+    ],
+    "helmholtz_filter_applied_to_evm": false,
+    "include_optional_fields": false
+  },
+  "solve_shape": [
+    660,
+    610
+  ],
+  "spacing_x_mm": 0.00184,
+  "spacing_y_mm": 0.00184
+}

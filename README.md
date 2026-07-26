@@ -146,9 +146,16 @@ Distribution-only indicators such as kurtosis remain diagnostics but no longer
 drive the selection. The automated score ranks P17 first, but the required
 visual review showed that P43 `(4, 3)` is the better scientific calibration
 ROI: its core contains two distinct diagonal deformation bands rather than one
-component selected mainly by the ranking heuristic. P43 is therefore the
-registered target for the next coupled campaign. No P43 alpha sweep has been
-launched yet.
+component selected mainly by the ranking heuristic.
+
+The P43 sweep is now complete for alpha = 0, 1, 2, and 4 at the fixed
+`58.88 µm` length. All runs converged without cutback and all positive
+candidates pass the eight registered checks. Correlation increases from
+`0.3791` to `0.5036` and relative L2 falls from `0.9516` to `0.4341`.
+Alpha 2 gives the highest top-10% IoU, while alpha 4 gives the best
+correlation, L2, and DIC-q90 IoU; neither value is frozen. The numerical record
+and figures are in
+[`validation/nonlocal_p0043_validation_results.md`](validation/nonlocal_p0043_validation_results.md).
 
 Before that campaign, the native MFront micromorphic hot path was made
 lightweight. Fixed-point evaluations now request only PEEQ and do not compute

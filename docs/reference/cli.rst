@@ -176,8 +176,8 @@ Filtered fields are post-processing products and are not valid
 ``plot-coupled-alpha-fields`` contract
 --------------------------------------
 
-This command compares the local P154 campaign with the three registered
-coupled campaigns (alpha = 0.5, 1, 2). It reconstructs the historical total
+This command compares one local campaign with exactly three coupled
+campaigns. It reconstructs the historical total
 equivalent strain from saved nodal displacements, using the same operator as
 the validation workflow, and extracts only the manifest-declared core:
 
@@ -192,6 +192,24 @@ the validation workflow, and extracts only the manifest-declared core:
      --partition-id 154 \
      --output validation/figures/p154-alpha-comparison \
      --include-optional-fields
+
+The generic repeated form supports other pre-registered alpha sets. For
+example, the P43 sweep uses:
+
+.. code-block:: text
+
+   fem-inhouse plot-coupled-alpha-fields \
+     --input data/processed/case_study \
+     --local-campaign results/constitutive-local-p0043-pad150 \
+     --coupled-campaign 1 results/constitutive-nonlocal-p0043-pad150-a100 \
+     --coupled-campaign 2 results/constitutive-nonlocal-p0043-pad150-a200 \
+     --coupled-campaign 4 results/constitutive-nonlocal-p0043-pad150-a400 \
+     --partition-id 43 \
+     --output validation/figures/p0043-alpha-comparison
+
+The legacy ``--campaign-a050``, ``--campaign-a100``, and
+``--campaign-a200`` options remain supported. They must not be mixed with
+``--coupled-campaign``.
 
 The command accepts ``--dpi``, ``--format {png,pdf,svg}``, the three robust
 colour-limit percentile options, ``--include-optional-fields``, and

@@ -289,6 +289,26 @@ still exceeds the registered 20% maximum, so the result is classified as
 diagnostics, residuals, and manifest hashes are preserved in
 `validation/nonlocal_p154_validation_results.md`.
 
+## Coupled P43 campaign
+
+The band-containing P43 core was evaluated at the fixed
+`ell=58.88 micrometres` for alpha 0, 1, 2 and 4. All four `660 x 610`
+calculations completed 20 increments without cutback.
+
+| Alpha | Wall time | Pearson correlation | Relative L2 | top-10% IoU | DIC-q90 IoU |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 15 min 43 s | 0.37910 | 0.95156 | 0.20727 | 0.20418 |
+| 1 | 26 min 40 s | 0.46243 | 0.61739 | 0.24304 | 0.24479 |
+| 2 | 29 min 56 s | 0.48136 | 0.52557 | **0.24860** | 0.25765 |
+| 4 | 36 min 14 s | **0.50358** | **0.43413** | 0.24616 | **0.26676** |
+
+Every positive candidate passes all eight registered checks. Alpha 2 and
+alpha 4 are non-dominated: the first retains slightly more top-10% overlap,
+whereas the second minimises field error and maximises correlation and
+absolute-threshold overlap. No parameter is frozen from this bounded sweep.
+See `validation/nonlocal_p0043_validation_results.md` and the committed
+common-scale figures for the full result.
+
 ## Lightweight micromorphic hot-path benchmark
 
 The optimization changes only the amount of constitutive output requested in

@@ -551,7 +551,7 @@ protocole prospectif.
 - [x] Lancer la référence locale P43 avec le profil scientifique retenu
 - [x] Estimer `Href` sur le cœur P43, puis pré-enregistrer le balayage
       `alpha=0,1,2,4`
-- [ ] Lancer et visualiser les campagnes P43 sans ajustement rétroactif
+- [x] Lancer et visualiser les campagnes P43 sans ajustement rétroactif
 
 **Preuve :** commit `d5b0e7e` et
 `validation/performance/nonlocal_hot_path_optimization.json`. Sur P43, le
@@ -563,8 +563,16 @@ de `12,7 %`. Les deux versions conservent exactement 20 tentatives,
 Les écarts des champs physiques restent inférieurs à `1,1e-12` relativement à
 leur amplitude globale.
 
-**Critère de sortie :** atteint pour l'optimisation technique. Aucun calcul
-scientifique P43 n'a encore été lancé ; cette phase ne modifie ni la loi, ni
+**Campagne P43 :** `validation/nonlocal_p0043_validation_results.md`. La
+référence locale et les candidats `alpha=1,2,4` convergent tous à 20
+incréments sans cutback. La corrélation EVM passe de `0,3791` à
+`0,4624/0,4814/0,5036` et l'erreur L2 relative de `0,9516` à
+`0,6174/0,5256/0,4341`. `alpha=2` maximise légèrement l'IoU top-10 tandis que
+`alpha=4` maximise corrélation et IoU q90 : les deux restent non dominés et
+aucun `Hchi` n'est figé.
+
+**Critère de sortie :** atteint pour l'optimisation technique et l'exécution
+du balayage P43. Cette phase ne modifie ni la loi, ni
 `ell`, ni `Hchi`, ni les tolérances, ni Newton, ni le point fixe, ni la
 tangente. Le second lot modifie seulement l'assemblage sparse et le cycle
 PARDISO. Sur P187, il ajoute `-10,6 %` de temps processus et `-16,7 %` de pic
@@ -1029,6 +1037,8 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-26 | Validation après optimisation | Ruff, mypy, 271 tests MGIS/MFront, Sphinx strict | HTML et PDF 144 pages | Réussi |
 | 2026-07-26 | CSR fixe et phases PARDISO explicites | Même P187, chemin constitutif optimisé inchangé | `273,56→244,67 s`, RSS `-16,7 %`, une phase 11 et 139 phases 22/33 | Réussi |
 | 2026-07-26 | J2 symétrique défini positif | Même P187, CSR supérieur et `mtype=2` | `244,67→227,34 s`, PARDISO `-38,0 %`, RSS `-8,7 %` | Réussi |
+| 2026-07-26 | Balayage couplé P43 `alpha=1,2,4` | 402 600 éléments, 20 incréments, `ell=58,88 µm` | `26:40 / 29:56 / 36:14`, zéro cutback | Réussi |
+| 2026-07-26 | Validation et figures P43 | EVM brute/DIC sur cœur, PEEQ interne | 8/8 critères pour les trois candidats ; `alpha=2` et `4` non dominés | Réussi |
 
 ## 14. Journal des mises à jour
 

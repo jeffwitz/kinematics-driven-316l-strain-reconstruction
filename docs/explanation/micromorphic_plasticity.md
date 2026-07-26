@@ -232,6 +232,24 @@ for identification, no value was frozen. The next calibration target is P43,
 selected after a morphology scan and explicit visual confirmation of two
 diagonal deformation bands.
 
+## P43 validation outcome
+
+The fixed-length P43 sweep tested \(\alpha=0,1,2,4\) on a `660 x 610`
+padded domain. All 20 increments converged without cutback for every
+candidate. From local to alpha 4, Pearson correlation increases from 0.3791
+to 0.5036 and relative L2 decreases from 0.9516 to 0.4341. The PEEQ maximum
+decreases from 0.0642 to 0.0116 while its mean changes only from 0.00308 to
+0.00279: coupling primarily redistributes plasticity and suppresses narrow
+peaks.
+
+The response is not sufficient to identify a unique \(H_\chi\). Alpha 2 has
+the highest top-10% IoU, whereas alpha 4 has the best correlation, L2 and
+absolute DIC-q90 IoU. Both are non-dominated and alpha 4 remains the largest
+tested value. No larger alpha is added after inspecting the result. Moreover,
+the length was held fixed, so this campaign validates the mechanism but does
+not constitute a joint identification of \(H_\chi\) and \(\ell\). See
+`validation/nonlocal_p0043_validation_results.md` for the complete record.
+
 ## P154 validation outcome
 
 The 20-increment, 128-pixel-padding sweep tested
