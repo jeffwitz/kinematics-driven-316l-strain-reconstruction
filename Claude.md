@@ -548,8 +548,8 @@ protocole prospectif.
 - [x] Conserver et tester le chemin générique `mtype=11`
 - [x] Activer le CSR triangulaire et `mtype=2` uniquement pour le J2 vérifié
 - [x] Rejeter tout tangent J2 dont l'asymétrie relative dépasse `1e-12`
-- [ ] Lancer la référence locale P43 avec le profil scientifique retenu
-- [ ] Estimer `Href` sur le cœur P43, puis pré-enregistrer le balayage
+- [x] Lancer la référence locale P43 avec le profil scientifique retenu
+- [x] Estimer `Href` sur le cœur P43, puis pré-enregistrer le balayage
       `alpha=0,1,2,4`
 - [ ] Lancer et visualiser les campagnes P43 sans ajustement rétroactif
 
