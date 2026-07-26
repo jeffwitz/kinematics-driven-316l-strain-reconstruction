@@ -17,3 +17,9 @@ campaign chronology.
 
 The registry is intentionally compact. A source is evidence only within the
 question, fidelity, parameter range and claim boundary stated here.
+
+During documentation generation, source existence, evidence identifiers and
+declared JSON assertions are checked. These assertions cover pass/fail status
+and selected numerical directions of change. Implementation contracts and
+provisional scientific interpretations may also cite versioned code, figures
+or archived reports; their claim boundary remains explicit in the matrix.
