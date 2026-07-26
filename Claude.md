@@ -623,20 +623,20 @@ sans déclarer prématurément une longueur matérielle. Le domaine initial est
       diagnostics PEEQ
 - [x] Implémenter le crible F0 sur PEEQ local figé et ses diagnostics
       énergétiques/spectraux
-- [ ] Valider les tendances F0 contre les F2 P43 existants
+- [x] Valider les tendances F0 contre les F2 P43 existants
       `alpha=0,1,2,4`, `ell=58,88 µm`
 - [x] Implémenter F1 avec réduction spatiale configurable, historique complet,
       reprise, cache strict et statuts individuels
 - [x] Valider le classement F1 contre les quatre points F2 P43 existants
 - [x] Implémenter le profil `Hchi*(ell)`, PCHIP/sécante contrôlée et la courbe
       de recherche principalement unidimensionnelle
-- [~] Construire le front de Pareto amplitude-localisation, le genou et les
+- [x] Construire le front de Pareto amplitude-localisation, le genou et les
       cartes `(ell,alpha)` / `(Hchi,Achi)`
-- [ ] Générer un manifeste de cinq nouveaux calculs F2 au maximum, incluant
+- [x] Générer un manifeste de cinq nouveaux calculs F2 au maximum, incluant
       obligatoirement `(ell=58,88 µm, alpha=6)`, sans les lancer
-- [ ] Préparer une validation de transfert de trois couples au maximum sur une
+- [x] Préparer une validation de transfert de trois couples au maximum sur une
       autre ROI, sans recalage
-- [ ] Produire configuration, CSV consolidé, figures, rapport, documentation,
+- [x] Produire configuration, CSV consolidé, figures, rapport, documentation,
       tests, HTML et PDF
 
 **Point d'arrêt obligatoire :** après génération du manifeste F2, présenter
@@ -747,6 +747,74 @@ les candidats, jamais à remplacer F2 comme résultat scientifique.
   normalisation des deux objectifs ;
 - les actions de profil/sélection refusent de proposer F2 tant que les points
   F1 requis manquent ou que la validation F1 n'est pas réussie.
+
+**Plan F1 séquentiel exécuté :**
+
+- support initial sparse :
+  `ell={20,40,60} µm`, `alpha={1,3.5,6}` ;
+- sept points convergés sur neuf ; les points `(20 µm,3.5)` et
+  `(20 µm,6)` échouent proprement lorsque le cutback passe sous le minimum ;
+- l'échec n'est ni masqué ni contourné par une modification de tolérance :
+  les deux points adaptatifs `(20 µm,2)` et `(20 µm,2.5)` sont ajoutés pour
+  encadrer le plus fort couplage court convergé ;
+- plan initial : `2967,86 s`, pic RSS `1443392 KiB` ;
+- complément adaptatif : `630,0 s`, pic RSS `1403376 KiB` ;
+- treize résultats F1 et quatre F2 sont consolidés dans une collection
+  immuable avec CSV, JSON, empreintes et fidélité explicite.
+
+**Résultat des profils :**
+
+- `ell=20 µm` : `alpha={1,2,2.5}`, minimum d'amplitude sur la borne
+  convergée `alpha=2.5` ;
+- `ell=40 µm` : `alpha={1,3.5,6}`, minimum sur `alpha=6` ;
+- `ell=60 µm` : `alpha={1,3.5,6}`, minimum sur `alpha=6` ;
+- tous les profils restent monotones : aucun optimum intérieur et aucune
+  identifiabilité séparée de `Hchi` et `ell` ne sont démontrés ;
+- front F1 non dominé :
+  `(40 µm,6)` genou, `(58,88 µm,4)` meilleure localisation q90 absolue,
+  `(60 µm,6)` meilleure amplitude.
+
+**Point d'arrêt F2 atteint sans lancement :**
+
+- manifeste immuable :
+  `results/joint-nonlocal-identification-p0043/f2-proposals/`
+  (clé exacte donnée par le rapport courant) ;
+- quatre propositions, et non cinq :
+  `(58,88 µm,6)`, `(60 µm,3.5)`, `(40 µm,6)` et `(20 µm,2.5)` ;
+- `(60 µm,6)`, meilleur point F1 d'amplitude, est volontairement représenté
+  par le calcul obligatoire `(58,88 µm,6)` : l'écart de longueur n'est que
+  `1,9 %` et deux F2 seraient presque redondants ;
+- temps séquentiel total estimé : `9584,7 s`, soit `2,66 h` ;
+- chaque ligne contient `ell`, `alpha`, `Hchi`, `Achi`, coût, justification,
+  métrique discriminée, destination et commande complète ;
+- `automatic_execution=false`, `human_approval_required=true` et tous les
+  statuts restent `proposed_not_run`.
+
+**Transfert et rapport préparés :**
+
+- manifeste de transfert limité à trois couples, paramètres figés et
+  `recalibration_allowed=false` ; statut `awaiting_validation_roi` ;
+- figures SVG/PNG/PDF : plan sparse, coordonnées `(log Hchi,log Achi)`,
+  profils, front de Pareto et hiérarchie de coût ;
+- page anglaise détaillée :
+  `docs/explanation/joint_nonlocal_identification.md` ;
+- guide reproductible :
+  `docs/how-to/run_joint_nonlocal_identification.md` ;
+- registre de performance :
+  `validation/joint_nonlocal_identification_p0043_benchmarks.json`.
+
+**Validation finale du jalon :**
+
+- Ruff : réussi sur tout le dépôt ;
+- mypy : réussi sur les 44 fichiers source ;
+- pytest : `288 passed, 22 skipped` sans bibliothèque MFront explicitement
+  déclarée ;
+- suite complète avec `MFRONT_BEHAVIOUR_LIBRARY` :
+  `310 passed` ;
+- Sphinx HTML strict : réussi, page
+  `docs/_build/html/explanation/joint_nonlocal_identification.html` ;
+- Sphinx LaTeX/PDF strict : réussi, manuel de 175 pages sous
+  `docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf`.
 
 ### Phase différée B — Validation externe Abaqus
 

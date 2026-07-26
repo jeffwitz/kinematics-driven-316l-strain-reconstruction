@@ -36,6 +36,9 @@ Top-level commands
      - Create reproducible raw EVM/PEEQ comparison figures for P154.
    * - ``select-dic-partition``
      - Rank DIC partitions by robust EVM spatial heterogeneity.
+   * - ``identify-nonlocal``
+     - Run explicit F0/F1 identification stages and generate approval-gated
+       F2 proposals.
 
 Run ``fem-inhouse COMMAND --help`` for the authoritative options installed with
 the current source revision.
@@ -172,6 +175,49 @@ Existing non-empty output is never replaced unless ``--overwrite`` is present.
 
 Filtered fields are post-processing products and are not valid
 ``partition --stitch`` field names.
+
+``identify-nonlocal`` contract
+------------------------------
+
+Every action requires a versioned ``--config``. The supported actions are:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 72
+
+   * - Action
+     - Effect
+   * - ``inspect``
+     - Verify inputs and display the planned F0/F1/F2 scope without writing.
+   * - ``screen-frozen``
+     - Run or reuse the DCT-only frozen-PEEQ screen.
+   * - ``run-low-fidelity``
+     - Replay reduced coupled mechanics; ``--design`` selects the sparse DOE
+       and repeated ``--point alpha:ell_um`` selects explicit points.
+   * - ``collect-results``
+     - Build an immutable consolidated F1/F2 CSV and JSON table.
+   * - ``profile-h``
+     - Profile the amplitude objective at each sampled length using bounded
+       PCHIP interpolation.
+   * - ``select-candidates``
+     - Construct the amplitude-localization Pareto front and its knee.
+   * - ``generate-high-fidelity-manifest``
+     - Write at most five proposed F2 commands. It cannot execute them.
+   * - ``report``
+     - Generate the DOE report and SVG/PNG/PDF figures without mechanics.
+   * - ``prepare-transfer-validation``
+     - Freeze at most three candidates in a no-recalibration transfer
+       manifest. It cannot execute them.
+
+``--dry-run`` is supported by calculation and manifest actions.
+``--workers`` limits F1 workers and defaults to one. Caches are reused only
+when their complete physical, numerical, observation and Git fingerprints
+match. A point failure receives an individual status; the F1 design continues
+and the command returns status 2.
+
+See :doc:`../how-to/run_joint_nonlocal_identification` for the complete P43
+sequence and :doc:`../explanation/joint_nonlocal_identification` for the
+scientific limits of F0, F1 and F2.
 
 ``plot-coupled-alpha-fields`` contract
 --------------------------------------

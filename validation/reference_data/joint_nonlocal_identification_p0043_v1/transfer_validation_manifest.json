@@ -1,0 +1,35 @@
+{
+  "acceptance_rule": "Use the identical DIC operator and metrics, compare rankings, and do not reinterpret ell as a material length before transfer.",
+  "automatic_execution": false,
+  "calibration_roi": "partition-43",
+  "generated_at_utc": "2026-07-26T10:29:45.785767+00:00",
+  "maximum_candidates": 3,
+  "parameters_frozen": true,
+  "recalibration_allowed": false,
+  "schema_version": 1,
+  "selected_candidates": [
+    {
+      "a_chi_mpa_mm2": 107.50329112260275,
+      "alpha": 6.0,
+      "h_chi_mpa": 31008.885496490057,
+      "length_scale_mm": 0.05888,
+      "reason": "Close the current alpha boundary at the previously tested length. This also represents the F1 best-amplitude point at ell=60 um: the 1.9% length difference is deliberately not charged as a second full-resolution run."
+    },
+    {
+      "a_chi_mpa_mm2": 65.11865954262912,
+      "alpha": 3.5,
+      "h_chi_mpa": 18088.5165396192,
+      "length_scale_mm": 0.06,
+      "reason": "Best absolute-DIC-q90 localization among new F1 points satisfying J_amp <= 0.25."
+    },
+    {
+      "a_chi_mpa_mm2": 49.61421679438409,
+      "alpha": 6.0,
+      "h_chi_mpa": 31008.885496490057,
+      "length_scale_mm": 0.04,
+      "reason": "Knee of the normalized F1 amplitude-localization Pareto front."
+    }
+  ],
+  "status": "awaiting_validation_roi",
+  "validation_cases": []
+}

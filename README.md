@@ -191,6 +191,24 @@ threshold of `1e-12`. Unclassified behaviours retain full CSR storage and
 nonsymmetric until its own tangent contract has been verified. Evidence is in
 [`validation/performance/symmetric_spd_pardiso_p0187.json`](validation/performance/symmetric_spd_pardiso_p0187.json).
 
+Joint identification of `ell` and `Hchi` is now organized as an explicit
+three-fidelity design rather than an exhaustive full-resolution grid. On P43,
+the frozen-field F0 screen evaluates 463 pairs with 22 DCT solves in 7.84 s.
+A factor-two F1 coupled model has been validated against the four existing F2
+campaigns, then used in a sparse sequential design. The current amplitude
+profiles remain monotone and end on their largest converged alpha, so the two
+parameters are not yet separately identified and no material-length claim is
+made. An immutable manifest proposes four discriminating F2 calculations,
+including the mandatory `ell=58.88 µm, alpha=6` boundary check, but the
+workflow cannot launch them without an explicit later command. The complete
+logic, timings, Pareto front, temporary conclusions and reproduction commands
+are documented in
+[`docs/explanation/joint_nonlocal_identification.md`](docs/explanation/joint_nonlocal_identification.md)
+and
+[`docs/how-to/run_joint_nonlocal_identification.md`](docs/how-to/run_joint_nonlocal_identification.md).
+The compact versioned campaign record is under
+[`validation/reference_data/joint_nonlocal_identification_p0043_v1`](validation/reference_data/joint_nonlocal_identification_p0043_v1).
+
 On a one-minute constitutive benchmark (200,000 points, 20 increments, two
 repetitions), the eight-thread MGIS backend is 3.50× faster than the current
 Python update; MFront serial is 8.0% slower. This excludes assembly and
@@ -330,6 +348,7 @@ fem-inhouse diagnose-nonlocality --help
 fem-inhouse estimate-nonlocal-reference --help
 fem-inhouse validate-coupled-nonlocal --help
 fem-inhouse plot-coupled-alpha-fields --help
+fem-inhouse identify-nonlocal --help
 ```
 
 See [`docs/reduced_example.md`](docs/reduced_example.md) for the interpretation

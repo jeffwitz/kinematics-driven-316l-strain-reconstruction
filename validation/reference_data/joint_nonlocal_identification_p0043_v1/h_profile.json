@@ -1,0 +1,68 @@
+{
+  "collection_key_sha256": "e8addb3214115762b15bd8f697b000cd267a57b30980ecb8638ec41c00847ff2",
+  "missing_f1_points": [],
+  "monotonicity_assumed": false,
+  "profiles": [
+    {
+      "alpha_star": 2.499994473977962,
+      "confirmation_required": false,
+      "h_chi_star_mpa": 12920.340397573418,
+      "j_amplitude_star_interpolated": 0.8191136545945873,
+      "length_scale_um": 20.0,
+      "monotonic_over_samples": true,
+      "optimum_on_sampled_boundary": true,
+      "sampled_alpha": [
+        1.0,
+        2.0,
+        2.5
+      ],
+      "sampled_j_amplitude": [
+        1.2832887969446733,
+        0.9322183352958113,
+        0.8191126345342132
+      ]
+    },
+    {
+      "alpha_star": 5.999996386485624,
+      "confirmation_required": false,
+      "h_chi_star_mpa": 31008.86682131447,
+      "j_amplitude_star_interpolated": 0.11236062835730336,
+      "length_scale_um": 40.0,
+      "monotonic_over_samples": true,
+      "optimum_on_sampled_boundary": true,
+      "sampled_alpha": [
+        1.0,
+        3.5,
+        6.0
+      ],
+      "sampled_j_amplitude": [
+        1.028567023570461,
+        0.31831488872870467,
+        0.11236062835667965
+      ]
+    },
+    {
+      "alpha_star": 5.999996386485624,
+      "confirmation_required": false,
+      "h_chi_star_mpa": 31008.86682131447,
+      "j_amplitude_star_interpolated": 0.048462837619944556,
+      "length_scale_um": 60.0,
+      "monotonic_over_samples": true,
+      "optimum_on_sampled_boundary": true,
+      "sampled_alpha": [
+        1.0,
+        3.5,
+        6.0
+      ],
+      "sampled_j_amplitude": [
+        0.9047726917475496,
+        0.1954824550178866,
+        0.04846283761953192
+      ]
+    }
+  ],
+  "profiling_method": "PCHIP plus bounded scalar minimization",
+  "schema_version": 1,
+  "status": "evaluated",
+  "usable_for_f2_selection": true
+}

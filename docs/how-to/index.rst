@@ -47,3 +47,10 @@ start with :doc:`../tutorials/first_reconstruction`.
 
       Derive H-ref, execute the smoke and validation profiles, and preserve
       every coupled field and diagnostic.
+
+   .. grid-item-card:: Identify ell and H-chi
+      :link: run_joint_nonlocal_identification
+      :link-type: doc
+
+      Run the staged F0/F1 design, build the Pareto front, and generate an
+      approval-gated F2 proposal without launching it.

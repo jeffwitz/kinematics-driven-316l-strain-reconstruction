@@ -129,6 +129,8 @@ Start here
   quantitative interpretation, and temporary scientific conclusions;
 * :doc:`explanation/joint_nonlocal_identification` for the staged,
   non-exhaustive identification of the coupling modulus and spatial length;
+* :doc:`how-to/run_joint_nonlocal_identification` for the exact resumable
+  commands and the approval gate before full-resolution calculations;
 * :doc:`how-to/run_coupled_nonlocal_p154` for the pre-registered P154 campaign;
 * :doc:`how-to/install` to install TFEL/MFront, MGIS, and the Python package;
 * :doc:`reference/input_contract` to check input arrays;
@@ -151,6 +153,7 @@ Start here
    how-to/inspect_results
    how-to/diagnose_nonlocality
    how-to/run_coupled_nonlocal_p154
+   how-to/run_joint_nonlocal_identification
 
 .. toctree::
    :hidden:

@@ -1,0 +1,66 @@
+{
+  "interpretation": {
+    "peeq_maximum": {
+      "expected_direction": "a stronger frozen penalty should correspond to a smaller F2 value",
+      "predictive_direction": true
+    },
+    "peeq_standard_deviation": {
+      "expected_direction": "a stronger frozen penalty should correspond to a smaller F2 value",
+      "predictive_direction": true
+    },
+    "peeq_total_variation": {
+      "expected_direction": "a stronger frozen penalty should correspond to a smaller F2 value",
+      "predictive_direction": true
+    },
+    "relative_l2_error": {
+      "expected_direction": "a stronger frozen penalty should correspond to a smaller F2 value",
+      "predictive_direction": true
+    }
+  },
+  "limitation": "F0 does not reintegrate plasticity and is used only for ordering, spectral equivalence and candidate rejection.",
+  "points": [
+    {
+      "alpha": 0.0,
+      "peeq_maximum": 0.0641909513152619,
+      "peeq_standard_deviation": 0.004675880034203134,
+      "peeq_total_variation": 0.2647978295347953,
+      "proxy_nonlocal_hardening_l2_mpa_core": 0.0,
+      "relative_l2_error": 0.9515604378263605
+    },
+    {
+      "alpha": 1.0,
+      "peeq_maximum": 0.021939973630418365,
+      "peeq_standard_deviation": 0.0031364615627084984,
+      "peeq_total_variation": 0.18061472463935252,
+      "proxy_length_scale_um": 58.88,
+      "proxy_nonlocal_hardening_l2_mpa_core": 6747.039690915567,
+      "relative_l2_error": 0.6173908380463329
+    },
+    {
+      "alpha": 2.0,
+      "peeq_maximum": 0.016154274039348833,
+      "peeq_standard_deviation": 0.002669450893663318,
+      "peeq_total_variation": 0.14975374739338138,
+      "proxy_length_scale_um": 58.88,
+      "proxy_nonlocal_hardening_l2_mpa_core": 13494.079381831134,
+      "relative_l2_error": 0.5255719166883995
+    },
+    {
+      "alpha": 4.0,
+      "peeq_maximum": 0.01160658109876423,
+      "peeq_standard_deviation": 0.002163809616707344,
+      "peeq_total_variation": 0.11650386249847416,
+      "proxy_length_scale_um": 58.88,
+      "proxy_nonlocal_hardening_l2_mpa_core": 26988.158763662268,
+      "relative_l2_error": 0.43413304102623257
+    }
+  ],
+  "rank_correlation_proxy_strength_vs_f2": {
+    "peeq_maximum": -1.0,
+    "peeq_standard_deviation": -1.0,
+    "peeq_total_variation": -1.0,
+    "relative_l2_error": -1.0
+  },
+  "reference_length_um": 58.88,
+  "status": "evaluated"
+}

@@ -1,0 +1,149 @@
+{
+  "automatic_execution": false,
+  "candidate_count": 4,
+  "candidates": [
+    {
+      "a_chi_mpa_mm2": 107.50329112260275,
+      "a_chi_mpa_um2": 107503291.12260275,
+      "alpha": 6.0,
+      "command": ".venv/bin/fem-inhouse --verbose partition --input /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/data/processed/case_study --output /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-058.880um-alpha-06.00 --parts-x 10 --parts-y 10 --padding 150 --partition-id 43 --increments 20 --max-newton-iterations 15 --residual-tolerance 1e-06 --constitutive-backend mfront-native-plane-stress --mfront-library build/mfront/src/libBehaviour.so --mfront-threads 8 --nonlocal-plasticity --nonlocal-length-um 58.88 --nonlocal-coupling-modulus-mpa 31008.8854965 --nonlocal-relaxation 0.5 --nonlocal-tolerance 1e-06 --nonlocal-max-iterations 15",
+      "estimated_cost": {
+        "alpha_linear_seconds": 2554.2552083733863,
+        "f1_scaled_seconds": 2202.2947762106783,
+        "hours": 0.7095153356592739,
+        "method": "conservative maximum of alpha-linear F2 extrapolation and median F2/F1 scaling applied to the nearest F1 point",
+        "seconds": 2554.2552083733863
+      },
+      "h_chi_mpa": 31008.885496490057,
+      "h_ref_mpa": 5168.147582748343,
+      "is_local": false,
+      "length_scale_mm": 0.05888,
+      "length_scale_um": 58.88,
+      "output_directory": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-058.880um-alpha-06.00",
+      "primary_discriminator": "Does the F2 amplitude improvement continue beyond alpha=4?",
+      "proposal_index": 1,
+      "reason": "Close the current alpha boundary at the previously tested length. This also represents the F1 best-amplitude point at ell=60 um: the 1.9% length difference is deliberately not charged as a second full-resolution run.",
+      "source_fidelity": "F1_interpolated_candidate",
+      "source_metrics": {
+        "absolute_q90_iou": null,
+        "correlation": null,
+        "j_amplitude": null,
+        "j_localization": null,
+        "relative_l2": null
+      },
+      "status": "proposed_not_run",
+      "theta_a_log_mpa_mm2": 4.677521462193064,
+      "theta_h_log_mpa": 10.342029071316096
+    },
+    {
+      "a_chi_mpa_mm2": 65.11865954262912,
+      "a_chi_mpa_um2": 65118659.542629115,
+      "alpha": 3.5,
+      "command": ".venv/bin/fem-inhouse --verbose partition --input /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/data/processed/case_study --output /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-060.000um-alpha-03.50 --parts-x 10 --parts-y 10 --padding 150 --partition-id 43 --increments 20 --max-newton-iterations 15 --residual-tolerance 1e-06 --constitutive-backend mfront-native-plane-stress --mfront-library build/mfront/src/libBehaviour.so --mfront-threads 8 --nonlocal-plasticity --nonlocal-length-um 60 --nonlocal-coupling-modulus-mpa 18088.5165396 --nonlocal-relaxation 0.5 --nonlocal-tolerance 1e-06 --nonlocal-max-iterations 15",
+      "estimated_cost": {
+        "alpha_linear_seconds": 2076.278338616773,
+        "f1_scaled_seconds": 1889.1002366720547,
+        "hours": 0.5767439829491036,
+        "method": "conservative maximum of alpha-linear F2 extrapolation and median F2/F1 scaling applied to the nearest F1 point",
+        "seconds": 2076.278338616773
+      },
+      "h_chi_mpa": 18088.5165396192,
+      "h_ref_mpa": 5168.147582748343,
+      "is_local": false,
+      "length_scale_mm": 0.06,
+      "length_scale_um": 60.0,
+      "output_directory": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-060.000um-alpha-03.50",
+      "primary_discriminator": "Localization gain without accepting a large amplitude error.",
+      "proposal_index": 2,
+      "reason": "Best absolute-DIC-q90 localization among new F1 points satisfying J_amp <= 0.25.",
+      "source_fidelity": "F1_low",
+      "source_metrics": {
+        "absolute_q90_iou": 0.2768565248738284,
+        "correlation": 0.5266371736995455,
+        "j_amplitude": 0.1954824550178866,
+        "j_localization": 0.7231434751261716,
+        "relative_l2": 0.4335304213689192
+      },
+      "status": "proposed_not_run",
+      "theta_a_log_mpa_mm2": 4.176211137063337,
+      "theta_h_log_mpa": 9.80303257058341
+    },
+    {
+      "a_chi_mpa_mm2": 49.61421679438409,
+      "a_chi_mpa_um2": 49614216.79438409,
+      "alpha": 6.0,
+      "command": ".venv/bin/fem-inhouse --verbose partition --input /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/data/processed/case_study --output /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-040.000um-alpha-06.00 --parts-x 10 --parts-y 10 --padding 150 --partition-id 43 --increments 20 --max-newton-iterations 15 --residual-tolerance 1e-06 --constitutive-backend mfront-native-plane-stress --mfront-library build/mfront/src/libBehaviour.so --mfront-threads 8 --nonlocal-plasticity --nonlocal-length-um 40 --nonlocal-coupling-modulus-mpa 31008.8854965 --nonlocal-relaxation 0.5 --nonlocal-tolerance 1e-06 --nonlocal-max-iterations 15",
+      "estimated_cost": {
+        "alpha_linear_seconds": 2554.2552083733863,
+        "f1_scaled_seconds": 2550.7143083295596,
+        "hours": 0.7095153356592739,
+        "method": "conservative maximum of alpha-linear F2 extrapolation and median F2/F1 scaling applied to the nearest F1 point",
+        "seconds": 2554.2552083733863
+      },
+      "h_chi_mpa": 31008.885496490057,
+      "h_ref_mpa": 5168.147582748343,
+      "is_local": false,
+      "length_scale_mm": 0.04,
+      "length_scale_um": 40.0,
+      "output_directory": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-040.000um-alpha-06.00",
+      "primary_discriminator": "Balanced amplitude/localization compromise.",
+      "proposal_index": 3,
+      "reason": "Knee of the normalized F1 amplitude-localization Pareto front.",
+      "source_fidelity": "F1_low",
+      "source_metrics": {
+        "absolute_q90_iou": 0.2759455934414012,
+        "correlation": 0.5507721203220471,
+        "j_amplitude": 0.11236062835667965,
+        "j_localization": 0.7240544065585988,
+        "relative_l2": 0.397180617325175
+      },
+      "status": "proposed_not_run",
+      "theta_a_log_mpa_mm2": 3.904277421579695,
+      "theta_h_log_mpa": 10.342029071316096
+    },
+    {
+      "a_chi_mpa_mm2": 5.168147582748343,
+      "a_chi_mpa_um2": 5168147.582748343,
+      "alpha": 2.5,
+      "command": ".venv/bin/fem-inhouse --verbose partition --input /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/data/processed/case_study --output /home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-020.000um-alpha-02.50 --parts-x 10 --parts-y 10 --padding 150 --partition-id 43 --increments 20 --max-newton-iterations 15 --residual-tolerance 1e-06 --constitutive-backend mfront-native-plane-stress --mfront-library build/mfront/src/libBehaviour.so --mfront-threads 8 --nonlocal-plasticity --nonlocal-length-um 20 --nonlocal-coupling-modulus-mpa 12920.3689569 --nonlocal-relaxation 0.5 --nonlocal-tolerance 1e-06 --nonlocal-max-iterations 15",
+      "estimated_cost": {
+        "alpha_linear_seconds": 1885.0875907141271,
+        "f1_scaled_seconds": 2399.8853249626422,
+        "hours": 0.6666348124896229,
+        "method": "conservative maximum of alpha-linear F2 extrapolation and median F2/F1 scaling applied to the nearest F1 point",
+        "seconds": 2399.8853249626422
+      },
+      "h_chi_mpa": 12920.368956870858,
+      "h_ref_mpa": 5168.147582748343,
+      "is_local": false,
+      "length_scale_mm": 0.02,
+      "length_scale_um": 20.0,
+      "output_directory": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/f2/ell-020.000um-alpha-02.50",
+      "primary_discriminator": "Parameter separation along a direction not covered by long lengths.",
+      "proposal_index": 4,
+      "reason": "Highest converged coupling at the shortest sampled length; retained to distinguish H_chi from A_chi after stronger short-length points failed cleanly.",
+      "source_fidelity": "F1_low",
+      "source_metrics": {
+        "absolute_q90_iou": 0.2596320176128322,
+        "correlation": 0.5099371207260864,
+        "j_amplitude": 0.8191126345342132,
+        "j_localization": 0.7403679823871678,
+        "relative_l2": 0.5707409944257132
+      },
+      "status": "proposed_not_run",
+      "theta_a_log_mpa_mm2": 1.6425143231059045,
+      "theta_h_log_mpa": 9.466560333962196
+    }
+  ],
+  "collection_key_sha256": "e8addb3214115762b15bd8f697b000cd267a57b30980ecb8638ec41c00847ff2",
+  "configuration": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/configs/joint_nonlocal_identification_p0043.yaml",
+  "configuration_sha256": "015487a21a25a6fdcdd8cfa651c8d2b2ef46107ebb172f394379f7da5dd44da8",
+  "generated_at_utc": "2026-07-26T10:29:44.047305+00:00",
+  "human_approval_required": true,
+  "identifiability_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/collections/e8addb3214115762b15bd8f697b000cd267a57b30980ecb8638ec41c00847ff2/identifiability.json",
+  "maximum_allowed": 5,
+  "schema_version": 1,
+  "scientific_stop": "No proposed command is executed. Review the candidate table and approve an explicit subset before any F2 calculation.",
+  "selection_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/joint-nonlocal-identification-p0043/collections/e8addb3214115762b15bd8f697b000cd267a57b30980ecb8638ec41c00847ff2/pareto_selection.json",
+  "total_estimated_wall_time_seconds": 9584.674080326187
+}

@@ -1,0 +1,64 @@
+{
+  "checks": {
+    "maximum_absolute_correlation_error_le_0p05": true,
+    "maximum_absolute_q90_iou_error_le_0p05": true,
+    "maximum_relative_l2_error_le_15_percent": true,
+    "maximum_top10_iou_error_le_0p05": true,
+    "same_correlation_ranking": true,
+    "same_l2_ranking": true
+  },
+  "points": [
+    {
+      "alpha": 0.0,
+      "f1_absolute_q90_iou": 0.22076502732240438,
+      "f1_correlation": 0.40325788471541024,
+      "f1_peeq_q99": 0.022136099830343675,
+      "f1_relative_l2": 0.8922187071312389,
+      "f1_top10_iou": 0.2210065645514223,
+      "f2_absolute_q90_iou": 0.2041838081192269,
+      "f2_correlation": 0.37910328816632,
+      "f2_relative_l2": 0.9515604378263605,
+      "f2_top10_iou": 0.20726958026828213
+    },
+    {
+      "alpha": 1.0,
+      "f1_absolute_q90_iou": 0.2546632943408157,
+      "f1_correlation": 0.48953128853124334,
+      "f1_peeq_q99": 0.012664793535475052,
+      "f1_relative_l2": 0.5954070557403134,
+      "f1_top10_iou": 0.25675675675675674,
+      "f2_absolute_q90_iou": 0.24478680361033303,
+      "f2_correlation": 0.46243020546253133,
+      "f2_relative_l2": 0.6173908380463329,
+      "f2_top10_iou": 0.24303853865003341
+    },
+    {
+      "alpha": 2.0,
+      "f1_absolute_q90_iou": 0.26483261518064305,
+      "f1_correlation": 0.5090103442902792,
+      "f1_peeq_q99": 0.010468545173036135,
+      "f1_relative_l2": 0.5070822852630177,
+      "f1_top10_iou": 0.2595936794582393,
+      "f2_absolute_q90_iou": 0.25765285186704967,
+      "f2_correlation": 0.48136062696265325,
+      "f2_relative_l2": 0.5255719166883995,
+      "f2_top10_iou": 0.24860147684045647
+    },
+    {
+      "alpha": 4.0,
+      "f1_absolute_q90_iou": 0.27805417357656165,
+      "f1_correlation": 0.531852643242231,
+      "f1_peeq_q99": 0.00844377435740999,
+      "f1_relative_l2": 0.41765029529080444,
+      "f1_top10_iou": 0.25534308211473566,
+      "f2_absolute_q90_iou": 0.26676411474511236,
+      "f2_correlation": 0.5035829730906514,
+      "f2_relative_l2": 0.43413304102623257,
+      "f2_top10_iou": 0.24616157668471889
+    }
+  ],
+  "rule": "F1 cannot select F2 candidates unless every validation check passes.",
+  "schema_version": 1,
+  "status": "evaluated",
+  "usable_for_candidate_selection": true
+}

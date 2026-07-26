@@ -1,0 +1,129 @@
+{
+  "amplitude_optimum_on_sampled_alpha_boundary_um": [
+    20.0,
+    40.0,
+    60.0
+  ],
+  "collection_key_sha256": "e8addb3214115762b15bd8f697b000cd267a57b30980ecb8638ec41c00847ff2",
+  "coordinate_definition": {
+    "A_chi": "H_chi * ell**2",
+    "theta_A": "log(A_chi / (MPa mm2))",
+    "theta_H": "log(H_chi / MPa)"
+  },
+  "material_length_claim_allowed": false,
+  "profiled_lengths_um": [
+    20.0,
+    40.0,
+    60.0
+  ],
+  "quadratic_diagnostics": {
+    "amplitude": {
+      "absolute_condition_number": 4.849994511719171,
+      "coefficients": [
+        0.5111733467630721,
+        -0.22244041012932636,
+        -0.2001344290192429,
+        0.16652188617599054,
+        -0.10529251981952197,
+        0.15402139637614404
+      ],
+      "coordinate_center": [
+        9.36509662955144,
+        2.9768149537424904
+      ],
+      "coordinate_scale": [
+        0.6654962981498019,
+        1.2090326882779046
+      ],
+      "coordinate_system": [
+        "log_H_chi_MPa",
+        "log_A_chi_MPa_mm2"
+      ],
+      "design_rank": 6,
+      "design_singular_values": [
+        5.417560662868522,
+        4.5266580642967025,
+        2.3327715772178195,
+        1.8657814903048475,
+        0.9440898978851917,
+        0.34683345669032206
+      ],
+      "hessian_eigenvalues": [
+        0.054793774918933176,
+        0.26574950763320143
+      ],
+      "hessian_normalized_coordinates": [
+        [
+          0.16652188617599054,
+          -0.10529251981952197
+        ],
+        [
+          -0.10529251981952197,
+          0.15402139637614404
+        ]
+      ],
+      "limitation": "A quadratic fit to the sparse F1 design is an identifiability diagnostic, not an uncertainty interval or an F2 optimum.",
+      "parameter_correlation_if_positive_definite": 0.657463019897928,
+      "point_count": 12,
+      "positive_definite": true,
+      "r_squared": 0.9979692031501857,
+      "status": "diagnostic_only"
+    },
+    "localization": {
+      "absolute_condition_number": 3.33608977761311,
+      "coefficients": [
+        0.7324132813262825,
+        -0.005821257827629673,
+        -0.0039569337454114124,
+        0.008331010791245562,
+        -0.0031952833079132623,
+        0.005024453454385856
+      ],
+      "coordinate_center": [
+        9.36509662955144,
+        2.9768149537424904
+      ],
+      "coordinate_scale": [
+        0.6654962981498019,
+        1.2090326882779046
+      ],
+      "coordinate_system": [
+        "log_H_chi_MPa",
+        "log_A_chi_MPa_mm2"
+      ],
+      "design_rank": 6,
+      "design_singular_values": [
+        5.417560662868522,
+        4.5266580642967025,
+        2.3327715772178195,
+        1.8657814903048475,
+        0.9440898978851917,
+        0.34683345669032206
+      ],
+      "hessian_eigenvalues": [
+        0.0030800709696059865,
+        0.010275393276025432
+      ],
+      "hessian_normalized_coordinates": [
+        [
+          0.008331010791245562,
+          -0.0031952833079132623
+        ],
+        [
+          -0.0031952833079132623,
+          0.005024453454385856
+        ]
+      ],
+      "limitation": "A quadratic fit to the sparse F1 design is an identifiability diagnostic, not an uncertainty interval or an F2 optimum.",
+      "parameter_correlation_if_positive_definite": 0.4938739376283562,
+      "point_count": 12,
+      "positive_definite": true,
+      "r_squared": 0.9153647690367916,
+      "status": "diagnostic_only"
+    }
+  },
+  "reason": "Every available H profile is still monotone and reaches its amplitude minimum at the largest converged alpha. The current F1 samples therefore constrain a useful region and a Pareto front, but they do not close an interior ell/H optimum.",
+  "schema_version": 1,
+  "separate_identifiability_demonstrated": false,
+  "status": "provisional"
+}
