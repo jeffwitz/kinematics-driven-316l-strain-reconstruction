@@ -616,10 +616,10 @@ sans déclarer prématurément une longueur matérielle. Le domaine initial est
 
 - [x] Auditer les solveurs Helmholtz, métriques, validateurs, partitions,
       formats de campagne et commandes réutilisables
-- [ ] Formaliser les unités et les conversions
+- [x] Formaliser les unités et les conversions
       `(alpha,ell) <-> (Hchi,Achi)`, y compris le cas local canonique
-- [ ] Formaliser et empreinter l'opérateur `M_DIC`
-- [ ] Ajouter les métriques d'amplitude, localisation, spectre spatial et
+- [x] Formaliser et empreinter l'opérateur `M_DIC`
+- [x] Ajouter les métriques d'amplitude, localisation, spectre spatial et
       diagnostics PEEQ
 - [ ] Implémenter le crible F0 sur PEEQ local figé et ses diagnostics
       énergétiques/spectraux
@@ -674,6 +674,20 @@ diagnostic scientifique de départ.
 - La CLI est une sous-commande unique avec actions explicites. Seule l'action
   F1 peut lancer des calculs réduits ; la génération F2 écrit uniquement un
   manifeste et des commandes reproductibles.
+
+**Socle d'identification implémenté :**
+
+- `identification.parameters.NonlocalIdentificationPoint` canonise le témoin
+  local et fournit les deux systèmes de coordonnées avec unités explicites ;
+- `identification.observation.DICObservationOperator` versionne et empreinte
+  la mesure EVM, le support, le masque, le cœur et l'éventuelle réduction par
+  nœuds coïncidents ;
+- `identification.metrics` sépare erreurs globales, objectif d'amplitude par
+  quantiles, recouvrement top-10 relatif, seuil DIC absolu, gradient,
+  variation totale, spectre radial et diagnostics PEEQ ;
+- les tests unitaires couvrent les conversions inverses, l'unicité de
+  `alpha=0`, la réduction de l'opérateur DIC, les deux IoU et le spectre d'un
+  sinus.
 
 ### Phase différée B — Validation externe Abaqus
 
