@@ -10,6 +10,7 @@ import time
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from hashlib import sha256
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
@@ -2020,6 +2021,7 @@ def _result_row(
     mesh_hash: str,
     dic_hash: str,
     source: str,
+    design_roles: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     global_metrics = metrics["global"]
     amplitude = metrics["amplitude"]
@@ -2040,6 +2042,7 @@ def _result_row(
         "dic_hash": dic_hash,
         "status": "complete",
         "source": source,
+        "design_roles": list(design_roles),
         "wall_time": diagnostics.get("elapsed_seconds"),
         "newton_iterations": diagnostics.get("total_newton_iterations"),
         "cutbacks": diagnostics.get("cutbacks"),
@@ -2370,6 +2373,7 @@ def collect_identification_results(
                     ).encode()
                 ).hexdigest(),
                 source=str(metrics_path.parent),
+                design_roles=tuple(str(value) for value in report.get("design_roles", ())),
             )
         )
     payload = {
@@ -2688,6 +2692,268 @@ def _quadratic_identifiability_fit(
     }
 
 
+def _relative_spread(values: list[float]) -> float | None:
+    if not values:
+        return None
+    scale = max(abs(float(np.mean(values))), np.finfo(np.float64).eps)
+    return float((max(values) - min(values)) / scale)
+
+
+def _analyze_discriminating_f1_design(
+    config: JointIdentificationConfig,
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    design = config.discriminating_design
+    if design is None:
+        return {"status": "not_configured"}
+    f1_rows = [row for row in rows if row["fidelity"] == "F1_low"]
+
+    saturation_profiles: list[dict[str, Any]] = []
+    for ell_um in design.saturation_ell_um:
+        profile_rows = sorted(
+            (
+                row
+                for row in f1_rows
+                if "alpha_saturation" in row.get("design_roles", ())
+                and np.isclose(float(row["length_scale_um"]), ell_um)
+            ),
+            key=lambda row: float(row["alpha"]),
+        )
+        steps: list[dict[str, Any]] = []
+        for previous, current in pairwise(profile_rows):
+            previous_amplitude = float(previous["j_amplitude"])
+            current_amplitude = float(current["j_amplitude"])
+            previous_l2 = float(previous["relative_l2"])
+            current_l2 = float(current["relative_l2"])
+            reference_width = max(
+                abs(float(current["band_width_reference_mm"])),
+                np.finfo(np.float64).eps,
+            )
+            amplitude_gain = (
+                previous_amplitude - current_amplitude
+            ) / max(abs(previous_amplitude), np.finfo(np.float64).eps)
+            correlation_gain = float(current["correlation"]) - float(
+                previous["correlation"]
+            )
+            relative_l2_change = abs(current_l2 - previous_l2) / max(
+                abs(previous_l2),
+                np.finfo(np.float64).eps,
+            )
+            width_degradation = max(
+                0.0,
+                abs(float(current["band_width_error_mm"]))
+                - abs(float(previous["band_width_error_mm"])),
+            ) / reference_width
+            checks = {
+                "amplitude_gain_below_threshold": amplitude_gain
+                <= design.saturation_thresholds[
+                    "maximum_relative_amplitude_objective_gain"
+                ],
+                "correlation_gain_below_threshold": correlation_gain
+                <= design.saturation_thresholds["maximum_correlation_gain"],
+                "relative_l2_change_below_threshold": relative_l2_change
+                <= design.saturation_thresholds["maximum_relative_l2_change"],
+                "band_width_degradation_below_threshold": width_degradation
+                <= design.saturation_thresholds[
+                    "maximum_band_width_relative_degradation"
+                ],
+            }
+            steps.append(
+                {
+                    "alpha_from": float(previous["alpha"]),
+                    "alpha_to": float(current["alpha"]),
+                    "relative_amplitude_objective_gain": amplitude_gain,
+                    "correlation_gain": correlation_gain,
+                    "relative_l2_change": relative_l2_change,
+                    "band_width_relative_degradation": width_degradation,
+                    "checks": checks,
+                    "saturated": all(checks.values()),
+                }
+            )
+        saturation_profiles.append(
+            {
+                "length_scale_um": ell_um,
+                "required_alpha": list(design.saturation_alpha),
+                "available_alpha": [float(row["alpha"]) for row in profile_rows],
+                "complete": len(profile_rows) == len(design.saturation_alpha),
+                "steps": steps,
+                "plateau_reached": bool(steps and steps[-1]["saturated"]),
+                "plateau_lower_bound_alpha": (
+                    float(steps[-1]["alpha_from"])
+                    if steps and steps[-1]["saturated"]
+                    else None
+                ),
+            }
+        )
+
+    constant_a_rows = sorted(
+        (
+            row
+            for row in f1_rows
+            if "constant_a_chi" in row.get("design_roles", ())
+        ),
+        key=lambda row: float(row["length_scale_um"]),
+    )
+    constant_a_pairwise: list[dict[str, Any]] = []
+    for first_index, first in enumerate(constant_a_rows):
+        for second in constant_a_rows[first_index + 1 :]:
+            constant_a_pairwise.append(
+                {
+                    "first": {
+                        "ell_um": float(first["length_scale_um"]),
+                        "alpha": float(first["alpha"]),
+                    },
+                    "second": {
+                        "ell_um": float(second["length_scale_um"]),
+                        "alpha": float(second["alpha"]),
+                    },
+                    "absolute_relative_l2_difference": abs(
+                        float(first["relative_l2"]) - float(second["relative_l2"])
+                    ),
+                    "absolute_correlation_difference": abs(
+                        float(first["correlation"]) - float(second["correlation"])
+                    ),
+                    "absolute_band_width_difference_mm": abs(
+                        float(first["band_width_prediction_mm"])
+                        - float(second["band_width_prediction_mm"])
+                    ),
+                    "absolute_band_orientation_difference_deg": abs(
+                        float(first["band_orientation_error_deg"])
+                        - float(second["band_orientation_error_deg"])
+                    ),
+                    "absolute_radial_spectrum_error_difference": abs(
+                        float(first["radial_spectrum_l2"])
+                        - float(second["radial_spectrum_l2"])
+                    ),
+                }
+            )
+    constant_a_report = {
+        "target_a_chi_mpa_mm2": (
+            design.constant_a_anchor_alpha
+            * design.constant_a_anchor_ell_um**2
+            * (
+                float(constant_a_rows[0]["h_ref_mpa"]) / 1_000_000.0
+                if constant_a_rows
+                else 0.0
+            )
+        ),
+        "required_lengths_um": list(design.constant_a_ell_um),
+        "available_lengths_um": [
+            float(row["length_scale_um"]) for row in constant_a_rows
+        ],
+        "complete": len(constant_a_rows) == len(design.constant_a_ell_um),
+        "a_chi_relative_spread": _relative_spread(
+            [float(row["a_chi_mpa_mm2"]) for row in constant_a_rows]
+        ),
+        "response_relative_spreads": {
+            key: _relative_spread([float(row[key]) for row in constant_a_rows])
+            for key in (
+                "relative_l2",
+                "j_amplitude",
+                "band_width_prediction_mm",
+                "radial_spectrum_l2",
+                "correlation_length_x_prediction_mm",
+                "correlation_length_y_prediction_mm",
+            )
+        },
+        "pairwise_differences": constant_a_pairwise,
+        "interpretation": (
+            "Descriptive F1 discrimination only. Separate identifiability "
+            "requires these differences to exceed numerical, mesh, DIC-resolution "
+            "and between-ROI variability."
+        ),
+    }
+
+    fixed_alpha_rows = sorted(
+        (
+            row
+            for row in f1_rows
+            if "fixed_alpha_length_discrimination" in row.get("design_roles", ())
+        ),
+        key=lambda row: float(row["length_scale_um"]),
+    )
+    fixed_alpha_report = {
+        "alpha": design.fixed_alpha,
+        "required_lengths_um": list(design.fixed_alpha_ell_um),
+        "complete": len(fixed_alpha_rows) == len(design.fixed_alpha_ell_um),
+        "rows": [
+            {
+                "ell_um": float(row["length_scale_um"]),
+                "relative_l2": float(row["relative_l2"]),
+                "correlation": float(row["correlation"]),
+                "band_width_prediction_mm": float(row["band_width_prediction_mm"]),
+                "band_axis_offset_mm": float(row["band_axis_offset_mm"]),
+                "radial_spectrum_l2": float(row["radial_spectrum_l2"]),
+                "correlation_length_x_prediction_mm": float(
+                    row["correlation_length_x_prediction_mm"]
+                ),
+                "correlation_length_y_prediction_mm": float(
+                    row["correlation_length_y_prediction_mm"]
+                ),
+            }
+            for row in fixed_alpha_rows
+        ],
+    }
+
+    load_history: dict[str, Any] = {}
+    for row in f1_rows:
+        roles = row.get("design_roles", ())
+        if not roles:
+            continue
+        metrics_path = Path(str(row["source"])) / "metrics.json"
+        if not metrics_path.is_file():
+            continue
+        point_report = load_json_object(metrics_path)
+        compact_history: dict[str, Any] = {}
+        for fraction_id, snapshot in point_report.get("load_history", {}).items():
+            snapshot_metrics = snapshot["metrics"]
+            snapshot_structure = snapshot_metrics["spatial"]["structure"]
+            compact_history[fraction_id] = {
+                "relative_l2": snapshot_metrics["global"]["relative_l2_error"],
+                "correlation": snapshot_metrics["global"]["pearson_correlation"],
+                "j_amplitude": snapshot_metrics["amplitude"]["objective"],
+                "absolute_q90_iou": snapshot_metrics[
+                    "localization_absolute_dic_quantile"
+                ]["intersection_over_union"],
+                "band_width_prediction_mm": snapshot_structure["prediction"][
+                    "band_average_width_mm"
+                ],
+                "band_axis_offset_mm": snapshot_structure["band_axis_offset_mm"],
+                "radial_spectrum_l2": snapshot_structure["radial_spectrum_l2"],
+                "peeq_maximum": snapshot["peeq_diagnostics"]["maximum"],
+            }
+        load_history[str(row["campaign_id"])] = compact_history
+
+    complete = (
+        all(profile["complete"] for profile in saturation_profiles)
+        and constant_a_report["complete"]
+        and fixed_alpha_report["complete"]
+    )
+    return {
+        "status": "complete" if complete else "incomplete",
+        "numerical_policy": {
+            "maximum_newton_iterations": config.low_maximum_newton_iterations,
+            "temporal_increments": config.low_temporal_increments,
+            "fixed_point_strategy": config.low_nonlocal_relaxation_strategy,
+            "fixed_point_relaxation": config.low_nonlocal_relaxation,
+            "snapshot_fractions": list(config.low_snapshot_fractions),
+        },
+        "saturation": {
+            "thresholds": design.saturation_thresholds,
+            "profiles": saturation_profiles,
+            "plateau_reached_for_all_lengths": bool(
+                saturation_profiles
+                and all(profile["plateau_reached"] for profile in saturation_profiles)
+            ),
+        },
+        "constant_a": constant_a_report,
+        "fixed_alpha": fixed_alpha_report,
+        "load_history": load_history,
+        "separate_identifiability_demonstrated_by_f1": False,
+        "material_length_claim_allowed": False,
+    }
+
+
 def analyze_joint_identifiability(
     config: JointIdentificationConfig,
 ) -> dict[str, Any]:
@@ -2724,6 +2990,10 @@ def analyze_joint_identifiability(
                 objective="j_localization",
             ),
         },
+        "discriminating_f1_design": _analyze_discriminating_f1_design(
+            config,
+            collection["rows"],
+        ),
         "profiled_lengths_um": [
             item["length_scale_um"] for item in profile["profiles"]
         ],
@@ -3003,6 +3273,34 @@ def generate_high_fidelity_manifest(
             "executed": False,
         }
     identifiability = analyze_joint_identifiability(config)
+    if config.discriminating_design is not None:
+        discriminating = identifiability["discriminating_f1_design"]
+        if discriminating["status"] != "complete":
+            return {
+                "status": "needs_discriminating_f1_points",
+                "selection": selection,
+                "identifiability": identifiability,
+                "reason": (
+                    "The homogeneous Newton-policy saturation, constant-A_chi "
+                    "and fixed-alpha experiments must all be complete before "
+                    "proposing any high-fidelity run."
+                ),
+                "candidates": [],
+                "executed": False,
+            }
+        if not discriminating["saturation"]["plateau_reached_for_all_lengths"]:
+            return {
+                "status": "needs_alpha_saturation",
+                "selection": selection,
+                "identifiability": identifiability,
+                "reason": (
+                    "At least one alpha profile still improves at the sampled "
+                    "upper bound. Extend the low-fidelity saturation experiment "
+                    "before selecting high-fidelity candidates."
+                ),
+                "candidates": [],
+                "executed": False,
+            }
     collection, _ = _load_current_collection(config)
     _, _, _, h_ref, _ = _load_local_context(config)
     selected = _proposed_f2_candidates(
@@ -3100,6 +3398,13 @@ def prepare_transfer_validation(
     """Prepare an immutable, no-recalibration transfer protocol without running it."""
 
     proposal = generate_high_fidelity_manifest(config, dry_run=dry_run)
+    if not proposal.get("candidates"):
+        return {
+            "status": "needs_high_fidelity_candidates",
+            "proposal": proposal,
+            "candidates": [],
+            "executed": False,
+        }
     candidates = proposal["candidates"][:3]
     payload = {
         "schema_version": 1,

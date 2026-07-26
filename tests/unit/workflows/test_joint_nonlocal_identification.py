@@ -10,6 +10,7 @@ import pytest
 
 from fem_inhouse.data_preparation import fingerprint_file
 from fem_inhouse.workflows.joint_nonlocal_identification import (
+    _analyze_discriminating_f1_design,
     _pareto_indices,
     _pareto_knee,
     _proposed_f2_candidates,
@@ -251,8 +252,10 @@ identifiability_design:
     ell_um: [20.0, 40.0, 60.0]
     alpha: [6.0, 9.0, 12.0]
     thresholds:
-      maximum_amplitude_objective_gain: 0.03
+      maximum_relative_amplitude_objective_gain: 0.03
       maximum_correlation_gain: 0.005
+      maximum_relative_l2_change: 0.02
+      maximum_band_width_relative_degradation: 0.05
   constant_a:
     anchor: {ell_um: 20.0, alpha: 6.0}
     ell_um: [20.0, 30.0, 40.0]
@@ -295,6 +298,34 @@ identifiability_design:
     ]
     a_chi = [float(point["a_chi_mpa_mm2"]) for point in constant_a_points]
     assert max(a_chi) == pytest.approx(min(a_chi), rel=1.0e-12)
+
+    rows = []
+    for point in report["points"]:
+        if bool(point["is_local"]):
+            continue
+        row = _identification_row(
+            fidelity="F1_low",
+            ell_um=float(point["length_scale_um"]),
+            alpha=float(point["alpha"]),
+            amplitude=1.0 / float(point["alpha"]),
+            localization=0.5,
+        )
+        row.update(
+            {
+                "campaign_id": point["point_id"],
+                "design_roles": point["design_roles"],
+                "source": str(tmp_path / "missing"),
+            }
+        )
+        rows.append(row)
+    analysis = _analyze_discriminating_f1_design(config, rows)
+    assert analysis["status"] == "complete"
+    assert analysis["constant_a"]["complete"] is True
+    assert analysis["constant_a"]["a_chi_relative_spread"] == pytest.approx(
+        0.0,
+        abs=1.0e-15,
+    )
+    assert analysis["saturation"]["plateau_reached_for_all_lengths"] is False
 
 
 def test_pareto_detection_excludes_dominated_points_and_finds_knee() -> None:
@@ -349,6 +380,19 @@ def _identification_row(
         "relative_l2": amplitude,
         "correlation": 1.0 - amplitude,
         "absolute_q90_iou": 1.0 - localization,
+        "band_width_reference_mm": 0.02,
+        "band_width_prediction_mm": 0.02 + 0.0001 * ell_um,
+        "band_width_error_mm": 0.0001 * ell_um,
+        "band_orientation_error_deg": 0.1 * ell_um,
+        "band_axis_offset_mm": 0.001,
+        "band_centroid_distance_mm": 0.001,
+        "correlation_length_x_reference_mm": 0.1,
+        "correlation_length_x_prediction_mm": 0.1 + ell_um / 10_000.0,
+        "correlation_length_y_reference_mm": 0.05,
+        "correlation_length_y_prediction_mm": 0.05 + ell_um / 20_000.0,
+        "spectral_centroid_reference_cycles_per_mm": 10.0,
+        "spectral_centroid_prediction_cycles_per_mm": 10.0 + ell_um / 100.0,
+        "radial_spectrum_l2": ell_um / 1_000.0,
         "wall_time": 100.0 + 10.0 * alpha,
     }
 

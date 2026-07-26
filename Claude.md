@@ -914,11 +914,17 @@ sur une grille arbitraire. Il doit tester :
   spectral et distance spectrale radiale ;
 - seuils DIC absolus q80/q90/q95 conservés séparément des quantiles propres à
   chaque champ.
+- analyse automatique des trois expériences (saturation, `Achi` constant et
+  `alpha` constant), avec comparaison aux quatre snapshots de chargement ;
+- génération F2 désormais bloquée si la collection discriminante est
+  incomplète ou si au moins un profil atteint encore la borne `alpha=12`
+  sans satisfaire les critères de plateau ; l'ancien manifeste reste donc
+  inutilisable par construction.
 
 **État :**
 
-- [x] architecture, configuration et tests synthétiques ;
-- [ ] exécuter les 23 points F1 homogènes ;
+- [x] architecture, configuration, garde F2 et tests synthétiques ;
+- [~] exécuter les 23 points F1 homogènes (campagne en cours) ;
 - [ ] consolider saturation, ligne `Achi` constante et évolution temporelle ;
 - [ ] régénérer le front de Pareto et les conclusions ;
 - [ ] seulement ensuite proposer au plus trois F2 discriminants.
