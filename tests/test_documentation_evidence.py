@@ -23,12 +23,14 @@ def test_documentation_evidence_generation_is_deterministic(tmp_path: Path) -> N
     second = {path.name: path.read_bytes() for path in output.iterdir()}
     assert first == second
     assert "Current conclusion" in first["current_conclusion.inc"].decode()
+    assert "maximum stress relative L2" in first["local_baseline_metrics.inc"].decode()
+    assert "21 / 23" in first["current_identification_metrics.inc"].decode()
     assert (static / "evidence" / "band_roi_alpha_summary.png").is_file()
 
 
 def test_documentation_evidence_rejects_missing_source(tmp_path: Path) -> None:
     registry = {
-        "schema_version": 1,
+        "schema_version": 2,
         "current_conclusion": "test",
         "claims": [],
         "evidence": [
@@ -37,15 +39,80 @@ def test_documentation_evidence_rejects_missing_source(tmp_path: Path) -> None:
                 "question": "test",
                 "fidelity": "test",
                 "parameters": "test",
-                "status": "test",
+                "status": "supported",
                 "conclusion": "test",
-                "source": "validation/does-not-exist.json",
+                "sources": [{"path": "does-not-exist.json"}],
             }
         ],
     }
     registry_path = tmp_path / "registry.json"
     registry_path.write_text(json.dumps(registry), encoding="utf-8")
     with pytest.raises(FileNotFoundError, match="missing evidence source"):
+        generate(registry_path, tmp_path / "generated", tmp_path / "static")
+
+
+def test_documentation_evidence_rejects_failed_assertion(tmp_path: Path) -> None:
+    source_path = tmp_path / "source.json"
+    source_path.write_text(json.dumps({"passed": False}), encoding="utf-8")
+    registry = {
+        "schema_version": 2,
+        "current_conclusion": "test",
+        "claims": [],
+        "evidence": [
+            {
+                "id": "failed",
+                "question": "test",
+                "fidelity": "test",
+                "parameters": "test",
+                "status": "verified",
+                "conclusion": "test",
+                "sources": [{"path": "source.json"}],
+                "assertions": [
+                    {
+                        "source": "source.json",
+                        "path": "passed",
+                        "operator": "equals",
+                        "expected": True,
+                    }
+                ],
+            }
+        ],
+    }
+    registry_path = tmp_path / "registry.json"
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+    with pytest.raises(ValueError, match="evidence assertion failed"):
+        generate(registry_path, tmp_path / "generated", tmp_path / "static")
+
+
+def test_documentation_evidence_rejects_unknown_claim_evidence(tmp_path: Path) -> None:
+    source_path = tmp_path / "source.txt"
+    source_path.write_text("evidence", encoding="utf-8")
+    registry = {
+        "schema_version": 2,
+        "current_conclusion": "test",
+        "claims": [
+            {
+                "question": "test",
+                "status": "supported",
+                "boundary": "test",
+                "evidence_ids": ["unknown"],
+            }
+        ],
+        "evidence": [
+            {
+                "id": "known",
+                "question": "test",
+                "fidelity": "test",
+                "parameters": "test",
+                "status": "supported",
+                "conclusion": "test",
+                "sources": [{"path": "source.txt"}],
+            }
+        ],
+    }
+    registry_path = tmp_path / "registry.json"
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+    with pytest.raises(ValueError, match="unknown evidence ids"):
         generate(registry_path, tmp_path / "generated", tmp_path / "static")
 
 
