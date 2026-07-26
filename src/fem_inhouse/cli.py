@@ -36,10 +36,13 @@ from fem_inhouse.workflows import (
     CoupledValidationThresholds,
     PartitionWorkflow,
     estimate_reference_hardening_from_campaign,
+    inspect_joint_identification,
     load_decision_thresholds,
+    load_joint_identification_config,
     plot_coupled_alpha_fields,
     run_nonlocality_diagnostic,
     scan_dic_partition_heterogeneity,
+    screen_frozen_field,
     validate_coupled_nonlocal_campaign,
     write_dic_partition_heterogeneity_report,
 )
@@ -316,6 +319,33 @@ def _parser() -> argparse.ArgumentParser:
         default="all",
     )
     diagnose.add_argument("--overwrite", action="store_true")
+
+    identify = commands.add_parser(
+        "identify-nonlocal",
+        help="inspect and run explicit stages of joint ell/H_chi identification",
+    )
+    identify.add_argument(
+        "action",
+        choices=(
+            "inspect",
+            "screen-frozen",
+            "run-low-fidelity",
+            "profile-h",
+            "select-candidates",
+            "generate-high-fidelity-manifest",
+            "collect-results",
+            "report",
+            "prepare-transfer-validation",
+        ),
+    )
+    identify.add_argument("--config", type=Path, required=True)
+    identify.add_argument("--dry-run", action="store_true")
+    identify.add_argument("--workers", type=int, default=1)
+    identify.add_argument(
+        "--point",
+        action="append",
+        help="optional point selector for resumable low-fidelity actions",
+    )
     return parser
 
 
@@ -601,4 +631,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         _print_json(nonlocality_report)
         return 0
+    if args.command == "identify-nonlocal":
+        if args.workers < 1:
+            raise ValueError("--workers must be positive")
+        identification_config = load_joint_identification_config(args.config)
+        if args.action == "inspect":
+            _print_json(inspect_joint_identification(identification_config))
+            return 0
+        if args.action == "screen-frozen":
+            _print_json(
+                screen_frozen_field(
+                    identification_config,
+                    dry_run=args.dry_run,
+                )
+            )
+            return 0
+        raise RuntimeError(
+            f"identification action {args.action!r} is not implemented yet; "
+            "no calculation was launched"
+        )
     raise AssertionError(f"unhandled command {args.command!r}")  # pragma: no cover

@@ -15,6 +15,11 @@ from fem_inhouse.workflows.dic_partition_selection import (
     scan_dic_partition_heterogeneity,
     write_dic_partition_heterogeneity_report,
 )
+from fem_inhouse.workflows.joint_nonlocal_identification import (
+    inspect_joint_identification,
+    load_joint_identification_config,
+    screen_frozen_field,
+)
 from fem_inhouse.workflows.nonlocal_coupling_campaign import (
     ReferenceHardeningReport,
     compute_reference_hardening_modulus,
@@ -44,7 +49,9 @@ __all__ = [
     "compute_reference_hardening_modulus",
     "estimate_reference_hardening_from_campaign",
     "fingerprint_array",
+    "inspect_joint_identification",
     "load_decision_thresholds",
+    "load_joint_identification_config",
     "normalize_length_scales",
     "plot_coupled_alpha_fields",
     "prepare_coupled_alpha_fields",
@@ -52,6 +59,7 @@ __all__ = [
     "run_field_sweep",
     "run_nonlocality_diagnostic",
     "scan_dic_partition_heterogeneity",
+    "screen_frozen_field",
     "symmetric_color_limit",
     "validate_coupled_nonlocal_campaign",
     "write_dic_partition_heterogeneity_report",

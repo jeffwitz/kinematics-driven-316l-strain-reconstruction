@@ -621,7 +621,7 @@ sans déclarer prématurément une longueur matérielle. Le domaine initial est
 - [x] Formaliser et empreinter l'opérateur `M_DIC`
 - [x] Ajouter les métriques d'amplitude, localisation, spectre spatial et
       diagnostics PEEQ
-- [ ] Implémenter le crible F0 sur PEEQ local figé et ses diagnostics
+- [x] Implémenter le crible F0 sur PEEQ local figé et ses diagnostics
       énergétiques/spectraux
 - [ ] Valider les tendances F0 contre les F2 P43 existants
       `alpha=0,1,2,4`, `ell=58,88 µm`
@@ -688,6 +688,22 @@ diagnostic scientifique de départ.
 - les tests unitaires couvrent les conversions inverses, l'unicité de
   `alpha=0`, la réduction de l'opérateur DIC, les deux IoU et le spectre d'un
   sinus.
+
+**Crible F0 implémenté :**
+
+- configuration versionnée :
+  `configs/joint_nonlocal_identification_p0043.yaml` ;
+- commande :
+  `fem-inhouse identify-nonlocal {inspect,screen-frozen} --config ...` ;
+- accès partagé aux campagnes avec vérification du manifeste, du statut et de
+  chaque empreinte de champ ;
+- une DCT par longueur, puis réemploi exact de `p0-chi_ell` pour les 21
+  valeurs de `alpha` et le témoin local unique ;
+- sorties cache-strictes `manifest.json`, `frozen_screen.csv`,
+  `length_diagnostics.json` et `proxy_validation.json` ;
+- énergies locale et de gradient, multiplicateur spectral, normes, quantiles,
+  gradient, variation totale, résidu Helmholtz et dérive de moyenne ;
+- aucune résolution mécanique et aucune exécution F2 dans cette action.
 
 ### Phase différée B — Validation externe Abaqus
 
