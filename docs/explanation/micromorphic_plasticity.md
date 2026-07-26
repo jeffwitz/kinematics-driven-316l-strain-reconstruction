@@ -248,7 +248,9 @@ absolute DIC-q90 IoU. Both are non-dominated and alpha 4 remains the largest
 tested value. No larger alpha is added after inspecting the result. Moreover,
 the length was held fixed, so this campaign validates the mechanism but does
 not constitute a joint identification of \(H_\chi\) and \(\ell\). See
-`validation/nonlocal_p0043_validation_results.md` for the complete record.
+`validation/nonlocal_p0043_validation_results.md` for the complete numerical
+record and {doc}`p43_coupled_results` for the detailed figure-by-figure
+interpretation and temporary conclusions.
 
 ## P154 validation outcome
 

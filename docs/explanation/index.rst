@@ -62,6 +62,13 @@ the supplied article.
       How the energetic H-chi coupling feeds the Helmholtz field back into
       J2 plastic evolution while preserving transactional Newton updates.
 
+   .. grid-item-card:: P43 coupled results
+      :link: p43_coupled_results
+      :link-type: doc
+
+      Detailed visual and quantitative interpretation of the first
+      band-containing coupled campaign, including temporary conclusions.
+
    .. grid-item-card:: Validation strategy
       :link: validation
       :link-type: doc

@@ -571,6 +571,15 @@ incréments sans cutback. La corrélation EVM passe de `0,3791` à
 `alpha=4` maximise corrélation et IoU q90 : les deux restent non dominés et
 aucun `Hchi` n'est figé.
 
+**Interprétation détaillée :**
+`docs/explanation/p43_coupled_results.md` commente séparément les cartes EVM,
+les erreurs signées, les champs et distributions PEEQ, le coût numérique et
+les conclusions temporaires. Le couplage réduit le pic PEEQ de `81,9 %`, son
+RMS de gradient de `65,3 %` et sa variation totale de `56,0 %`, pour seulement
+`9,3 %` de baisse de moyenne : il s'agit bien d'une redistribution. La baisse
+du rappel q90 et le léger recul de l'IoU top-10 à `alpha=4` empêchent toutefois
+de conclure que toute augmentation supplémentaire serait bénéfique.
+
 **Critère de sortie :** atteint pour l'optimisation technique et l'exécution
 du balayage P43. Cette phase ne modifie ni la loi, ni
 `ell`, ni `Hchi`, ni les tolérances, ni Newton, ni le point fixe, ni la

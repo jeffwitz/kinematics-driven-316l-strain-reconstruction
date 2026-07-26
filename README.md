@@ -156,6 +156,9 @@ Alpha 2 gives the highest top-10% IoU, while alpha 4 gives the best
 correlation, L2, and DIC-q90 IoU; neither value is frozen. The numerical record
 and figures are in
 [`validation/nonlocal_p0043_validation_results.md`](validation/nonlocal_p0043_validation_results.md).
+The detailed scientific reading of the maps, error structures, PEEQ
+distributions, and provisional conclusions is available in
+[`docs/explanation/p43_coupled_results.md`](docs/explanation/p43_coupled_results.md).
 
 Before that campaign, the native MFront micromorphic hot path was made
 lightweight. Fixed-point evaluations now request only PEEQ and do not compute

@@ -101,6 +101,17 @@ Validated state
    **0.704**. Stage 1 therefore supports a spatial-width contribution without
    identifying a material internal length.
 
+.. container:: result-strip
+
+   The first constitutively coupled, band-containing campaign is complete on
+   **P43** for alpha = 0, 1, 2, and 4. All four 402,600-element calculations
+   converge over 20 increments without a cutback. Raw FEM-DIC relative L2
+   falls from **0.952 to 0.434**, correlation rises from **0.379 to 0.504**,
+   and the PEEQ peak falls by **81.9%** while its mean changes by only
+   **9.3%**. This supports genuine plasticity redistribution, but alpha 2 and
+   alpha 4 remain non-dominated and the fixed length is not yet identified as
+   a material parameter. See :doc:`explanation/p43_coupled_results`.
+
 Start here
 ----------
 
@@ -114,6 +125,8 @@ Start here
   on an existing padded partition;
 * :doc:`explanation/micromorphic_plasticity` for the coupled constitutive
   extension and its transaction model;
+* :doc:`explanation/p43_coupled_results` for the detailed P43 maps,
+  quantitative interpretation, and temporary scientific conclusions;
 * :doc:`how-to/run_coupled_nonlocal_p154` for the pre-registered P154 campaign;
 * :doc:`how-to/install` to install TFEL/MFront, MGIS, and the Python package;
 * :doc:`reference/input_contract` to check input arrays;
@@ -163,4 +176,5 @@ Start here
    explanation/partitioning
    explanation/nonlocality_diagnostic
    explanation/micromorphic_plasticity
+   explanation/p43_coupled_results
    explanation/validation
