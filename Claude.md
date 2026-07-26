@@ -1958,3 +1958,30 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
   sans interprétation de `58,88 µm` comme longueur interne matérielle
 - Sauvegarde exhaustive des deux calculs mécaniques, champs filtrés, figures,
   journaux, rapports, seuils et empreintes
+
+### 2026-07-26 — Consolidation vérifiable de la documentation publique
+
+- Passage du registre documentaire au schéma 2 : chaque preuve primaire
+  déclare désormais des assertions JSON Pointer exécutées avant génération
+- Ajout d'une preuve déterministe de la définition de table historique
+  (1000 lignes, grille et valeurs de Ludwik), explicitement séparée de toute
+  revendication de parité EF Abaqus
+- Séparation des claims : définition Abaqus-oriented réimplémentée,
+  parité Abaqus/Table–InHouse/Table non démontrée, et cohérence
+  InHouse/Table–InHouse/MFront vérifiée
+- Remplacement des métadonnées de tracé par le JSON numérique consolidé comme
+  preuve primaire du mécanisme micromorphique ; provenance graphique conservée
+  comme source secondaire
+- Génération automatique de quatre tableaux courts depuis les rapports :
+  points matériels, petit cas EF, redistribution PEEQ et état
+  d'identifiabilité Newton-25
+- Remplacement de la première figure scientifique par une comparaison
+  strictement locale : DIC EVM, FEM locale, erreur signée et PEEQ locale
+- Correction du guide d'identification avec une configuration réellement
+  versionnée et explication des deux étapes F1
+- Parcours scientifique d'accueil complété jusqu'à l'identification, les
+  preuves actuelles et la portée prédictive
+- Références CLI et solveur sparse enrichies avec options, valeurs par défaut,
+  contrats, erreurs, phases PARDISO et diagnostics
+- Tests documentaires étendus pour vérifier l'échec sur assertion sémantique,
+  en plus de la génération déterministe
