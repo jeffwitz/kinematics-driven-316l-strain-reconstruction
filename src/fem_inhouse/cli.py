@@ -365,10 +365,16 @@ def _parser() -> argparse.ArgumentParser:
     identify.add_argument("--config", type=Path, required=True)
     identify.add_argument("--dry-run", action="store_true")
     identify.add_argument("--workers", type=int, default=1)
-    identify.add_argument(
+    identify_design = identify.add_mutually_exclusive_group()
+    identify_design.add_argument(
         "--design",
         action="store_true",
         help="run the configured sparse F1 design instead of validation points",
+    )
+    identify_design.add_argument(
+        "--identifiability-design",
+        action="store_true",
+        help="run the homogeneous saturation and constant-A_chi F1 experiments",
     )
     identify.add_argument(
         "--point",
@@ -690,6 +696,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 dry_run=args.dry_run,
                 maximum_workers=args.workers,
                 use_sparse_design=args.design,
+                use_identifiability_design=args.identifiability_design,
             )
             _print_json(low_fidelity_report)
             return 2 if low_fidelity_report.get("failure_count", 0) else 0

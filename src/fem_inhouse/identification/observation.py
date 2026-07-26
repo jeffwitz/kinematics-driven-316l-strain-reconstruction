@@ -10,8 +10,6 @@ from typing import Any, Literal
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from fem_inhouse.workflows.nonlocality_diagnostic import reconstruct_historical_evm
-
 FloatArray = NDArray[np.float64]
 BoolArray = NDArray[np.bool_]
 
@@ -90,6 +88,13 @@ class DICObservationOperator:
         mask: ArrayLike | None = None,
     ) -> ObservationResult:
         """Reconstruct EVM, then apply the declared support and core mask."""
+
+        # Imported lazily because the workflows package also exports this
+        # observation operator. Keeping the numerical operator in one place
+        # avoids formula duplication without creating an import cycle.
+        from fem_inhouse.workflows.nonlocality_diagnostic import (
+            reconstruct_historical_evm,
+        )
 
         displacement = np.asarray(displacement_mm, dtype=np.float64)
         if displacement.ndim != 3 or displacement.shape[-1] != 2:

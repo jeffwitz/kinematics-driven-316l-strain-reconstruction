@@ -6,8 +6,8 @@ import pytest
 
 from fem_inhouse.config import CaseStudyConfig, MeshConfig
 from fem_inhouse.core.tensor_reconstruction import reconstruct_python_plane_stress_state
-from fem_inhouse.partitioning import PartitionLayout
-from fem_inhouse.results import FEMResult
+from fem_inhouse.partitioning import PartitionLayout, extract_partition_field
+from fem_inhouse.results import FEMResult, FrameResult
 from fem_inhouse.workflows import partitioned
 from fem_inhouse.workflows.partitioned import PartitionWorkflow, fingerprint_array
 
@@ -39,6 +39,7 @@ def _fake_solver(calls):
         displacement_y_mm,
         yield_stress_mpa,
         hardening_coefficient_mpa,
+        snapshots=(),
     ):
         calls.append(config.mesh)
         stress = np.stack(
@@ -56,6 +57,15 @@ def _fake_solver(calls):
             stress,
             config.material.poisson_ratio,
         )
+        frames = {
+            float(fraction): FrameResult(
+                stress_mpa=stress * fraction,
+                total_strain=np.zeros_like(stress),
+                equivalent_plastic_strain=np.asarray(yield_stress_mpa) * fraction,
+                displacement_mm=displacement * fraction,
+            )
+            for fraction in snapshots
+        }
         return FEMResult(
             displacement_mm=displacement,
             stress_mpa=stress,
@@ -73,6 +83,7 @@ def _fake_solver(calls):
             nonlocal_hardening_mpa=np.zeros_like(yield_stress_mpa),
             yield_surface_radius_mpa=np.asarray(yield_stress_mpa),
             nonlocal_residual=np.zeros_like(yield_stress_mpa),
+            frames=frames,
         )
 
     return solve
@@ -177,6 +188,44 @@ def test_partition_solves_are_resumable_and_stitchable(tmp_path, monkeypatch) ->
     assert custom_path.exists()
 
 
+def test_partition_snapshots_are_manifested_hashed_and_resumable(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    workflow = _workflow(tmp_path)
+    workflow.snapshot_fractions = (1.0, 0.25, 0.5, 0.75)
+    workflow.__post_init__()
+    calls = []
+    monkeypatch.setattr(partitioned, "run_case_study", _fake_solver(calls))
+
+    status = workflow.solve_partition(0)
+
+    assert workflow._manifest_data()["snapshots"]["fractions"] == [
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+    ]
+    assert set(status["snapshots"]) == {"0.250000", "0.500000", "0.750000", "1.000000"}
+    snapshot_u = np.load(workflow._snapshot_path(0, 0.5, "U"))
+    expected_x = (
+        extract_partition_field(
+            workflow.displacement_x_mm,
+            layout=workflow.layout,
+            partition=workflow.layout.get(0),
+            location="node",
+        )
+        * 0.5
+    )
+    np.testing.assert_array_equal(snapshot_u[..., 0], expected_x)
+    assert workflow.solve_partition(0) == status
+    assert len(calls) == 1
+
+    snapshot_path = workflow._snapshot_path(0, 0.5, "PEEQ")
+    np.save(snapshot_path, np.zeros((1, 1)))
+    assert 0 in workflow.pending_partition_ids()
+
+
 def test_corrupt_or_incomplete_partition_is_detected(tmp_path, monkeypatch) -> None:
     workflow = _workflow(tmp_path)
     monkeypatch.setattr(partitioned, "run_case_study", _fake_solver([]))
@@ -215,3 +264,7 @@ def test_invalid_workflow_layout_and_partition_id_are_rejected(tmp_path) -> None
             hardening_coefficient_mpa=workflow.hardening_coefficient_mpa,
             output_directory=tmp_path / "invalid-fields",
         )
+
+    with pytest.raises(ValueError, match="snapshot_fractions"):
+        workflow.snapshot_fractions = (0.0,)
+        workflow.__post_init__()

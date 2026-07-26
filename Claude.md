@@ -871,6 +871,58 @@ politique Newton-25 déclarée. Le registre compact est
 - Sphinx LaTeX/PDF strict : réussi, manuel de 184 pages sous
   `docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf`.
 
+### 2026-07-26 — Séparation de `alpha` et `ell` par expériences discriminantes
+
+**Décision scientifique :** aucun optimum intérieur n'est établi. Les
+profils à `ell=20/40/60 µm` atteignent encore leur meilleure amplitude sur
+la borne `alpha=6`. Le nouveau plan ne cherche donc pas un « meilleur couple »
+sur une grille arbitraire. Il doit tester :
+
+1. une éventuelle saturation selon `alpha=6 -> 9 -> 12` ;
+2. la dégénérescence à `Achi = Hchi*ell²` constant ;
+3. l'effet propre de `ell` à `alpha=6` constant ;
+4. l'évolution des champs à 25, 50, 75 et 100 % du chargement.
+
+**Protocole F1 homogène versionné :**
+
+- configuration :
+  `configs/joint_nonlocal_identifiability_p0043_newton25.yaml` ;
+- répertoire neuf et cache incompatible avec l'ancienne collection :
+  `results/joint-nonlocal-identifiability-p0043-newton25` ;
+- 25 itérations Newton maximum partout ;
+- 10 incréments, tolérance relative `3e-6`, Picard fixe `0.5`, 15
+  itérations micromorphiques et même cutback pour tous les points ;
+- Aitken reste désactivé ;
+- 23 calculs F1 uniques incluant le témoin local, la reproduction homogène
+  des anciens points, les profils de saturation et les deux nouveaux points
+  à `Achi` constant ;
+- aucun calcul F2 automatique.
+
+**Infrastructure implémentée :**
+
+- option CLI `--identifiability-design`, distincte du produit cartésien
+  historique `--design` ;
+- fusion déterministe des rôles expérimentaux et déduplication des points ;
+- ligne `Achi` constant ancrée sur `(ell=20 µm, alpha=6)` :
+  `(20,6)`, `(30,2.666666...)`, `(40,1.5)` ;
+- sauvegarde atomique et vérifiée des snapshots `U`, `E` et `PEEQ` par le
+  workflow partitionné ;
+- reconstruction de l'EVM DIC à chaque niveau par mise à l'échelle du
+  déplacement imposé proportionnel, et EVM FEM depuis le snapshot convergé ;
+- métriques de structure spatiale ajoutées : largeur et longueur de bande,
+  orientation, position d'axe, longueurs de corrélation x/y, centroïde
+  spectral et distance spectrale radiale ;
+- seuils DIC absolus q80/q90/q95 conservés séparément des quantiles propres à
+  chaque champ.
+
+**État :**
+
+- [x] architecture, configuration et tests synthétiques ;
+- [ ] exécuter les 23 points F1 homogènes ;
+- [ ] consolider saturation, ligne `Achi` constante et évolution temporelle ;
+- [ ] régénérer le front de Pareto et les conclusions ;
+- [ ] seulement ensuite proposer au plus trois F2 discriminants.
+
 ### Phase différée B — Validation externe Abaqus
 
 - [ ] Récupérer ou régénérer un petit `.inp` de référence

@@ -230,6 +230,73 @@ def test_low_fidelity_fixed_point_controls_are_explicitly_loaded(
     assert config.low_record_iteration_history is True
 
 
+def test_discriminating_design_unions_replay_saturation_and_constant_a(
+    tmp_path: Path,
+) -> None:
+    path = _synthetic_configuration(tmp_path)
+    text = path.read_text(encoding="utf-8")
+    text = text.replace(
+        "ell_um: {min: 20.0, max: 40.0, samples: 2}",
+        "ell_um: {min: 20.0, max: 60.0, samples: 3}",
+    ).replace(
+        "alpha: {min: 1.0, max: 2.0, samples: 2}",
+        "alpha: {min: 1.0, max: 12.0, samples: 4}",
+    )
+    text += """
+identifiability_design:
+  homogeneous_replay_points:
+    - {ell_um: 20.0, alpha: 1.0}
+    - {ell_um: 40.0, alpha: 2.0}
+  saturation:
+    ell_um: [20.0, 40.0, 60.0]
+    alpha: [6.0, 9.0, 12.0]
+    thresholds:
+      maximum_amplitude_objective_gain: 0.03
+      maximum_correlation_gain: 0.005
+  constant_a:
+    anchor: {ell_um: 20.0, alpha: 6.0}
+    ell_um: [20.0, 30.0, 40.0]
+  fixed_alpha:
+    alpha: 6.0
+    ell_um: [20.0, 40.0, 60.0]
+"""
+    text = text.replace(
+        "    residual_tolerance: 3.0e-6\n",
+        "    residual_tolerance: 3.0e-6\n"
+        "    maximum_newton_iterations: 25\n"
+        "    snapshot_fractions: [0.25, 0.5, 0.75, 1.0]\n",
+    )
+    path.write_text(text, encoding="utf-8")
+    config = load_joint_identification_config(path)
+
+    report = run_low_fidelity(
+        config,
+        dry_run=True,
+        use_identifiability_design=True,
+    )
+
+    assert config.low_maximum_newton_iterations == 25
+    assert config.low_snapshot_fractions == (0.25, 0.5, 0.75, 1.0)
+    assert report["point_count"] == 14
+    by_pair = {
+        (round(float(point["length_scale_um"]), 6), round(float(point["alpha"]), 6)): point
+        for point in report["points"]
+        if not bool(point["is_local"])
+    }
+    assert (20.0, 6.0) in by_pair
+    assert set(by_pair[(20.0, 6.0)]["design_roles"]) == {
+        "alpha_saturation",
+        "constant_a_chi",
+        "fixed_alpha_length_discrimination",
+    }
+    assert (30.0, 2.666667) in by_pair
+    constant_a_points = [
+        point for point in report["points"] if "constant_a_chi" in point["design_roles"]
+    ]
+    a_chi = [float(point["a_chi_mpa_mm2"]) for point in constant_a_points]
+    assert max(a_chi) == pytest.approx(min(a_chi), rel=1.0e-12)
+
+
 def test_pareto_detection_excludes_dominated_points_and_finds_knee() -> None:
     rows = [
         {"j_amplitude": 1.0, "j_localization": 4.0},

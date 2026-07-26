@@ -67,6 +67,21 @@ class ExistingHighFidelityPoint:
 
 
 @dataclass(frozen=True, slots=True)
+class DiscriminatingF1Design:
+    """Sparse experiments intended to separate coupling strength and length."""
+
+    homogeneous_replay_points: tuple[tuple[float, float], ...]
+    saturation_ell_um: tuple[float, ...]
+    saturation_alpha: tuple[float, ...]
+    constant_a_anchor_ell_um: float
+    constant_a_anchor_alpha: float
+    constant_a_ell_um: tuple[float, ...]
+    fixed_alpha: float
+    fixed_alpha_ell_um: tuple[float, ...]
+    saturation_thresholds: dict[str, float]
+
+
+@dataclass(frozen=True, slots=True)
 class JointIdentificationConfig:
     """Validated campaign configuration used by all identification actions."""
 
@@ -99,8 +114,10 @@ class JointIdentificationConfig:
     low_nonlocal_aitken_residual_growth_factor: float
     low_nonlocal_maximum_iterations: int
     low_record_iteration_history: bool
+    low_snapshot_fractions: tuple[float, ...]
     low_design_ell_um: tuple[float, ...]
     low_design_alpha: tuple[float, ...]
+    discriminating_design: DiscriminatingF1Design | None
     existing_high_fidelity: tuple[ExistingHighFidelityPoint, ...]
     observation: DICObservationOperatorConfig
     raw: dict[str, Any]
@@ -156,6 +173,42 @@ def _finite_range(
     ):
         raise ValueError(f"{name} range is invalid")
     return minimum, maximum
+
+
+def _finite_tuple(
+    values: Any,
+    *,
+    name: str,
+    minimum_exclusive: float | None = None,
+) -> tuple[float, ...]:
+    if not isinstance(values, list | tuple):
+        raise ValueError(f"{name} must be a sequence")
+    converted = tuple(float(value) for value in values)
+    if not converted or any(not np.isfinite(value) for value in converted):
+        raise ValueError(f"{name} must contain finite values")
+    if minimum_exclusive is not None and any(
+        value <= minimum_exclusive for value in converted
+    ):
+        raise ValueError(f"{name} values must exceed {minimum_exclusive}")
+    return converted
+
+
+def _explicit_point_pairs(values: Any, *, name: str) -> tuple[tuple[float, float], ...]:
+    if not isinstance(values, list):
+        raise ValueError(f"{name} must be a list")
+    pairs: list[tuple[float, float]] = []
+    for index, value in enumerate(values):
+        item = _mapping(value, name=f"{name}[{index}]")
+        pairs.append((float(item["ell_um"]), float(item["alpha"])))
+    if any(
+        not np.isfinite(ell_um)
+        or not np.isfinite(alpha)
+        or ell_um <= 0.0
+        or alpha <= 0.0
+        for ell_um, alpha in pairs
+    ):
+        raise ValueError(f"{name} contains an invalid point")
+    return tuple(pairs)
 
 
 def load_joint_identification_config(
@@ -250,6 +303,24 @@ def load_joint_identification_config(
     low_record_iteration_history = bool(
         fixed_point.get("record_iteration_history", False)
     )
+    raw_snapshot_fractions = low.get("snapshot_fractions", ())
+    low_snapshot_fractions = (
+        tuple(
+            sorted(
+                set(
+                    _finite_tuple(
+                        raw_snapshot_fractions,
+                        name="fidelity.low.snapshot_fractions",
+                        minimum_exclusive=0.0,
+                    )
+                )
+            )
+        )
+        if raw_snapshot_fractions
+        else ()
+    )
+    if any(value > 1.0 for value in low_snapshot_fractions):
+        raise ValueError("fidelity.low.snapshot_fractions must lie in (0, 1]")
     sparse_design_data = low.get("sparse_design")
     low_design_ell_um: tuple[float, ...]
     low_design_alpha: tuple[float, ...]
@@ -299,6 +370,96 @@ def load_joint_identification_config(
         raise ValueError("F1 design lengths must lie in the exploration domain")
     if any(value < alpha_min or value > alpha_max for value in low_design_alpha):
         raise ValueError("F1 design alpha values must lie in the exploration domain")
+    discriminating_data = raw.get("identifiability_design")
+    discriminating_design: DiscriminatingF1Design | None = None
+    if discriminating_data is not None:
+        design = _mapping(discriminating_data, name="identifiability_design")
+        saturation = _mapping(design.get("saturation"), name="identifiability_design.saturation")
+        constant_a = _mapping(
+            design.get("constant_a"),
+            name="identifiability_design.constant_a",
+        )
+        constant_anchor = _mapping(
+            constant_a.get("anchor"),
+            name="identifiability_design.constant_a.anchor",
+        )
+        fixed_alpha = _mapping(
+            design.get("fixed_alpha"),
+            name="identifiability_design.fixed_alpha",
+        )
+        thresholds = _mapping(
+            saturation.get("thresholds"),
+            name="identifiability_design.saturation.thresholds",
+        )
+        discriminating_design = DiscriminatingF1Design(
+            homogeneous_replay_points=_explicit_point_pairs(
+                design.get("homogeneous_replay_points"),
+                name="identifiability_design.homogeneous_replay_points",
+            ),
+            saturation_ell_um=_finite_tuple(
+                saturation.get("ell_um"),
+                name="identifiability_design.saturation.ell_um",
+                minimum_exclusive=0.0,
+            ),
+            saturation_alpha=_finite_tuple(
+                saturation.get("alpha"),
+                name="identifiability_design.saturation.alpha",
+                minimum_exclusive=0.0,
+            ),
+            constant_a_anchor_ell_um=float(constant_anchor["ell_um"]),
+            constant_a_anchor_alpha=float(constant_anchor["alpha"]),
+            constant_a_ell_um=_finite_tuple(
+                constant_a.get("ell_um"),
+                name="identifiability_design.constant_a.ell_um",
+                minimum_exclusive=0.0,
+            ),
+            fixed_alpha=float(fixed_alpha["alpha"]),
+            fixed_alpha_ell_um=_finite_tuple(
+                fixed_alpha.get("ell_um"),
+                name="identifiability_design.fixed_alpha.ell_um",
+                minimum_exclusive=0.0,
+            ),
+            saturation_thresholds={
+                str(key): float(value) for key, value in thresholds.items()
+            },
+        )
+        design_points = [
+            *discriminating_design.homogeneous_replay_points,
+            *[
+                (ell_um_value, alpha_value)
+                for ell_um_value in discriminating_design.saturation_ell_um
+                for alpha_value in discriminating_design.saturation_alpha
+            ],
+            *[
+                (
+                    ell_um_value,
+                    discriminating_design.constant_a_anchor_alpha
+                    * (
+                        discriminating_design.constant_a_anchor_ell_um
+                        / ell_um_value
+                    )
+                    ** 2,
+                )
+                for ell_um_value in discriminating_design.constant_a_ell_um
+            ],
+            *[
+                (ell_um_value, discriminating_design.fixed_alpha)
+                for ell_um_value in discriminating_design.fixed_alpha_ell_um
+            ],
+        ]
+        if any(
+            ell_um_value < ell_min
+            or ell_um_value > ell_max
+            or alpha_value < alpha_min
+            or alpha_value > alpha_max
+            for ell_um_value, alpha_value in design_points
+        ):
+            raise ValueError("identifiability design points must lie in the parameter domain")
+        if any(
+            not np.isfinite(value) or value < 0.0
+            for value in discriminating_design.saturation_thresholds.values()
+        ):
+            raise ValueError("saturation thresholds must be finite and non-negative")
     return JointIdentificationConfig(
         source_path=source,
         name=str(campaign["name"]),
@@ -343,8 +504,10 @@ def load_joint_identification_config(
             low_nonlocal_maximum_iterations
         ),
         low_record_iteration_history=low_record_iteration_history,
+        low_snapshot_fractions=low_snapshot_fractions,
         low_design_ell_um=low_design_ell_um,
         low_design_alpha=low_design_alpha,
+        discriminating_design=discriminating_design,
         existing_high_fidelity=existing,
         observation=observation,
         raw=raw,
@@ -1163,6 +1326,51 @@ def _sparse_f1_design_points(
     )
 
 
+def _discriminating_f1_design_records(
+    config: JointIdentificationConfig,
+    *,
+    h_ref_mpa: float,
+) -> tuple[tuple[NonlocalIdentificationPoint, tuple[str, ...]], ...]:
+    design = config.discriminating_design
+    if design is None:
+        raise ValueError("configuration does not define identifiability_design")
+    records: dict[str, tuple[NonlocalIdentificationPoint, set[str]]] = {}
+    local = NonlocalIdentificationPoint.from_alpha_and_length_um(
+        alpha=0.0,
+        length_scale_um=None,
+        h_ref_mpa=h_ref_mpa,
+    )
+    records[_point_identifier(local)] = (local, {"homogeneous_newton25_baseline"})
+
+    def add(ell_um: float, alpha: float, role: str) -> None:
+        point = NonlocalIdentificationPoint.from_alpha_and_length_um(
+            alpha=alpha,
+            length_scale_um=ell_um,
+            h_ref_mpa=h_ref_mpa,
+        )
+        point_id = _point_identifier(point)
+        if point_id not in records:
+            records[point_id] = (point, set())
+        records[point_id][1].add(role)
+
+    for ell_um, alpha in design.homogeneous_replay_points:
+        add(ell_um, alpha, "homogeneous_newton25_replay")
+    for ell_um in design.saturation_ell_um:
+        for alpha in design.saturation_alpha:
+            add(ell_um, alpha, "alpha_saturation")
+    constant_product = (
+        design.constant_a_anchor_alpha * design.constant_a_anchor_ell_um**2
+    )
+    for ell_um in design.constant_a_ell_um:
+        add(ell_um, constant_product / ell_um**2, "constant_a_chi")
+    for ell_um in design.fixed_alpha_ell_um:
+        add(ell_um, design.fixed_alpha, "fixed_alpha_length_discrimination")
+    return tuple(
+        (point, tuple(sorted(roles)))
+        for point, roles in sorted(records.values(), key=lambda item: _point_identifier(item[0]))
+    )
+
+
 def _material_and_solver_from_local_manifest(
     local_manifest: dict[str, Any],
     config: JointIdentificationConfig,
@@ -1220,6 +1428,8 @@ def _f1_point_manifest(
     point: NonlocalIdentificationPoint,
     reduced_inputs: ReducedCaseInputs,
     case_config: CaseStudyConfig,
+    *,
+    design_roles: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     git = _git_state(_repository_root(config.source_path))
     data = {
@@ -1233,6 +1443,8 @@ def _f1_point_manifest(
         "reduction": reduced_inputs.reduction_manifest,
         "case_config": asdict(case_config),
         "partition_id": config.partition_id,
+        "snapshot_fractions": list(config.low_snapshot_fractions),
+        "design_roles": list(design_roles),
         "observation_operator": {
             **config.observation.as_dict(),
             "grid_mapping": "coincident-node-stride",
@@ -1260,6 +1472,58 @@ def _amplitude_config(config: JointIdentificationConfig) -> AmplitudeMetricConfi
             objectives.get("standard_deviation_weight", 1.0)
         ),
     )
+
+
+def _spatial_metric_configuration(
+    config: JointIdentificationConfig,
+) -> tuple[tuple[float, ...], float]:
+    objectives = _mapping(config.raw.get("objectives"), name="objectives")
+    absolute_quantiles = tuple(
+        float(value)
+        for value in objectives.get("absolute_dic_quantiles", (0.8, 0.9, 0.95))
+    )
+    if not absolute_quantiles or any(
+        not np.isfinite(value) or not 0.0 < value < 1.0
+        for value in absolute_quantiles
+    ):
+        raise ValueError("objectives.absolute_dic_quantiles must lie in (0, 1)")
+    spatial_active_quantile = float(
+        objectives.get("spatial_active_quantile", 0.9)
+    )
+    if not np.isfinite(spatial_active_quantile) or not 0.0 < spatial_active_quantile < 1.0:
+        raise ValueError("objectives.spatial_active_quantile must lie in (0, 1)")
+    return absolute_quantiles, spatial_active_quantile
+
+
+def _load_verified_snapshot_field(
+    campaign_directory: Path,
+    *,
+    partition_id: int,
+    status: dict[str, Any],
+    fraction: float,
+    name: str,
+) -> FloatArray:
+    fraction_id = f"{fraction:.6f}"
+    try:
+        expected_sha256 = status["snapshots"][fraction_id][name]
+    except KeyError as error:
+        raise RuntimeError(
+            f"snapshot {fraction_id} does not declare field {name}"
+        ) from error
+    path = (
+        campaign_directory
+        / "partitions"
+        / f"{partition_id:04d}"
+        / "snapshots"
+        / fraction_id.replace(".", "p")
+        / f"{name}.npy"
+    )
+    if not path.is_file() or fingerprint_file(path) != expected_sha256:
+        raise RuntimeError(f"snapshot field is missing or corrupted: {path}")
+    values = np.load(path, mmap_mode="r", allow_pickle=False)
+    if not np.isfinite(values).all():
+        raise ValueError(f"snapshot field contains non-finite values: {path}")
+    return np.asarray(values, dtype=np.float64)
 
 
 def _evaluate_f1_point(
@@ -1331,6 +1595,8 @@ def _evaluate_f1_point(
         spacing_y_mm=reduced_inputs.spacing_mm,
         mask=dic_observed.valid_mask & fem_observed.valid_mask,
         amplitude_config=_amplitude_config(config),
+        absolute_reference_quantiles=_spatial_metric_configuration(config)[0],
+        spatial_active_quantile=_spatial_metric_configuration(config)[1],
     )
     peeq_core = np.asarray(peeq[partition.core_element_slice_local], dtype=np.float64)
     peeq_metrics = peeq_diagnostic_metrics(
@@ -1342,13 +1608,73 @@ def _evaluate_f1_point(
         ),
         nonlocal_hardening_mpa=nonlocal_hardening,
     )
+    load_history: dict[str, Any] = {}
+    for fraction in config.low_snapshot_fractions:
+        snapshot_u = _load_verified_snapshot_field(
+            campaign_directory,
+            partition_id=config.partition_id,
+            status=status,
+            fraction=fraction,
+            name="U",
+        )
+        snapshot_peeq = _load_verified_snapshot_field(
+            campaign_directory,
+            partition_id=config.partition_id,
+            status=status,
+            fraction=fraction,
+            name="PEEQ",
+        )
+        snapshot_dic = observation.observe_displacement(
+            dic_u * fraction,
+            spacing_x_mm=reduced_inputs.spacing_mm,
+            spacing_y_mm=reduced_inputs.spacing_mm,
+            core_slice=partition.core_element_slice_local,
+        )
+        snapshot_fem = observation.observe_displacement(
+            snapshot_u,
+            spacing_x_mm=reduced_inputs.spacing_mm,
+            spacing_y_mm=reduced_inputs.spacing_mm,
+            core_slice=partition.core_element_slice_local,
+        )
+        snapshot_metrics = evaluate_identification_metrics(
+            snapshot_dic.element_field,
+            snapshot_fem.element_field,
+            spacing_x_mm=reduced_inputs.spacing_mm,
+            spacing_y_mm=reduced_inputs.spacing_mm,
+            mask=snapshot_dic.valid_mask & snapshot_fem.valid_mask,
+            amplitude_config=_amplitude_config(config),
+            absolute_reference_quantiles=_spatial_metric_configuration(config)[0],
+            spatial_active_quantile=_spatial_metric_configuration(config)[1],
+        )
+        snapshot_peeq_metrics = peeq_diagnostic_metrics(
+            np.asarray(
+                snapshot_peeq[partition.core_element_slice_local],
+                dtype=np.float64,
+            ),
+            spacing_x_mm=reduced_inputs.spacing_mm,
+            spacing_y_mm=reduced_inputs.spacing_mm,
+            first_positive_plastic_strain=float(
+                point_manifest["case_config"]["material"][
+                    "first_positive_plastic_strain"
+                ]
+            ),
+        )
+        load_history[f"{fraction:.6f}"] = {
+            "load_fraction": fraction,
+            "dic_displacement_scaling": fraction,
+            "proportional_loading_assumption": True,
+            "metrics": snapshot_metrics,
+            "peeq_diagnostics": snapshot_peeq_metrics,
+        }
     return {
         "schema_version": 1,
         "fidelity": "F1_low",
         "point_id": _point_identifier(point),
         "parameters": point.as_dict(),
+        "design_roles": point_manifest["design_roles"],
         "metrics": metrics,
         "peeq_diagnostics": peeq_metrics,
+        "load_history": load_history,
         "solver_diagnostics": status.get("diagnostics", {}),
         "observation": {
             "operator_sha256": dic_observed.operator_sha256,
@@ -1368,32 +1694,46 @@ def run_low_fidelity(
     dry_run: bool = False,
     maximum_workers: int = 1,
     use_sparse_design: bool = False,
+    use_identifiability_design: bool = False,
 ) -> dict[str, Any]:
     """Run selected F1 points through the existing partition workflow."""
 
     if maximum_workers < 1:
         raise ValueError("maximum_workers must be positive")
     local_manifest, _, _, h_ref, _ = _load_local_context(config)
-    if point_selectors and use_sparse_design:
-        raise ValueError("explicit --point selectors cannot be combined with --design")
-    points = (
-        tuple(
-            _parse_point_selector(selector, h_ref_mpa=h_ref)
+    selected_modes = sum(
+        (bool(point_selectors), use_sparse_design, use_identifiability_design)
+    )
+    if selected_modes > 1:
+        raise ValueError(
+            "explicit --point selectors, --design and --identifiability-design "
+            "are mutually exclusive"
+        )
+    records: tuple[tuple[NonlocalIdentificationPoint, tuple[str, ...]], ...]
+    if point_selectors:
+        records = tuple(
+            (
+                _parse_point_selector(selector, h_ref_mpa=h_ref),
+                ("explicit_selector",),
+            )
             for selector in point_selectors
         )
-        if point_selectors
-        else (
-            _sparse_f1_design_points(config, h_ref_mpa=h_ref)
-            if use_sparse_design
-            else _default_f1_validation_points(config, h_ref_mpa=h_ref)
+    elif use_sparse_design:
+        records = tuple(
+            (point, ("legacy_sparse_design",))
+            for point in _sparse_f1_design_points(config, h_ref_mpa=h_ref)
         )
-    )
-    unique_points = tuple(
-        {
-            _point_identifier(point): point
-            for point in points
-        }.values()
-    )
+    elif use_identifiability_design:
+        records = _discriminating_f1_design_records(config, h_ref_mpa=h_ref)
+    else:
+        records = tuple(
+            (point, ("fidelity_validation",))
+            for point in _default_f1_validation_points(config, h_ref_mpa=h_ref)
+        )
+    unique_records = {
+        _point_identifier(point): (point, roles) for point, roles in records
+    }
+    unique_points = tuple(point for point, _roles in unique_records.values())
     reduced_inputs = prepare_low_fidelity_inputs(config)
     minimum_length_um = min(
         (
@@ -1419,6 +1759,7 @@ def run_low_fidelity(
         {
             "point_id": _point_identifier(point),
             **point.as_dict(),
+            "design_roles": list(roles),
             "output": str(
                 config.output_directory
                 / "f1"
@@ -1427,7 +1768,7 @@ def run_low_fidelity(
                 / "campaign"
             ),
         }
-        for point in unique_points
+        for point, roles in unique_records.values()
     ]
     if dry_run:
         return {
@@ -1448,7 +1789,7 @@ def run_low_fidelity(
 
     results: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
-    for point in unique_points:
+    for point, design_roles in unique_records.values():
         point_id = _point_identifier(point)
         point_directory = config.output_directory / "f1" / "points" / point_id
         campaign_directory = point_directory / "campaign"
@@ -1465,6 +1806,7 @@ def run_low_fidelity(
             point,
             reduced_inputs,
             case_config,
+            design_roles=design_roles,
         )
         if manifest_path.exists():
             existing = load_json_object(manifest_path)
@@ -1495,6 +1837,7 @@ def run_low_fidelity(
             yield_stress_mpa=reduced_inputs.yield_stress_mpa,
             hardening_coefficient_mpa=reduced_inputs.hardening_coefficient_mpa,
             output_directory=campaign_directory,
+            snapshot_fractions=config.low_snapshot_fractions,
         )
         started = time.perf_counter()
         try:
@@ -1683,6 +2026,9 @@ def _result_row(
     relative = metrics["localization_relative_top"]
     absolute = metrics["localization_absolute_dic_quantile"]
     spatial = metrics["spatial"]
+    structure = spatial["structure"]
+    reference_structure = structure["reference"]
+    prediction_structure = structure["prediction"]
     return {
         "campaign_id": campaign_id,
         "case_id": campaign_id,
@@ -1712,6 +2058,31 @@ def _result_row(
         "absolute_q90_prediction_active_fraction": absolute[
             "prediction_active_fraction"
         ],
+        "band_width_reference_mm": reference_structure["band_average_width_mm"],
+        "band_width_prediction_mm": prediction_structure["band_average_width_mm"],
+        "band_width_error_mm": structure["band_width_error_mm"],
+        "band_orientation_error_deg": structure["band_orientation_error_deg"],
+        "band_axis_offset_mm": structure["band_axis_offset_mm"],
+        "band_centroid_distance_mm": structure["band_centroid_distance_mm"],
+        "correlation_length_x_reference_mm": reference_structure[
+            "correlation_length_x_mm"
+        ],
+        "correlation_length_x_prediction_mm": prediction_structure[
+            "correlation_length_x_mm"
+        ],
+        "correlation_length_y_reference_mm": reference_structure[
+            "correlation_length_y_mm"
+        ],
+        "correlation_length_y_prediction_mm": prediction_structure[
+            "correlation_length_y_mm"
+        ],
+        "spectral_centroid_reference_cycles_per_mm": reference_structure[
+            "spectral_centroid_cycles_per_mm"
+        ],
+        "spectral_centroid_prediction_cycles_per_mm": prediction_structure[
+            "spectral_centroid_cycles_per_mm"
+        ],
+        "radial_spectrum_l2": structure["radial_spectrum_l2"],
         "gradient_rms": spatial["prediction_gradient_rms"],
         "total_variation": spatial["prediction_total_variation"],
         "peeq_mean": peeq["mean"],
@@ -1801,6 +2172,8 @@ def _full_fidelity_metrics(
         spacing_y_mm=spacing,
         mask=dic_observed.valid_mask & fem_observed.valid_mask,
         amplitude_config=_amplitude_config(config),
+        absolute_reference_quantiles=_spatial_metric_configuration(config)[0],
+        spatial_active_quantile=_spatial_metric_configuration(config)[1],
     )
     hardening = None
     if not point.is_local:

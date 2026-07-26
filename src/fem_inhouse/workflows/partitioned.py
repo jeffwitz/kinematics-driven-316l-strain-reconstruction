@@ -25,6 +25,11 @@ from fem_inhouse.solver import run_case_study
 
 LOGGER = logging.getLogger(__name__)
 FieldLocation = Literal["element", "node"]
+SNAPSHOT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
+    "U": ("displacement_mm", "node"),
+    "E": ("total_strain", "element"),
+    "PEEQ": ("equivalent_plastic_strain", "element"),
+}
 BASE_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "U": ("displacement_mm", "node"),
     "S": ("stress_mpa", "element"),
@@ -159,6 +164,7 @@ class PartitionWorkflow:
     yield_stress_mpa: ArrayLike
     hardening_coefficient_mpa: ArrayLike
     output_directory: Path
+    snapshot_fractions: tuple[float, ...] = ()
     _manifest_digest: str | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -178,6 +184,15 @@ class PartitionWorkflow:
         ):
             if np.shape(values) != expected_shape:
                 raise ValueError(f"{name} has shape {np.shape(values)}, expected {expected_shape}")
+        snapshot_fractions = tuple(float(value) for value in self.snapshot_fractions)
+        if any(
+            not np.isfinite(value) or not 0.0 < value <= 1.0
+            for value in snapshot_fractions
+        ):
+            raise ValueError("snapshot_fractions must be finite and lie in (0, 1]")
+        if len(set(snapshot_fractions)) != len(snapshot_fractions):
+            raise ValueError("snapshot_fractions must be unique")
+        self.snapshot_fractions = tuple(sorted(snapshot_fractions))
         self.output_directory = Path(self.output_directory)
 
     @property
@@ -211,6 +226,11 @@ class PartitionWorkflow:
             "result_field_metadata": {
                 name: RESULT_FIELD_METADATA[name] for name in result_fields
             },
+            "snapshots": {
+                "fractions": list(self.snapshot_fractions),
+                "fields": sorted(SNAPSHOT_FIELDS),
+                "purpose": "load-history identifiability diagnostics",
+            },
         }
 
     def prepare(self) -> str:
@@ -240,6 +260,20 @@ class PartitionWorkflow:
     def _result_path(self, partition_id: int, field_name: str) -> Path:
         return self._partition_directory(partition_id) / f"{field_name}.npy"
 
+    def _snapshot_path(
+        self,
+        partition_id: int,
+        fraction: float,
+        field_name: str,
+    ) -> Path:
+        fraction_id = f"{fraction:.6f}".replace(".", "p")
+        return (
+            self._partition_directory(partition_id)
+            / "snapshots"
+            / fraction_id
+            / f"{field_name}.npy"
+        )
+
     def _completed_status(self, partition_id: int, manifest_digest: str) -> dict[str, Any] | None:
         status_path = self._status_path(partition_id)
         if not status_path.exists():
@@ -253,6 +287,17 @@ class PartitionWorkflow:
                 path = self._result_path(partition_id, field_name)
                 if not path.is_file() or _fingerprint_file(path) != expected_outputs[field_name]:
                     return None
+            expected_snapshots = status.get("snapshots", {})
+            for fraction in self.snapshot_fractions:
+                fraction_id = f"{fraction:.6f}"
+                snapshot_outputs = expected_snapshots[fraction_id]
+                for field_name in SNAPSHOT_FIELDS:
+                    path = self._snapshot_path(partition_id, fraction, field_name)
+                    if (
+                        not path.is_file()
+                        or _fingerprint_file(path) != snapshot_outputs[field_name]
+                    ):
+                        return None
         except (KeyError, OSError, ValueError, json.JSONDecodeError):
             return None
         return status
@@ -290,6 +335,9 @@ class PartitionWorkflow:
             return completed
 
         LOGGER.info("Solving partition %s of %s", partition_id, self.layout.count)
+        snapshot_arguments: dict[str, Any] = (
+            {"snapshots": self.snapshot_fractions} if self.snapshot_fractions else {}
+        )
         result = run_case_study(
             self._local_config(partition_id),
             displacement_x_mm=extract_partition_field(
@@ -316,6 +364,7 @@ class PartitionWorkflow:
                 partition=partition,
                 location="element",
             ),
+            **snapshot_arguments,
         )
         write_started_at = time.perf_counter()
         outputs: dict[str, str] = {}
@@ -336,6 +385,20 @@ class PartitionWorkflow:
                 )
             _atomic_save_array(path, values)
             outputs[field_name] = _fingerprint_file(path)
+        snapshot_outputs: dict[str, dict[str, str]] = {}
+        for fraction in self.snapshot_fractions:
+            try:
+                frame = result.frames[fraction]
+            except KeyError as error:
+                raise RuntimeError(
+                    f"completed solve did not provide requested snapshot {fraction}"
+                ) from error
+            fraction_outputs: dict[str, str] = {}
+            for field_name, (attribute, _location) in SNAPSHOT_FIELDS.items():
+                path = self._snapshot_path(partition_id, fraction, field_name)
+                _atomic_save_array(path, np.asarray(getattr(frame, attribute)))
+                fraction_outputs[field_name] = _fingerprint_file(path)
+            snapshot_outputs[f"{fraction:.6f}"] = fraction_outputs
         status = {
             "complete": True,
             "diagnostics": {
@@ -345,6 +408,7 @@ class PartitionWorkflow:
             "manifest_sha256": manifest_digest,
             "partition_id": partition_id,
             "outputs": outputs,
+            "snapshots": snapshot_outputs,
         }
         _atomic_write_text(self._status_path(partition_id), _canonical_json(status))
         return status

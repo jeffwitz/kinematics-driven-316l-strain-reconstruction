@@ -6,9 +6,11 @@ import pytest
 from fem_inhouse.identification.metrics import (
     AmplitudeMetricConfig,
     amplitude_objective,
+    compare_spatial_structure,
     evaluate_identification_metrics,
     peeq_diagnostic_metrics,
     radial_power_spectrum,
+    spatial_structure_metrics,
 )
 
 
@@ -74,3 +76,53 @@ def test_peeq_diagnostics_measure_plastic_fraction_and_hardening_norm() -> None:
     )
     assert metrics["plastic_fraction"] == 0.75
     assert metrics["nonlocal_hardening_l2_mpa"] == 10.0
+
+
+def test_spatial_structure_distinguishes_band_width_position_and_orientation() -> None:
+    nx = ny = 101
+    spacing = 0.002
+    y = np.arange(ny)[None, :]
+    reference = np.exp(-0.5 * ((y - 50.0) / 4.0) ** 2) * np.ones((nx, 1))
+    wider = np.exp(-0.5 * ((y - 50.0) / 8.0) ** 2) * np.ones((nx, 1))
+    shifted = np.exp(-0.5 * ((y - 60.0) / 4.0) ** 2) * np.ones((nx, 1))
+
+    reference_metrics = spatial_structure_metrics(
+        reference,
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+    )
+    comparison = compare_spatial_structure(
+        reference,
+        wider,
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+    )
+    shifted_comparison = compare_spatial_structure(
+        reference,
+        shifted,
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+    )
+
+    assert reference_metrics["band_orientation_deg"] == pytest.approx(0.0, abs=1.0)
+    assert comparison["band_width_error_mm"] > 0.0
+    assert comparison["band_axis_offset_mm"] == pytest.approx(0.0, abs=spacing)
+    assert shifted_comparison["band_axis_offset_mm"] == pytest.approx(0.02, abs=spacing)
+
+
+def test_identification_metrics_report_multiple_absolute_thresholds_and_scale() -> None:
+    y = np.arange(64)[None, :]
+    reference = np.exp(-0.5 * ((y - 30.0) / 5.0) ** 2) * np.ones((64, 1))
+    prediction = np.exp(-0.5 * ((y - 32.0) / 7.0) ** 2) * np.ones((64, 1))
+
+    metrics = evaluate_identification_metrics(
+        reference,
+        prediction,
+        spacing_x_mm=0.002,
+        spacing_y_mm=0.002,
+    )
+
+    assert set(metrics["localization_absolute_dic_quantiles"]) == {"q80", "q90", "q95"}
+    structure = metrics["spatial"]["structure"]
+    assert structure["band_width_error_mm"] > 0.0
+    assert structure["radial_spectrum_l2"] > 0.0
