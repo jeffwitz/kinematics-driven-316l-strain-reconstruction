@@ -17,6 +17,8 @@ import numpy as np
 import scipy
 import yaml
 from numpy.typing import NDArray
+from scipy.interpolate import PchipInterpolator
+from scipy.optimize import minimize_scalar
 from scipy.stats import spearmanr
 
 from fem_inhouse import __version__
@@ -87,6 +89,8 @@ class JointIdentificationConfig:
     low_temporal_increments: int
     low_minimum_elements_per_ell: float
     low_residual_tolerance: float
+    low_design_ell_um: tuple[float, ...]
+    low_design_alpha: tuple[float, ...]
     existing_high_fidelity: tuple[ExistingHighFidelityPoint, ...]
     observation: DICObservationOperatorConfig
     raw: dict[str, Any]
@@ -211,6 +215,23 @@ def load_joint_identification_config(
     low_temporal_increments = int(low.get("temporal_increments", 10))
     low_minimum_elements_per_ell = float(low.get("minimum_elements_per_ell", 3.0))
     low_residual_tolerance = float(low.get("residual_tolerance", 3.0e-6))
+    sparse_design_data = low.get("sparse_design")
+    low_design_ell_um: tuple[float, ...]
+    low_design_alpha: tuple[float, ...]
+    if sparse_design_data is None:
+        low_design_ell_um = (ell_min, 0.5 * (ell_min + ell_max), ell_max)
+        low_design_alpha = (alpha_min, 0.5 * (alpha_min + alpha_max), alpha_max)
+    else:
+        sparse_design = _mapping(
+            sparse_design_data,
+            name="fidelity.low.sparse_design",
+        )
+        low_design_ell_um = tuple(
+            float(value) for value in sparse_design.get("ell_um", ())
+        )
+        low_design_alpha = tuple(
+            float(value) for value in sparse_design.get("alpha", ())
+        )
     if low_spatial_reduction < 1:
         raise ValueError("fidelity.low.spatial_reduction must be positive")
     if low_temporal_increments < 1:
@@ -222,6 +243,12 @@ def load_joint_identification_config(
         raise ValueError("fidelity.low.minimum_elements_per_ell must be positive")
     if not 0.0 < low_residual_tolerance < 1.0:
         raise ValueError("fidelity.low.residual_tolerance must lie in (0, 1)")
+    if not low_design_ell_um or not low_design_alpha:
+        raise ValueError("fidelity.low.sparse_design must define ell_um and alpha")
+    if any(value < ell_min or value > ell_max for value in low_design_ell_um):
+        raise ValueError("F1 design lengths must lie in the exploration domain")
+    if any(value < alpha_min or value > alpha_max for value in low_design_alpha):
+        raise ValueError("F1 design alpha values must lie in the exploration domain")
     return JointIdentificationConfig(
         source_path=source,
         name=str(campaign["name"]),
@@ -247,6 +274,8 @@ def load_joint_identification_config(
         low_temporal_increments=low_temporal_increments,
         low_minimum_elements_per_ell=low_minimum_elements_per_ell,
         low_residual_tolerance=low_residual_tolerance,
+        low_design_ell_um=low_design_ell_um,
+        low_design_alpha=low_design_alpha,
         existing_high_fidelity=existing,
         observation=observation,
         raw=raw,
@@ -385,6 +414,12 @@ def inspect_joint_identification(
                     for point in config.existing_high_fidelity
                 ],
             ],
+            "sparse_design": {
+                "ell_um": list(config.low_design_ell_um),
+                "alpha": list(config.low_design_alpha),
+                "point_count": len(config.low_design_ell_um)
+                * len(config.low_design_alpha),
+            },
         },
         "existing_high_fidelity": existing,
         "local_diagnostics": status.get("diagnostics", {}),
@@ -1043,6 +1078,22 @@ def _default_f1_validation_points(
     return tuple(points)
 
 
+def _sparse_f1_design_points(
+    config: JointIdentificationConfig,
+    *,
+    h_ref_mpa: float,
+) -> tuple[NonlocalIdentificationPoint, ...]:
+    return tuple(
+        NonlocalIdentificationPoint.from_alpha_and_length_um(
+            alpha=alpha,
+            length_scale_um=ell_um,
+            h_ref_mpa=h_ref_mpa,
+        )
+        for ell_um in config.low_design_ell_um
+        for alpha in config.low_design_alpha
+    )
+
+
 def _material_and_solver_from_local_manifest(
     local_manifest: dict[str, Any],
     config: JointIdentificationConfig,
@@ -1236,19 +1287,26 @@ def run_low_fidelity(
     point_selectors: tuple[str, ...] = (),
     dry_run: bool = False,
     maximum_workers: int = 1,
+    use_sparse_design: bool = False,
 ) -> dict[str, Any]:
     """Run selected F1 points through the existing partition workflow."""
 
     if maximum_workers < 1:
         raise ValueError("maximum_workers must be positive")
     local_manifest, _, _, h_ref, _ = _load_local_context(config)
+    if point_selectors and use_sparse_design:
+        raise ValueError("explicit --point selectors cannot be combined with --design")
     points = (
         tuple(
             _parse_point_selector(selector, h_ref_mpa=h_ref)
             for selector in point_selectors
         )
         if point_selectors
-        else _default_f1_validation_points(config, h_ref_mpa=h_ref)
+        else (
+            _sparse_f1_design_points(config, h_ref_mpa=h_ref)
+            if use_sparse_design
+            else _default_f1_validation_points(config, h_ref_mpa=h_ref)
+        )
     )
     unique_points = tuple(
         {
@@ -1489,3 +1547,543 @@ def validate_low_fidelity_ranking(
     output = config.output_directory / "f1" / "validation.json"
     _atomic_write(output, _canonical_json(report))
     return {**report, "path": str(output)}
+
+
+def _quantile_log_error(amplitude: dict[str, Any], quantile: float) -> float:
+    candidates = amplitude["quantiles"]
+    selected = min(candidates, key=lambda item: abs(float(item["quantile"]) - quantile))
+    return float(selected["log_ratio"])
+
+
+def _result_row(
+    *,
+    campaign_id: str,
+    roi_id: str,
+    fidelity: str,
+    point: NonlocalIdentificationPoint,
+    metrics: dict[str, Any],
+    peeq: dict[str, Any],
+    diagnostics: dict[str, Any],
+    git_sha: str | None,
+    mesh_hash: str,
+    dic_hash: str,
+    source: str,
+) -> dict[str, Any]:
+    global_metrics = metrics["global"]
+    amplitude = metrics["amplitude"]
+    relative = metrics["localization_relative_top"]
+    absolute = metrics["localization_absolute_dic_quantile"]
+    spatial = metrics["spatial"]
+    return {
+        "campaign_id": campaign_id,
+        "case_id": campaign_id,
+        "roi_id": roi_id,
+        "fidelity": fidelity,
+        **point.as_dict(),
+        "git_sha": git_sha,
+        "mesh_hash": mesh_hash,
+        "dic_hash": dic_hash,
+        "status": "complete",
+        "source": source,
+        "wall_time": diagnostics.get("elapsed_seconds"),
+        "newton_iterations": diagnostics.get("total_newton_iterations"),
+        "cutbacks": diagnostics.get("cutbacks"),
+        "rmse": global_metrics["rmse"],
+        "mae": global_metrics["mae"],
+        "bias": global_metrics["signed_mean_error"],
+        "relative_l2": global_metrics["relative_l2_error"],
+        "correlation": global_metrics["pearson_correlation"],
+        "spearman": global_metrics["spearman_correlation"],
+        "j_amplitude": amplitude["objective"],
+        "j_localization": 1.0 - float(absolute["intersection_over_union"]),
+        "q90_error": _quantile_log_error(amplitude, 0.90),
+        "q95_error": _quantile_log_error(amplitude, 0.95),
+        "top10_iou": relative["intersection_over_union"],
+        "absolute_q90_iou": absolute["intersection_over_union"],
+        "absolute_q90_prediction_active_fraction": absolute[
+            "prediction_active_fraction"
+        ],
+        "gradient_rms": spatial["prediction_gradient_rms"],
+        "total_variation": spatial["prediction_total_variation"],
+        "peeq_mean": peeq["mean"],
+        "peeq_standard_deviation": peeq["standard_deviation"],
+        "peeq_max": peeq["maximum"],
+        "peeq_q90": peeq["quantiles"]["q90"],
+        "peeq_q95": peeq["quantiles"]["q95"],
+        "peeq_q99": peeq["quantiles"]["q99"],
+        "peeq_gradient_rms": peeq["gradient_rms"],
+        "peeq_total_variation": peeq["total_variation"],
+        "peeq_plastic_fraction": peeq["plastic_fraction"],
+        "nonlocal_hardening_l2_mpa": peeq.get("nonlocal_hardening_l2_mpa"),
+    }
+
+
+def _full_fidelity_metrics(
+    config: JointIdentificationConfig,
+    *,
+    local_manifest: dict[str, Any],
+    campaign: Path,
+    point: NonlocalIdentificationPoint,
+    prepared_manifest: dict[str, Any],
+    displacement_x: FloatArray,
+    displacement_y: FloatArray,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    campaign_manifest_path = campaign / "manifest.json"
+    campaign_manifest = load_json_object(campaign_manifest_path)
+    if not point.is_local:
+        validate_mechanical_campaign_pair(local_manifest, campaign_manifest)
+    _, partition = partition_from_manifest(campaign_manifest, config.partition_id)
+    status = load_partition_status(
+        campaign,
+        partition_id=config.partition_id,
+        manifest_sha256=_manifest_sha256(campaign_manifest_path),
+    )
+    fem_u = load_verified_partition_field(
+        campaign,
+        partition_id=config.partition_id,
+        status=status,
+        name="U",
+    )
+    peeq = load_verified_partition_field(
+        campaign,
+        partition_id=config.partition_id,
+        status=status,
+        name="PEEQ",
+    )
+    dic_u = np.stack(
+        (
+            extract_partition_field(
+                displacement_x,
+                layout=partition_from_manifest(local_manifest, config.partition_id)[0],
+                partition=partition,
+                location="node",
+            ),
+            extract_partition_field(
+                displacement_y,
+                layout=partition_from_manifest(local_manifest, config.partition_id)[0],
+                partition=partition,
+                location="node",
+            ),
+        ),
+        axis=-1,
+    )
+    mesh = campaign_manifest["config"]["mesh"]
+    spacing = float(mesh["base_pixel_size_mm"]) * float(mesh["scale_factor"])
+    observation = DICObservationOperator(
+        DICObservationOperatorConfig(),
+        poisson_ratio=float(campaign_manifest["config"]["material"]["poisson_ratio"]),
+    )
+    dic_observed = observation.observe_displacement(
+        dic_u,
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+        core_slice=partition.core_element_slice_local,
+    )
+    fem_observed = observation.observe_displacement(
+        fem_u,
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+        core_slice=partition.core_element_slice_local,
+    )
+    metrics = evaluate_identification_metrics(
+        dic_observed.element_field,
+        fem_observed.element_field,
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+        mask=dic_observed.valid_mask & fem_observed.valid_mask,
+        amplitude_config=_amplitude_config(config),
+    )
+    hardening = None
+    if not point.is_local:
+        hardening = load_verified_partition_field(
+            campaign,
+            partition_id=config.partition_id,
+            status=status,
+            name="NONLOCAL_HARDENING_MPA",
+        )[partition.core_element_slice_local]
+    peeq_metrics = peeq_diagnostic_metrics(
+        peeq[partition.core_element_slice_local],
+        spacing_x_mm=spacing,
+        spacing_y_mm=spacing,
+        first_positive_plastic_strain=float(
+            campaign_manifest["config"]["material"]["first_positive_plastic_strain"]
+        ),
+        nonlocal_hardening_mpa=hardening,
+    )
+    hashes = {
+        "mesh": sha256(
+            json.dumps(
+                {
+                    "mesh": campaign_manifest["config"]["mesh"],
+                    "layout": campaign_manifest["layout"],
+                },
+                sort_keys=True,
+            ).encode()
+        ).hexdigest(),
+        "dic": sha256(
+            (
+                str(prepared_manifest["outputs"]["displacement_x_mm"]["sha256"])
+                + str(prepared_manifest["outputs"]["displacement_y_mm"]["sha256"])
+                + config.observation.fingerprint()
+            ).encode()
+        ).hexdigest(),
+    }
+    return metrics, peeq_metrics, {
+        "status": status,
+        "manifest": campaign_manifest,
+        "hashes": hashes,
+    }
+
+
+def _collection_sources(config: JointIdentificationConfig) -> list[Path]:
+    sources = [
+        config.source_path,
+        config.h_ref_path,
+        config.local_campaign / "manifest.json",
+        config.input_directory / "manifest.json",
+    ]
+    sources.extend(
+        path
+        for path in (config.output_directory / "f1" / "points").glob("*/metrics.json")
+        if path.is_file()
+    )
+    for existing in config.existing_high_fidelity:
+        sources.extend(
+            (
+                existing.campaign / "manifest.json",
+                existing.validation_report,
+            )
+        )
+    return sorted(sources)
+
+
+def collect_identification_results(
+    config: JointIdentificationConfig,
+) -> dict[str, Any]:
+    """Collect F1 and existing F2 results into one immutable table."""
+
+    sources = _collection_sources(config)
+    if not sources:
+        raise ValueError("no identification result sources are available")
+    source_hashes = {str(path): fingerprint_file(path) for path in sources}
+    collection_git = _git_state(_repository_root(config.source_path))
+    source_hashes["git://HEAD"] = str(collection_git["commit"])
+    collection_key = sha256(
+        json.dumps(source_hashes, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    directory = config.output_directory / "collections" / collection_key
+    json_path = directory / "results.json"
+    csv_path = directory / "results.csv"
+    if json_path.is_file() and csv_path.is_file():
+        return {
+            "status": "reused",
+            "collection_key_sha256": collection_key,
+            "results_json": str(json_path),
+            "results_csv": str(csv_path),
+        }
+    if directory.exists() and any(directory.iterdir()):
+        raise RuntimeError(f"incomplete immutable collection: {directory}")
+
+    local_manifest, _, _, h_ref, _ = _load_local_context(config)
+    prepared_manifest = load_json_object(config.input_directory / "manifest.json")
+    displacement_x = _load_prepared_array(
+        config.input_directory,
+        prepared_manifest,
+        "displacement_x_mm",
+    )
+    displacement_y = _load_prepared_array(
+        config.input_directory,
+        prepared_manifest,
+        "displacement_y_mm",
+    )
+    local_point = NonlocalIdentificationPoint.from_alpha_and_length_um(
+        alpha=0.0,
+        length_scale_um=None,
+        h_ref_mpa=h_ref,
+    )
+    full_points = [
+        (local_point, config.local_campaign),
+        *[
+            (
+                NonlocalIdentificationPoint.from_alpha_and_length_um(
+                    alpha=existing.alpha,
+                    length_scale_um=_existing_length_um(existing),
+                    h_ref_mpa=h_ref,
+                ),
+                existing.campaign,
+            )
+            for existing in config.existing_high_fidelity
+        ],
+    ]
+    rows: list[dict[str, Any]] = []
+    for point, campaign in full_points:
+        metrics, peeq, context = _full_fidelity_metrics(
+            config,
+            local_manifest=local_manifest,
+            campaign=campaign,
+            point=point,
+            prepared_manifest=prepared_manifest,
+            displacement_x=displacement_x,
+            displacement_y=displacement_y,
+        )
+        rows.append(
+            _result_row(
+                campaign_id=campaign.name,
+                roi_id=f"partition-{config.partition_id}",
+                fidelity="F2_high",
+                point=point,
+                metrics=metrics,
+                peeq=peeq,
+                diagnostics=context["status"].get("diagnostics", {}),
+                git_sha=None,
+                mesh_hash=context["hashes"]["mesh"],
+                dic_hash=context["hashes"]["dic"],
+                source=str(campaign),
+            )
+        )
+
+    for metrics_path in sorted(
+        (config.output_directory / "f1" / "points").glob("*/metrics.json")
+    ):
+        report = load_json_object(metrics_path)
+        parameters = report["parameters"]
+        point = NonlocalIdentificationPoint(
+            alpha=float(parameters["alpha"]),
+            h_ref_mpa=float(parameters["h_ref_mpa"]),
+            length_scale_mm=(
+                None
+                if parameters["length_scale_mm"] is None
+                else float(parameters["length_scale_mm"])
+            ),
+        )
+        point_manifest = load_json_object(
+            metrics_path.with_name("identification_manifest.json")
+        )
+        reduction = point_manifest["reduction"]
+        rows.append(
+            _result_row(
+                campaign_id=str(report["point_id"]),
+                roi_id=f"partition-{config.partition_id}",
+                fidelity="F1_low",
+                point=point,
+                metrics=report["metrics"],
+                peeq=report["peeq_diagnostics"],
+                diagnostics=report["solver_diagnostics"],
+                git_sha=point_manifest.get("git", {}).get("commit"),
+                mesh_hash=sha256(
+                    json.dumps(
+                        {
+                            "shape": reduction["reduced_element_shape"],
+                            "spacing": reduction["reduced_spacing_mm"],
+                            "padding": reduction["reduced_padding_elements"],
+                        },
+                        sort_keys=True,
+                    ).encode()
+                ).hexdigest(),
+                dic_hash=sha256(
+                    (
+                        reduction["input_hashes"]["displacement_x_mm"]
+                        + reduction["input_hashes"]["displacement_y_mm"]
+                        + config.observation.fingerprint()
+                    ).encode()
+                ).hexdigest(),
+                source=str(metrics_path.parent),
+            )
+        )
+    payload = {
+        "schema_version": 1,
+        "collection_key_sha256": collection_key,
+        "source_hashes": source_hashes,
+        "git": collection_git,
+        "configuration_sha256": config.source_sha256,
+        "rows": rows,
+        "fidelity_contract": {
+            "F0_frozen": "heuristic screening only",
+            "F1_low": "validated ranking only",
+            "F2_high": "scientific full-resolution result",
+        },
+    }
+    directory.mkdir(parents=True, exist_ok=True)
+    _atomic_write(json_path, _canonical_json(payload))
+    _write_csv(csv_path, rows)
+    return {
+        "status": "completed",
+        "collection_key_sha256": collection_key,
+        "results_json": str(json_path),
+        "results_csv": str(csv_path),
+        "row_count": len(rows),
+        "f1_count": sum(row["fidelity"] == "F1_low" for row in rows),
+        "f2_count": sum(row["fidelity"] == "F2_high" for row in rows),
+    }
+
+
+def _load_current_collection(config: JointIdentificationConfig) -> tuple[dict[str, Any], Path]:
+    collection = collect_identification_results(config)
+    path = Path(collection["results_json"])
+    return load_json_object(path), path.parent
+
+
+def _pareto_indices(
+    rows: list[dict[str, Any]],
+    objectives: tuple[str, ...] = ("j_amplitude", "j_localization"),
+) -> list[int]:
+    """Return deterministic non-dominated row indices for minimization objectives."""
+
+    non_dominated: list[int] = []
+    for index, candidate in enumerate(rows):
+        dominated = False
+        for other_index, other in enumerate(rows):
+            if other_index == index:
+                continue
+            no_worse = all(float(other[key]) <= float(candidate[key]) for key in objectives)
+            strictly_better = any(
+                float(other[key]) < float(candidate[key]) for key in objectives
+            )
+            if no_worse and strictly_better:
+                dominated = True
+                break
+        if not dominated:
+            non_dominated.append(index)
+    return non_dominated
+
+
+def _pareto_knee(rows: list[dict[str, Any]], indices: list[int]) -> int | None:
+    if not indices:
+        return None
+    if len(indices) <= 2:
+        return min(
+            indices,
+            key=lambda index: rows[index]["j_amplitude"]
+            + rows[index]["j_localization"],
+        )
+    points = np.array(
+        [
+            [float(rows[index]["j_amplitude"]), float(rows[index]["j_localization"])]
+            for index in indices
+        ]
+    )
+    minimum = points.min(axis=0)
+    span = np.maximum(points.max(axis=0) - minimum, np.finfo(float).eps)
+    normalized = (points - minimum) / span
+    distance_to_ideal = np.linalg.norm(normalized, axis=1)
+    return indices[int(np.argmin(distance_to_ideal))]
+
+
+def profile_coupling_modulus(
+    config: JointIdentificationConfig,
+) -> dict[str, Any]:
+    """Profile the amplitude-optimal ``H_chi`` at each sampled F1 length."""
+
+    validation = validate_low_fidelity_ranking(config)
+    if not validation.get("usable_for_candidate_selection", False):
+        raise RuntimeError("F1 validation must pass before profiling H_chi")
+    collection, directory = _load_current_collection(config)
+    f1_rows = [
+        row
+        for row in collection["rows"]
+        if row["fidelity"] == "F1_low" and not row["is_local"]
+    ]
+    grouped: dict[float, list[dict[str, Any]]] = {}
+    for row in f1_rows:
+        grouped.setdefault(float(row["length_scale_um"]), []).append(row)
+    profiles: list[dict[str, Any]] = []
+    missing: list[dict[str, Any]] = []
+    for ell_um in config.low_design_ell_um:
+        rows = sorted(grouped.get(ell_um, []), key=lambda row: float(row["alpha"]))
+        if len(rows) < 3:
+            missing.extend(
+                {
+                    "alpha": alpha,
+                    "length_scale_um": ell_um,
+                    "selector": f"{alpha:g}:{ell_um:g}",
+                }
+                for alpha in config.low_design_alpha
+                if not any(
+                    np.isclose(float(row["alpha"]), alpha, rtol=0.0, atol=1e-12)
+                    for row in rows
+                )
+            )
+            continue
+        alpha = np.asarray([row["alpha"] for row in rows], dtype=float)
+        amplitude = np.asarray([row["j_amplitude"] for row in rows], dtype=float)
+        monotonic = bool(np.all(np.diff(amplitude) >= 0.0) or np.all(np.diff(amplitude) <= 0.0))
+        interpolator = PchipInterpolator(alpha, amplitude, extrapolate=False)
+        optimum = minimize_scalar(
+            lambda value, curve=interpolator: float(curve(value)),
+            bounds=(float(alpha.min()), float(alpha.max())),
+            method="bounded",
+        )
+        optimum_alpha = float(optimum.x)
+        boundary = bool(
+            min(
+                abs(optimum_alpha - float(alpha.min())),
+                abs(optimum_alpha - float(alpha.max())),
+            )
+            <= 0.02 * float(np.ptp(alpha))
+        )
+        profiles.append(
+            {
+                "length_scale_um": ell_um,
+                "sampled_alpha": alpha.tolist(),
+                "sampled_j_amplitude": amplitude.tolist(),
+                "monotonic_over_samples": monotonic,
+                "alpha_star": optimum_alpha,
+                "h_chi_star_mpa": optimum_alpha * float(rows[0]["h_ref_mpa"]),
+                "j_amplitude_star_interpolated": float(optimum.fun),
+                "optimum_on_sampled_boundary": boundary,
+                "confirmation_required": not any(
+                    abs(float(value) - optimum_alpha) <= 0.1 for value in alpha
+                ),
+            }
+        )
+    report = {
+        "schema_version": 1,
+        "collection_key_sha256": collection["collection_key_sha256"],
+        "status": "incomplete" if missing else "evaluated",
+        "profiles": profiles,
+        "missing_f1_points": missing,
+        "profiling_method": "PCHIP plus bounded scalar minimization",
+        "monotonicity_assumed": False,
+        "usable_for_f2_selection": not missing
+        and all(not item["confirmation_required"] for item in profiles),
+    }
+    path = directory / "h_profile.json"
+    _atomic_write(path, _canonical_json(report))
+    return {**report, "path": str(path)}
+
+
+def select_identification_candidates(
+    config: JointIdentificationConfig,
+) -> dict[str, Any]:
+    """Build the amplitude-localization Pareto front and propose F2 candidates."""
+
+    profile = profile_coupling_modulus(config)
+    if not profile["usable_for_f2_selection"]:
+        return {
+            "status": "needs_f1_points",
+            "missing_f1_points": profile["missing_f1_points"],
+            "profile": profile["path"],
+        }
+    collection, directory = _load_current_collection(config)
+    positive_rows = [row for row in collection["rows"] if not row["is_local"]]
+    indices = _pareto_indices(positive_rows)
+    knee_index = _pareto_knee(positive_rows, indices)
+    pareto = [positive_rows[index] for index in indices]
+    best_amplitude = min(positive_rows, key=lambda row: float(row["j_amplitude"]))
+    best_localization = min(positive_rows, key=lambda row: float(row["j_localization"]))
+    knee = None if knee_index is None else positive_rows[knee_index]
+    report = {
+        "schema_version": 1,
+        "collection_key_sha256": collection["collection_key_sha256"],
+        "status": "evaluated",
+        "objective_direction": "minimize",
+        "objectives": ["j_amplitude", "j_localization"],
+        "pareto_points": pareto,
+        "best_amplitude": best_amplitude,
+        "best_localization": best_localization,
+        "knee": knee,
+        "candidate_generation_ready": True,
+    }
+    path = directory / "pareto_selection.json"
+    _atomic_write(path, _canonical_json(report))
+    return {**report, "path": str(path)}

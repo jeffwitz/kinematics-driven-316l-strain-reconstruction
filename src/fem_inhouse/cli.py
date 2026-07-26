@@ -35,15 +35,18 @@ from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import (
     CoupledValidationThresholds,
     PartitionWorkflow,
+    collect_identification_results,
     estimate_reference_hardening_from_campaign,
     inspect_joint_identification,
     load_decision_thresholds,
     load_joint_identification_config,
     plot_coupled_alpha_fields,
+    profile_coupling_modulus,
     run_low_fidelity,
     run_nonlocality_diagnostic,
     scan_dic_partition_heterogeneity,
     screen_frozen_field,
+    select_identification_candidates,
     validate_coupled_nonlocal_campaign,
     write_dic_partition_heterogeneity_report,
 )
@@ -342,6 +345,11 @@ def _parser() -> argparse.ArgumentParser:
     identify.add_argument("--config", type=Path, required=True)
     identify.add_argument("--dry-run", action="store_true")
     identify.add_argument("--workers", type=int, default=1)
+    identify.add_argument(
+        "--design",
+        action="store_true",
+        help="run the configured sparse F1 design instead of validation points",
+    )
     identify.add_argument(
         "--point",
         action="append",
@@ -654,8 +662,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                     point_selectors=tuple(args.point or ()),
                     dry_run=args.dry_run,
                     maximum_workers=args.workers,
+                    use_sparse_design=args.design,
                 )
             )
+            return 0
+        if args.action == "collect-results":
+            _print_json(collect_identification_results(identification_config))
+            return 0
+        if args.action == "profile-h":
+            _print_json(profile_coupling_modulus(identification_config))
+            return 0
+        if args.action == "select-candidates":
+            _print_json(select_identification_candidates(identification_config))
             return 0
         raise RuntimeError(
             f"identification action {args.action!r} is not implemented yet; "

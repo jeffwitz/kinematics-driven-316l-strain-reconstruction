@@ -10,6 +10,8 @@ import pytest
 
 from fem_inhouse.data_preparation import fingerprint_file
 from fem_inhouse.workflows.joint_nonlocal_identification import (
+    _pareto_indices,
+    _pareto_knee,
     inspect_joint_identification,
     load_joint_identification_config,
     run_low_fidelity,
@@ -124,6 +126,9 @@ fidelity:
     temporal_increments: 2
     minimum_elements_per_ell: 3
     residual_tolerance: 3.0e-6
+    sparse_design:
+      ell_um: [20.0, 40.0]
+      alpha: [1.0, 2.0]
 observation:
   grid_mapping: identity
   grid_reduction: 1
@@ -186,6 +191,21 @@ def test_low_fidelity_dry_run_preserves_extent_and_reduces_padding(
     assert reduction["reduced_element_shape"] == [4, 3]
     assert reduction["reduced_spacing_mm"] == pytest.approx(0.004)
     assert reduction["physical_extent_preserved"] is True
+
+    design = run_low_fidelity(config, dry_run=True, use_sparse_design=True)
+    assert design["point_count"] == 4
+
+
+def test_pareto_detection_excludes_dominated_points_and_finds_knee() -> None:
+    rows = [
+        {"j_amplitude": 1.0, "j_localization": 4.0},
+        {"j_amplitude": 2.0, "j_localization": 2.0},
+        {"j_amplitude": 4.0, "j_localization": 1.0},
+        {"j_amplitude": 3.0, "j_localization": 3.0},
+    ]
+    indices = _pareto_indices(rows)
+    assert indices == [0, 1, 2]
+    assert _pareto_knee(rows, indices) == 1
 
 
 def test_configuration_rejects_local_alpha_in_positive_domain(tmp_path: Path) -> None:

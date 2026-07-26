@@ -16,10 +16,13 @@ from fem_inhouse.workflows.dic_partition_selection import (
     write_dic_partition_heterogeneity_report,
 )
 from fem_inhouse.workflows.joint_nonlocal_identification import (
+    collect_identification_results,
     inspect_joint_identification,
     load_joint_identification_config,
+    profile_coupling_modulus,
     run_low_fidelity,
     screen_frozen_field,
+    select_identification_candidates,
     validate_low_fidelity_ranking,
 )
 from fem_inhouse.workflows.nonlocal_coupling_campaign import (
@@ -47,6 +50,7 @@ __all__ = [
     "NonlocalitySweep",
     "PartitionWorkflow",
     "ReferenceHardeningReport",
+    "collect_identification_results",
     "common_color_limits",
     "compute_reference_hardening_modulus",
     "estimate_reference_hardening_from_campaign",
@@ -57,12 +61,14 @@ __all__ = [
     "normalize_length_scales",
     "plot_coupled_alpha_fields",
     "prepare_coupled_alpha_fields",
+    "profile_coupling_modulus",
     "reconstruct_historical_evm",
     "run_field_sweep",
     "run_low_fidelity",
     "run_nonlocality_diagnostic",
     "scan_dic_partition_heterogeneity",
     "screen_frozen_field",
+    "select_identification_candidates",
     "symmetric_color_limit",
     "validate_coupled_nonlocal_campaign",
     "validate_low_fidelity_ranking",

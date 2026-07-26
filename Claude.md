@@ -627,10 +627,10 @@ sans déclarer prématurément une longueur matérielle. Le domaine initial est
       `alpha=0,1,2,4`, `ell=58,88 µm`
 - [x] Implémenter F1 avec réduction spatiale configurable, historique complet,
       reprise, cache strict et statuts individuels
-- [ ] Valider le classement F1 contre les quatre points F2 P43 existants
-- [ ] Implémenter le profil `Hchi*(ell)`, PCHIP/sécante contrôlée et la courbe
+- [x] Valider le classement F1 contre les quatre points F2 P43 existants
+- [x] Implémenter le profil `Hchi*(ell)`, PCHIP/sécante contrôlée et la courbe
       de recherche principalement unidimensionnelle
-- [ ] Construire le front de Pareto amplitude-localisation, le genou et les
+- [~] Construire le front de Pareto amplitude-localisation, le genou et les
       cartes `(ell,alpha)` / `(Hchi,Achi)`
 - [ ] Générer un manifeste de cinq nouveaux calculs F2 au maximum, incluant
       obligatoirement `(ell=58,88 µm, alpha=6)`, sans les lancer
@@ -727,6 +727,26 @@ pas les amplitudes mécaniques prédites.
   `alpha=0,1,2,4`, grille `1800x1550`, padding `75`, résolution
   `ell/h_F1=16`. Le lancement reste explicite via
   `identify-nonlocal run-low-fidelity`.
+
+**Validation F1 P43 :** les quatre points réduits convergent en `14 min
+43,21 s` au total, avec `1428156 KiB` de pic RSS. Les durées mécaniques sont
+`127,06 / 217,32 / 243,72 / 289,60 s` pour `alpha=0/1/2/4`.
+Les six critères pré-enregistrés passent : mêmes classements L2 et
+corrélation, erreur absolue de corrélation `<=0,05`, erreur L2 relative
+`<=15 %`, et erreurs IoU top-10/q90 `<=0,05`. F1 est donc autorisé à classer
+les candidats, jamais à remplacer F2 comme résultat scientifique.
+
+**Profil et Pareto implémentés :**
+
+- collecte immuable F1/F2 avec tableau consolidé et empreintes complètes ;
+- plan F1 sparse par défaut `ell={20,40,60} µm`,
+  `alpha={1,3.5,6}`, soit neuf points non exhaustifs ;
+- profil par PCHIP et minimisation bornée, avec détection explicite de
+  monotonie, optimum de bord et besoin d'un point de confirmation ;
+- front non dominé sur `(J_amp, 1-IoU_q90_absolue)` et genou calculé après
+  normalisation des deux objectifs ;
+- les actions de profil/sélection refusent de proposer F2 tant que les points
+  F1 requis manquent ou que la validation F1 n'est pas réussie.
 
 ### Phase différée B — Validation externe Abaqus
 
