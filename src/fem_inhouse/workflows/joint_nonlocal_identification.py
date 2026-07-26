@@ -1090,6 +1090,7 @@ def _f1_point_manifest(
     reduced_inputs: ReducedCaseInputs,
     case_config: CaseStudyConfig,
 ) -> dict[str, Any]:
+    git = _git_state(_repository_root(config.source_path))
     data = {
         "schema_version": 1,
         "campaign": config.name,
@@ -1097,6 +1098,7 @@ def _f1_point_manifest(
         "point_id": _point_identifier(point),
         "parameters": point.as_dict(),
         "configuration_sha256": config.source_sha256,
+        "git": git,
         "reduction": reduced_inputs.reduction_manifest,
         "case_config": asdict(case_config),
         "partition_id": config.partition_id,
@@ -1355,6 +1357,7 @@ def run_low_fidelity(
             )
             metrics["wall_time_seconds_with_postprocessing"] = time.perf_counter() - started
             _atomic_write(report_path, _canonical_json(metrics))
+            (point_directory / "failure.json").unlink(missing_ok=True)
             results.append(
                 {
                     "point_id": point_id,
