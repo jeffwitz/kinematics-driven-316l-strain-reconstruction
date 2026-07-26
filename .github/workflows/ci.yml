@@ -51,8 +51,10 @@ jobs:
           python -m pip install -r requirements-docs.txt
           python -m pip install -e . --no-deps
       - name: Regenerate documentation figures
-        run: python scripts/build_documentation_figures.py
+        run: |
+          python scripts/build_documentation_figures.py
+          python scripts/generate_documentation_evidence.py
       - name: Check generated figures are current
-        run: git diff --exit-code -- docs/_static
+        run: git diff --exit-code -- docs/_static docs/_generated
       - name: Build strict HTML documentation
         run: sphinx-build -M html docs docs/_build -W --keep-going

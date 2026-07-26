@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY_ROOT))
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
+
+from scripts.generate_documentation_evidence import generate  # noqa: E402
+
+generate()
 
 project = "Kinematics-Driven 316L Strain Reconstruction"
 author = "Adil Kılınç et al."
@@ -47,6 +52,7 @@ exclude_patterns = [
     "reduced_example.md",
     "scientific_contract.md",
     "validation.md",
+    "archive/**",
 ]
 
 myst_enable_extensions = [

@@ -27,6 +27,22 @@ avec `mtype=11` conservé pour les comportements non classifiés ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
+Jalon documentaire au 2026-07-26 : **réécriture publique science-first
+terminée et vérifiée**. La navigation principale suit désormais un récit
+linéaire DIC → base locale → défaut morphologique → diagnostic de largeur →
+modèle micromorphique → identification F0/F1/F2 → portée des claims. Les
+guides sont orientés par tâche et les détails MGIS, Kelvin, condensation 3D,
+point fixe, CSR et PARDISO ont été déplacés vers `docs/reference/`. Les anciens
+rapports restent conservés sous `docs/archive/`, hors navigation et recherche.
+`validation/documentation_evidence_registry.json` devient la source unique des
+conclusions, claims et preuves synthétiques ; le script
+`scripts/generate_documentation_evidence.py` produit les fragments Sphinx et
+les figures de preuve. Validation du jalon : Ruff vert, mypy vert sur les 44
+fichiers du périmètre CI, 320 tests verts avec MFront réel, HTML Sphinx strict
+vert, linkcheck strict vert, PDF LuaLaTeX strict de 48 pages compilé et rendu
+inspecté. Le README compte 85 lignes. Le commit et la publication sont le
+dernier point administratif du jalon.
+
 Jalon atteint au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
 partition P154 d'un découpage 20×20**. Le protocole et les résultats sont
 respectivement dans `validation/nonlocal_p154_preregistration.md` et
