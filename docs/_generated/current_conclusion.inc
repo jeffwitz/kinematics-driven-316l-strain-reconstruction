@@ -3,5 +3,5 @@
 :::{admonition} Current conclusion
 :class: important
 
-The local model is verified but produces overly concentrated localization. A coupled micromorphic model introduces a spatial length and redistributes plasticity. Current reduced-fidelity evidence distinguishes length effects from coupling-strength effects, but no transferable material length has yet been identified.
+The local finite-element baseline is numerically verified within its declared structured plane-stress scope, but it produces overly concentrated localization. A coupled micromorphic model introduces a spatial length and redistributes plasticity. Current reduced-fidelity evidence supports a length effect distinct from coupling strength, but no transferable material internal length has yet been identified.
 :::
