@@ -656,16 +656,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 0
         if args.action == "run-low-fidelity":
-            _print_json(
-                run_low_fidelity(
-                    identification_config,
-                    point_selectors=tuple(args.point or ()),
-                    dry_run=args.dry_run,
-                    maximum_workers=args.workers,
-                    use_sparse_design=args.design,
-                )
+            low_fidelity_report = run_low_fidelity(
+                identification_config,
+                point_selectors=tuple(args.point or ()),
+                dry_run=args.dry_run,
+                maximum_workers=args.workers,
+                use_sparse_design=args.design,
             )
-            return 0
+            _print_json(low_fidelity_report)
+            return 2 if low_fidelity_report.get("failure_count", 0) else 0
         if args.action == "collect-results":
             _print_json(collect_identification_results(identification_config))
             return 0

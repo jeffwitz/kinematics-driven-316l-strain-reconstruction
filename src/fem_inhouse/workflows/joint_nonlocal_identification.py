@@ -1367,6 +1367,7 @@ def run_low_fidelity(
         )
 
     results: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
     for point in unique_points:
         point_id = _point_identifier(point)
         point_directory = config.output_directory / "f1" / "points" / point_id
@@ -1393,6 +1394,19 @@ def run_low_fidelity(
             raise FileExistsError(f"refusing to overwrite incomplete F1 point: {point_id}")
         else:
             _atomic_write(manifest_path, _canonical_json(point_manifest))
+        cached_failure_path = point_directory / "failure.json"
+        if cached_failure_path.is_file() and not point_selectors:
+            cached_failure = load_json_object(cached_failure_path)
+            failure_record = {
+                "point_id": point_id,
+                "status": "failed_cached",
+                "failure": str(cached_failure_path),
+                "error_type": cached_failure.get("error_type"),
+                "error": cached_failure.get("error"),
+            }
+            failures.append(failure_record)
+            results.append(failure_record)
+            continue
         workflow = PartitionWorkflow(
             config=case_config,
             layout=reduced_inputs.layout,
@@ -1426,22 +1440,22 @@ def run_low_fidelity(
                 }
             )
         except Exception as error:
-            _atomic_write(
-                point_directory / "failure.json",
-                _canonical_json(
-                    {
-                        "point_id": point_id,
-                        "status": "failed",
-                        "error_type": type(error).__name__,
-                        "error": str(error),
-                    }
-                ),
-            )
-            raise
+            failure_record = {
+                "point_id": point_id,
+                "status": "failed",
+                "failure": str(cached_failure_path),
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }
+            _atomic_write(cached_failure_path, _canonical_json(failure_record))
+            failures.append(failure_record)
+            results.append(failure_record)
+            continue
     validation = validate_low_fidelity_ranking(config)
     return {
-        "status": "completed",
+        "status": "completed_with_failures" if failures else "completed",
         "points": results,
+        "failure_count": len(failures),
         "validation": validation,
         "high_fidelity_auto_execution": False,
     }
