@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "scientific_scope": "F1 numerical convergence diagnosis; not an F2 result",
+  "git_commit": "a5c1de42441278f8e7d74337a39c594318a1a948",
+  "parameter_point": {
+    "length_scale_um": 20.0,
+    "h_ref_mpa": 5168.147582748343,
+    "tested_alpha": [
+      3.5,
+      6.0
+    ]
+  },
+  "historical_replay_alpha_3p5": {
+    "config": "configs/joint_nonlocal_fixed_point_diagnostic_p0043.yaml",
+    "config_sha256": "8a9b6bd27e8df4cfe4ba30957b7dc7a7c71d24c166136e15ee0d0f6a792c04b4",
+    "failure_sha256": "0e5fe26f40cace7362a08c0b805b4b8206fb77e9d236afeb905b5c3ba2e6b59c",
+    "increments": 10,
+    "maximum_newton_iterations": 15,
+    "fixed_point_strategy": "fixed",
+    "fixed_point_relaxation": 0.5,
+    "maximum_fixed_point_iterations_allowed": 15,
+    "attempted_increments": 18,
+    "converged_increments": 7,
+    "cutbacks": 11,
+    "first_cutback": {
+      "increment": 8,
+      "pseudo_time": 0.8,
+      "newton_iteration": 15,
+      "mechanical_relative_residual": 3.209054293883625e-6,
+      "configured_relative_tolerance": 3.0e-6
+    },
+    "maximum_fixed_point_iterations_observed": 12,
+    "failed_fixed_point_calls": 0,
+    "minimum_yield_surface_radius_mpa": 31.59735212682969,
+    "maximum_absolute_nonlocal_hardening_mpa": 134.19245300723972,
+    "diagnosis": "mechanical_newton_iteration_limit"
+  },
+  "newton_25_alpha_3p5": {
+    "config": "configs/joint_nonlocal_newton_diagnostic_p0043.yaml",
+    "config_sha256": "42a9f0708b29556a7e7dbaacf78fa07f610805568606f03b889499ce37e957ca",
+    "metrics_sha256": "c3423b3b96bab2eb77d1a6d8d76f41d11bcff45c64b61a48cc948bb2f9ea0eda",
+    "converged_increments": 10,
+    "cutbacks": 0,
+    "elapsed_seconds": 441.8463987619616,
+    "total_newton_iterations": 134,
+    "maximum_newton_iterations_observed": 17,
+    "total_fixed_point_iterations": 546,
+    "maximum_fixed_point_iterations_observed": 12,
+    "minimum_yield_surface_radius_mpa": 28.386461658357728,
+    "minimum_residual_direction_cosine": 0.9998967745420079,
+    "maximum_residual_direction_cosine": 0.9999964367871439,
+    "relative_l2_error": 0.5358492100274023,
+    "pearson_correlation": 0.5198530890902817,
+    "amplitude_objective": 0.6491109835140921,
+    "top10_iou": 0.2613019891500904,
+    "absolute_q90_iou": 0.2626536803448826
+  },
+  "newton_25_alpha_6": {
+    "config": "configs/joint_nonlocal_newton_diagnostic_p0043.yaml",
+    "config_sha256": "42a9f0708b29556a7e7dbaacf78fa07f610805568606f03b889499ce37e957ca",
+    "metrics_sha256": "6610f7f17eab2ee3901347186e4d2e821e4625e2b73a549a9ec2c15b0f977011",
+    "converged_increments": 10,
+    "cutbacks": 0,
+    "elapsed_seconds": 503.20766089716926,
+    "total_newton_iterations": 174,
+    "maximum_newton_iterations_observed": 22,
+    "total_fixed_point_iterations": 646,
+    "maximum_fixed_point_iterations_observed": 12,
+    "minimum_yield_surface_radius_mpa": 33.24765516536132,
+    "minimum_residual_direction_cosine": 0.9997371612359593,
+    "maximum_residual_direction_cosine": 0.9999934160578229,
+    "relative_l2_error": 0.4787249522453188,
+    "pearson_correlation": 0.5366928365515198,
+    "amplitude_objective": 0.4007340946066868,
+    "top10_iou": 0.2618724559023066,
+    "absolute_q90_iou": 0.26595570139458574
+  },
+  "conclusions": [
+    "The observed alpha=3.5 failure is not a micromorphic fixed-point failure.",
+    "The yield-surface radius remains positive for all instrumented trials.",
+    "Bounded Aitken is implemented but is not justified by these non-oscillatory traces.",
+    "Raising only the Newton ceiling from 15 to 25 makes alpha=3.5 and alpha=6 converge without cutback.",
+    "The previous F2 proposal containing the truncated alpha=2.5 short-length boundary must be treated as superseded until the F1 collection is regenerated."
+  ]
+}

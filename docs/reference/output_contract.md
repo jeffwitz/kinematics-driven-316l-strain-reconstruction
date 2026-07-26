@@ -134,7 +134,7 @@ historical snapshot payload remains unchanged.
 | Newton | total iterations, maximum iterations |
 | convergence | final norm, final relative residual, criterion name |
 | local plane stress | maximum Gauss-point residual, maximum and mean local iterations, local failures, maximum `cond(Cbb)` |
-| micromorphic coupling | enabled flag, \(\ell\), \(H_\chi\), \(\omega\), iterations per Newton and increment, total/maximum/mean iterations, final coupling residual, maximum Helmholtz residual, mean drift, Helmholtz/MFront time, failures |
+| micromorphic coupling | enabled flag, \(\ell\), \(H_\chi\), relaxation strategy and bounds, iterations per Newton and increment, total/maximum/mean iterations, optional per-iteration fixed-point/Newton trace, final coupling residual, maximum Helmholtz residual, mean drift, Helmholtz/MFront time, failures |
 
 Campaign status also records write time because filesystem output occurs after
 the typed solver result has been returned.

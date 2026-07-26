@@ -1,0 +1,70 @@
+campaign:
+  name: joint_nonlocal_fixed_point_diagnostic_p0043
+  input: data/processed/case_study
+  output: results/joint-nonlocal-fixed-point-diagnostic-p0043
+  local_campaign: results/constitutive-local-p0043-pad150
+  partition_id: 43
+  h_ref: results/constitutive-local-p0043-pad150/HREF.json
+  max_new_high_fidelity_runs: 5
+  existing_high_fidelity:
+    - alpha: 1.0
+      campaign: results/constitutive-nonlocal-p0043-pad150-a100
+      validation_report: validation/results/p0043-a100
+    - alpha: 2.0
+      campaign: results/constitutive-nonlocal-p0043-pad150-a200
+      validation_report: validation/results/p0043-a200
+    - alpha: 4.0
+      campaign: results/constitutive-nonlocal-p0043-pad150-a400
+      validation_report: validation/results/p0043-a400
+
+parameters:
+  ell_um:
+    min: 20.0
+    max: 60.0
+    samples: 21
+    anchors: [58.88]
+  alpha:
+    min: 1.0
+    max: 6.0
+    samples: 21
+    anchors: [1.0, 2.0, 4.0, 6.0]
+  local_baseline_alpha: 0.0
+  h_ref_source: campaign_metadata
+  use_log_coordinates: true
+
+fidelity:
+  frozen:
+    enabled: true
+  low:
+    enabled: true
+    spatial_reduction: 2
+    temporal_increments: 10
+    minimum_elements_per_ell: 3
+    relaxed_solver_tolerances: true
+    residual_tolerance: 3.0e-6
+    maximum_newton_iterations: 15
+    minimum_step_divisor: 1024
+    fixed_point:
+      strategy: fixed
+      relaxation: 0.5
+      maximum_iterations: 15
+      record_iteration_history: true
+  high:
+    enabled: false
+
+observation:
+  apply_dic_operator: true
+  grid_mapping: identity
+  grid_reduction: 1
+  spatial_filter: none
+  use_core_mask_only: true
+  exclude_padding: true
+
+objectives:
+  quantiles: [0.50, 0.75, 0.90, 0.95, 0.99]
+  quantile_weights: [1.0, 1.0, 1.0, 1.0, 1.0]
+  standard_deviation_weight: 1.0
+  use_relative_top10_iou: true
+  use_absolute_dic_q90_iou: true
+  use_correlation: true
+  use_spectral_metrics: true

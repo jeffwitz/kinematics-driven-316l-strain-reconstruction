@@ -75,9 +75,14 @@ extension. It does not alter a campaign when `enabled=false`.
 | `length_scale_mm` | `0.05888` | mm | Helmholtz interaction length |
 | `coupling_modulus_mpa` | `0.0` | MPa | energetic coupling modulus \(H_\chi\) |
 | `relaxation` | `0.5` | — | fixed-point relaxation \(\omega\) |
+| `relaxation_strategy` | `fixed` | — | historical fixed Picard or optional bounded `aitken` |
+| `minimum_relaxation` | `0.05` | — | lower Aitken bound |
+| `maximum_relaxation` | `0.8` | — | upper Aitken bound |
+| `aitken_residual_growth_factor` | `1.25` | — | reject acceleration above this residual-growth ratio |
 | `relative_tolerance` | `1e-6` | — | mesh-independent mixed relative maximum-norm tolerance on \(\chi\) |
 | `maximum_iterations` | `15` | — | fixed-point iteration limit per mechanical Newton trial |
 | `maximum_helmholtz_residual` | `1e-10` | — | accepted relative DCT equation residual |
+| `record_iteration_history` | `false` | — | persist per-fixed-point and enclosing Newton diagnostics |
 
 The current implementation requires an MFront backend. The Python J2 backend
 is retained as an independent local reference and rejects nonlocal activation.

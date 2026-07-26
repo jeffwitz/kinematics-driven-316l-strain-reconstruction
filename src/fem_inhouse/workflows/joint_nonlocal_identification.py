@@ -1528,9 +1528,21 @@ def run_low_fidelity(
                 "error": str(error),
             }
             failure_diagnostics = getattr(error, "diagnostics", None)
+            persisted_failure = dict(failure_record)
             if isinstance(failure_diagnostics, dict):
-                failure_record["diagnostics"] = failure_diagnostics
-            _atomic_write(cached_failure_path, _canonical_json(failure_record))
+                persisted_failure["diagnostics"] = failure_diagnostics
+                failure_record["diagnostic_summary"] = {
+                    key: failure_diagnostics.get(key)
+                    for key in (
+                        "attempted_increments",
+                        "converged_increments",
+                        "cutbacks",
+                        "first_cutback",
+                        "last_cutback",
+                        "relaxation_strategy",
+                    )
+                }
+            _atomic_write(cached_failure_path, _canonical_json(persisted_failure))
             failures.append(failure_record)
             results.append(failure_record)
             continue

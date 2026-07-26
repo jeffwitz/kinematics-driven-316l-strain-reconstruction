@@ -762,10 +762,66 @@ les candidats, jamais à remplacer F2 comme résultat scientifique.
 - treize résultats F1 et quatre F2 sont consolidés dans une collection
   immuable avec CSV, JSON, empreintes et fidélité explicite.
 
-**Résultat des profils :**
+**Diagnostic de convergence aux couplages courts (en cours) :**
+
+- [x] conserver le Picard amorti historique comme stratégie par défaut et
+      préserver exactement son chemin arithmétique ;
+- [x] ajouter une évaluation MFront légère sans tangente qui expose à la fois
+      `PEEQ` et `YieldSurfaceRadius`, sans reconstruction des tenseurs 3D ;
+- [x] enregistrer par itération le résidu micromorphique absolu/relatif, la
+      relaxation, les variations maximales de `p` et `chi`, les bornes de
+      `Hchi*(p-chi)`, le résidu Helmholtz et les bornes du rayon de charge ;
+- [x] rattacher ces données à l'incrément, au pseudo-temps, à l'itération de
+      Newton et au résidu mécanique lorsque celui-ci est disponible ;
+- [x] arrêter explicitement un essai dès que le rayon de charge devient non
+      positif, au lieu de chercher à forcer numériquement la convergence ;
+- [x] classifier un échec en données insuffisantes, oscillation, divergence,
+      stagnation lente ou domaine constitutif non admissible ;
+- [x] implémenter Aitken optionnel, borné, avec rejet si le résidu croît de
+      plus de 25 % et repli automatique vers une relaxation plus faible ;
+- [x] exposer tous les réglages par configuration et CLI, sans activer Aitken
+      dans les campagnes historiques ;
+- [x] valider le code par `312 passed`, Ruff et mypy avant le rejeu réel ;
+- [x] rejouer `(ell=20 µm, alpha=3.5)` avec les paramètres F1 historiques et
+      l'instrumentation seule ;
+- [x] établir que le point fixe converge sans échec, avec au plus 12
+      itérations et `R_min=31,597 MPa` ; le premier cutback vient de Newton,
+      dont le résidu relatif vaut `3,209e-6` à l'itération limite 15 pour une
+      tolérance de `3e-6` ;
+- [x] tester causalement 25 Newton avec tous les autres contrôles historiques
+      inchangés : 10/10 incréments, aucun cutback, 134 Newton, maximum 17,
+      `441,85 s`, `R_min=28,386 MPa` ;
+- [ ] n'activer le profil Aitken/40 incréments/50 itérations que si une trace
+      montre effectivement une oscillation ou un échec micromorphique ;
+- [x] essayer `(20 µm,6)` avec le même profil Newton-25 : 10/10 incréments,
+      aucun cutback, 174 Newton, maximum 22, `503,21 s`,
+      `R_min=33,248 MPa` ;
+- [x] documenter le diagnostic, les limites et la différence entre
+      stabilisation numérique et modification constitutive.
+
+La campagne instrumentée est volontairement séparée dans
+`configs/joint_nonlocal_fixed_point_diagnostic_p0043.yaml` et
+`results/joint-nonlocal-fixed-point-diagnostic-p0043`. Elle ne peut donc ni
+écraser ni valider par accident les anciens points F1. Le commit technique de
+référence est `a5c1de4`. Le test causal Newton utilise à son tour
+`configs/joint_nonlocal_newton_diagnostic_p0043.yaml` et un répertoire de
+résultats distinct.
+
+**Conclusion temporaire du diagnostic court :** l'ancien plafond convergé
+`alpha=2.5` à `ell=20 µm` était numérique. Avec Newton-25, `alpha=3.5` puis
+`alpha=6` convergent, sans Aitken et sans rayon de charge non positif.
+L'objectif d'amplitude continue de décroître (`0,8191` à `alpha=2.5`,
+`0,6491` à 3.5, `0,4007` à 6). La proposition F2 existante qui contenait
+`(20 µm,2.5)` est donc **superseded** et ne doit pas être lancée. Il faudra
+reconstruire une collection F1 et une proposition F2 immuables avec la
+politique Newton-25 déclarée. Le registre compact est
+`validation/joint_nonlocal_fixed_point_diagnostic_p0043.json`.
+
+**Résultat historique des profils (superseded à `ell=20 µm`) :**
 
 - `ell=20 µm` : `alpha={1,2,2.5}`, minimum d'amplitude sur la borne
-  convergée `alpha=2.5` ;
+  convergée `alpha=2.5` dans la collection initiale ; le diagnostic
+  Newton-25 étend maintenant la tendance monotone jusqu'à `alpha=6` ;
 - `ell=40 µm` : `alpha={1,3.5,6}`, minimum sur `alpha=6` ;
 - `ell=60 µm` : `alpha={1,3.5,6}`, minimum sur `alpha=6` ;
 - tous les profils restent monotones : aucun optimum intérieur et aucune
@@ -774,7 +830,7 @@ les candidats, jamais à remplacer F2 comme résultat scientifique.
   `(40 µm,6)` genou, `(58,88 µm,4)` meilleure localisation q90 absolue,
   `(60 µm,6)` meilleure amplitude.
 
-**Point d'arrêt F2 atteint sans lancement :**
+**Point d'arrêt F2 historique, sans lancement et désormais superseded :**
 
 - manifeste immuable :
   `results/joint-nonlocal-identification-p0043/f2-proposals/`
@@ -789,6 +845,8 @@ les candidats, jamais à remplacer F2 comme résultat scientifique.
   métrique discriminée, destination et commande complète ;
 - `automatic_execution=false`, `human_approval_required=true` et tous les
   statuts restent `proposed_not_run`.
+- ce manifeste est conservé pour la provenance mais ne doit plus être exécuté
+  depuis que `(20 µm,3.5)` et `(20 µm,6)` ont convergé avec Newton-25.
 
 **Transfert et rapport préparés :**
 
@@ -807,13 +865,10 @@ les candidats, jamais à remplacer F2 comme résultat scientifique.
 
 - Ruff : réussi sur tout le dépôt ;
 - mypy : réussi sur les 44 fichiers source ;
-- pytest : `288 passed, 22 skipped` sans bibliothèque MFront explicitement
-  déclarée ;
-- suite complète avec `MFRONT_BEHAVIOUR_LIBRARY` :
-  `310 passed` ;
+- suite complète avec MGIS/MFront réel : `313 passed` ;
 - Sphinx HTML strict : réussi, page
   `docs/_build/html/explanation/joint_nonlocal_identification.html` ;
-- Sphinx LaTeX/PDF strict : réussi, manuel de 175 pages sous
+- Sphinx LaTeX/PDF strict : réussi, manuel de 184 pages sous
   `docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf`.
 
 ### Phase différée B — Validation externe Abaqus

@@ -100,14 +100,17 @@ Exactly one action is required:
      - Stitch one complete global field.
 
 Solver options include ``--increments``, ``--max-newton-iterations``,
-``--residual-tolerance``,
+``--residual-tolerance``, ``--minimum-step-divisor``,
 ``--constitutive-backend {python,mfront,mfront-native-plane-stress,mfront-3d-condensed-plane-stress}``,
 ``--mfront-library``, and ``--mfront-threads``.
 
 Coupled MFront campaigns add ``--nonlocal-plasticity``,
 ``--nonlocal-length-um``, ``--nonlocal-coupling-modulus-mpa``,
-``--nonlocal-relaxation``, ``--nonlocal-tolerance``, and
-``--nonlocal-max-iterations``.
+``--nonlocal-relaxation``, ``--nonlocal-relaxation-strategy``,
+``--nonlocal-minimum-relaxation``, ``--nonlocal-maximum-relaxation``,
+``--nonlocal-aitken-residual-growth-factor``, ``--nonlocal-tolerance``,
+``--nonlocal-max-iterations``, and
+``--nonlocal-record-iteration-history``.
 
 ``estimate-nonlocal-reference`` contract
 -----------------------------------------

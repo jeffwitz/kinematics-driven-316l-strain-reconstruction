@@ -102,6 +102,73 @@ Do not change solver settings merely to make a difficult DOE point converge.
 A clean failure and a new bracket are preferable to an unregistered numerical
 change.
 
+## Diagnose a failed short-length point
+
+Use a separate configuration and output directory before changing any
+numerical control. The repository contains an instrumented replay of the
+historical \((\alpha=3.5,\ell=20\,\mu\mathrm m)\) F1 point:
+
+```bash
+source /home/jeff/.local/share/tfel/env/env.sh
+export MFRONT_BEHAVIOUR_LIBRARY="$PWD/build/mfront/src/libBehaviour.so"
+
+fem-inhouse identify-nonlocal run-low-fidelity \
+  --config configs/joint_nonlocal_fixed_point_diagnostic_p0043.yaml \
+  --point 3.5:20
+```
+
+That profile retains the original 10 increments, 15 Newton iterations,
+Picard relaxation 0.5, 15 micromorphic iterations, tolerances and cutback
+limit. It only enables `record_iteration_history`. Its output is separate from
+the identification cache, so it cannot turn a diagnostic replay into a
+scientific F1 result.
+
+Inspect `failure.json` after an unsuccessful replay. In addition to the
+exception message it contains:
+
+- the first and last cutbacks;
+- the complete recorded fixed-point history;
+- the final failed fixed-point history even when global history recording is
+  disabled;
+- the fixed-point failure classification;
+- the minimum yield-surface radius observed during each trial.
+
+If the minimum radius is non-positive, stop. Aitken, smaller cutbacks or more
+iterations must not be used to force that parameter pair through an
+inadmissible constitutive state.
+
+If the radius stays positive and the trace is oscillatory, create a new
+configuration and set:
+
+```yaml
+fidelity:
+  low:
+    temporal_increments: 40
+    maximum_newton_iterations: 25
+    minimum_step_divisor: 4096
+    fixed_point:
+      strategy: aitken
+      relaxation: 0.2
+      minimum_relaxation: 0.05
+      maximum_relaxation: 0.8
+      residual_growth_factor: 1.25
+      maximum_iterations: 50
+      record_iteration_history: true
+```
+
+Keep the physical parameters and convergence tolerances unchanged. Give this
+profile a distinct campaign name and output directory. Retry
+\(\alpha=6,\ell=20\,\mu\mathrm m\) only after 3.5 converges without a
+non-positive yield radius.
+
+For direct partition runs, the equivalent controls are
+`--nonlocal-relaxation-strategy`, `--nonlocal-minimum-relaxation`,
+`--nonlocal-maximum-relaxation`,
+`--nonlocal-aitken-residual-growth-factor`,
+`--nonlocal-record-iteration-history`, `--nonlocal-max-iterations`,
+`--max-newton-iterations`, `--increments`, and
+`--minimum-step-divisor`.
+
 ## Collect, profile and build the Pareto front
 
 ```bash

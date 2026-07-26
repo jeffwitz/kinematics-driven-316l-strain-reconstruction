@@ -75,6 +75,64 @@ evidence for a width contribution, not identification of a material internal
 length. The candidate is the upper sweep boundary and only one held-out
 partition has been tested.
 
+## Short-length F1 convergence diagnosis on P43
+
+Evidence record:
+`validation/joint_nonlocal_fixed_point_diagnostic_p0043.json`
+
+The historical low-fidelity point
+\((\ell,\alpha)=(20\,\mu\mathrm m,3.5)\) was replayed with its original
+10 increments, 15-iteration mechanical Newton ceiling, relative tolerance
+`3e-6`, fixed Picard relaxation `0.5`, 15-iteration micromorphic ceiling and
+cutback policy. Iteration tracing was the only addition.
+
+| Diagnostic | Historical replay |
+|---|---:|
+| converged increments | 7 / 10 |
+| cutbacks | 11 |
+| first failed pseudo-time | `0.8` |
+| mechanical residual at Newton iteration 15 | `3.209054e-6` |
+| maximum micromorphic iterations | 12 |
+| failed micromorphic calls | 0 |
+| minimum yield-surface radius | `31.597 MPa` |
+| largest absolute nonlocal hardening | `134.192 MPa` |
+
+Every micromorphic call converged. The mechanical residual was still
+decreasing and missed its tolerance by only `2.09054e-7` when it reached the
+Newton ceiling. The cutbacks therefore did not indicate a non-contractive
+Helmholtz fixed point, and the yield radius remained strictly positive.
+
+A causal replay changed only the mechanical Newton ceiling from 15 to 25:
+
+| Result | \(\alpha=3.5\) | \(\alpha=6\) |
+|---|---:|---:|
+| converged increments / cutbacks | 10 / 0 | 10 / 0 |
+| wall time | `441.85 s` | `503.21 s` |
+| total / maximum Newton iterations | 134 / 17 | 174 / 22 |
+| total / maximum micromorphic iterations | 546 / 12 | 646 / 12 |
+| minimum yield-surface radius | `28.386 MPa` | `33.248 MPa` |
+| relative L2 | `0.53585` | `0.47872` |
+| Pearson correlation | `0.51985` | `0.53669` |
+| amplitude objective | `0.64911` | `0.40073` |
+| top-10% / absolute-q90 IoU | `0.26130 / 0.26265` | `0.26187 / 0.26596` |
+
+The fixed-point residual directions were almost collinear rather than
+oscillatory: their cosine stayed in `[0.999897, 0.999996]` for
+\(\alpha=3.5\) and `[0.999737, 0.999993]` for \(\alpha=6\). Bounded Aitken
+relaxation is implemented and tested, but was neither activated nor needed in
+these runs.
+
+The former \(\alpha=2.5\) short-length boundary was therefore numerical, not
+physical. The historical F2 proposal containing
+\((20\,\mu\mathrm m,2.5)\) is superseded and must not be launched. A new
+immutable F1 collection and F2 proposal must declare the Newton-25 policy
+before any production calculation. These replays are numerical F1 evidence,
+not full-resolution F2 scientific results.
+
+See {doc}`../explanation/joint_nonlocal_identification` for the causal
+analysis and {doc}`../explanation/micromorphic_plasticity` for the fixed-point
+diagnostics and optional Aitken algorithm.
+
 ## Three-backend FEM benchmark
 
 Campaign:

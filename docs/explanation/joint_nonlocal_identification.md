@@ -300,6 +300,103 @@ The two adaptive points took 630.0 s and peaked at 1,403,376 KiB. Every point
 has an individual immutable manifest and status; failure is data, not a
 silently missing row.
 
+### Instrumented diagnosis of the short-length failure
+
+The original failure message identified only the global symptom: the
+increment was repeatedly cut back below the minimum. A cache-isolated replay
+of \((20\,\mu\mathrm m,3.5)\) retained all historical F1 controls and added
+iteration tracing.
+
+The replay reached seven converged increments before the first failure:
+
+| Diagnostic | Observed value |
+|---|---:|
+| first failed pseudo-time | 0.8 |
+| Newton limit | 15 |
+| relative Newton residual at iteration 15 | \(3.2091\times10^{-6}\) |
+| configured Newton tolerance | \(3.0\times10^{-6}\) |
+| maximum micromorphic iterations in any call | 12 |
+| failed micromorphic calls | 0 |
+| minimum yield-surface radius | 31.597 MPa |
+| largest absolute \(H_\chi(p-\chi)\) | 134.192 MPa |
+| largest Helmholtz residual | numerical roundoff scale |
+
+The fixed point therefore **was not the source of these cutbacks**. At
+the first failed increment, every micromorphic call converged. Its iteration
+count fell from 11--12 in the first two Newton trials to one near the
+mechanical limit. The mechanical residual decreased monotonically but reached
+the maximum Newton iteration just above its tolerance. Eleven cutbacks then
+reproduced the same mechanical-limit failure; the final attempted step was
+\(9.765625\times10^{-5}\).
+
+This evidence changes the numerical response:
+
+- the parameter pair is not rejected by the yield-radius positivity check;
+- increasing the micromorphic iteration budget cannot solve the observed
+  failure;
+- Aitken is available and tested, but is not activated merely because the
+  global solve failed;
+- the causal follow-up changes only the Newton iteration ceiling from 15 to
+  25, with increments, tolerances, Picard relaxation and cutback policy held
+  fixed.
+
+That causal follow-up converged:
+
+| Diagnostic | Newton-25 replay |
+|---|---:|
+| converged increments | 10 / 10 |
+| cutbacks | 0 |
+| total Newton iterations | 134 |
+| maximum Newton iterations | 17 |
+| wall time | 441.85 s |
+| total micromorphic iterations | 546 |
+| maximum micromorphic iterations | 12 |
+| minimum yield-surface radius | 28.386 MPa |
+| residual-direction cosine range | 0.999897 to 0.999996 |
+
+The positive residual-direction cosines rule out the oscillatory signature
+that would justify Aitken for this replay. The point also extends the
+short-length F1 trend beyond \(\alpha=2.5\): relative L2 decreases from
+0.5707 to 0.5358, correlation rises from 0.5099 to 0.5199, and the amplitude
+objective decreases from 0.8191 to 0.6491.
+
+The same Newton-25 profile was then applied to \(\alpha=6\), only after the
+3.5 result had converged:
+
+| Diagnostic | \(\alpha=6,\ell=20\,\mu\mathrm m\) |
+|---|---:|
+| converged increments / cutbacks | 10 / 0 |
+| wall time | 503.21 s |
+| total / maximum Newton iterations | 174 / 22 |
+| total / maximum micromorphic iterations | 646 / 12 |
+| minimum yield-surface radius | 33.248 MPa |
+| relative L2 / correlation | 0.4787 / 0.5367 |
+| amplitude objective | 0.4007 |
+| top-10 / absolute-q90 IoU | 0.2619 / 0.2660 |
+
+The short-length amplitude profile therefore remains monotone through
+\(\alpha=6\); the former \(\alpha=2.5\) boundary was numerical, not a
+scientifically identified optimum. The already-generated F2 proposal that
+used \((20\,\mu\mathrm m,2.5)\) is consequently **superseded and must not be
+launched**. A new immutable F1 collection and F2 proposal are required before
+production calculations, with the Newton-25 policy declared consistently.
+
+The likely architectural limitation is the staggered mechanical tangent: it
+is consistent for the local material update at fixed \(\chi\), but does not
+contain the complete derivative of the converged Helmholtz coupling. At strong
+short-length coupling this can reduce global Newton to slow linear
+convergence. A monolithic block Newton or a consistently coupled tangent
+remains the long-term remedy; neither is introduced by the diagnostic replay.
+
+The raw trace is stored outside the identification cache under
+`results/joint-nonlocal-fixed-point-diagnostic-p0043`. The compact
+reproducible configuration is
+`configs/joint_nonlocal_fixed_point_diagnostic_p0043.yaml`. The isolated
+Newton-25 confirmation uses
+`configs/joint_nonlocal_newton_diagnostic_p0043.yaml`.
+The compact evidence record is
+`validation/joint_nonlocal_fixed_point_diagnostic_p0043.json`.
+
 ## Profiles and Pareto front
 
 At each sampled length, a monotone PCHIP is fitted only inside the converged
@@ -307,9 +404,13 @@ alpha interval. No monotonicity is assumed before checking the samples.
 
 | ell (µm) | converged α samples | profiled α* | status |
 |---:|---|---:|---|
-| 20 | 1, 2, 2.5 | 2.50 | upper converged boundary |
+| 20 | 1, 2, 2.5, 3.5†, 6† | 6.00 | upper sampled boundary |
 | 40 | 1, 3.5, 6 | 6.00 | upper sampled boundary |
 | 60 | 1, 3.5, 6 | 6.00 | upper sampled boundary |
+
+† The two added short-length points use the separately declared Newton-25
+diagnostic policy. They supersede the old numerical boundary but have not yet
+been folded into a regenerated immutable collection.
 
 ```{image} ../_static/joint_identification/joint_identification_h_profiles.*
 :alt: Profiles of the amplitude objective at each sampled length.
@@ -372,7 +473,10 @@ The levels answer different questions, so this is not a claim that F0 is
 parameters. F1 pays for coupled mechanics to validate the ranking. F2 is paid
 only for a small, justified set of scientific points.
 
-## Proposed full-resolution calculations — not launched
+## Historical full-resolution proposal — superseded, not launched
+
+The following manifest is retained for provenance only. It predates the
+Newton-25 diagnosis and **must not be executed**.
 
 The generated immutable manifest proposes four, not five, new F2 runs:
 
@@ -397,7 +501,9 @@ The total estimated sequential time is 9,584.7 s, or 2.66 h. These are
 planning estimates, not solver guarantees.
 
 The manifest contains complete commands but marks every candidate
-`proposed_not_run`. Human approval is required before executing any of them.
+`proposed_not_run`. A replacement proposal requires a regenerated immutable
+F1 collection with the Newton-25 policy declared consistently, followed by
+new human approval.
 
 ## Temporary scientific conclusions
 
@@ -411,8 +517,9 @@ The present evidence supports the following statements:
    converged profile;
 4. localization is not monotone in exactly the same way, producing a genuine
    Pareto trade-off;
-5. short-length/high-coupling points are numerically harder and delimit the
-   converged design region;
+5. short-length/high-coupling points require more mechanical Newton
+   iterations, but the former \(\alpha=2.5\) boundary was not a physical or
+   micromorphic convergence limit;
 6. the current data do not provide an interior optimum or demonstrate
    separate identifiability of \(H_\chi\) and \(\ell\);
 7. no material-length conclusion is allowed.

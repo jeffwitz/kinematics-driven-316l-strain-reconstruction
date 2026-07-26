@@ -199,6 +199,37 @@ def test_low_fidelity_dry_run_preserves_extent_and_reduces_padding(
     assert design["point_count"] == 4
 
 
+def test_low_fidelity_fixed_point_controls_are_explicitly_loaded(
+    tmp_path: Path,
+) -> None:
+    path = _synthetic_configuration(tmp_path)
+    text = path.read_text(encoding="utf-8").replace(
+        "    sparse_design:\n",
+        """    maximum_newton_iterations: 25
+    minimum_step_divisor: 4096
+    fixed_point:
+      strategy: aitken
+      relaxation: 0.2
+      minimum_relaxation: 0.05
+      maximum_relaxation: 0.8
+      residual_growth_factor: 1.25
+      maximum_iterations: 50
+      record_iteration_history: true
+    sparse_design:
+""",
+    )
+    path.write_text(text, encoding="utf-8")
+
+    config = load_joint_identification_config(path)
+
+    assert config.low_maximum_newton_iterations == 25
+    assert config.low_minimum_step_divisor == 4096
+    assert config.low_nonlocal_relaxation_strategy == "aitken"
+    assert config.low_nonlocal_relaxation == pytest.approx(0.2)
+    assert config.low_nonlocal_maximum_iterations == 50
+    assert config.low_record_iteration_history is True
+
+
 def test_pareto_detection_excludes_dominated_points_and_finds_knee() -> None:
     rows = [
         {"j_amplitude": 1.0, "j_localization": 4.0},

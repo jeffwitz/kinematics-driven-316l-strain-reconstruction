@@ -106,7 +106,8 @@ The production native-plane-stress adapter therefore separates three
 operations:
 
 1. intermediate fixed-point integrations use MFront without a tangent and
-   expose only PEEQ;
+   expose PEEQ plus the already-computed `YieldSurfaceRadius`; the latter is
+   read only for admissibility diagnostics;
 2. one integration with the consistent tangent produces the in-plane stress
    and tangent needed by the mechanical Newton assembly;
 3. full 3D stress and strain tensors are reconstructed once, after final FEM
@@ -193,6 +194,86 @@ state magnitude is the relative branch. A raw global \(L_2\) norm is not used
 because it makes the same pointwise error harder to accept when the ROI gains
 elements. The saved diagnostics identify this choice as
 `mixed_relative_linf`.
+
+## Diagnosing and stabilizing the partitioned fixed point
+
+The staggered map is
+
+$$
+\chi^k
+\longmapsto p^k
+\longmapsto
+\chi^\star_k=\mathcal H_\ell(p^k).
+$$
+
+It is not guaranteed to remain contractive for every pair
+\((\ell,H_\chi)\). A shorter length damps fewer spatial modes, while a larger
+coupling modulus increases the sensitivity of the local plastic update to
+\(\chi\). A failed mechanical increment can therefore originate in the
+micromorphic iteration even when the global cutback mechanism is working as
+designed.
+
+The solver can record, for every fixed-point iteration and its enclosing
+mechanical Newton iteration:
+
+- absolute and mixed-relative fixed-point residuals;
+- current relaxation factor;
+- maximum changes in local \(p\) and nonlocal \(\chi\);
+- minimum and maximum of \(H_\chi(p-\chi)\);
+- minimum and maximum `YieldSurfaceRadius`;
+- Helmholtz residual;
+- residual-direction cosine;
+- mechanical absolute and relative residuals, when a constitutive trial was
+  returned.
+
+The first and last cutbacks record their increment, Newton iteration,
+pseudo-time, attempted step and cause. This separates four interpretations:
+
+| Trace | Interpretation | Appropriate response |
+|---|---|---|
+| residual decreases too slowly | iteration budget is too short | increase the fixed-point budget |
+| successive residual directions oppose each other | oscillatory partitioned map | adaptive relaxation |
+| residual magnitude grows | non-contractive map | stronger nonlinear coupling method |
+| yield radius becomes non-positive | constitutive domain is inadmissible | stop; do not force convergence |
+
+The positivity check is performed during the lightweight MFront calls, before
+the final tangent evaluation. It therefore detects a constitutive-domain
+problem instead of reporting only a later global cutback.
+
+### Optional bounded Aitken relaxation
+
+The historical method remains fixed Picard relaxation and is still the
+default. Aitken is an explicit solver option that changes only the path to the
+same fixed point:
+
+$$
+r_k=\chi^\star_k-\chi^k,\qquad
+\chi^{k+1}=\chi^k+\omega_k r_k,
+$$
+
+$$
+\omega_{k+1}
+=-\omega_k
+\frac{r_k^\mathsf T(r_{k+1}-r_k)}
+{\lVert r_{k+1}-r_k\rVert_2^2}.
+$$
+
+For the short-length diagnostic profile, \(\omega\) starts at 0.2 and is
+clipped to \([0.05,0.8]\). If the raw residual grows by more than 25%, the
+Aitken proposal is rejected and the current relaxation is halved, subject to
+the lower bound. A singular or non-finite Aitken denominator also leaves the
+safe relaxation unchanged. The acceleration history is reset for every call
+from the mechanical Newton solver, so no secant information crosses a
+constitutive trial boundary.
+
+Neither strategy commits MGIS state during the fixed point. Aitken does not
+alter \(H_\chi\), \(\ell\), the constitutive equations, the Helmholtz
+operator, the convergence tolerance or the mechanical tangent. It must
+nevertheless be recorded in the campaign manifest because it is a numerical
+solver choice.
+
+Anderson acceleration and a monolithic block Newton in \((u,\chi)\) remain
+future options. They are not silently activated when Aitken fails.
 
 ## Two MFront behaviours
 
