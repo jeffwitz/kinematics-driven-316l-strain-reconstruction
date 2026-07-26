@@ -590,6 +590,67 @@ paires 22/33 sont enregistrées. Le troisième lot J2 symétrique réduit encore
 le temps `244,67→227,34 s`, PARDISO de `38,0 %` et le pic RSS de `8,7 %`.
 La plasticité cristalline reste par défaut sur le chemin complet `mtype=11`.
 
+### Phase prioritaire A.7 — Identification conjointe rapide de `ell` et `Hchi`
+
+**Mission :** déterminer si la longueur `ell` et le module de couplage `Hchi`
+sont séparément identifiables et transférables, sans grille F2 exhaustive et
+sans déclarer prématurément une longueur matérielle. Le domaine initial est
+`alpha∈[1,6]`, `ell∈[20,60] µm`, avec le témoin local unique `alpha=0`.
+
+**Contrats scientifiques :**
+
+- conserver le modèle micromorphique, MFront, MGIS transactionnel, Newton et
+  les deux voies de contraintes planes inchangés ;
+- paramétrer et enregistrer `alpha`, `Hchi`, `ell` et
+  `Achi=Hchi*ell**2`, avec interpolation possible dans
+  `(log(Hchi), log(Achi))` ;
+- comparer uniquement l'EVM totale reconstruite par le même opérateur de
+  mesure DIC ; PEEQ reste un diagnostic interne ;
+- distinguer explicitement F0 heuristique, F1 de classement et F2
+  scientifique ;
+- ne jamais réutiliser un cache dont les empreintes physiques, numériques ou
+  d'observation diffèrent ;
+- ne lancer aucun nouveau calcul F2 sans validation humaine explicite.
+
+**Ordre imposé et suivi :**
+
+- [ ] Auditer les solveurs Helmholtz, métriques, validateurs, partitions,
+      formats de campagne et commandes réutilisables
+- [ ] Formaliser les unités et les conversions
+      `(alpha,ell) <-> (Hchi,Achi)`, y compris le cas local canonique
+- [ ] Formaliser et empreinter l'opérateur `M_DIC`
+- [ ] Ajouter les métriques d'amplitude, localisation, spectre spatial et
+      diagnostics PEEQ
+- [ ] Implémenter le crible F0 sur PEEQ local figé et ses diagnostics
+      énergétiques/spectraux
+- [ ] Valider les tendances F0 contre les F2 P43 existants
+      `alpha=0,1,2,4`, `ell=58,88 µm`
+- [ ] Implémenter F1 avec réduction spatiale configurable, historique complet,
+      reprise, cache strict et statuts individuels
+- [ ] Valider le classement F1 contre les quatre points F2 P43 existants
+- [ ] Implémenter le profil `Hchi*(ell)`, PCHIP/sécante contrôlée et la courbe
+      de recherche principalement unidimensionnelle
+- [ ] Construire le front de Pareto amplitude-localisation, le genou et les
+      cartes `(ell,alpha)` / `(Hchi,Achi)`
+- [ ] Générer un manifeste de cinq nouveaux calculs F2 au maximum, incluant
+      obligatoirement `(ell=58,88 µm, alpha=6)`, sans les lancer
+- [ ] Préparer une validation de transfert de trois couples au maximum sur une
+      autre ROI, sans recalage
+- [ ] Produire configuration, CSV consolidé, figures, rapport, documentation,
+      tests, HTML et PDF
+
+**Point d'arrêt obligatoire :** après génération du manifeste F2, présenter
+pour chaque candidat `ell`, `alpha`, `Hchi`, `Achi`, justification, coût
+estimé et métrique discriminée. Attendre une validation humaine avant toute
+exécution haute fidélité. Un éventuel second lot de deux points au maximum
+nécessitera également une commande explicite.
+
+**État initial :** P43 fournit quatre F2 réutilisables à
+`ell=58,88 µm`, `alpha=0,1,2,4`. `H_ref` doit toujours être lu dans
+`HREF.json` ou les métadonnées de campagne ; la valeur numérique n'est jamais
+codée en dur. La page `docs/explanation/p43_coupled_results.md` constitue le
+diagnostic scientifique de départ.
+
 ### Phase différée B — Validation externe Abaqus
 
 - [ ] Récupérer ou régénérer un petit `.inp` de référence
