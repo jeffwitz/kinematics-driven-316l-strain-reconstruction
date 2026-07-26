@@ -25,6 +25,7 @@ Usage:
 
 import logging
 import time
+from dataclasses import asdict
 from typing import cast
 
 import numpy as np
@@ -49,6 +50,7 @@ from fem_inhouse.core.linear_solver import (
 )
 from fem_inhouse.core.mesh import StructuredMesh
 from fem_inhouse.core.nonlocal_plasticity import (
+    NonlocalCouplingConvergenceError,
     NonlocalCouplingEvaluation,
     NonlocalFixedPointWorkspace,
     NonlocalPlaneStressMaterialBatch,
@@ -68,6 +70,14 @@ LOGGER = logging.getLogger(__name__)
 GP_XI = GAUSS_POINTS
 GP_W = GAUSS_WEIGHTS
 N_GP = GAUSS_POINT_COUNT
+
+
+class NonlinearConvergenceError(RuntimeError):
+    """Global convergence failure carrying machine-readable diagnostics."""
+
+    def __init__(self, message: str, *, diagnostics: dict[str, object]) -> None:
+        super().__init__(message)
+        self.diagnostics = diagnostics
 
 
 # ── Main solver ──────────────────────────────────────────────────────────────
@@ -102,9 +112,14 @@ def run_fem(
     nonlocal_length_scale_mm=0.05888,
     nonlocal_coupling_modulus_mpa=0.0,
     nonlocal_relaxation=0.5,
+    nonlocal_relaxation_strategy="fixed",
+    nonlocal_minimum_relaxation=0.05,
+    nonlocal_maximum_relaxation=0.8,
+    nonlocal_aitken_residual_growth_factor=1.25,
     nonlocal_relative_tolerance=1e-6,
     nonlocal_maximum_iterations=15,
     nonlocal_maximum_helmholtz_residual=1e-10,
+    nonlocal_record_iteration_history=False,
     snapshot_fractions=None,
     verbose=True,
 ):
@@ -282,6 +297,9 @@ def run_fem(
     nonlocal_mfront_without_tangent_seconds = 0.0
     nonlocal_mfront_with_tangent_seconds = 0.0
     helmholtz_seconds = 0.0
+    nonlocal_fixed_point_history: list[dict[str, object]] = []
+    last_failed_fixed_point_history: list[dict[str, object]] = []
+    first_cutback: dict[str, object] | None = None
     snaps = {}
     pending = sorted(snapshot_fractions) if snapshot_fractions else []
     while t < 1.0 - 1e-12:
@@ -306,8 +324,11 @@ def run_fem(
         nonlocal_evaluation_acc: NonlocalCouplingEvaluation | None = None
         increment_nonlocal_iterations = 0
         converged = False
+        increment_failure_reason = "newton_iterations_exhausted"
+        failed_newton_iteration = 0
 
         for nrit in range(max_nr):
+            failed_newton_iteration = nrit + 1
             total_newton_iterations += 1
             maximum_newton_iterations = max(maximum_newton_iterations, nrit + 1)
             u_e = u[ld]
@@ -332,6 +353,12 @@ def run_fem(
                         spacing_y_mm=mesh.element_size,
                         coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
                         relaxation=nonlocal_relaxation,
+                        relaxation_strategy=nonlocal_relaxation_strategy,
+                        minimum_relaxation=nonlocal_minimum_relaxation,
+                        maximum_relaxation=nonlocal_maximum_relaxation,
+                        aitken_residual_growth_factor=(
+                            nonlocal_aitken_residual_growth_factor
+                        ),
                         relative_tolerance=nonlocal_relative_tolerance,
                         maximum_iterations=nonlocal_maximum_iterations,
                         maximum_helmholtz_residual=nonlocal_maximum_helmholtz_residual,
@@ -340,6 +367,20 @@ def run_fem(
                     trial = nonlocal_evaluation.constitutive_trial
                     np.copyto(chi_trial_guess, nonlocal_evaluation.nonlocal_peeq)
                     nonlocal_evaluation_acc = nonlocal_evaluation
+                    trace_start = len(nonlocal_fixed_point_history)
+                    if nonlocal_record_iteration_history:
+                        nonlocal_fixed_point_history.extend(
+                            {
+                                "increment": inc,
+                                "pseudo_time": t + dt,
+                                "step_size": dt,
+                                "newton_iteration": nrit + 1,
+                                "mechanical_residual_norm": None,
+                                "mechanical_relative_residual": None,
+                                **asdict(item),
+                            }
+                            for item in nonlocal_evaluation.iteration_history
+                        )
                     nonlocal_iterations_per_newton.append(nonlocal_evaluation.iterations)
                     increment_nonlocal_iterations += nonlocal_evaluation.iterations
                     nonlocal_total_iterations += nonlocal_evaluation.iterations
@@ -378,6 +419,25 @@ def run_fem(
             except ConstitutiveIntegrationError as error:
                 if nonlocal_plasticity_enabled:
                     nonlocal_coupling_failures += 1
+                increment_failure_reason = str(error)
+                if isinstance(error, NonlocalCouplingConvergenceError):
+                    last_failed_fixed_point_history = [
+                        {
+                            "increment": inc,
+                            "pseudo_time": t + dt,
+                            "step_size": dt,
+                            "newton_iteration": nrit + 1,
+                            "mechanical_residual_norm": None,
+                            "mechanical_relative_residual": None,
+                            "failure_reason": error.reason,
+                            **asdict(item),
+                        }
+                        for item in error.iteration_history
+                    ]
+                    if nonlocal_record_iteration_history:
+                        nonlocal_fixed_point_history.extend(
+                            last_failed_fixed_point_history
+                        )
                 LOGGER.warning(
                     "constitutive trial failed: %s",
                     error,
@@ -425,6 +485,13 @@ def run_fem(
             if nrit == 0:
                 res0 = max(res, 1e-30)
             rel = res / res0
+            if (
+                nonlocal_plasticity_enabled
+                and nonlocal_record_iteration_history
+            ):
+                for record in nonlocal_fixed_point_history[trace_start:]:
+                    record["mechanical_residual_norm"] = float(res)
+                    record["mechanical_relative_residual"] = float(rel)
             if verbose:
                 LOGGER.info(
                     "Newton iteration",
@@ -479,6 +546,15 @@ def run_fem(
             u = u_save
             dt *= 0.5
             cutbacks += 1
+            if first_cutback is None:
+                first_cutback = {
+                    "increment": inc,
+                    "newton_iteration": failed_newton_iteration,
+                    "pseudo_time": t + 2.0 * dt,
+                    "failed_step_size": 2.0 * dt,
+                    "next_step_size": dt,
+                    "reason": increment_failure_reason,
+                }
             LOGGER.warning(
                 "increment cutback",
                 extra={
@@ -488,8 +564,29 @@ def run_fem(
                 },
             )
             if dt < dt_min:
-                raise RuntimeError(
-                    f"run_fem: increment cutback below minimum ({dt:.2e}) - solution not converging"
+                raise NonlinearConvergenceError(
+                    f"run_fem: increment cutback below minimum ({dt:.2e}) "
+                    "- solution not converging",
+                    diagnostics={
+                        "first_cutback": first_cutback,
+                        "last_cutback": {
+                            "increment": inc,
+                            "newton_iteration": failed_newton_iteration,
+                            "pseudo_time": t + 2.0 * dt,
+                            "failed_step_size": 2.0 * dt,
+                            "next_step_size": dt,
+                            "reason": increment_failure_reason,
+                        },
+                        "attempted_increments": inc,
+                        "converged_increments": converged_increments,
+                        "cutbacks": cutbacks,
+                        "total_newton_iterations": total_newton_iterations,
+                        "relaxation_strategy": nonlocal_relaxation_strategy,
+                        "fixed_point_history": nonlocal_fixed_point_history,
+                        "last_failed_fixed_point_history": (
+                            last_failed_fixed_point_history
+                        ),
+                    },
                 )
             continue
 
@@ -687,6 +784,13 @@ def run_fem(
             nonlocal_length_scale_mm=nonlocal_length_scale_mm,
             nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
             nonlocal_relaxation=nonlocal_relaxation,
+            nonlocal_relaxation_strategy=nonlocal_relaxation_strategy,
+            nonlocal_minimum_relaxation=nonlocal_minimum_relaxation,
+            nonlocal_maximum_relaxation=nonlocal_maximum_relaxation,
+            nonlocal_aitken_residual_growth_factor=(
+                nonlocal_aitken_residual_growth_factor
+            ),
+            nonlocal_fixed_point_history=tuple(nonlocal_fixed_point_history),
             nonlocal_iterations_per_newton=tuple(nonlocal_iterations_per_newton),
             nonlocal_iterations_per_increment=tuple(nonlocal_iterations_per_increment),
             total_nonlocal_iterations=nonlocal_total_iterations,

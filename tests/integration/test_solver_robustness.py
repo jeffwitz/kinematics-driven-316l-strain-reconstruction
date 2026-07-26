@@ -216,6 +216,17 @@ def test_nonlocal_failure_restarts_from_committed_chi_after_cutback(monkeypatch)
         def set_nonlocal_equivalent_plastic_strain(self, values):
             self.external_chi = np.asarray(values, dtype=float).copy()
 
+        def evaluate_nonlocal_state(self, strain, *, time_increment):
+            trial = self.delegate.evaluate_in_plane(
+                strain,
+                time_increment=time_increment,
+                consistent_tangent=False,
+            )
+            return (
+                trial.observables["equivalent_plastic_strain"],
+                np.full(self.delegate.point_count, 300.0),
+            )
+
         def commit(self):
             self.delegate.commit()
             self.committed_chi = self.external_chi.copy()

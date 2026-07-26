@@ -6,16 +6,27 @@ import pytest
 from fem_inhouse.core.nonlocal_plasticity import (
     NonlocalCouplingConvergenceError,
     _mixed_relative_maximum_norm,
+    classify_fixed_point_history,
     evaluate_nonlocal_fixed_point,
 )
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial
 
 
 class _FakeNonlocalBatch:
-    def __init__(self, point_count: int, *, local_peeq: float, follows_chi: bool = False):
+    def __init__(
+        self,
+        point_count: int,
+        *,
+        local_peeq: float,
+        follows_chi: bool = False,
+        feedback: float | None = None,
+        yield_radius_mpa: float | None = None,
+    ):
         self.point_count = point_count
         self.local_peeq = local_peeq
         self.follows_chi = follows_chi
+        self.feedback = feedback
+        self.yield_radius_mpa = yield_radius_mpa
         self.external_chi = np.zeros(point_count)
         self.evaluate_calls = 0
 
@@ -32,11 +43,12 @@ class _FakeNonlocalBatch:
         del time_increment, consistent_tangent
         self.evaluate_calls += 1
         assert np.asarray(in_plane_strain).shape == (self.point_count, 3)
-        peeq = (
-            self.external_chi + self.local_peeq
-            if self.follows_chi
-            else np.full(self.point_count, self.local_peeq)
-        )
+        if self.feedback is not None:
+            peeq = self.local_peeq + self.feedback * self.external_chi
+        elif self.follows_chi:
+            peeq = self.external_chi + self.local_peeq
+        else:
+            peeq = np.full(self.point_count, self.local_peeq)
         tensor = np.zeros((self.point_count, 3, 3))
         return ConstitutiveTrial(
             stress_in_plane_mpa=np.zeros((self.point_count, 3)),
@@ -48,8 +60,11 @@ class _FakeNonlocalBatch:
             plane_stress_residual_mpa=np.zeros((self.point_count, 3)),
             observables={
                 "equivalent_plastic_strain": peeq,
-                "yield_surface_radius_mpa": 300.0
-                + 1_000.0 * (peeq - self.external_chi),
+                "yield_surface_radius_mpa": (
+                    np.full(self.point_count, self.yield_radius_mpa)
+                    if self.yield_radius_mpa is not None
+                    else 300.0 + 1_000.0 * (peeq - self.external_chi)
+                ),
             },
         )
 
@@ -64,6 +79,22 @@ class _FakeNonlocalBatch:
             time_increment=time_increment,
             consistent_tangent=False,
         ).observables["equivalent_plastic_strain"]
+
+    def evaluate_nonlocal_state(
+        self,
+        in_plane_strain,
+        *,
+        time_increment: float,
+    ):
+        trial = self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        )
+        return (
+            trial.observables["equivalent_plastic_strain"],
+            trial.observables["yield_surface_radius_mpa"],
+        )
 
     def evaluate_in_plane(
         self,
@@ -89,6 +120,7 @@ def _evaluate(
     relaxation: float = 1.0,
     maximum_iterations: int = 5,
     initial_nonlocal_peeq: np.ndarray | None = None,
+    relaxation_strategy: str = "fixed",
 ):
     return evaluate_nonlocal_fixed_point(
         batch,
@@ -106,6 +138,9 @@ def _evaluate(
         spacing_y_mm=0.01,
         coupling_modulus_mpa=coupling_modulus_mpa,
         relaxation=relaxation,
+        relaxation_strategy=relaxation_strategy,
+        minimum_relaxation=0.05,
+        maximum_relaxation=0.8,
         relative_tolerance=1e-10,
         maximum_iterations=maximum_iterations,
         maximum_helmholtz_residual=1e-10,
@@ -164,6 +199,42 @@ def test_nonconvergent_constitutive_feedback_is_reported() -> None:
         match="did not converge",
     ):
         _evaluate(batch, maximum_iterations=2, relaxation=0.5)
+
+
+def test_aitken_accelerates_oscillatory_contracting_feedback() -> None:
+    batch = _FakeNonlocalBatch(24, local_peeq=0.02, feedback=-0.9)
+
+    result = _evaluate(
+        batch,
+        relaxation=0.2,
+        relaxation_strategy="aitken",
+        maximum_iterations=10,
+    )
+
+    np.testing.assert_allclose(
+        result.nonlocal_peeq,
+        0.02 / 1.9,
+        rtol=0.0,
+        atol=1e-10,
+    )
+    assert result.iterations <= 4
+    assert any(item.acceleration_accepted for item in result.iteration_history)
+    assert classify_fixed_point_history(result.iteration_history) == "oscillating"
+
+
+def test_nonpositive_yield_radius_stops_before_final_tangent() -> None:
+    batch = _FakeNonlocalBatch(
+        24,
+        local_peeq=0.02,
+        yield_radius_mpa=-1.0,
+    )
+
+    with pytest.raises(NonlocalCouplingConvergenceError) as caught:
+        _evaluate(batch, relaxation=0.5)
+
+    assert caught.value.reason == "nonpositive_yield_surface"
+    assert len(caught.value.iteration_history) == 1
+    assert batch.evaluate_calls == 1
 
 
 @pytest.mark.parametrize("value", [np.full((3, 2), np.nan), np.full((3, 2), -1.0)])

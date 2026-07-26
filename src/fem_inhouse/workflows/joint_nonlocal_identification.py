@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 import numpy as np
@@ -90,6 +90,15 @@ class JointIdentificationConfig:
     low_temporal_increments: int
     low_minimum_elements_per_ell: float
     low_residual_tolerance: float
+    low_maximum_newton_iterations: int
+    low_minimum_step_divisor: int
+    low_nonlocal_relaxation: float
+    low_nonlocal_relaxation_strategy: Literal["fixed", "aitken"]
+    low_nonlocal_minimum_relaxation: float
+    low_nonlocal_maximum_relaxation: float
+    low_nonlocal_aitken_residual_growth_factor: float
+    low_nonlocal_maximum_iterations: int
+    low_record_iteration_history: bool
     low_design_ell_um: tuple[float, ...]
     low_design_alpha: tuple[float, ...]
     existing_high_fidelity: tuple[ExistingHighFidelityPoint, ...]
@@ -216,6 +225,31 @@ def load_joint_identification_config(
     low_temporal_increments = int(low.get("temporal_increments", 10))
     low_minimum_elements_per_ell = float(low.get("minimum_elements_per_ell", 3.0))
     low_residual_tolerance = float(low.get("residual_tolerance", 3.0e-6))
+    low_maximum_newton_iterations = int(low.get("maximum_newton_iterations", 15))
+    low_minimum_step_divisor = int(low.get("minimum_step_divisor", 1_024))
+    fixed_point = _mapping(
+        low.get("fixed_point", {}),
+        name="fidelity.low.fixed_point",
+    )
+    low_nonlocal_relaxation = float(fixed_point.get("relaxation", 0.5))
+    low_nonlocal_relaxation_strategy_value = str(
+        fixed_point.get("strategy", "fixed")
+    )
+    low_nonlocal_minimum_relaxation = float(
+        fixed_point.get("minimum_relaxation", 0.05)
+    )
+    low_nonlocal_maximum_relaxation = float(
+        fixed_point.get("maximum_relaxation", 0.8)
+    )
+    low_nonlocal_aitken_residual_growth_factor = float(
+        fixed_point.get("residual_growth_factor", 1.25)
+    )
+    low_nonlocal_maximum_iterations = int(
+        fixed_point.get("maximum_iterations", 15)
+    )
+    low_record_iteration_history = bool(
+        fixed_point.get("record_iteration_history", False)
+    )
     sparse_design_data = low.get("sparse_design")
     low_design_ell_um: tuple[float, ...]
     low_design_alpha: tuple[float, ...]
@@ -244,6 +278,21 @@ def load_joint_identification_config(
         raise ValueError("fidelity.low.minimum_elements_per_ell must be positive")
     if not 0.0 < low_residual_tolerance < 1.0:
         raise ValueError("fidelity.low.residual_tolerance must lie in (0, 1)")
+    if low_maximum_newton_iterations < 1:
+        raise ValueError("fidelity.low.maximum_newton_iterations must be positive")
+    if low_minimum_step_divisor < 2:
+        raise ValueError("fidelity.low.minimum_step_divisor must be at least two")
+    if low_nonlocal_relaxation_strategy_value not in {"fixed", "aitken"}:
+        raise ValueError("fidelity.low.fixed_point.strategy is invalid")
+    low_nonlocal_relaxation_strategy: Literal["fixed", "aitken"] = (
+        "aitken"
+        if low_nonlocal_relaxation_strategy_value == "aitken"
+        else "fixed"
+    )
+    if low_nonlocal_maximum_iterations < 1:
+        raise ValueError(
+            "fidelity.low.fixed_point.maximum_iterations must be positive"
+        )
     if not low_design_ell_um or not low_design_alpha:
         raise ValueError("fidelity.low.sparse_design must define ell_um and alpha")
     if any(value < ell_min or value > ell_max for value in low_design_ell_um):
@@ -275,6 +324,25 @@ def load_joint_identification_config(
         low_temporal_increments=low_temporal_increments,
         low_minimum_elements_per_ell=low_minimum_elements_per_ell,
         low_residual_tolerance=low_residual_tolerance,
+        low_maximum_newton_iterations=low_maximum_newton_iterations,
+        low_minimum_step_divisor=low_minimum_step_divisor,
+        low_nonlocal_relaxation=low_nonlocal_relaxation,
+        low_nonlocal_relaxation_strategy=(
+            low_nonlocal_relaxation_strategy
+        ),
+        low_nonlocal_minimum_relaxation=(
+            low_nonlocal_minimum_relaxation
+        ),
+        low_nonlocal_maximum_relaxation=(
+            low_nonlocal_maximum_relaxation
+        ),
+        low_nonlocal_aitken_residual_growth_factor=(
+            low_nonlocal_aitken_residual_growth_factor
+        ),
+        low_nonlocal_maximum_iterations=(
+            low_nonlocal_maximum_iterations
+        ),
+        low_record_iteration_history=low_record_iteration_history,
         low_design_ell_um=low_design_ell_um,
         low_design_alpha=low_design_alpha,
         existing_high_fidelity=existing,
@@ -1109,6 +1177,8 @@ def _material_and_solver_from_local_manifest(
         source_solver,
         increments=config.low_temporal_increments,
         residual_tolerance=config.low_residual_tolerance,
+        max_newton_iterations=config.low_maximum_newton_iterations,
+        minimum_step_divisor=config.low_minimum_step_divisor,
     )
     source_nonlocal = NonlocalPlasticityConfig(**config_data["nonlocal_plasticity"])
     nonlocal_config = replace(
@@ -1120,6 +1190,15 @@ def _material_and_solver_from_local_manifest(
             else point.length_scale_mm
         ),
         coupling_modulus_mpa=point.h_chi_mpa,
+        relaxation=config.low_nonlocal_relaxation,
+        relaxation_strategy=config.low_nonlocal_relaxation_strategy,
+        minimum_relaxation=config.low_nonlocal_minimum_relaxation,
+        maximum_relaxation=config.low_nonlocal_maximum_relaxation,
+        aitken_residual_growth_factor=(
+            config.low_nonlocal_aitken_residual_growth_factor
+        ),
+        maximum_iterations=config.low_nonlocal_maximum_iterations,
+        record_iteration_history=config.low_record_iteration_history,
     )
     source_mesh = config_data["mesh"]
     return CaseStudyConfig(
@@ -1448,6 +1527,9 @@ def run_low_fidelity(
                 "error_type": type(error).__name__,
                 "error": str(error),
             }
+            failure_diagnostics = getattr(error, "diagnostics", None)
+            if isinstance(failure_diagnostics, dict):
+                failure_record["diagnostics"] = failure_diagnostics
             _atomic_write(cached_failure_path, _canonical_json(failure_record))
             failures.append(failure_record)
             results.append(failure_record)

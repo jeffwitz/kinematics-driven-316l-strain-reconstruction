@@ -575,6 +575,30 @@ class MFrontMaterialPointBatch:
             :, self._equivalent_plastic_strain_offset
         ]
 
+    def evaluate_nonlocal_state(
+        self,
+        total_strain: ArrayLike,
+        *,
+        time_increment: float = 1.0,
+    ) -> tuple[NDArray, NDArray]:
+        """Integrate without tangent and expose PEEQ and the yield radius.
+
+        Both arrays are ephemeral MGIS views valid until the next trial
+        integration.  This keeps positivity diagnostics inside the lightweight
+        micromorphic fixed-point path.
+        """
+
+        self._integrate_trial(
+            total_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        )
+        state = self._manager.s1.internal_state_variables
+        return (
+            state[:, self._equivalent_plastic_strain_offset],
+            state[:, self._yield_surface_radius_offset],
+        )
+
     def evaluate(
         self,
         total_strain: ArrayLike,
@@ -719,6 +743,17 @@ class MFrontNativePlaneStressBatch:
         time_increment: float,
     ) -> NDArray:
         return self._bridge.evaluate_equivalent_plastic_strain(
+            in_plane_strain,
+            time_increment=time_increment,
+        )
+
+    def evaluate_nonlocal_state(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> tuple[NDArray, NDArray]:
+        return self._bridge.evaluate_nonlocal_state(
             in_plane_strain,
             time_increment=time_increment,
         )
@@ -1311,6 +1346,22 @@ class MFront3DCondensedPlaneStressBatch:
             consistent_tangent=False,
         )
         return trial.observables["equivalent_plastic_strain"]
+
+    def evaluate_nonlocal_state(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> tuple[NDArray, NDArray]:
+        trial = self.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        )
+        return (
+            trial.observables["equivalent_plastic_strain"],
+            trial.observables["yield_surface_radius_mpa"],
+        )
 
     def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
         if not isinstance(trial, ConstitutiveTrial):

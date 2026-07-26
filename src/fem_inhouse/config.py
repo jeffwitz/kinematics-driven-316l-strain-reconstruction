@@ -134,9 +134,14 @@ class NonlocalPlasticityConfig:
     length_scale_mm: float = 0.05888
     coupling_modulus_mpa: float = 0.0
     relaxation: float = 0.5
+    relaxation_strategy: Literal["fixed", "aitken"] = "fixed"
+    minimum_relaxation: float = 0.05
+    maximum_relaxation: float = 0.8
+    aitken_residual_growth_factor: float = 1.25
     relative_tolerance: float = 1e-6
     maximum_iterations: int = 15
     maximum_helmholtz_residual: float = 1e-10
+    record_iteration_history: bool = False
 
     def __post_init__(self) -> None:
         if self.length_scale_mm <= 0:
@@ -145,6 +150,21 @@ class NonlocalPlasticityConfig:
             raise ValueError("coupling_modulus_mpa must be nonnegative")
         if not 0 < self.relaxation <= 1:
             raise ValueError("relaxation must lie in (0, 1]")
+        if self.relaxation_strategy not in {"fixed", "aitken"}:
+            raise ValueError("relaxation_strategy must be 'fixed' or 'aitken'")
+        if not 0 < self.minimum_relaxation <= self.maximum_relaxation <= 1:
+            raise ValueError(
+                "relaxation bounds must satisfy 0 < minimum <= maximum <= 1"
+            )
+        if (
+            self.relaxation_strategy == "aitken"
+            and not self.minimum_relaxation
+            <= self.relaxation
+            <= self.maximum_relaxation
+        ):
+            raise ValueError("relaxation must lie inside the configured bounds")
+        if self.aitken_residual_growth_factor <= 1:
+            raise ValueError("aitken_residual_growth_factor must be greater than one")
         if not 0 < self.relative_tolerance < 1:
             raise ValueError("relative_tolerance must lie in (0, 1)")
         if self.maximum_iterations < 1:

@@ -59,6 +59,11 @@ class SolverDiagnostics:
     nonlocal_length_scale_mm: float = 0.0
     nonlocal_coupling_modulus_mpa: float = 0.0
     nonlocal_relaxation: float = 0.0
+    nonlocal_relaxation_strategy: str = "fixed"
+    nonlocal_minimum_relaxation: float = 0.0
+    nonlocal_maximum_relaxation: float = 0.0
+    nonlocal_aitken_residual_growth_factor: float = 0.0
+    nonlocal_fixed_point_history: tuple[dict[str, object], ...] = ()
     nonlocal_iterations_per_newton: tuple[int, ...] = ()
     nonlocal_iterations_per_increment: tuple[int, ...] = ()
     total_nonlocal_iterations: int = 0

@@ -273,12 +273,27 @@ def run_case_study(
             config.nonlocal_plasticity.coupling_modulus_mpa
         ),
         nonlocal_relaxation=config.nonlocal_plasticity.relaxation,
+        nonlocal_relaxation_strategy=(
+            config.nonlocal_plasticity.relaxation_strategy
+        ),
+        nonlocal_minimum_relaxation=(
+            config.nonlocal_plasticity.minimum_relaxation
+        ),
+        nonlocal_maximum_relaxation=(
+            config.nonlocal_plasticity.maximum_relaxation
+        ),
+        nonlocal_aitken_residual_growth_factor=(
+            config.nonlocal_plasticity.aitken_residual_growth_factor
+        ),
         nonlocal_relative_tolerance=(
             config.nonlocal_plasticity.relative_tolerance
         ),
         nonlocal_maximum_iterations=config.nonlocal_plasticity.maximum_iterations,
         nonlocal_maximum_helmholtz_residual=(
             config.nonlocal_plasticity.maximum_helmholtz_residual
+        ),
+        nonlocal_record_iteration_history=(
+            config.nonlocal_plasticity.record_iteration_history
         ),
         snapshot_fractions=snapshot_fractions,
         verbose=verbose,

@@ -171,6 +171,7 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--increments", type=int, default=20)
     partition.add_argument("--max-newton-iterations", type=int, default=15)
     partition.add_argument("--residual-tolerance", type=float, default=1e-6)
+    partition.add_argument("--minimum-step-divisor", type=int, default=1_024)
     partition.add_argument(
         "--constitutive-backend",
         choices=(
@@ -190,8 +191,24 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--nonlocal-length-um", type=float, default=58.88)
     partition.add_argument("--nonlocal-coupling-modulus-mpa", type=float, default=0.0)
     partition.add_argument("--nonlocal-relaxation", type=float, default=0.5)
+    partition.add_argument(
+        "--nonlocal-relaxation-strategy",
+        choices=("fixed", "aitken"),
+        default="fixed",
+    )
+    partition.add_argument("--nonlocal-minimum-relaxation", type=float, default=0.05)
+    partition.add_argument("--nonlocal-maximum-relaxation", type=float, default=0.8)
+    partition.add_argument(
+        "--nonlocal-aitken-residual-growth-factor",
+        type=float,
+        default=1.25,
+    )
     partition.add_argument("--nonlocal-tolerance", type=float, default=1e-6)
     partition.add_argument("--nonlocal-max-iterations", type=int, default=15)
+    partition.add_argument(
+        "--nonlocal-record-iteration-history",
+        action="store_true",
+    )
     action = partition.add_mutually_exclusive_group(required=True)
     action.add_argument("--list-pending", action="store_true")
     action.add_argument("--partition-id", type=int)
@@ -415,6 +432,7 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             increments=args.increments,
             max_newton_iterations=args.max_newton_iterations,
             residual_tolerance=args.residual_tolerance,
+            minimum_step_divisor=args.minimum_step_divisor,
             constitutive_backend=args.constitutive_backend,
             mfront_library=args.mfront_library,
             mfront_threads=args.mfront_threads,
@@ -424,8 +442,15 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             length_scale_mm=args.nonlocal_length_um / 1_000.0,
             coupling_modulus_mpa=args.nonlocal_coupling_modulus_mpa,
             relaxation=args.nonlocal_relaxation,
+            relaxation_strategy=args.nonlocal_relaxation_strategy,
+            minimum_relaxation=args.nonlocal_minimum_relaxation,
+            maximum_relaxation=args.nonlocal_maximum_relaxation,
+            aitken_residual_growth_factor=(
+                args.nonlocal_aitken_residual_growth_factor
+            ),
             relative_tolerance=args.nonlocal_tolerance,
             maximum_iterations=args.nonlocal_max_iterations,
+            record_iteration_history=args.nonlocal_record_iteration_history,
         ),
     )
     return PartitionWorkflow(
