@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-07-26
+Dernière mise à jour : 2026-07-27
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
 MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
@@ -34,14 +34,15 @@ modèle micromorphique → identification F0/F1/F2 → portée des claims. Les
 guides sont orientés par tâche et les détails MGIS, Kelvin, condensation 3D,
 point fixe, CSR et PARDISO ont été déplacés vers `docs/reference/`. Les anciens
 rapports restent conservés sous `docs/archive/`, hors navigation et recherche.
-`validation/documentation_evidence_registry.json` devient la source unique des
-conclusions, claims et preuves synthétiques ; le script
+`validation/documentation_evidence_registry.json` est la source unique des
+conclusions, claims et preuves synthétiques ; son schéma 2 vérifie désormais
+les assertions contre les JSON primaires avant génération. Le script
 `scripts/generate_documentation_evidence.py` produit les fragments Sphinx et
-les figures de preuve. Validation du jalon : Ruff vert, mypy vert sur les 44
-fichiers du périmètre CI, 320 tests verts avec MFront réel, HTML Sphinx strict
+les figures de preuve. Validation du jalon consolidé : Ruff vert, mypy vert
+sur les 44 fichiers du périmètre CI, 321 tests verts avec MFront réel, HTML Sphinx strict
 vert, linkcheck strict vert, PDF LuaLaTeX strict de 48 pages compilé et rendu
-inspecté. Le README compte 85 lignes. La réécriture a été publiée dans le
-commit `094b009`.
+inspecté. Le README compte 85 lignes. La consolidation est publiée jusqu'au
+commit `18f0fac`.
 
 Jalon atteint au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
 partition P154 d'un découpage 20×20**. Le protocole et les résultats sont
@@ -72,6 +73,242 @@ vérifié par un test, un rapport ou une mesure reproductible.
 - `[~]` : en cours
 - `[x]` : terminé et vérifié
 - `[!]` : bloqué
+
+## 1.1 Stratégie prioritaire de validation — décision du 2026-07-27
+
+Cette section est **autoritative pour la prochaine phase**. Elle suspend les
+nouveaux balayages de `alpha`, `Hchi` et `ell` décrits plus bas tant que la
+chaîne de mesure et l'opérateur d'observation ne sont pas caractérisés. Les
+sections historiques restent conservées comme journal de provenance ; elles
+ne constituent plus l'ordre d'exécution courant.
+
+### Position scientifique
+
+Le modèle 2D est interprété comme un modèle effectif obtenu en éliminant la
+direction d'épaisseur non observée. Cette réduction peut produire une
+interaction spatiale effective. La longueur `ell` est donc appelée
+**portée d'interaction apparente ou structurelle du modèle réduit**, et non
+longueur interne intrinsèque du 316L.
+
+Les résultats F1 actuels soutiennent un effet morphologique propre à `ell` :
+les couples à `Achi = Hchi * ell**2` constant ne sont pas équivalents.
+Cependant, `Hchi` et `ell` ne sont pas encore identifiés séparément et aucun
+transfert sans recalage n'a été réalisé. Une échelle obtenue par EBSD sera
+traitée comme une **échelle microstructurale indépendante servant de prior ou
+d'hypothèse de fermeture**, jamais comme une mesure directe du paramètre
+micromorphique.
+
+### Règles de cette phase
+
+- [ ] Pré-enregistrer toute campagne dans `validation/` avant son exécution.
+- [ ] Conserver les seuils après calcul et documenter les résultats négatifs.
+- [ ] Mettre à jour le registre de preuves et la matrice des claims dans le
+  même commit que tout nouveau résultat.
+- [ ] Étiqueter chaque grandeur comme mesurée, calculée ou supposée.
+- [ ] Ne jamais comparer PEEQ ou une contrainte locale à la DIC comme s'il
+  s'agissait de la même observable.
+- [ ] Ne lancer aucune nouvelle identification micromorphique couplée avant la
+  caractérisation DIC et l'opérateur d'observation honnête.
+
+### Lot V0 — Inventaire expérimental, bloquant
+
+Livrable autonome :
+`docs/reference/experimental_data_inventory.md`.
+
+- [ ] Inventorier tous les pas DIC disponibles et distinguer images brutes,
+  déplacements préparés et cartes dérivées.
+- [ ] Vérifier l'existence d'une branche de déchargement et du signal de
+  charge synchronisé `F(t)`.
+- [ ] Documenter épaisseur, largeur utile, résolution, ROI et méthode de
+  mesure.
+- [ ] Rechercher une paire statique ou une translation rigide connue.
+- [ ] Documenter la couverture, le pas et le recalage EBSD/DIC.
+- [ ] Reconstituer tous les paramètres DISFlow, notamment l'epsilon
+  Charbonnier actuellement absent.
+- [ ] Répondre à chaque ligne par une valeur traçable ou `not available`.
+- [ ] Ajouter une note de décision sur l'acquisition éventuelle du
+  déchargement.
+
+### Lot V1 — Contrôles mécaniques gratuits
+
+#### Équilibre de section
+
+Le contrôle naïf
+
+`N_y(y) = t * integral sigma_yy(x,y) dx = constante`
+
+est **interdit sur une partition intérieure telle que P43**. En intégrant
+l'équilibre local :
+
+`d/dy integral sigma_yy dx = -(sigma_xy(x_R,y)-sigma_xy(x_L,y))`.
+
+La constance n'est attendue que sur une section couvrant la largeur physique
+complète avec bords latéraux sans traction de cisaillement. Deux voies sont
+autorisées :
+
+- [ ] exécuter le contrôle sur un domaine couvrant réellement toute la
+  section utile ; ou
+- [ ] inclure explicitement les flux de cisaillement des bords artificiels
+  dans le résidu intégré.
+
+Le diagnostic doit rapporter séparément la résultante, le terme de bord et le
+résidu d'équilibre. L'épaisseur s'élimine dans la dispersion relative mais est
+obligatoire pour comparer à une force mesurée.
+
+#### Calibration de force, conditionnelle aux données
+
+- [ ] Utiliser l'épaisseur mesurée, jamais ajustée.
+- [ ] Calibrer un seul facteur `lambda` commun à `sigma_y` et `K` sur un seul
+  point de charge, en relançant la mécanique.
+- [ ] Geler `lambda`, puis comparer `F_hat(t)` à toute la courbe `F(t)`.
+- [ ] Interpréter séparément erreur de niveau et erreur de courbure.
+- [ ] Ne jamais calibrer sur toute la courbe puis la présenter comme
+  validation.
+
+### Lot V2 — Caractérisation prioritaire de la chaîne DIC
+
+Ce lot est le plus rentable scientifiquement et précède toute nouvelle
+interprétation de `ell`.
+
+#### V2.1 Test nul
+
+- [ ] Corréler deux images du même état ou une translation rigide connue avec
+  les paramètres de production exacts.
+- [ ] Rapporter `sigma_u` en pixel, RMS de l'EVM parasite et longueur
+  d'autocorrélation radiale.
+- [ ] Comparer le RMS parasite au RMS du champ DIC étudié sans modifier les
+  seuils après observation.
+
+#### V2.2 Fonction de transfert
+
+- [ ] Déformer synthétiquement l'image de référence par un balayage sinusoïdal
+  et mesurer la modulation en fonction de la longueur d'onde.
+- [ ] Imposer des bandes de largeur 4, 8, 16 et 32 pixels et mesurer leur
+  largeur reconstruite.
+- [ ] Rapporter résolution effective, biais d'amplitude et fidélité de largeur
+  en pixels et micromètres.
+- [ ] Distinguer la fonction de transfert algorithmique synthétique des
+  artefacts expérimentaux d'éclairage, de speckle et de mouvement hors plan.
+
+#### V2.3 Sensibilité aux paramètres DISFlow
+
+- [ ] Répéter uniquement le diagnostic spatial output-only avec une variation
+  pré-enregistrée de `alpha` DISFlow et de l'epsilon Charbonnier.
+- [ ] Ne pas relancer à ce stade une identification micromorphique couplée.
+- [ ] Rapporter le déplacement de la longueur diagnostique et déterminer si
+  elle suit le lissage de mesure.
+
+#### V2.4 Qualité locale et incertitudes
+
+- [ ] Construire un résidu photométrique local et le comparer à la carte
+  d'erreur FEM–DIC.
+- [ ] Produire métriques brutes et métriques masquées/pondérées sans supprimer
+  la première.
+- [ ] Séparer une propagation légère jusqu'aux métriques EVM d'une propagation
+  complète relançant corrélation, identification des cartes et FEM.
+- [ ] Présenter l'incertitude de PEEQ comme incertitude d'une sortie du modèle,
+  jamais comme incertitude expérimentale directe.
+
+### Lot V3 — Opérateur d'observation symétrique
+
+- [ ] Ajouter un mode `synthetic_disflow` à l'opérateur d'observation :
+  déformer l'image de référence par `U_FEM`, relancer DISFlow avec les
+  paramètres de production, puis reconstruire l'EVM.
+- [ ] Conserver le mode actuel pour la non-régression et enregistrer le mode,
+  les paramètres et les empreintes d'images dans le cache.
+- [ ] Recalculer la baseline locale et les campagnes couplées archivées, sans
+  nouveau balayage de paramètres.
+- [ ] Rapporter toutes les métriques avant/après, notamment l'aire active au
+  seuil DIC q90.
+- [ ] Documenter que cet opérateur reproduit le transfert algorithmique mais
+  pas nécessairement les défauts expérimentaux complets.
+
+### Lot V4 — Valeur informative réelle des cartes
+
+- [ ] Baseline homogène : mêmes conditions de bord, `sigma_y` et `K`
+  uniformes aux valeurs macroscopiques.
+- [ ] Contrôle permuté : transformer conjointement `sigma_y` et `K` de façon à
+  préserver leurs distributions et leur dépendance mutuelle tout en détruisant
+  leur correspondance spatiale.
+- [ ] Pré-enregistrer transformation, traitement des bords et métriques.
+- [ ] Quantifier le gain dû aux seules conditions de bord, puis l'information
+  spatiale ajoutée par les cartes.
+- [ ] Auditer avec le laboratoire partenaire la résolution, les orientations,
+  la morphologie d'épaisseur et l'identification du calcul CPFEM comparé.
+
+### Lot V5 — Échelle microstructurale indépendante
+
+Ce lot commence seulement après V2 et V3.
+
+- [ ] Pré-enregistrer la statistique EBSD avant de lire sa valeur.
+- [ ] Utiliser comme analyse principale la longueur de décroissance
+  exponentielle d'un champ orientationnel mécaniquement motivé ; rapporter le
+  rayon RMS comme contrôle.
+- [ ] Calculer le facteur de Schmid maximal pixel par pixel comme proxy
+  clairement étiqueté, sans prétendre qu'il représente la contrainte locale
+  multiaxiale.
+- [ ] Traiter la reconstruction des grains et le choix des macles comme une
+  analyse secondaire ; ils ne doivent pas modifier arbitrairement le champ
+  orientationnel pixelisé.
+- [ ] Examiner l'anisotropie avant toute moyenne radiale et estimer
+  l'incertitude par bootstrap spatial.
+- [ ] Définir `xi_EBSD` comme échelle mesurée et pré-enregistrer l'hypothèse
+  `ell = c * xi_EBSD`, avec `c=1` comme hypothèse principale et une bande de
+  sensibilité annoncée à l'avance.
+- [ ] Ne jamais appeler `xi_EBSD` une mesure directe de `ell`.
+- [ ] Une fois cette hypothèse figée, balayer uniquement `Hchi` et publier
+  aussi `ell/2`, `ell` et `2*ell` comme sensibilité ; ne pas réajuster `ell`
+  si les critères échouent.
+
+### Lot V6 — Histoire temporelle et validation conditionnelle
+
+- [ ] Imposer les déplacements de bord mesurés à chaque pas disponible au lieu
+  d'une rampe proportionnelle vers l'état final.
+- [ ] Comparer accumulation incrémentale DISFlow et corrélation directe
+  référence-vers-état courant pour quantifier la dérive.
+- [ ] Identifier les cartes sur les pas 1–20 et évaluer les pas 21–40 avec
+  cartes gelées et état interne propagé.
+- [ ] Nommer ce test `conditional temporal prediction` tant que les conditions
+  de bord futures restent mesurées.
+- [ ] Cartographier les zones candidates de déchargement/non-proportionnalité,
+  mais ne pas interpréter une baisse d'EVM comme preuve de Bauschinger.
+- [ ] N'introduire Armstrong–Frederick ou Chaboche que si un véritable
+  renversement de charge est disponible.
+- [ ] Limiter l'indistinguabilité isotrope/cinématique au cas uniaxial
+  proportionnel monotone ; ne pas la généraliser aux chemins locaux
+  multiaxiaux.
+
+### Lot V7 — Test jumeau de la revendication data-driven
+
+- [ ] Générer une vérité avec une loi différente de Ludwik, idéalement CPFEM
+  ou Voce.
+- [ ] Passer ses déplacements de surface par le bruit et la fonction de
+  transfert mesurés en V2.
+- [ ] Rejouer sans modification toute la chaîne d'identification des cartes et
+  de reconstruction J2/Ludwik.
+- [ ] Comparer le nuage de phase reconstruit à la vérité indépendante.
+- [ ] Si Ludwik réapparaît quelle que soit la vérité, déclarer la revendication
+  data-driven réfutée.
+- [ ] Positionner explicitement le travail face à Data-Driven Identification
+  et à la Virtual Fields Method avant toute revendication de supériorité.
+
+### Ordre d'exécution et portes de décision
+
+1. V0 inventorie et débloque les données.
+2. V1 exécute uniquement les contrôles mécaniques mathématiquement admissibles.
+3. V2 mesure la chaîne DIC.
+4. V3 rétablit la symétrie de l'opérateur d'observation.
+5. V4 mesure la contribution réelle des cartes et rend la comparaison CPFEM
+   interprétable.
+6. V5 teste une échelle microstructurale indépendante.
+7. V6 teste l'histoire temporelle.
+8. V7 décide si la revendication espace des phases survit à un jumeau
+   numérique.
+
+Une nouvelle campagne d'identification micromorphique n'est autorisée qu'après
+V2 et V3. Une revendication de longueur structurelle imposée exige V5. Une
+revendication de longueur matérielle reste interdite sans transfert sur une
+autre ROI, une autre résolution d'observation et idéalement un autre essai.
 
 ## 2. Sources de vérité
 

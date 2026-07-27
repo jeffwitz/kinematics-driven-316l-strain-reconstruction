@@ -1,59 +1,47 @@
 {
-  "schema_version": 2,
+  "schema_version": 1,
   "current_conclusion": "The local model is verified but produces overly concentrated localization. A coupled micromorphic model introduces a spatial length and redistributes plasticity. Current reduced-fidelity evidence distinguishes length effects from coupling-strength effects, but no transferable material length has yet been identified.",
   "claims": [
     {
-      "question": "Finite-element baseline passes its numerical regression contract",
+      "question": "Finite-element discretization verified",
       "status": "verified",
-      "boundary": "Structured small-strain plane-stress Q4 integration scope",
-      "evidence_ids": ["E-LOCAL-002"]
+      "boundary": "Structured small-strain plane-stress Q4 scope",
+      "evidence_ids": ["E-FE-001"]
     },
     {
-      "question": "Available Abaqus-oriented table definition reimplemented",
-      "status": "verified at definition level",
-      "boundary": "The versioned 1000-row generator is checked; Abaqus FE and ODB parity are excluded",
-      "evidence_ids": ["E-TABLE-001"]
-    },
-    {
-      "question": "Abaqus/Table and InHouse/Table finite-element results agree",
-      "status": "not demonstrated",
-      "boundary": "Original input model, ODB and extraction procedure are unavailable",
-      "evidence_ids": ["E-TABLE-001"]
-    },
-    {
-      "question": "InHouse/Table and InHouse/MFront are coherent",
+      "question": "Historical tabulated law reproduced",
       "status": "verified",
-      "boundary": "Declared material-point and finite-element comparison thresholds",
+      "boundary": "Available constitutive definition and preserved in-house results",
       "evidence_ids": ["E-LOCAL-001", "E-LOCAL-002"]
     },
     {
-      "question": "A 3D MFront law can be condensed without changing the 2D solver",
-      "status": "verified",
-      "boundary": "Native plane stress versus 3D-condensed J2 on the reduced DIC case",
-      "evidence_ids": ["E-3D-001"]
+      "question": "Complete Abaqus model reproduced",
+      "status": "not demonstrated",
+      "boundary": "Original input model, ODB and extraction procedure are unavailable",
+      "evidence_ids": ["E-LOCAL-001"]
     },
     {
-      "question": "Output-only spatial broadening supports a missing-width hypothesis",
-      "status": "supported",
-      "boundary": "Diagnostic only; mechanics is unchanged and no material length is identified",
-      "evidence_ids": ["E-DIAG-001"]
+      "question": "Historical table and analytical MFront response coherent",
+      "status": "verified",
+      "boundary": "Declared material-point and finite-element tolerances",
+      "evidence_ids": ["E-LOCAL-001", "E-LOCAL-002"]
     },
     {
       "question": "Micromorphic interaction redistributes plasticity",
       "status": "verified",
-      "boundary": "Converged full-resolution band-containing reconstruction campaigns",
+      "boundary": "Converged band-containing reconstruction campaigns",
       "evidence_ids": ["E-NL-002"]
     },
     {
       "question": "Spatial length affects morphology independently of coupling strength",
       "status": "supported",
-      "boundary": "Validated reduced-fidelity constant-Achi and fixed-alpha experiments",
+      "boundary": "Reduced-fidelity constant-Achi and fixed-alpha experiments",
       "evidence_ids": ["E-ID-001"]
     },
     {
       "question": "Hchi and ell statistically identified",
       "status": "not demonstrated",
-      "boundary": "The short-length high-coupling region remains numerically censored",
+      "boundary": "Short-length high-coupling region remains numerically censored",
       "evidence_ids": ["E-ID-001"]
     },
     {
@@ -65,79 +53,31 @@
   ],
   "evidence": [
     {
-      "id": "E-TABLE-001",
-      "question": "Is the available Abaqus-oriented table definition generated exactly as documented?",
-      "fidelity": "definition",
-      "parameters": "1000 rows over PEEQ 0 to 0.2",
-      "status": "verified at definition level",
-      "conclusion": "The versioned generator reproduces the documented table grid and Ludwik values exactly; this is not an Abaqus FE parity test.",
-      "sources": [
-        {
-          "path": "validation/reference_data/historical_table_definition_v1/report.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/table/rows", "operator": "equals", "expected": 1000},
-            {"path": "/table/maximum_formula_error_mpa", "operator": "equals", "expected": 0.0}
-          ]
-        }
-      ]
+      "id": "E-FE-001",
+      "question": "Does the finite-element kernel satisfy its numerical contract?",
+      "fidelity": "unit and integration",
+      "parameters": "local baseline",
+      "status": "verified",
+      "conclusion": "Patch, material-point, tensor and nonlinear regression tests cover the supported Q4 plane-stress scope.",
+      "source": "tests"
     },
     {
       "id": "E-LOCAL-001",
-      "question": "Does the analytical MFront law reproduce the in-house historical table path?",
+      "question": "Does the analytical MFront law reproduce the historical tabulated baseline?",
       "fidelity": "material point",
       "parameters": "three loading paths, 200 steps",
       "status": "verified",
-      "conclusion": "Stress and PEEQ differences remain below all declared comparison thresholds below the historical table cap.",
-      "sources": [
-        {
-          "path": "validation/reference_data/mfront_material_point_v1/report.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/paths/uniaxial_strain/stress_relative_l2", "operator": "less_than", "expected_path": "/thresholds/stress_relative_l2_max"},
-            {"path": "/paths/equibiaxial_strain/stress_relative_l2", "operator": "less_than", "expected_path": "/thresholds/stress_relative_l2_max"},
-            {"path": "/paths/simple_shear/stress_relative_l2", "operator": "less_than", "expected_path": "/thresholds/stress_relative_l2_max"}
-          ]
-        }
-      ]
+      "conclusion": "Stress and PEEQ differences remain within the declared comparison thresholds below the historical table cap.",
+      "source": "validation/reference_data/mfront_material_point_v1/report.json"
     },
     {
       "id": "E-LOCAL-002",
-      "question": "Do InHouse/Table and InHouse/MFront produce coherent finite-element fields?",
+      "question": "Do the historical table and MFront produce coherent finite-element fields?",
       "fidelity": "small DIC-driven FEM",
       "parameters": "10 by 10 elements, 20 increments",
       "status": "verified",
-      "conclusion": "All historical fields pass their declared relative error thresholds.",
-      "sources": [
-        {
-          "path": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/metrics/stress_mpa/relative_linf", "operator": "less_than", "expected_path": "/thresholds/stress_mpa/maximum"},
-            {"path": "/metrics/equivalent_plastic_strain/relative_linf", "operator": "less_than", "expected_path": "/thresholds/equivalent_plastic_strain/maximum"}
-          ]
-        }
-      ]
-    },
-    {
-      "id": "E-DIAG-001",
-      "question": "Does output-only spatial broadening improve DIC agreement?",
-      "fidelity": "saved full-resolution fields",
-      "parameters": "selection ROI and held-out ROI",
-      "status": "supported",
-      "conclusion": "A positive Helmholtz length improves pre-registered metrics without modifying mechanics.",
-      "sources": [
-        {
-          "path": "validation/reference_data/nonlocality_helmholtz_article_p0042_confirmatory_v1/confirmation-report.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/all_preregistered_requirements_passed", "operator": "equals", "expected": true}
-          ]
-        }
-      ]
+      "conclusion": "All historical fields pass the declared relative error thresholds.",
+      "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json"
     },
     {
       "id": "E-3D-001",
@@ -145,18 +85,17 @@
       "fidelity": "small DIC-driven FEM",
       "parameters": "native plane stress versus 3D condensation",
       "status": "verified",
-      "conclusion": "Native and condensed MFront paths agree within declared tolerances while the global problem remains two-dimensional.",
-      "sources": [
-        {
-          "path": "validation/reference_data/mfront_3d_condensed_dic_10x10_v1/report.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/metrics/stress_mpa/relative_linf", "operator": "less_than", "expected_path": "/thresholds/stress_mpa/maximum"},
-            {"path": "/metrics/equivalent_plastic_strain/relative_linf", "operator": "less_than", "expected_path": "/thresholds/equivalent_plastic_strain/maximum"}
-          ]
-        }
-      ]
+      "conclusion": "Native and condensed MFront paths agree within numerical tolerances while the global finite-element problem remains two-dimensional.",
+      "source": "validation/reference_data/mfront_3d_condensed_dic_10x10_v1/report.json"
+    },
+    {
+      "id": "E-DIAG-001",
+      "question": "Does output-only spatial broadening improve DIC agreement?",
+      "fidelity": "saved full-resolution fields",
+      "parameters": "selection ROI and held-out ROI",
+      "status": "supported",
+      "conclusion": "A positive Helmholtz length improves amplitude and localization metrics on selection and held-out regions without modifying mechanics.",
+      "source": "validation/reference_data/nonlocality_helmholtz_article_p0042_confirmatory_v1/confirmation-report.json"
     },
     {
       "id": "E-NL-002",
@@ -164,26 +103,8 @@
       "fidelity": "full-resolution band-containing ROI",
       "parameters": "fixed ell, alpha 0, 1, 2 and 4",
       "status": "verified",
-      "conclusion": "The converged numerical fields show lower PEEQ peaks and gradients as coupling increases; the figure metadata is retained only as secondary provenance.",
-      "sources": [
-        {
-          "path": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/rows/0/status", "operator": "equals", "expected": "complete"},
-            {"path": "/rows/3/status", "operator": "equals", "expected": "complete"},
-            {"path": "/rows/3/peeq_max", "operator": "less_than", "expected_path": "/rows/0/peeq_max"},
-            {"path": "/rows/3/peeq_gradient_rms", "operator": "less_than", "expected_path": "/rows/0/peeq_gradient_rms"}
-          ]
-        },
-        {
-          "path": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
-          "role": "secondary figure provenance",
-          "assertions": [
-            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false}
-          ]
-        }
-      ]
+      "conclusion": "Coupling lowers concentrated PEEQ peaks and broadens the active support; stronger coupling can improve global error while erasing relevant bands.",
+      "source": "validation/figures/p0043-alpha-comparison/plot_metadata.json"
     },
     {
       "id": "E-ID-001",
@@ -191,62 +112,14 @@
       "fidelity": "F0 and F1",
       "parameters": "23-point homogeneous Newton-25 design",
       "status": "provisional",
-      "conclusion": "Interior amplitude optima exist at 40 and 60 um, but two short-length points fail; F2 confirmation and transfer remain absent.",
-      "sources": [
-        {
-          "path": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
-          "role": "primary",
-          "assertions": [
-            {"path": "/scientific_status/f1_ranking_validation_passed", "operator": "equals", "expected": true},
-            {"path": "/scientific_status/design_status", "operator": "equals", "expected": "numerically_censored"},
-            {"path": "/scientific_status/separate_identifiability_demonstrated", "operator": "equals", "expected": false},
-            {"path": "/scientific_status/material_length_claim_allowed", "operator": "equals", "expected": false},
-            {"path": "/execution/high_fidelity_runs_started", "operator": "equals", "expected": 0}
-          ]
-        }
-      ]
-    }
-  ],
-  "tables": [
-    {
-      "target": "local_material_point_metrics.inc",
-      "columns": ["Loading path", "Stress relative L2", "Maximum stress error (MPa)", "Maximum PEEQ error"],
-      "rows": [
-        ["Uniaxial", {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/uniaxial_strain/stress_relative_l2", "format": ".3e"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/uniaxial_strain/maximum_stress_error_mpa", "format": ".3f"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/uniaxial_strain/maximum_peeq_absolute_error", "format": ".3e"}],
-        ["Equibiaxial", {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/equibiaxial_strain/stress_relative_l2", "format": ".3e"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/equibiaxial_strain/maximum_stress_error_mpa", "format": ".3f"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/equibiaxial_strain/maximum_peeq_absolute_error", "format": ".3e"}],
-        ["Simple shear", {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/simple_shear/stress_relative_l2", "format": ".3e"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/simple_shear/maximum_stress_error_mpa", "format": ".3f"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/simple_shear/maximum_peeq_absolute_error", "format": ".3e"}]
-      ]
-    },
-    {
-      "target": "local_fem_metrics.inc",
-      "columns": ["Field", "Relative Linf", "Maximum absolute error", "Acceptance threshold"],
-      "rows": [
-        ["Stress (MPa)", {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/stress_mpa/relative_linf", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/stress_mpa/maximum_absolute_error", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/thresholds/stress_mpa/maximum", "format": ".1e"}],
-        ["PEEQ", {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/equivalent_plastic_strain/relative_linf", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/equivalent_plastic_strain/maximum_absolute_error", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/thresholds/equivalent_plastic_strain/maximum", "format": ".1e"}]
-      ]
-    },
-    {
-      "target": "micromorphic_redistribution_metrics.inc",
-      "columns": ["Case", "Relative L2", "Pearson", "PEEQ max", "PEEQ gradient RMS"],
-      "rows": [
-        ["Local", {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/relative_l2", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/correlation", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/peeq_max", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/peeq_gradient_rms", "format": ".4f"}],
-        ["Coupled alpha=4", {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/relative_l2", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/correlation", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/peeq_max", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/peeq_gradient_rms", "format": ".4f"}]
-      ]
-    },
-    {
-      "target": "identifiability_status.inc",
-      "columns": ["Length (um)", "Amplitude-optimum alpha", "Status"],
-      "rows": [
-        ["20", "6", "higher coupling numerically censored"],
-        [{"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/0/length_scale_um", "format": ".0f"}, {"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/0/alpha", "format": ".0f"}, "interior optimum"],
-        [{"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/1/length_scale_um", "format": ".0f"}, {"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/1/alpha", "format": ".0f"}, "interior optimum"]
-      ]
+      "conclusion": "Constant-Achi responses remain distinct, supporting an independent length effect, but two short-length points fail and no F2 confirmation or transfer has been performed.",
+      "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json"
     }
   ],
   "figures": [
     {
-      "source": "validation/figures/p0043-alpha-comparison/p0043_local_defect.png",
-      "target": "evidence/local_morphological_defect.png"
+      "source": "validation/figures/p0043-alpha-comparison/p0043_alpha_summary.png",
+      "target": "evidence/band_roi_alpha_summary.png"
     },
     {
       "source": "validation/figures/p0043-alpha-comparison/p0043_total_evm_comparison.png",

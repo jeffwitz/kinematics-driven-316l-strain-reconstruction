@@ -18,13 +18,12 @@ main symptoms are:
 The representative comparison below uses a band-containing calibration region.
 Its campaign identifier is retained only in the evidence provenance.
 
-```{figure} ../_static/evidence/local_morphological_defect.png
-:alt: DIC equivalent total strain, local FEM equivalent strain, signed error and local PEEQ on a band-containing region.
+```{figure} ../_static/evidence/band_roi_alpha_summary.png
+:alt: DIC equivalent total strain, local and coupled FEM fields, and internal PEEQ on a band-containing region.
 :width: 100%
 
-This strictly local comparison establishes the morphological defect before
-introducing any coupled solution. PEEQ is an internal model variable, not an
-experimental DIC field.
+The left comparison establishes the local morphological defect. PEEQ is an
+internal model variable, not an experimental DIC field.
 ```
 
 Lower global error is not sufficient evidence of a better localization. A

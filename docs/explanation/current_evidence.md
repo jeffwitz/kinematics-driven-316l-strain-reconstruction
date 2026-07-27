@@ -19,12 +19,6 @@ and what remains unresolved?
 - Equal-$A_\chi$ pairs do not produce identical reduced-fidelity responses.
   Spatial length therefore has an observable effect beyond amplitude alone.
 
-The full-resolution local/coupled evidence quantifies redistribution without
-using plot metadata as its primary source:
-
-```{include} ../_generated/micromorphic_redistribution_metrics.inc
-```
-
 ```{figure} ../_static/evidence/band_roi_evm_comparison.png
 :alt: DIC and raw FEM equivalent total strain on a band-containing calibration region for increasing coupling.
 :width: 100%
@@ -54,12 +48,6 @@ fidelity and transferred.
 - prediction before the experiment with the present local descriptor maps.
 
 ## Current numerical limitation
-
-The homogeneous Newton-25 design currently resolves two interior amplitude
-optima while leaving the shortest-length profile censored:
-
-```{include} ../_generated/identifiability_status.inc
-```
 
 The short-length, high-coupling corner is censored by mechanical convergence in
 the homogeneous F1 design. This is not interpreted as a physical boundary.
