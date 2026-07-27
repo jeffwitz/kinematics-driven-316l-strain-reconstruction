@@ -1,0 +1,24 @@
+{
+  "claim_exclusions": [
+    "Abaqus finite-element parity",
+    "Abaqus ODB extraction parity"
+  ],
+  "generator": {
+    "qualified_name": "fem_inhouse.material.abaqus_plastic_table",
+    "source_sha256": "e5ddf013e52fe1293005e6ca49c38d6a362c63901768b5d2bafebbf706fd32cb"
+  },
+  "passed": true,
+  "schema_version": 1,
+  "scope": "definition-level reproduction of the available Abaqus-oriented table",
+  "table": {
+    "columns": [
+      "yield_stress_mpa",
+      "equivalent_plastic_strain"
+    ],
+    "first_plastic_strain": 0.0,
+    "last_plastic_strain": 0.2,
+    "maximum_formula_error_mpa": 0.0,
+    "rows": 1000,
+    "second_plastic_strain": 1e-06
+  }
+}

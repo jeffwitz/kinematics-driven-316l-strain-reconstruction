@@ -6,9 +6,9 @@ difference, or a limitation of the local constitutive model?
 ## Historical Abaqus-oriented table versus InHouse/Table
 
 The historical reference represents J2 plasticity with a tabulated
-Ludwik-Hollomon hardening curve. The in-house table path reproduces that
-available constitutive definition with the same small-strain, plane-stress and
-engineering-shear conventions.
+Ludwik-Hollomon hardening curve. The in-house generator reproduces the
+**available Abaqus-oriented table definition**: 1000 rows, the documented
+plastic-strain grid and the same Ludwik values.
 
 | Assumption | Historical definition | InHouse/Table |
 |---|---|---|
@@ -19,23 +19,32 @@ engineering-shear conventions.
 | Stress unit | MPa | MPa |
 | In-plane shear strain | engineering shear | engineering shear |
 
-The available preserved fields and constitutive definition can be reproduced.
-The original Abaqus input model, ODB and extraction procedure are not
-available, so mesh, boundary and output parity cannot be audited end to end.
+This is a definition-level verification, not an Abaqus finite-element
+comparison. The original Abaqus input model, ODB and extraction procedure are
+not available, so mesh, boundary and output parity cannot be audited end to
+end.
 
 :::{admonition} Claim boundary
 :class: warning
 
-The historical Abaqus-oriented table has been reproduced in the in-house
-implementation. Full Abaqus model parity remains unverified because the
-original model and ODB extraction are unavailable.
+The available Abaqus-oriented table definition has been reproduced in the
+in-house implementation. Abaqus/Table versus InHouse/Table finite-element
+parity is **not demonstrated**, because the original model and ODB extraction
+are unavailable.
 :::
 
 ## InHouse/Table versus InHouse/MFront
 
 The analytical MFront law implements the same local scientific model without
-the 1000-segment table. It has been compared at material points and in a
-DIC-driven finite-element problem:
+the 1000-segment table. The material-point comparison gives:
+
+```{include} ../_generated/local_material_point_metrics.inc
+```
+
+The independent DIC-driven finite-element comparison gives:
+
+```{include} ../_generated/local_fem_metrics.inc
+```
 
 | Check | Compared quantity | Result |
 |---|---|---|

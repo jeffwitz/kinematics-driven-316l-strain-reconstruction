@@ -59,7 +59,9 @@ Recommended journeys
    :doc:`explanation/local_baseline` →
    :doc:`explanation/missing_spatial_interaction` →
    :doc:`explanation/micromorphic_model` →
-   :doc:`explanation/current_evidence`
+   :doc:`explanation/parameter_identification` →
+   :doc:`explanation/current_evidence` →
+   :doc:`explanation/scope_and_prediction`
 
 **Reproduce the results**
    :doc:`how-to/install` → :doc:`how-to/prepare_case` →

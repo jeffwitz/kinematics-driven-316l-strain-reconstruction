@@ -17,6 +17,21 @@ authoritative option list for the installed revision.
 | `select-dic-partition` | rank candidate observation regions |
 | `identify-nonlocal` | run F0/F1 collection, selection, report and transfer preparation |
 
+## Common option contracts
+
+| Group | Options | Contract and defaults |
+|---|---|---|
+| outputs | `--output`, `--report`, `--difference` | preserved unless `--overwrite` is explicit |
+| partition geometry | `--count` or `--parts-x` + `--parts-y`, `--padding` | legacy counts 25/100 remain supported; default padding 150 |
+| constitutive backend | `--constitutive-backend`, `--mfront-library`, `--mfront-threads` | MFront is nominal; library and threads enter provenance |
+| mechanical solve | `--increments`, `--max-newton-iterations`, `--residual-tolerance`, `--minimum-step-divisor` | 20, 15, `1e-6`, 1024 |
+| nonlocal solve | `--nonlocal-*` | disabled unless requested; defaults: 58.88 um, fixed relaxation 0.5, tolerance `1e-6`, 15 iterations |
+
+For `partition`, exactly one action is required: `--list-pending`,
+`--partition-id`, `--solve-pending` or `--stitch`. For
+`diagnose-nonlocality`, exactly one length unit is required. Confirmatory mode
+also requires a pre-declared decision-threshold file.
+
 ## Identification subcommands
 
 `identify-nonlocal` provides `inspect`, `screen-frozen`,
@@ -27,11 +42,27 @@ authoritative option list for the installed revision.
 High-fidelity execution is deliberately absent from implicit selection:
 generation of an F2 manifest and execution are separate user actions.
 
+| Low-fidelity switch | Meaning |
+|---|---|
+| none | validate F1 rankings against existing F2 references |
+| `--design` | run the configured sparse ranking design |
+| `--identifiability-design` | run saturation, constant-$A_\chi$ and fixed-$\alpha$ experiments |
+
+`--point` is repeatable for resumable candidate selection. `--workers`
+defaults to one and must be positive. `--dry-run` reports intended work
+without launching it.
+
 ## Exit and overwrite contract
 
 Commands return non-zero on invalid metadata, missing required fields,
 incompatible cache keys, non-finite data or solver failure. Existing
 non-empty outputs are not overwritten unless the relevant command explicitly
 accepts `--overwrite`.
+
+Field comparison and coupled-validation threshold failures return non-zero
+while retaining their reports. A low-fidelity collection with failed points
+returns exit code 2 and preserves per-point status. Cache reuse requires
+matching mesh, DIC, material, configuration, loading history, observation
+operator, constitutive variant, fidelity and nonlocal parameters.
 
 Operational examples are in {doc}`../how-to/index`.

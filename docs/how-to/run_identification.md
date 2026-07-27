@@ -9,15 +9,25 @@
 - a validated DIC observation operator;
 - no unresolved mismatch in numerical policy between reused campaigns.
 
+The versioned Newton-25 configuration is the current executable example:
+
+```bash
+cp configs/joint_nonlocal_identifiability_p0043_newton25.yaml \
+  configs/my_identification.yaml
+```
+
+Edit the copied paths and ROI metadata before running it. Campaign-specific
+identifiers belong in configuration, not in the workflow implementation.
+
 ## Inspect and screen
 
 ```bash
 fem-inhouse identify-nonlocal inspect \
-  --config configs/joint_nonlocal_identification.yaml \
+  --config configs/my_identification.yaml \
   --dry-run
 
 fem-inhouse identify-nonlocal screen-frozen \
-  --config configs/joint_nonlocal_identification.yaml
+  --config configs/my_identification.yaml
 ```
 
 F0 writes dense frozen-field diagnostics. It does not run mechanics.
@@ -26,28 +36,30 @@ F0 writes dense frozen-field diagnostics. It does not run mechanics.
 
 ```bash
 fem-inhouse identify-nonlocal run-low-fidelity \
-  --config configs/joint_nonlocal_identification.yaml
+  --config configs/my_identification.yaml
 
 fem-inhouse identify-nonlocal run-low-fidelity \
-  --config configs/joint_nonlocal_identification.yaml \
+  --config configs/my_identification.yaml \
   --identifiability-design
 ```
 
-Use `--point` to resume or select one candidate and `--workers` to cap
-concurrency. Do not use F1 for selection unless its ranking criteria against
-existing F2 cases pass.
+The first call runs the configured F1 validation points and checks their
+ranking against existing F2 reference cases. Only after all validation gates
+pass does the second call run the homogeneous saturation, constant-$A_\chi$
+and fixed-$\alpha$ discriminating design. Use `--point` to resume or select
+one candidate and `--workers` to cap concurrency.
 
 ## Collect and select
 
 ```bash
 fem-inhouse identify-nonlocal collect-results \
-  --config configs/joint_nonlocal_identification.yaml
+  --config configs/my_identification.yaml
 fem-inhouse identify-nonlocal profile-h \
-  --config configs/joint_nonlocal_identification.yaml
+  --config configs/my_identification.yaml
 fem-inhouse identify-nonlocal select-candidates \
-  --config configs/joint_nonlocal_identification.yaml
+  --config configs/my_identification.yaml
 fem-inhouse identify-nonlocal report \
-  --config configs/joint_nonlocal_identification.yaml
+  --config configs/my_identification.yaml
 ```
 
 The report keeps amplitude, localization and spatial-scale metrics separate.
@@ -56,7 +68,7 @@ The report keeps amplitude, localization and spatial-scale metrics separate.
 
 ```bash
 fem-inhouse identify-nonlocal generate-high-fidelity-manifest \
-  --config configs/joint_nonlocal_identification.yaml \
+  --config configs/my_identification.yaml \
   --dry-run
 ```
 
