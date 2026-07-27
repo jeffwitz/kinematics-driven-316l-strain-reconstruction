@@ -15,6 +15,7 @@ argue for the scientific model.
 
 ## Data and interfaces
 
+- {doc}`experimental_data_inventory`
 - {doc}`input_contract`
 - {doc}`output_contract`
 - {doc}`configuration`
@@ -44,6 +45,7 @@ nonlocal_parameters
 tensor_conventions
 observation_operator
 convergence_criteria
+experimental_data_inventory
 input_contract
 output_contract
 configuration

@@ -115,19 +115,37 @@ micromorphique.
 Livrable autonome :
 `docs/reference/experimental_data_inventory.md`.
 
-- [ ] Inventorier tous les pas DIC disponibles et distinguer images brutes,
+- [x] Inventorier tous les pas DIC disponibles et distinguer images brutes,
   déplacements préparés et cartes dérivées.
-- [ ] Vérifier l'existence d'une branche de déchargement et du signal de
+- [x] Vérifier l'existence d'une branche de déchargement et du signal de
   charge synchronisé `F(t)`.
-- [ ] Documenter épaisseur, largeur utile, résolution, ROI et méthode de
+- [x] Documenter épaisseur, largeur utile, résolution, ROI et méthode de
   mesure.
-- [ ] Rechercher une paire statique ou une translation rigide connue.
-- [ ] Documenter la couverture, le pas et le recalage EBSD/DIC.
-- [ ] Reconstituer tous les paramètres DISFlow, notamment l'epsilon
+- [x] Rechercher une paire statique ou une translation rigide connue.
+- [x] Documenter la couverture, le pas et le recalage EBSD/DIC.
+- [x] Reconstituer tous les paramètres DISFlow, notamment l'epsilon
   Charbonnier actuellement absent.
-- [ ] Répondre à chaque ligne par une valeur traçable ou `not available`.
-- [ ] Ajouter une note de décision sur l'acquisition éventuelle du
+- [x] Répondre à chaque ligne par une valeur traçable ou `not available`.
+- [x] Ajouter une note de décision sur l'acquisition éventuelle du
   déchargement.
+
+**Résultat V0 au 2026-07-27 :**
+
+- seule l'étape DIC 40 est accessible ; aucune séquence d'images brute ni
+  histoire monotone complète n'a été trouvée ;
+- aucune branche de déchargement, paire statique ou série de force
+  synchronisée n'est accessible ;
+- l'article rapporte `t=2 mm`, un ROI initial `7×10 mm²`, un crop
+  `6,624×5,704 mm²` et `1,84 µm/pixel`, mais pas la largeur utile ni la méthode
+  de mesure de l'épaisseur ;
+- les paramètres publiés sont `alpha=100`, `delta=1`, `gamma=0`,
+  `epsilon=0,002`, 30 itérations ; les autres réglages OpenCV restent absents ;
+- `essais/CP_dataset.h5` contient orientations et facteur de Schmid déclarés
+  co-enregistrés sur `3600×3100`, mais le pas EBSD natif et la méthode de
+  recalage sont absents ; 60 valeurs hors domaine et six pixels nuls doivent
+  être masqués ou expliqués avant analyse ;
+- décision : acquérir un cycle décharge/recharge si le montage peut être
+  récupéré ; KD-064 reste bloqué jusque-là.
 
 ### Lot V1 — Contrôles mécaniques gratuits
 

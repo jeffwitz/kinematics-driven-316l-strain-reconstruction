@@ -106,6 +106,10 @@ Only DIC step 40 is versioned. Historical baseline steps 1–5 are absent.
 Current calculations use the provided final displacement directly and do not
 claim to reproduce an unavailable baseline subtraction.
 
+The broader availability audit, including images, loading, geometry, DISFlow
+and EBSD-derived fields, is maintained in
+{doc}`experimental_data_inventory`.
+
 ## Provenance hierarchy
 
 Three manifests preserve distinct identities:
@@ -116,4 +120,3 @@ Three manifests preserve distinct identities:
    hashes.
 
 Every partition status then identifies the six result files.
-
