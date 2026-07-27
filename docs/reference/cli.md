@@ -18,6 +18,7 @@ authoritative option list for the installed revision.
 | `plot-coupled-alpha-fields` | generate common-scale EVM and PEEQ figures |
 | `select-dic-partition` | rank candidate observation regions |
 | `validate-material-map-controls` | compare mapped, homogeneous and translated-map local campaigns |
+| `measure-ebsd-structural-length` | measure the preregistered EBSD/Schmid structural correlation scale |
 | `identify-nonlocal` | run F0/F1 collection, selection, report and transfer preparation |
 
 ## Common option contracts
@@ -69,3 +70,15 @@ matching mesh, DIC, material, configuration, loading history, observation
 operator, constitutive variant, fidelity and nonlocal parameters.
 
 Operational examples are in {doc}`../how-to/index`.
+
+## Independent EBSD/Schmid measurement
+
+`measure-ebsd-structural-length` requires an HDF5 input containing
+`/schmid/max_schmid_factor` and the three Euler datasets under
+`/orientation`. It writes `report.json`, radial and directional CSV profiles,
+and a common correlation figure. A non-empty output directory is rejected
+unless `--overwrite` is supplied.
+
+The command applies the estimator declared in
+`validation/ell_ebsd_definition_preregistration.md`; it does not run FEM,
+fit a micromorphic parameter or launch a coupled campaign.

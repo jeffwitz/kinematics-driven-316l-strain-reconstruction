@@ -1,0 +1,321 @@
+{
+  "blocks": [
+    {
+      "block": [
+        0,
+        0
+      ],
+      "bounds_pixels": [
+        0,
+        900,
+        0,
+        775
+      ],
+      "radial_decay_length_um": 122.30073543775059,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        0,
+        1
+      ],
+      "bounds_pixels": [
+        0,
+        900,
+        775,
+        1550
+      ],
+      "radial_decay_length_um": 90.31266521579755,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        0,
+        2
+      ],
+      "bounds_pixels": [
+        0,
+        900,
+        1550,
+        2325
+      ],
+      "radial_decay_length_um": 135.27409455719211,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        0,
+        3
+      ],
+      "bounds_pixels": [
+        0,
+        900,
+        2325,
+        3100
+      ],
+      "radial_decay_length_um": 113.56806525588333,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        1,
+        0
+      ],
+      "bounds_pixels": [
+        900,
+        1800,
+        0,
+        775
+      ],
+      "radial_decay_length_um": 173.7710413064784,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        1,
+        1
+      ],
+      "bounds_pixels": [
+        900,
+        1800,
+        775,
+        1550
+      ],
+      "radial_decay_length_um": 103.39747941206606,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        1,
+        2
+      ],
+      "bounds_pixels": [
+        900,
+        1800,
+        1550,
+        2325
+      ],
+      "radial_decay_length_um": 68.21210705024758,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        1,
+        3
+      ],
+      "bounds_pixels": [
+        900,
+        1800,
+        2325,
+        3100
+      ],
+      "radial_decay_length_um": 121.9115133459521,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        2,
+        0
+      ],
+      "bounds_pixels": [
+        1800,
+        2700,
+        0,
+        775
+      ],
+      "radial_decay_length_um": 109.4859941415212,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        2,
+        1
+      ],
+      "bounds_pixels": [
+        1800,
+        2700,
+        775,
+        1550
+      ],
+      "radial_decay_length_um": 90.9212595681895,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        2,
+        2
+      ],
+      "bounds_pixels": [
+        1800,
+        2700,
+        1550,
+        2325
+      ],
+      "radial_decay_length_um": 180.79433942094417,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        2,
+        3
+      ],
+      "bounds_pixels": [
+        1800,
+        2700,
+        2325,
+        3100
+      ],
+      "radial_decay_length_um": 87.63909116712396,
+      "status": "valid",
+      "valid_fraction": 0.9999913978494623
+    },
+    {
+      "block": [
+        3,
+        0
+      ],
+      "bounds_pixels": [
+        2700,
+        3600,
+        0,
+        775
+      ],
+      "radial_decay_length_um": 107.65337435204277,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        3,
+        1
+      ],
+      "bounds_pixels": [
+        2700,
+        3600,
+        775,
+        1550
+      ],
+      "radial_decay_length_um": 93.36328296503689,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        3,
+        2
+      ],
+      "bounds_pixels": [
+        2700,
+        3600,
+        1550,
+        2325
+      ],
+      "radial_decay_length_um": 76.49108835094913,
+      "status": "valid",
+      "valid_fraction": 1.0
+    },
+    {
+      "block": [
+        3,
+        3
+      ],
+      "bounds_pixels": [
+        2700,
+        3600,
+        2325,
+        3100
+      ],
+      "radial_decay_length_um": 160.24115824059234,
+      "status": "valid",
+      "valid_fraction": 0.9999139784946236
+    }
+  ],
+  "bootstrap_block_median": {
+    "lower_2p5_um": 90.9212595681895,
+    "median_um": 108.56968424678199,
+    "sample_count": 10000.0,
+    "seed": 20260727.0,
+    "upper_97p5_um": 122.38004434935667,
+    "valid_block_count": 16.0
+  },
+  "claim_boundary": "Independent EBSD/Schmid structural correlation scale; not a fitted micromorphic parameter and not a demonstrated material internal length.",
+  "estimator": {
+    "block_layout": [
+      4,
+      4
+    ],
+    "boundary": "circular FFT; interpreted only to one quarter of the shortest axis",
+    "fit_interval": [
+      0.15,
+      0.6
+    ],
+    "maximum_lag_pixels": 775,
+    "minimum_fit_points": 5
+  },
+  "generated_at_utc": "2026-07-27T12:17:36.383204+00:00",
+  "input": {
+    "dataset": "/schmid/max_schmid_factor",
+    "path": "/home/jeff/CNRS/Theses/Adil/essais/CP_dataset.h5",
+    "sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
+    "shape": [
+      3600,
+      3100
+    ],
+    "spacing_um": 1.84
+  },
+  "lengths": {
+    "directional_anisotropy_ratio": 1.5971330403523987,
+    "radial_decay": {
+      "first_index": 37,
+      "intercept": -0.21966336393867938,
+      "last_index": 166,
+      "length_pixels": 97.4889499821449,
+      "length_um": 179.37966796714662,
+      "point_count": 130,
+      "r_squared": 0.9963760708315555,
+      "slope_per_pixel": -0.010257572783204147
+    },
+    "rms_control_length_pixels": 169.42097168988488,
+    "rms_control_length_um": 311.7345879093882,
+    "rms_radius_pixels": 338.84194337976976,
+    "rms_radius_um": 623.4691758187764,
+    "x_decay": {
+      "first_index": 31,
+      "intercept": -0.15051465549491225,
+      "last_index": 132,
+      "length_pixels": 72.24521150918636,
+      "length_um": 132.9311891769029,
+      "point_count": 102,
+      "r_squared": 0.9917426703889495,
+      "slope_per_pixel": -0.013841747835049868
+    },
+    "y_decay": {
+      "first_index": 44,
+      "intercept": -0.17911059140940014,
+      "last_index": 196,
+      "length_pixels": 115.3852143085689,
+      "length_um": 212.3087943277668,
+      "point_count": 153,
+      "r_squared": 0.997839460370246,
+      "slope_per_pixel": -0.008666621681056553
+    }
+  },
+  "mask": {
+    "invalid_count": 66,
+    "rule": "finite and 0 < Schmid <= 0.5 and Euler triplet not all zero",
+    "valid_count": 11159934,
+    "valid_fraction": 0.9999940860215054
+  },
+  "schema_version": 1
+}

@@ -43,6 +43,7 @@ from fem_inhouse.workflows import (
     inspect_joint_identification,
     load_decision_thresholds,
     load_joint_identification_config,
+    measure_ebsd_structural_length,
     plot_coupled_alpha_fields,
     prepare_material_map_control,
     prepare_transfer_validation,
@@ -391,6 +392,14 @@ def _parser() -> argparse.ArgumentParser:
     map_controls.add_argument("--partition-id", type=int, required=True)
     map_controls.add_argument("--output", type=Path, required=True)
     map_controls.add_argument("--overwrite", action="store_true")
+
+    ebsd_length = commands.add_parser(
+        "measure-ebsd-structural-length",
+        help="measure the preregistered structural correlation scale of an EBSD/Schmid field",
+    )
+    ebsd_length.add_argument("--input", type=Path, required=True)
+    ebsd_length.add_argument("--output", type=Path, required=True)
+    ebsd_length.add_argument("--overwrite", action="store_true")
 
     identify = commands.add_parser(
         "identify-nonlocal",
@@ -757,6 +766,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(control_report)
+        return 0
+    if args.command == "measure-ebsd-structural-length":
+        ebsd_report = measure_ebsd_structural_length(
+            args.input,
+            args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(ebsd_report)
         return 0
     if args.command == "identify-nonlocal":
         if args.workers < 1:

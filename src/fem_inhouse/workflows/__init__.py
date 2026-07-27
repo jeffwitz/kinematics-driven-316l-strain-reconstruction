@@ -15,6 +15,7 @@ from fem_inhouse.workflows.dic_partition_selection import (
     scan_dic_partition_heterogeneity,
     write_dic_partition_heterogeneity_report,
 )
+from fem_inhouse.workflows.ebsd_structural_length import measure_ebsd_structural_length
 from fem_inhouse.workflows.joint_nonlocal_identification import (
     analyze_joint_identifiability,
     collect_identification_results,
@@ -71,6 +72,7 @@ __all__ = [
     "inspect_joint_identification",
     "load_decision_thresholds",
     "load_joint_identification_config",
+    "measure_ebsd_structural_length",
     "normalize_length_scales",
     "plot_coupled_alpha_fields",
     "prepare_coupled_alpha_fields",

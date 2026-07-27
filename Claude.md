@@ -285,17 +285,18 @@ un champ de fond lisse. Voir
 
 Ce lot commence seulement après V2 et V3.
 
-- [ ] Pré-enregistrer la statistique EBSD avant de lire sa valeur.
-- [ ] Utiliser comme analyse principale la longueur de décroissance
+- [x] Pré-enregistrer la statistique EBSD avant de lire sa valeur.
+- [x] Utiliser comme analyse principale la longueur de décroissance
   exponentielle d'un champ orientationnel mécaniquement motivé ; rapporter le
   rayon RMS comme contrôle.
-- [ ] Calculer le facteur de Schmid maximal pixel par pixel comme proxy
+- [x] Exploiter le facteur de Schmid maximal pixelisé, archivé sous forme de
+  moyenne par grain, comme proxy
   clairement étiqueté, sans prétendre qu'il représente la contrainte locale
   multiaxiale.
-- [ ] Traiter la reconstruction des grains et le choix des macles comme une
+- [x] Traiter la reconstruction des grains et le choix des macles comme une
   analyse secondaire ; ils ne doivent pas modifier arbitrairement le champ
   orientationnel pixelisé.
-- [ ] Examiner l'anisotropie avant toute moyenne radiale et estimer
+- [x] Examiner l'anisotropie avant toute moyenne radiale et estimer
   l'incertitude par bootstrap spatial.
 - [ ] Définir `xi_EBSD` comme échelle mesurée et pré-enregistrer l'hypothèse
   `ell = c * xi_EBSD`, avec `c=1` comme hypothèse principale et une bande de
@@ -304,6 +305,17 @@ Ce lot commence seulement après V2 et V3.
 - [ ] Une fois cette hypothèse figée, balayer uniquement `Hchi` et publier
   aussi `ell/2`, `ell` et `2*ell` comme sensibilité ; ne pas réajuster `ell`
   si les critères échouent.
+
+**Résultat V5 indépendant au 2026-07-27 :** le champ Schmid moyen par grain
+donne une décroissance radiale de `179,38 µm`, avec une médiane spatiale
+bootstrap de `108,57 µm` (`IC 95 % [90,92 ; 122,38] µm`). Les directions
+diffèrent nettement (`132,93 µm` selon x, `212,31 µm` selon y ; rapport
+`1,60`). Le contrôle par second moment est beaucoup plus long (`311,73 µm`) :
+la valeur dépend donc fortement de la définition, exactement comme anticipé.
+Ces nombres constituent une **échelle structurale EBSD/Schmid indépendante**,
+pas une mesure directe de `ell`. Aucun calcul micromorphique n'a été lancé.
+Voir `validation/ell_ebsd_definition_preregistration.md` et
+`validation/ell_ebsd_structural_length_results.md`.
 
 ### Lot V6 — Histoire temporelle et validation conditionnelle
 

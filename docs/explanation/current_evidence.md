@@ -44,6 +44,31 @@ post-filter is applied to the FEM EVM.
 These statements are **supported**, not yet independently confirmed at high
 fidelity and transferred.
 
+## An independent structural scale
+
+The grain-mean maximum-Schmid-factor map provides a structural measurement
+that never uses FEM/DIC agreement. Under the preregistered exponential-tail
+definition, the full-field radial decay is **179.38 µm**. Spatial blocks give
+a median of **108.57 µm** with a bootstrap interval of
+**[90.92, 122.38] µm**. Directional estimates are **132.93 µm** along x and
+**212.31 µm** along y, exposing anisotropy that a scalar radial average hides.
+
+```{figure} ../_static/evidence/ebsd_schmid_correlation.png
+:alt: Radial and directional autocorrelation profiles of the grain-mean maximum Schmid factor field.
+:width: 85%
+
+The shaded interval and dashed fits were fixed before the field value was
+read. The RMS-control definition gives 311.73 µm and is deliberately not
+substituted for the primary result.
+```
+
+This is an **EBSD/Schmid structural correlation scale**, not a direct
+measurement of the micromorphic $\ell$ and not a material internal length.
+The input is already averaged per grain, and the native EBSD step and
+registration procedure are not archived. Its value is evidence for a
+microstructural spatial scale and for directional structure; imposing it in
+mechanics requires a separate preregistered hypothesis.
+
 ## What the material maps contribute
 
 A homogeneous nominal control and a jointly translated-map control separate

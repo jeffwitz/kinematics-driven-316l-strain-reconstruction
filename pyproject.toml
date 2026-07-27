@@ -9,6 +9,7 @@ description = "Kinematics-driven FEM reconstruction of microscale strain localiz
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "h5py>=3.11,<4",
     "matplotlib>=3.8,<4",
     "numpy>=2,<3",
     "pypardiso>=0.4.7,<0.5",
@@ -82,5 +83,5 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["pypardiso", "scipy.*"]
+module = ["h5py", "pypardiso", "scipy.*"]
 ignore_missing_imports = true

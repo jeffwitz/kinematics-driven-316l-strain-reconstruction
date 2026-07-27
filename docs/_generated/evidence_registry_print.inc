@@ -53,3 +53,9 @@
 : Status: **provisional**.
 : Conclusion: Interior amplitude optima exist at 40 and 60 um, but two short-length points fail; F2 confirmation and transfer remain absent.
 : Sources: primary: `validation/joint_nonlocal_identifiability_p0043_newton25_execution.json`.
+
+**E-EBSD-001 — What structural scale is carried by the archived grain-mean Schmid field?**
+: Fidelity: independent EBSD/Schmid spatial statistic. Parameters: frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap.
+: Status: **verified**.
+: Conclusion: The radial decay is 179.38 um, spatial-block median 108.57 um, and directional ratio 1.60; this is an independent structural scale, not a direct measurement of ell.
+: Sources: primary: `validation/reference_data/ebsd_structural_length_v1/report.json`.

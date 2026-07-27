@@ -63,6 +63,12 @@
       "evidence_ids": ["E-ID-001"]
     },
     {
+      "question": "An EBSD/Schmid structural correlation scale has been measured independently of FEM/DIC agreement",
+      "status": "verified",
+      "boundary": "Grain-mean maximum-Schmid map and declared 1.84 um grid; not a direct micromorphic or material length",
+      "evidence_ids": ["E-EBSD-001"]
+    },
+    {
       "question": "Hchi and ell statistically identified",
       "status": "not demonstrated",
       "boundary": "The short-length high-coupling region remains numerically censored",
@@ -257,6 +263,28 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-EBSD-001",
+      "question": "What structural scale is carried by the archived grain-mean Schmid field?",
+      "fidelity": "independent EBSD/Schmid spatial statistic",
+      "parameters": "frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap",
+      "status": "verified",
+      "conclusion": "The radial decay is 179.38 um, spatial-block median 108.57 um, and directional ratio 1.60; this is an independent structural scale, not a direct measurement of ell.",
+      "sources": [
+        {
+          "path": "validation/reference_data/ebsd_structural_length_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/schema_version", "operator": "equals", "expected": 1},
+            {"path": "/input/dataset", "operator": "equals", "expected": "/schmid/max_schmid_factor"},
+            {"path": "/mask/invalid_count", "operator": "equals", "expected": 66},
+            {"path": "/lengths/radial_decay/r_squared", "operator": "greater_than", "expected": 0.99},
+            {"path": "/bootstrap_block_median/valid_block_count", "operator": "equals", "expected": 16.0},
+            {"path": "/lengths/directional_anisotropy_ratio", "operator": "greater_than", "expected": 1.5}
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -307,6 +335,10 @@
     {
       "source": "validation/reference_data/nonlocality_helmholtz_article_p0048_v1/figures/best_candidates.png",
       "target": "evidence/helmholtz_diagnostic.png"
+    },
+    {
+      "source": "validation/reference_data/ebsd_structural_length_v1/correlation_profiles.png",
+      "target": "evidence/ebsd_schmid_correlation.png"
     }
   ]
 }
