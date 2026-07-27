@@ -44,6 +44,7 @@ from fem_inhouse.workflows import (
     load_decision_thresholds,
     load_joint_identification_config,
     plot_coupled_alpha_fields,
+    prepare_material_map_control,
     prepare_transfer_validation,
     profile_coupling_modulus,
     run_low_fidelity,
@@ -52,6 +53,7 @@ from fem_inhouse.workflows import (
     screen_frozen_field,
     select_identification_candidates,
     validate_coupled_nonlocal_campaign,
+    validate_material_map_controls,
     write_dic_partition_heterogeneity_report,
 )
 
@@ -140,6 +142,22 @@ def _parser() -> argparse.ArgumentParser:
         default="error",
         help="explicit policy for non-finite hardening multipliers",
     )
+
+    map_control = commands.add_parser(
+        "prepare-material-map-control",
+        help="derive an immutable homogeneous or translated-map control input",
+    )
+    map_control.add_argument("--input", type=Path, required=True)
+    map_control.add_argument("--output", type=Path, required=True)
+    map_control.add_argument(
+        "--mode",
+        choices=("homogeneous", "translated"),
+        required=True,
+    )
+    map_control.add_argument("--yield-stress-mpa", type=float, default=124.0)
+    map_control.add_argument("--hardening-coefficient-mpa", type=float, default=380.0)
+    map_control.add_argument("--shift-x-pixels", type=int, default=600)
+    map_control.add_argument("--shift-y-pixels", type=int, default=500)
     prepare.add_argument(
         "--nodal-completion",
         choices=("edge-pad-upper",),
@@ -362,6 +380,18 @@ def _parser() -> argparse.ArgumentParser:
     section_equilibrium.add_argument("--output", type=Path, required=True)
     section_equilibrium.add_argument("--overwrite", action="store_true")
 
+    map_controls = commands.add_parser(
+        "validate-material-map-controls",
+        help="compare mapped, homogeneous and translated-map campaigns with DIC",
+    )
+    map_controls.add_argument("--input", type=Path, required=True)
+    map_controls.add_argument("--mapped-campaign", type=Path, required=True)
+    map_controls.add_argument("--homogeneous-campaign", type=Path, required=True)
+    map_controls.add_argument("--translated-campaign", type=Path, required=True)
+    map_controls.add_argument("--partition-id", type=int, required=True)
+    map_controls.add_argument("--output", type=Path, required=True)
+    map_controls.add_argument("--overwrite", action="store_true")
+
     identify = commands.add_parser(
         "identify-nonlocal",
         help="inspect and run explicit stages of joint ell/H_chi identification",
@@ -547,6 +577,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         _print_json(manifest)
         return 0
+    if args.command == "prepare-material-map-control":
+        control_manifest = prepare_material_map_control(
+            args.input,
+            args.output,
+            mode=args.mode,
+            homogeneous_yield_stress_mpa=args.yield_stress_mpa,
+            homogeneous_hardening_coefficient_mpa=args.hardening_coefficient_mpa,
+            shift_x_pixels=args.shift_x_pixels,
+            shift_y_pixels=args.shift_y_pixels,
+        )
+        _print_json(control_manifest)
+        return 0
     if args.command == "partition":
         workflow = _partition_workflow(args)
         if args.list_pending:
@@ -701,6 +743,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(section_report)
+        return 0
+    if args.command == "validate-material-map-controls":
+        control_report = validate_material_map_controls(
+            input_directory=args.input,
+            campaigns=(
+                ("mapped", args.mapped_campaign),
+                ("homogeneous", args.homogeneous_campaign),
+                ("translated", args.translated_campaign),
+            ),
+            partition_id=args.partition_id,
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(control_report)
         return 0
     if args.command == "identify-nonlocal":
         if args.workers < 1:

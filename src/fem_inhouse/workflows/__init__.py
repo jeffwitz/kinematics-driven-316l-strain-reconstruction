@@ -29,6 +29,10 @@ from fem_inhouse.workflows.joint_nonlocal_identification import (
     select_identification_candidates,
     validate_low_fidelity_ranking,
 )
+from fem_inhouse.workflows.material_map_control_validation import (
+    validate_material_map_controls,
+)
+from fem_inhouse.workflows.material_map_controls import prepare_material_map_control
 from fem_inhouse.workflows.nonlocal_coupling_campaign import (
     ReferenceHardeningReport,
     compute_reference_hardening_modulus,
@@ -70,6 +74,7 @@ __all__ = [
     "normalize_length_scales",
     "plot_coupled_alpha_fields",
     "prepare_coupled_alpha_fields",
+    "prepare_material_map_control",
     "prepare_transfer_validation",
     "profile_coupling_modulus",
     "reconstruct_historical_evm",
@@ -82,5 +87,6 @@ __all__ = [
     "symmetric_color_limit",
     "validate_coupled_nonlocal_campaign",
     "validate_low_fidelity_ranking",
+    "validate_material_map_controls",
     "write_dic_partition_heterogeneity_report",
 ]

@@ -15,6 +15,12 @@
       "evidence_ids": ["E-EQ-001"]
     },
     {
+      "question": "The pixel-wise material maps add spatial localisation information beyond boundary kinematics",
+      "status": "supported",
+      "boundary": "One band-containing ROI; translated-map and homogeneous controls; no transfer claim",
+      "evidence_ids": ["E-MAP-001"]
+    },
+    {
       "question": "Available Abaqus-oriented table definition reimplemented",
       "status": "verified at definition level",
       "boundary": "The versioned 1000-row generator is checked; Abaqus FE and ODB parity are excluded",
@@ -70,6 +76,27 @@
     }
   ],
   "evidence": [
+    {
+      "id": "E-MAP-001",
+      "question": "What do boundary kinematics and the spatial placement of the material maps contribute?",
+      "fidelity": "full-resolution local FEM controls",
+      "parameters": "P43 mapped, homogeneous 124/380 MPa, joint map shift 600/500 pixels",
+      "status": "supported",
+      "conclusion": "The homogeneous control minimizes global error but erases q90-active bands; translating the maps strongly degrades spatial correlation and overlap, showing that their original placement contains localisation information.",
+      "sources": [
+        {
+          "path": "validation/reference_data/material_map_controls_p0043_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_no_acceptance_threshold"},
+            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false},
+            {"path": "/rows/1/absolute_dic_q90/prediction_active_fraction", "operator": "equals", "expected": 0.0},
+            {"path": "/rows/2/error/pearson_correlation", "operator": "less_than", "expected_path": "/rows/0/error/pearson_correlation"},
+            {"path": "/rows/2/relative_top10/intersection_over_union", "operator": "less_than", "expected_path": "/rows/0/relative_top10/intersection_over_union"}
+          ]
+        }
+      ]
+    },
     {
       "id": "E-EQ-001",
       "question": "What is the cross-section-integrated equilibrium baseline of the archived P43 fields?",

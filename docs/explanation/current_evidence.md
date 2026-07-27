@@ -44,6 +44,27 @@ post-filter is applied to the FEM EVM.
 These statements are **supported**, not yet independently confirmed at high
 fidelity and transferred.
 
+## What the material maps contribute
+
+A homogeneous nominal control and a jointly translated-map control separate
+three effects that global agreement otherwise mixes:
+
+```{figure} ../_static/evidence/material_map_controls.png
+:alt: DIC EVM and mapped, homogeneous, and translated-map controls with their PEEQ fields
+:width: 100%
+
+Full-resolution controls on the band-containing calibration region. EVM uses
+one common scale; PEEQ is shown separately as a model output.
+```
+
+The homogeneous control gives a lower global L2 error than the mapped model,
+but predicts no point above the absolute DIC q90 threshold: it obtains a good
+score by suppressing the bands. Conversely, translating both material maps
+together while preserving their distributions reduces correlation from
+0.379 to 0.140 and top-10% IoU from 0.207 to 0.113. Boundary kinematics explain
+much of the smooth background, while the original map placement contributes
+genuine localisation information. Neither result establishes transferability.
+
 ## Not demonstrated
 
 - one unique value of $H_\chi$;

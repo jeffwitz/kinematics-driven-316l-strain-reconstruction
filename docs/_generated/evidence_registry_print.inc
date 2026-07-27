@@ -1,5 +1,11 @@
 <!-- Generated from validation/documentation_evidence_registry.json. -->
 
+**E-MAP-001 — What do boundary kinematics and the spatial placement of the material maps contribute?**
+: Fidelity: full-resolution local FEM controls. Parameters: P43 mapped, homogeneous 124/380 MPa, joint map shift 600/500 pixels.
+: Status: **supported**.
+: Conclusion: The homogeneous control minimizes global error but erases q90-active bands; translating the maps strongly degrades spatial correlation and overlap, showing that their original placement contains localisation information.
+: Sources: primary: `validation/reference_data/material_map_controls_p0043_v1/report.json`.
+
 **E-EQ-001 — What is the cross-section-integrated equilibrium baseline of the archived P43 fields?**
 : Fidelity: saved full-resolution element-centred stresses. Parameters: local and alpha 1, 2, 4; padded domain and retained core.
 : Status: **reported baseline**.

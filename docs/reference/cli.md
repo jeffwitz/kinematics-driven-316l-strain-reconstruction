@@ -9,12 +9,15 @@ authoritative option list for the installed revision.
 |---|---|
 | `backend` | report sparse and constitutive backend availability |
 | `prepare-case` | create canonical DIC-driven inputs |
+| `prepare-material-map-control` | derive homogeneous or jointly translated material-map controls |
 | `partition` | create, solve, resume and stitch partition campaigns |
+| `diagnose-section-equilibrium` | evaluate generalized section balance including lateral shear flux |
 | `diagnose-nonlocality` | run an output-only Helmholtz diagnostic |
 | `estimate-nonlocal-reference` | derive $H_{\mathrm{ref}}$ from a local campaign |
 | `validate-coupled-nonlocal` | compare raw coupled fields with DIC |
 | `plot-coupled-alpha-fields` | generate common-scale EVM and PEEQ figures |
 | `select-dic-partition` | rank candidate observation regions |
+| `validate-material-map-controls` | compare mapped, homogeneous and translated-map local campaigns |
 | `identify-nonlocal` | run F0/F1 collection, selection, report and transfer preparation |
 
 ## Common option contracts

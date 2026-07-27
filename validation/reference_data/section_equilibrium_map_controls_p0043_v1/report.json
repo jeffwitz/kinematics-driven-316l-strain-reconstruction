@@ -1,0 +1,153 @@
+{
+  "array_axes": [
+    "x",
+    "y",
+    "component"
+  ],
+  "case_count": 3,
+  "equilibrium_equation": "Delta N_y + Delta y * t * mean[sigma_12(x_R)-sigma_12(x_L)] = residual",
+  "generated_at_utc": "2026-07-27T11:35:00.353176+00:00",
+  "interpretation_boundary": "P43 is an interior Dirichlet partition. Section-force constancy alone is not an equilibrium requirement; lateral shear flux must be included. Boundary tractions are approximated from cell-centred stresses.",
+  "metrics": [
+    {
+      "balance_residual_relative_l2": 0.15326314869136473,
+      "balance_residual_relative_to_mean_force": 0.000227248467215332,
+      "balance_residual_rms_n": 0.0679221574628795,
+      "boundary_flux_closure_gain": 0.7091586203405049,
+      "campaign": "results/constitutive-local-p0043-pad150",
+      "label": "mapped",
+      "naive_force_increment_rms_n": 0.23353677369568224,
+      "region": "solve",
+      "section_force_mean_n": 298.88939756200443,
+      "section_force_relative_dispersion": 0.054470711963236454
+    },
+    {
+      "balance_residual_relative_l2": 0.15478836277936117,
+      "balance_residual_relative_to_mean_force": 0.0002223424459047139,
+      "balance_residual_rms_n": 0.03486828249646753,
+      "boundary_flux_closure_gain": 0.6963082890146505,
+      "campaign": "results/constitutive-local-p0043-pad150",
+      "label": "mapped",
+      "naive_force_increment_rms_n": 0.11481473229326834,
+      "region": "core",
+      "section_force_mean_n": 156.82242926935564,
+      "section_force_relative_dispersion": 0.030847681370470233
+    },
+    {
+      "balance_residual_relative_l2": 0.23692742094736258,
+      "balance_residual_relative_to_mean_force": 0.00016848637382171016,
+      "balance_residual_rms_n": 0.05568944706644135,
+      "boundary_flux_closure_gain": 0.5696333006637527,
+      "campaign": "results/control-homogeneous-local-p0043-pad150",
+      "label": "homogeneous",
+      "naive_force_increment_rms_n": 0.12939999110602876,
+      "region": "solve",
+      "section_force_mean_n": 330.5278985075144,
+      "section_force_relative_dispersion": 0.010790968497324593
+    },
+    {
+      "balance_residual_relative_l2": 0.0010995546075876115,
+      "balance_residual_relative_to_mean_force": 5.510381247001198e-07,
+      "balance_residual_rms_n": 0.00010140711772509878,
+      "boundary_flux_closure_gain": 0.9978014180523673,
+      "campaign": "results/control-homogeneous-local-p0043-pad150",
+      "label": "homogeneous",
+      "naive_force_increment_rms_n": 0.0461238744520259,
+      "region": "core",
+      "section_force_mean_n": 184.0292226246333,
+      "section_force_relative_dispersion": 0.01843981367122073
+    },
+    {
+      "balance_residual_relative_l2": 0.14885159231189085,
+      "balance_residual_relative_to_mean_force": 0.00028405126619151675,
+      "balance_residual_rms_n": 0.1083351842934366,
+      "boundary_flux_closure_gain": 0.7164029491732498,
+      "campaign": "results/control-translated-maps-local-p0043-pad150",
+      "label": "translated",
+      "naive_force_increment_rms_n": 0.38200391709862563,
+      "region": "solve",
+      "section_force_mean_n": 381.39306944822215,
+      "section_force_relative_dispersion": 0.03275676926746608
+    },
+    {
+      "balance_residual_relative_l2": 0.14367674588013318,
+      "balance_residual_relative_to_mean_force": 0.0001800755403799774,
+      "balance_residual_rms_n": 0.039044093451830825,
+      "boundary_flux_closure_gain": 0.7181146775523726,
+      "campaign": "results/control-translated-maps-local-p0043-pad150",
+      "label": "translated",
+      "naive_force_increment_rms_n": 0.1385105585236173,
+      "region": "core",
+      "section_force_mean_n": 216.82063743606648,
+      "section_force_relative_dispersion": 0.01614556897620277
+    }
+  ],
+  "partition_id": 43,
+  "schema_version": 1,
+  "sources": [
+    {
+      "campaign": "results/constitutive-local-p0043-pad150",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "mapped",
+      "manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "b790d67344cfa0d2b621df74f3ccae4fed6cd3e9e7289bd461fabd0c93141e80"
+    },
+    {
+      "campaign": "results/control-homogeneous-local-p0043-pad150",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "homogeneous",
+      "manifest_sha256": "42b2ffce43f3c88deb56f84515fbd7a0173fe189cb940a964442311b340d0586",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "9ac3f52bce648dc3a2cc7c74869bc399af7d4018b0be07bfe61933f84bcd4d7a"
+    },
+    {
+      "campaign": "results/control-translated-maps-local-p0043-pad150",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "translated",
+      "manifest_sha256": "ce5e7c695b64a4dade852a6aedbc209b57e45befa890d54845f576c7951aad91",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "9aaa5fa001d8078ef1eee259d7b1f716da17533b624aeac08e96a08b59760c3d"
+    }
+  ],
+  "status": "completed_baseline_no_acceptance_threshold",
+  "stress_convention": [
+    "sigma_11",
+    "sigma_22",
+    "sigma_12"
+  ],
+  "thickness_mm": 2.0
+}

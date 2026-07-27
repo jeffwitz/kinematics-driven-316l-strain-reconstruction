@@ -258,16 +258,28 @@ interprétation de `ell`.
 
 ### Lot V4 — Valeur informative réelle des cartes
 
-- [ ] Baseline homogène : mêmes conditions de bord, `sigma_y` et `K`
+- [x] Baseline homogène : mêmes conditions de bord, `sigma_y` et `K`
   uniformes aux valeurs macroscopiques.
-- [ ] Contrôle permuté : transformer conjointement `sigma_y` et `K` de façon à
+- [x] Contrôle permuté : transformer conjointement `sigma_y` et `K` de façon à
   préserver leurs distributions et leur dépendance mutuelle tout en détruisant
   leur correspondance spatiale.
-- [ ] Pré-enregistrer transformation, traitement des bords et métriques.
-- [ ] Quantifier le gain dû aux seules conditions de bord, puis l'information
+- [x] Pré-enregistrer transformation, traitement des bords et métriques.
+- [x] Quantifier le gain dû aux seules conditions de bord, puis l'information
   spatiale ajoutée par les cartes.
 - [ ] Auditer avec le laboratoire partenaire la résolution, les orientations,
   la morphologie d'épaisseur et l'identification du calcul CPFEM comparé.
+
+**Résultat V4 au 2026-07-27 :** les deux contrôles P43 convergent sans
+cutback. Le contrôle homogène nominal (`sigma_y=124 MPa`, `K=380 MPa`) obtient
+la meilleure erreur globale (`L2=0,351`, corrélation `0,420`) mais ne prédit
+aucun pixel au-dessus du seuil DIC q90 : il efface les bandes. La translation
+conjointe des cartes de `(600,500)` pixels fait chuter la corrélation de
+`0,379` à `0,140` et l'IoU top-10 % de `0,207` à `0,113`. La position
+originale des cartes contient donc une information réelle de localisation,
+mais la baseline homogène démontre que L2 et corrélation favorisent fortement
+un champ de fond lisse. Voir
+`validation/material_map_controls_p0043_preregistration.md` et
+`validation/material_map_controls_p0043_results.md`.
 
 ### Lot V5 — Échelle microstructurale indépendante
 
