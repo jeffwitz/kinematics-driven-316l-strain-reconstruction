@@ -1,0 +1,196 @@
+{
+  "array_axes": [
+    "x",
+    "y",
+    "component"
+  ],
+  "case_count": 4,
+  "equilibrium_equation": "Delta N_y + Delta y * t * mean[sigma_12(x_R)-sigma_12(x_L)] = residual",
+  "generated_at_utc": "2026-07-27T10:34:26.311076+00:00",
+  "interpretation_boundary": "P43 is an interior Dirichlet partition. Section-force constancy alone is not an equilibrium requirement; lateral shear flux must be included. Boundary tractions are approximated from cell-centred stresses.",
+  "metrics": [
+    {
+      "balance_residual_relative_l2": 0.15326314869136473,
+      "balance_residual_relative_to_mean_force": 0.000227248467215332,
+      "balance_residual_rms_n": 0.0679221574628795,
+      "boundary_flux_closure_gain": 0.7091586203405049,
+      "campaign": "results/constitutive-local-p0043-pad150",
+      "label": "local",
+      "naive_force_increment_rms_n": 0.23353677369568224,
+      "region": "solve",
+      "section_force_mean_n": 298.88939756200443,
+      "section_force_relative_dispersion": 0.054470711963236454
+    },
+    {
+      "balance_residual_relative_l2": 0.15478836277936117,
+      "balance_residual_relative_to_mean_force": 0.0002223424459047139,
+      "balance_residual_rms_n": 0.03486828249646753,
+      "boundary_flux_closure_gain": 0.6963082890146505,
+      "campaign": "results/constitutive-local-p0043-pad150",
+      "label": "local",
+      "naive_force_increment_rms_n": 0.11481473229326834,
+      "region": "core",
+      "section_force_mean_n": 156.82242926935564,
+      "section_force_relative_dispersion": 0.030847681370470233
+    },
+    {
+      "balance_residual_relative_l2": 0.16076319276436674,
+      "balance_residual_relative_to_mean_force": 0.00022032202274558968,
+      "balance_residual_rms_n": 0.06868688146309625,
+      "boundary_flux_closure_gain": 0.6968562549515902,
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a100",
+      "label": "alpha_1",
+      "naive_force_increment_rms_n": 0.22658188593707407,
+      "region": "solve",
+      "section_force_mean_n": 311.75676678681543,
+      "section_force_relative_dispersion": 0.04737344426510062
+    },
+    {
+      "balance_residual_relative_l2": 0.15943896336169855,
+      "balance_residual_relative_to_mean_force": 0.00019395606584478268,
+      "balance_residual_rms_n": 0.03241333117100851,
+      "boundary_flux_closure_gain": 0.6865948050949878,
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a100",
+      "label": "alpha_1",
+      "naive_force_increment_rms_n": 0.10342308199719677,
+      "region": "core",
+      "section_force_mean_n": 167.11687273007456,
+      "section_force_relative_dispersion": 0.027755053695595278
+    },
+    {
+      "balance_residual_relative_l2": 0.16387270456462005,
+      "balance_residual_relative_to_mean_force": 0.00021960539717713035,
+      "balance_residual_rms_n": 0.06988776972805356,
+      "boundary_flux_closure_gain": 0.6920243939123492,
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a200",
+      "label": "alpha_2",
+      "naive_force_increment_rms_n": 0.2269263160672644,
+      "region": "solve",
+      "section_force_mean_n": 318.24249597874484,
+      "section_force_relative_dispersion": 0.045184910373045395
+    },
+    {
+      "balance_residual_relative_l2": 0.15765860942853133,
+      "balance_residual_relative_to_mean_force": 0.0001738888643709894,
+      "balance_residual_rms_n": 0.02998159479226348,
+      "boundary_flux_closure_gain": 0.6904159665737479,
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a200",
+      "label": "alpha_2",
+      "naive_force_increment_rms_n": 0.09684477090258464,
+      "region": "core",
+      "section_force_mean_n": 172.4181413267395,
+      "section_force_relative_dispersion": 0.026523663265089592
+    },
+    {
+      "balance_residual_relative_l2": 0.1682039062643748,
+      "balance_residual_relative_to_mean_force": 0.0002229686303518403,
+      "balance_residual_rms_n": 0.07269011959231447,
+      "boundary_flux_closure_gain": 0.6854031500883466,
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a400",
+      "label": "alpha_4",
+      "naive_force_increment_rms_n": 0.2310580020516024,
+      "region": "solve",
+      "section_force_mean_n": 326.0105220972602,
+      "section_force_relative_dispersion": 0.043148868779739294
+    },
+    {
+      "balance_residual_relative_l2": 0.15669468604536127,
+      "balance_residual_relative_to_mean_force": 0.00015303974177222366,
+      "balance_residual_rms_n": 0.027366943567444495,
+      "boundary_flux_closure_gain": 0.6929818408392225,
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a400",
+      "label": "alpha_4",
+      "naive_force_increment_rms_n": 0.08913786611922565,
+      "region": "core",
+      "section_force_mean_n": 178.82246304476925,
+      "section_force_relative_dispersion": 0.025430528197292808
+    }
+  ],
+  "partition_id": 43,
+  "schema_version": 1,
+  "sources": [
+    {
+      "campaign": "results/constitutive-local-p0043-pad150",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "local",
+      "manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "b790d67344cfa0d2b621df74f3ccae4fed6cd3e9e7289bd461fabd0c93141e80"
+    },
+    {
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a100",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "alpha_1",
+      "manifest_sha256": "a911aa9b792fa36860756e548e2fed1f2066ddd5e014b7046b20cd99fbd72c66",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "2bf79f4a9f29b52d331537f7948b6bb0d9e72fcef0d38af4015f886c4d75f21e"
+    },
+    {
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a200",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "alpha_2",
+      "manifest_sha256": "078ae0546c73347b839abcdab63acc5349f970df5d3ff4f978c8af1c5084fff1",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "2d5f7b656d18a0bb6f4025e03360c55702c1e8ce3772a80e528631c349038ab0"
+    },
+    {
+      "campaign": "results/constitutive-nonlocal-p0043-pad150-a400",
+      "core_bounds": [
+        1440,
+        1800,
+        930,
+        1240
+      ],
+      "label": "alpha_4",
+      "manifest_sha256": "9e9dc8149bbafa0a5d7a45f4c89f5f88e45c933ab2306bd78300de8eab5a26bb",
+      "solve_bounds": [
+        1290,
+        1950,
+        780,
+        1390
+      ],
+      "spacing_mm": 0.00184,
+      "stress_sha256": "3451f7a66c536d136d4098a497d0390cf92a48a79e0d6987a44faa94baf84039"
+    }
+  ],
+  "status": "completed_baseline_no_acceptance_threshold",
+  "stress_convention": [
+    "sigma_11",
+    "sigma_22",
+    "sigma_12"
+  ],
+  "thickness_mm": 2.0
+}

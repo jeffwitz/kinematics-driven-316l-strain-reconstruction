@@ -25,6 +25,10 @@ from fem_inhouse.postprocessing.metrics import (
     localization_overlap_metrics,
     signed_difference_field,
 )
+from fem_inhouse.postprocessing.section_equilibrium import (
+    SectionEquilibriumResult,
+    integrated_section_equilibrium,
+)
 from fem_inhouse.postprocessing.stress_curves import (
     direct_fe_equivalent_stress_curve,
     reconstructed_equivalent_stress,
@@ -45,6 +49,7 @@ __all__ = [
     "FieldErrorMetrics",
     "HelmholtzFilterResult",
     "LocalizationOverlapMetrics",
+    "SectionEquilibriumResult",
     "StrainComponents",
     "absolute_threshold_overlap_metrics",
     "cell_average",
@@ -54,6 +59,7 @@ __all__ = [
     "field_error_metrics",
     "helmholtz_filter_element_field",
     "instantaneous_equivalent_plastic_strain",
+    "integrated_section_equilibrium",
     "interface_gradient_ratio",
     "localization_overlap_metrics",
     "plane_stress_equivalent_strain",

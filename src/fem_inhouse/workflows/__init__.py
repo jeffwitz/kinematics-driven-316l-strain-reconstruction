@@ -45,6 +45,7 @@ from fem_inhouse.workflows.nonlocality_diagnostic import (
     run_nonlocality_diagnostic,
 )
 from fem_inhouse.workflows.partitioned import PartitionWorkflow, fingerprint_array
+from fem_inhouse.workflows.section_equilibrium import diagnose_section_equilibrium_campaigns
 
 __all__ = [
     "CoupledAlphaVisualizationData",
@@ -58,6 +59,7 @@ __all__ = [
     "collect_identification_results",
     "common_color_limits",
     "compute_reference_hardening_modulus",
+    "diagnose_section_equilibrium_campaigns",
     "estimate_reference_hardening_from_campaign",
     "fingerprint_array",
     "generate_high_fidelity_manifest",

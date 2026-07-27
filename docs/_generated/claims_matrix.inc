@@ -3,6 +3,7 @@
 | Question | Status | Claim boundary | Evidence |
 |---|---|---|---|
 | Finite-element baseline passes its numerical regression contract | **verified** | Structured small-strain plane-stress Q4 integration scope | `E-LOCAL-002` |
+| Generalized section equilibrium has been quantified on the archived band-containing cases | **reported baseline** | Interior P43 partition; lateral shear flux included; no experimental force validation | `E-EQ-001` |
 | Available Abaqus-oriented table definition reimplemented | **verified at definition level** | The versioned 1000-row generator is checked; Abaqus FE and ODB parity are excluded | `E-TABLE-001` |
 | Abaqus/Table and InHouse/Table finite-element results agree | **not demonstrated** | Original input model, ODB and extraction procedure are unavailable | `E-TABLE-001` |
 | InHouse/Table and InHouse/MFront are coherent | **verified** | Declared material-point and finite-element comparison thresholds | `E-LOCAL-001`, `E-LOCAL-002` |

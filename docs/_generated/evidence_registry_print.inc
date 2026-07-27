@@ -1,5 +1,11 @@
 <!-- Generated from validation/documentation_evidence_registry.json. -->
 
+**E-EQ-001 — What is the cross-section-integrated equilibrium baseline of the archived P43 fields?**
+: Fidelity: saved full-resolution element-centred stresses. Parameters: local and alpha 1, 2, 4; padded domain and retained core.
+: Status: **reported baseline**.
+: Conclusion: Lateral shear flux closes about 69 to 71 percent of the naive adjacent-section imbalance; the remaining RMS residual is about 1.5e-4 to 2.3e-4 of mean section force.
+: Sources: primary: `validation/reference_data/section_equilibrium_p0043_v1/report.json`.
+
 **E-TABLE-001 — Is the available Abaqus-oriented table definition generated exactly as documented?**
 : Fidelity: definition. Parameters: 1000 rows over PEEQ 0 to 0.2.
 : Status: **verified at definition level**.

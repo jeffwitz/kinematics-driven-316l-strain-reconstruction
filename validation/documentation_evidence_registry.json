@@ -9,6 +9,12 @@
       "evidence_ids": ["E-LOCAL-002"]
     },
     {
+      "question": "Generalized section equilibrium has been quantified on the archived band-containing cases",
+      "status": "reported baseline",
+      "boundary": "Interior P43 partition; lateral shear flux included; no experimental force validation",
+      "evidence_ids": ["E-EQ-001"]
+    },
+    {
       "question": "Available Abaqus-oriented table definition reimplemented",
       "status": "verified at definition level",
       "boundary": "The versioned 1000-row generator is checked; Abaqus FE and ODB parity are excluded",
@@ -64,6 +70,25 @@
     }
   ],
   "evidence": [
+    {
+      "id": "E-EQ-001",
+      "question": "What is the cross-section-integrated equilibrium baseline of the archived P43 fields?",
+      "fidelity": "saved full-resolution element-centred stresses",
+      "parameters": "local and alpha 1, 2, 4; padded domain and retained core",
+      "status": "reported baseline",
+      "conclusion": "Lateral shear flux closes about 69 to 71 percent of the naive adjacent-section imbalance; the remaining RMS residual is about 1.5e-4 to 2.3e-4 of mean section force.",
+      "sources": [
+        {
+          "path": "validation/reference_data/section_equilibrium_p0043_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_baseline_no_acceptance_threshold"},
+            {"path": "/case_count", "operator": "equals", "expected": 4},
+            {"path": "/partition_id", "operator": "equals", "expected": 43}
+          ]
+        }
+      ]
+    },
     {
       "id": "E-TABLE-001",
       "question": "Is the available Abaqus-oriented table definition generated exactly as documented?",

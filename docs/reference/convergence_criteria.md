@@ -29,6 +29,29 @@ Helmholtz residual, finite values and the minimum yield-surface radius. Failure
 does not commit MGIS state. Relaxation parameters and optional acceleration
 must be recorded in the campaign manifest.
 
+## Integrated section equilibrium
+
+Saved plane-stress campaigns can be inspected with:
+
+```bash
+fem-inhouse diagnose-section-equilibrium \
+  --campaign local results/my-local-campaign \
+  --campaign coupled results/my-coupled-campaign \
+  --partition-id 0 \
+  --thickness-mm 2.0 \
+  --output validation/section-equilibrium
+```
+
+For an interior DIC-Dirichlet partition, constancy of
+`t integral sigma_yy dx` is not required: shear traction crosses the
+artificial lateral cuts. The diagnostic reports the conservative balance
+between the section-force increment and the lateral `sigma_12` flux. It also
+reports the naive section-force dispersion, but that value is descriptive and
+must not be interpreted alone as an equilibrium residual.
+
+The current archived run is a baseline without an acceptance threshold. Its
+source and claim boundary are recorded under evidence ID `E-EQ-001`.
+
 ## Interpretation
 
 Failure at one parameter pair is a numerical censoring event unless a physical

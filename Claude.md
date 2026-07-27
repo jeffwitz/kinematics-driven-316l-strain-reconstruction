@@ -166,12 +166,27 @@ autorisées :
 
 - [ ] exécuter le contrôle sur un domaine couvrant réellement toute la
   section utile ; ou
-- [ ] inclure explicitement les flux de cisaillement des bords artificiels
+- [x] inclure explicitement les flux de cisaillement des bords artificiels
   dans le résidu intégré.
 
 Le diagnostic doit rapporter séparément la résultante, le terme de bord et le
 résidu d'équilibre. L'épaisseur s'élimine dans la dispersion relative mais est
 obligatoire pour comparer à une force mesurée.
+
+**Résultat V1 au 2026-07-27 :** la commande
+`diagnose-section-equilibrium` charge les champs `S` après contrôle
+d'empreinte et analyse le domaine paddé ainsi que le cœur. Sur les quatre
+campagnes P43 archivées, la dispersion descriptive de la résultante vaut
+`2,54–5,45 %`. Le flux de cisaillement latéral ferme `68,5–70,9 %` du
+déséquilibre naïf entre sections ; le résidu RMS restant vaut
+`1,53e-4–2,27e-4` de la résultante moyenne. Ce résultat constitue une base
+numérique sans seuil d'acceptation, car les contraintes de bord sont
+approchées aux centres des cellules. Voir
+`validation/section_equilibrium_p0043_preregistration.md` et
+`validation/section_equilibrium_p0043_results.md`.
+
+La validation contre une force physique reste bloquée : aucune série de
+charge synchronisée et aucune largeur utile confirmée ne sont disponibles.
 
 #### Calibration de force, conditionnelle aux données
 

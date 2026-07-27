@@ -36,6 +36,7 @@ from fem_inhouse.workflows import (
     CoupledValidationThresholds,
     PartitionWorkflow,
     collect_identification_results,
+    diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
     generate_high_fidelity_manifest,
     generate_joint_identification_report,
@@ -343,6 +344,23 @@ def _parser() -> argparse.ArgumentParser:
         default="all",
     )
     diagnose.add_argument("--overwrite", action="store_true")
+
+    section_equilibrium = commands.add_parser(
+        "diagnose-section-equilibrium",
+        help="evaluate generalized section equilibrium for saved partition campaigns",
+    )
+    section_equilibrium.add_argument(
+        "--campaign",
+        action="append",
+        nargs=2,
+        metavar=("LABEL", "PATH"),
+        required=True,
+        help="repeat for each campaign to compare",
+    )
+    section_equilibrium.add_argument("--partition-id", type=int, required=True)
+    section_equilibrium.add_argument("--thickness-mm", type=float, required=True)
+    section_equilibrium.add_argument("--output", type=Path, required=True)
+    section_equilibrium.add_argument("--overwrite", action="store_true")
 
     identify = commands.add_parser(
         "identify-nonlocal",
@@ -673,6 +691,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(nonlocality_report)
+        return 0
+    if args.command == "diagnose-section-equilibrium":
+        section_report = diagnose_section_equilibrium_campaigns(
+            tuple((label, Path(path)) for label, path in args.campaign),
+            partition_id=args.partition_id,
+            output_directory=args.output,
+            thickness_mm=args.thickness_mm,
+            overwrite=args.overwrite,
+        )
+        _print_json(section_report)
         return 0
     if args.command == "identify-nonlocal":
         if args.workers < 1:
