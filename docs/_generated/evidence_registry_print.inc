@@ -24,6 +24,12 @@
 : Conclusion: A positive Helmholtz length improves pre-registered metrics without modifying mechanics.
 : Sources: primary: `validation/reference_data/nonlocality_helmholtz_article_p0042_confirmatory_v1/confirmation-report.json`.
 
+**E-3D-001 — Can a three-dimensional law be condensed without changing the 2D solver?**
+: Fidelity: small DIC-driven FEM. Parameters: native plane stress versus 3D condensation.
+: Status: **verified**.
+: Conclusion: Native and condensed MFront paths agree within declared tolerances while the global problem remains two-dimensional.
+: Sources: primary: `validation/reference_data/mfront_3d_condensed_dic_10x10_v1/report.json`.
+
 **E-NL-002 — Does constitutive micromorphic coupling redistribute plastic localization?**
 : Fidelity: full-resolution band-containing ROI. Parameters: fixed ell, alpha 0, 1, 2 and 4.
 : Status: **verified**.
