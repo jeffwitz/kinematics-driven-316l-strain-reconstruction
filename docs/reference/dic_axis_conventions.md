@@ -16,22 +16,23 @@ transpose, flip or component exchange.
 | FEM nodal `U` | `(x node, y node, 2)` | `[u_x, u_y]` in millimetres |
 | element EVM | `(x element, y element)` | dimensionless |
 
-For this experiment, image columns map to canonical `x` and image rows map to
-canonical `y`. Conversion between image and canonical array support therefore
-transposes the first two axes once:
+For this experiment, the tensile direction is the image-column direction.
+Image rows map to canonical transverse `x`; image columns map to canonical
+tensile `y`. The array support is retained and the flow components are
+exchanged:
 
 ```text
-canonical[x, y, ux] = image_flow[row=y, column=x, dcolumn] * pixel_size
-canonical[x, y, uy] = image_flow[row=y, column=x, drow]    * pixel_size
+canonical[x=row, y=column, ux] = image_flow[row, column, drow]    * pixel_size
+canonical[x=row, y=column, uy] = image_flow[row, column, dcolumn] * pixel_size
 ```
 
-The pure functions `image_flow_to_canonical(...)` and
-`canonical_to_image_flow(...)` implement this contract and are exact inverses
-up to floating-point rounding.
+The pure functions implement this contract and are exact inverses up to
+floating-point rounding. They do not transpose the spatial support.
 
 ## Historical U and V names
 
-The received final fields use an experiment-specific convention:
+Direct reference-to-final correlation identifies the received convention
+unambiguously:
 
 ```text
 V_40 -> u_x, transverse
@@ -40,7 +41,11 @@ U_40 -> u_y, tensile
 
 This is consistent across the raw-data README, prepared-data manifest,
 preparation code and its regression tests. It is not inferred from generic
-letter names.
+letter names. Among the eight component/sign candidates, `U=+flow_column` and
+`V=+flow_row` gives correlations 0.9995 and 0.9969 with the archived fields;
+the next candidates have errors tens of pixels larger. The residual biases
+are consistent with an unavailable historical OpenCV binary and frame
+provenance, not with a component ambiguity.
 
 The historical optical-flow script itself labels OpenCV component zero `u`
 and component one `v`. Those local variable names do not override the
