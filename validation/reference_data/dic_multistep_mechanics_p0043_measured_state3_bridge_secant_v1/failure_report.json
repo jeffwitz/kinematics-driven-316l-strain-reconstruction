@@ -1,0 +1,142 @@
+{
+  "boundary_history_predictor": "secant-corrected-elastic",
+  "config": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 660,
+      "ny": 610,
+      "scale_factor": 1.84
+    },
+    "nonlocal_plasticity": {
+      "aitken_residual_growth_factor": 1.25,
+      "coupling_modulus_mpa": 0.0,
+      "enabled": false,
+      "length_scale_mm": 0.05888,
+      "maximum_helmholtz_residual": 1e-10,
+      "maximum_iterations": 15,
+      "maximum_relaxation": 0.8,
+      "minimum_relaxation": 0.05,
+      "record_iteration_history": false,
+      "relative_tolerance": 1e-06,
+      "relaxation": 0.5,
+      "relaxation_strategy": "fixed"
+    },
+    "solver": {
+      "boundary_history_predictor": "secant-corrected-elastic",
+      "constitutive_backend": "mfront-native-plane-stress",
+      "hardening_mode": "ludwik",
+      "increments": 40,
+      "line_search_armijo_coefficient": 0.0001,
+      "line_search_maximum_trials": 12,
+      "line_search_minimum_factor": 0.000244140625,
+      "line_search_reduction": 0.5,
+      "local_plane_stress_relative_tolerance": 1e-10,
+      "local_plane_stress_tolerance_mpa": 1e-08,
+      "max_newton_iterations": 15,
+      "maximum_cbb_condition_number": 1000000000000.0,
+      "maximum_local_plane_stress_iterations": 15,
+      "mfront_library": "build/mfront/src/libBehaviour.so",
+      "mfront_threads": 8,
+      "minimum_step_divisor": 1024,
+      "newton_line_search": false,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-06
+    }
+  },
+  "constitutive_state_committed_after_failure": false,
+  "created_at_utc": "2026-07-29T22:14:22.523623+00:00",
+  "diagnostics": {
+    "attempted_increments": 14,
+    "boundary_history_predictor": "secant-corrected-elastic",
+    "converged_increments": 3,
+    "cutbacks": 11,
+    "first_constitutive_failure": {
+      "component_index": 2,
+      "component_maxima": [
+        20.555550313735928,
+        18.131487785979086,
+        69.52868894779012
+      ],
+      "component_minima": [
+        -29.924537678238465,
+        -29.892640107756424,
+        -41.16540772952911
+      ],
+      "element_index": 190740,
+      "gauss_point_index": 1,
+      "maximum_absolute_engineering_strain": 69.52868894779012,
+      "newton_iteration": 7,
+      "pseudo_time": 0.1,
+      "step_size": 0.025
+    },
+    "first_cutback": {
+      "failed_step_size": 0.025,
+      "increment": 4,
+      "newton_iteration": 7,
+      "next_step_size": 0.0125,
+      "pseudo_time": 0.1,
+      "reason": "MFront integration failed with status -1"
+    },
+    "fixed_point_history": [],
+    "last_constitutive_failure": {
+      "component_index": 2,
+      "component_maxima": [
+        20.058589102086927,
+        47.80308884158772,
+        56.32171774162629
+      ],
+      "component_minima": [
+        -13.25570637759346,
+        -24.216602670359855,
+        -90.23043064979422
+      ],
+      "element_index": 190740,
+      "gauss_point_index": 1,
+      "maximum_absolute_engineering_strain": 90.23043064979422,
+      "newton_iteration": 2,
+      "pseudo_time": 0.0750244140625,
+      "step_size": 2.44140625e-05
+    },
+    "last_cutback": {
+      "failed_step_size": 2.44140625e-05,
+      "increment": 14,
+      "newton_iteration": 2,
+      "next_step_size": 1.220703125e-05,
+      "pseudo_time": 0.0750244140625,
+      "reason": "MFront integration failed with status -1"
+    },
+    "last_failed_fixed_point_history": [],
+    "line_search_evaluations": 0,
+    "line_search_failures": 0,
+    "line_search_reductions": 0,
+    "minimum_accepted_line_search_factor": 1.0,
+    "relaxation_strategy": "fixed",
+    "secant_predictor_fallbacks": 0,
+    "secant_predictor_uses": 13,
+    "total_newton_iterations": 28
+  },
+  "error": "run_fem: increment cutback below minimum (1.22e-05) - solution not converging",
+  "git_sha": "1ac93944f4e7d39efcec6d60c7a668aeac87d6b9",
+  "mechanics_completed": false,
+  "micromorphic_identification_run": false,
+  "mode": "measured",
+  "newton_line_search_enabled": false,
+  "nominal_increments": 40,
+  "partition_id": 43,
+  "schema_version": 1,
+  "source": {
+    "campaign_manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+    "history_report_sha256": "398170ecc5792de113fdb4d1473806048e2ff3dace8bc4cb5e887aecd1fee43b",
+    "history_sha256": "9165ec6b9b8370c71509c0c283cbb33aab34895901644ad968194e8d7a274b56",
+    "prepared_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "status": "failed_local_measured_boundary_history"
+}
