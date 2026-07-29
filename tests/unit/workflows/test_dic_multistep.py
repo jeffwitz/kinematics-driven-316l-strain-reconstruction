@@ -26,3 +26,11 @@ def test_anchor_history_rejects_nonzero_reference() -> None:
     raw = np.ones((3, 2, 2, 2))
     with pytest.raises(ValueError, match="start from zero"):
         anchor_displacement_history(raw, raw[-1])
+
+
+def test_float32_history_endpoint_can_be_restored_exactly() -> None:
+    endpoint = np.array([[[0.123456789, -0.234567891]]], dtype=np.float64)
+    stored = np.asarray(endpoint, dtype=np.float32).astype(np.float64)
+    assert np.max(np.abs(stored - endpoint)) > 0.0
+    stored[...] = endpoint
+    np.testing.assert_array_equal(stored, endpoint)
