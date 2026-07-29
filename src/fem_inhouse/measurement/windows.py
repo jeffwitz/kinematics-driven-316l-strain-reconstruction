@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
-from typing import Any, Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
