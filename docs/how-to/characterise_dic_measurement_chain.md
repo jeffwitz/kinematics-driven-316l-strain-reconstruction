@@ -127,6 +127,32 @@ photometric residual, geometric validity mask, fixed-decile CSV, figures and
 report. It does not rerun mechanics. The unmasked metrics remain primary;
 the q90 exclusion is only a declared sensitivity.
 
+## Propagate the repeated-frame residual
+
+After producing the four primary legacy-profile V3 replays, propagate the
+measured repeated-frame residual without rerunning mechanics:
+
+```bash
+fem-inhouse propagate-dic-uncertainty \
+  --final-image /path/to/DIC_images/000334.tif \
+  --repeat-image /path/to/DIC_images/000335.tif \
+  --prepared-case data/processed/case_study \
+  --replay local 0 validation/reference_data/V3/local_legacy_script_2021 \
+  --replay alpha1 1 validation/reference_data/V3/a100_legacy_script_2021 \
+  --replay alpha2 2 validation/reference_data/V3/a200_legacy_script_2021 \
+  --replay alpha4 4 validation/reference_data/V3/a400_legacy_script_2021 \
+  --output validation/reference_data/my_dic_uncertainty \
+  --figure-output validation/figures/my_dic_uncertainty \
+  --samples 256 \
+  --seed 20260729
+```
+
+The command centres the measured repeat flow and samples contiguous
+solve-support-sized windows. It deliberately does not wrap the residual at
+the image edges, because a periodic join would introduce a non-physical EVM
+line. The output intervals quantify sensitivity to this measured residual;
+they are not confidence intervals. PEEQ is explicitly left unpropagated.
+
 ## Common failures
 
 `DISFlow support requires the 'measurement' optional dependency`

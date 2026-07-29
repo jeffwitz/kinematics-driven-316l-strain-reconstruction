@@ -445,6 +445,32 @@
       ]
     },
     {
+      "id": "E-DIC-006",
+      "question": "Does the measured repeated-frame DIC residual change the ranking of the archived P43 candidates?",
+      "fidelity": "256 translated measured-residual surrogate samples on four immutable V3 replays",
+      "parameters": "alpha 0, 1, 2 and 4; legacy-source profile; contiguous full-support windows; seed 20260729; no mechanical rerun",
+      "status": "verified sensitivity",
+      "conclusion": "The measured repeat-frame residual changes metric values but not their objective-dependent ranking: alpha 4 is always best for L2, RMSE, correlation and active-area error, alpha 1 for absolute-q90 IoU, and the local model for relative top-10 IoU. These are surrogate sensitivity intervals, not confidence intervals.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_surrogate_sensitivity_no_acceptance_threshold"},
+            {"path": "/sample_count", "operator": "equals", "expected": 256},
+            {"path": "/seed", "operator": "equals", "expected": 20260729},
+            {"path": "/mechanics_rerun", "operator": "equals", "expected": false},
+            {"path": "/micromorphic_identification_run", "operator": "equals", "expected": false},
+            {"path": "/ranking_probabilities/relative_l2/alpha4", "operator": "equals", "expected": 1.0},
+            {"path": "/ranking_probabilities/pearson/alpha4", "operator": "equals", "expected": 1.0},
+            {"path": "/ranking_probabilities/absolute_q90_iou/alpha1", "operator": "equals", "expected": 1.0},
+            {"path": "/ranking_probabilities/top10_iou/local", "operator": "equals", "expected": 1.0},
+            {"path": "/peeq_max/status", "operator": "equals", "expected": "not_propagated_requires_mechanical_rerun"}
+          ]
+        }
+      ]
+    },
+    {
       "id": "E-EBSD-001",
       "question": "What structural scale is carried by the archived grain-mean Schmid field?",
       "fidelity": "independent EBSD/Schmid spatial statistic",
@@ -587,6 +613,14 @@
     {
       "source": "validation/figures/dic_photometric_quality_p0043_v1/photometric_deciles.png",
       "target": "evidence/p43_photometric_deciles.png"
+    },
+    {
+      "source": "validation/figures/dic_uncertainty_propagation_p0043_v1/metric_intervals.png",
+      "target": "evidence/p43_dic_uncertainty_intervals.png"
+    },
+    {
+      "source": "validation/figures/dic_uncertainty_propagation_p0043_v1/ranking_probabilities.png",
+      "target": "evidence/p43_dic_uncertainty_rankings.png"
     }
   ]
 }

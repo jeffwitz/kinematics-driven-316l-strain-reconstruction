@@ -198,8 +198,44 @@ Excluding the worst photometric decile retains 90.14% of the core, changes
 relative L2 by at most about 1.1%, changes FEM/DIC correlation by less than
 0.0015 and does not change candidate ordering. This does **not** support
 discarding pixels from the main comparison. It also does not turn the
-photometric residual into an uncertainty distribution: propagated
-measurement uncertainty remains a separate task.
+photometric residual into an uncertainty distribution.
+
+## The measured repeat-frame residual does not remove the objective conflict
+
+Evidence `E-DIC-006` propagates the two-component residual measured between
+the candidate repeated final frames. It uses 256 signed, contiguous windows
+of the complete P43 solve-support size. The residual is added to the prepared
+DIC displacement before the common EVM reconstruction; all FEM fields remain
+immutable.
+
+```{figure} ../_static/evidence/p43_dic_uncertainty_intervals.png
+:alt: Surrogate sensitivity intervals for P43 L2, correlation and localisation metrics.
+:width: 88%
+
+The measured structured residual produces visible metric intervals, but the
+four candidates remain separated differently by amplitude and localisation.
+```
+
+Across every surrogate draw, \(\alpha=4\) is best for RMSE, relative L2,
+correlation and absolute-q90 active-area error. Conversely, \(\alpha=1\) is
+best for absolute-q90 IoU, while the local model is best for relative top-10 %
+IoU.
+
+```{figure} ../_static/evidence/p43_dic_uncertainty_rankings.png
+:alt: Fraction of surrogate residual samples for which each P43 candidate ranks first.
+:width: 96%
+
+The ranking is stable under this measured-residual sensitivity, but there is
+no candidate that wins all objective families.
+```
+
+The first pilot used periodic translations and was rejected because the
+non-matching crop edges created an artificial EVM seam. The versioned
+amendment fixes contiguous windows before the accepted rerun. The reported
+limits remain **surrogate sensitivity intervals**, not confidence intervals:
+they sample one measured repeated-frame residual, not all acquisition and
+correlation uncertainty. PEEQ is not propagated because doing so requires a
+mechanical rerun.
 
 ## An independent structural scale
 
