@@ -74,9 +74,9 @@ final coordinate residual and the minimum forward-map Jacobian. The
 artefacts.
 
 The canonical axis contract is defined in
-{doc}`dic_axis_conventions`. Image rows map to canonical \(x,u_x\); image
-columns map to canonical \(y,u_y\). OpenCV flow itself remains ordered
-`(column displacement, row displacement)`.
+{doc}`DIC axis conventions </reference/dic_axis_conventions>`. Image rows map
+to canonical \(x,u_x\); image columns map to canonical \(y,u_y\). OpenCV flow
+itself remains ordered `(column displacement, row displacement)`.
 
 The unavailable historical mask is not guessed. New V3 artefacts use an
 explicit all-valid boolean mask and record its type, unique value and hash.

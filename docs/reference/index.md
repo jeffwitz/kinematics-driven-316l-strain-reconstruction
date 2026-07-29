@@ -10,7 +10,7 @@ argue for the scientific model.
 - {doc}`constitutive_models`
 - {doc}`nonlocal_parameters`
 - {doc}`tensor_conventions`
-- {doc}`dic_axis_conventions`
+- {doc}`DIC axis conventions </reference/dic_axis_conventions>`
 - {doc}`observation_operator`
 - {doc}`convergence_criteria`
 
