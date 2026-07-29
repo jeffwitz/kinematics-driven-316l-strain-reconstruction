@@ -1,0 +1,144 @@
+{
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-29T17:41:51.468992+00:00",
+  "endpoint_compatibility": {
+    "anchored_final_max_abs_difference_mm": 0.0,
+    "component_rms_difference_mm": 0.0007764130821296872,
+    "maximum_absolute_component_difference_mm": 0.0012085771346092289,
+    "relative_vector_norm": 0.01583142740240419
+  },
+  "git_sha": "9aa8ce3e0754be46978ff7ffea156131d9fff4c8",
+  "load_cell_synchronisation_available": false,
+  "mask": {
+    "historical_mask_reproduced": false,
+    "mode": "declared_all_valid"
+  },
+  "mechanics_rerun": false,
+  "micromorphic_identification_run": false,
+  "nonproportionality": {
+    "final_rms_deviation_from_proportional_mm": 0.0,
+    "maximum_rms_deviation_from_proportional_mm": 0.0028259855535771347
+  },
+  "ordered_pseudo_time_only": true,
+  "outputs": {
+    "anchored_history_mm.npy": "331292c050885ce00e12d717354b18fe77eaa01fb222d7974681d80f7e7f6500",
+    "boundary_history_diagnostic.png": "c635ffd0c239fdb55595a4e5a3d659a2d132cba0d0da71cbc0130b7b6533da62",
+    "endpoint_correction_mm.npy": "d820980c3d36ad98474ab1d3bebd280bf3debdbf64b4126546fd1da73ffcdb74",
+    "raw_direct_history_mm.npy": "2cecc3c0cb97b825efa3383a8e0e98352b1eb46c8541e7c56bfb5c01d7a875fb"
+  },
+  "partition_id": 43,
+  "pixel_size_mm": 0.00184,
+  "profile": {
+    "explicitly_set": [
+      "finest_scale",
+      "patch_size",
+      "patch_stride",
+      "variational_refinement_alpha",
+      "variational_refinement_delta",
+      "variational_refinement_epsilon",
+      "variational_refinement_gamma",
+      "variational_refinement_iterations"
+    ],
+    "left_to_factory": [
+      "gradient_descent_iterations",
+      "preset",
+      "use_mean_normalization",
+      "use_spatial_propagation"
+    ],
+    "name": "legacy_script_2021",
+    "queried_opencv": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 16,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.0020000000949949026,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "requested": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": null,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "preset": null,
+      "use_mean_normalization": null,
+      "use_spatial_propagation": null,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.002,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "source": "setters explicitly present in references/legacy_dic/dic_displacement_fields.py"
+  },
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "source": {
+    "campaign_manifest": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/constitutive-local-p0043-pad150/manifest.json",
+    "campaign_manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+    "image_hashes": {
+      "000294.tif": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da",
+      "000295.tif": "8518dc4dbafdefa2371667875824052510acf412090650b40737049d63837282",
+      "000296.tif": "a163908260013187840ab2c48e33f6a18bb8fe73c40d4ca13d0e5758cbb49363",
+      "000297.tif": "8de9bc177e093835c733c651af1da24866236a7b74758257af63f58f0ce01e91",
+      "000298.tif": "c4adbfabed52549aae37f21c5d74aad53eea166600921dccad63fee8fca1c4e0",
+      "000299.tif": "99683de8385130cd0c9be24ac967775cff0ee01422a8079ebf3026223da11c6f",
+      "000300.tif": "0b7b29fd24726c983c57bda38dc122452fb1c7e9dd88ee21eda4422ac16a53de",
+      "000301.tif": "5b04c4730491f6db84b8e431b658a9f453820b9d07094695d287250a55b44ac9",
+      "000302.tif": "d006772968fee09ec089b925289d2884fc4ff5dbc8aad57177992648f26fbf20",
+      "000303.tif": "01892ea3728487660275b1296032293730c91ceed7ff5fd1738946e1f159e8dc",
+      "000304.tif": "c5c2f0f63ff7af59ee134072487026e60510949510ede6bff800b996215b2693",
+      "000305.tif": "a3957d903d28165474d628368cbb7b467d5cfd62dd3f4d8cf085ef378788b8c6",
+      "000306.tif": "fc8d58d82a5cf420f2b3953fe0a9f9e63da6ebc616590aaa35f2e4a29f62cfde",
+      "000307.tif": "67a4d0fdc7d599cadf063994e7ec42f1db3055c0ad46cae97b94ea0e7c954a75",
+      "000308.tif": "d3bc5ed80414465df76dd2761e4138e1a81be8c7bf03d15402e4464642535f05",
+      "000309.tif": "7aeb0bec6cc1266670a7035c21d2753c21d2bc1a647ea1ff20f994697cb8cea4",
+      "000310.tif": "9e5a63a30a59756310f8472a24a53e31b7a2235ce114cd5b45805e3de3bab9e2",
+      "000311.tif": "1982ab8e3025a6eade5b55ffabb68e096e54fdd2d952012726661d3124490093",
+      "000312.tif": "a9cb251fd0a17059a9b4c4ee49f9d85d0d14ccc041ffef6e6ad2f95ea2550943",
+      "000313.tif": "c23906366ed02075c47c0001afa0fb7f8bdd3e97611a0802c076c8bf8acd7925",
+      "000314.tif": "67c94d04c9502acdaf2209a7e38225ecf4ea1a0aadc9c31d57f022751fecb38b",
+      "000315.tif": "f224dc88317a587ca6922c25d41344492ad02df3f9ba2588e7f60ddbf5b746cb",
+      "000316.tif": "82943bed31f33e05190ff19b15c4a45283d214f32e19293441fe97dbf124c62d",
+      "000317.tif": "4157f369bbc3390a1671ecd1ceae994cb63a696043139c3f9c3ce8190f3b3158",
+      "000318.tif": "3a4aa24fcdd976a089fd12228b5f8a6dce7cc95c9325eb858bfad940f76d795c",
+      "000319.tif": "20e001330fdc5e56a7ac211a7d676ecf1a0ba58879eb4ae3475eef833a93df04",
+      "000320.tif": "1670ee4104e9fa460c9650c4075df98cdad6d114c797158a602cd8efc90151b2",
+      "000321.tif": "e8352bfa9f89d2ce3a355da8d4552157e5676e754b66fad7d4b84918f7a299be",
+      "000322.tif": "de4c673e9d3a8de7c328379e67da7a142a790d6ea5cfca4edce6b30577572d9c",
+      "000323.tif": "7d6a807f2c8ed5cd0d3d0a105c3c164c162663ef79097872996a4fa15b3fa008",
+      "000324.tif": "f56351f0f3f965ca3769e889e355793b3e96a85b27344379e24926339afd3a58",
+      "000325.tif": "a24412a4a2cb98c274f6cd66b2e77b558d72b17eb334340b26f4cd117f6b1414",
+      "000326.tif": "822ea2ccfece524dacb5b5c90ea0e7a3f6bfbaac54d99329c87589dfc946819e",
+      "000327.tif": "0c5512e0cdf33aa959f471b01b2fa358e73e776f78b4db04db06945ac3277cc7",
+      "000328.tif": "c0b59a4d5aa63d93269418efa76f3d459540f2fdf096ba709de3f4a2fa68dc66",
+      "000329.tif": "56432d503058b7b7232402cc0b7eca05fe0d43a0513f384a87d7d19d70178092",
+      "000330.tif": "54edfbc48c9b8073c285c9ebeb6e7bb8f91b7cde6b0d1e4f52cc32fe15dc4ba0",
+      "000331.tif": "2ba08bd27e7e03ca5b3dce44caf7fea8d64c7b58426905d3803488acdf69e1fa",
+      "000332.tif": "fdce70057e94db66141c8aa03546afaa0bd6dd1067d562893377e3e7a9d0ecd2",
+      "000333.tif": "9f6eefd3b46700dab3d1d31b1a1b0489f701d36c63ae2ce12827816662c8af12",
+      "000334.tif": "04f38d166cc186403b85424ccb14f15621c532fef0f1338e6bd6207ba8b8d830"
+    },
+    "prepared_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "status": "completed_direct_reference_history_endpoint_anchored",
+  "step_count": 40
+}
