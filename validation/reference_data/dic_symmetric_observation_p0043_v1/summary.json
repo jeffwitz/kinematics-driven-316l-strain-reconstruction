@@ -1,0 +1,194 @@
+{
+  "mechanics_rerun": false,
+  "partition_id": 43,
+  "primary_profile": "legacy_script_2021",
+  "rows": [
+    {
+      "alpha": 0,
+      "case": "local",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.16132616487455198,
+        "absolute_q90_iou": 0.3086242484070717,
+        "pearson": 0.6042249226619093,
+        "relative_l2": 0.48583813694362415,
+        "rmse": 0.002036047217157085,
+        "top10_iou": 0.29873152566042127
+      },
+      "profile": "legacy_script_2021",
+      "raw": {
+        "absolute_q90_active_fraction": 0.17801971326164875,
+        "absolute_q90_iou": 0.2041838081192269,
+        "pearson": 0.37910328816632,
+        "relative_l2": 0.9515604378263605,
+        "rmse": 0.00398779312299634,
+        "top10_iou": 0.20726958026828213
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 1,
+      "case": "a100",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.15003584229390682,
+        "absolute_q90_iou": 0.3225898189401839,
+        "pearson": 0.6512120234751524,
+        "relative_l2": 0.3542009218665564,
+        "rmse": 0.001484382856022189,
+        "top10_iou": 0.288981288981289
+      },
+      "profile": "legacy_script_2021",
+      "raw": {
+        "absolute_q90_active_fraction": 0.18670250896057347,
+        "absolute_q90_iou": 0.24478680361033303,
+        "pearson": 0.46243020546253133,
+        "relative_l2": 0.6173908380463329,
+        "rmse": 0.0025873573976930935,
+        "top10_iou": 0.24303853865003341
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 2,
+      "case": "a200",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.13538530465949822,
+        "absolute_q90_iou": 0.3085429638854296,
+        "pearson": 0.657948158073428,
+        "relative_l2": 0.3197310037509214,
+        "rmse": 0.001339926553566223,
+        "top10_iou": 0.2817273458137131
+      },
+      "profile": "legacy_script_2021",
+      "raw": {
+        "absolute_q90_active_fraction": 0.1746326164874552,
+        "absolute_q90_iou": 0.25765285186704967,
+        "pearson": 0.48136062696265325,
+        "relative_l2": 0.5255719166883995,
+        "rmse": 0.002202563275746923,
+        "top10_iou": 0.24860147684045647
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 4,
+      "case": "a400",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.10258064516129033,
+        "absolute_q90_iou": 0.25488454706927177,
+        "pearson": 0.6635857571812368,
+        "relative_l2": 0.29168216792883933,
+        "rmse": 0.0012223796798701528,
+        "top10_iou": 0.2526658435290156
+      },
+      "profile": "legacy_script_2021",
+      "raw": {
+        "absolute_q90_active_fraction": 0.14849462365591398,
+        "absolute_q90_iou": 0.26676411474511236,
+        "pearson": 0.5035829730906514,
+        "relative_l2": 0.43413304102623257,
+        "rmse": 0.0018193618467624976,
+        "top10_iou": 0.24616157668471889
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 0,
+      "case": "local",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.16485663082437277,
+        "absolute_q90_iou": 0.291701262946292,
+        "pearson": 0.5726178622889979,
+        "relative_l2": 0.5217237614130336,
+        "rmse": 0.002186436452338438,
+        "top10_iou": 0.29376304196614883
+      },
+      "profile": "declared_medium_v4",
+      "raw": {
+        "absolute_q90_active_fraction": 0.17801971326164875,
+        "absolute_q90_iou": 0.2041838081192269,
+        "pearson": 0.37910328816632,
+        "relative_l2": 0.9515604378263605,
+        "rmse": 0.00398779312299634,
+        "top10_iou": 0.20726958026828213
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 1,
+      "case": "a100",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.15171146953405018,
+        "absolute_q90_iou": 0.3042529482774631,
+        "pearson": 0.6285323980655037,
+        "relative_l2": 0.3705732628627136,
+        "rmse": 0.001552995953242757,
+        "top10_iou": 0.2769609245380171
+      },
+      "profile": "declared_medium_v4",
+      "raw": {
+        "absolute_q90_active_fraction": 0.18670250896057347,
+        "absolute_q90_iou": 0.24478680361033303,
+        "pearson": 0.46243020546253133,
+        "relative_l2": 0.6173908380463329,
+        "rmse": 0.0025873573976930935,
+        "top10_iou": 0.24303853865003341
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 2,
+      "case": "a200",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.1360304659498208,
+        "absolute_q90_iou": 0.2886986301369863,
+        "pearson": 0.6377289628609394,
+        "relative_l2": 0.3312443895084402,
+        "rmse": 0.0013881767736480032,
+        "top10_iou": 0.2715050700694998
+      },
+      "profile": "declared_medium_v4",
+      "raw": {
+        "absolute_q90_active_fraction": 0.1746326164874552,
+        "absolute_q90_iou": 0.25765285186704967,
+        "pearson": 0.48136062696265325,
+        "relative_l2": 0.5255719166883995,
+        "rmse": 0.002202563275746923,
+        "top10_iou": 0.24860147684045647
+      },
+      "status": "completed_symmetric_image_observation"
+    },
+    {
+      "alpha": 4,
+      "case": "a400",
+      "evm_post_filter_applied": false,
+      "observed": {
+        "absolute_q90_active_fraction": 0.10967741935483871,
+        "absolute_q90_iou": 0.2718773779758669,
+        "pearson": 0.6440107629082087,
+        "relative_l2": 0.30019968893539856,
+        "rmse": 0.0012580748499767644,
+        "top10_iou": 0.2609457092819615
+      },
+      "profile": "declared_medium_v4",
+      "raw": {
+        "absolute_q90_active_fraction": 0.14849462365591398,
+        "absolute_q90_iou": 0.26676411474511236,
+        "pearson": 0.5035829730906514,
+        "relative_l2": 0.43413304102623257,
+        "rmse": 0.0018193618467624976,
+        "top10_iou": 0.24616157668471889
+      },
+      "status": "completed_symmetric_image_observation"
+    }
+  ],
+  "schema_version": 1,
+  "sensitivity_profile": "declared_medium_v4",
+  "status": "completed_symmetric_image_observation"
+}
