@@ -505,6 +505,12 @@ Artefacts principaux :
 `validation/reference_data/dic_symmetric_observation_p0043_v1/` et
 `docs/explanation/current_evidence.md`.
 
+Validation finale A0--A8 : Ruff vert globalement ; mypy vert sur 61 fichiers
+source ; `378` tests verts avec MGIS/MFront réel ; job ciblé measurement
+`2 passed, 376 deselected`, aucun test OpenCV ignoré ; Sphinx HTML et
+linkcheck stricts verts ; PDF LuaLaTeX strict compilé. La CI contient
+désormais un job OpenCV dédié qui échoue si un test measurement est sauté.
+
 ### Lot V4 — Valeur informative réelle des cartes
 
 - [x] Baseline homogène : mêmes conditions de bord, `sigma_y` et `K`
