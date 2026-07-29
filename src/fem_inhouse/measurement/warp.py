@@ -48,7 +48,7 @@ def _inputs(
     return np.ascontiguousarray(image), np.ascontiguousarray(displacement)
 
 
-def _minimum_jacobian(displacement: NDArray[np.float32]) -> float:
+def _minimum_jacobian(displacement: NDArray[np.float64]) -> float:
     du_drow, du_dcolumn = np.gradient(displacement[..., 0].astype(np.float64))
     dv_drow, dv_dcolumn = np.gradient(displacement[..., 1].astype(np.float64))
     determinant = (1.0 + du_dcolumn) * (1.0 + dv_drow) - du_drow * dv_dcolumn
