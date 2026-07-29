@@ -13,5 +13,6 @@
 | Micromorphic interaction redistributes plasticity | **verified** | Converged full-resolution band-containing reconstruction campaigns | `E-NL-002` |
 | Spatial length affects morphology independently of coupling strength | **supported** | Validated reduced-fidelity constant-Achi and fixed-alpha experiments | `E-ID-001` |
 | An EBSD/Schmid structural correlation scale has been measured independently of FEM/DIC agreement | **verified** | Grain-mean maximum-Schmid map and declared 1.84 um grid; not a direct micromorphic or material length | `E-EBSD-001` |
+| The declared DISFlow reproduction chain has a measured noise upper bound and spatial transfer | **verified for the reproduction implementation** | Candidate final-state repeat without acquisition log; OpenCV 4.14 reproduction, not bitwise historical DISFlow | `E-DIC-001` |
 | Hchi and ell statistically identified | **not demonstrated** | The short-length high-coupling region remains numerically censored | `E-ID-001` |
 | Transferable material internal length identified | **not claimed** | Requires unchanged-parameter transfer to independent observations | `E-ID-001` |

@@ -12,6 +12,7 @@ authoritative option list for the installed revision.
 | `prepare-material-map-control` | derive homogeneous or jointly translated material-map controls |
 | `partition` | create, solve, resume and stitch partition campaigns |
 | `diagnose-section-equilibrium` | evaluate generalized section balance including lateral shear flux |
+| `characterise-dic-measurement-chain` | measure DISFlow null response and synthetic spatial transfer |
 | `diagnose-nonlocality` | run an output-only Helmholtz diagnostic |
 | `estimate-nonlocal-reference` | derive $H_{\mathrm{ref}}$ from a local campaign |
 | `validate-coupled-nonlocal` | compare raw coupled fields with DIC |
@@ -82,3 +83,16 @@ unless `--overwrite` is supplied.
 The command applies the estimator declared in
 `validation/ell_ebsd_definition_preregistration.md`; it does not run FEM,
 fit a micromorphic parameter or launch a coupled campaign.
+
+## DIC measurement-chain characterisation
+
+`characterise-dic-measurement-chain` requires `--images`, `--prepared-case`,
+`--output` and `--figure-output`. By default it executes the full-crop
+candidate-repeat test and the fixed-window synthetic transfer campaign.
+`--null-only` disables the synthetic stage. The command requires the
+`measurement` optional dependency and rejects non-empty outputs unless
+`--overwrite` is explicit.
+
+Its manifest records the image hashes, crop, OpenCV and NumPy versions,
+requested settings, values queried back from the OpenCV object, and figure
+hashes. The command does not run FEM or modify a saved campaign.

@@ -1,0 +1,299 @@
+{
+  "band_fwhm_pixels": [
+    4,
+    8,
+    16,
+    32
+  ],
+  "band_rows": [
+    {
+      "centroid_shift_pixels": -1.0,
+      "imposed_width_pixels": 4,
+      "imposed_width_um": 7.36,
+      "orientation": "horizontal",
+      "peak_gain": 0.4191179751759388,
+      "recovered_width_pixels": 8.0,
+      "recovered_width_um": 14.72,
+      "relative_width_error": 1.0
+    },
+    {
+      "centroid_shift_pixels": -1.0,
+      "imposed_width_pixels": 8,
+      "imposed_width_um": 14.72,
+      "orientation": "horizontal",
+      "peak_gain": 0.6263364185183603,
+      "recovered_width_pixels": 10.0,
+      "recovered_width_um": 18.400000000000002,
+      "relative_width_error": 0.25
+    },
+    {
+      "centroid_shift_pixels": 2.0,
+      "imposed_width_pixels": 16,
+      "imposed_width_um": 29.44,
+      "orientation": "horizontal",
+      "peak_gain": 0.8262785524474702,
+      "recovered_width_pixels": 17.0,
+      "recovered_width_um": 31.28,
+      "relative_width_error": 0.0625
+    },
+    {
+      "centroid_shift_pixels": -4.0,
+      "imposed_width_pixels": 32,
+      "imposed_width_um": 58.88,
+      "orientation": "horizontal",
+      "peak_gain": 1.0014856897054416,
+      "recovered_width_pixels": 30.0,
+      "recovered_width_um": 55.2,
+      "relative_width_error": -0.0625
+    },
+    {
+      "centroid_shift_pixels": -1.0,
+      "imposed_width_pixels": 4,
+      "imposed_width_um": 7.36,
+      "orientation": "vertical",
+      "peak_gain": 0.42516849365644355,
+      "recovered_width_pixels": 7.0,
+      "recovered_width_um": 12.88,
+      "relative_width_error": 0.75
+    },
+    {
+      "centroid_shift_pixels": -1.0,
+      "imposed_width_pixels": 8,
+      "imposed_width_um": 14.72,
+      "orientation": "vertical",
+      "peak_gain": 0.6419108530022816,
+      "recovered_width_pixels": 10.0,
+      "recovered_width_um": 18.400000000000002,
+      "relative_width_error": 0.25
+    },
+    {
+      "centroid_shift_pixels": -3.0,
+      "imposed_width_pixels": 16,
+      "imposed_width_um": 29.44,
+      "orientation": "vertical",
+      "peak_gain": 0.8727295609252765,
+      "recovered_width_pixels": 15.0,
+      "recovered_width_um": 27.6,
+      "relative_width_error": -0.0625
+    },
+    {
+      "centroid_shift_pixels": -3.0,
+      "imposed_width_pixels": 32,
+      "imposed_width_um": 58.88,
+      "orientation": "vertical",
+      "peak_gain": 1.0600056527925215,
+      "recovered_width_pixels": 25.0,
+      "recovered_width_um": 46.0,
+      "relative_width_error": -0.21875
+    }
+  ],
+  "border_excluded_pixels": 16,
+  "evm_post_filter_applied": false,
+  "experimental_artifacts_included": false,
+  "mtf50_wavelength_pixels": {
+    "horizontal": 127.23711710388321,
+    "vertical": 126.37496770653351
+  },
+  "schema_version": 1,
+  "sinusoidal_rows": [
+    {
+      "gain": 4.7400537928857735e-05,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -2.357419637564448,
+      "recovered_amplitude_pixels": 2.3700268964428868e-05,
+      "wavelength_pixels": 4,
+      "wavelength_um": 7.36
+    },
+    {
+      "gain": 3.765007246644941e-05,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -2.684485268356546,
+      "recovered_amplitude_pixels": 1.8825036233224707e-05,
+      "wavelength_pixels": 8,
+      "wavelength_um": 14.72
+    },
+    {
+      "gain": 0.00014021260415111368,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -1.672295261313268,
+      "recovered_amplitude_pixels": 7.010630207555684e-05,
+      "wavelength_pixels": 12,
+      "wavelength_um": 22.080000000000002
+    },
+    {
+      "gain": 0.00020173476638683858,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -2.903811173936083,
+      "recovered_amplitude_pixels": 0.00010086738319341929,
+      "wavelength_pixels": 16,
+      "wavelength_um": 29.44
+    },
+    {
+      "gain": 0.0007040568264569118,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 3.0839432311317885,
+      "recovered_amplitude_pixels": 0.0003520284132284559,
+      "wavelength_pixels": 24,
+      "wavelength_um": 44.160000000000004
+    },
+    {
+      "gain": 0.0018754435436973342,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -3.02986098137557,
+      "recovered_amplitude_pixels": 0.0009377217718486671,
+      "wavelength_pixels": 32,
+      "wavelength_um": 58.88
+    },
+    {
+      "gain": 0.003925382228422441,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -1.6252607213980652,
+      "recovered_amplitude_pixels": 0.0019626911142112207,
+      "wavelength_pixels": 48,
+      "wavelength_um": 88.32000000000001
+    },
+    {
+      "gain": 0.023176387858957755,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.07723440808088258,
+      "recovered_amplitude_pixels": 0.011588193929478878,
+      "wavelength_pixels": 64,
+      "wavelength_um": 117.76
+    },
+    {
+      "gain": 0.31185517419944964,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -0.0025796187786676986,
+      "recovered_amplitude_pixels": 0.15592758709972482,
+      "wavelength_pixels": 96,
+      "wavelength_um": 176.64000000000001
+    },
+    {
+      "gain": 0.5045949333006237,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.00978115776528762,
+      "recovered_amplitude_pixels": 0.25229746665031183,
+      "wavelength_pixels": 128,
+      "wavelength_um": 235.52
+    },
+    {
+      "gain": 3.872668335120934e-05,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -2.3571893875652976,
+      "recovered_amplitude_pixels": 1.936334167560467e-05,
+      "wavelength_pixels": 4,
+      "wavelength_um": 7.36
+    },
+    {
+      "gain": 1.7223213409391864e-05,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.2778766151964686,
+      "recovered_amplitude_pixels": 8.611606704695932e-06,
+      "wavelength_pixels": 8,
+      "wavelength_um": 14.72
+    },
+    {
+      "gain": 7.55745590266338e-05,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -0.6475241208048503,
+      "recovered_amplitude_pixels": 3.77872795133169e-05,
+      "wavelength_pixels": 12,
+      "wavelength_um": 22.080000000000002
+    },
+    {
+      "gain": 0.00018973151866503836,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.16459191366502324,
+      "recovered_amplitude_pixels": 9.486575933251918e-05,
+      "wavelength_pixels": 16,
+      "wavelength_um": 29.44
+    },
+    {
+      "gain": 0.0007102680502763929,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 2.850375908372199,
+      "recovered_amplitude_pixels": 0.00035513402513819643,
+      "wavelength_pixels": 24,
+      "wavelength_um": 44.160000000000004
+    },
+    {
+      "gain": 0.0017781313595975053,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -3.0345110718239634,
+      "recovered_amplitude_pixels": 0.0008890656797987526,
+      "wavelength_pixels": 32,
+      "wavelength_um": 58.88
+    },
+    {
+      "gain": 0.0037329364594915655,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -1.708568721380333,
+      "recovered_amplitude_pixels": 0.0018664682297457828,
+      "wavelength_pixels": 48,
+      "wavelength_um": 88.32000000000001
+    },
+    {
+      "gain": 0.02253569594132888,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.06681486219272616,
+      "recovered_amplitude_pixels": 0.01126784797066444,
+      "wavelength_pixels": 64,
+      "wavelength_um": 117.76
+    },
+    {
+      "gain": 0.31352169457239165,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.002884977002934811,
+      "recovered_amplitude_pixels": 0.15676084728619583,
+      "wavelength_pixels": 96,
+      "wavelength_um": 176.64000000000001
+    },
+    {
+      "gain": 0.5099764145028405,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.009817966127410921,
+      "recovered_amplitude_pixels": 0.25498820725142024,
+      "wavelength_pixels": 128,
+      "wavelength_um": 235.52
+    }
+  ],
+  "sinusoidal_wavelengths_pixels": [
+    4,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64,
+    96,
+    128
+  ],
+  "status": "completed_algorithmic_transfer_characterisation",
+  "synthetic_transfer_only": true,
+  "window_selection": "fixed_central_window_of_registered_crop",
+  "window_shape": [
+    1024,
+    1024
+  ]
+}

@@ -219,23 +219,54 @@ interprétation de `ell`.
 
 #### V2.1 Test nul
 
-- [~] Corréler deux images du même état ou une translation rigide connue avec
+- [x] Corréler deux images du même état ou une translation rigide connue avec
   les paramètres de production exacts.
-- [ ] Rapporter `sigma_u` en pixel, RMS de l'EVM parasite et longueur
+- [x] Rapporter `sigma_u` en pixel, RMS de l'EVM parasite et longueur
   d'autocorrélation radiale.
-- [ ] Comparer le RMS parasite au RMS du champ DIC étudié sans modifier les
+- [x] Comparer le RMS parasite au RMS du champ DIC étudié sans modifier les
   seuils après observation.
 
 #### V2.2 Fonction de transfert
 
-- [ ] Déformer synthétiquement l'image de référence par un balayage sinusoïdal
+- [x] Déformer synthétiquement l'image de référence par un balayage sinusoïdal
   et mesurer la modulation en fonction de la longueur d'onde.
-- [ ] Imposer des bandes de largeur 4, 8, 16 et 32 pixels et mesurer leur
+- [x] Imposer des bandes de largeur 4, 8, 16 et 32 pixels et mesurer leur
   largeur reconstruite.
-- [ ] Rapporter résolution effective, biais d'amplitude et fidélité de largeur
+- [x] Rapporter résolution effective, biais d'amplitude et fidélité de largeur
   en pixels et micromètres.
-- [ ] Distinguer la fonction de transfert algorithmique synthétique des
+- [x] Distinguer la fonction de transfert algorithmique synthétique des
   artefacts expérimentaux d'éclairage, de speckle et de mouvement hors plan.
+
+**Résultat V2.1/V2.2 au 2026-07-29 :**
+
+- une commande reproductible `characterise-dic-measurement-chain` applique
+  les paramètres rapportés dans OpenCV 4.14 et sérialise les paramètres
+  demandés et relus ;
+- la paire finale candidate donne un RMS EVM parasite de `7,895e-5`, soit
+  `2,62 %` du RMS EVM DIC final ; le seuil pré-enregistré classe cette
+  amplitude comme faible ;
+- cette paire ne constitue pas encore un bruit blanc certifié : le flot est
+  cohérent sur `119,8 px` (`220,4 µm`) et le journal d'acquisition manque ;
+- le MTF-50 sinusoïdal se situe vers `126–127 px`, tandis qu'une bande intégrée
+  de `16 px` est reconstruite à `15–17 px` ; ces deux essais mesurent des
+  contenus spectraux différents et doivent rester présentés ensemble ;
+- les bandes de `4 px` sont élargies à `7–8 px` avec seulement environ `42 %`
+  du pic ; à `32 px`, le pic est conservé mais la largeur reconstruite reste
+  anisotrope (`30 px` horizontal, `25 px` vertical) ;
+- conclusion : l'opérateur de mesure est spatialement non neutre. V3 devient
+  prioritaire avant toute reprise des balayages micromorphiques.
+
+Artefacts :
+`validation/dic_measurement_chain_results.md`,
+`validation/reference_data/dic_measurement_chain_v1/` et
+`validation/figures/dic_measurement_chain_v1/`.
+
+Validation du lot : Ruff vert ; mypy vert sur les 53 fichiers source ;
+323 tests verts et 22 tests MFront ignorés faute de variable de bibliothèque
+dans cette exécution ; Sphinx HTML strict vert ; linkcheck strict vert ;
+PDF LuaLaTeX strict de 59 pages généré. Le code reproductible est publié au
+commit `83fcefd`; le commit des résultats et de la documentation est indiqué
+dans le journal Git suivant.
 
 #### V2.3 Sensibilité aux paramètres DISFlow
 

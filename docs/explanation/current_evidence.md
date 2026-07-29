@@ -44,6 +44,49 @@ post-filter is applied to the FEM EVM.
 These statements are **supported**, not yet independently confirmed at high
 fidelity and transferred.
 
+## What the DIC reproduction chain resolves
+
+The newly recovered raw image sequence makes a direct observation-chain test
+possible. With the reported DIS variational parameters applied in a declared
+OpenCV 4.14 implementation, the candidate repeated final-state pair produces
+a spurious EVM RMS of \(7.90\times10^{-5}\), or **2.62 %** of the final DIC
+EVM RMS.
+
+This number is an upper bound, not yet a certified random noise floor. The
+residual flow remains coherent over about 120 px, and the acquisition log does
+not certify that the two last images are the same physical state.
+
+```{include} ../_generated/dic_measurement_chain_metrics.inc
+```
+
+```{figure} ../_static/evidence/dic_measurement_null_test.png
+:alt: Candidate repeated-state images, recovered flow, spurious EVM and its autocorrelation.
+:width: 100%
+
+The EVM amplitude is small relative to the final field, but its long spatial
+coherence is incompatible with interpreting the map as white image noise.
+```
+
+The synthetic tests also show why measurement resolution cannot be reduced to
+one number. Zero-mean displacement sinusoids reach 50 % recovered amplitude
+only around 126--127 px, whereas an integrated 16 px strain band is recovered
+at 15--17 px. The former isolates one spatial frequency; the latter contains
+low-frequency displacement content.
+
+```{figure} ../_static/evidence/dic_measurement_band_fidelity.png
+:alt: Recovered versus imposed DIC strain-band width and peak amplitude.
+:width: 85%
+
+Bands narrower than 8 px are broadened and attenuated. A 16 px band is
+recovered within one pixel, while a 32 px band still shows orientation-
+dependent width bias.
+```
+
+The measurement chain is therefore demonstrably non-neutral. This evidence
+does not invalidate a structural length, but it requires the next FEM/DIC
+comparison to pass FEM displacements through the same image-level operator
+before any new nonlocal identification.
+
 ## An independent structural scale
 
 The grain-mean maximum-Schmid-factor map provides a structural measurement

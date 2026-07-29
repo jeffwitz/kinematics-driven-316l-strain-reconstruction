@@ -37,6 +37,7 @@ docs = [
 ]
 measurement = [
     "opencv-contrib-python-headless==4.14.0.94",
+    "Pillow>=10,<13",
 ]
 
 [tool.setuptools.packages.find]

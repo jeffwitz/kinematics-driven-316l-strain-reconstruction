@@ -19,6 +19,33 @@ The current historical EVM chain is implemented through the shared
 `reconstruct_historical_evm` path. Plotting and validation code must reuse it
 rather than reimplementing the formula.
 
+## Declared DISFlow reproduction
+
+The optional measurement-chain implementation adds an image-level operator:
+
+```text
+reference speckle image
+→ known or FEM displacement warp
+→ OpenCV DISFlow
+→ reconstructed displacement
+→ historical EVM
+```
+
+Its current declared configuration is OpenCV 4.14, medium preset, finest
+scale 1, patch size 8, patch stride 3, mean normalisation and spatial
+propagation enabled, 30 gradient-descent iterations, and variational
+refinement with \(\alpha=100\), \(\delta=1\), \(\gamma=0\),
+\(\epsilon=0.002\), 30 iterations.
+
+Every run queries these values back from the OpenCV object and stores them in
+its manifest. This is a **reproduction implementation**, not a bitwise copy of
+the historical executable whose OpenCV version and remaining settings were
+not archived.
+
+The pre-registered measurement-chain evidence is summarised in
+{doc}`../explanation/current_evidence`; the runnable procedure is
+{doc}`../how-to/characterise_dic_measurement_chain`.
+
 ## Prohibited substitutions
 
 - Do not compare PEEQ amplitude directly with DIC EVM.

@@ -13,6 +13,7 @@
 
 - {doc}`inspect_campaign`
 - {doc}`compare_fields`
+- {doc}`characterise_dic_measurement_chain`
 - {doc}`run_identification`
 - {doc}`transfer_candidates`
 
@@ -33,6 +34,7 @@ run_coupled_reconstruction
 run_identification
 inspect_campaign
 compare_fields
+characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
 ```

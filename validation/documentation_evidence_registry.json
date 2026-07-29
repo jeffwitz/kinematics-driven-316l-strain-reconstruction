@@ -69,6 +69,12 @@
       "evidence_ids": ["E-EBSD-001"]
     },
     {
+      "question": "The declared DISFlow reproduction chain has a measured noise upper bound and spatial transfer",
+      "status": "verified for the reproduction implementation",
+      "boundary": "Candidate final-state repeat without acquisition log; OpenCV 4.14 reproduction, not bitwise historical DISFlow",
+      "evidence_ids": ["E-DIC-001"]
+    },
+    {
       "question": "Hchi and ell statistically identified",
       "status": "not demonstrated",
       "boundary": "The short-length high-coupling region remains numerically censored",
@@ -265,6 +271,35 @@
       ]
     },
     {
+      "id": "E-DIC-001",
+      "question": "What noise upper bound and spatial transfer does the declared DISFlow reproduction produce?",
+      "fidelity": "full-crop candidate null pair and synthetic 1024 by 1024 warps",
+      "parameters": "OpenCV 4.14 DIS medium; reported alpha, delta, gamma, epsilon; 30 iterations",
+      "status": "verified for the reproduction implementation",
+      "conclusion": "The candidate-repeat EVM RMS is 2.62 percent of the final DIC RMS but remains spatially coherent, so it is an upper bound rather than a certified noise floor. Synthetic sinusoidal and band tests show strongly scale-dependent transfer.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_measurement_chain_v1/null_test_report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_characterisation_no_pass_fail"},
+            {"path": "/frame_mapping_status", "operator": "equals", "expected": "provisional_without_acquisition_log"},
+            {"path": "/spurious_to_step40_rms_ratio", "operator": "less_than", "expected": 0.1},
+            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_algorithmic_transfer_characterisation"},
+            {"path": "/synthetic_transfer_only", "operator": "equals", "expected": true},
+            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false}
+          ]
+        }
+      ]
+    },
+    {
       "id": "E-EBSD-001",
       "question": "What structural scale is carried by the archived grain-mean Schmid field?",
       "fidelity": "independent EBSD/Schmid spatial statistic",
@@ -288,6 +323,16 @@
     }
   ],
   "tables": [
+    {
+      "target": "dic_measurement_chain_metrics.inc",
+      "columns": ["Quantity", "Horizontal / column", "Vertical / row"],
+      "rows": [
+        ["Centred displacement standard deviation (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/null_test_report.json", "path": "/flow_column_centered_pixels/standard_deviation", "format": ".4f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/null_test_report.json", "path": "/flow_row_centered_pixels/standard_deviation", "format": ".4f"}],
+        ["Sinusoidal MTF-50 wavelength (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/mtf50_wavelength_pixels/horizontal", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/mtf50_wavelength_pixels/vertical", "format": ".1f"}],
+        ["Recovered FWHM for imposed 16 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/2/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/6/recovered_width_pixels", "format": ".1f"}],
+        ["Recovered FWHM for imposed 32 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/3/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/7/recovered_width_pixels", "format": ".1f"}]
+      ]
+    },
     {
       "target": "local_material_point_metrics.inc",
       "columns": ["Loading path", "Stress relative L2", "Maximum stress error (MPa)", "Maximum PEEQ error"],
