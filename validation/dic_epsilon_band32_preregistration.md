@@ -51,3 +51,16 @@ called material only if it is larger than the deterministic differences
 visible in the reported metrics and maps. Any apparent improvement in
 along-band waviness must be reported together with its effects on width and
 peak amplitude.
+
+## Pre-registered refinement after the coarse sweep
+
+The coarse sweep located a sharp transition between `0.002` and `0.02`.
+Before executing any additional point, the following three intermediate
+values are fixed:
+
+```text
+0.004, 0.006, 0.01
+```
+
+They refine the transition only. The reporting quantities and interpretation
+rule above remain unchanged.
