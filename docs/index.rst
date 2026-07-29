@@ -58,6 +58,7 @@ Recommended journeys
    :doc:`explanation/from_dic_to_mechanics` →
    :doc:`explanation/local_baseline` →
    :doc:`explanation/missing_spatial_interaction` →
+   :doc:`explanation/dic_synthetic_measurement_tests` →
    :doc:`explanation/micromorphic_model` →
    :doc:`explanation/parameter_identification` →
    :doc:`explanation/current_evidence` →

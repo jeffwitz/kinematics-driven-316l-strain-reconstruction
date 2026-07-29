@@ -5,6 +5,7 @@ import pytest
 
 from fem_inhouse.measurement import DISFlowConfig, run_disflow, warp_image
 from fem_inhouse.workflows.dic_measurement_chain import (
+    _transfer_figures,
     image_flow_to_historical_evm,
     radial_autocorrelation,
 )
@@ -64,3 +65,48 @@ def test_warp_and_disflow_recover_smooth_translation() -> None:
 
     core = recovered[16:-16, 16:-16]
     np.testing.assert_allclose(np.mean(core, axis=(0, 1)), (0.75, -0.5), atol=0.2)
+
+
+def test_transfer_figures_include_evm_normal_sections(tmp_path) -> None:
+    coordinate = np.linspace(-20.0, 20.0, 41)
+    profile = np.exp(-0.5 * np.square(coordinate / 4.0))
+    field = np.repeat(profile[:, None], 32, axis=1)
+    band_cases = [
+        {
+            "width_pixels": width,
+            "recovered_width_pixels": float(width),
+            "coordinate_um": coordinate,
+            "imposed_profile": profile,
+            "recovered_profile": 0.9 * profile,
+            "imposed_map": field,
+            "recovered_map": 0.9 * field,
+            "map_half_extent_pixels": 16,
+        }
+        for width in (4, 8, 16, 32)
+    ]
+    sinusoidal_rows = [
+        {"orientation": orientation, "wavelength_pixels": wavelength, "gain": gain}
+        for orientation in ("horizontal", "vertical")
+        for wavelength, gain in ((32, 0.25), (64, 0.75))
+    ]
+    band_rows = [
+        {
+            "orientation": orientation,
+            "imposed_width_pixels": width,
+            "recovered_width_pixels": float(width),
+            "peak_gain": 0.9,
+        }
+        for orientation in ("horizontal", "vertical")
+        for width in (4, 8, 16, 32)
+    ]
+
+    _transfer_figures(
+        tmp_path,
+        sinusoidal_rows=sinusoidal_rows,
+        band_rows=band_rows,
+        band_evm_cases=band_cases,
+    )
+
+    assert (tmp_path / "transfer_function.png").is_file()
+    assert (tmp_path / "band_width_fidelity.png").is_file()
+    assert (tmp_path / "synthetic_band_evm_sections.png").is_file()
