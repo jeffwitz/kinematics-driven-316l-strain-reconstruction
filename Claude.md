@@ -440,9 +440,9 @@ Sphinx HTML, linkcheck et PDF stricts verts.
   d'erreur FEM–DIC.
 - [x] Produire métriques brutes et métriques masquées/pondérées sans supprimer
   la première.
-- [ ] Séparer une propagation légère jusqu'aux métriques EVM d'une propagation
+- [x] Séparer une propagation légère jusqu'aux métriques EVM d'une propagation
   complète relançant corrélation, identification des cartes et FEM.
-- [ ] Présenter l'incertitude de PEEQ comme incertitude d'une sortie du modèle,
+- [x] Présenter l'incertitude de PEEQ comme incertitude d'une sortie du modèle,
   jamais comme incertitude expérimentale directe.
 
 **Résultat KD-023 au 2026-07-29 :**
@@ -469,6 +469,37 @@ Artefacts :
 Validation : Ruff et mypy verts ; `383` tests avec MGIS/MFront réel ;
 `7` tests `measurement` sans skip ; Sphinx HTML, linkcheck et PDF stricts
 verts.
+
+**Résultat KD-024 au 2026-07-29 :**
+
+- propagation légère pré-enregistrée sur les quatre rejeux V3 P43, 256
+  tirages, graine `20260729`, sans relancer la mécanique ;
+- le résidu DISFlow mesuré entre `000334` et `000335` est recentré puis
+  extrait par fenêtres contiguës de la taille du support résolu P43, avec
+  signe aléatoire ;
+- un premier pilote périodique a été rejeté et documenté : la jonction de
+  bords non concordants créait une ligne EVM artificielle. L'amendement
+  méthodologique a été figé avant le rejeu accepté ;
+- `alpha=4` reste premier sur RMSE, L2, corrélation et erreur d'aire active
+  q90 pour 100 % des tirages ; `alpha=1` reste premier sur l'IoU q90 absolue
+  et le cas local sur l'IoU top-10 % relative ;
+- conclusion : l'incertitude structurée mesurée ne change pas le conflit
+  entre familles d'objectifs et ne permet toujours pas de choisir un unique
+  couplage ;
+- les intervalles sont des sensibilités de substitution, pas des intervalles
+  de confiance. `PEEQ` porte explicitement le statut
+  `not_propagated_requires_mechanical_rerun`.
+
+Artefacts :
+`validation/dic_uncertainty_propagation_p0043_preregistration.md`,
+`validation/dic_uncertainty_propagation_p0043_amendment.md`,
+`validation/dic_uncertainty_propagation_p0043_results.md`,
+`validation/reference_data/dic_uncertainty_propagation_p0043_v1/` et
+`validation/figures/dic_uncertainty_propagation_p0043_v1/`.
+Validation finale : Ruff global et mypy sur `64` fichiers sources verts ;
+`386` tests avec MGIS/MFront réel ; `7` tests `measurement`, aucun skip ;
+Sphinx HTML, linkcheck et PDF stricts verts ; registre de preuves
+`E-DIC-006` vérifié contre le JSON primaire.
 
 ### Lot V3 — Opérateur d'observation symétrique
 

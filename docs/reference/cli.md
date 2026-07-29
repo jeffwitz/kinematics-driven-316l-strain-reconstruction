@@ -114,3 +114,11 @@ prepared case, output and figure directories, plus one or more
 `legacy_script_2021` V3 artefact with matching core bounds and immutable field
 hashes. The command performs no mechanics and does not replace primary
 unmasked metrics by its q90-residual sensitivity.
+
+`propagate-dic-uncertainty` requires final and repeated-final images, the
+prepared case, output and figure directories, plus one or more
+`--replay LABEL ALPHA PATH` triples. It propagates contiguous windows of the
+centred measured repeat-flow residual through the common EVM operator while
+keeping every FEM field fixed. Defaults are `--samples 256` and
+`--seed 20260729`. The reported intervals are surrogate sensitivities, not
+confidence intervals; PEEQ is not propagated without a mechanical rerun.

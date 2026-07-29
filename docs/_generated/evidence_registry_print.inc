@@ -84,6 +84,12 @@
 : Conclusion: Residual/error Pearson and Spearman associations are negligible, and excluding the worst photometric decile leaves the candidate ordering and field metrics essentially unchanged. The primary V3 comparison therefore remains unmasked.
 : Sources: primary: `validation/reference_data/dic_photometric_quality_p0043_v1/report.json`.
 
+**E-DIC-006 — Does the measured repeated-frame DIC residual change the ranking of the archived P43 candidates?**
+: Fidelity: 256 translated measured-residual surrogate samples on four immutable V3 replays. Parameters: alpha 0, 1, 2 and 4; legacy-source profile; contiguous full-support windows; seed 20260729; no mechanical rerun.
+: Status: **verified sensitivity**.
+: Conclusion: The measured repeat-frame residual changes metric values but not their objective-dependent ranking: alpha 4 is always best for L2, RMSE, correlation and active-area error, alpha 1 for absolute-q90 IoU, and the local model for relative top-10 IoU. These are surrogate sensitivity intervals, not confidence intervals.
+: Sources: primary: `validation/reference_data/dic_uncertainty_propagation_p0043_v1/report.json`.
+
 **E-EBSD-001 — What structural scale is carried by the archived grain-mean Schmid field?**
 : Fidelity: independent EBSD/Schmid spatial statistic. Parameters: frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap.
 : Status: **verified**.
