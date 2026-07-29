@@ -1,0 +1,421 @@
+{
+  "baseline_metrics": [
+    {
+      "absolute_q90_active_fraction_error": 0.061326164874551975,
+      "absolute_q90_iou": 0.3086242484070717,
+      "absolute_q90_prediction_active_fraction": 0.16132616487455198,
+      "alpha": 0.0,
+      "label": "local",
+      "pearson": 0.6042249226619093,
+      "relative_l2": 0.48583813694362415,
+      "rmse": 0.002036047217157085,
+      "top10_iou": 0.29873152566042127
+    },
+    {
+      "absolute_q90_active_fraction_error": 0.05003584229390681,
+      "absolute_q90_iou": 0.3225898189401839,
+      "absolute_q90_prediction_active_fraction": 0.15003584229390682,
+      "alpha": 1.0,
+      "label": "alpha1",
+      "pearson": 0.6512120234751524,
+      "relative_l2": 0.3542009218665564,
+      "rmse": 0.001484382856022189,
+      "top10_iou": 0.288981288981289
+    },
+    {
+      "absolute_q90_active_fraction_error": 0.03538530465949821,
+      "absolute_q90_iou": 0.3085429638854296,
+      "absolute_q90_prediction_active_fraction": 0.13538530465949822,
+      "alpha": 2.0,
+      "label": "alpha2",
+      "pearson": 0.657948158073428,
+      "relative_l2": 0.3197310037509214,
+      "rmse": 0.001339926553566223,
+      "top10_iou": 0.2817273458137131
+    },
+    {
+      "absolute_q90_active_fraction_error": 0.002580645161290321,
+      "absolute_q90_iou": 0.25488454706927177,
+      "absolute_q90_prediction_active_fraction": 0.10258064516129033,
+      "alpha": 4.0,
+      "label": "alpha4",
+      "pearson": 0.6635857571812368,
+      "relative_l2": 0.29168216792883933,
+      "rmse": 0.0012223796798701528,
+      "top10_iou": 0.2526658435290156
+    }
+  ],
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-29T16:09:06.502934+00:00",
+  "git_sha": "2eebb46d68e2f7f541d4a14e7878059158d71116",
+  "interpretation_boundary": "Intervals are surrogate sensitivity intervals under translated measured repeat-frame residuals; they are not confidence intervals.",
+  "mechanics_rerun": false,
+  "metric_directions": {
+    "absolute_q90_active_fraction_error": "min",
+    "absolute_q90_iou": "max",
+    "pearson": "max",
+    "relative_l2": "min",
+    "rmse": "min",
+    "top10_iou": "max"
+  },
+  "micromorphic_identification_run": false,
+  "outputs": {
+    "centred_repeat_flow_pixels.npy": "82247ccdbcbccfd31b270dac67e3a717b8e7070c701459ee68abdb790665597b",
+    "samples.csv": "f8c4557d2cc4cdd66078dcc3731ae31c3b0d07362bbae93df89abc3bf25919a4"
+  },
+  "partition_id": 43,
+  "peeq_max": {
+    "reason": "PEEQ is a mechanical internal variable, not an observation output",
+    "status": "not_propagated_requires_mechanical_rerun"
+  },
+  "prepared_case": {
+    "baseline_reconstruction_max_abs_difference": 0.0,
+    "manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/data/processed/case_study"
+  },
+  "profile": {
+    "explicitly_set": [
+      "finest_scale",
+      "patch_size",
+      "patch_stride",
+      "variational_refinement_alpha",
+      "variational_refinement_delta",
+      "variational_refinement_epsilon",
+      "variational_refinement_gamma",
+      "variational_refinement_iterations"
+    ],
+    "left_to_factory": [
+      "gradient_descent_iterations",
+      "preset",
+      "use_mean_normalization",
+      "use_spatial_propagation"
+    ],
+    "name": "legacy_script_2021",
+    "queried_opencv": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 16,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.0020000000949949026,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "requested": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": null,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "preset": null,
+      "use_mean_normalization": null,
+      "use_spatial_propagation": null,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.002,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "source": "setters explicitly present in references/legacy_dic/dic_displacement_fields.py"
+  },
+  "ranking_probabilities": {
+    "absolute_q90_active_fraction_error": {
+      "alpha1": 0.0,
+      "alpha2": 0.0,
+      "alpha4": 1.0,
+      "local": 0.0
+    },
+    "absolute_q90_iou": {
+      "alpha1": 1.0,
+      "alpha2": 0.0,
+      "alpha4": 0.0,
+      "local": 0.0
+    },
+    "pearson": {
+      "alpha1": 0.0,
+      "alpha2": 0.0,
+      "alpha4": 1.0,
+      "local": 0.0
+    },
+    "relative_l2": {
+      "alpha1": 0.0,
+      "alpha2": 0.0,
+      "alpha4": 1.0,
+      "local": 0.0
+    },
+    "rmse": {
+      "alpha1": 0.0,
+      "alpha2": 0.0,
+      "alpha4": 1.0,
+      "local": 0.0
+    },
+    "top10_iou": {
+      "alpha1": 0.0,
+      "alpha2": 0.0,
+      "alpha4": 0.0,
+      "local": 1.0
+    }
+  },
+  "replays": [
+    {
+      "alpha": 0.0,
+      "label": "local",
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/local_legacy_script_2021",
+      "report_sha256": "6631a8d7eff9a50fa41c9592cb5b6cb20e3b8f7d264f0de1815139a1c2d1f355"
+    },
+    {
+      "alpha": 1.0,
+      "label": "alpha1",
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a100_legacy_script_2021",
+      "report_sha256": "687c55911ebb052f36a20520c84c894005020a3584f636267cef38f3469eee6f"
+    },
+    {
+      "alpha": 2.0,
+      "label": "alpha2",
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a200_legacy_script_2021",
+      "report_sha256": "447010d46cad7ceebf486098531d99e73323e04a3594ccbf5f256ff1f97c7fd0"
+    },
+    {
+      "alpha": 4.0,
+      "label": "alpha4",
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a400_legacy_script_2021",
+      "report_sha256": "8ed38d90dfdd5fdfb329922a1c6aa9b7e678743efc9bd5cf16650ad1f7457df0"
+    }
+  ],
+  "residual_model": {
+    "component_means_pixels": [
+      0.13482556563868536,
+      0.023744117759303664
+    ],
+    "component_standard_deviations_pixels": [
+      0.06282591286046899,
+      0.042670982574360534
+    ],
+    "final_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000334.tif",
+    "final_image_sha256": "04f38d166cc186403b85424ccb14f15621c532fef0f1338e6bd6207ba8b8d830",
+    "repeat_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000335.tif",
+    "repeat_image_sha256": "2d086df7381856e6d6252721b2a0451ab020bd0d496718b9011d25856917519d",
+    "sign": "equiprobable -1 or +1",
+    "source": "centred repeat-frame DISFlow residual",
+    "translation": "uniform contiguous windows wholly inside the canonical crop; no periodic join"
+  },
+  "sample_count": 256,
+  "schema_version": 1,
+  "seed": 20260729,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "status": "completed_surrogate_sensitivity_no_acceptance_threshold",
+  "surrogate_sensitivity_summaries": [
+    {
+      "alpha": 1.0,
+      "label": "alpha1",
+      "metrics": {
+        "absolute_q90_active_fraction_error": {
+          "mean": 0.05008204525089605,
+          "median": 0.05021953405017922,
+          "q2_5": 0.043953853046594986,
+          "q97_5": 0.05596214157706092,
+          "standard_deviation": 0.0036376720504193404
+        },
+        "absolute_q90_iou": {
+          "mean": 0.322047351175489,
+          "median": 0.3218898114557631,
+          "q2_5": 0.31217117832441577,
+          "q97_5": 0.33183837711410996,
+          "standard_deviation": 0.00493451975165034
+        },
+        "pearson": {
+          "mean": 0.6499763486769955,
+          "median": 0.6499333085539555,
+          "q2_5": 0.6399536254935534,
+          "q97_5": 0.6597522408624785,
+          "standard_deviation": 0.004806395040640482
+        },
+        "relative_l2": {
+          "mean": 0.3550333828905533,
+          "median": 0.35486379374483923,
+          "q2_5": 0.3491927044996703,
+          "q97_5": 0.361372554793569,
+          "standard_deviation": 0.0032477453711517593
+        },
+        "rmse": {
+          "mean": 0.0014883924061832063,
+          "median": 0.0014874270864974623,
+          "q2_5": 0.0014629551187574493,
+          "q97_5": 0.0015155238989068669,
+          "standard_deviation": 1.3898352956766732e-05
+        },
+        "top10_iou": {
+          "mean": 0.28883485991813507,
+          "median": 0.28883242868691533,
+          "q2_5": 0.27955973715683535,
+          "q97_5": 0.29814613279710206,
+          "standard_deviation": 0.0050325906815066514
+        }
+      },
+      "sample_count": 256
+    },
+    {
+      "alpha": 2.0,
+      "label": "alpha2",
+      "metrics": {
+        "absolute_q90_active_fraction_error": {
+          "mean": 0.03535306759632616,
+          "median": 0.035667562724014334,
+          "q2_5": 0.028217965949820772,
+          "q97_5": 0.04288082437275985,
+          "standard_deviation": 0.004499744505694328
+        },
+        "absolute_q90_iou": {
+          "mean": 0.30735707432752646,
+          "median": 0.3077527677607964,
+          "q2_5": 0.2974914065900515,
+          "q97_5": 0.3171013700186828,
+          "standard_deviation": 0.00550069131002672
+        },
+        "pearson": {
+          "mean": 0.6567388908004761,
+          "median": 0.6566599454640354,
+          "q2_5": 0.6464706062602755,
+          "q97_5": 0.6666689338051353,
+          "standard_deviation": 0.0048530382441785555
+        },
+        "relative_l2": {
+          "mean": 0.3206175946512118,
+          "median": 0.3205214761882055,
+          "q2_5": 0.31585936065529474,
+          "q97_5": 0.32539352946412936,
+          "standard_deviation": 0.00249835813629935
+        },
+        "rmse": {
+          "mean": 0.0013441631023985148,
+          "median": 0.0013436503585097358,
+          "q2_5": 0.0013161378148799714,
+          "q97_5": 0.0013759532971238228,
+          "standard_deviation": 1.590442404189502e-05
+        },
+        "top10_iou": {
+          "mean": 0.28190775599518547,
+          "median": 0.28209547209176605,
+          "q2_5": 0.2721120721890744,
+          "q97_5": 0.292218714443769,
+          "standard_deviation": 0.005210823207007823
+        }
+      },
+      "sample_count": 256
+    },
+    {
+      "alpha": 4.0,
+      "label": "alpha4",
+      "metrics": {
+        "absolute_q90_active_fraction_error": {
+          "mean": 0.00489299815188172,
+          "median": 0.004650537634408605,
+          "q2_5": 0.0001344086021505264,
+          "q97_5": 0.012153897849462364,
+          "standard_deviation": 0.0034592427930735985
+        },
+        "absolute_q90_iou": {
+          "mean": 0.2573778765791789,
+          "median": 0.25687967024005187,
+          "q2_5": 0.23948538230272579,
+          "q97_5": 0.2757332994532169,
+          "standard_deviation": 0.009582671731950375
+        },
+        "pearson": {
+          "mean": 0.6624113792781094,
+          "median": 0.6621495262364276,
+          "q2_5": 0.6528028580513277,
+          "q97_5": 0.6717223573153261,
+          "standard_deviation": 0.004862589200864604
+        },
+        "relative_l2": {
+          "mean": 0.29260571537110974,
+          "median": 0.29281866305759474,
+          "q2_5": 0.2887363083902647,
+          "q97_5": 0.2967842593300831,
+          "standard_deviation": 0.0020358208702767645
+        },
+        "rmse": {
+          "mean": 0.001226786691491752,
+          "median": 0.0012248406109457112,
+          "q2_5": 0.0011960590876384939,
+          "q97_5": 0.0012628718096461562,
+          "standard_deviation": 1.8518985149873382e-05
+        },
+        "top10_iou": {
+          "mean": 0.2527323109270816,
+          "median": 0.25234955912845974,
+          "q2_5": 0.24277035034868677,
+          "q97_5": 0.2635601325699307,
+          "standard_deviation": 0.005193355688041123
+        }
+      },
+      "sample_count": 256
+    },
+    {
+      "alpha": 0.0,
+      "label": "local",
+      "metrics": {
+        "absolute_q90_active_fraction_error": {
+          "mean": 0.06111842657930107,
+          "median": 0.06150985663082437,
+          "q2_5": 0.05471886200716845,
+          "q97_5": 0.06763440860215053,
+          "standard_deviation": 0.003952854836581018
+        },
+        "absolute_q90_iou": {
+          "mean": 0.3088994579561396,
+          "median": 0.30875449250077214,
+          "q2_5": 0.2978350434152945,
+          "q97_5": 0.3195203977458096,
+          "standard_deviation": 0.005233998889927002
+        },
+        "pearson": {
+          "mean": 0.6029915962931277,
+          "median": 0.6028368475028136,
+          "q2_5": 0.5932907435715493,
+          "q97_5": 0.6117932420375319,
+          "standard_deviation": 0.004693368850057661
+        },
+        "relative_l2": {
+          "mean": 0.48647448841189034,
+          "median": 0.4865960334001659,
+          "q2_5": 0.47628378423221424,
+          "q97_5": 0.4965185659667685,
+          "standard_deviation": 0.00575077229731199
+        },
+        "rmse": {
+          "mean": 0.0020393099598011283,
+          "median": 0.0020390667557560254,
+          "q2_5": 0.0020190400582449195,
+          "q97_5": 0.0020613498285150136,
+          "standard_deviation": 1.0637978341932817e-05
+        },
+        "top10_iou": {
+          "mean": 0.2987174975014011,
+          "median": 0.2989960726844165,
+          "q2_5": 0.28900009646249253,
+          "q97_5": 0.30790205889951083,
+          "standard_deviation": 0.004941850953269754
+        }
+      },
+      "sample_count": 256
+    }
+  ]
+}
