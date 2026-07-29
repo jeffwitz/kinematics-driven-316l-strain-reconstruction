@@ -18,7 +18,12 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import fft
 
-from fem_inhouse.measurement import DISFlowConfig, create_disflow, run_disflow, warp_image
+from fem_inhouse.measurement import (
+    DISFlowConfig,
+    query_disflow_configuration,
+    run_disflow,
+    warp_image,
+)
 from fem_inhouse.workflows.nonlocality_diagnostic import reconstruct_historical_evm
 
 matplotlib.use("Agg")
@@ -99,24 +104,7 @@ def _csv(path: Path, rows: Iterable[dict[str, Any]]) -> None:
 def queried_disflow_configuration(config: DISFlowConfig) -> dict[str, Any]:
     """Return settings queried back from the OpenCV object."""
 
-    flow = create_disflow(config)
-    getters = {
-        "finest_scale": "getFinestScale",
-        "gradient_descent_iterations": "getGradientDescentIterations",
-        "patch_size": "getPatchSize",
-        "patch_stride": "getPatchStride",
-        "use_mean_normalization": "getUseMeanNormalization",
-        "use_spatial_propagation": "getUseSpatialPropagation",
-        "variational_refinement_alpha": "getVariationalRefinementAlpha",
-        "variational_refinement_delta": "getVariationalRefinementDelta",
-        "variational_refinement_gamma": "getVariationalRefinementGamma",
-        "variational_refinement_epsilon": "getVariationalRefinementEpsilon",
-        "variational_refinement_iterations": "getVariationalRefinementIterations",
-    }
-    return {
-        name: getattr(flow, getter)()
-        for name, getter in getters.items()
-    }
+    return query_disflow_configuration(config)
 
 
 def image_flow_to_historical_evm(

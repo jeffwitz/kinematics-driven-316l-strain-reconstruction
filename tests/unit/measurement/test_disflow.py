@@ -3,7 +3,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fem_inhouse.measurement import DISFlowConfig, run_disflow, warp_image
+from fem_inhouse.measurement import (
+    DISFlowConfig,
+    disflow_profile,
+    disflow_profile_names,
+    query_disflow_configuration,
+    run_disflow,
+    warp_image,
+)
 from fem_inhouse.workflows.dic_measurement_chain import (
     _transfer_figures,
     image_flow_to_historical_evm,
@@ -18,6 +25,34 @@ def test_disflow_configuration_rejects_invalid_values() -> None:
         DISFlowConfig(patch_size=0)
     with pytest.raises(ValueError, match="nonnegative"):
         DISFlowConfig(variational_refinement_epsilon=-1.0)
+
+
+def test_declared_and_legacy_profiles_are_distinct_and_stable() -> None:
+    assert disflow_profile_names() == ("declared_medium_v4", "legacy_script_2021")
+    declared = disflow_profile("declared_medium_v4")
+    legacy = disflow_profile("legacy_script_2021")
+
+    assert declared.config == DISFlowConfig()
+    assert legacy.config.preset is None
+    assert legacy.config.patch_size == 4
+    assert legacy.config.patch_stride == 1
+    assert legacy.config.gradient_descent_iterations is None
+    assert legacy.config.use_mean_normalization is None
+    assert legacy.config.use_spatial_propagation is None
+    with pytest.raises(ValueError, match="unknown DISFlow profile"):
+        disflow_profile("best-looking")
+
+
+def test_legacy_profile_records_requested_and_factory_values() -> None:
+    pytest.importorskip("cv2")
+    profile = disflow_profile("legacy_script_2021")
+    manifest = profile.manifest()
+
+    assert manifest["requested"]["gradient_descent_iterations"] is None
+    assert "gradient_descent_iterations" in manifest["left_to_factory"]
+    assert manifest["queried_opencv"] == query_disflow_configuration(profile.config)
+    assert manifest["queried_opencv"]["patch_size"] == 4
+    assert manifest["queried_opencv"]["patch_stride"] == 1
 
 
 def test_image_flow_evm_is_zero_for_rigid_translation() -> None:
