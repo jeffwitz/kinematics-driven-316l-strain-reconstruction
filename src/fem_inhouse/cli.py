@@ -50,6 +50,7 @@ from fem_inhouse.workflows import (
     prepare_material_map_control,
     prepare_transfer_validation,
     profile_coupling_modulus,
+    replay_dic_observation,
     run_low_fidelity,
     run_nonlocality_diagnostic,
     scan_dic_partition_heterogeneity,
@@ -403,6 +404,22 @@ def _parser() -> argparse.ArgumentParser:
         default="legacy_approximate_inverse",
     )
     measurement_chain.add_argument("--overwrite", action="store_true")
+
+    observation_replay = commands.add_parser(
+        "replay-dic-observation",
+        help="replay an archived FEM displacement through the image/DISFlow chain",
+    )
+    observation_replay.add_argument("--campaign", type=Path, required=True)
+    observation_replay.add_argument("--prepared-case", type=Path, required=True)
+    observation_replay.add_argument("--reference-image", type=Path, required=True)
+    observation_replay.add_argument("--partition-id", type=int, required=True)
+    observation_replay.add_argument(
+        "--profile",
+        choices=disflow_profile_names(),
+        default="legacy_script_2021",
+    )
+    observation_replay.add_argument("--output", type=Path, required=True)
+    observation_replay.add_argument("--overwrite", action="store_true")
 
     map_controls = commands.add_parser(
         "validate-material-map-controls",
@@ -790,6 +807,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             run_transfer=not args.null_only,
         )
         _print_json(measurement_report)
+        return 0
+    if args.command == "replay-dic-observation":
+        replay_report = replay_dic_observation(
+            campaign=args.campaign,
+            prepared_case=args.prepared_case,
+            reference_image=args.reference_image,
+            partition_id=args.partition_id,
+            profile_name=args.profile,
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(replay_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
