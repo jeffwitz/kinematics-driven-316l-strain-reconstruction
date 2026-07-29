@@ -1,0 +1,323 @@
+{
+  "band_fwhm_pixels": [
+    4,
+    8,
+    16,
+    32
+  ],
+  "band_rows": [
+    {
+      "centroid_shift_pixels": 0.4904842753876437,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 4,
+      "imposed_width_um": 7.36,
+      "legacy_integer_fwhm_pixels": 4.0,
+      "orientation": "horizontal",
+      "peak_gain": 0.8228458660328936,
+      "peak_shift_pixels": 0.0,
+      "recovered_width_pixels": 4.1555427133996545,
+      "recovered_width_um": 7.646198592655365,
+      "relative_width_error": 0.03888567834991363
+    },
+    {
+      "centroid_shift_pixels": 0.5319505691281847,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 8,
+      "imposed_width_um": 14.72,
+      "legacy_integer_fwhm_pixels": 6.0,
+      "orientation": "horizontal",
+      "peak_gain": 1.0223418994664157,
+      "peak_shift_pixels": -1.0,
+      "recovered_width_pixels": 6.340051204860856,
+      "recovered_width_um": 11.665694216943976,
+      "relative_width_error": -0.20749359939239298
+    },
+    {
+      "centroid_shift_pixels": 0.5700296943552985,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 16,
+      "imposed_width_um": 29.44,
+      "legacy_integer_fwhm_pixels": 10.0,
+      "orientation": "horizontal",
+      "peak_gain": 1.1452372354202522,
+      "peak_shift_pixels": -2.0,
+      "recovered_width_pixels": 9.983866031141474,
+      "recovered_width_um": 18.370313497300312,
+      "relative_width_error": -0.37600837305365786
+    },
+    {
+      "centroid_shift_pixels": 0.6781127138604006,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 32,
+      "imposed_width_um": 58.88,
+      "legacy_integer_fwhm_pixels": 26.0,
+      "orientation": "horizontal",
+      "peak_gain": 1.1739662224940453,
+      "peak_shift_pixels": -5.0,
+      "recovered_width_pixels": 18.327204543497317,
+      "recovered_width_um": 33.72205636003506,
+      "relative_width_error": -0.42727485801570886
+    },
+    {
+      "centroid_shift_pixels": 0.3279637104611197,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 4,
+      "imposed_width_um": 7.36,
+      "legacy_integer_fwhm_pixels": 4.0,
+      "orientation": "vertical",
+      "peak_gain": 0.8231311211675635,
+      "peak_shift_pixels": 0.0,
+      "recovered_width_pixels": 4.144924947438653,
+      "recovered_width_um": 7.626661903287123,
+      "relative_width_error": 0.03623123685966334
+    },
+    {
+      "centroid_shift_pixels": 0.3788475136142324,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 8,
+      "imposed_width_um": 14.72,
+      "legacy_integer_fwhm_pixels": 6.0,
+      "orientation": "vertical",
+      "peak_gain": 1.0460469891940956,
+      "peak_shift_pixels": -1.0,
+      "recovered_width_pixels": 6.151938822363775,
+      "recovered_width_um": 11.319567433149347,
+      "relative_width_error": -0.23100764720452815
+    },
+    {
+      "centroid_shift_pixels": 0.4570934217644549,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 16,
+      "imposed_width_um": 29.44,
+      "legacy_integer_fwhm_pixels": 13.0,
+      "orientation": "vertical",
+      "peak_gain": 1.1342981258171838,
+      "peak_shift_pixels": -1.0,
+      "recovered_width_pixels": 12.647861255020302,
+      "recovered_width_um": 23.27206470923736,
+      "relative_width_error": -0.2095086715612311
+    },
+    {
+      "centroid_shift_pixels": 0.54162509957564,
+      "fwhm_status": "ok",
+      "imposed_width_pixels": 32,
+      "imposed_width_um": 58.88,
+      "legacy_integer_fwhm_pixels": 28.0,
+      "orientation": "vertical",
+      "peak_gain": 1.1206548212347736,
+      "peak_shift_pixels": -3.0,
+      "recovered_width_pixels": 19.897603684345313,
+      "recovered_width_um": 36.611590779195375,
+      "relative_width_error": -0.37819988486420897
+    }
+  ],
+  "border_excluded_pixels": 8,
+  "evm_post_filter_applied": false,
+  "experimental_artifacts_included": false,
+  "mtf50_wavelength_pixels": {
+    "horizontal": 55.92128667359247,
+    "vertical": 55.49690830437141
+  },
+  "schema_version": 1,
+  "sinusoidal_rows": [
+    {
+      "gain": 6.269043163277146e-06,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -0.8189235164878668,
+      "recovered_amplitude_pixels": 3.134521581638573e-06,
+      "wavelength_pixels": 4,
+      "wavelength_um": 7.36
+    },
+    {
+      "gain": 0.0002056959805382338,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.30820297521819845,
+      "recovered_amplitude_pixels": 0.0001028479902691169,
+      "wavelength_pixels": 8,
+      "wavelength_um": 14.72
+    },
+    {
+      "gain": 0.0003303059003715925,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 2.1608506756993022,
+      "recovered_amplitude_pixels": 0.00016515295018579626,
+      "wavelength_pixels": 12,
+      "wavelength_um": 22.080000000000002
+    },
+    {
+      "gain": 0.0010066416855975696,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -2.9216697111424446,
+      "recovered_amplitude_pixels": 0.0005033208427987848,
+      "wavelength_pixels": 16,
+      "wavelength_um": 29.44
+    },
+    {
+      "gain": 0.002086241764548832,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": -0.4797446956321591,
+      "recovered_amplitude_pixels": 0.001043120882274416,
+      "wavelength_pixels": 24,
+      "wavelength_um": 44.160000000000004
+    },
+    {
+      "gain": 0.10202668410021563,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.04136811583688479,
+      "recovered_amplitude_pixels": 0.05101334205010782,
+      "wavelength_pixels": 32,
+      "wavelength_um": 58.88
+    },
+    {
+      "gain": 0.4126731015005507,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.009440289387504137,
+      "recovered_amplitude_pixels": 0.20633655075027535,
+      "wavelength_pixels": 48,
+      "wavelength_um": 88.32000000000001
+    },
+    {
+      "gain": 0.5890624222720353,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.00438673818629095,
+      "recovered_amplitude_pixels": 0.29453121113601766,
+      "wavelength_pixels": 64,
+      "wavelength_um": 117.76
+    },
+    {
+      "gain": 0.7390394079910817,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.0025056209842944477,
+      "recovered_amplitude_pixels": 0.36951970399554085,
+      "wavelength_pixels": 96,
+      "wavelength_um": 176.64000000000001
+    },
+    {
+      "gain": 0.8051029828315859,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "horizontal",
+      "phase_error_radians": 0.003195571512045235,
+      "recovered_amplitude_pixels": 0.40255149141579294,
+      "wavelength_pixels": 128,
+      "wavelength_um": 235.52
+    },
+    {
+      "gain": 6.7588855451115044e-06,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -0.47597771034026937,
+      "recovered_amplitude_pixels": 3.3794427725557522e-06,
+      "wavelength_pixels": 4,
+      "wavelength_um": 7.36
+    },
+    {
+      "gain": 0.00017277927445153753,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.2983464073668804,
+      "recovered_amplitude_pixels": 8.638963722576876e-05,
+      "wavelength_pixels": 8,
+      "wavelength_um": 14.72
+    },
+    {
+      "gain": 0.00034887754507003234,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 2.160461945500848,
+      "recovered_amplitude_pixels": 0.00017443877253501617,
+      "wavelength_pixels": 12,
+      "wavelength_um": 22.080000000000002
+    },
+    {
+      "gain": 0.0011254403648381,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -2.934113992015047,
+      "recovered_amplitude_pixels": 0.00056272018241905,
+      "wavelength_pixels": 16,
+      "wavelength_um": 29.44
+    },
+    {
+      "gain": 0.0021459591898199282,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": -0.4953154088821625,
+      "recovered_amplitude_pixels": 0.0010729795949099641,
+      "wavelength_pixels": 24,
+      "wavelength_um": 44.160000000000004
+    },
+    {
+      "gain": 0.1071594719522357,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.04025977368624979,
+      "recovered_amplitude_pixels": 0.05357973597611785,
+      "wavelength_pixels": 32,
+      "wavelength_um": 58.88
+    },
+    {
+      "gain": 0.4177776160960305,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.01082388940342573,
+      "recovered_amplitude_pixels": 0.20888880804801524,
+      "wavelength_pixels": 48,
+      "wavelength_um": 88.32000000000001
+    },
+    {
+      "gain": 0.5932577058947035,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.005462156341896587,
+      "recovered_amplitude_pixels": 0.29662885294735175,
+      "wavelength_pixels": 64,
+      "wavelength_um": 117.76
+    },
+    {
+      "gain": 0.7420707689928977,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.004856464847141815,
+      "recovered_amplitude_pixels": 0.37103538449644885,
+      "wavelength_pixels": 96,
+      "wavelength_um": 176.64000000000001
+    },
+    {
+      "gain": 0.8081147965427496,
+      "imposed_amplitude_pixels": 0.5,
+      "orientation": "vertical",
+      "phase_error_radians": 0.00362646300537736,
+      "recovered_amplitude_pixels": 0.4040573982713748,
+      "wavelength_pixels": 128,
+      "wavelength_um": 235.52
+    }
+  ],
+  "sinusoidal_wavelengths_pixels": [
+    4,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64,
+    96,
+    128
+  ],
+  "status": "completed_algorithmic_transfer_characterisation",
+  "synthetic_transfer_only": true,
+  "window_selection": "fixed_central_window_of_registered_crop",
+  "window_shape": [
+    1024,
+    1024
+  ]
+}
