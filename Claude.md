@@ -630,9 +630,9 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
 
 ### Lot V6 — Histoire temporelle et validation conditionnelle
 
-- [ ] Imposer les déplacements de bord mesurés à chaque pas disponible au lieu
+- [!] Imposer les déplacements de bord mesurés à chaque pas disponible au lieu
   d'une rampe proportionnelle vers l'état final.
-- [ ] Comparer accumulation incrémentale DISFlow et corrélation directe
+- [x] Comparer accumulation incrémentale DISFlow et corrélation directe
   référence-vers-état courant pour quantifier la dérive.
 - [ ] Identifier les cartes sur les pas 1–20 et évaluer les pas 21–40 avec
   cartes gelées et état interne propagé.
@@ -645,6 +645,38 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
 - [ ] Limiter l'indistinguabilité isotrope/cinématique au cas uniaxial
   proportionnel monotone ; ne pas la généraliser aux chemins locaux
   multiaxiaux.
+
+**État V6 au 2026-07-29 :**
+
+- le pilote EF accepte désormais une histoire nodale transactionnelle de
+  `N+1` états, interpole uniquement lors des cutbacks et conserve strictement
+  le chemin proportionnel historique lorsqu'aucune histoire n'est fournie ;
+- les 40 champs ont été reconstruits par corrélation directe de la même image
+  de référence vers chaque état : aucune accumulation DISFlow n'est présente
+  dans cette série, donc le test de dérive incrémentale ne s'applique pas à
+  cette provenance ;
+- l'état final OpenCV 4.14 diffère du champ préparé de `1,583 %` en norme
+  vectorielle ; l'histoire est ancrée linéairement sur l'endpoint immuable,
+  sans supprimer sa déviation au chemin proportionnel ;
+- les états 31 et 32 contiennent un artefact EVM massif, cohérent avec la
+  déclaration `CORRUPTED_FRAMES` du script historique. Une correction
+  pré-enregistrée interpole les déplacements entre les états 30 et 33 :
+  l'EVM incrémentale maximale passe de `5,459e-2` à `5,623e-3`, sans changer
+  les autres états ni l'endpoint ;
+- malgré cette réparation, le calcul local MFront échoue dès la transition
+  état 3 → état 4 (`pseudo-time=0,10`) puis sous cutback jusqu'à
+  `0,0750244`. L'échec précède donc les frames réparées et ne peut pas leur
+  être attribué ;
+- l'état constitutif est restauré après chaque tentative et aucun résultat
+  mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
+  bloqué jusqu'à séparation entre limitation d'intégration MFront et
+  sur-correction du Newton non amorti.
+
+Artefacts : `validation/dic_multistep_p0043_audit.md`,
+`validation/dic_multistep_p0043_preregistration.md`,
+`validation/dic_multistep_p0043_endpoint_amendment.md`,
+`validation/dic_multistep_p0043_corrupted_frames_amendment.md` et
+`validation/dic_multistep_p0043_results.md`.
 
 ### Lot V7 — Test jumeau de la revendication data-driven
 

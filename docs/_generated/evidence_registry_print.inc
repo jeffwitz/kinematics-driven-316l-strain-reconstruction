@@ -95,3 +95,9 @@
 : Status: **verified**.
 : Conclusion: The radial decay is 179.38 um, spatial-block median 108.57 um, and directional ratio 1.60; this is an independent structural scale, not a direct measurement of ell.
 : Sources: primary: `validation/reference_data/ebsd_structural_length_v1/report.json`.
+
+**E-DIC-007 — Can the local P43 mechanics replay the measured 40-state DIC boundary history?**
+: Fidelity: full 660 by 610 element local MFront solve with measured boundary states. Parameters: 40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; unchanged constitutive and Newton settings.
+: Status: **blocked negative result**.
+: Conclusion: The documented optical-flow corruption is removed, but the unchanged local solver fails on the earlier state-3-to-state-4 transition. Measured-history prediction is not yet available.
+: Sources: primary measurement-history repair: `validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json`<br>primary mechanical failure: `validation/reference_data/dic_multistep_mechanics_p0043_measured_repaired_v1/failure_report.json`.
