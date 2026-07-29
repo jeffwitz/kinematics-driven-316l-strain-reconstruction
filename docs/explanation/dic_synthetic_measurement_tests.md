@@ -22,10 +22,10 @@ The test therefore includes:
 It does not include camera noise, illumination drift, out-of-plane motion or
 specimen evolution.
 
-## Exact DISFlow settings
+## Two declared DISFlow profiles
 
-The OpenCV 4.14 reproduction uses the `MEDIUM` DIS preset and reaches the
-native image grid:
+The V4 reproduction profile, `declared_medium_v4`, uses the `MEDIUM` DIS
+preset and reaches the native image grid:
 
 | DIS stage | Value |
 |---|---:|
@@ -51,6 +51,26 @@ in the campaign manifest. Stopping at scale 1 is not acceptable here: it
 removes the final full-resolution refinement and materially changes the
 result.
 
+The supplied historical source defines a second provenance profile,
+`legacy_script_2021`:
+
+| Setting | Requested by the source |
+|---|---:|
+| factory call | `cv2.DISOpticalFlow_create()` with no argument |
+| finest scale | **0** |
+| patch size | 4 px |
+| patch stride | 1 px |
+| gradient-descent iterations | not set |
+| mean normalisation | not set |
+| spatial propagation | not set |
+| variational \(\alpha,\delta,\gamma,\epsilon\) | 100, 1, 0, 0.002 |
+| variational iterations | 30 |
+
+Under OpenCV 4.14, the three unset factory values are read back as 16
+gradient-descent iterations, mean normalisation enabled and spatial
+propagation enabled. They are measured defaults of the current library, not
+certified values of the unavailable historical OpenCV binary.
+
 ## Sinusoidal transfer
 
 A sinusoidal displacement of amplitude 0.5 px is imposed along either image
@@ -61,9 +81,11 @@ fitted away from a 16 px border.
 :alt: Recovered displacement amplitude divided by imposed amplitude for synthetic sinusoids.
 :width: 78%
 
-The recovered displacement reaches 50 % amplitude at a wavelength of about
-49 px in both directions. This is a displacement modulation-transfer result,
-not a minimum resolvable strain-band width.
+The V4 reproduction reaches 50 % amplitude at a wavelength of about 49 px in
+both directions with the historical approximate warp, and about 50 px with
+the corrected warp. The legacy-source profile reaches about 56 px. These are
+displacement modulation-transfer results, not minimum resolvable strain-band
+widths.
 ```
 
 A sinusoid contains a single spatial frequency. A localised band contains
@@ -91,7 +113,8 @@ exact imposed EVM, recovered EVM and the FWHM reference step. The lower axis
 is in micrometres and the upper axis in pixels.
 ```
 
-The measured widths and amplitudes are:
+The original V4 campaign used the historical one-step inverse and integer
+FWHM. Its measured widths and amplitudes were:
 
 | Imposed FWHM | Physical width | Recovered FWHM | Recovered peak / imposed peak |
 |---:|---:|---:|---:|
@@ -101,7 +124,38 @@ The measured widths and amplitudes are:
 | 32 px | 58.88 µm | 28 px | 1.156--1.251 |
 
 The two values in a range correspond to the two image-axis orientations.
-Centroid shifts reach 1, 1--2, 2 and 5 px respectively.
+Those integer displacements were historically labelled centroid shifts, but
+were actually peak shifts. New campaigns report a true subpixel centroid
+after background subtraction.
+
+## What the corrected metrology changes
+
+The nominal synthetic warp now inverts
+\(x_{\mathrm{destination}}=x_{\mathrm{source}}+u(x_{\mathrm{source}})\)
+iteratively. The FWHM is obtained from the nearest half-height crossings
+around the actual peak with linear interpolation. The historical approximate
+inverse and integer count remain available only for non-regression.
+
+```{figure} ../_static/evidence/dic_profile_and_warp_comparison.png
+:alt: Normal band profiles separating the corrected inverse warp and the DISFlow profile.
+:width: 100%
+
+Cases A and B isolate the inverse-warp correction with the V4 profile. Cases
+B and C then isolate the DISFlow profile with the corrected warp.
+```
+
+For imposed horizontal FWHM values of 4, 8, 16 and 32 px:
+
+| Profile and warp | Subpixel recovered FWHM (px) |
+|---|---|
+| V4, corrected inverse | 4.62, 8.17, 15.35, 25.31 |
+| legacy-source, corrected inverse | 4.16, 6.34, 9.98, 18.33 |
+
+The old integer metric reported 28 px for the 32 px band with both the
+approximate and corrected V4 warps because it bridged shoulders and local
+dips. The corrected subpixel metric shows that the inverse was a substantial
+metrology error for localised bands even though it moved the sinusoidal
+MTF-50 by less than one pixel.
 
 ## What “acceptable” means here
 
@@ -171,9 +225,10 @@ production value.
 
 The measurement chain is neither a neutral sampler nor a simple Gaussian
 blur. Depending on scale, differentiation can attenuate or amplify peaks and
-can narrow a band. Future quantitative comparisons must therefore send FEM
-displacements through the same image-level observation operator before
-attributing these effects to the constitutive model.
+can narrow a band. The symmetric V3 replay therefore sends archived FEM
+displacements through the same image-level operator before computing EVM. It
+shows that this correction materially changes error levels and candidate
+ranking; see {doc}`current_evidence`.
 
 The current numerical evidence and its limitations are summarised in
 {doc}`current_evidence`; the operational reproduction command is in

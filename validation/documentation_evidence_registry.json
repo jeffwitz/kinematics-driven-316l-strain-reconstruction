@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "current_conclusion": "The local model is verified but produces overly concentrated localization. A coupled micromorphic model introduces a spatial length and redistributes plasticity. Current reduced-fidelity evidence distinguishes length effects from coupling-strength effects, but no transferable material length has yet been identified.",
+  "current_conclusion": "The local and coupled mechanics are numerically verified, but earlier scores compared raw FEM with image-observed DIC. Symmetric image-level replay shows that DISFlow materially changes amplitudes, morphology and the coupling ranking. Micromorphic coupling redistributes plasticity, but Hchi and ell remain unidentified and no material internal length is claimed.",
   "claims": [
     {
       "question": "Finite-element baseline passes its numerical regression contract",
@@ -75,10 +75,22 @@
       "evidence_ids": ["E-DIC-001"]
     },
     {
+      "question": "The supplied legacy DISFlow source and the declared V4 profile have different measured transfer",
+      "status": "verified for OpenCV 4.14",
+      "boundary": "The legacy source leaves factory defaults implicit; this is provenance sensitivity, not certification of the unavailable historical binary",
+      "evidence_ids": ["E-DIC-003"]
+    },
+    {
+      "question": "Symmetric image-level observation materially changes FEM/DIC metrics and candidate ranking",
+      "status": "verified",
+      "boundary": "Archived P43 displacement fields, legacy-source profile primary and declared V4 sensitivity; mechanics unchanged",
+      "evidence_ids": ["E-DIC-004"]
+    },
+    {
       "question": "Hchi and ell statistically identified",
       "status": "not demonstrated",
-      "boundary": "The short-length high-coupling region remains numerically censored",
-      "evidence_ids": ["E-ID-001"]
+      "boundary": "The earlier objective surface used raw FEM against observed DIC and must not be reused after the symmetric observation result",
+      "evidence_ids": ["E-ID-001", "E-DIC-004"]
     },
     {
       "question": "Transferable material internal length identified",
@@ -333,6 +345,68 @@
       ]
     },
     {
+      "id": "E-DIC-003",
+      "question": "How do the declared V4 and supplied legacy-source DISFlow profiles differ after correcting the synthetic warp?",
+      "fidelity": "candidate null pair and synthetic 1024 by 1024 real-speckle warps",
+      "parameters": "native scale 0; declared medium profile versus no-argument legacy-source factory; legacy and iterative inverse warps",
+      "status": "verified for OpenCV 4.14",
+      "conclusion": "The corrected inverse materially changes localized-band metrology while barely moving sinusoidal MTF-50. The legacy-source profile has a different null response and transfer from the declared V4 profile; it is primary by provenance, not by FEM/DIC score.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_legacy_profile_comparison_v1/case_a_declared_legacy_warp/manifest.json",
+          "role": "V4 non-regression",
+          "assertions": [
+            {"path": "/disflow_profile", "operator": "equals", "expected": "declared_medium_v4"},
+            {"path": "/warp_mode", "operator": "equals", "expected": "legacy_approximate_inverse"},
+            {"path": "/disflow_queried/finest_scale", "operator": "equals", "expected": 0}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_legacy_profile_comparison_v1/case_b_declared_corrected_warp/manifest.json",
+          "role": "corrected-warp control",
+          "assertions": [
+            {"path": "/disflow_profile", "operator": "equals", "expected": "declared_medium_v4"},
+            {"path": "/warp_mode", "operator": "equals", "expected": "iterative_forward_inverse"},
+            {"path": "/disflow_queried/patch_size", "operator": "equals", "expected": 8}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_legacy_profile_comparison_v1/case_c_legacy_corrected_warp/manifest.json",
+          "role": "legacy-source provenance profile",
+          "assertions": [
+            {"path": "/disflow_profile", "operator": "equals", "expected": "legacy_script_2021"},
+            {"path": "/warp_mode", "operator": "equals", "expected": "iterative_forward_inverse"},
+            {"path": "/disflow_requested/gradient_descent_iterations", "operator": "equals", "expected": null},
+            {"path": "/disflow_queried/gradient_descent_iterations", "operator": "equals", "expected": 16},
+            {"path": "/disflow_queried/patch_size", "operator": "equals", "expected": 4}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-004",
+      "question": "What changes when archived P43 FEM displacement is observed through the same image-level DISFlow chain as DIC?",
+      "fidelity": "eight full-resolution archived-displacement replays",
+      "parameters": "alpha 0, 1, 2 and 4; legacy-source profile primary; declared V4 sensitivity; no mechanical rerun",
+      "status": "verified",
+      "conclusion": "Symmetric observation substantially reduces apparent L2 error and raises correlation, but it separates the objectives: alpha 4 is best for amplitude and correlation while alpha 1 is best for absolute-q90 overlap. The old identification objective must not be reused.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+          "role": "primary consolidated metrics",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_symmetric_image_observation"},
+            {"path": "/mechanics_rerun", "operator": "equals", "expected": false},
+            {"path": "/rows/0/evm_post_filter_applied", "operator": "equals", "expected": false},
+            {"path": "/rows/0/observed/relative_l2", "operator": "less_than", "expected_path": "/rows/0/raw/relative_l2"},
+            {"path": "/rows/0/observed/pearson", "operator": "greater_than", "expected_path": "/rows/0/raw/pearson"},
+            {"path": "/rows/3/observed/relative_l2", "operator": "less_than", "expected_path": "/rows/0/observed/relative_l2"},
+            {"path": "/rows/1/observed/absolute_q90_iou", "operator": "greater_than", "expected_path": "/rows/3/observed/absolute_q90_iou"}
+          ]
+        }
+      ]
+    },
+    {
       "id": "E-EBSD-001",
       "question": "What structural scale is carried by the archived grain-mean Schmid field?",
       "fidelity": "independent EBSD/Schmid spatial statistic",
@@ -364,6 +438,16 @@
         ["Sinusoidal MTF-50 wavelength (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/mtf50_wavelength_pixels/horizontal", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/mtf50_wavelength_pixels/vertical", "format": ".1f"}],
         ["Recovered FWHM for imposed 16 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/2/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/6/recovered_width_pixels", "format": ".1f"}],
         ["Recovered FWHM for imposed 32 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/3/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/7/recovered_width_pixels", "format": ".1f"}]
+      ]
+    },
+    {
+      "target": "dic_symmetric_observation_metrics.inc",
+      "columns": ["Alpha", "Raw rel. L2", "Observed rel. L2", "Raw Pearson", "Observed Pearson", "Observed q90 IoU", "Observed q90 active"],
+      "rows": [
+        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/absolute_q90_active_fraction", "format": ".1%"}],
+        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/absolute_q90_active_fraction", "format": ".1%"}],
+        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/absolute_q90_active_fraction", "format": ".1%"}],
+        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/absolute_q90_active_fraction", "format": ".1%"}]
       ]
     },
     {
@@ -431,6 +515,22 @@
     {
       "source": "validation/reference_data/ebsd_structural_length_v1/correlation_profiles.png",
       "target": "evidence/ebsd_schmid_correlation.png"
+    },
+    {
+      "source": "validation/figures/dic_legacy_profile_comparison_v1/dic_profile_and_warp_comparison.png",
+      "target": "evidence/dic_profile_and_warp_comparison.png"
+    },
+    {
+      "source": "validation/figures/dic_symmetric_observation_p0043_v1/p43_symmetric_observation_fields.png",
+      "target": "evidence/p43_symmetric_observation_fields.png"
+    },
+    {
+      "source": "validation/figures/dic_symmetric_observation_p0043_v1/p43_symmetric_observation_metrics.png",
+      "target": "evidence/p43_symmetric_observation_metrics.png"
+    },
+    {
+      "source": "validation/figures/dic_symmetric_observation_p0043_v1/p43_peeq_separate.png",
+      "target": "evidence/p43_peeq_separate.png"
     }
   ]
 }

@@ -24,6 +24,12 @@ avec `1,89×` de gain sur le cœur P43 et `1,45×` sur un calcul EF complet
 intermédiaire sans changement scientifique ; CSR triangulaire et PARDISO
 symétrique `mtype=2` activés par défaut pour les comportements J2 vérifiés,
 avec `mtype=11` conservé pour les comportements non classifiés ;
+chaîne DIC consolidée avec profils historique-source et V4 explicites,
+convention d'axes vérifiée, warp direct inversé itérativement et métrologie
+FWHM sous-pixel ; opérateur d'observation image V3 appliqué sans recalcul
+mécanique aux cas P43 `alpha=0,1,2,4`, démontrant que DISFlow change
+fortement l'amplitude, la morphologie et le classement et suspendant toute
+nouvelle identification micromorphique sur l'ancien objectif ;
 exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
@@ -441,17 +447,63 @@ Sphinx HTML, linkcheck et PDF stricts verts.
 
 ### Lot V3 — Opérateur d'observation symétrique
 
-- [ ] Ajouter un mode `synthetic_disflow` à l'opérateur d'observation :
+- [x] Ajouter un mode `synthetic_disflow` à l'opérateur d'observation :
   déformer l'image de référence par `U_FEM`, relancer DISFlow avec les
   paramètres de production, puis reconstruire l'EVM.
-- [ ] Conserver le mode actuel pour la non-régression et enregistrer le mode,
+- [x] Conserver le mode actuel pour la non-régression et enregistrer le mode,
   les paramètres et les empreintes d'images dans le cache.
-- [ ] Recalculer la baseline locale et les campagnes couplées archivées, sans
+- [x] Recalculer la baseline locale et les campagnes couplées archivées, sans
   nouveau balayage de paramètres.
-- [ ] Rapporter toutes les métriques avant/après, notamment l'aire active au
+- [x] Rapporter toutes les métriques avant/après, notamment l'aire active au
   seuil DIC q90.
-- [ ] Documenter que cet opérateur reproduit le transfert algorithmique mais
+- [x] Documenter que cet opérateur reproduit le transfert algorithmique mais
   pas nécessairement les défauts expérimentaux complets.
+
+**Résultat V3 au 2026-07-29 :**
+
+- les sources DIC historiques ont été archivées sans modification sous
+  `references/legacy_dic/` ; leur source fixe `finest_scale=0`,
+  `patch_size=4`, `patch_stride=1`, les paramètres variationnels
+  `100/1/0/0,002` et 30 itérations, mais laisse le preset, les itérations DIS,
+  la normalisation de moyenne et la propagation spatiale aux valeurs d'usine ;
+- deux profils immuables sont disponibles :
+  `legacy_script_2021`, primaire par provenance, et `declared_medium_v4`,
+  sensibilité entièrement explicite. Sous OpenCV 4.14, les valeurs d'usine
+  relues pour le premier sont 16 itérations DIS, normalisation et propagation
+  activées ;
+- le masque historique reste absent. Conformément à la décision utilisateur,
+  cela ne bloque pas V3 : un masque booléen tout-valide, déterministe et
+  empreinté est déclaré, sans prétendre reproduire le masque historique ;
+- la convention a été déterminée sur les champs réels :
+  `U_40=flow[...,0]` est le déplacement de colonne, `V_40=flow[...,1]` celui
+  de ligne ; le repère canonique associe ligne à `x/ux` et colonne à `y/uy`,
+  sans transposition spatiale cachée ;
+- le warp nominal inverse maintenant exactement la carte directe par point
+  fixe en `float64`. La FWHM est sous-pixel et distingue maximum et barycentre.
+  L'ancienne approximation et l'ancienne FWHM entière restent uniquement
+  pour la non-régression ;
+- sur la bande horizontale de 32 px, V4 corrigée donne `25,31 px` et le
+  profil legacy-source `18,33 px`. Le warp corrigé modifie fortement cette
+  métrologie alors qu'il déplace le MTF-50 de moins d'un pixel ;
+- huit rejeux P43 ont été effectués sans relancer la mécanique :
+  `alpha=0,1,2,4` avec les deux profils. Pour le profil principal, la baseline
+  locale passe de `L2=0,952` à `0,486` et de `r=0,379` à `0,604` ;
+- après observation, `alpha=4` minimise L2 (`0,292`) et maximise la
+  corrélation (`0,664`), tandis que `alpha=1` maximise l'IoU absolue q90
+  (`0,323`). Le classement dépend donc de l'observable et aucune valeur
+  unique de couplage n'est sélectionnée ;
+- la PEEQ n'a pas changé : sa redistribution reste une preuve mécanique
+  séparée, jamais une PEEQ expérimentale ;
+- décision : **ne pas reprendre l'identification `Hchi,ell` sur l'ancienne
+  surface d'objectif**. Une nouvelle pré-inscription utilisant V3 et séparant
+  amplitude/localisation est obligatoire.
+
+Artefacts principaux :
+`validation/dic_legacy_profile_comparison_results.md`,
+`validation/dic_symmetric_observation_p0043_results.md`,
+`validation/reference_data/dic_legacy_profile_comparison_v1/`,
+`validation/reference_data/dic_symmetric_observation_p0043_v1/` et
+`docs/explanation/current_evidence.md`.
 
 ### Lot V4 — Valeur informative réelle des cartes
 

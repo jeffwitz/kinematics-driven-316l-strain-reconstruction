@@ -10,12 +10,14 @@ and what remains unresolved?
 
 - The local finite-element solver and its constitutive backends are coherent
   within their declared tolerances.
-- The local solution is overly concentrated in regions containing coherent
-  deformation bands.
+- The historical raw-FEM comparison overstates part of the local-model error
+  because only the experimental field had passed through DISFlow.
+- After symmetric image-level observation, the local case still predicts too
+  much area above the absolute DIC q90 threshold.
 - Coupled micromorphic feedback redistributes PEEQ; it does not merely filter
   the final EVM.
-- Excessive coupling can reduce global L2 while suppressing relevant band
-  morphology.
+- Stronger coupling can reduce global L2 and increase correlation while
+  degrading absolute-threshold band overlap.
 - Equal-$A_\chi$ pairs do not produce identical reduced-fidelity responses.
   Spatial length therefore has an observable effect beyond amplitude alone.
 
@@ -37,21 +39,36 @@ post-filter is applied to the FEM EVM.
 
 - $H_\chi$ and $\ell$ play distinct roles in the present reduced-fidelity
   observations.
-- Some explored regions show interior compromises between amplitude and
-  localization objectives.
+- The local formulation retains a model-form localization error after the
+  observation asymmetry is removed.
 - Reproducing measured band width requires an effective spatial scale.
 
-These statements are **supported**, not yet independently confirmed at high
-fidelity and transferred.
+These statements are **supported**, but the old parameter-objective surface is
+not reusable: it scored raw FEM against observed DIC. They require a new
+pre-registration using the symmetric operator before high-fidelity
+confirmation and transfer.
 
 ## What the DIC reproduction chain resolves
 
-The newly recovered raw image sequence makes a direct observation-chain test
-possible. With the reported DIS variational parameters applied in a declared
-OpenCV 4.14 implementation evaluated at native scale 0, the candidate
+The recovered raw image sequence makes a direct observation-chain test
+possible. Two profiles are kept distinct:
+
+- `legacy_script_2021` reproduces only the setters present in the supplied
+  source: scale 0, patch 4, stride 1 and variational refinement
+  \(\alpha=100,\delta=1,\gamma=0,\epsilon=0.002\), 30 iterations. Its
+  no-argument OpenCV factory leaves gradient-descent iterations, mean
+  normalisation and spatial propagation at factory values, which are queried
+  and recorded.
+- `declared_medium_v4` explicitly requests the medium preset, scale 0, patch
+  8, stride 3, 30 gradient-descent iterations, mean normalisation and spatial
+  propagation, with the same variational settings.
+
+Neither profile is chosen by its FEM/DIC score. The legacy-source profile is
+primary by provenance; V4 is a sensitivity. Under OpenCV 4.14, the candidate
 repeated final-state pair produces a spurious EVM RMS of
-\(1.36\times10^{-4}\), or **4.52 %** of the final DIC
-EVM RMS.
+\(1.64\times10^{-4}\) with the legacy-source profile and
+\(1.36\times10^{-4}\) with V4, respectively **5.42 %** and **4.52 %** of the
+final DIC EVM RMS.
 
 This number is an upper bound, not yet a certified random noise floor. The
 residual flow remains coherent over about 38 px, and the acquisition log does
@@ -69,10 +86,11 @@ coherence is incompatible with interpreting the map as white image noise.
 ```
 
 The synthetic tests also show why measurement resolution cannot be reduced to
-one number. Zero-mean displacement sinusoids reach 50 % recovered amplitude
-only around 49 px, whereas an integrated 16 px strain band is recovered
-at 12--13 px. The former isolates one spatial frequency; the latter contains
-low-frequency displacement content.
+one number. With the corrected forward-warp inverse, V4 reaches sinusoidal
+MTF-50 around 50 px and the legacy-source profile around 56 px. Their
+subpixel FWHM for the same imposed 32 px horizontal band is respectively
+25.31 and 18.33 px. The inverse-warp correction itself changes localised-band
+metrology substantially even though it moves MTF-50 by less than one pixel.
 
 The imposed and recovered EVM maps, normal sections and explicit FWHM
 reference steps are shown and interpreted in
@@ -87,10 +105,65 @@ The 8, 16 and 32 px bands are recovered at 7, 12--13 and 28 px respectively;
 the larger bands are narrowed and their differentiated peaks are amplified.
 ```
 
-The measurement chain is therefore demonstrably non-neutral. This evidence
-does not invalidate a structural length, but it requires the next FEM/DIC
-comparison to pass FEM displacements through the same image-level operator
-before any new nonlocal identification.
+```{figure} ../_static/evidence/dic_profile_and_warp_comparison.png
+:alt: Synthetic band profiles separating inverse-warp correction and DISFlow-profile effects.
+:width: 100%
+
+The first comparison isolates the corrected forward inverse; the second
+changes only the DISFlow provenance profile.
+```
+
+The measurement chain is demonstrably non-neutral. This evidence does not
+invalidate a structural length, but it prohibits fitting one with an
+asymmetric raw-FEM versus observed-DIC objective.
+
+## Symmetric observation changes the conclusion
+
+Archived P43 displacement fields for \(\alpha=0,1,2,4\) were replayed through
+the image-level chain without rerunning mechanics. DIC, raw FEM and observed
+FEM use the same historical EVM operator and the same 360 by 310 core.
+
+```{include} ../_generated/dic_symmetric_observation_metrics.inc
+```
+
+```{figure} ../_static/evidence/p43_symmetric_observation_fields.png
+:alt: Raw and DISFlow-observed FEM EVM and signed errors for four coupling levels.
+:width: 100%
+
+Every row uses common EVM and signed-error limits. The change from raw to
+observed FEM is entirely an observation effect.
+```
+
+For the local case, relative L2 falls from 0.952 to 0.486 and Pearson
+correlation rises from 0.379 to 0.604. The operator therefore explains a
+major fraction of the former apparent discrepancy. It does not remove all of
+it: the local case still predicts 16.1 % active area above the DIC q90
+threshold, whose reference fraction is 10 %.
+
+The candidate ranking is no longer one-dimensional. At \(\alpha=4\), the
+observed field has the lowest L2 and highest correlation, and its q90-active
+area is close to 10 %. However, absolute-q90 IoU is maximal at
+\(\alpha=1\), then decreases to 0.255 at \(\alpha=4\). Lowering global error
+by suppressing activity is not equivalent to placing the bands correctly.
+
+```{figure} ../_static/evidence/p43_symmetric_observation_metrics.png
+:alt: Raw and image-observed P43 metrics for the legacy-source and declared V4 profiles.
+:width: 86%
+
+Both profiles give the same qualitative conflict between amplitude and
+localisation. Their spread is observation-chain uncertainty, not a
+parameter-selection freedom.
+```
+
+PEEQ is unchanged by replay and remains a mechanical model output:
+
+```{figure} ../_static/evidence/p43_peeq_separate.png
+:alt: PEEQ model output for the four archived coupling levels.
+:width: 100%
+
+Increasing coupling redistributes and attenuates local plasticity. This is not
+an experimental PEEQ comparison.
+```
 
 ## An independent structural scale
 
@@ -147,18 +220,22 @@ genuine localisation information. Neither result establishes transferability.
 - complete Abaqus parity;
 - prediction before the experiment with the present local descriptor maps.
 
-## Current numerical limitation
+## Identification consequence
 
-The homogeneous Newton-25 design currently resolves two interior amplitude
+The earlier homogeneous Newton-25 design resolved two interior amplitude
 optima while leaving the shortest-length profile censored:
 
 ```{include} ../_generated/identifiability_status.inc
 ```
 
-The short-length, high-coupling corner is censored by mechanical convergence in
-the homogeneous F1 design. This is not interpreted as a physical boundary.
-Until that part of the parameter domain is either solved robustly or excluded
-for a physical reason, the objective surface is incomplete.
+That numerical censoring remains non-physical. More importantly, V3 now shows
+that the entire old objective surface used an asymmetric observation
+operator. It is retained as historical evidence that \(H_\chi\) and \(\ell\)
+can act differently, not as a valid parameter-identification surface.
+
+No new sweep is authorised until its operator, separate amplitude and
+localisation objectives, parameter domain and decision rule are
+pre-registered.
 
 The generated {doc}`../reference/claims_matrix` and
 {doc}`../reference/evidence_registry` are the source of detailed status and
@@ -167,8 +244,10 @@ reading path.
 
 ## Conclusion
 
-> Current evidence distinguishes a spatial-length effect from coupling
-> strength, but it does not identify a transferable material length.
+> Symmetric image-level observation removes a large part of the apparent
+> FEM/DIC discrepancy and changes the coupling ranking. Micromorphic
+> redistribution remains demonstrated, but neither \(H_\chi\) nor \(\ell\)
+> is identified and no material internal length is claimed.
 
 The final chapter, {doc}`scope_and_prediction`, states what the software can
 claim and what extension is required next.
