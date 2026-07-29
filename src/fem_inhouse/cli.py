@@ -35,6 +35,7 @@ from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import (
     CoupledValidationThresholds,
     PartitionWorkflow,
+    characterise_dic_measurement_chain,
     collect_identification_results,
     diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
@@ -380,6 +381,17 @@ def _parser() -> argparse.ArgumentParser:
     section_equilibrium.add_argument("--thickness-mm", type=float, required=True)
     section_equilibrium.add_argument("--output", type=Path, required=True)
     section_equilibrium.add_argument("--overwrite", action="store_true")
+
+    measurement_chain = commands.add_parser(
+        "characterise-dic-measurement-chain",
+        help="run preregistered DISFlow null and synthetic transfer diagnostics",
+    )
+    measurement_chain.add_argument("--images", type=Path, required=True)
+    measurement_chain.add_argument("--prepared-case", type=Path, required=True)
+    measurement_chain.add_argument("--output", type=Path, required=True)
+    measurement_chain.add_argument("--figure-output", type=Path, required=True)
+    measurement_chain.add_argument("--null-only", action="store_true")
+    measurement_chain.add_argument("--overwrite", action="store_true")
 
     map_controls = commands.add_parser(
         "validate-material-map-controls",
@@ -752,6 +764,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(section_report)
+        return 0
+    if args.command == "characterise-dic-measurement-chain":
+        measurement_report = characterise_dic_measurement_chain(
+            image_directory=args.images,
+            prepared_case=args.prepared_case,
+            output_directory=args.output,
+            figure_directory=args.figure_output,
+            overwrite=args.overwrite,
+            run_transfer=not args.null_only,
+        )
+        _print_json(measurement_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(

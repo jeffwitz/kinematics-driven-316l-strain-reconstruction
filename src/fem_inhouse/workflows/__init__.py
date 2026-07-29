@@ -11,6 +11,7 @@ from fem_inhouse.workflows.coupled_nonlocal_validation import (
     CoupledValidationThresholds,
     validate_coupled_nonlocal_campaign,
 )
+from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
 from fem_inhouse.workflows.dic_partition_selection import (
     scan_dic_partition_heterogeneity,
     write_dic_partition_heterogeneity_report,
@@ -61,6 +62,7 @@ __all__ = [
     "PartitionWorkflow",
     "ReferenceHardeningReport",
     "analyze_joint_identifiability",
+    "characterise_dic_measurement_chain",
     "collect_identification_results",
     "common_color_limits",
     "compute_reference_hardening_modulus",
