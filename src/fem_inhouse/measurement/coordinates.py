@@ -13,14 +13,16 @@ def image_flow_to_canonical(
     *,
     pixel_size_mm: float,
 ) -> FloatArray:
-    """Convert OpenCV ``(row, column, [dcolumn,drow])`` to ``(x,y,[ux,uy])``."""
+    """Convert image flow to this experiment's canonical transverse/tensile frame."""
 
     flow = np.asarray(flow_pixels, dtype=np.float64)
     if flow.ndim != 3 or flow.shape[-1] != 2 or not np.isfinite(flow).all():
         raise ValueError("flow_pixels must have finite shape (rows, columns, 2)")
     if not np.isfinite(pixel_size_mm) or pixel_size_mm <= 0.0:
         raise ValueError("pixel_size_mm must be finite and positive")
-    return np.ascontiguousarray(np.transpose(flow, (1, 0, 2)) * pixel_size_mm)
+    return np.ascontiguousarray(
+        np.stack((flow[..., 1], flow[..., 0]), axis=-1) * pixel_size_mm
+    )
 
 
 def canonical_to_image_flow(
@@ -39,9 +41,8 @@ def canonical_to_image_flow(
         raise ValueError("displacement_mm must have finite shape (x, y, 2)")
     if not np.isfinite(pixel_size_mm) or pixel_size_mm <= 0.0:
         raise ValueError("pixel_size_mm must be finite and positive")
-    return np.ascontiguousarray(
-        np.transpose(displacement / pixel_size_mm, (1, 0, 2))
-    )
+    scaled = displacement / pixel_size_mm
+    return np.ascontiguousarray(np.stack((scaled[..., 1], scaled[..., 0]), axis=-1))
 
 
 def historical_uv_to_canonical(

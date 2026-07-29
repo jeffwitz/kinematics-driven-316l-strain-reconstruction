@@ -62,7 +62,7 @@ def test_image_flow_evm_is_zero_for_rigid_translation() -> None:
 
     evm = image_flow_to_historical_evm(flow)
 
-    assert evm.shape == (18, 16)
+    assert evm.shape == (16, 18)
     np.testing.assert_allclose(evm, 0.0, rtol=0.0, atol=1e-14)
 
 

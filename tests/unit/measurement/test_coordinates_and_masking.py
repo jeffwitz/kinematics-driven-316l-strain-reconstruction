@@ -19,10 +19,10 @@ def test_image_and_canonical_conversions_are_exact_inverses() -> None:
     canonical = image_flow_to_canonical(flow, pixel_size_mm=0.00184)
     recovered = canonical_to_image_flow(canonical, pixel_size_mm=0.00184)
 
-    assert canonical.shape == (7, 5, 2)
+    assert canonical.shape == (5, 7, 2)
     np.testing.assert_allclose(recovered, flow, rtol=0.0, atol=1e-12)
-    np.testing.assert_allclose(canonical[..., 0], flow[..., 0].T * 0.00184)
-    np.testing.assert_allclose(canonical[..., 1], flow[..., 1].T * 0.00184)
+    np.testing.assert_allclose(canonical[..., 0], flow[..., 1] * 0.00184)
+    np.testing.assert_allclose(canonical[..., 1], flow[..., 0] * 0.00184)
 
 
 def test_historical_experiment_maps_v_to_ux_and_u_to_uy() -> None:

@@ -21,6 +21,7 @@ from scipy import fft
 from fem_inhouse.measurement import (
     DISFlowConfig,
     WarpMode,
+    image_flow_to_canonical,
     profile_metrology,
     query_disflow_configuration,
     run_disflow,
@@ -119,9 +120,12 @@ def image_flow_to_historical_evm(
     flow = np.asarray(flow_pixels, dtype=np.float64)
     if flow.ndim != 3 or flow.shape[-1] != 2 or not np.isfinite(flow).all():
         raise ValueError("flow_pixels must have finite shape (rows, columns, 2)")
-    displacement = np.stack((flow[..., 0].T, flow[..., 1].T), axis=-1)
+    displacement = image_flow_to_canonical(
+        flow,
+        pixel_size_mm=PIXEL_SIZE_UM / 1_000.0,
+    )
     return reconstruct_historical_evm(
-        displacement * (PIXEL_SIZE_UM / 1_000.0),
+        displacement,
         spacing_x_mm=PIXEL_SIZE_UM / 1_000.0,
         spacing_y_mm=PIXEL_SIZE_UM / 1_000.0,
         poisson_ratio=poisson_ratio,
