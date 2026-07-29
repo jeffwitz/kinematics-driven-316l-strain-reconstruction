@@ -92,6 +92,10 @@ class SolverConfig:
     line_search_armijo_coefficient: float = 1e-4
     line_search_minimum_factor: float = 2.0**-12
     line_search_maximum_trials: int = 12
+    boundary_history_predictor: Literal[
+        "elastic",
+        "secant-corrected-elastic",
+    ] = "elastic"
 
     def __post_init__(self) -> None:
         if self.increments < 1:
@@ -121,6 +125,14 @@ class SolverConfig:
             raise ValueError("line_search_minimum_factor must lie in (0, 1]")
         if self.line_search_maximum_trials < 1:
             raise ValueError("line_search_maximum_trials must be positive")
+        if self.boundary_history_predictor not in {
+            "elastic",
+            "secant-corrected-elastic",
+        }:
+            raise ValueError(
+                "boundary_history_predictor must be 'elastic' or "
+                "'secant-corrected-elastic'"
+            )
         if isinstance(self.mfront_threads, bool) or not isinstance(self.mfront_threads, int):
             raise TypeError("mfront_threads must be an integer")
         if self.mfront_threads < 1:

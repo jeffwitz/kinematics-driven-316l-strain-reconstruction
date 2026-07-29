@@ -285,6 +285,7 @@ def run_case_study(
         line_search_armijo_coefficient=(config.solver.line_search_armijo_coefficient),
         line_search_minimum_factor=config.solver.line_search_minimum_factor,
         line_search_maximum_trials=config.solver.line_search_maximum_trials,
+        boundary_history_predictor=config.solver.boundary_history_predictor,
         nonlocal_plasticity_enabled=config.nonlocal_plasticity.enabled,
         nonlocal_length_scale_mm=config.nonlocal_plasticity.length_scale_mm,
         nonlocal_coupling_modulus_mpa=(config.nonlocal_plasticity.coupling_modulus_mpa),

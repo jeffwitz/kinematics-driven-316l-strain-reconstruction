@@ -119,6 +119,7 @@ def test_typed_api_validates_and_forwards_configuration(monkeypatch) -> None:
     assert captured.kwargs["mfront_library"] == "/tmp/libBehaviour.so"
     assert captured.kwargs["mfront_threads"] == 3
     assert captured.kwargs["boundary_displacement_history"] is None
+    assert captured.kwargs["boundary_history_predictor"] == "elastic"
 
 
 def test_measured_boundary_history_reaches_each_registered_knot() -> None:

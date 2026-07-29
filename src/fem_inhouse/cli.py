@@ -36,6 +36,7 @@ from fem_inhouse.solver import linear_solver_backend, require_pypardiso
 from fem_inhouse.workflows import (
     CoupledValidationThresholds,
     PartitionWorkflow,
+    bridge_dic_multistep_history,
     characterise_dic_measurement_chain,
     collect_identification_results,
     diagnose_dic_photometric_quality,
@@ -486,6 +487,23 @@ def _parser() -> argparse.ArgumentParser:
     multistep_repair.add_argument("--output", type=Path, required=True)
     multistep_repair.add_argument("--overwrite", action="store_true")
 
+    multistep_bridge = commands.add_parser(
+        "bridge-dic-multistep-history",
+        help="replace explicitly declared DIC states by a piecewise-linear bridge",
+    )
+    multistep_bridge.add_argument("--history", type=Path, required=True)
+    multistep_bridge.add_argument("--source-campaign", type=Path, required=True)
+    multistep_bridge.add_argument("--partition-id", type=int, required=True)
+    multistep_bridge.add_argument(
+        "--state",
+        type=int,
+        action="append",
+        required=True,
+        help="measured state to replace; repeat for consecutive states",
+    )
+    multistep_bridge.add_argument("--output", type=Path, required=True)
+    multistep_bridge.add_argument("--overwrite", action="store_true")
+
     multistep_mechanics = commands.add_parser(
         "run-dic-multistep-mechanics",
         help="run local mechanics with measured or proportional P43 boundaries",
@@ -496,6 +514,11 @@ def _parser() -> argparse.ArgumentParser:
     multistep_mechanics.add_argument("--partition-id", type=int, required=True)
     multistep_mechanics.add_argument("--mode", choices=("measured", "proportional"), required=True)
     multistep_mechanics.add_argument("--newton-line-search", action="store_true")
+    multistep_mechanics.add_argument(
+        "--boundary-history-predictor",
+        choices=("elastic", "secant-corrected-elastic"),
+        default="elastic",
+    )
     multistep_mechanics.add_argument("--output", type=Path, required=True)
     multistep_mechanics.add_argument("--overwrite", action="store_true")
 
@@ -943,6 +966,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         _print_json(repair_report)
         return 0
+    if args.command == "bridge-dic-multistep-history":
+        bridge_report = bridge_dic_multistep_history(
+            history_directory=args.history,
+            source_campaign=args.source_campaign,
+            partition_id=args.partition_id,
+            bridged_states=tuple(args.state),
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(bridge_report)
+        return 0
     if args.command == "run-dic-multistep-mechanics":
         mechanics_report = run_dic_multistep_mechanics(
             prepared_case=args.prepared_case,
@@ -952,6 +986,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             mode=args.mode,
             output_directory=args.output,
             newton_line_search=args.newton_line_search,
+            boundary_history_predictor=args.boundary_history_predictor,
             overwrite=args.overwrite,
         )
         _print_json(mechanics_report)

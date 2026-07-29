@@ -83,6 +83,59 @@ def test_optional_newton_line_search_preserves_converged_solution() -> None:
     assert searched.diagnostics.line_search_failures == 0
 
 
+def test_secant_corrected_boundary_predictor_preserves_converged_solution() -> None:
+    case = reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
+    increments = 5
+    final = np.stack(
+        (case.displacement_x_mm, case.displacement_y_mm),
+        axis=-1,
+    )
+    history = np.linspace(0.0, 1.0, increments + 1)[:, None, None, None] * final
+    base_solver = replace(
+        case.config.solver,
+        increments=increments,
+        max_newton_iterations=20,
+        boundary_history_predictor="elastic",
+    )
+    elastic = run_case_study(
+        replace(case.config, solver=base_solver),
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        boundary_displacement_history_mm=history,
+    )
+    secant = run_case_study(
+        replace(
+            case.config,
+            solver=replace(
+                base_solver,
+                boundary_history_predictor="secant-corrected-elastic",
+            ),
+        ),
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        boundary_displacement_history_mm=history,
+    )
+
+    for elastic_field, secant_field in zip(
+        elastic.arrays(),
+        secant.arrays(),
+        strict=True,
+    ):
+        np.testing.assert_allclose(
+            secant_field,
+            elastic_field,
+            rtol=1.0e-10,
+            atol=1.0e-12,
+        )
+    assert secant.diagnostics is not None
+    assert secant.diagnostics.boundary_history_predictor == "secant-corrected-elastic"
+    assert secant.diagnostics.secant_predictor_uses > 0
+
+
 def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
     case = reduced_biaxial_case(nx=6, ny=6, constitutive_backend="python")
     indices = np.indices((6, 6))

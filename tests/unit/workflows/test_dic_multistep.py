@@ -5,6 +5,7 @@ import pytest
 
 from fem_inhouse.workflows.dic_multistep import (
     anchor_displacement_history,
+    bridge_displacement_history_states,
     repair_corrupted_displacement_states,
 )
 
@@ -64,3 +65,27 @@ def test_repair_corrupted_states_rejects_invalid_brackets() -> None:
             corrupted_states=(3,),
             bracketing_states=(1, 3),
         )
+
+
+def test_bridge_history_interpolates_declared_consecutive_states_only() -> None:
+    history = np.zeros((8, 2, 3, 2))
+    history[:, ..., 0] = np.arange(8)[:, None, None]
+    history[:, ..., 1] = -np.arange(8)[:, None, None]
+    history[3:5] += 50.0
+
+    bridged = bridge_displacement_history_states(
+        history,
+        bridged_states=(3, 4),
+    )
+
+    np.testing.assert_allclose(bridged[3], (2.0 * history[2] + history[5]) / 3.0)
+    np.testing.assert_allclose(bridged[4], (history[2] + 2.0 * history[5]) / 3.0)
+    unaffected = [0, 1, 2, 5, 6, 7]
+    np.testing.assert_array_equal(bridged[unaffected], history[unaffected])
+
+
+@pytest.mark.parametrize("states", [(), (0,), (4,)])
+def test_bridge_history_rejects_missing_or_endpoint_states(states: tuple[int, ...]) -> None:
+    history = np.zeros((5, 2, 2, 2))
+    with pytest.raises(ValueError):
+        bridge_displacement_history_states(history, bridged_states=states)
