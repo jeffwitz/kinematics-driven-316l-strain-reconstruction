@@ -38,6 +38,7 @@ from fem_inhouse.workflows import (
     PartitionWorkflow,
     characterise_dic_measurement_chain,
     collect_identification_results,
+    diagnose_dic_photometric_quality,
     diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
     generate_high_fidelity_manifest,
@@ -420,6 +421,25 @@ def _parser() -> argparse.ArgumentParser:
     )
     observation_replay.add_argument("--output", type=Path, required=True)
     observation_replay.add_argument("--overwrite", action="store_true")
+
+    photometric_quality = commands.add_parser(
+        "diagnose-dic-photometric-quality",
+        help="relate direct DIC image residuals to archived V3 FEM/DIC errors",
+    )
+    photometric_quality.add_argument("--reference-image", type=Path, required=True)
+    photometric_quality.add_argument("--final-image", type=Path, required=True)
+    photometric_quality.add_argument("--prepared-case", type=Path, required=True)
+    photometric_quality.add_argument(
+        "--replay",
+        action="append",
+        nargs=3,
+        metavar=("LABEL", "ALPHA", "PATH"),
+        required=True,
+        help="repeat for each legacy-profile V3 replay",
+    )
+    photometric_quality.add_argument("--output", type=Path, required=True)
+    photometric_quality.add_argument("--figure-output", type=Path, required=True)
+    photometric_quality.add_argument("--overwrite", action="store_true")
 
     map_controls = commands.add_parser(
         "validate-material-map-controls",
@@ -819,6 +839,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(replay_report)
+        return 0
+    if args.command == "diagnose-dic-photometric-quality":
+        photometric_report = diagnose_dic_photometric_quality(
+            reference_image=args.reference_image,
+            final_image=args.final_image,
+            prepared_case=args.prepared_case,
+            replays=tuple(
+                (label, float(alpha), Path(path))
+                for label, alpha, path in args.replay
+            ),
+            output_directory=args.output,
+            figure_directory=args.figure_output,
+            overwrite=args.overwrite,
+        )
+        _print_json(photometric_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
