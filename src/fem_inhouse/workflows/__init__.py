@@ -12,6 +12,10 @@ from fem_inhouse.workflows.coupled_nonlocal_validation import (
     validate_coupled_nonlocal_campaign,
 )
 from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
+from fem_inhouse.workflows.dic_multistep import (
+    anchor_displacement_history,
+    prepare_dic_multistep_history,
+)
 from fem_inhouse.workflows.dic_observation_replay import replay_dic_observation
 from fem_inhouse.workflows.dic_partition_selection import (
     scan_dic_partition_heterogeneity,
@@ -71,6 +75,7 @@ __all__ = [
     "PartitionWorkflow",
     "ReferenceHardeningReport",
     "analyze_joint_identifiability",
+    "anchor_displacement_history",
     "characterise_dic_measurement_chain",
     "collect_identification_results",
     "common_color_limits",
@@ -90,6 +95,7 @@ __all__ = [
     "periodic_residual_on_support",
     "plot_coupled_alpha_fields",
     "prepare_coupled_alpha_fields",
+    "prepare_dic_multistep_history",
     "prepare_material_map_control",
     "prepare_transfer_validation",
     "profile_coupling_modulus",
