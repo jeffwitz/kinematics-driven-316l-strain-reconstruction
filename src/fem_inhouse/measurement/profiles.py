@@ -22,7 +22,9 @@ class DISFlowProfile:
             "name": self.name,
             "source": self.source,
             "requested": requested,
-            "explicitly_set": sorted(name for name, value in requested.items() if value is not None),
+            "explicitly_set": sorted(
+                name for name, value in requested.items() if value is not None
+            ),
             "left_to_factory": sorted(name for name, value in requested.items() if value is None),
             "queried_opencv": query_disflow_configuration(self.config),
         }
