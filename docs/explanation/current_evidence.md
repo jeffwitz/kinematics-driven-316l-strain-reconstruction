@@ -48,12 +48,13 @@ fidelity and transferred.
 
 The newly recovered raw image sequence makes a direct observation-chain test
 possible. With the reported DIS variational parameters applied in a declared
-OpenCV 4.14 implementation, the candidate repeated final-state pair produces
-a spurious EVM RMS of \(7.90\times10^{-5}\), or **2.62 %** of the final DIC
+OpenCV 4.14 implementation evaluated at native scale 0, the candidate
+repeated final-state pair produces a spurious EVM RMS of
+\(1.36\times10^{-4}\), or **4.52 %** of the final DIC
 EVM RMS.
 
 This number is an upper bound, not yet a certified random noise floor. The
-residual flow remains coherent over about 120 px, and the acquisition log does
+residual flow remains coherent over about 38 px, and the acquisition log does
 not certify that the two last images are the same physical state.
 
 ```{include} ../_generated/dic_measurement_chain_metrics.inc
@@ -69,17 +70,17 @@ coherence is incompatible with interpreting the map as white image noise.
 
 The synthetic tests also show why measurement resolution cannot be reduced to
 one number. Zero-mean displacement sinusoids reach 50 % recovered amplitude
-only around 126--127 px, whereas an integrated 16 px strain band is recovered
-at 15--17 px. The former isolates one spatial frequency; the latter contains
+only around 49 px, whereas an integrated 16 px strain band is recovered
+at 12--13 px. The former isolates one spatial frequency; the latter contains
 low-frequency displacement content.
 
 ```{figure} ../_static/evidence/dic_measurement_band_fidelity.png
 :alt: Recovered versus imposed DIC strain-band width and peak amplitude.
 :width: 85%
 
-Bands narrower than 8 px are broadened and attenuated. A 16 px band is
-recovered within one pixel, while a 32 px band still shows orientation-
-dependent width bias.
+At native scale, a 4 px band is resolved at 4 px with about 83 % of its peak.
+The 8, 16 and 32 px bands are recovered at 7, 12--13 and 28 px respectively;
+the larger bands are narrowed and their differentiated peaks are amplified.
 ```
 
 The measurement chain is therefore demonstrably non-neutral. This evidence

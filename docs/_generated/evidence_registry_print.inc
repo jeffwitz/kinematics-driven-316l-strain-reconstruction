@@ -55,10 +55,10 @@
 : Sources: primary: `validation/joint_nonlocal_identifiability_p0043_newton25_execution.json`.
 
 **E-DIC-001 — What noise upper bound and spatial transfer does the declared DISFlow reproduction produce?**
-: Fidelity: full-crop candidate null pair and synthetic 1024 by 1024 warps. Parameters: OpenCV 4.14 DIS medium; reported alpha, delta, gamma, epsilon; 30 iterations.
+: Fidelity: full-crop candidate null pair and synthetic 1024 by 1024 warps. Parameters: OpenCV 4.14 DIS medium; native finest scale 0; reported alpha, delta, gamma, epsilon; 30 iterations.
 : Status: **verified for the reproduction implementation**.
-: Conclusion: The candidate-repeat EVM RMS is 2.62 percent of the final DIC RMS but remains spatially coherent, so it is an upper bound rather than a certified noise floor. Synthetic sinusoidal and band tests show strongly scale-dependent transfer.
-: Sources: primary: `validation/reference_data/dic_measurement_chain_v1/null_test_report.json`<br>primary: `validation/reference_data/dic_measurement_chain_v1/transfer_report.json`.
+: Conclusion: At native finest scale 0, the candidate-repeat EVM RMS is 4.52 percent of the final DIC RMS but remains spatially coherent, so it is an upper bound rather than a certified noise floor. Synthetic sinusoidal and band tests show strongly scale-dependent transfer.
+: Sources: primary: `validation/reference_data/dic_measurement_chain_v2/manifest.json`<br>primary: `validation/reference_data/dic_measurement_chain_v2/null_test_report.json`<br>primary: `validation/reference_data/dic_measurement_chain_v2/transfer_report.json`.
 
 **E-EBSD-001 — What structural scale is carried by the archived grain-mean Schmid field?**
 : Fidelity: independent EBSD/Schmid spatial statistic. Parameters: frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap.

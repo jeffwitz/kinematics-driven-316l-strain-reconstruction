@@ -23,6 +23,12 @@ Read the experiment-specific frame mapping in
 {doc}`../reference/experimental_data_inventory` before treating the final pair
 as a repeated state.
 
+The production metrology must reach the native image grid:
+`finest_scale=0`. Stopping at scale 1 discards the last full-resolution
+refinement and is not acceptable for measuring the response to 4--32 px
+bands. The command records both the requested and queried OpenCV settings in
+the manifest; verify this value before interpreting the results.
+
 ## Run both diagnostics
 
 ```bash
@@ -53,6 +59,20 @@ band-width plot.
 The main EVM is never Helmholtz-filtered in this workflow. The synthetic tests
 characterise the algorithmic observation operator; they do not reproduce
 out-of-plane motion or load-dependent illumination changes.
+
+Before using a report, check:
+
+```bash
+python - <<'PY'
+import json
+from pathlib import Path
+
+manifest = json.loads(Path(
+    "validation/reference_data/my_dic_chain/manifest.json"
+).read_text())
+assert manifest["disflow_queried"]["finest_scale"] == 0
+PY
+```
 
 ## Common failures
 

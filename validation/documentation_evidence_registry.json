@@ -274,12 +274,20 @@
       "id": "E-DIC-001",
       "question": "What noise upper bound and spatial transfer does the declared DISFlow reproduction produce?",
       "fidelity": "full-crop candidate null pair and synthetic 1024 by 1024 warps",
-      "parameters": "OpenCV 4.14 DIS medium; reported alpha, delta, gamma, epsilon; 30 iterations",
+      "parameters": "OpenCV 4.14 DIS medium; native finest scale 0; reported alpha, delta, gamma, epsilon; 30 iterations",
       "status": "verified for the reproduction implementation",
-      "conclusion": "The candidate-repeat EVM RMS is 2.62 percent of the final DIC RMS but remains spatially coherent, so it is an upper bound rather than a certified noise floor. Synthetic sinusoidal and band tests show strongly scale-dependent transfer.",
+      "conclusion": "At native finest scale 0, the candidate-repeat EVM RMS is 4.52 percent of the final DIC RMS but remains spatially coherent, so it is an upper bound rather than a certified noise floor. Synthetic sinusoidal and band tests show strongly scale-dependent transfer.",
       "sources": [
         {
-          "path": "validation/reference_data/dic_measurement_chain_v1/null_test_report.json",
+          "path": "validation/reference_data/dic_measurement_chain_v2/manifest.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/disflow_requested/finest_scale", "operator": "equals", "expected": 0},
+            {"path": "/disflow_queried/finest_scale", "operator": "equals", "expected": 0}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_measurement_chain_v2/null_test_report.json",
           "role": "primary",
           "assertions": [
             {"path": "/status", "operator": "equals", "expected": "completed_characterisation_no_pass_fail"},
@@ -289,7 +297,7 @@
           ]
         },
         {
-          "path": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json",
+          "path": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json",
           "role": "primary",
           "assertions": [
             {"path": "/status", "operator": "equals", "expected": "completed_algorithmic_transfer_characterisation"},
@@ -327,10 +335,10 @@
       "target": "dic_measurement_chain_metrics.inc",
       "columns": ["Quantity", "Horizontal / column", "Vertical / row"],
       "rows": [
-        ["Centred displacement standard deviation (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/null_test_report.json", "path": "/flow_column_centered_pixels/standard_deviation", "format": ".4f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/null_test_report.json", "path": "/flow_row_centered_pixels/standard_deviation", "format": ".4f"}],
-        ["Sinusoidal MTF-50 wavelength (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/mtf50_wavelength_pixels/horizontal", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/mtf50_wavelength_pixels/vertical", "format": ".1f"}],
-        ["Recovered FWHM for imposed 16 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/2/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/6/recovered_width_pixels", "format": ".1f"}],
-        ["Recovered FWHM for imposed 32 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/3/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v1/transfer_report.json", "path": "/band_rows/7/recovered_width_pixels", "format": ".1f"}]
+        ["Centred displacement standard deviation (px)", {"source": "validation/reference_data/dic_measurement_chain_v2/null_test_report.json", "path": "/flow_column_centered_pixels/standard_deviation", "format": ".4f"}, {"source": "validation/reference_data/dic_measurement_chain_v2/null_test_report.json", "path": "/flow_row_centered_pixels/standard_deviation", "format": ".4f"}],
+        ["Sinusoidal MTF-50 wavelength (px)", {"source": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json", "path": "/mtf50_wavelength_pixels/horizontal", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json", "path": "/mtf50_wavelength_pixels/vertical", "format": ".1f"}],
+        ["Recovered FWHM for imposed 16 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json", "path": "/band_rows/2/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json", "path": "/band_rows/6/recovered_width_pixels", "format": ".1f"}],
+        ["Recovered FWHM for imposed 32 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json", "path": "/band_rows/3/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v2/transfer_report.json", "path": "/band_rows/7/recovered_width_pixels", "format": ".1f"}]
       ]
     },
     {

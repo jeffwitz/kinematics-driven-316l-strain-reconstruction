@@ -237,44 +237,44 @@ interprétation de `ell`.
 - [x] Distinguer la fonction de transfert algorithmique synthétique des
   artefacts expérimentaux d'éclairage, de speckle et de mouvement hors plan.
 
-**Résultat V2.1/V2.2 initial invalidé au 2026-07-29 :**
+**Résultat V2.1/V2.2 corrigé au 2026-07-29 :**
 
 - une commande reproductible `characterise-dic-measurement-chain` applique
   les paramètres rapportés dans OpenCV 4.14 et sérialise les paramètres
   demandés et relus ;
 - la première exécution utilisait `finest_scale=1`, donc s'arrêtait avant
   l'échelle native. Ce choix invalide toute conclusion métrologique sur les
-  bandes de `4–32 px` ; les chiffres ci-dessous sont conservés uniquement
-  comme provenance et ne doivent plus être cités ;
-- la paire finale candidate donne un RMS EVM parasite de `7,895e-5`, soit
-  `2,62 %` du RMS EVM DIC final ; le seuil pré-enregistré classe cette
+  bandes de `4–32 px` ; V1 est conservée uniquement comme provenance ;
+- V2 impose `finest_scale=0`. La paire finale candidate donne alors un RMS EVM
+  parasite de `1,363e-4`, soit `4,52 %` du RMS EVM DIC final ; le seuil
+  pré-enregistré classe encore cette
   amplitude comme faible ;
 - cette paire ne constitue pas encore un bruit blanc certifié : le flot est
-  cohérent sur `119,8 px` (`220,4 µm`) et le journal d'acquisition manque ;
-- le MTF-50 sinusoïdal se situe vers `126–127 px`, tandis qu'une bande intégrée
-  de `16 px` est reconstruite à `15–17 px` ; ces deux essais mesurent des
+  cohérent sur `38,2 px` (`70,3 µm`) et le journal d'acquisition manque ;
+- le MTF-50 sinusoïdal se situe vers `49 px`, tandis qu'une bande intégrée
+  de `16 px` est reconstruite à `12–13 px` ; ces deux essais mesurent des
   contenus spectraux différents et doivent rester présentés ensemble ;
-- les bandes de `4 px` sont élargies à `7–8 px` avec seulement environ `42 %`
-  du pic ; à `32 px`, le pic est conservé mais la largeur reconstruite reste
-  anisotrope (`30 px` horizontal, `25 px` vertical) ;
+- la bande de `4 px` est résolue à `4 px` avec environ `83 %` du pic ; les
+  bandes de `8`, `16` et `32 px` sont reconstruites à `7`, `12–13` et `28 px` ;
+- la comparaison V1/V2 démontre que l'échelle finale est un paramètre
+  métrologique majeur : elle déplace le MTF-50 d'environ `127` à `49 px` ;
 - conclusion : l'opérateur de mesure est spatialement non neutre. V3 devient
   prioritaire avant toute reprise des balayages micromorphiques.
 
 Artefacts :
 `validation/dic_measurement_chain_results.md`,
-`validation/reference_data/dic_measurement_chain_v1/` et
-`validation/figures/dic_measurement_chain_v1/`.
+`validation/reference_data/dic_measurement_chain_v2/` et
+`validation/figures/dic_measurement_chain_v2/`. V1 reste archivée et
+explicitement invalidée.
 
-Validation du lot : Ruff vert ; mypy vert sur les 53 fichiers source ;
-323 tests verts et 22 tests MFront ignorés faute de variable de bibliothèque
-dans cette exécution ; Sphinx HTML strict vert ; linkcheck strict vert ;
-PDF LuaLaTeX strict de 59 pages généré. Le code reproductible est publié au
-commit `83fcefd`; les résultats, preuves et la documentation sont publiés au
-commit `5e5bced`.
+Validation de la correction V2 : Ruff et mypy verts ; `323` tests verts et
+`22` tests MFront ignorés faute de bibliothèque déclarée ; Sphinx HTML,
+linkcheck et PDF stricts verts. Le changement de valeur par défaut imposant
+l'échelle native est publié au commit `339f76a` ; les résultats V2 et leur
+consolidation documentaire appartiennent au commit final suivant.
 
-**Correction en cours :** `finest_scale=0` est désormais obligatoire. Une
-campagne `dic_measurement_chain_v2` doit remplacer V1 dans le registre de
-preuves et dans toute conclusion publique.
+`finest_scale=0` est désormais obligatoire et V2 remplace V1 dans le registre
+de preuves et dans toute conclusion publique.
 
 #### V2.3 Sensibilité aux paramètres DISFlow
 
