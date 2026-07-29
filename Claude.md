@@ -67,6 +67,106 @@ chaque jalon avec :
 Une tâche ne doit être marquée terminée que si son critère d'acceptation est
 vérifié par un test, un rapport ou une mesure reproductible.
 
+## 1.0 Environnement d'exécution installé sur cette machine
+
+Cette section est **autoritative** pour reprendre le projet. TFEL, MFront et
+MGIS sont déjà installés : ne pas conclure qu'ils sont absents avant d'avoir
+chargé leur environnement. Un shell neuf ne voit pas spontanément les bindings
+Python MGIS et pytest ignore alors les tests réels MFront.
+
+### Chemins vérifiés le 2026-07-29
+
+| Composant | Chemin |
+|---|---|
+| Racine du dépôt | `/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse` |
+| Python du projet | `/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/.venv/bin/python` |
+| CLI du projet | `/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/.venv/bin/fem-inhouse` |
+| Préfixe TFEL/MFront/MGIS | `/home/jeff/.local` |
+| Script d'environnement TFEL | `/home/jeff/.local/share/tfel/env/env.sh` |
+| Bindings Python TFEL/MGIS | `/home/jeff/.local/lib/python3.12/site-packages` |
+| Exécutable MFront | `/home/jeff/.local/bin/mfront` |
+| Bibliothèque des comportements | `/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so` |
+| Sources MFront du projet | `/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/mfront` |
+
+Versions vérifiées : TFEL/MFront `5.1.0` au commit `deee4cd`, MGIS `3.1`.
+Le Python du venv est Python `3.12` et charge `mgis` depuis le préfixe
+`/home/jeff/.local`, pas depuis le venv lui-même.
+
+### Initialisation obligatoire d'un shell
+
+Depuis la racine du dépôt :
+
+```bash
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+TFEL_PREFIX="/home/jeff/.local"
+PYTHON_ENV="${PROJECT_ROOT}/.venv"
+
+# env.sh n'est pas compatible avec `set -u` lorsque ces variables sont
+# absentes. Les initialiser avant de le sourcer.
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PYTHONPATH:-}"
+source "${TFEL_PREFIX}/share/tfel/env/env.sh"
+
+export PYTHONPATH="${TFEL_PREFIX}/lib/python3.12/site-packages:${PYTHONPATH:-}"
+export MFRONT_BEHAVIOUR_LIBRARY="${PROJECT_ROOT}/build/mfront/src/libBehaviour.so"
+export PATH="${PYTHON_ENV}/bin:${PATH}"
+```
+
+Il n'est pas nécessaire d'exécuter `source .venv/bin/activate` : utiliser les
+exécutables absolus de `.venv/bin` est plus robuste. Si l'activation est
+souhaitée, la faire **après** avoir défini `PYTHON_ENV` :
+
+```bash
+source "${PYTHON_ENV}/bin/activate"
+```
+
+### Compilation et canari avant toute validation
+
+```bash
+test -x "${PYTHON_ENV}/bin/python"
+test -f "${TFEL_PREFIX}/share/tfel/env/env.sh"
+
+bash scripts/build_mfront_behaviour.sh
+test -f "${MFRONT_BEHAVIOUR_LIBRARY}"
+
+mfront --version
+tfel-config --version
+"${PYTHON_ENV}/bin/python" -c \
+  'import tfel, mgis.behaviour; print(tfel.getTFELVersion(), mgis.__file__)'
+```
+
+La bibliothèque contient quatre comportements :
+
+- `PixelLudwikJ2Plasticity` sous `PlaneStress` ;
+- `PixelLudwikJ2Plasticity3D` sous `Tridimensional` ;
+- `PixelMicromorphicLudwikJ2Plasticity` sous `PlaneStress` ;
+- `PixelMicromorphicLudwikJ2Plasticity3D` sous `Tridimensional`.
+
+Canari MGIS réel, qui ne doit produire aucun `skip` :
+
+```bash
+"${PYTHON_ENV}/bin/pytest" -q \
+  tests/unit/core/test_mfront.py \
+  tests/integration/test_mfront_newton.py \
+  tests/integration/test_tensor_histories.py
+```
+
+Résultat vérifié le 2026-07-29 : `35 passed`. Pour la suite complète :
+
+```bash
+"${PYTHON_ENV}/bin/pytest" -q
+```
+
+Résultat vérifié avec ce même environnement : `345 passed` en `24,89 s`,
+aucun test MFront ignoré.
+
+Si pytest affiche `MFRONT_BEHAVIOUR_LIBRARY is not set`, il ne teste pas le
+backend réel : ce n'est pas une indisponibilité de MFront, mais un shell mal
+initialisé. Si `import mgis` échoue, vérifier `PYTHONPATH`. Si le chargement de
+`libBehaviour.so` échoue sur un symbole TFEL, vérifier `LD_LIBRARY_PATH` et
+re-sourcer `env.sh`. Le script `scripts/build_mfront_behaviour.sh` protège
+déjà son propre `source` par `set +u`.
+
 ### Convention d'état
 
 - `[ ]` : à faire
