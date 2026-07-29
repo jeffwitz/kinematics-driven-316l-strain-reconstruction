@@ -32,6 +32,34 @@ jobs:
         # CI still covers the dependency-free protocol and conversions.
         run: pytest --cov=fem_inhouse --cov-branch --cov-config=.coveragerc-ci --cov-fail-under=85
 
+  measurement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements-lock.txt
+            pyproject.toml
+      - name: Install measurement environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-lock.txt
+          python -m pip install -e '.[measurement]'
+      - name: Test image observation chain without skips
+        shell: bash
+        run: |
+          set -o pipefail
+          output="$(pytest -m measurement -q -rs)"
+          printf '%s\n' "$output"
+          if grep -Eiq '(^|[[:space:]])[0-9]+ skipped' <<<"$output"; then
+            echo "Measurement tests were skipped despite the OpenCV environment."
+            exit 1
+          fi
+
   documentation:
     runs-on: ubuntu-latest
     timeout-minutes: 20
