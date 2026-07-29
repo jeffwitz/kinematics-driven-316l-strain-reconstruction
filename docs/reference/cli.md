@@ -13,6 +13,7 @@ authoritative option list for the installed revision.
 | `partition` | create, solve, resume and stitch partition campaigns |
 | `diagnose-section-equilibrium` | evaluate generalized section balance including lateral shear flux |
 | `characterise-dic-measurement-chain` | measure DISFlow null response and synthetic spatial transfer |
+| `replay-dic-observation` | pass archived FEM displacement through the image-level DISFlow operator |
 | `diagnose-nonlocality` | run an output-only Helmholtz diagnostic |
 | `estimate-nonlocal-reference` | derive $H_{\mathrm{ref}}$ from a local campaign |
 | `validate-coupled-nonlocal` | compare raw coupled fields with DIC |
@@ -89,10 +90,19 @@ fit a micromorphic parameter or launch a coupled campaign.
 `characterise-dic-measurement-chain` requires `--images`, `--prepared-case`,
 `--output` and `--figure-output`. By default it executes the full-crop
 candidate-repeat test and the fixed-window synthetic transfer campaign.
-`--null-only` disables the synthetic stage. The command requires the
-`measurement` optional dependency and rejects non-empty outputs unless
-`--overwrite` is explicit.
+`--profile` accepts `legacy_script_2021` or `declared_medium_v4`.
+`--warp-mode` accepts `iterative_forward_inverse` or the regression-only
+`legacy_approximate_inverse`. `--null-only` disables the synthetic stage. The
+command requires the `measurement` optional dependency and rejects non-empty
+outputs unless `--overwrite` is explicit.
 
 Its manifest records the image hashes, crop, OpenCV and NumPy versions,
 requested settings, values queried back from the OpenCV object, and figure
 hashes. The command does not run FEM or modify a saved campaign.
+
+`replay-dic-observation` requires `--campaign`, `--prepared-case`,
+`--reference-image`, `--partition-id`, `--profile` and `--output`. It verifies
+the archived displacement hash, resolves support bounds from the campaign
+manifest, applies the corrected image warp and writes DIC, raw-FEM and
+DISFlow-observed EVM separately. The default profile is
+`legacy_script_2021`; `declared_medium_v4` is the declared sensitivity.

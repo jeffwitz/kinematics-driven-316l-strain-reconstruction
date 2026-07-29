@@ -10,6 +10,7 @@ argue for the scientific model.
 - {doc}`constitutive_models`
 - {doc}`nonlocal_parameters`
 - {doc}`tensor_conventions`
+- {doc}`dic_axis_conventions`
 - {doc}`observation_operator`
 - {doc}`convergence_criteria`
 
@@ -43,6 +44,7 @@ model_contract
 constitutive_models
 nonlocal_parameters
 tensor_conventions
+dic_axis_conventions
 observation_operator
 convergence_criteria
 experimental_data_inventory

@@ -22,7 +22,7 @@ Inventory date: **2026-07-29**.
 | EBSD-derived fields | orientation and Schmid fields found in an external HDF5 file | **available but not versioned** |
 | Native EBSD step size | not recorded in the accessible file | **not available** |
 | EBSD/DIC registration | arrays are declared co-registered after cropping; method absent | **partially documented** |
-| DISFlow parameters | \(\alpha=100,\delta=1,\gamma=0,\epsilon=0.002\), 30 iterations | **reported in manuscript** |
+| DISFlow parameters | manuscript variational settings plus supplied legacy source with scale 0, patch 4 and stride 1 | **partially reproducible** |
 
 An explicit `not available` means that no supporting file or metadata was
 found in the repository, its immediate scientific parent directories, or the
@@ -109,8 +109,8 @@ original input file is unavailable.
 
 ## DISFlow production settings
 
-Section 2.2 of the supplied manuscript gives the complete reported parameter
-set:
+Section 2.2 of the supplied manuscript gives the reported
+variational-refinement parameter set:
 
 | Parameter | Value | Reported role |
 |---|---:|---|
@@ -120,19 +120,35 @@ set:
 | Charbonnier \(\epsilon\) | 0.002 | robust-penalty regime |
 | gradient-descent iterations | 30 maximum | iterative optical-flow solve |
 
-No executable DIC configuration file, OpenCV version, pyramid configuration,
-patch size, finest scale or patch stride was found. The standard OpenCV
-`DISOpticalFlow` API in the declared reproduction environment exposes the
-reported variational-refinement weights, epsilon and iteration count.
-Consequently, these five values can be applied. The historical chain still
-cannot be reproduced bit-for-bit from the manuscript alone because its OpenCV
-version, preset and remaining DIS parameters are missing.
+The supplied source
+`references/legacy_dic/dic_displacement_fields.py` adds:
 
-The new raw sequence makes a declared **reproduction implementation**
-possible. Its OpenCV version, preset and every queryable parameter must be
-written into each validation report. It must not be described as the exact
-historical production chain while the original executable configuration is
-missing.
+| Setting | Historical source |
+|---|---:|
+| factory | `cv2.DISOpticalFlow_create()` without an argument |
+| finest scale | 0 |
+| patch size | 4 px |
+| patch stride | 1 px |
+
+The source does **not** set gradient-descent iterations, mean normalisation or
+spatial propagation. Under OpenCV 4.14, the no-argument object returns 16,
+enabled and enabled for these three getters after the explicit historical
+setters are applied. Those are current-library defaults, not certified values
+of the historical executable.
+
+The original OpenCV version, effective no-argument preset and factory values
+used during production are not archived. The historical mask file is also
+absent. Consequently, the production chain cannot be reproduced bit for bit.
+This absence does not block new all-valid-window metrology or symmetric P43
+replay, provided the declared boolean mask and its hash are recorded and no
+historical-mask claim is made.
+
+The new raw sequence makes two declared **reproduction implementations**
+possible: `legacy_script_2021`, based on the supplied source, and
+`declared_medium_v4`, the fully explicit earlier metrology profile. Their
+OpenCV version, requested settings and every queryable value are written into
+each validation report. Neither is described as the exact historical
+production chain.
 
 ## EBSD-derived and topography data
 

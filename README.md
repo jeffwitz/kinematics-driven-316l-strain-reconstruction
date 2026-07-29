@@ -11,13 +11,12 @@ mechanical equilibrium. This is deliberately not a general Abaqus replacement.
 
 ## Current scientific conclusion
 
-The local baseline is numerically verified across its independent tabulated and
-analytical MFront implementations, but it produces localization that is too
-narrow and concentrated. A coupled micromorphic model introduces a coupling
-modulus and a spatial length and demonstrably redistributes plasticity.
-Reduced-fidelity evidence distinguishes a length effect from a
-coupling-strength effect. No unique transferable material internal length is
-currently claimed.
+The local and coupled mechanics are numerically verified. Earlier validation
+scores nevertheless compared raw FEM fields with image-observed DIC fields.
+A symmetric image-level replay now shows that DISFlow materially changes
+amplitude, morphology and the ranking of coupling candidates. Micromorphic
+coupling redistributes plasticity, but its coupling modulus and spatial length
+remain unidentified; no transferable material internal length is claimed.
 
 ## Install
 

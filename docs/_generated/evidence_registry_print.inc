@@ -66,6 +66,18 @@
 : Conclusion: Increasing epsilon strongly suppresses along-band waviness, but the strong reduction is inseparable from peak attenuation and excessive band broadening. Intermediate epsilon 0.01 reduces waviness while preserving peak amplitude, but narrows the band to 26 px.
 : Sources: primary: `validation/reference_data/dic_epsilon_band32_v2/manifest.json`.
 
+**E-DIC-003 — How do the declared V4 and supplied legacy-source DISFlow profiles differ after correcting the synthetic warp?**
+: Fidelity: candidate null pair and synthetic 1024 by 1024 real-speckle warps. Parameters: native scale 0; declared medium profile versus no-argument legacy-source factory; legacy and iterative inverse warps.
+: Status: **verified for OpenCV 4.14**.
+: Conclusion: The corrected inverse materially changes localized-band metrology while barely moving sinusoidal MTF-50. The legacy-source profile has a different null response and transfer from the declared V4 profile; it is primary by provenance, not by FEM/DIC score.
+: Sources: V4 non-regression: `validation/reference_data/dic_legacy_profile_comparison_v1/case_a_declared_legacy_warp/manifest.json`<br>corrected-warp control: `validation/reference_data/dic_legacy_profile_comparison_v1/case_b_declared_corrected_warp/manifest.json`<br>legacy-source provenance profile: `validation/reference_data/dic_legacy_profile_comparison_v1/case_c_legacy_corrected_warp/manifest.json`.
+
+**E-DIC-004 — What changes when archived P43 FEM displacement is observed through the same image-level DISFlow chain as DIC?**
+: Fidelity: eight full-resolution archived-displacement replays. Parameters: alpha 0, 1, 2 and 4; legacy-source profile primary; declared V4 sensitivity; no mechanical rerun.
+: Status: **verified**.
+: Conclusion: Symmetric observation substantially reduces apparent L2 error and raises correlation, but it separates the objectives: alpha 4 is best for amplitude and correlation while alpha 1 is best for absolute-q90 overlap. The old identification objective must not be reused.
+: Sources: primary consolidated metrics: `validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json`.
+
 **E-EBSD-001 — What structural scale is carried by the archived grain-mean Schmid field?**
 : Fidelity: independent EBSD/Schmid spatial statistic. Parameters: frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap.
 : Status: **verified**.

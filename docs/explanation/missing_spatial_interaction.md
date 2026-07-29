@@ -5,9 +5,9 @@ verified local model fail to reproduce?
 
 ## The local failure is morphological
 
-In regions containing coherent deformation bands, the local baseline tends to
-concentrate plasticity into a support that is too narrow and too intense. The
-main symptoms are:
+The original comparison placed raw FEM EVM beside DIC EVM already transformed
+by the image-correlation chain. In regions containing coherent deformation
+bands, that comparison showed:
 
 - excessive peaks;
 - bands that are too thin;
@@ -22,15 +22,23 @@ Its campaign identifier is retained only in the evidence provenance.
 :alt: DIC equivalent total strain, local FEM equivalent strain, signed error and local PEEQ on a band-containing region.
 :width: 100%
 
-This strictly local comparison establishes the morphological defect before
-introducing any coupled solution. PEEQ is an internal model variable, not an
-experimental DIC field.
+This strictly local **raw-field** comparison motivated the spatial
+investigation before introducing any coupled solution. PEEQ is an internal
+model variable, not an experimental DIC field.
 ```
 
 Lower global error is not sufficient evidence of a better localization. A
 model may reduce peaks everywhere and improve L2 while erasing a physically
 relevant band. Amplitude, localization and spatial-scale measures must
 therefore remain separate.
+
+The later symmetric image-level replay changes the magnitude of this defect:
+DISFlow removes much of the fine raw-FEM structure and halves the local
+relative L2 error. A residual localization discrepancy remains — the observed
+local field predicts 16.1 % active area above the DIC q90 threshold instead
+of 10 % — but the initial apparent peak and width error cannot be assigned
+entirely to the constitutive law. The current quantified result is in
+{doc}`current_evidence`.
 
 ## An output-only Helmholtz diagnostic
 
@@ -50,13 +58,16 @@ width could explain part of the FEM-DIC discrepancy.
 :alt: Raw local FEM field, Helmholtz-broadened diagnostic fields and DIC comparison.
 :width: 90%
 
-A positive diagnostic length improves several field and localization metrics
-on a selection region and transfers unchanged to a held-out region.
+A positive diagnostic length improved several field and localization metrics
+in the original raw-FEM comparison and transferred unchanged to a held-out
+region.
 ```
 
 The experiment supports the spatial-width hypothesis, but it cannot identify a
 constitutive length. It operates after the mechanics and cannot redistribute
-plastic evolution or forces.
+plastic evolution or forces. Because the historical diagnostic used the
+asymmetric observation objective, its numerical optimum must not be reused as
+a constitutive parameter after V3.
 
 ## Why post-filtering is not the final model
 
@@ -67,9 +78,10 @@ hide the local result without changing its mechanics.
 
 ## Conclusion
 
-> The improvement obtained by spatial broadening suggests that the local law
-> lacks a spatial interaction, but it does not justify filtering the final
-> result.
+> Spatial broadening was a useful model-form diagnostic, but the image
+> operator explains a major part of the original apparent defect. The
+> remaining discrepancy may motivate a coupled interaction; it does not
+> justify filtering the final result or reusing the old fitted length.
 
 The diagnostic therefore motivates the coupled model introduced in
 {doc}`micromorphic_model`.
