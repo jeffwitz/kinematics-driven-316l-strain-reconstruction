@@ -687,6 +687,12 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   variables internes repartent du dernier état engagé, sont intégrées pendant
   l'incrément, puis engagées une seule fois après convergence. Leur
   interpolation directe reste interdite ;
+- un second contrôle pré-enregistré remplace uniquement l'état cible 4 par
+  `(u3+u5)/2` et rétablit le prédicteur élastique. Il échoue exactement à la
+  même limite (`t=0,0750244`, 3 incréments, 11 cutbacks), dans les mêmes
+  éléments de bord. La suppression de frames supplémentaires est donc
+  arrêtée : le verrou est la globalisation de Newton au voisinage de cet état,
+  pas une frame DIC isolée ;
 - l'état constitutif est restauré après chaque tentative et aucun résultat
   mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
   bloqué. Une éventuelle interpolation de l'état cible 4 doit constituer une
@@ -700,6 +706,7 @@ Artefacts : `validation/dic_multistep_p0043_audit.md`,
 `validation/dic_multistep_p0043_results.md`,
 `validation/dic_multistep_p0043_state4_bridge_preregistration.md`,
 `validation/dic_multistep_p0043_state_bridge_indexing_amendment.md` et
+`validation/dic_multistep_p0043_blocked_state4_preregistration.md` et
 `validation/dic_multistep_p0043_state_bridge_results.md`.
 
 ### Lot V7 — Test jumeau de la revendication data-driven

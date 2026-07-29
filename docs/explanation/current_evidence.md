@@ -310,10 +310,25 @@ This is a reported negative result. It does not invalidate the measured path,
 but it means that a conditional temporal-prediction result is not yet
 available. Instrumentation shows that the undamped Newton correction creates
 trial engineering strains of 82.3 and 58.0 in neighbouring upper-boundary
-elements; MFront is rejecting this nonphysical overshoot. An optional
-residual-controlled line search is therefore the next numerical experiment.
-It must be pre-registered and must preserve the converged proportional
-baseline.
+elements; MFront is rejecting this nonphysical overshoot.
+
+Two transparent temporal-bridge controls have since been run. Replacing the
+largest boundary-history curvature state by a linear interpolation, together
+with a secant-corrected displacement predictor, still stops after three
+converged states and 11 cutbacks. Replacing the mechanically blocked target
+state by the average of its two neighbours and restoring the elastic predictor
+gives the same limiting pseudo-time. The complete diagnostic maps and
+machine-readable failure reports are archived under
+`validation/reference_data/dic_multistep_history_p0043_state3_bridge_v1` and
+`validation/reference_data/dic_multistep_history_p0043_blocked_state4_v1`.
+
+The transaction protocol is not the issue: every MFront evaluation starts
+from the last committed state, and internal variables are integrated rather
+than interpolated. Further solver-driven frame deletion is not justified.
+A residual line search prevents the immediate overshoot but was stopped after
+2 h 47 min because it accumulated iterations and cutbacks. The remaining
+limit is therefore Newton globalisation near the onset reached at the third
+state, not one isolated DIC frame.
 
 ## Not demonstrated
 
