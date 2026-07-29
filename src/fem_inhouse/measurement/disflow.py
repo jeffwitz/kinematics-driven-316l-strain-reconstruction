@@ -8,6 +8,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from .warp import WarpMode, warp_forward_displacement
+
 ByteImage = NDArray[np.uint8]
 FloatArray = NDArray[np.float32]
 
@@ -161,26 +163,13 @@ def run_disflow(
 def warp_image(
     reference: NDArray[np.generic],
     displacement_pixels: NDArray[np.generic],
+    *,
+    mode: WarpMode = "iterative_forward_inverse",
 ) -> ByteImage:
     """Warp a reference image by a known forward displacement field."""
 
-    cv2 = _cv2()
-    image = _byte_image(reference, name="reference")
-    displacement = np.asarray(displacement_pixels, dtype=np.float32)
-    if displacement.shape != (*image.shape, 2):
-        raise ValueError("displacement_pixels must have shape (*image.shape, 2)")
-    if not np.isfinite(displacement).all():
-        raise ValueError("displacement_pixels must contain finite values")
-    rows, columns = np.indices(image.shape, dtype=np.float32)
-    map_x = columns - displacement[..., 0]
-    map_y = rows - displacement[..., 1]
-    return np.asarray(
-        cv2.remap(
-            image,
-            map_x,
-            map_y,
-            interpolation=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_REFLECT101,
-        ),
-        dtype=np.uint8,
-    )
+    return warp_forward_displacement(
+        reference,
+        displacement_pixels,
+        mode=mode,
+    ).image

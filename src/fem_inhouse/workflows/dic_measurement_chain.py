@@ -625,7 +625,11 @@ def characterise_dic_measurement_chain(
                     wavelength_pixels=wavelength,
                     orientation=orientation,
                 )
-                warped = warp_image(window, imposed)
+                warped = warp_image(
+                    window,
+                    imposed,
+                    mode="legacy_approximate_inverse",
+                )
                 recovered = run_disflow(window, warped, config=selected)
                 amplitude, phase = _fit_sinusoid(
                     recovered[..., component],
@@ -656,7 +660,11 @@ def characterise_dic_measurement_chain(
                     width_pixels=width,
                     orientation=orientation,
                 )
-                warped = warp_image(window, imposed)
+                warped = warp_image(
+                    window,
+                    imposed,
+                    mode="legacy_approximate_inverse",
+                )
                 recovered = run_disflow(window, warped, config=selected)
                 recovered_gradient = np.gradient(
                     recovered[..., component],

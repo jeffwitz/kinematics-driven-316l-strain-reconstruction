@@ -13,11 +13,19 @@ from .disflow import (
     warp_image,
 )
 from .masking import apply_image_mask, binary_mask, declared_all_valid_mask
+from .metrology import ProfileMetrology, profile_metrology
 from .profiles import DISFlowProfile, disflow_profile, disflow_profile_names
+from .synthetic_fields import gaussian_gradient_band
+from .warp import WarpMode, WarpResult, warp_forward_displacement
+from .windows import MeasurementWindow, measurement_windows
 
 __all__ = [
     "DISFlowConfig",
     "DISFlowProfile",
+    "MeasurementWindow",
+    "ProfileMetrology",
+    "WarpMode",
+    "WarpResult",
     "apply_image_mask",
     "binary_mask",
     "canonical_to_image_flow",
@@ -25,9 +33,13 @@ __all__ = [
     "declared_all_valid_mask",
     "disflow_profile",
     "disflow_profile_names",
+    "gaussian_gradient_band",
     "historical_uv_to_canonical",
     "image_flow_to_canonical",
+    "measurement_windows",
+    "profile_metrology",
     "query_disflow_configuration",
     "run_disflow",
+    "warp_forward_displacement",
     "warp_image",
 ]
