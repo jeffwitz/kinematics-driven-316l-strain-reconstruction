@@ -496,9 +496,9 @@
       "id": "E-DIC-007",
       "question": "Can the local P43 mechanics replay the measured 40-state DIC boundary history?",
       "fidelity": "full 660 by 610 element local MFront solve with measured boundary states",
-      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; unchanged constitutive and Newton settings",
+      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; state 3 measurement-only bridge diagnostic; transactional internal states; unchanged constitutive settings",
       "status": "blocked negative result",
-      "conclusion": "The documented optical-flow corruption is removed, but the unchanged local solver fails on the earlier state-3-to-state-4 transition. Measured-history prediction is not yet available.",
+      "conclusion": "The documented optical-flow corruption is removed. A transparent bridge of the largest temporal-curvature state and a secant-corrected displacement predictor still fail on the state-3-to-state-4 transition. Measured-history prediction is not yet available.",
       "sources": [
         {
           "path": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
@@ -523,6 +523,32 @@
             {"path": "/diagnostics/first_cutback/reason", "operator": "equals", "expected": "MFront integration failed with status -1"},
             {"path": "/diagnostics/first_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 80.0},
             {"path": "/diagnostics/last_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 50.0}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_multistep_history_p0043_state3_bridge_v1/report.json",
+          "role": "measurement-only state bridge",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_declared_state_bridge"},
+            {"path": "/bridge/states/0", "operator": "equals", "expected": 3},
+            {"path": "/bridge/internal_variables_interpolated", "operator": "equals", "expected": false},
+            {"path": "/checks/largest_source_second_difference_state", "operator": "equals", "expected": 3},
+            {"path": "/checks/unaffected_states_bitwise_identical", "operator": "equals", "expected": true},
+            {"path": "/checks/final_state_bitwise_identical", "operator": "equals", "expected": true}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_multistep_mechanics_p0043_measured_state3_bridge_secant_v1/failure_report.json",
+          "role": "state-bridge mechanical failure",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "failed_local_measured_boundary_history"},
+            {"path": "/mechanics_completed", "operator": "equals", "expected": false},
+            {"path": "/constitutive_state_committed_after_failure", "operator": "equals", "expected": false},
+            {"path": "/diagnostics/converged_increments", "operator": "equals", "expected": 3},
+            {"path": "/diagnostics/cutbacks", "operator": "equals", "expected": 11},
+            {"path": "/diagnostics/boundary_history_predictor", "operator": "equals", "expected": "secant-corrected-elastic"},
+            {"path": "/diagnostics/secant_predictor_uses", "operator": "greater_than", "expected": 0},
+            {"path": "/diagnostics/first_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 60.0}
           ]
         }
       ]
