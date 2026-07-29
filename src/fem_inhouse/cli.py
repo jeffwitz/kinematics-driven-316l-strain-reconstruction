@@ -40,6 +40,7 @@ from fem_inhouse.workflows import (
     characterise_dic_measurement_chain,
     collect_identification_results,
     diagnose_dic_boundary_history,
+    diagnose_dic_boundary_loading_subspace,
     diagnose_dic_photometric_quality,
     diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
@@ -536,6 +537,16 @@ def _parser() -> argparse.ArgumentParser:
     multistep_boundary_audit.add_argument("--maximum-state", type=int, default=6)
     multistep_boundary_audit.add_argument("--overwrite", action="store_true")
 
+    loading_subspace = commands.add_parser(
+        "diagnose-dic-boundary-loading-subspace",
+        help="measure temporal noise and the loading subspace of a measured DIC boundary",
+    )
+    loading_subspace.add_argument("--history", type=Path, required=True)
+    loading_subspace.add_argument("--history-report", type=Path, required=True)
+    loading_subspace.add_argument("--output", type=Path, required=True)
+    loading_subspace.add_argument("--figure-output", type=Path, required=True)
+    loading_subspace.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -1017,6 +1028,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(boundary_report)
+        return 0
+    if args.command == "diagnose-dic-boundary-loading-subspace":
+        subspace_report = diagnose_dic_boundary_loading_subspace(
+            history_path=args.history,
+            history_report_path=args.history_report,
+            output_directory=args.output,
+            figure_directory=args.figure_output,
+            overwrite=args.overwrite,
+        )
+        _print_json(subspace_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(

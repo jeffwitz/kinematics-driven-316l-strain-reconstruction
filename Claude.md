@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-07-29
+Dernière mise à jour : 2026-07-30
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
 MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
@@ -713,7 +713,45 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   des ddl libres avant l'essai constitutif rejeté (norme, incrément de
   déformation élémentaire, conditionnement de la tangente), pas sur une
   nouvelle suppression de frame. Aucun rejet automatique piloté par la
-  convergence et aucun filtre de Kalman ne sont autorisés implicitement.
+  convergence et aucun filtre de Kalman ne sont autorisés implicitement ;
+- une hypothèse de bruit de bord a été pré-enregistrée puis **réfutée** le
+  2026-07-30 par le diagnostic étape 0 de sous-espace de chargement. Le critère
+  enregistré demandait `|z| >= 3` à l'état 4 : les scores mesurés valent `0,13`
+  sur le coefficient de chargement et `1,66` sur la déformation affine. Le
+  maximum sur les 40 états vaut `1,99`, sous le `~2,7` attendu de 39 tirages
+  gaussiens : le chemin de bord est plus lisse que du bruit pur et ne contient
+  aucun outlier. Le SNR de l'incrément à l'état 4 vaut `3,73`, au-dessus de la
+  médiane `3,52`. La lecture antérieure à `3,5 sigma` provenait d'une comparaison
+  d'incréments bruts à cinq voisins d'une série en tendance ; le
+  second-différenciage la fait disparaître. L'instrumentation Newton différée
+  est donc réinstaurée comme piste principale.
+
+**Acquis conservés du diagnostic étape 0, 2026-07-30 :**
+
+- bruit de mesure par état `0,047–0,051 px`, estimé par différences temporelles
+  secondes sur 37 réalisations, en accord avec la borne `0,06283 px` obtenue par
+  paire d'images répétées. Deux routes indépendantes convergent près de
+  `0,05 px` ; l'autocorrélation lag-1 des différences secondes vaut `-0,561`
+  contre `-2/3` théorique, ce qui valide l'estimateur ;
+- **le bruit est affine à ~90 %** (fraction non affine médiane `9,63 %`). Il se
+  comporte comme un tremblement global cohérent du bord, pas comme une
+  décorrélation nodale. Cela explique le facteur `26` entre le sigma archivé et
+  le résidu non affine archivé : la métrique de résidu retire par construction
+  la bande qui porte le bruit ;
+- conséquence Saint-Venant : la bande contre laquelle un padding protège est
+  celle qui ne porte presque pas de bruit, et la bande qui porte le bruit est
+  quasi uniforme et ne décroît pas vers l'intérieur. Un filtre spatial n'a rien
+  à retirer et le padding n'est pas une défense ici ;
+- le chargement de bord est **un seul mode lisse** à `99,91 %` de l'énergie,
+  rugosité temporelle `0,0023` ; les modes 1 à 3 portent `99,999 %`. Une
+  régularisation temporelle de faible dimension est donc l'architecture
+  correcte si l'étape 1 est poursuivie ;
+- SNR par incrément de déformation affine : médiane `3,52`, minimum `0,62`,
+  5 incréments sur 40 sous l'unité (états 5, 8, 19, 24, 25). La régularisation
+  temporelle garde une justification mesurée, mais **faible** : elle ne corrige
+  pas l'échec, elle améliore 5 incréments et réduit d'environ `3,6 %` le biais
+  d'accumulation plastique, contre `18 %` estimé avant mesure. L'étape 1 doit
+  être re-pré-enregistrée sur cette base ou différée.
 
 Artefacts : `validation/dic_multistep_p0043_audit.md`,
 `validation/dic_multistep_p0043_preregistration.md`,
@@ -725,7 +763,9 @@ Artefacts : `validation/dic_multistep_p0043_audit.md`,
 `validation/dic_multistep_p0043_blocked_state4_preregistration.md` et
 `validation/dic_multistep_p0043_state_bridge_results.md`, puis
 `validation/dic_multistep_p0043_boundary_outlier_analysis_plan.md` et
-`validation/dic_multistep_p0043_boundary_outlier_results.md`.
+`validation/dic_multistep_p0043_boundary_outlier_results.md`, puis
+`validation/dic_boundary_temporal_regularisation_preregistration.md` et
+`validation/dic_boundary_loading_subspace_p0043_results.md`.
 
 ### Lot V7 — Test jumeau de la revendication data-driven
 
@@ -2120,8 +2160,31 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-26 | J2 symétrique défini positif | Même P187, CSR supérieur et `mtype=2` | `244,67→227,34 s`, PARDISO `-38,0 %`, RSS `-8,7 %` | Réussi |
 | 2026-07-26 | Balayage couplé P43 `alpha=1,2,4` | 402 600 éléments, 20 incréments, `ell=58,88 µm` | `26:40 / 29:56 / 36:14`, zéro cutback | Réussi |
 | 2026-07-26 | Validation et figures P43 | EVM brute/DIC sur cœur, PEEQ interne | 8/8 critères pour les trois candidats ; `alpha=2` et `4` non dominés | Réussi |
+| 2026-07-30 | Bruit temporel et sous-espace de chargement P43 | `diagnose-dic-boundary-loading-subspace` sur 41 états | Bruit `0,047–0,051 px`, affine à `90 %`, un mode à `99,91 %` | Réussi |
+| 2026-07-30 | Outlier de bord pré-enregistré à l'état 4 | Même diagnostic, critère `|z| >= 3` | `z = 0,13` et `1,66` ; hypothèse réfutée | Échec enregistré |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-30 — Réfutation de l'hypothèse d'outlier de bord mesuré
+
+- Hypothèse pré-enregistrée : l'échec de l'état 3 vers l'état 4 vient d'une
+  excursion non physique du bord mesuré. Critère : `|z| >= 3` à l'état 4
+- Mesuré : `z = 0,13` sur le coefficient de chargement, `1,66` sur la
+  déformation affine. Maximum sur 40 états `1,99`, sous le `~2,7` attendu de
+  39 tirages gaussiens. **Hypothèse réfutée, résultat négatif conservé**
+- La lecture antérieure à `3,5 sigma` était un artefact de fenêtre courte :
+  incréments bruts comparés à cinq voisins d'une série en tendance
+- L'instrumentation Newton, différée au profit de cette campagne, redevient la
+  piste principale de l'échec multi-pas
+- Acquis conservés : bruit `0,047–0,051 px` par état confirmant la borne
+  `0,06283 px` par une route indépendante ; bruit affine à `90 %` ; chargement
+  de bord en un seul mode lisse à `99,91 %` de l'énergie
+- Saint-Venant tranché : la bande protégée par le padding ne porte presque pas
+  de bruit, et la bande qui porte le bruit est quasi uniforme et ne décroît pas
+- La régularisation temporelle reste défendable mais faiblement : 5 incréments
+  sur 40 sous SNR unité, biais d'accumulation plastique `~3,6 %`. Étape 1 à
+  re-pré-enregistrer sur cette base ou à différer
+- Aucune mécanique exécutée, histoire immuable non modifiée
 
 ### 2026-07-26 — P43 et optimisation du chemin chaud micromorphique
 
