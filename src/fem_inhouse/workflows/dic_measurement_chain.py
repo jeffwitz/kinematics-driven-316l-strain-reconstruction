@@ -20,6 +20,8 @@ from scipy import fft
 
 from fem_inhouse.measurement import (
     DISFlowConfig,
+    WarpMode,
+    profile_metrology,
     query_disflow_configuration,
     run_disflow,
     warp_image,
@@ -537,6 +539,8 @@ def characterise_dic_measurement_chain(
     output_directory: str | Path,
     figure_directory: str | Path,
     config: DISFlowConfig | None = None,
+    profile_name: str = "declared_medium_v4",
+    warp_mode: WarpMode = "legacy_approximate_inverse",
     overwrite: bool = False,
     run_transfer: bool = True,
 ) -> dict[str, Any]:
@@ -615,6 +619,8 @@ def characterise_dic_measurement_chain(
     transfer_report: dict[str, Any] = {"status": "not_requested"}
     if run_transfer:
         window = _central_window(reference)
+        if selected.patch_size is None:
+            raise ValueError("synthetic transfer requires an explicit patch_size")
         border = 2 * selected.patch_size
         sinusoidal_rows: list[dict[str, Any]] = []
         for orientation in ("horizontal", "vertical"):
@@ -628,7 +634,7 @@ def characterise_dic_measurement_chain(
                 warped = warp_image(
                     window,
                     imposed,
-                    mode="legacy_approximate_inverse",
+                    mode=warp_mode,
                 )
                 recovered = run_disflow(window, warped, config=selected)
                 amplitude, phase = _fit_sinusoid(
@@ -663,7 +669,7 @@ def characterise_dic_measurement_chain(
                 warped = warp_image(
                     window,
                     imposed,
-                    mode="legacy_approximate_inverse",
+                    mode=warp_mode,
                 )
                 recovered = run_disflow(window, warped, config=selected)
                 recovered_gradient = np.gradient(
@@ -672,19 +678,38 @@ def characterise_dic_measurement_chain(
                 )
                 central = recovered_gradient[border:-border, border:-border]
                 profile = np.asarray(np.median(central, axis=profile_axis), dtype=np.float64)
-                recovered_width, peak_index = _half_maximum_width(profile)
                 imposed_core = imposed_gradient[border:-border]
-                imposed_peak_index = float(np.argmax(imposed_core))
+                recovered_metrology = profile_metrology(profile)
+                imposed_metrology = profile_metrology(imposed_core)
+                recovered_width = recovered_metrology.subpixel_fwhm_pixels
+                recovered_width_value = (
+                    float("nan") if recovered_width is None else recovered_width
+                )
+                centroid_shift = (
+                    None
+                    if recovered_metrology.centroid_index_pixels is None
+                    or imposed_metrology.centroid_index_pixels is None
+                    else recovered_metrology.centroid_index_pixels
+                    - imposed_metrology.centroid_index_pixels
+                )
                 band_rows.append(
                     {
                         "orientation": orientation,
                         "imposed_width_pixels": width,
                         "imposed_width_um": width * PIXEL_SIZE_UM,
-                        "recovered_width_pixels": recovered_width,
-                        "recovered_width_um": recovered_width * PIXEL_SIZE_UM,
-                        "relative_width_error": recovered_width / width - 1.0,
+                        "recovered_width_pixels": recovered_width_value,
+                        "recovered_width_um": recovered_width_value * PIXEL_SIZE_UM,
+                        "relative_width_error": recovered_width_value / width - 1.0,
+                        "legacy_integer_fwhm_pixels": (
+                            recovered_metrology.legacy_integer_fwhm_pixels
+                        ),
+                        "fwhm_status": recovered_metrology.fwhm_status,
                         "peak_gain": float(np.max(profile) / np.max(imposed_core)),
-                        "centroid_shift_pixels": peak_index - imposed_peak_index,
+                        "peak_shift_pixels": (
+                            recovered_metrology.peak_index_pixels
+                            - imposed_metrology.peak_index_pixels
+                        ),
+                        "centroid_shift_pixels": centroid_shift,
                     }
                 )
                 if orientation == "horizontal":
@@ -709,7 +734,7 @@ def characterise_dic_measurement_chain(
                     band_evm_cases.append(
                         {
                             "width_pixels": width,
-                            "recovered_width_pixels": recovered_width,
+                            "recovered_width_pixels": recovered_width_value,
                             "coordinate_um": coordinate_um,
                             "imposed_profile": imposed_profile,
                             "recovered_profile": recovered_evm_profile,
@@ -763,6 +788,8 @@ def characterise_dic_measurement_chain(
         "prepared_case": str(prepared.resolve()),
         "disflow_requested": selected.as_dict(),
         "disflow_queried": queried_disflow_configuration(selected),
+        "disflow_profile": profile_name,
+        "warp_mode": warp_mode,
         "historical_identity": {
             "status": "reproduction_not_bitwise_historical",
             "reported_parameters_applied": True,

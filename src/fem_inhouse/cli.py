@@ -25,6 +25,7 @@ from fem_inhouse.examples import (
     save_reduced_example,
     validate_reduced_case,
 )
+from fem_inhouse.measurement import disflow_profile, disflow_profile_names
 from fem_inhouse.partitioning import PartitionLayout
 from fem_inhouse.postprocessing import (
     FieldAcceptanceThresholds,
@@ -391,6 +392,16 @@ def _parser() -> argparse.ArgumentParser:
     measurement_chain.add_argument("--output", type=Path, required=True)
     measurement_chain.add_argument("--figure-output", type=Path, required=True)
     measurement_chain.add_argument("--null-only", action="store_true")
+    measurement_chain.add_argument(
+        "--profile",
+        choices=disflow_profile_names(),
+        default="declared_medium_v4",
+    )
+    measurement_chain.add_argument(
+        "--warp-mode",
+        choices=("legacy_approximate_inverse", "iterative_forward_inverse"),
+        default="legacy_approximate_inverse",
+    )
     measurement_chain.add_argument("--overwrite", action="store_true")
 
     map_controls = commands.add_parser(
@@ -766,11 +777,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         _print_json(section_report)
         return 0
     if args.command == "characterise-dic-measurement-chain":
+        profile = disflow_profile(args.profile)
         measurement_report = characterise_dic_measurement_chain(
             image_directory=args.images,
             prepared_case=args.prepared_case,
             output_directory=args.output,
             figure_directory=args.figure_output,
+            config=profile.config,
+            profile_name=profile.name,
+            warp_mode=args.warp_mode,
             overwrite=args.overwrite,
             run_transfer=not args.null_only,
         )
