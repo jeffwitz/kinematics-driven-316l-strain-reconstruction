@@ -343,6 +343,8 @@ def run_fem(
     nonlocal_fixed_point_history: list[dict[str, object]] = []
     last_failed_fixed_point_history: list[dict[str, object]] = []
     first_cutback: dict[str, object] | None = None
+    first_constitutive_failure: dict[str, object] | None = None
+    last_constitutive_failure: dict[str, object] | None = None
     snaps = {}
     pending = sorted(snapshot_fractions) if snapshot_fractions else []
     while t < 1.0 - 1e-12:
@@ -472,6 +474,25 @@ def run_fem(
                 if nonlocal_plasticity_enabled:
                     nonlocal_coupling_failures += 1
                 increment_failure_reason = str(error)
+                absolute_strain = np.abs(eps_tot)
+                flat_index = int(np.argmax(absolute_strain))
+                element_index, gauss_point_index, component_index = np.unravel_index(
+                    flat_index,
+                    eps_tot.shape,
+                )
+                last_constitutive_failure = {
+                    "pseudo_time": float(t + dt),
+                    "step_size": float(dt),
+                    "newton_iteration": nrit + 1,
+                    "maximum_absolute_engineering_strain": float(absolute_strain.flat[flat_index]),
+                    "component_minima": [float(value) for value in np.min(eps_tot, axis=(0, 1))],
+                    "component_maxima": [float(value) for value in np.max(eps_tot, axis=(0, 1))],
+                    "element_index": int(element_index),
+                    "gauss_point_index": int(gauss_point_index),
+                    "component_index": int(component_index),
+                }
+                if first_constitutive_failure is None:
+                    first_constitutive_failure = dict(last_constitutive_failure)
                 if isinstance(error, NonlocalCouplingConvergenceError):
                     last_failed_fixed_point_history = [
                         {
@@ -631,6 +652,8 @@ def run_fem(
                         "relaxation_strategy": nonlocal_relaxation_strategy,
                         "fixed_point_history": nonlocal_fixed_point_history,
                         "last_failed_fixed_point_history": (last_failed_fixed_point_history),
+                        "first_constitutive_failure": first_constitutive_failure,
+                        "last_constitutive_failure": last_constitutive_failure,
                     },
                 )
             continue
