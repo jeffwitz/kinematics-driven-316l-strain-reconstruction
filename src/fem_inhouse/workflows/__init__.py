@@ -11,6 +11,11 @@ from fem_inhouse.workflows.coupled_nonlocal_validation import (
     CoupledValidationThresholds,
     validate_coupled_nonlocal_campaign,
 )
+from fem_inhouse.workflows.dic_boundary_history import (
+    affine_boundary_decomposition,
+    diagnose_dic_boundary_history,
+    element_gauss_engineering_strain,
+)
 from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
 from fem_inhouse.workflows.dic_multistep import (
     anchor_displacement_history,
@@ -78,6 +83,7 @@ __all__ = [
     "NonlocalitySweep",
     "PartitionWorkflow",
     "ReferenceHardeningReport",
+    "affine_boundary_decomposition",
     "analyze_joint_identifiability",
     "anchor_displacement_history",
     "bridge_dic_multistep_history",
@@ -87,8 +93,10 @@ __all__ = [
     "common_color_limits",
     "compute_reference_hardening_modulus",
     "contiguous_residual_on_support",
+    "diagnose_dic_boundary_history",
     "diagnose_dic_photometric_quality",
     "diagnose_section_equilibrium_campaigns",
+    "element_gauss_engineering_strain",
     "estimate_reference_hardening_from_campaign",
     "fingerprint_array",
     "generate_high_fidelity_manifest",

@@ -9,7 +9,7 @@ import subprocess
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -709,7 +709,9 @@ def run_dic_multistep_mechanics(
     mode: str,
     output_directory: str | Path,
     newton_line_search: bool = False,
-    boundary_history_predictor: str = "elastic",
+    boundary_history_predictor: Literal[
+        "elastic", "secant-corrected-elastic"
+    ] = "elastic",
     overwrite: bool = False,
 ) -> dict[str, Any]:
     """Run local P43 mechanics with measured or proportional 40-step boundaries."""

@@ -39,6 +39,7 @@ from fem_inhouse.workflows import (
     bridge_dic_multistep_history,
     characterise_dic_measurement_chain,
     collect_identification_results,
+    diagnose_dic_boundary_history,
     diagnose_dic_photometric_quality,
     diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
@@ -522,6 +523,19 @@ def _parser() -> argparse.ArgumentParser:
     multistep_mechanics.add_argument("--output", type=Path, required=True)
     multistep_mechanics.add_argument("--overwrite", action="store_true")
 
+    multistep_boundary_audit = commands.add_parser(
+        "diagnose-dic-boundary-history",
+        help="audit early measured DIC states at nonlinear failure locations",
+    )
+    multistep_boundary_audit.add_argument("--history", type=Path, required=True)
+    multistep_boundary_audit.add_argument("--history-report", type=Path, required=True)
+    multistep_boundary_audit.add_argument("--failure-report", type=Path, required=True)
+    multistep_boundary_audit.add_argument("--images", type=Path, required=True)
+    multistep_boundary_audit.add_argument("--output", type=Path, required=True)
+    multistep_boundary_audit.add_argument("--figure-output", type=Path, required=True)
+    multistep_boundary_audit.add_argument("--maximum-state", type=int, default=6)
+    multistep_boundary_audit.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -990,6 +1004,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(mechanics_report)
+        return 0
+    if args.command == "diagnose-dic-boundary-history":
+        boundary_report = diagnose_dic_boundary_history(
+            history_path=args.history,
+            history_report_path=args.history_report,
+            failure_report_path=args.failure_report,
+            raw_image_directory=args.images,
+            output_directory=args.output,
+            figure_directory=args.figure_output,
+            maximum_state=args.maximum_state,
+            overwrite=args.overwrite,
+        )
+        _print_json(boundary_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
