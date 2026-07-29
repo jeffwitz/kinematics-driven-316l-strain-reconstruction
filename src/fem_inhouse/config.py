@@ -87,6 +87,11 @@ class SolverConfig:
     local_plane_stress_relative_tolerance: float = 1e-10
     maximum_local_plane_stress_iterations: int = 15
     maximum_cbb_condition_number: float = 1e12
+    newton_line_search: bool = False
+    line_search_reduction: float = 0.5
+    line_search_armijo_coefficient: float = 1e-4
+    line_search_minimum_factor: float = 2.0**-12
+    line_search_maximum_trials: int = 12
 
     def __post_init__(self) -> None:
         if self.increments < 1:
@@ -108,6 +113,14 @@ class SolverConfig:
             raise ValueError("unsupported constitutive_backend")
         if not self.mfront_library:
             raise ValueError("mfront_library must not be empty")
+        if not 0.0 < self.line_search_reduction < 1.0:
+            raise ValueError("line_search_reduction must lie in (0, 1)")
+        if not 0.0 < self.line_search_armijo_coefficient < 1.0:
+            raise ValueError("line_search_armijo_coefficient must lie in (0, 1)")
+        if not 0.0 < self.line_search_minimum_factor <= 1.0:
+            raise ValueError("line_search_minimum_factor must lie in (0, 1]")
+        if self.line_search_maximum_trials < 1:
+            raise ValueError("line_search_maximum_trials must be positive")
         if isinstance(self.mfront_threads, bool) or not isinstance(self.mfront_threads, int):
             raise TypeError("mfront_threads must be an integer")
         if self.mfront_threads < 1:

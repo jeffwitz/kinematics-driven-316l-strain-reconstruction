@@ -109,6 +109,11 @@ def run_fem(
     local_plane_stress_relative_tolerance=1e-10,
     maximum_local_plane_stress_iterations=15,
     maximum_cbb_condition_number=1e12,
+    newton_line_search=False,
+    line_search_reduction=0.5,
+    line_search_armijo_coefficient=1e-4,
+    line_search_minimum_factor=2.0**-12,
+    line_search_maximum_trials=12,
     nonlocal_plasticity_enabled=False,
     nonlocal_length_scale_mm=0.05888,
     nonlocal_coupling_modulus_mpa=0.0,
@@ -142,6 +147,8 @@ def run_fem(
     """
     if nonlocal_plasticity_enabled and constitutive_backend == "python":
         raise ValueError("nonlocal plasticity currently requires an MFront backend")
+    if newton_line_search and nonlocal_plasticity_enabled:
+        raise ValueError("Newton line search is currently restricted to local plasticity")
     started_at = time.perf_counter()
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
@@ -248,6 +255,10 @@ def run_fem(
     tangent_assembly_seconds = 0.0
     internal_force_seconds = 0.0
     maximum_relative_constitutive_tangent_asymmetry = 0.0
+    line_search_evaluations = 0
+    line_search_reductions = 0
+    line_search_failures = 0
+    minimum_accepted_line_search_factor = 1.0
 
     def timed_solve(matrix, right_hand_side):
         return linear_solver.factorize_and_solve(matrix, right_hand_side)
@@ -606,7 +617,59 @@ def run_fem(
             du = timed_solve(KII, -R_I)
             if not np.isfinite(du).all():
                 break  # singular tangent -> cutback
-            u[dof_I] += du
+            if not newton_line_search:
+                u[dof_I] += du
+                continue
+
+            base_u_I = u[dof_I].copy()
+            factor = 1.0
+            accepted_line_search = False
+            for _line_search_trial in range(line_search_maximum_trials):
+                if factor < line_search_minimum_factor:
+                    break
+                line_search_evaluations += 1
+                u[dof_I] = base_u_I + factor * du
+                candidate_eps = np.einsum("gak,ek->ega", Bs, u[ld])
+                try:
+                    candidate_started_at = time.perf_counter()
+                    candidate_trial = evaluate_in_plane(
+                        candidate_eps.reshape(-1, 3),
+                        time_increment=dt,
+                        consistent_tangent=False,
+                    )
+                    constitutive_seconds += time.perf_counter() - candidate_started_at
+                    candidate_stress = candidate_trial.stress_in_plane_mpa.reshape(
+                        n_e,
+                        N_GP,
+                        3,
+                    )
+                    candidate_force_started_at = time.perf_counter()
+                    candidate_residual = internal_force(
+                        mesh,
+                        candidate_stress,
+                        Bs,
+                        dJs,
+                        ld,
+                    )[dof_I]
+                    internal_force_seconds += time.perf_counter() - candidate_force_started_at
+                    candidate_norm = float(np.linalg.norm(candidate_residual))
+                except ConstitutiveIntegrationError:
+                    candidate_norm = float("inf")
+                target_norm = (1.0 - line_search_armijo_coefficient * factor) * res
+                if np.isfinite(candidate_norm) and candidate_norm <= target_norm:
+                    accepted_line_search = True
+                    minimum_accepted_line_search_factor = min(
+                        minimum_accepted_line_search_factor,
+                        factor,
+                    )
+                    break
+                factor *= line_search_reduction
+                line_search_reductions += 1
+            if not accepted_line_search:
+                u[dof_I] = base_u_I
+                line_search_failures += 1
+                increment_failure_reason = "Newton line search found no residual-decreasing trial"
+                break
 
         if not converged:
             material_batch.revert()
@@ -654,6 +717,12 @@ def run_fem(
                         "last_failed_fixed_point_history": (last_failed_fixed_point_history),
                         "first_constitutive_failure": first_constitutive_failure,
                         "last_constitutive_failure": last_constitutive_failure,
+                        "line_search_evaluations": line_search_evaluations,
+                        "line_search_reductions": line_search_reductions,
+                        "line_search_failures": line_search_failures,
+                        "minimum_accepted_line_search_factor": (
+                            minimum_accepted_line_search_factor
+                        ),
                     },
                 )
             continue
@@ -814,6 +883,11 @@ def run_fem(
             final_residual_norm=final_residual_norm,
             final_relative_residual=final_relative_residual,
             final_convergence_criterion=final_convergence_criterion,
+            newton_line_search_enabled=newton_line_search,
+            line_search_evaluations=line_search_evaluations,
+            line_search_reductions=line_search_reductions,
+            line_search_failures=line_search_failures,
+            minimum_accepted_line_search_factor=(minimum_accepted_line_search_factor),
             tensor_reconstruction_source=material_batch.completion_strategy,
             linear_system_matrix_type=linear_system_matrix_type,
             maximum_relative_constitutive_tangent_asymmetry=(

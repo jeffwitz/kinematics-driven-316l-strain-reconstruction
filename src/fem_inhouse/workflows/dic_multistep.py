@@ -489,6 +489,7 @@ def run_dic_multistep_mechanics(
     partition_id: int,
     mode: str,
     output_directory: str | Path,
+    newton_line_search: bool = False,
     overwrite: bool = False,
 ) -> dict[str, Any]:
     """Run local P43 mechanics with measured or proportional 40-step boundaries."""
@@ -518,7 +519,11 @@ def run_dic_multistep_mechanics(
             scale_factor=float(source_mesh["scale_factor"]),
         ),
         material=MaterialConfig(**config_data["material"]),
-        solver=replace(source_solver, increments=40),
+        solver=replace(
+            source_solver,
+            increments=40,
+            newton_line_search=newton_line_search,
+        ),
         nonlocal_plasticity=replace(
             NonlocalPlasticityConfig(**config_data["nonlocal_plasticity"]),
             enabled=False,
@@ -582,6 +587,7 @@ def run_dic_multistep_mechanics(
             "error": str(error),
             "diagnostics": error.diagnostics,
             "nominal_increments": 40,
+            "newton_line_search_enabled": newton_line_search,
             "config": asdict(config),
             "source": {
                 "campaign_manifest_sha256": _sha256(manifest_path),
@@ -645,6 +651,7 @@ def run_dic_multistep_mechanics(
             else "proportional_to_prepared_final"
         ),
         "nominal_increments": 40,
+        "newton_line_search_enabled": newton_line_search,
         "snapshot_fractions": [0.25, 0.5, 0.75, 1.0],
         "config": asdict(config),
         "solve_bounds": list(partition.solve_bounds),

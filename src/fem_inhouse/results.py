@@ -46,6 +46,11 @@ class SolverDiagnostics:
     final_residual_norm: float
     final_relative_residual: float
     final_convergence_criterion: str
+    newton_line_search_enabled: bool = False
+    line_search_evaluations: int = 0
+    line_search_reductions: int = 0
+    line_search_failures: int = 0
+    minimum_accepted_line_search_factor: float = 1.0
     tensor_reconstruction_source: str = "unspecified"
     linear_system_matrix_type: str = "unspecified"
     maximum_relative_constitutive_tangent_asymmetry: float = 0.0

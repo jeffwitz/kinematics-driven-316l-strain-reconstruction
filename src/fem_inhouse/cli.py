@@ -495,6 +495,7 @@ def _parser() -> argparse.ArgumentParser:
     multistep_mechanics.add_argument("--history", type=Path, required=True)
     multistep_mechanics.add_argument("--partition-id", type=int, required=True)
     multistep_mechanics.add_argument("--mode", choices=("measured", "proportional"), required=True)
+    multistep_mechanics.add_argument("--newton-line-search", action="store_true")
     multistep_mechanics.add_argument("--output", type=Path, required=True)
     multistep_mechanics.add_argument("--overwrite", action="store_true")
 
@@ -950,6 +951,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             partition_id=args.partition_id,
             mode=args.mode,
             output_directory=args.output,
+            newton_line_search=args.newton_line_search,
             overwrite=args.overwrite,
         )
         _print_json(mechanics_report)
