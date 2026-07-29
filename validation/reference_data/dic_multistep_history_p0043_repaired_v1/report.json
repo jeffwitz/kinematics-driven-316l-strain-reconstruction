@@ -1,0 +1,425 @@
+{
+  "checks": {
+    "final_state_bitwise_identical": true,
+    "finite": true,
+    "largest_original_increment_evm_max": 0.054592507398130666,
+    "largest_repaired_increment_evm_max": 0.005623280201638799,
+    "unaffected_states_bitwise_identical": true
+  },
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-29T17:56:51.546552+00:00",
+  "git_sha": "59dde7311bb4ca5d3f000f5aa13538da289bb620",
+  "mechanics_rerun": false,
+  "micromorphic_identification_run": false,
+  "outputs": {
+    "corrupted_frames_diagnostic.png": "414e4b83056c3e1519c599f4eef9280c3b40e72d33780d49c9220918930a3efa",
+    "repaired_history_mm.npy": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0"
+  },
+  "partition_id": 43,
+  "repair": {
+    "bracketing_states": [
+      30,
+      33
+    ],
+    "corrupted_states": [
+      31,
+      32
+    ],
+    "legacy_source_declares_corrupted_array_indices": [
+      31,
+      32
+    ],
+    "legacy_source_repairs_evm_only": true,
+    "method": "piecewise_linear_displacement_interpolation"
+  },
+  "schema_version": 1,
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "source": {
+    "campaign_manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+    "history_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_v1/report.json",
+    "history_report_sha256": "3535a815db90ad46c9aa64a3bead056a6fddea504c0e42cbd3b4bf8cc739122f",
+    "history_sha256": "331292c050885ce00e12d717354b18fe77eaa01fb222d7974681d80f7e7f6500"
+  },
+  "state_diagnostics": [
+    {
+      "image": null,
+      "original_increment_evm_max": 0.0,
+      "original_state_evm_max": 0.0,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0,
+      "repaired_state_evm_max": 0.0,
+      "state": 0
+    },
+    {
+      "image": "000295.tif",
+      "original_increment_evm_max": 0.000316767531217336,
+      "original_state_evm_max": 0.000316767531217336,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.000316767531217336,
+      "repaired_state_evm_max": 0.000316767531217336,
+      "state": 1
+    },
+    {
+      "image": "000296.tif",
+      "original_increment_evm_max": 0.0002459538289804392,
+      "original_state_evm_max": 0.0005567917173721107,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0002459538289804392,
+      "repaired_state_evm_max": 0.0005567917173721107,
+      "state": 2
+    },
+    {
+      "image": "000297.tif",
+      "original_increment_evm_max": 0.0002820552684991417,
+      "original_state_evm_max": 0.0007781426468897263,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0002820552684991417,
+      "repaired_state_evm_max": 0.0007781426468897263,
+      "state": 3
+    },
+    {
+      "image": "000298.tif",
+      "original_increment_evm_max": 0.0003056879435050024,
+      "original_state_evm_max": 0.0009710294908841847,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0003056879435050024,
+      "repaired_state_evm_max": 0.0009710294908841847,
+      "state": 4
+    },
+    {
+      "image": "000299.tif",
+      "original_increment_evm_max": 0.00030938200597992703,
+      "original_state_evm_max": 0.0011044089666681235,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.00030938200597992703,
+      "repaired_state_evm_max": 0.0011044089666681235,
+      "state": 5
+    },
+    {
+      "image": "000300.tif",
+      "original_increment_evm_max": 0.0003763829844724991,
+      "original_state_evm_max": 0.0012831566854213615,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0003763829844724991,
+      "repaired_state_evm_max": 0.0012831566854213615,
+      "state": 6
+    },
+    {
+      "image": "000301.tif",
+      "original_increment_evm_max": 0.0004236240663720861,
+      "original_state_evm_max": 0.001538370684715373,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0004236240663720861,
+      "repaired_state_evm_max": 0.001538370684715373,
+      "state": 7
+    },
+    {
+      "image": "000302.tif",
+      "original_increment_evm_max": 0.00043674286403568366,
+      "original_state_evm_max": 0.0018008950395073725,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.00043674286403568366,
+      "repaired_state_evm_max": 0.0018008950395073725,
+      "state": 8
+    },
+    {
+      "image": "000303.tif",
+      "original_increment_evm_max": 0.0004944585172329912,
+      "original_state_evm_max": 0.0019329497263457299,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0004944585172329912,
+      "repaired_state_evm_max": 0.0019329497263457299,
+      "state": 9
+    },
+    {
+      "image": "000304.tif",
+      "original_increment_evm_max": 0.0003424971940623696,
+      "original_state_evm_max": 0.0020777542146443516,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0003424971940623696,
+      "repaired_state_evm_max": 0.0020777542146443516,
+      "state": 10
+    },
+    {
+      "image": "000305.tif",
+      "original_increment_evm_max": 0.0002789102596538745,
+      "original_state_evm_max": 0.0023269968481647546,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0002789102596538745,
+      "repaired_state_evm_max": 0.0023269968481647546,
+      "state": 11
+    },
+    {
+      "image": "000306.tif",
+      "original_increment_evm_max": 0.00036385933054175284,
+      "original_state_evm_max": 0.0024771034144651276,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.00036385933054175284,
+      "repaired_state_evm_max": 0.0024771034144651276,
+      "state": 12
+    },
+    {
+      "image": "000307.tif",
+      "original_increment_evm_max": 0.00034558318709290416,
+      "original_state_evm_max": 0.0026447804557427164,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.00034558318709290416,
+      "repaired_state_evm_max": 0.0026447804557427164,
+      "state": 13
+    },
+    {
+      "image": "000308.tif",
+      "original_increment_evm_max": 0.0004172230885361223,
+      "original_state_evm_max": 0.002799668918421646,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0004172230885361223,
+      "repaired_state_evm_max": 0.002799668918421646,
+      "state": 14
+    },
+    {
+      "image": "000309.tif",
+      "original_increment_evm_max": 0.0004308142663298851,
+      "original_state_evm_max": 0.0029404015979834918,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0004308142663298851,
+      "repaired_state_evm_max": 0.0029404015979834918,
+      "state": 15
+    },
+    {
+      "image": "000310.tif",
+      "original_increment_evm_max": 0.00038400754053252197,
+      "original_state_evm_max": 0.0031455647365765827,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.00038400754053252197,
+      "repaired_state_evm_max": 0.0031455647365765827,
+      "state": 16
+    },
+    {
+      "image": "000311.tif",
+      "original_increment_evm_max": 0.0004306753116221587,
+      "original_state_evm_max": 0.0032287445790913126,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0004306753116221587,
+      "repaired_state_evm_max": 0.0032287445790913126,
+      "state": 17
+    },
+    {
+      "image": "000312.tif",
+      "original_increment_evm_max": 0.0004273244167388976,
+      "original_state_evm_max": 0.00342678218820076,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0004273244167388976,
+      "repaired_state_evm_max": 0.00342678218820076,
+      "state": 18
+    },
+    {
+      "image": "000313.tif",
+      "original_increment_evm_max": 0.0005130116172248806,
+      "original_state_evm_max": 0.0035850784070106884,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0005130116172248806,
+      "repaired_state_evm_max": 0.0035850784070106884,
+      "state": 19
+    },
+    {
+      "image": "000314.tif",
+      "original_increment_evm_max": 0.0006659140559243455,
+      "original_state_evm_max": 0.0038619718778898113,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0006659140559243455,
+      "repaired_state_evm_max": 0.0038619718778898113,
+      "state": 20
+    },
+    {
+      "image": "000315.tif",
+      "original_increment_evm_max": 0.0008346104206375718,
+      "original_state_evm_max": 0.0038823529026913374,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0008346104206375718,
+      "repaired_state_evm_max": 0.0038823529026913374,
+      "state": 21
+    },
+    {
+      "image": "000316.tif",
+      "original_increment_evm_max": 0.0009825767879982263,
+      "original_state_evm_max": 0.004483402294153703,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0009825767879982263,
+      "repaired_state_evm_max": 0.004483402294153703,
+      "state": 22
+    },
+    {
+      "image": "000317.tif",
+      "original_increment_evm_max": 0.0006675981203675574,
+      "original_state_evm_max": 0.004747955542630602,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0006675981203675574,
+      "repaired_state_evm_max": 0.004747955542630602,
+      "state": 23
+    },
+    {
+      "image": "000318.tif",
+      "original_increment_evm_max": 0.000882386308747619,
+      "original_state_evm_max": 0.004867749912742889,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.000882386308747619,
+      "repaired_state_evm_max": 0.004867749912742889,
+      "state": 24
+    },
+    {
+      "image": "000319.tif",
+      "original_increment_evm_max": 0.000922052877876355,
+      "original_state_evm_max": 0.005390607459670043,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.000922052877876355,
+      "repaired_state_evm_max": 0.005390607459670043,
+      "state": 25
+    },
+    {
+      "image": "000320.tif",
+      "original_increment_evm_max": 0.001511140618090883,
+      "original_state_evm_max": 0.005743897366642612,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.001511140618090883,
+      "repaired_state_evm_max": 0.005743897366642612,
+      "state": 26
+    },
+    {
+      "image": "000321.tif",
+      "original_increment_evm_max": 0.0029830797903418428,
+      "original_state_evm_max": 0.0065376658047913705,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0029830797903418428,
+      "repaired_state_evm_max": 0.0065376658047913705,
+      "state": 27
+    },
+    {
+      "image": "000322.tif",
+      "original_increment_evm_max": 0.002193332012316638,
+      "original_state_evm_max": 0.007334216652625401,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.002193332012316638,
+      "repaired_state_evm_max": 0.007334216652625401,
+      "state": 28
+    },
+    {
+      "image": "000323.tif",
+      "original_increment_evm_max": 0.0016745130737190529,
+      "original_state_evm_max": 0.007905383263382717,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0016745130737190529,
+      "repaired_state_evm_max": 0.007905383263382717,
+      "state": 29
+    },
+    {
+      "image": "000324.tif",
+      "original_increment_evm_max": 0.005340311771168025,
+      "original_state_evm_max": 0.009271885092729299,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.005340311771168025,
+      "repaired_state_evm_max": 0.009271885092729299,
+      "state": 30
+    },
+    {
+      "image": "000325.tif",
+      "original_increment_evm_max": 0.054592507398130666,
+      "original_state_evm_max": 0.058926180276233406,
+      "repaired": true,
+      "repaired_increment_evm_max": 0.0018503692612027302,
+      "repaired_state_evm_max": 0.009681226464270803,
+      "state": 31
+    },
+    {
+      "image": "000326.tif",
+      "original_increment_evm_max": 0.04060805163945934,
+      "original_state_evm_max": 0.04204458776433687,
+      "repaired": true,
+      "repaired_increment_evm_max": 0.00185036926120366,
+      "repaired_state_evm_max": 0.010338516162051864,
+      "state": 32
+    },
+    {
+      "image": "000327.tif",
+      "original_increment_evm_max": 0.03831362229338298,
+      "original_state_evm_max": 0.011247999147826917,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0018503692612032168,
+      "repaired_state_evm_max": 0.011247999147826917,
+      "state": 33
+    },
+    {
+      "image": "000328.tif",
+      "original_increment_evm_max": 0.0036791374373323542,
+      "original_state_evm_max": 0.010651107099996268,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0036791374373323542,
+      "repaired_state_evm_max": 0.010651107099996268,
+      "state": 34
+    },
+    {
+      "image": "000329.tif",
+      "original_increment_evm_max": 0.003999960684323177,
+      "original_state_evm_max": 0.011520727347716475,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.003999960684323177,
+      "repaired_state_evm_max": 0.011520727347716475,
+      "state": 35
+    },
+    {
+      "image": "000330.tif",
+      "original_increment_evm_max": 0.005207170117537608,
+      "original_state_evm_max": 0.011141556320455118,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.005207170117537608,
+      "repaired_state_evm_max": 0.011141556320455118,
+      "state": 36
+    },
+    {
+      "image": "000331.tif",
+      "original_increment_evm_max": 0.0035612566999789043,
+      "original_state_evm_max": 0.011393552298851493,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0035612566999789043,
+      "repaired_state_evm_max": 0.011393552298851493,
+      "state": 37
+    },
+    {
+      "image": "000332.tif",
+      "original_increment_evm_max": 0.0039120800667002895,
+      "original_state_evm_max": 0.012445311370435697,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.0039120800667002895,
+      "repaired_state_evm_max": 0.012445311370435697,
+      "state": 38
+    },
+    {
+      "image": "000333.tif",
+      "original_increment_evm_max": 0.005623280201638799,
+      "original_state_evm_max": 0.015905379835995145,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.005623280201638799,
+      "repaired_state_evm_max": 0.015905379835995145,
+      "state": 39
+    },
+    {
+      "image": "000334.tif",
+      "original_increment_evm_max": 0.004716992907000676,
+      "original_state_evm_max": 0.01310067318048861,
+      "repaired": false,
+      "repaired_increment_evm_max": 0.004716992907000676,
+      "repaired_state_evm_max": 0.01310067318048861,
+      "state": 40
+    }
+  ],
+  "status": "completed_documented_corrupted_frame_repair"
+}
