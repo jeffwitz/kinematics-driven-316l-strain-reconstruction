@@ -1,0 +1,166 @@
+{
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-29T14:56:34.111663+00:00",
+  "git_sha": "817097e388290fbbc42b093a765ecb48cc9d8bbe",
+  "mechanics_rerun": false,
+  "micromorphic_identification_run": false,
+  "outputs": {
+    "decile_metrics.csv": "75351c3e2aec2d9a04b9bc22800393bed29811219b5d4a5253ed3cbddfea2bfb",
+    "photometric_deciles.png": "637794777aa38b6e051a256b6ebeb2c6b7d35e6e3f636768013518122635e5e2",
+    "photometric_quality_and_error.png": "09e8af1f54315ce8362da2e70d5fbd29c982bf883eacee1f85f2f03bffb8a664",
+    "photometric_residual.npy": "ea84c9e408cac65c0fe80bd24745337c4b64bba953194b4b4ff4f9847d3ba283",
+    "valid_mask.npy": "a5845d3fa5651dd58c6112d4913523e219bd53f7cc4a905b306997cd3b5db569"
+  },
+  "partition_id": 43,
+  "photometric_residual": {
+    "definition": "cell_average(abs(I40(x + u_DIC(x)) - I0(x)))",
+    "intensity_normalisation": "none",
+    "interpolation": "bilinear",
+    "q90_threshold": 20.75,
+    "unit": "8-bit grey levels",
+    "valid_fraction": 1.0
+  },
+  "provenance": {
+    "axis_convention": "image row -> canonical x/ux; image column -> canonical y/uy",
+    "final_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000334.tif",
+    "final_image_sha256": "04f38d166cc186403b85424ccb14f15621c532fef0f1338e6bd6207ba8b8d830",
+    "pixel_size_mm": 0.00184,
+    "prepared_case_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "reference_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+    "reference_image_sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da"
+  },
+  "rows": [
+    {
+      "alpha": 0.0,
+      "association": {
+        "pearson": -0.025017085763901728,
+        "spearman": -0.019242589598512532
+      },
+      "case": "local",
+      "q90_masked_sensitivity": {
+        "count": 100599,
+        "mae": 0.0014886959766896495,
+        "maximum_absolute_error": 0.010456878870414892,
+        "pearson_correlation": 0.6045719465859388,
+        "relative_l2_error": 0.49091159787713606,
+        "rmse": 0.002050157211769821,
+        "signed_mean_error": -0.00014183189829729826
+      },
+      "replay": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/local_legacy_script_2021",
+      "replay_report_sha256": "6631a8d7eff9a50fa41c9592cb5b6cb20e3b8f7d264f0de1815139a1c2d1f355",
+      "retained_fraction": 0.9014247311827956,
+      "unmasked": {
+        "count": 111600,
+        "mae": 0.0014839346294645442,
+        "maximum_absolute_error": 0.010456878870414892,
+        "pearson_correlation": 0.6042249226619093,
+        "relative_l2_error": 0.48583813694362415,
+        "rmse": 0.002036047217157085,
+        "signed_mean_error": -0.00016780039692238972
+      }
+    },
+    {
+      "alpha": 1.0,
+      "association": {
+        "pearson": -0.0005056016577003114,
+        "spearman": -0.008412778345671543
+      },
+      "case": "alpha1",
+      "q90_masked_sensitivity": {
+        "count": 100599,
+        "mae": 0.0011498333842127207,
+        "maximum_absolute_error": 0.006149196102957701,
+        "pearson_correlation": 0.6521733702017605,
+        "relative_l2_error": 0.3551234988239311,
+        "rmse": 0.0014830755788438925,
+        "signed_mean_error": -0.0002022456601225084
+      },
+      "replay": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a100_legacy_script_2021",
+      "replay_report_sha256": "687c55911ebb052f36a20520c84c894005020a3584f636267cef38f3469eee6f",
+      "retained_fraction": 0.9014247311827956,
+      "unmasked": {
+        "count": 111600,
+        "mae": 0.0011518232232414956,
+        "maximum_absolute_error": 0.006149196102957701,
+        "pearson_correlation": 0.6512120234751524,
+        "relative_l2_error": 0.3542009218665564,
+        "rmse": 0.001484382856022189,
+        "signed_mean_error": -0.0002215350976836508
+      }
+    },
+    {
+      "alpha": 2.0,
+      "association": {
+        "pearson": 0.01271936501979598,
+        "spearman": 0.0014313609341124012
+      },
+      "case": "alpha2",
+      "q90_masked_sensitivity": {
+        "count": 100599,
+        "mae": 0.001033716837540727,
+        "maximum_absolute_error": 0.006274394345005831,
+        "pearson_correlation": 0.6591004115385196,
+        "relative_l2_error": 0.31975760950062787,
+        "rmse": 0.0013353796731851923,
+        "signed_mean_error": -0.0002356666538215889
+      },
+      "replay": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a200_legacy_script_2021",
+      "replay_report_sha256": "447010d46cad7ceebf486098531d99e73323e04a3594ccbf5f256ff1f97c7fd0",
+      "retained_fraction": 0.9014247311827956,
+      "unmasked": {
+        "count": 111600,
+        "mae": 0.0010379109539337503,
+        "maximum_absolute_error": 0.006274394345005831,
+        "pearson_correlation": 0.657948158073428,
+        "relative_l2_error": 0.3197310037509214,
+        "rmse": 0.001339926553566223,
+        "signed_mean_error": -0.000252836979815321
+      }
+    },
+    {
+      "alpha": 4.0,
+      "association": {
+        "pearson": 0.02290974153424781,
+        "spearman": 0.00853123778708167
+      },
+      "case": "alpha4",
+      "q90_masked_sensitivity": {
+        "count": 100599,
+        "mae": 0.0009270555190423582,
+        "maximum_absolute_error": 0.00691102460271648,
+        "pearson_correlation": 0.665016846545254,
+        "relative_l2_error": 0.2910728580279281,
+        "rmse": 0.0012155857014112786,
+        "signed_mean_error": -0.000276117589723909
+      },
+      "replay": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a400_legacy_script_2021",
+      "replay_report_sha256": "8ed38d90dfdd5fdfb329922a1c6aa9b7e678743efc9bd5cf16650ad1f7457df0",
+      "retained_fraction": 0.9014247311827956,
+      "unmasked": {
+        "count": 111600,
+        "mae": 0.0009328920069536833,
+        "maximum_absolute_error": 0.00694208281593824,
+        "pearson_correlation": 0.6635857571812368,
+        "relative_l2_error": 0.29168216792883933,
+        "rmse": 0.0012223796798701528,
+        "signed_mean_error": -0.0002908509687587635
+      }
+    }
+  ],
+  "schema_version": 1,
+  "sensitivity_mask": {
+    "definition": "exclude residual strictly above core q90",
+    "primary_metrics_remain_unmasked": true,
+    "retained_fraction": 0.9014247311827956
+  },
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "status": "completed_baseline_no_acceptance_threshold"
+}
