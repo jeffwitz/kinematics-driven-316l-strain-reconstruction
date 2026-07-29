@@ -667,10 +667,15 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   état 3 → état 4 (`pseudo-time=0,10`) puis sous cutback jusqu'à
   `0,0750244`. L'échec précède donc les frames réparées et ne peut pas leur
   être attribué ;
+- l'instrumentation du rejet montre des essais Newton non physiques :
+  déformation ingénieur maximale `82,257` au premier échec et `58,011` au
+  dernier, dans deux éléments voisins du bord supérieur. MFront rejette donc
+  correctement un sursaut du Newton non amorti ; ce n'est pas une limite
+  constitutive sur la petite déformation DIC imposée ;
 - l'état constitutif est restauré après chaque tentative et aucun résultat
   mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
-  bloqué jusqu'à séparation entre limitation d'intégration MFront et
-  sur-correction du Newton non amorti.
+  bloqué jusqu'à un essai pré-enregistré de line search résiduelle optionnelle,
+  avec non-régression stricte du chemin proportionnel.
 
 Artefacts : `validation/dic_multistep_p0043_audit.md`,
 `validation/dic_multistep_p0043_preregistration.md`,

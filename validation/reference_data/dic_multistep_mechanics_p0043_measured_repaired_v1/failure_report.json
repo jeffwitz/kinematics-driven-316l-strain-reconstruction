@@ -45,11 +45,30 @@
     }
   },
   "constitutive_state_committed_after_failure": false,
-  "created_at_utc": "2026-07-29T18:04:56.316950+00:00",
+  "created_at_utc": "2026-07-29T18:54:09.817231+00:00",
   "diagnostics": {
     "attempted_increments": 14,
     "converged_increments": 3,
     "cutbacks": 11,
+    "first_constitutive_failure": {
+      "component_index": 2,
+      "component_maxima": [
+        48.08522862518613,
+        16.268966561900267,
+        82.25710692445949
+      ],
+      "component_minima": [
+        -29.756435365074722,
+        -57.016543158597614,
+        -46.680718790091085
+      ],
+      "element_index": 402245,
+      "gauss_point_index": 1,
+      "maximum_absolute_engineering_strain": 82.25710692445949,
+      "newton_iteration": 7,
+      "pseudo_time": 0.1,
+      "step_size": 0.025
+    },
     "first_cutback": {
       "failed_step_size": 0.025,
       "increment": 4,
@@ -59,6 +78,25 @@
       "reason": "MFront integration failed with status -1"
     },
     "fixed_point_history": [],
+    "last_constitutive_failure": {
+      "component_index": 1,
+      "component_maxima": [
+        8.646995570065826,
+        58.011313199249265,
+        39.58081656098419
+      ],
+      "component_minima": [
+        -21.028348428583108,
+        -19.84170931193871,
+        -47.58680956875878
+      ],
+      "element_index": 402246,
+      "gauss_point_index": 0,
+      "maximum_absolute_engineering_strain": 58.011313199249265,
+      "newton_iteration": 2,
+      "pseudo_time": 0.0750244140625,
+      "step_size": 2.44140625e-05
+    },
     "last_cutback": {
       "failed_step_size": 2.44140625e-05,
       "increment": 14,
@@ -72,7 +110,7 @@
     "total_newton_iterations": 28
   },
   "error": "run_fem: increment cutback below minimum (1.22e-05) - solution not converging",
-  "git_sha": "98e44ea1b0f57a655a49aff1eefe3d2b85e732c2",
+  "git_sha": "64ef983b2186a2ab8b655050963f1c6d8565fc5a",
   "mechanics_completed": false,
   "micromorphic_identification_run": false,
   "mode": "measured",

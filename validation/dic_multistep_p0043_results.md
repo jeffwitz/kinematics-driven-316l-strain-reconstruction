@@ -57,6 +57,19 @@ unchanged nominal local solver:
 | last attempted pseudo-time | `0.0750244` |
 | committed state after failure | no |
 
+The rejected strain-state instrumentation identifies a global Newton
+overshoot:
+
+| Rejected trial | Maximum absolute engineering strain | Location |
+|---|---:|---|
+| first cutback | `82.257` | element 402245, Gauss point 1, shear component |
+| last cutback | `58.011` | element 402246, Gauss point 0, yy component |
+
+With the mesh's Fortran element ordering, these are neighbouring elements on
+the upper solved boundary. Their magnitudes are several thousand percent and
+are unrelated to the measured state-4 incremental EVM maximum
+(`3.057e-4`). MFront is correctly rejecting a nonphysical Newton trial.
+
 The failure occurs before the repaired frames.  Removing their optical-flow
 artefact was necessary for a valid history, but it is not sufficient to make
 the current undamped Newton path robust to the measured non-proportional
@@ -74,8 +87,9 @@ path is physically impossible.  It establishes:
 4. no multi-step FEM/DIC prediction claim is authorised yet.
 
 No solver tolerance, constitutive parameter, material map, or non-local
-parameter was changed.  The next numerical diagnostic is to distinguish a
-MFront integration limitation from a global Newton overshoot on the
-state-3-to-state-4 transition.  A line search or a different constitutive
-backend must not be adopted without a separate pre-registration and parity
-test.
+parameter was changed. The cause is a global Newton overshoot on the
+state-3-to-state-4 transition, concentrated next to the upper boundary. A
+residual-controlled Newton line search is the justified next solver
+experiment. It must be optional, disabled for the historical baseline,
+pre-registered, and verified to leave already converged proportional results
+unchanged.
