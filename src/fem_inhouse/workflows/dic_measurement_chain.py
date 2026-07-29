@@ -381,6 +381,7 @@ def _transfer_figures(
     *,
     sinusoidal_rows: list[dict[str, Any]],
     band_rows: list[dict[str, Any]],
+    band_evm_cases: list[dict[str, Any]],
 ) -> None:
     figure, axis = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
     for orientation in ("horizontal", "vertical"):
@@ -427,6 +428,117 @@ def _transfer_figures(
         axis.legend()
     figure.suptitle("DISFlow imposed-band fidelity")
     figure.savefig(figure_directory / "band_width_fidelity.png", dpi=180)
+    plt.close(figure)
+
+    figure, axes = plt.subplots(
+        len(band_evm_cases),
+        3,
+        figsize=(14, 3.25 * len(band_evm_cases)),
+        constrained_layout=True,
+    )
+    for row_index, case in enumerate(band_evm_cases):
+        imposed_map = np.asarray(case["imposed_map"], dtype=np.float64)
+        recovered_map = np.asarray(case["recovered_map"], dtype=np.float64)
+        coordinate_um = np.asarray(case["coordinate_um"], dtype=np.float64)
+        imposed_profile = np.asarray(case["imposed_profile"], dtype=np.float64)
+        recovered_profile = np.asarray(case["recovered_profile"], dtype=np.float64)
+        width_pixels = int(case["width_pixels"])
+        width_um = width_pixels * PIXEL_SIZE_UM
+        common_maximum = float(max(np.max(imposed_map), np.max(recovered_map)))
+        half_extent_um = float(case["map_half_extent_pixels"]) * PIXEL_SIZE_UM
+        extent = (-half_extent_um, half_extent_um, -half_extent_um, half_extent_um)
+
+        imposed_image = axes[row_index, 0].imshow(
+            imposed_map.T,
+            origin="lower",
+            extent=extent,
+            cmap="magma",
+            vmin=0.0,
+            vmax=common_maximum,
+            aspect="equal",
+        )
+        axes[row_index, 0].axhline(0.0, color="cyan", linewidth=1.2)
+        axes[row_index, 0].set_title(
+            f"Imposed EVM — FWHM {width_pixels} px ({width_um:.2f} µm)"
+        )
+        axes[row_index, 1].imshow(
+            recovered_map.T,
+            origin="lower",
+            extent=extent,
+            cmap="magma",
+            vmin=0.0,
+            vmax=common_maximum,
+            aspect="equal",
+        )
+        axes[row_index, 1].axhline(0.0, color="cyan", linewidth=1.2)
+        axes[row_index, 1].set_title(
+            "DISFlow-recovered EVM\n"
+            f"FWHM {case['recovered_width_pixels']:.0f} px"
+        )
+        figure.colorbar(
+            imposed_image,
+            ax=(axes[row_index, 0], axes[row_index, 1]),
+            label="Total equivalent strain, EVM",
+            shrink=0.88,
+        )
+
+        ideal_step = np.where(
+            np.abs(coordinate_um) <= 0.5 * width_um,
+            float(np.max(imposed_profile)),
+            0.0,
+        )
+        axes[row_index, 2].plot(
+            coordinate_um,
+            imposed_profile,
+            color="black",
+            linewidth=1.8,
+            label="Exact imposed Gaussian EVM",
+        )
+        axes[row_index, 2].plot(
+            coordinate_um,
+            recovered_profile,
+            color="#d95f02",
+            linewidth=1.8,
+            label="Recovered EVM",
+        )
+        axes[row_index, 2].step(
+            coordinate_um,
+            ideal_step,
+            where="mid",
+            color="#1b9e77",
+            linestyle="--",
+            linewidth=1.5,
+            label="FWHM reference step",
+        )
+        axes[row_index, 2].axvspan(
+            -0.5 * width_um,
+            0.5 * width_um,
+            color="#1b9e77",
+            alpha=0.08,
+        )
+        axes[row_index, 2].set_xlim(-4.0 * width_um, 4.0 * width_um)
+        axes[row_index, 2].set_xlabel("Coordinate normal to the band (µm)")
+        axes[row_index, 2].set_ylabel("Total equivalent strain, EVM")
+        axes[row_index, 2].grid(alpha=0.25)
+        axes[row_index, 2].legend(fontsize=8, loc="upper right")
+        secondary = axes[row_index, 2].secondary_xaxis(
+            "top",
+            functions=(
+                lambda values: values / PIXEL_SIZE_UM,
+                lambda values: values * PIXEL_SIZE_UM,
+            ),
+        )
+        secondary.set_xlabel("Coordinate normal to the band (px)")
+
+        for axis in axes[row_index, :2]:
+            axis.set_xlabel("Normal coordinate (µm)")
+            axis.set_ylabel("Along-band coordinate (µm)")
+
+    figure.suptitle(
+        "Synthetic strain bands at native DISFlow scale 0\n"
+        "Cyan line: section normal to the band; maps in each row share one scale"
+    )
+    figure.savefig(figure_directory / "synthetic_band_evm_sections.png", dpi=180)
     plt.close(figure)
 
 
@@ -545,6 +657,7 @@ def characterise_dic_measurement_chain(
                     }
                 )
         band_rows: list[dict[str, Any]] = []
+        band_evm_cases: list[dict[str, Any]] = []
         for orientation in ("horizontal", "vertical"):
             component = 0 if orientation == "horizontal" else 1
             profile_axis = 0 if orientation == "horizontal" else 1
@@ -578,6 +691,37 @@ def characterise_dic_measurement_chain(
                         "centroid_shift_pixels": peak_index - imposed_peak_index,
                     }
                 )
+                if orientation == "horizontal":
+                    imposed_evm = image_flow_to_historical_evm(imposed)
+                    recovered_evm = image_flow_to_historical_evm(recovered)
+                    imposed_profile = np.median(imposed_evm, axis=1)
+                    recovered_evm_profile = np.median(recovered_evm, axis=1)
+                    centre_index = int(np.argmax(imposed_profile))
+                    coordinate_um = (
+                        np.arange(imposed_profile.size, dtype=np.float64) - centre_index
+                    ) * PIXEL_SIZE_UM
+                    map_half_extent = 96
+                    along_centre = imposed_evm.shape[1] // 2
+                    normal_slice = slice(
+                        centre_index - map_half_extent,
+                        centre_index + map_half_extent,
+                    )
+                    along_slice = slice(
+                        along_centre - map_half_extent,
+                        along_centre + map_half_extent,
+                    )
+                    band_evm_cases.append(
+                        {
+                            "width_pixels": width,
+                            "recovered_width_pixels": recovered_width,
+                            "coordinate_um": coordinate_um,
+                            "imposed_profile": imposed_profile,
+                            "recovered_profile": recovered_evm_profile,
+                            "imposed_map": imposed_evm[normal_slice, along_slice],
+                            "recovered_map": recovered_evm[normal_slice, along_slice],
+                            "map_half_extent_pixels": map_half_extent,
+                        }
+                    )
         _csv(output / "sinusoidal_transfer.csv", sinusoidal_rows)
         _csv(output / "band_width_fidelity.csv", band_rows)
         transfer_report = {
@@ -603,6 +747,7 @@ def characterise_dic_measurement_chain(
             figures,
             sinusoidal_rows=sinusoidal_rows,
             band_rows=band_rows,
+            band_evm_cases=band_evm_cases,
         )
 
     cv2 = _cv2()
