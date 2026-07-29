@@ -373,8 +373,31 @@ linkcheck et PDF stricts verts. Le changement de valeur par défaut imposant
 l'échelle native est publié au commit `339f76a` ; les résultats V2 et leur
 consolidation documentaire appartiennent au commit final suivant.
 
-`finest_scale=0` est désormais obligatoire et V2 remplace V1 dans le registre
-de preuves et dans toute conclusion publique.
+`finest_scale=0` est désormais obligatoire. V2 a invalidé V1 ; V4 reproduit
+les mêmes valeurs corrigées et constitue maintenant l'artefact public complet.
+
+Extension visuelle V4 au 2026-07-29 :
+
+- [x] afficher l'EVM exacte imposée et l'EVM récupérée par DISFlow pour les
+  bandes de `4`, `8`, `16` et `32 px` ;
+- [x] tracer sur chaque carte une coupe normale à la bande ;
+- [x] superposer sur cette coupe le profil gaussien réellement imposé, le
+  profil EVM récupéré et un créneau de lecture de même FWHM ;
+- [x] conserver les amplitudes physiques d'EVM et afficher les coordonnées en
+  pixels et micromètres ;
+- [x] documenter qu'une largeur FWHM correcte ne garantit ni l'amplitude ni
+  la morphologie.
+
+Artefacts V4 :
+`validation/reference_data/dic_measurement_chain_v4/`,
+`validation/figures/dic_measurement_chain_v4/synthetic_band_evm_sections.png`
+et `docs/explanation/dic_synthetic_measurement_tests.md`.
+
+Validation V4 : Ruff vert sur `src`, `tests` et `scripts` ; mypy vert sur les
+`53` fichiers source ; `346` tests verts avec MGIS/MFront réel et aucun skip ;
+Sphinx HTML, linkcheck et PDF stricts verts. Le Ruff global reste pollué par
+les scripts historiques nouvellement ajoutés sous `dic_analysis/`, hors de ce
+lot et non modifiés ici.
 
 #### V2.3 Sensibilité aux paramètres DISFlow
 
