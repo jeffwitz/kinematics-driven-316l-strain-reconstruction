@@ -24,6 +24,7 @@ from fem_inhouse.config import (
     NonlocalPlasticityConfig,
     SolverConfig,
 )
+from fem_inhouse.core.nonlinear import NonlinearConvergenceError
 from fem_inhouse.measurement import disflow_profile, image_flow_to_canonical, run_disflow
 from fem_inhouse.solver import run_case_study
 from fem_inhouse.workflows.campaign_access import (
@@ -559,16 +560,44 @@ def run_dic_multistep_mechanics(
     history[-1] = prepared_final
     local_yield = np.asarray(yield_map[sx0:sx1, sy0:sy1], dtype=np.float64)
     local_hardening = np.asarray(hardening_map[sx0:sx1, sy0:sy1], dtype=np.float64)
-    result = run_case_study(
-        config,
-        displacement_x_mm=final_x,
-        displacement_y_mm=final_y,
-        yield_stress_mpa=local_yield,
-        hardening_coefficient_mpa=local_hardening,
-        boundary_displacement_history_mm=history if mode == "measured" else None,
-        snapshots=(0.25, 0.5, 0.75, 1.0),
-        verbose=True,
-    )
+    try:
+        result = run_case_study(
+            config,
+            displacement_x_mm=final_x,
+            displacement_y_mm=final_y,
+            yield_stress_mpa=local_yield,
+            hardening_coefficient_mpa=local_hardening,
+            boundary_displacement_history_mm=history if mode == "measured" else None,
+            snapshots=(0.25, 0.5, 0.75, 1.0),
+            verbose=True,
+        )
+    except NonlinearConvergenceError as error:
+        failure_report = {
+            "schema_version": 1,
+            "status": "failed_local_measured_boundary_history",
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "git_sha": _git_sha(),
+            "partition_id": partition_id,
+            "mode": mode,
+            "error": str(error),
+            "diagnostics": error.diagnostics,
+            "nominal_increments": 40,
+            "config": asdict(config),
+            "source": {
+                "campaign_manifest_sha256": _sha256(manifest_path),
+                "prepared_manifest_sha256": _sha256(prepared / "manifest.json"),
+                "history_report_sha256": _sha256(history_report_path),
+                "history_sha256": _sha256(history_path),
+            },
+            "mechanics_completed": False,
+            "constitutive_state_committed_after_failure": False,
+            "micromorphic_identification_run": False,
+        }
+        (output / "failure_report.json").write_text(
+            json.dumps(failure_report, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        raise
     fields = {
         "U.npy": result.displacement_mm,
         "S.npy": result.stress_mpa,
