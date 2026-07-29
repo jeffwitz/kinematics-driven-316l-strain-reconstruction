@@ -436,14 +436,39 @@ Sphinx HTML, linkcheck et PDF stricts verts.
 
 #### V2.4 Qualité locale et incertitudes
 
-- [ ] Construire un résidu photométrique local et le comparer à la carte
+- [x] Construire un résidu photométrique local et le comparer à la carte
   d'erreur FEM–DIC.
-- [ ] Produire métriques brutes et métriques masquées/pondérées sans supprimer
+- [x] Produire métriques brutes et métriques masquées/pondérées sans supprimer
   la première.
 - [ ] Séparer une propagation légère jusqu'aux métriques EVM d'une propagation
   complète relançant corrélation, identification des cartes et FEM.
 - [ ] Présenter l'incertitude de PEEQ comme incertitude d'une sortie du modèle,
   jamais comme incertitude expérimentale directe.
+
+**Résultat KD-023 au 2026-07-29 :**
+
+- campagne pré-enregistrée puis exécutée sur les quatre rejeux V3 P43 du
+  profil `legacy_script_2021`, sans mécanique ni identification ;
+- résidu direct
+  `cell_average(abs(I40(x + u_DIC(x)) - I0(x)))`, bilinéaire, sans correction
+  d'intensité et sans le `mask.png` historique absent ;
+- support géométrique valide sur 100 % du coeur ; seuil q90 de `20,75`
+  niveaux de gris et sensibilité conservant `90,14 %` des éléments ;
+- corrélations résidu/erreur EVM négligeables : Pearson de `-0,025` à `0,023`
+  et Spearman de `-0,019` à `0,009` ;
+- retirer le pire décile change L2 d'au plus environ `1,1 %`, la corrélation
+  FEM/DIC de moins de `0,0015` et ne change pas le classement ;
+- conclusion négative : ce proxy photométrique local n'explique pas l'erreur
+  structurée restante et ne justifie aucun masque pour l'identification.
+  L'incertitude propagée reste une tâche distincte.
+
+Artefacts :
+`validation/reference_data/dic_photometric_quality_p0043_v1/`,
+`validation/figures/dic_photometric_quality_p0043_v1/` et
+`validation/dic_photometric_quality_p0043_results.md`.
+Validation : Ruff et mypy verts ; `383` tests avec MGIS/MFront réel ;
+`7` tests `measurement` sans skip ; Sphinx HTML, linkcheck et PDF stricts
+verts.
 
 ### Lot V3 — Opérateur d'observation symétrique
 

@@ -78,6 +78,12 @@
 : Conclusion: Symmetric observation substantially reduces apparent L2 error and raises correlation, but it separates the objectives: alpha 4 is best for amplitude and correlation while alpha 1 is best for absolute-q90 overlap. The old identification objective must not be reused.
 : Sources: primary consolidated metrics: `validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json`.
 
+**E-DIC-005 — Does direct local brightness mismatch explain the remaining observed-FEM/DIC EVM error?**
+: Fidelity: full-resolution P43 direct-image diagnostic on four archived V3 replays. Parameters: alpha 0, 1, 2 and 4; cell-averaged direct brightness residual; fixed q90 sensitivity; no mechanical rerun.
+: Status: **negative result**.
+: Conclusion: Residual/error Pearson and Spearman associations are negligible, and excluding the worst photometric decile leaves the candidate ordering and field metrics essentially unchanged. The primary V3 comparison therefore remains unmasked.
+: Sources: primary: `validation/reference_data/dic_photometric_quality_p0043_v1/report.json`.
+
 **E-EBSD-001 — What structural scale is carried by the archived grain-mean Schmid field?**
 : Fidelity: independent EBSD/Schmid spatial statistic. Parameters: frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap.
 : Status: **verified**.
