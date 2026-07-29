@@ -308,6 +308,31 @@
       ]
     },
     {
+      "id": "E-DIC-002",
+      "question": "Can Charbonnier epsilon remove the waviness of a recovered 32 px strain band without biasing its width and amplitude?",
+      "fidelity": "synthetic 1024 by 1024 real-speckle warp at native scale 0",
+      "parameters": "32 px Gaussian-FWHM EVM band; epsilon from 0.0002 to 2; all other DISFlow settings fixed",
+      "status": "exploratory",
+      "conclusion": "Increasing epsilon strongly suppresses along-band waviness, but the strong reduction is inseparable from peak attenuation and excessive band broadening. Intermediate epsilon 0.01 reduces waviness while preserving peak amplitude, but narrows the band to 26 px.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_exploratory_sensitivity"},
+            {"path": "/fixed/finest_scale", "operator": "equals", "expected": 0},
+            {"path": "/fixed/band_width_pixels", "operator": "equals", "expected": 32},
+            {"path": "/metrics/1/epsilon", "operator": "equals", "expected": 0.002},
+            {"path": "/metrics/1/fwhm_pixels", "operator": "equals", "expected": 28.0},
+            {"path": "/metrics/4/epsilon", "operator": "equals", "expected": 0.01},
+            {"path": "/metrics/4/fwhm_pixels", "operator": "equals", "expected": 26.0},
+            {"path": "/metrics/5/epsilon", "operator": "equals", "expected": 0.02},
+            {"path": "/metrics/5/fwhm_pixels", "operator": "equals", "expected": 39.0}
+          ]
+        }
+      ]
+    },
+    {
       "id": "E-EBSD-001",
       "question": "What structural scale is carried by the archived grain-mean Schmid field?",
       "fidelity": "independent EBSD/Schmid spatial statistic",
@@ -339,6 +364,20 @@
         ["Sinusoidal MTF-50 wavelength (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/mtf50_wavelength_pixels/horizontal", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/mtf50_wavelength_pixels/vertical", "format": ".1f"}],
         ["Recovered FWHM for imposed 16 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/2/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/6/recovered_width_pixels", "format": ".1f"}],
         ["Recovered FWHM for imposed 32 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/3/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/7/recovered_width_pixels", "format": ".1f"}]
+      ]
+    },
+    {
+      "target": "dic_epsilon_band32_metrics.inc",
+      "columns": ["Epsilon", "FWHM (px)", "Peak gain", "Along-band CV", "Relative L2"],
+      "rows": [
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/relative_l2", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/relative_l2", "format": ".3f"}]
       ]
     },
     {

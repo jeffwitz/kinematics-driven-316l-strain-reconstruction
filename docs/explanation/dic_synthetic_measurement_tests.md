@@ -127,6 +127,46 @@ Thus “4 px recovered at 4 px” is only a width statement. It does not establi
 perfect amplitude or morphology. Conversely, the 49 px sinusoidal MTF-50 does
 not mean that a 32 px localised strain band is invisible.
 
+## Does Charbonnier epsilon remove the waviness?
+
+A targeted sweep varies only the Charbonnier epsilon on the 32 px band. Every
+other DIS and variational-refinement setting remains fixed.
+
+```{include} ../_generated/dic_epsilon_band32_metrics.inc
+```
+
+```{figure} ../_static/evidence/dic_epsilon_band32_sections.png
+:alt: Recovered 32 px synthetic EVM band and normal section for eight Charbonnier epsilon values.
+:width: 100%
+
+All recovered maps share one colour scale. Increasing epsilon suppresses the
+texture-aligned waviness, but also changes the normal band profile.
+```
+
+```{figure} ../_static/evidence/dic_epsilon_band32_metrics.png
+:alt: Recovered width, peak gain and along-band waviness versus Charbonnier epsilon.
+:width: 88%
+
+Width, amplitude and along-band variation must be read together; no curve is
+an optimisation objective by itself.
+```
+
+The effect is strong but not free:
+
+- at the production value \(\epsilon=0.002\), the band is 28 px wide, the
+  peak is amplified by 16 %, and the along-band coefficient of variation is
+  7.0 %;
+- at \(\epsilon=0.01\), waviness falls to 3.0 % and the peak becomes nearly
+  unbiased, but the band narrows further to 26 px;
+- at \(\epsilon=0.02\), waviness falls to 1.1 %, but the band broadens to
+  39 px and the peak is attenuated by 27 %;
+- larger epsilon values remain visibly over-smoothed.
+
+Therefore epsilon can hide the waviness, but the strong improvement at
+\(0.02\) and above is mainly a redistribution of the error into width and
+amplitude. This single-band exploratory sweep does not justify changing the
+production value.
+
 ## Consequence for FEM/DIC comparison
 
 The measurement chain is neither a neutral sampler nor a simple Gaussian

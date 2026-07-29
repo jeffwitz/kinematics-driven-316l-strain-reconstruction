@@ -399,6 +399,27 @@ Sphinx HTML, linkcheck et PDF stricts verts. Le Ruff global reste pollué par
 les scripts historiques nouvellement ajoutés sous `dic_analysis/`, hors de ce
 lot et non modifiés ici.
 
+Sensibilité epsilon sur la bande de `32 px` :
+
+- [x] pré-enregistrement grossier puis raffinement explicite de la transition
+  entre `0,002` et `0,02` ;
+- [x] balayage `0,0002`, `0,002`, `0,004`, `0,006`, `0,01`, `0,02`, `0,2`,
+  `2`, avec tous les autres réglages fixes et `finest_scale=0` ;
+- [x] à `epsilon=0,01`, CV longitudinal réduit de `0,070` à `0,030` et pic
+  presque exact (`0,958`), mais largeur réduite de `28` à `26 px` ;
+- [x] à `epsilon=0,02`, CV réduit à `0,011`, mais largeur portée à `39 px` et
+  pic réduit à `0,728` ;
+- [x] conclusion : epsilon modifie fortement le défaut visible, mais la
+  disparition de l'ondulation aux grandes valeurs est une
+  sur-régularisation qui déplace l'erreur vers la largeur et l'amplitude ;
+  aucune nouvelle valeur de production n'est sélectionnée.
+
+Artefacts : `validation/dic_epsilon_band32_preregistration.md`,
+`validation/dic_epsilon_band32_results.md` et
+`validation/reference_data/dic_epsilon_band32_v2/`.
+Validation : Ruff et mypy verts sur le périmètre ; `9` tests ciblés verts ;
+Sphinx HTML, linkcheck et PDF stricts verts.
+
 #### V2.3 Sensibilité aux paramètres DISFlow
 
 - [ ] Répéter uniquement le diagnostic spatial output-only avec une variation

@@ -1,0 +1,222 @@
+{
+  "claim_boundary": "measurement-chain sensitivity only; no parameter selected",
+  "epsilons": [
+    0.0002,
+    0.002,
+    0.004,
+    0.006,
+    0.01,
+    0.02,
+    0.2,
+    2.0
+  ],
+  "fixed": {
+    "band_width_pixels": 32,
+    "finest_scale": 0,
+    "maximum_displacement_pixels": 1.5,
+    "pixel_size_um": 1.84
+  },
+  "git_sha": "53d6f69519d402694c047a8e4aa114fb13f32777",
+  "metrics": [
+    {
+      "along_band_peak_cv": 0.07424551749428607,
+      "along_band_peak_mean": 0.04883085886686841,
+      "along_band_peak_standard_deviation": 0.0036254723862610924,
+      "centroid_shift_pixels": -4.0,
+      "epsilon": 0.0002,
+      "fwhm_pixels": 29.0,
+      "fwhm_um": 53.36,
+      "peak_gain": 1.1744183967379125,
+      "relative_l2": 0.20520409403553497
+    },
+    {
+      "along_band_peak_cv": 0.06967197049400321,
+      "along_band_peak_mean": 0.04803386767168313,
+      "along_band_peak_standard_deviation": 0.0033466142111343617,
+      "centroid_shift_pixels": -4.0,
+      "epsilon": 0.002,
+      "fwhm_pixels": 28.0,
+      "fwhm_um": 51.52,
+      "peak_gain": 1.1605179849061427,
+      "relative_l2": 0.19439427319332772
+    },
+    {
+      "along_band_peak_cv": 0.06131320649878113,
+      "along_band_peak_mean": 0.045917006868035966,
+      "along_band_peak_standard_deviation": 0.0028153189239058405,
+      "centroid_shift_pixels": -4.0,
+      "epsilon": 0.004,
+      "fwhm_pixels": 27.0,
+      "fwhm_um": 49.68,
+      "peak_gain": 1.125764748065296,
+      "relative_l2": 0.18226381638140224
+    },
+    {
+      "along_band_peak_cv": 0.05141822669579583,
+      "along_band_peak_mean": 0.04319076733411643,
+      "along_band_peak_standard_deviation": 0.0022207926659509715,
+      "centroid_shift_pixels": -4.0,
+      "epsilon": 0.006,
+      "fwhm_pixels": 25.0,
+      "fwhm_um": 46.0,
+      "peak_gain": 1.0824339552444846,
+      "relative_l2": 0.17856947625477615
+    },
+    {
+      "along_band_peak_cv": 0.030043916697764038,
+      "along_band_peak_mean": 0.037072976281739854,
+      "along_band_peak_standard_deviation": 0.0011138174111467742,
+      "centroid_shift_pixels": -2.0,
+      "epsilon": 0.01,
+      "fwhm_pixels": 26.0,
+      "fwhm_um": 47.84,
+      "peak_gain": 0.9580941896431503,
+      "relative_l2": 0.2025059783843767
+    },
+    {
+      "along_band_peak_cv": 0.011190299188107388,
+      "along_band_peak_mean": 0.02722518781301183,
+      "along_band_peak_standard_deviation": 0.0003046579970800174,
+      "centroid_shift_pixels": -1.0,
+      "epsilon": 0.02,
+      "fwhm_pixels": 39.0,
+      "fwhm_um": 71.76,
+      "peak_gain": 0.7278893461465605,
+      "relative_l2": 0.307659651257668
+    },
+    {
+      "along_band_peak_cv": 0.014843550226312658,
+      "along_band_peak_mean": 0.023905834939562134,
+      "along_band_peak_standard_deviation": 0.0003548474616273306,
+      "centroid_shift_pixels": -1.0,
+      "epsilon": 0.2,
+      "fwhm_pixels": 48.0,
+      "fwhm_um": 88.32000000000001,
+      "peak_gain": 0.6379136766192597,
+      "relative_l2": 0.35157139998324566
+    },
+    {
+      "along_band_peak_cv": 0.019499662683515103,
+      "along_band_peak_mean": 0.025547546600364398,
+      "along_band_peak_standard_deviation": 0.0004981685410984888,
+      "centroid_shift_pixels": -1.0,
+      "epsilon": 2.0,
+      "fwhm_pixels": 45.0,
+      "fwhm_um": 82.8,
+      "peak_gain": 0.6781829197172456,
+      "relative_l2": 0.31041522709560765
+    }
+  ],
+  "queried_disflow": {
+    "0.0002": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.00019999999494757503,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "0.002": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.0020000000949949026,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "0.004": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.004000000189989805,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "0.006": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.006000000052154064,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "0.01": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.009999999776482582,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "0.02": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.019999999552965164,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "0.2": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.20000000298023224,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "2.0": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 2.0,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    }
+  },
+  "reference_image": {
+    "path": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+    "sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da"
+  },
+  "schema_version": 1,
+  "status": "completed_exploratory_sensitivity"
+}
