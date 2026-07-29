@@ -51,6 +51,7 @@ addopts = "--strict-config --strict-markers -ra"
 testpaths = ["tests"]
 markers = [
     "mfront: requires a compiled MFront behaviour and MGIS runtime",
+    "measurement: requires OpenCV and exercises the image observation chain",
 ]
 
 [tool.coverage.run]
