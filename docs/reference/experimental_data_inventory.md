@@ -4,21 +4,21 @@
 currently accessible to the repository. It distinguishes archived data,
 statements in the supplied manuscript, and information that is not available.
 
-Inventory date: **2026-07-27**.
+Inventory date: **2026-07-29**.
 
 ## Summary
 
 | Item | Available evidence | Status |
 |---|---|---|
-| DIC steps | `U_40.npy` and `V_40.npy` only | **step 40 only** |
-| Full monotonic history | no images or displacement fields found | **not available** |
+| DIC steps | 42 raw TIFF images, plus prepared `U_40.npy` and `V_40.npy` | **raw sequence available** |
+| Full monotonic history | `000294.tif`--`000335.tif`; acquisition log absent | **available, frame-to-load map provisional** |
 | Unloading images | no reverse-branch images found | **not available** |
 | Load-cell history \(F(t)\) | figure in the manuscript, no numerical time series | **not available** |
 | Image/load synchronisation | no timestamps or synchronisation table found | **not available** |
 | Specimen thickness | manuscript states 2 mm | **reported, measurement method unavailable** |
 | Gauge width | initial and cropped observation-window dimensions only | **not available** |
-| Static image pair | no undeformed repeat pair or known rigid translation found | **not available** |
-| Raw speckle images | no production image sequence found | **not available** |
+| Static image pair | `000334.tif` and `000335.tif` are a candidate repeated final state | **strongly supported, acquisition log absent** |
+| Raw speckle images | 42 uncompressed 8-bit TIFF images, \(5400\times4400\) pixels | **available outside the repository** |
 | EBSD-derived fields | orientation and Schmid fields found in an external HDF5 file | **available but not versioned** |
 | Native EBSD step size | not recorded in the accessible file | **not available** |
 | EBSD/DIC registration | arrays are declared co-registered after cropping; method absent | **partially documented** |
@@ -31,7 +31,7 @@ supplied manuscript. It does not prove that the data never existed.
 ## DIC displacement data
 
 The repository versions four received arrays under
-`data/raw/case_study/`. Only two are displacement measurements:
+`data/raw/case_study/`. Two are final-state displacement measurements:
 
 | File | Repository convention | Shape | Unit | SHA-256 |
 |---|---|---:|---|---|
@@ -42,20 +42,37 @@ The physical sampling used by the reconstruction is
 \(1.84\,\mu\mathrm m\) per pixel. The retained field therefore covers
 \(6.624\times5.704\,\mathrm{mm}^2\).
 
-No steps 1--39, no step after 40, no raw image sequence and no timestamps
-were found. The present solver input is consequently a single final
-displacement state. A proportional loading ramp used internally by a
-calculation is a model assumption, not an archived experimental history.
+The following external directory was supplied on 2026-07-29:
 
-:::{admonition} Component-name conflict in the external HDF5 export
-:class: warning
+```text
+/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/
+```
 
-The external HDF5 attributes describe `U` as the \(x\) component and `V` as
-the \(y\) component. This conflicts with the legacy Abaqus generator and the
-versioned repository contract, which map `U_40` to \(u_y\) and `V_40` to
-\(u_x\). The repository mapping remains authoritative until the original DIC
-export code or image-based verification resolves the conflict.
-:::
+It contains 42 distinct uncompressed grayscale TIFF images named
+`000294.tif` through `000335.tif`. Every image is \(5400\times4400\) pixels.
+The crop `rows[400:4000], columns[1211:4311]` produces the
+\(3600\times3100\) support of the prepared fields. The sequence is from the
+experiment reported in Qi Hu's thesis, as confirmed by the data owner.
+
+The following mapping is strongly supported by file count and image
+registration, but remains **provisional until the acquisition log is found**:
+
+- `000294.tif`: undeformed reference;
+- `000295.tif`--`000334.tif`: monotonic steps 1--40;
+- `000335.tif`: repeated image at the final state.
+
+The last pair has the same estimated global translation relative to the
+reference and a substantially smaller grey-level change than the preceding
+loading pair. It is therefore the pre-registered candidate for the null test.
+Raw-image timestamps and their load-cell correspondence are not embedded in
+the TIFF files.
+
+The supplied numerical README resolves the previous component-name conflict:
+`U2` or `U` is the traction-axis displacement and `U1` or `V` the transverse
+displacement in the source calculations. This agrees with the versioned
+repository convention \(U_40=u_y\), \(V_40=u_x\). Generic `x`/`y` attributes
+found in one HDF5 export are not used to override this experiment-specific
+mapping.
 
 ## Loading history and force
 
@@ -104,9 +121,17 @@ set:
 | gradient-descent iterations | 30 maximum | iterative optical-flow solve |
 
 No executable DIC configuration file, OpenCV version, pyramid configuration,
-patch size, finest scale, variational-refinement settings or source images
-were found. The reported five values are therefore necessary but not yet
-sufficient to reproduce the production measurement chain.
+patch size, finest scale or patch stride was found. The standard OpenCV
+`DISOpticalFlow` API exposes the reported variational-refinement weights and
+iteration count, but does not expose the Charbonnier epsilon as a configurable
+property. Consequently, the historical chain cannot yet be reproduced
+bit-for-bit from the manuscript alone.
+
+The new raw sequence makes a declared **reproduction implementation**
+possible. Its OpenCV version, preset and every queryable parameter must be
+written into each validation report. It must not be described as the exact
+historical production chain while the original executable configuration is
+missing.
 
 ## EBSD-derived and topography data
 
@@ -170,7 +195,15 @@ The main sources used by this inventory are:
 3. `data/raw/case_study/README.md`;
 4. `docs/reference/input_contract.md`;
 5. `references/legacy_abaqus/Case5.py`;
-6. the external HDF5 file identified above.
+6. the external HDF5 file identified above;
+7. `/home/jeff/CNRS/Theses/Adil/essais/9_numerical/README_EN.txt`;
+8. the external TIFF sequence, with endpoint hashes:
+   `000294.tif` =
+   `9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da`,
+   `000334.tif` =
+   `04f38d166cc186403b85424ccb14f15621c532fef0f1338e6bd6207ba8b8d830`,
+   and `000335.tif` =
+   `2d086df7381856e6d6252721b2a0451ab020bd0d496718b9011d25856917519d`.
 
 This page records availability only. It does not certify the scientific
 correctness of any external dataset.

@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-07-27
+Dernière mise à jour : 2026-07-29
 Statut global : **pipeline autonome DIC → entrées canoniques → calcul
 partitionné validé sur une partition article de 234 600 éléments ; backend
 MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
@@ -129,23 +129,36 @@ Livrable autonome :
 - [x] Ajouter une note de décision sur l'acquisition éventuelle du
   déchargement.
 
-**Résultat V0 au 2026-07-27 :**
+**Résultat V0 révisé au 2026-07-29 :**
 
-- seule l'étape DIC 40 est accessible ; aucune séquence d'images brute ni
-  histoire monotone complète n'a été trouvée ;
-- aucune branche de déchargement, paire statique ou série de force
-  synchronisée n'est accessible ;
+- une séquence externe de 42 TIFF bruts `000294`--`000335`, issue de l'essai
+  de Qi Hu, est désormais accessible sous `essais/9_numerical/DIC_images` ;
+  le crop `rows[400:4000], columns[1211:4311]` correspond exactement au
+  support `3600×3100` des champs préparés ;
+- le mapping `000294=référence`, `000295..000334=pas 1..40`,
+  `000335=répétition finale` est fortement soutenu par le compte d'images et
+  le recalage, mais reste provisoire sans journal d'acquisition ;
+- aucune branche de déchargement ni série de force synchronisée n'est encore
+  accessible ;
 - l'article rapporte `t=2 mm`, un ROI initial `7×10 mm²`, un crop
   `6,624×5,704 mm²` et `1,84 µm/pixel`, mais pas la largeur utile ni la méthode
   de mesure de l'épaisseur ;
 - les paramètres publiés sont `alpha=100`, `delta=1`, `gamma=0`,
-  `epsilon=0,002`, 30 itérations ; les autres réglages OpenCV restent absents ;
+  `epsilon=0,002`, 30 itérations ; la version OpenCV, le preset, la pyramide
+  et les patches restent absents, et l'API OpenCV publique ne permet pas de
+  régler explicitement l'epsilon Charbonnier ;
 - `essais/CP_dataset.h5` contient orientations et facteur de Schmid déclarés
   co-enregistrés sur `3600×3100`, mais le pas EBSD natif et la méthode de
   recalage sont absents ; 60 valeurs hors domaine et six pixels nuls doivent
   être masqués ou expliqués avant analyse ;
 - décision : acquérir un cycle décharge/recharge si le montage peut être
   récupéré ; KD-064 reste bloqué jusque-là.
+
+La caractérisation V2.1/V2.2 est pré-enregistrée dans
+`validation/dic_measurement_chain_preregistration.md`. Elle distinguera
+explicitement la chaîne historique non reproductible bit à bit de
+l'implémentation DISFlow de reproduction dont tous les paramètres seront
+enregistrés.
 
 ### Lot V1 — Contrôles mécaniques gratuits
 
@@ -205,7 +218,7 @@ interprétation de `ell`.
 
 #### V2.1 Test nul
 
-- [ ] Corréler deux images du même état ou une translation rigide connue avec
+- [~] Corréler deux images du même état ou une translation rigide connue avec
   les paramètres de production exacts.
 - [ ] Rapporter `sigma_u` en pixel, RMS de l'EVM parasite et longueur
   d'autocorrélation radiale.
