@@ -308,7 +308,11 @@ def run_dic_multistep_mechanics(
     history_path = history_root / "anchored_history_mm.npy"
     if _sha256(history_path) != history_report["outputs"][history_path.name]:
         raise ValueError("anchored history hash does not match its report")
-    history = np.asarray(np.load(history_path, mmap_mode="r", allow_pickle=False))
+    history = np.array(
+        np.load(history_path, mmap_mode="r", allow_pickle=False),
+        dtype=np.float64,
+        copy=True,
+    )
 
     ux = np.load(prepared / "displacement_x_mm.npy", mmap_mode="r", allow_pickle=False)
     uy = np.load(prepared / "displacement_y_mm.npy", mmap_mode="r", allow_pickle=False)
@@ -320,6 +324,9 @@ def run_dic_multistep_mechanics(
     )
     final_x = np.asarray(ux[sx0 : sx1 + 1, sy0 : sy1 + 1], dtype=np.float64)
     final_y = np.asarray(uy[sx0 : sx1 + 1, sy0 : sy1 + 1], dtype=np.float64)
+    prepared_final = np.stack((final_x, final_y), axis=-1)
+    endpoint_storage_roundoff_mm = float(np.max(np.abs(history[-1] - prepared_final)))
+    history[-1] = prepared_final
     local_yield = np.asarray(yield_map[sx0:sx1, sy0:sy1], dtype=np.float64)
     local_hardening = np.asarray(hardening_map[sx0:sx1, sy0:sy1], dtype=np.float64)
     result = run_case_study(
@@ -384,6 +391,7 @@ def run_dic_multistep_mechanics(
             "prepared_manifest_sha256": _sha256(prepared / "manifest.json"),
             "history_report_sha256": _sha256(history_report_path),
             "history_sha256": _sha256(history_path),
+            "runtime_endpoint_storage_roundoff_correction_max_mm": (endpoint_storage_roundoff_mm),
         },
         "diagnostics": (asdict(result.diagnostics) if result.diagnostics is not None else None),
         "frames": frame_hashes,
