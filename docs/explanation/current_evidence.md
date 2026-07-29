@@ -74,6 +74,10 @@ only around 49 px, whereas an integrated 16 px strain band is recovered
 at 12--13 px. The former isolates one spatial frequency; the latter contains
 low-frequency displacement content.
 
+The imposed and recovered EVM maps, normal sections and explicit FWHM
+reference steps are shown and interpreted in
+{doc}`dic_synthetic_measurement_tests`.
+
 ```{figure} ../_static/evidence/dic_measurement_band_fidelity.png
 :alt: Recovered versus imposed DIC strain-band width and peak amplitude.
 :width: 85%
