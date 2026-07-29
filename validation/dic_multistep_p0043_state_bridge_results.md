@@ -89,3 +89,37 @@ preferred transparent diagnostic.
 
 This result does not modify any scientific field comparison and does not
 authorise micromorphic re-identification.
+
+## Blocked-target control
+
+A second, separately preregistered control selected state 4 from the mechanical
+failure location rather than from temporal curvature. It used the repaired
+history, replaced only
+
+```text
+u_4 = 0.5 * (u_3 + u_5),
+```
+
+and restored the original elastic predictor.
+
+The result is again negative:
+
+| Diagnostic | Value |
+|---|---:|
+| converged increments | 3 |
+| attempted increments | 14 |
+| cutbacks | 11 |
+| Newton iterations | 28 |
+| first failed target pseudo-time | `0.10` |
+| last failed pseudo-time | `0.0750244140625` |
+| first rejected maximum engineering strain | `76.218` |
+| last rejected maximum engineering strain | `56.928` |
+
+The limiting pseudo-time, cutback count and neighbouring upper-boundary
+elements are unchanged. This demonstrates that the failure is not carried by
+the value of one DIC state. Any positive continuation beyond the third
+committed state enters the same poorly globalised Newton regime.
+
+Further solver-driven frame removal is therefore stopped. The next numerical
+work, if temporal replay is prioritised, must improve or diagnose global
+Newton near this transition. It must not smooth more experimental states.
