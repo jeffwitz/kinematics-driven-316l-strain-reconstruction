@@ -51,6 +51,7 @@ from fem_inhouse.workflows import (
     prepare_material_map_control,
     prepare_transfer_validation,
     profile_coupling_modulus,
+    propagate_dic_uncertainty,
     replay_dic_observation,
     run_low_fidelity,
     run_nonlocality_diagnostic,
@@ -441,6 +442,26 @@ def _parser() -> argparse.ArgumentParser:
     photometric_quality.add_argument("--figure-output", type=Path, required=True)
     photometric_quality.add_argument("--overwrite", action="store_true")
 
+    uncertainty = commands.add_parser(
+        "propagate-dic-uncertainty",
+        help="propagate the measured repeat-frame DIC residual over archived replays",
+    )
+    uncertainty.add_argument("--final-image", type=Path, required=True)
+    uncertainty.add_argument("--repeat-image", type=Path, required=True)
+    uncertainty.add_argument("--prepared-case", type=Path, required=True)
+    uncertainty.add_argument(
+        "--replay",
+        action="append",
+        nargs=3,
+        metavar=("LABEL", "ALPHA", "PATH"),
+        required=True,
+    )
+    uncertainty.add_argument("--output", type=Path, required=True)
+    uncertainty.add_argument("--figure-output", type=Path, required=True)
+    uncertainty.add_argument("--samples", type=int, default=256)
+    uncertainty.add_argument("--seed", type=int, default=20260729)
+    uncertainty.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -568,9 +589,7 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             relaxation_strategy=args.nonlocal_relaxation_strategy,
             minimum_relaxation=args.nonlocal_minimum_relaxation,
             maximum_relaxation=args.nonlocal_maximum_relaxation,
-            aitken_residual_growth_factor=(
-                args.nonlocal_aitken_residual_growth_factor
-            ),
+            aitken_residual_growth_factor=(args.nonlocal_aitken_residual_growth_factor),
             relative_tolerance=args.nonlocal_tolerance,
             maximum_iterations=args.nonlocal_max_iterations,
             record_iteration_history=args.nonlocal_record_iteration_history,
@@ -845,15 +864,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             reference_image=args.reference_image,
             final_image=args.final_image,
             prepared_case=args.prepared_case,
-            replays=tuple(
-                (label, float(alpha), Path(path))
-                for label, alpha, path in args.replay
-            ),
+            replays=tuple((label, float(alpha), Path(path)) for label, alpha, path in args.replay),
             output_directory=args.output,
             figure_directory=args.figure_output,
             overwrite=args.overwrite,
         )
         _print_json(photometric_report)
+        return 0
+    if args.command == "propagate-dic-uncertainty":
+        uncertainty_report = propagate_dic_uncertainty(
+            final_image=args.final_image,
+            repeat_image=args.repeat_image,
+            prepared_case=args.prepared_case,
+            replays=tuple((label, float(alpha), Path(path)) for label, alpha, path in args.replay),
+            output_directory=args.output,
+            figure_directory=args.figure_output,
+            sample_count=args.samples,
+            seed=args.seed,
+            overwrite=args.overwrite,
+        )
+        _print_json(uncertainty_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
