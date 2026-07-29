@@ -14,6 +14,8 @@ from fem_inhouse.workflows.coupled_nonlocal_validation import (
 from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
 from fem_inhouse.workflows.dic_multistep import (
     anchor_displacement_history,
+    bridge_dic_multistep_history,
+    bridge_displacement_history_states,
     prepare_dic_multistep_history,
     repair_dic_multistep_history,
     run_dic_multistep_mechanics,
@@ -78,6 +80,8 @@ __all__ = [
     "ReferenceHardeningReport",
     "analyze_joint_identifiability",
     "anchor_displacement_history",
+    "bridge_dic_multistep_history",
+    "bridge_displacement_history_states",
     "characterise_dic_measurement_chain",
     "collect_identification_results",
     "common_color_limits",

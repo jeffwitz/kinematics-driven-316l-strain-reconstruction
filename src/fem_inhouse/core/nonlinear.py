@@ -114,6 +114,7 @@ def run_fem(
     line_search_armijo_coefficient=1e-4,
     line_search_minimum_factor=2.0**-12,
     line_search_maximum_trials=12,
+    boundary_history_predictor="elastic",
     nonlocal_plasticity_enabled=False,
     nonlocal_length_scale_mm=0.05888,
     nonlocal_coupling_modulus_mpa=0.0,
@@ -142,6 +143,11 @@ def run_fem(
                 (N_inc + 1, nx + 1, ny + 1, 2). The first state must be zero
                 and the last state must equal (disp_x, disp_y). Measured knots
                 are reached exactly; cutbacks interpolate only between them.
+    boundary_history_predictor : ``elastic`` uses the elastic response to the
+                current boundary increment. ``secant-corrected-elastic`` adds
+                the time-scaled nonlinear free-displacement correction from
+                the previous converged increment. Constitutive internal
+                variables are never extrapolated.
     constitutive_backend : 'python' uses the in-house return mapping; 'mfront'
                 delegates stress, state update and consistent tangent to MGIS.
     """
@@ -149,6 +155,15 @@ def run_fem(
         raise ValueError("nonlocal plasticity currently requires an MFront backend")
     if newton_line_search and nonlocal_plasticity_enabled:
         raise ValueError("Newton line search is currently restricted to local plasticity")
+    if boundary_history_predictor not in {
+        "elastic",
+        "secant-corrected-elastic",
+    }:
+        raise ValueError("unsupported boundary_history_predictor")
+    if boundary_history_predictor != "elastic" and boundary_displacement_history is None:
+        raise ValueError(
+            "secant-corrected-elastic predictor requires boundary_displacement_history"
+        )
     started_at = time.perf_counter()
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
@@ -259,6 +274,8 @@ def run_fem(
     line_search_reductions = 0
     line_search_failures = 0
     minimum_accepted_line_search_factor = 1.0
+    secant_predictor_uses = 0
+    secant_predictor_fallbacks = 0
 
     def timed_solve(matrix, right_hand_side):
         return linear_solver.factorize_and_solve(matrix, right_hand_side)
@@ -324,6 +341,10 @@ def run_fem(
         NonlocalFixedPointWorkspace.create((nx, ny), N_GP) if nonlocal_plasticity_enabled else None
     )
     accepted_nonlocal_evaluation: NonlocalCouplingEvaluation | None = None
+    previous_accepted_boundary_increment: np.ndarray | None = None
+    previous_accepted_free_increment: np.ndarray | None = None
+    previous_accepted_elastic_free_increment: np.ndarray | None = None
+    previous_accepted_step_size: float | None = None
 
     # Incremental loading with automatic cutback (Abaqus-style):
     # pseudo-time t: 0 -> 1, initial/maximum step 1/N_inc, halved on failure.
@@ -377,9 +398,31 @@ def run_fem(
         # Elastic predictor (reused factorization)
         if history is None:
             assert elastic_predictor_direction is not None
-            u[dof_I] += elastic_predictor_direction * dt
+            elastic_free_increment = elastic_predictor_direction * dt
         else:
-            u[dof_I] += solve_el(-KIB_el @ du_B)
+            elastic_free_increment = solve_el(-KIB_el @ du_B)
+        predictor_free_increment = elastic_free_increment
+        if (
+            boundary_history_predictor == "secant-corrected-elastic"
+            and previous_accepted_boundary_increment is not None
+            and previous_accepted_free_increment is not None
+            and previous_accepted_elastic_free_increment is not None
+            and previous_accepted_step_size is not None
+        ):
+            alignment = float(np.dot(du_B, previous_accepted_boundary_increment))
+            if alignment > 0.0:
+                previous_nonlinear_correction = (
+                    previous_accepted_free_increment
+                    - previous_accepted_elastic_free_increment
+                )
+                predictor_free_increment = (
+                    elastic_free_increment
+                    + (dt / previous_accepted_step_size) * previous_nonlinear_correction
+                )
+                secant_predictor_uses += 1
+            else:
+                secant_predictor_fallbacks += 1
+        u[dof_I] += predictor_free_increment
 
         KII = KII_el  # start with elastic tangent, replaced after 1st iter
 
@@ -723,6 +766,9 @@ def run_fem(
                         "minimum_accepted_line_search_factor": (
                             minimum_accepted_line_search_factor
                         ),
+                        "boundary_history_predictor": boundary_history_predictor,
+                        "secant_predictor_uses": secant_predictor_uses,
+                        "secant_predictor_fallbacks": secant_predictor_fallbacks,
                     },
                 )
             continue
@@ -750,6 +796,10 @@ def run_fem(
         eps_p = eps_p_acc
         ep_bar = ep_new
         sig = sf_acc
+        previous_accepted_boundary_increment = du_B.copy()
+        previous_accepted_free_increment = u[dof_I] - u_save[dof_I]
+        previous_accepted_elastic_free_increment = elastic_free_increment.copy()
+        previous_accepted_step_size = dt
         t += dt
         converged_increments += 1
         dt = min(dt * 1.5, dt_max)  # grow back after success
@@ -888,6 +938,9 @@ def run_fem(
             line_search_reductions=line_search_reductions,
             line_search_failures=line_search_failures,
             minimum_accepted_line_search_factor=(minimum_accepted_line_search_factor),
+            boundary_history_predictor=boundary_history_predictor,
+            secant_predictor_uses=secant_predictor_uses,
+            secant_predictor_fallbacks=secant_predictor_fallbacks,
             tensor_reconstruction_source=material_batch.completion_strategy,
             linear_system_matrix_type=linear_system_matrix_type,
             maximum_relative_constitutive_tangent_asymmetry=(

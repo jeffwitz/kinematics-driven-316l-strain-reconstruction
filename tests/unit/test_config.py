@@ -56,6 +56,12 @@ def test_mesh_uses_article_pixel_scale() -> None:
         ),
         (lambda: SolverConfig(mfront_library=""), "mfront_library"),
         (lambda: SolverConfig(mfront_threads=0), "mfront_threads"),
+        (
+            lambda: SolverConfig(
+                boundary_history_predictor="unsupported"  # type: ignore[arg-type]
+            ),
+            "boundary_history_predictor",
+        ),
         (lambda: NonlocalPlasticityConfig(length_scale_mm=0), "length_scale_mm"),
         (
             lambda: NonlocalPlasticityConfig(coupling_modulus_mpa=-1),

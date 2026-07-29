@@ -51,6 +51,9 @@ class SolverDiagnostics:
     line_search_reductions: int = 0
     line_search_failures: int = 0
     minimum_accepted_line_search_factor: float = 1.0
+    boundary_history_predictor: str = "elastic"
+    secant_predictor_uses: int = 0
+    secant_predictor_fallbacks: int = 0
     tensor_reconstruction_source: str = "unspecified"
     linear_system_matrix_type: str = "unspecified"
     maximum_relative_constitutive_tangent_asymmetry: float = 0.0

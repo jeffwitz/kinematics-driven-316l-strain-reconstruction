@@ -103,6 +103,42 @@ def repair_corrupted_displacement_states(
     return repaired
 
 
+def bridge_displacement_history_states(
+    history_mm: NDArray[np.generic],
+    *,
+    bridged_states: tuple[int, ...],
+) -> FloatArray:
+    """Replace declared history states by linear interpolation between neighbours.
+
+    Consecutive declared states are treated as one interval. State zero and the
+    final state cannot be bridged because they define the experiment endpoints.
+    """
+
+    history = np.asarray(history_mm, dtype=np.float64)
+    if history.ndim != 4 or history.shape[-1] != 2:
+        raise ValueError("history_mm must have shape (steps + 1, nx, ny, 2)")
+    if not np.isfinite(history).all():
+        raise ValueError("history_mm must contain finite values")
+    states = tuple(sorted(set(int(state) for state in bridged_states)))
+    if not states:
+        raise ValueError("bridged_states must contain at least one state")
+    if states[0] <= 0 or states[-1] >= history.shape[0] - 1:
+        raise ValueError("initial and final history states cannot be bridged")
+
+    bridged = history.copy()
+    selected = set(states)
+    for state in states:
+        before = state - 1
+        while before in selected:
+            before -= 1
+        after = state + 1
+        while after in selected:
+            after += 1
+        weight = (state - before) / float(after - before)
+        bridged[state] = (1.0 - weight) * history[before] + weight * history[after]
+    return bridged
+
+
 def _history_evm(
     history: FloatArray,
     *,
@@ -170,6 +206,55 @@ def _corrupted_frame_figure(
         axes[row_index, 0].set_ylabel(label)
         figure.colorbar(image, ax=axes[row_index], shrink=0.72)
     figure.suptitle("P43 documented corrupted-frame repair (common scales by field type)")
+    figure.savefig(path, dpi=180)
+    plt.close(figure)
+
+
+def _state_bridge_figure(
+    path: Path,
+    *,
+    original_state: FloatArray,
+    bridged_state: FloatArray,
+    original_increment: FloatArray,
+    bridged_increment: FloatArray,
+    bridged_states: tuple[int, ...],
+) -> None:
+    first = max(min(bridged_states) - 2, 0)
+    last = min(max(bridged_states) + 2, original_state.shape[0] - 1)
+    states = tuple(range(first, last + 1))
+    figure, axes = plt.subplots(
+        4,
+        len(states),
+        figsize=(2.6 * len(states), 9),
+        constrained_layout=True,
+        squeeze=False,
+    )
+    rows = (
+        ("Measured state EVM", original_state),
+        ("Bridged state EVM", bridged_state),
+        ("Measured increment EVM", original_increment),
+        ("Bridged increment EVM", bridged_increment),
+    )
+    state_limit = float(np.max(original_state[first : last + 1]))
+    increment_limit = float(np.max(original_increment[first : last + 1]))
+    for row_index, (label, values) in enumerate(rows):
+        limit = state_limit if row_index < 2 else increment_limit
+        for column, state in enumerate(states):
+            image = axes[row_index, column].imshow(
+                values[state].T,
+                origin="lower",
+                vmin=0.0,
+                vmax=limit,
+                cmap="viridis",
+                interpolation="nearest",
+            )
+            suffix = " (bridged)" if state in bridged_states else ""
+            axes[row_index, column].set_title(f"state {state}{suffix}")
+            axes[row_index, column].set_xticks([])
+            axes[row_index, column].set_yticks([])
+        axes[row_index, 0].set_ylabel(label)
+        figure.colorbar(image, ax=axes[row_index], shrink=0.72)
+    figure.suptitle("Declared measured-history bridge (common scales by field type)")
     figure.savefig(path, dpi=180)
     plt.close(figure)
 
@@ -481,6 +566,136 @@ def repair_dic_multistep_history(
     return report
 
 
+def bridge_dic_multistep_history(
+    *,
+    history_directory: str | Path,
+    source_campaign: str | Path,
+    partition_id: int,
+    bridged_states: tuple[int, ...],
+    output_directory: str | Path,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """Archive an explicit piecewise-linear bridge over declared DIC states."""
+
+    history_root = Path(history_directory)
+    campaign = Path(source_campaign)
+    output = Path(output_directory)
+    if output.exists() and any(output.iterdir()) and not overwrite:
+        raise FileExistsError(f"refusing to overwrite non-empty directory: {output}")
+    output.mkdir(parents=True, exist_ok=True)
+
+    source_report_path = history_root / "report.json"
+    source_report = load_json_object(source_report_path)
+    accepted_sources = {
+        "completed_direct_reference_history_endpoint_anchored": "anchored_history_mm.npy",
+        "completed_documented_corrupted_frame_repair": "repaired_history_mm.npy",
+    }
+    source_status = str(source_report.get("status"))
+    if source_status not in accepted_sources:
+        raise ValueError("source history campaign is not complete or cannot be bridged")
+    if int(source_report["partition_id"]) != partition_id:
+        raise ValueError("source history identifies another partition")
+    source_path = history_root / accepted_sources[source_status]
+    if _sha256(source_path) != source_report["outputs"][source_path.name]:
+        raise ValueError("source history hash does not match its report")
+    original = np.asarray(
+        np.load(source_path, mmap_mode="r", allow_pickle=False),
+        dtype=np.float64,
+    )
+    states = tuple(sorted(set(int(state) for state in bridged_states)))
+    bridged = bridge_displacement_history_states(
+        original,
+        bridged_states=states,
+    )
+
+    manifest_path = campaign / "manifest.json"
+    manifest = load_json_object(manifest_path)
+    _layout, partition = partition_from_manifest(manifest, partition_id)
+    material_config = MaterialConfig(**manifest["config"]["material"])
+    spacing_mm = float(manifest["config"]["mesh"]["base_pixel_size_mm"]) * float(
+        manifest["config"]["mesh"]["scale_factor"]
+    )
+    original_state, original_increment = _history_evm(
+        original,
+        spacing_mm=spacing_mm,
+        poisson_ratio=material_config.poisson_ratio,
+    )
+    bridged_state, bridged_increment = _history_evm(
+        bridged,
+        spacing_mm=spacing_mm,
+        poisson_ratio=material_config.poisson_ratio,
+    )
+    unaffected = [index for index in range(original.shape[0]) if index not in states]
+    if not np.array_equal(bridged[unaffected], original[unaffected]):
+        raise RuntimeError("bridge changed a state outside the declared set")
+
+    boundary = np.zeros(original.shape[1:3], dtype=bool)
+    boundary[[0, -1], :] = True
+    boundary[:, [0, -1]] = True
+    boundary_history = original[:, boundary, :]
+    second_difference = np.diff(boundary_history, n=2, axis=0)
+    second_difference_rms = np.sqrt(np.mean(np.square(second_difference), axis=(1, 2)))
+
+    bridged_path = output / "bridged_history_mm.npy"
+    figure_path = output / "state_bridge_diagnostic.png"
+    np.save(bridged_path, np.asarray(bridged, dtype=np.float32))
+    _state_bridge_figure(
+        figure_path,
+        original_state=original_state,
+        bridged_state=bridged_state,
+        original_increment=original_increment,
+        bridged_increment=bridged_increment,
+        bridged_states=states,
+    )
+    report = {
+        "schema_version": 1,
+        "status": "completed_declared_state_bridge",
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "git_sha": _git_sha(),
+        "partition_id": partition_id,
+        "solve_bounds": list(partition.solve_bounds),
+        "core_bounds": list(partition.core_bounds),
+        "bridge": {
+            "states": list(states),
+            "method": "piecewise_linear_displacement_interpolation_between_retained_states",
+            "selection_is_explicit": True,
+            "automatic_solver_driven_rejection": False,
+            "internal_variables_interpolated": False,
+        },
+        "source": {
+            "history_report": str(source_report_path.resolve()),
+            "history_report_sha256": _sha256(source_report_path),
+            "history_sha256": _sha256(source_path),
+            "campaign_manifest_sha256": _sha256(manifest_path),
+        },
+        "checks": {
+            "finite": bool(np.isfinite(bridged).all()),
+            "unaffected_states_bitwise_identical": True,
+            "final_state_bitwise_identical": bool(np.array_equal(bridged[-1], original[-1])),
+            "maximum_boundary_component_change_mm": float(
+                np.max(np.abs(bridged[:, boundary, :] - boundary_history))
+            ),
+            "source_second_difference_rms_mm": {
+                str(state): float(second_difference_rms[state - 1]) for state in states
+            },
+            "largest_source_second_difference_state": int(
+                np.argmax(second_difference_rms) + 1
+            ),
+        },
+        "outputs": {
+            bridged_path.name: _sha256(bridged_path),
+            figure_path.name: _sha256(figure_path),
+        },
+        "mechanics_rerun": False,
+        "micromorphic_identification_run": False,
+    }
+    (output / "report.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report
+
+
 def run_dic_multistep_mechanics(
     *,
     prepared_case: str | Path,
@@ -490,6 +705,7 @@ def run_dic_multistep_mechanics(
     mode: str,
     output_directory: str | Path,
     newton_line_search: bool = False,
+    boundary_history_predictor: str = "elastic",
     overwrite: bool = False,
 ) -> dict[str, Any]:
     """Run local P43 mechanics with measured or proportional 40-step boundaries."""
@@ -523,6 +739,7 @@ def run_dic_multistep_mechanics(
             source_solver,
             increments=40,
             newton_line_search=newton_line_search,
+            boundary_history_predictor=boundary_history_predictor,
         ),
         nonlocal_plasticity=replace(
             NonlocalPlasticityConfig(**config_data["nonlocal_plasticity"]),
@@ -535,6 +752,7 @@ def run_dic_multistep_mechanics(
     accepted_statuses = {
         "completed_direct_reference_history_endpoint_anchored": "anchored_history_mm.npy",
         "completed_documented_corrupted_frame_repair": "repaired_history_mm.npy",
+        "completed_declared_state_bridge": "bridged_history_mm.npy",
     }
     history_status = str(history_report.get("status"))
     if history_status not in accepted_statuses:
@@ -588,6 +806,7 @@ def run_dic_multistep_mechanics(
             "diagnostics": error.diagnostics,
             "nominal_increments": 40,
             "newton_line_search_enabled": newton_line_search,
+            "boundary_history_predictor": boundary_history_predictor,
             "config": asdict(config),
             "source": {
                 "campaign_manifest_sha256": _sha256(manifest_path),
@@ -643,15 +862,24 @@ def run_dic_multistep_mechanics(
         "mode": mode,
         "boundary_history": (
             (
-                "measured_direct_reference_endpoint_anchored_corrupted_frames_repaired"
-                if history_status == "completed_documented_corrupted_frame_repair"
-                else "measured_direct_reference_endpoint_anchored"
+                {
+                    "completed_documented_corrupted_frame_repair": (
+                        "measured_direct_reference_endpoint_anchored_corrupted_frames_repaired"
+                    ),
+                    "completed_declared_state_bridge": (
+                        "measured_direct_reference_endpoint_anchored_declared_state_bridge"
+                    ),
+                }.get(
+                    history_status,
+                    "measured_direct_reference_endpoint_anchored",
+                )
             )
             if mode == "measured"
             else "proportional_to_prepared_final"
         ),
         "nominal_increments": 40,
         "newton_line_search_enabled": newton_line_search,
+        "boundary_history_predictor": boundary_history_predictor,
         "snapshot_fractions": [0.25, 0.5, 0.75, 1.0],
         "config": asdict(config),
         "solve_bounds": list(partition.solve_bounds),
