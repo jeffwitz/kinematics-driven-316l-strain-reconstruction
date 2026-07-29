@@ -20,6 +20,10 @@ from fem_inhouse.workflows.dic_partition_selection import (
 from fem_inhouse.workflows.dic_photometric_quality import (
     diagnose_dic_photometric_quality,
 )
+from fem_inhouse.workflows.dic_uncertainty_propagation import (
+    periodic_residual_on_support,
+    propagate_dic_uncertainty,
+)
 from fem_inhouse.workflows.ebsd_structural_length import measure_ebsd_structural_length
 from fem_inhouse.workflows.joint_nonlocal_identification import (
     analyze_joint_identifiability,
@@ -81,11 +85,13 @@ __all__ = [
     "load_joint_identification_config",
     "measure_ebsd_structural_length",
     "normalize_length_scales",
+    "periodic_residual_on_support",
     "plot_coupled_alpha_fields",
     "prepare_coupled_alpha_fields",
     "prepare_material_map_control",
     "prepare_transfer_validation",
     "profile_coupling_modulus",
+    "propagate_dic_uncertainty",
     "reconstruct_historical_evm",
     "replay_dic_observation",
     "run_field_sweep",
