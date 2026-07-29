@@ -1,0 +1,95 @@
+{
+  "crop_columns": [
+    1211,
+    4311
+  ],
+  "crop_rows": [
+    400,
+    4000
+  ],
+  "evm_post_filter_applied": false,
+  "final_frame": "000334.tif",
+  "flow_column_centered_pixels": {
+    "maximum": 0.12348440289497375,
+    "mean": 8.16850612560908e-09,
+    "minimum": -0.14502832293510437,
+    "q50": -0.0019252747297286987,
+    "q90": 0.08444517999887466,
+    "q95": 0.09445868730545037,
+    "q99": 0.10785411432385442,
+    "rms": 0.06282591286022111,
+    "standard_deviation": 0.06282591286022059
+  },
+  "flow_column_pixels": {
+    "maximum": 0.2583099603652954,
+    "mean": 0.13482556563868536,
+    "minimum": -0.010202761739492416,
+    "q50": 0.13290028274059296,
+    "q90": 0.21927073746919631,
+    "q95": 0.22928424477577203,
+    "q99": 0.24267967179417607,
+    "rms": 0.1487448435292552,
+    "standard_deviation": 0.06282591286046829
+  },
+  "flow_row_centered_pixels": {
+    "maximum": 0.13452427089214325,
+    "mean": 1.6801276220856602e-10,
+    "minimum": -0.09168662130832672,
+    "q50": -0.006780683994293213,
+    "q90": 0.06155910119414329,
+    "q95": 0.07116779759526251,
+    "q99": 0.0866828417778015,
+    "rms": 0.04267098238471253,
+    "standard_deviation": 0.04267098238471253
+  },
+  "flow_row_pixels": {
+    "maximum": 0.15826839208602905,
+    "mean": 0.023744117759303605,
+    "minimum": -0.06794250756502151,
+    "q50": 0.016963433474302292,
+    "q90": 0.0853032186627388,
+    "q95": 0.09491191841661929,
+    "q99": 0.1104269629716873,
+    "rms": 0.04883232415141834,
+    "standard_deviation": 0.042670982574362144
+  },
+  "frame_mapping_status": "provisional_without_acquisition_log",
+  "photometric_residual_grey_levels": {
+    "maximum": 27.0,
+    "mean": 0.010618906810035843,
+    "minimum": -27.0,
+    "q50": 0.0,
+    "q90": 2.0,
+    "q95": 3.0,
+    "q99": 4.0,
+    "rms": 1.8328750893582366,
+    "standard_deviation": 1.832844328361829
+  },
+  "pre_registered_interpretation": "small",
+  "radial_autocorrelation_first_one_over_e_pixels": 37.93855706361854,
+  "radial_autocorrelation_first_one_over_e_um": 69.80694499705811,
+  "reference_frame": "000294.tif",
+  "repeat_frame": "000335.tif",
+  "schema_version": 1,
+  "spurious_historical_evm": {
+    "maximum": 0.0008786555327881839,
+    "mean": 0.00014550005174584026,
+    "minimum": 2.5802141316157027e-06,
+    "q50": 0.00013325738934829128,
+    "q90": 0.00024002108669383187,
+    "q95": 0.0002817637051602564,
+    "q99": 0.00038736166353707226,
+    "rms": 0.00016371902671085935,
+    "standard_deviation": 7.505767548431598e-05
+  },
+  "spurious_to_step40_rms_ratio": 0.05422846775697371,
+  "status": "completed_characterisation_no_pass_fail",
+  "step40_dic_historical_evm": {
+    "operator": "reconstruct_historical_evm",
+    "rms": 0.0030190605319067917,
+    "support": [
+      3600,
+      3100
+    ]
+  }
+}

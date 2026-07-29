@@ -1,0 +1,73 @@
+{
+  "created_at_utc": "2026-07-29T13:45:37.698446+00:00",
+  "disflow_profile": "legacy_script_2021",
+  "disflow_queried": {
+    "finest_scale": 0,
+    "gradient_descent_iterations": 16,
+    "patch_size": 4,
+    "patch_stride": 1,
+    "use_mean_normalization": true,
+    "use_spatial_propagation": true,
+    "variational_refinement_alpha": 100.0,
+    "variational_refinement_delta": 1.0,
+    "variational_refinement_epsilon": 0.0020000000949949026,
+    "variational_refinement_gamma": 0.0,
+    "variational_refinement_iterations": 30
+  },
+  "disflow_requested": {
+    "finest_scale": 0,
+    "gradient_descent_iterations": null,
+    "patch_size": 4,
+    "patch_stride": 1,
+    "preset": null,
+    "use_mean_normalization": null,
+    "use_spatial_propagation": null,
+    "variational_refinement_alpha": 100.0,
+    "variational_refinement_delta": 1.0,
+    "variational_refinement_epsilon": 0.002,
+    "variational_refinement_gamma": 0.0,
+    "variational_refinement_iterations": 30
+  },
+  "figures": {
+    "band_width_fidelity.png": "eca0fd7aa312d21507891fdd4b719220040ccd48b2e6110668c05a161395adc8",
+    "null_test.png": "4c8eaf48f57fe43beebbbb2399ccf93cd340b0a59c2e7db215764d9aadaad0a8",
+    "synthetic_band_evm_sections.png": "44a5085840899dfb985fa9127bed76ca3bdede7606b65ea3757cd57c5124e144",
+    "transfer_function.png": "99e5e87e3af412eefbeea03bc097a382342d3375dd5d004cdf578629a3fbf5db"
+  },
+  "git_sha": "b3644d1533c24f2ddb845f265de32db056030e55",
+  "historical_identity": {
+    "missing_historical_opencv_version_and_remaining_defaults": true,
+    "reported_parameters_applied": true,
+    "status": "reproduction_not_bitwise_historical"
+  },
+  "outputs": {
+    "band_width_fidelity.csv": "13a2bde66e2d30c752b4de5562c911c253af0a5d58d10427d064c1614f8fa998",
+    "null_autocorrelation.csv": "276bfd9606bfe0f2045d4998484633cb40040e8da07bdae38c46b702edcf673b",
+    "null_test_report.json": "2efc2b564430061b9d9103846cba139cd4f8985b68162b52927a14eb56ce06c3",
+    "sinusoidal_transfer.csv": "8fff7a9b30693871e87a0e6e70f428b76a0ecdbe72e159cd75d9f2c64261c28e",
+    "transfer_report.json": "4c8cc54aba65825c810f036c5647a561e519ba0e59898c170194a40b685380b6"
+  },
+  "pixel_size_um": 1.84,
+  "prepared_case": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/data/processed/case_study",
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "opencv": "4.14.0",
+    "python": "3.12.3"
+  },
+  "source_images": {
+    "000294.tif": {
+      "path": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+      "sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da"
+    },
+    "000334.tif": {
+      "path": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000334.tif",
+      "sha256": "04f38d166cc186403b85424ccb14f15621c532fef0f1338e6bd6207ba8b8d830"
+    },
+    "000335.tif": {
+      "path": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000335.tif",
+      "sha256": "2d086df7381856e6d6252721b2a0451ab020bd0d496718b9011d25856917519d"
+    }
+  },
+  "warp_mode": "iterative_forward_inverse"
+}
