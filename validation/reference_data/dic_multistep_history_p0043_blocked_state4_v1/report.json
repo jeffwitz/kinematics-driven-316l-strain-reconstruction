@@ -1,0 +1,50 @@
+{
+  "bridge": {
+    "automatic_solver_driven_rejection": false,
+    "internal_variables_interpolated": false,
+    "method": "piecewise_linear_displacement_interpolation_between_retained_states",
+    "selection_is_explicit": true,
+    "states": [
+      4
+    ]
+  },
+  "checks": {
+    "final_state_bitwise_identical": true,
+    "finite": true,
+    "largest_source_second_difference_state": 3,
+    "maximum_boundary_component_change_mm": 0.00020314351786510088,
+    "source_second_difference_rms_mm": {
+      "4": 0.00024932109797944606
+    },
+    "unaffected_states_bitwise_identical": true
+  },
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-29T22:17:22.034593+00:00",
+  "git_sha": "09112889026f82ce1256e6ebdd29f55b67b4ccf5",
+  "mechanics_rerun": false,
+  "micromorphic_identification_run": false,
+  "outputs": {
+    "bridged_history_mm.npy": "d868d466c84c1b269d5164e00cb0d675f99368bc0039ef84990b3b206e7c67dc",
+    "state_bridge_diagnostic.png": "57dfd042110007f3bbd87f11f7d1a11192d7b23e84ad778f053c46d010d89acf"
+  },
+  "partition_id": 43,
+  "schema_version": 1,
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "source": {
+    "campaign_manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+    "history_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
+    "history_report_sha256": "d6e8e2f5d216b2e1f6c5e7f515c8d8aa558186579194de4ccf09797573560076",
+    "history_sha256": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0"
+  },
+  "status": "completed_declared_state_bridge"
+}
