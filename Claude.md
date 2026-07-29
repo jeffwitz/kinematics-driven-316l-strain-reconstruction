@@ -237,11 +237,15 @@ interprétation de `ell`.
 - [x] Distinguer la fonction de transfert algorithmique synthétique des
   artefacts expérimentaux d'éclairage, de speckle et de mouvement hors plan.
 
-**Résultat V2.1/V2.2 au 2026-07-29 :**
+**Résultat V2.1/V2.2 initial invalidé au 2026-07-29 :**
 
 - une commande reproductible `characterise-dic-measurement-chain` applique
   les paramètres rapportés dans OpenCV 4.14 et sérialise les paramètres
   demandés et relus ;
+- la première exécution utilisait `finest_scale=1`, donc s'arrêtait avant
+  l'échelle native. Ce choix invalide toute conclusion métrologique sur les
+  bandes de `4–32 px` ; les chiffres ci-dessous sont conservés uniquement
+  comme provenance et ne doivent plus être cités ;
 - la paire finale candidate donne un RMS EVM parasite de `7,895e-5`, soit
   `2,62 %` du RMS EVM DIC final ; le seuil pré-enregistré classe cette
   amplitude comme faible ;
@@ -267,6 +271,10 @@ dans cette exécution ; Sphinx HTML strict vert ; linkcheck strict vert ;
 PDF LuaLaTeX strict de 59 pages généré. Le code reproductible est publié au
 commit `83fcefd`; les résultats, preuves et la documentation sont publiés au
 commit `5e5bced`.
+
+**Correction en cours :** `finest_scale=0` est désormais obligatoire. Une
+campagne `dic_measurement_chain_v2` doit remplacer V1 dans le registre de
+preuves et dans toute conclusion publique.
 
 #### V2.3 Sensibilité aux paramètres DISFlow
 

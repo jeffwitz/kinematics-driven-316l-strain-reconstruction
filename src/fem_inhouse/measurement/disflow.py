@@ -27,7 +27,7 @@ class DISFlowConfig:
     """Fully declared settings for the reproduction implementation."""
 
     preset: str = "medium"
-    finest_scale: int = 1
+    finest_scale: int = 0
     gradient_descent_iterations: int = 30
     patch_size: int = 8
     patch_stride: int = 3

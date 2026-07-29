@@ -4,6 +4,24 @@ Date: **2026-07-29**
 
 Status: **frozen before optical-flow computation**
 
+## Protocol correction — 2026-07-29
+
+The first execution used OpenCV `finest_scale=1`, inherited from the
+`MEDIUM` preset and then recorded explicitly. That execution stops one pyramid
+level above the native image resolution. It is unsuitable for metrology of
+4--32 pixel bands and its quantitative results are **invalidated**.
+
+The corrected execution is frozen with:
+
+```text
+finest_scale = 0
+```
+
+All other settings, source frames, crop, synthetic fields, metrics and
+reporting rules below remain unchanged. The invalidated execution is retained
+as `dic_measurement_chain_v1` for provenance. The corrected evidence must be
+written as `dic_measurement_chain_v2`; no scientific claim may use V1.
+
 ## Question
 
 How much noise, spatial attenuation and band-width bias does the available
