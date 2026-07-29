@@ -26,13 +26,13 @@ def _cv2() -> Any:
 class DISFlowConfig:
     """Fully declared settings for the reproduction implementation."""
 
-    preset: str = "medium"
-    finest_scale: int = 0
-    gradient_descent_iterations: int = 30
-    patch_size: int = 8
-    patch_stride: int = 3
-    use_mean_normalization: bool = True
-    use_spatial_propagation: bool = True
+    preset: str | None = "medium"
+    finest_scale: int | None = 0
+    gradient_descent_iterations: int | None = 30
+    patch_size: int | None = 8
+    patch_stride: int | None = 3
+    use_mean_normalization: bool | None = True
+    use_spatial_propagation: bool | None = True
     variational_refinement_alpha: float = 100.0
     variational_refinement_delta: float = 1.0
     variational_refinement_gamma: float = 0.0
@@ -40,17 +40,17 @@ class DISFlowConfig:
     variational_refinement_iterations: int = 30
 
     def __post_init__(self) -> None:
-        if self.preset not in {"ultrafast", "fast", "medium"}:
-            raise ValueError("preset must be ultrafast, fast, or medium")
+        if self.preset not in {None, "ultrafast", "fast", "medium"}:
+            raise ValueError("preset must be None, ultrafast, fast, or medium")
         integer_positive = (
             self.gradient_descent_iterations,
             self.patch_size,
             self.patch_stride,
             self.variational_refinement_iterations,
         )
-        if any(value < 1 for value in integer_positive):
+        if any(value is not None and value < 1 for value in integer_positive):
             raise ValueError("DISFlow iteration and patch values must be positive")
-        if self.finest_scale < 0:
+        if self.finest_scale is not None and self.finest_scale < 0:
             raise ValueError("finest_scale must be nonnegative")
         weights = (
             self.variational_refinement_alpha,
@@ -77,19 +77,48 @@ def create_disflow(config: DISFlowConfig | None = None) -> Any:
         "fast": cv2.DISOPTICAL_FLOW_PRESET_FAST,
         "medium": cv2.DISOPTICAL_FLOW_PRESET_MEDIUM,
     }
-    flow = cv2.DISOpticalFlow_create(presets[selected.preset])
-    flow.setFinestScale(selected.finest_scale)
-    flow.setGradientDescentIterations(selected.gradient_descent_iterations)
-    flow.setPatchSize(selected.patch_size)
-    flow.setPatchStride(selected.patch_stride)
-    flow.setUseMeanNormalization(selected.use_mean_normalization)
-    flow.setUseSpatialPropagation(selected.use_spatial_propagation)
+    flow = (
+        cv2.DISOpticalFlow_create()
+        if selected.preset is None
+        else cv2.DISOpticalFlow_create(presets[selected.preset])
+    )
+    optional_setters = (
+        ("setFinestScale", selected.finest_scale),
+        ("setGradientDescentIterations", selected.gradient_descent_iterations),
+        ("setPatchSize", selected.patch_size),
+        ("setPatchStride", selected.patch_stride),
+        ("setUseMeanNormalization", selected.use_mean_normalization),
+        ("setUseSpatialPropagation", selected.use_spatial_propagation),
+    )
+    for setter, value in optional_setters:
+        if value is not None:
+            getattr(flow, setter)(value)
     flow.setVariationalRefinementAlpha(selected.variational_refinement_alpha)
     flow.setVariationalRefinementDelta(selected.variational_refinement_delta)
     flow.setVariationalRefinementGamma(selected.variational_refinement_gamma)
     flow.setVariationalRefinementEpsilon(selected.variational_refinement_epsilon)
     flow.setVariationalRefinementIterations(selected.variational_refinement_iterations)
     return flow
+
+
+def query_disflow_configuration(config: DISFlowConfig | None = None) -> dict[str, Any]:
+    """Read every supported setting back from the configured OpenCV object."""
+
+    flow = create_disflow(config)
+    getters = {
+        "finest_scale": "getFinestScale",
+        "gradient_descent_iterations": "getGradientDescentIterations",
+        "patch_size": "getPatchSize",
+        "patch_stride": "getPatchStride",
+        "use_mean_normalization": "getUseMeanNormalization",
+        "use_spatial_propagation": "getUseSpatialPropagation",
+        "variational_refinement_alpha": "getVariationalRefinementAlpha",
+        "variational_refinement_delta": "getVariationalRefinementDelta",
+        "variational_refinement_gamma": "getVariationalRefinementGamma",
+        "variational_refinement_epsilon": "getVariationalRefinementEpsilon",
+        "variational_refinement_iterations": "getVariationalRefinementIterations",
+    }
+    return {name: getattr(flow, getter)() for name, getter in getters.items()}
 
 
 def _byte_image(values: NDArray[np.generic], *, name: str) -> ByteImage:
