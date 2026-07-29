@@ -118,6 +118,55 @@ def test_typed_api_validates_and_forwards_configuration(monkeypatch) -> None:
     assert captured.kwargs["constitutive_backend"] == "mfront"
     assert captured.kwargs["mfront_library"] == "/tmp/libBehaviour.so"
     assert captured.kwargs["mfront_threads"] == 3
+    assert captured.kwargs["boundary_displacement_history"] is None
+
+
+def test_measured_boundary_history_reaches_each_registered_knot() -> None:
+    nx = ny = 2
+    config = CaseStudyConfig(
+        MeshConfig(nx=nx, ny=ny),
+        solver=SolverConfig(
+            increments=2,
+            max_newton_iterations=8,
+            residual_tolerance=1.0e-9,
+            constitutive_backend="python",
+        ),
+    )
+    coordinates = np.indices((nx + 1, ny + 1), dtype=float)
+    first = np.zeros((nx + 1, ny + 1, 2))
+    first[..., 0] = 2.0e-5 * coordinates[1]
+    first[..., 1] = 1.0e-5 * coordinates[0]
+    final = np.zeros_like(first)
+    final[..., 0] = 3.0e-5 * coordinates[0]
+    final[..., 1] = 4.0e-5 * coordinates[1]
+    history = np.stack((np.zeros_like(first), first, final))
+    result = solver.run_case_study(
+        config,
+        displacement_x_mm=final[..., 0],
+        displacement_y_mm=final[..., 1],
+        yield_stress_mpa=np.full((nx, ny), 1.0e6),
+        hardening_coefficient_mpa=np.zeros((nx, ny)),
+        boundary_displacement_history_mm=history,
+        snapshots=(0.5, 1.0),
+    )
+
+    boundary = np.zeros((nx + 1, ny + 1), dtype=bool)
+    boundary[[0, -1], :] = True
+    boundary[:, [0, -1]] = True
+    np.testing.assert_allclose(
+        result.frames[0.5].displacement_mm[boundary],
+        first[boundary],
+        rtol=0.0,
+        atol=1.0e-13,
+    )
+    np.testing.assert_allclose(
+        result.displacement_mm[boundary],
+        final[boundary],
+        rtol=0.0,
+        atol=1.0e-13,
+    )
+    assert result.diagnostics is not None
+    assert result.diagnostics.cutbacks == 0
 
 
 @pytest.mark.parametrize(

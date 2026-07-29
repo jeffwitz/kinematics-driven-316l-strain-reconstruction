@@ -25,6 +25,7 @@ Usage:
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import asdict
 from typing import cast
 
@@ -121,6 +122,7 @@ def run_fem(
     nonlocal_maximum_helmholtz_residual=1e-10,
     nonlocal_record_iteration_history=False,
     snapshot_fractions=None,
+    boundary_displacement_history=None,
     verbose=True,
 ):
     """
@@ -131,6 +133,10 @@ def run_fem(
                 fields at those pseudo-times are recorded during ONE incremental
                 solve and returned in result['frames'] = {fraction: {...}}.
                 (Replaces re-solving the whole problem per load level.)
+    boundary_displacement_history : optional nodal array with shape
+                (N_inc + 1, nx + 1, ny + 1, 2). The first state must be zero
+                and the last state must equal (disp_x, disp_y). Measured knots
+                are reached exactly; cutbacks interpolate only between them.
     constitutive_backend : 'python' uses the in-house return mapping; 'mfront'
                 delegates stress, state update and consistent tangent to MGIS.
     """
@@ -253,7 +259,46 @@ def run_fem(
     u_bc = np.zeros(mesh.n_dof)
     u_bc[2 * nd_all.ravel(order="F")] = disp_x.ravel(order="F")
     u_bc[2 * nd_all.ravel(order="F") + 1] = disp_y.ravel(order="F")
-    elastic_predictor_direction = solve_el(-KIB_el @ u_bc[dof_B])
+    history = None
+    boundary_target: Callable[[float], np.ndarray] | None = None
+    if boundary_displacement_history is not None:
+        history = np.asarray(boundary_displacement_history, dtype=np.float64)
+        expected_shape = (N_inc + 1, nxn, nyn, 2)
+        if history.shape != expected_shape:
+            raise ValueError(
+                "boundary_displacement_history has shape "
+                f"{history.shape}, expected {expected_shape}"
+            )
+        if not np.isfinite(history).all():
+            raise ValueError("boundary_displacement_history must contain finite values")
+        if not np.allclose(history[0], 0.0, rtol=0.0, atol=1.0e-14):
+            raise ValueError("boundary_displacement_history must start from zero")
+        final_displacement = np.stack((disp_x, disp_y), axis=-1)
+        if not np.allclose(history[-1], final_displacement, rtol=0.0, atol=1.0e-14):
+            raise ValueError(
+                "boundary_displacement_history final state must match disp_x and disp_y"
+            )
+        history_dofs = np.zeros((N_inc + 1, mesh.n_dof), dtype=np.float64)
+        history_dofs[:, 2 * nd_all.ravel(order="F")] = np.stack(
+            [frame.ravel(order="F") for frame in history[..., 0]]
+        )
+        history_dofs[:, 2 * nd_all.ravel(order="F") + 1] = np.stack(
+            [frame.ravel(order="F") for frame in history[..., 1]]
+        )
+
+        def boundary_target(pseudo_time: float) -> np.ndarray:
+            scaled = min(max(float(pseudo_time), 0.0), 1.0) * N_inc
+            lower = min(int(np.floor(scaled)), N_inc - 1)
+            local = scaled - lower
+            return (1.0 - local) * history_dofs[lower, dof_B] + local * history_dofs[
+                lower + 1, dof_B
+            ]
+
+        elastic_predictor_direction = None
+    else:
+        history_dofs = None
+        boundary_target = None
+        elastic_predictor_direction = solve_el(-KIB_el @ u_bc[dof_B])
 
     # State
     u = np.zeros(mesh.n_dof)
@@ -265,9 +310,7 @@ def run_fem(
     chi_committed = np.zeros((nx, ny), dtype=np.float64)
     chi_trial_guess = chi_committed.copy()
     nonlocal_workspace = (
-        NonlocalFixedPointWorkspace.create((nx, ny), N_GP)
-        if nonlocal_plasticity_enabled
-        else None
+        NonlocalFixedPointWorkspace.create((nx, ny), N_GP) if nonlocal_plasticity_enabled else None
     )
     accepted_nonlocal_evaluation: NonlocalCouplingEvaluation | None = None
 
@@ -304,15 +347,26 @@ def run_fem(
     pending = sorted(snapshot_fractions) if snapshot_fractions else []
     while t < 1.0 - 1e-12:
         dt = min(dt, 1.0 - t)
+        if history is not None:
+            next_history_knot = (np.floor(t * N_inc + 1.0e-10) + 1.0) / N_inc
+            dt = min(dt, max(next_history_knot - t, 1.0e-12))
         if pending:  # land exactly on snapshot fractions
             dt = min(dt, max(pending[0] - t, 1e-12))
         inc += 1
-        du_B = u_bc[dof_B] * dt
+        if history is None:
+            du_B = u_bc[dof_B] * dt
+        else:
+            assert boundary_target is not None
+            du_B = boundary_target(t + dt) - boundary_target(t)
         u_save = u.copy()
 
         u[dof_B] += du_B
         # Elastic predictor (reused factorization)
-        u[dof_I] += elastic_predictor_direction * dt
+        if history is None:
+            assert elastic_predictor_direction is not None
+            u[dof_I] += elastic_predictor_direction * dt
+        else:
+            u[dof_I] += solve_el(-KIB_el @ du_B)
 
         KII = KII_el  # start with elastic tangent, replaced after 1st iter
 
@@ -356,9 +410,7 @@ def run_fem(
                         relaxation_strategy=nonlocal_relaxation_strategy,
                         minimum_relaxation=nonlocal_minimum_relaxation,
                         maximum_relaxation=nonlocal_maximum_relaxation,
-                        aitken_residual_growth_factor=(
-                            nonlocal_aitken_residual_growth_factor
-                        ),
+                        aitken_residual_growth_factor=(nonlocal_aitken_residual_growth_factor),
                         relative_tolerance=nonlocal_relative_tolerance,
                         maximum_iterations=nonlocal_maximum_iterations,
                         maximum_helmholtz_residual=nonlocal_maximum_helmholtz_residual,
@@ -435,9 +487,7 @@ def run_fem(
                         for item in error.iteration_history
                     ]
                     if nonlocal_record_iteration_history:
-                        nonlocal_fixed_point_history.extend(
-                            last_failed_fixed_point_history
-                        )
+                        nonlocal_fixed_point_history.extend(last_failed_fixed_point_history)
                 LOGGER.warning(
                     "constitutive trial failed: %s",
                     error,
@@ -485,10 +535,7 @@ def run_fem(
             if nrit == 0:
                 res0 = max(res, 1e-30)
             rel = res / res0
-            if (
-                nonlocal_plasticity_enabled
-                and nonlocal_record_iteration_history
-            ):
+            if nonlocal_plasticity_enabled and nonlocal_record_iteration_history:
                 for record in nonlocal_fixed_point_history[trace_start:]:
                     record["mechanical_residual_norm"] = float(res)
                     record["mechanical_relative_residual"] = float(rel)
@@ -583,9 +630,7 @@ def run_fem(
                         "total_newton_iterations": total_newton_iterations,
                         "relaxation_strategy": nonlocal_relaxation_strategy,
                         "fixed_point_history": nonlocal_fixed_point_history,
-                        "last_failed_fixed_point_history": (
-                            last_failed_fixed_point_history
-                        ),
+                        "last_failed_fixed_point_history": (last_failed_fixed_point_history),
                     },
                 )
             continue
@@ -601,9 +646,7 @@ def run_fem(
                     )
                 accepted_constitutive_trial = constitutive_trial_acc
             else:
-                accepted_constitutive_trial = complete_trial(
-                    constitutive_trial_acc
-                )
+                accepted_constitutive_trial = complete_trial(constitutive_trial_acc)
         material_batch.commit()
         if nonlocal_plasticity_enabled:
             if nonlocal_evaluation_acc is None:
@@ -676,9 +719,7 @@ def run_fem(
     mfront_integration_with_tangent_seconds = float(
         getattr(material_timing, "integration_with_tangent_seconds", 0.0)
     )
-    kelvin_conversion_seconds = float(
-        getattr(material_timing, "kelvin_conversion_seconds", 0.0)
-    )
+    kelvin_conversion_seconds = float(getattr(material_timing, "kelvin_conversion_seconds", 0.0))
     tensor_reconstruction_seconds = float(
         getattr(material_timing, "tensor_reconstruction_seconds", 0.0)
     )
@@ -688,9 +729,7 @@ def run_fem(
     mfront_integration_with_tangent_calls = int(
         getattr(material_timing, "integration_with_tangent_calls", 0)
     )
-    tensor_reconstruction_calls = int(
-        getattr(material_timing, "tensor_reconstruction_calls", 0)
-    )
+    tensor_reconstruction_calls = int(getattr(material_timing, "tensor_reconstruction_calls", 0))
     nonlocal_fields = {}
     if nonlocal_plasticity_enabled:
         if accepted_nonlocal_evaluation is None:
@@ -698,12 +737,8 @@ def run_fem(
         nonlocal_fields = {
             "PEEQ_NONLOCAL": accepted_nonlocal_evaluation.nonlocal_peeq,
             "PEEQ_MISMATCH": accepted_nonlocal_evaluation.mismatch,
-            "NONLOCAL_HARDENING_MPA": (
-                accepted_nonlocal_evaluation.nonlocal_hardening_mpa
-            ),
-            "YIELD_SURFACE_RADIUS_MPA": (
-                accepted_nonlocal_evaluation.yield_surface_radius_mpa
-            ),
+            "NONLOCAL_HARDENING_MPA": (accepted_nonlocal_evaluation.nonlocal_hardening_mpa),
+            "YIELD_SURFACE_RADIUS_MPA": (accepted_nonlocal_evaluation.yield_surface_radius_mpa),
             "NONLOCAL_RESIDUAL": accepted_nonlocal_evaluation.residual_field,
         }
 
@@ -740,10 +775,7 @@ def run_fem(
         mesh=mesh,
         frames=snaps,
         diagnostics=dict(
-            backend=(
-                f"{linear_solver.backend_name}; constitutive="
-                f"{material_batch.backend_name}"
-            ),
+            backend=(f"{linear_solver.backend_name}; constitutive={material_batch.backend_name}"),
             elapsed_seconds=elapsed_seconds,
             initialization_seconds=initialization_seconds,
             elastic_assembly_seconds=elastic_assembly_seconds,
@@ -777,9 +809,7 @@ def run_fem(
             maximum_cbb_condition_number=local_statistics.maximum_cbb_condition_number,
             nonlocal_plasticity_enabled=nonlocal_plasticity_enabled,
             nonlocal_convergence_norm=(
-                "mixed_relative_linf"
-                if nonlocal_plasticity_enabled
-                else "not_applicable"
+                "mixed_relative_linf" if nonlocal_plasticity_enabled else "not_applicable"
             ),
             nonlocal_length_scale_mm=nonlocal_length_scale_mm,
             nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
@@ -787,9 +817,7 @@ def run_fem(
             nonlocal_relaxation_strategy=nonlocal_relaxation_strategy,
             nonlocal_minimum_relaxation=nonlocal_minimum_relaxation,
             nonlocal_maximum_relaxation=nonlocal_maximum_relaxation,
-            nonlocal_aitken_residual_growth_factor=(
-                nonlocal_aitken_residual_growth_factor
-            ),
+            nonlocal_aitken_residual_growth_factor=(nonlocal_aitken_residual_growth_factor),
             nonlocal_fixed_point_history=tuple(nonlocal_fixed_point_history),
             nonlocal_iterations_per_newton=tuple(nonlocal_iterations_per_newton),
             nonlocal_iterations_per_increment=tuple(nonlocal_iterations_per_increment),
@@ -801,21 +829,13 @@ def run_fem(
                 else 0.0
             ),
             final_nonlocal_relative_residual=nonlocal_final_relative_residual,
-            maximum_helmholtz_residual_relative=(
-                nonlocal_maximum_helmholtz_residual_observed
-            ),
-            maximum_absolute_nonlocal_mean_drift=(
-                nonlocal_maximum_absolute_mean_drift
-            ),
+            maximum_helmholtz_residual_relative=(nonlocal_maximum_helmholtz_residual_observed),
+            maximum_absolute_nonlocal_mean_drift=(nonlocal_maximum_absolute_mean_drift),
             helmholtz_seconds=helmholtz_seconds,
             nonlocal_mfront_seconds=nonlocal_mfront_seconds,
             nonlocal_coupling_failures=nonlocal_coupling_failures,
-            mfront_integration_without_tangent_seconds=(
-                mfront_integration_without_tangent_seconds
-            ),
-            mfront_integration_with_tangent_seconds=(
-                mfront_integration_with_tangent_seconds
-            ),
+            mfront_integration_without_tangent_seconds=(mfront_integration_without_tangent_seconds),
+            mfront_integration_with_tangent_seconds=(mfront_integration_with_tangent_seconds),
             kelvin_conversion_seconds=kelvin_conversion_seconds,
             tensor_reconstruction_seconds=tensor_reconstruction_seconds,
             internal_force_seconds=internal_force_seconds,
@@ -823,30 +843,16 @@ def run_fem(
             sparse_assembly_seconds=sparse_assembly_seconds,
             free_system_extraction_seconds=free_system_extraction_seconds,
             pardiso_seconds=linear_solve_seconds,
-            pardiso_analysis_seconds=(
-                linear_solver_statistics.analysis_seconds
-            ),
-            pardiso_factorization_seconds=(
-                linear_solver_statistics.factorization_seconds
-            ),
+            pardiso_analysis_seconds=(linear_solver_statistics.analysis_seconds),
+            pardiso_factorization_seconds=(linear_solver_statistics.factorization_seconds),
             pardiso_solve_seconds=linear_solver_statistics.solve_seconds,
             pardiso_analysis_calls=linear_solver_statistics.analysis_calls,
-            pardiso_factorization_calls=(
-                linear_solver_statistics.factorization_calls
-            ),
+            pardiso_factorization_calls=(linear_solver_statistics.factorization_calls),
             pardiso_solve_calls=linear_solver_statistics.solve_calls,
-            nonlocal_mfront_without_tangent_seconds=(
-                nonlocal_mfront_without_tangent_seconds
-            ),
-            nonlocal_mfront_with_tangent_seconds=(
-                nonlocal_mfront_with_tangent_seconds
-            ),
-            mfront_integration_without_tangent_calls=(
-                mfront_integration_without_tangent_calls
-            ),
-            mfront_integration_with_tangent_calls=(
-                mfront_integration_with_tangent_calls
-            ),
+            nonlocal_mfront_without_tangent_seconds=(nonlocal_mfront_without_tangent_seconds),
+            nonlocal_mfront_with_tangent_seconds=(nonlocal_mfront_with_tangent_seconds),
+            mfront_integration_without_tangent_calls=(mfront_integration_without_tangent_calls),
+            mfront_integration_with_tangent_calls=(mfront_integration_with_tangent_calls),
             tensor_reconstruction_calls=tensor_reconstruction_calls,
         ),
     )

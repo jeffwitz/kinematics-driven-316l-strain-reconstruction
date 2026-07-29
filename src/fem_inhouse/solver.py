@@ -36,10 +36,7 @@ def linear_solver_backend() -> str:
         import_module("pypardiso")
     except Exception:
         return "scipy SuperLU (single-threaded, full storage)"
-    return (
-        "pypardiso explicit phases 11/22/33 "
-        "(J2 mtype=2 upper; generic mtype=11 full)"
-    )
+    return "pypardiso explicit phases 11/22/33 (J2 mtype=2 upper; generic mtype=11 full)"
 
 
 def _validated_field(
@@ -194,6 +191,7 @@ def run_case_study(
     displacement_y_mm: ArrayLike,
     yield_stress_mpa: ArrayLike,
     hardening_coefficient_mpa: ArrayLike,
+    boundary_displacement_history_mm: ArrayLike | None = None,
     snapshots: tuple[float, ...] = (),
     verbose: bool = False,
 ) -> FEMResult:
@@ -229,6 +227,21 @@ def run_case_study(
         shape=element_shape,
         nonnegative=True,
     )
+    boundary_history = None
+    if boundary_displacement_history_mm is not None:
+        boundary_history = np.asarray(boundary_displacement_history_mm, dtype=np.float64)
+        expected_history_shape = (
+            config.solver.increments + 1,
+            *nodal_shape,
+            2,
+        )
+        if boundary_history.shape != expected_history_shape:
+            raise ValueError(
+                "boundary_displacement_history_mm has shape "
+                f"{boundary_history.shape}, expected {expected_history_shape}"
+            )
+        if not np.isfinite(boundary_history).all():
+            raise ValueError("boundary_displacement_history_mm contains non-finite values")
     snapshot_fractions = _validated_snapshots(snapshots)
 
     if config.solver.require_pypardiso:
@@ -269,33 +282,20 @@ def run_case_study(
         maximum_cbb_condition_number=config.solver.maximum_cbb_condition_number,
         nonlocal_plasticity_enabled=config.nonlocal_plasticity.enabled,
         nonlocal_length_scale_mm=config.nonlocal_plasticity.length_scale_mm,
-        nonlocal_coupling_modulus_mpa=(
-            config.nonlocal_plasticity.coupling_modulus_mpa
-        ),
+        nonlocal_coupling_modulus_mpa=(config.nonlocal_plasticity.coupling_modulus_mpa),
         nonlocal_relaxation=config.nonlocal_plasticity.relaxation,
-        nonlocal_relaxation_strategy=(
-            config.nonlocal_plasticity.relaxation_strategy
-        ),
-        nonlocal_minimum_relaxation=(
-            config.nonlocal_plasticity.minimum_relaxation
-        ),
-        nonlocal_maximum_relaxation=(
-            config.nonlocal_plasticity.maximum_relaxation
-        ),
+        nonlocal_relaxation_strategy=(config.nonlocal_plasticity.relaxation_strategy),
+        nonlocal_minimum_relaxation=(config.nonlocal_plasticity.minimum_relaxation),
+        nonlocal_maximum_relaxation=(config.nonlocal_plasticity.maximum_relaxation),
         nonlocal_aitken_residual_growth_factor=(
             config.nonlocal_plasticity.aitken_residual_growth_factor
         ),
-        nonlocal_relative_tolerance=(
-            config.nonlocal_plasticity.relative_tolerance
-        ),
+        nonlocal_relative_tolerance=(config.nonlocal_plasticity.relative_tolerance),
         nonlocal_maximum_iterations=config.nonlocal_plasticity.maximum_iterations,
-        nonlocal_maximum_helmholtz_residual=(
-            config.nonlocal_plasticity.maximum_helmholtz_residual
-        ),
-        nonlocal_record_iteration_history=(
-            config.nonlocal_plasticity.record_iteration_history
-        ),
+        nonlocal_maximum_helmholtz_residual=(config.nonlocal_plasticity.maximum_helmholtz_residual),
+        nonlocal_record_iteration_history=(config.nonlocal_plasticity.record_iteration_history),
         snapshot_fractions=snapshot_fractions,
+        boundary_displacement_history=boundary_history,
         verbose=verbose,
     )
     return _convert_result(raw, poisson_ratio=config.material.poisson_ratio)
