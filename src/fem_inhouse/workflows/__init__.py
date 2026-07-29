@@ -17,6 +17,9 @@ from fem_inhouse.workflows.dic_partition_selection import (
     scan_dic_partition_heterogeneity,
     write_dic_partition_heterogeneity_report,
 )
+from fem_inhouse.workflows.dic_photometric_quality import (
+    diagnose_dic_photometric_quality,
+)
 from fem_inhouse.workflows.ebsd_structural_length import measure_ebsd_structural_length
 from fem_inhouse.workflows.joint_nonlocal_identification import (
     analyze_joint_identifiability,
@@ -67,6 +70,7 @@ __all__ = [
     "collect_identification_results",
     "common_color_limits",
     "compute_reference_hardening_modulus",
+    "diagnose_dic_photometric_quality",
     "diagnose_section_equilibrium_campaigns",
     "estimate_reference_hardening_from_campaign",
     "fingerprint_array",
