@@ -248,7 +248,11 @@ def _state_bridge_figure(
                 cmap="viridis",
                 interpolation="nearest",
             )
-            suffix = " (bridged)" if state in bridged_states else ""
+            suffix = (
+                " (bridged)"
+                if row_index in {1, 3} and state in bridged_states
+                else ""
+            )
             axes[row_index, column].set_title(f"state {state}{suffix}")
             axes[row_index, column].set_xticks([])
             axes[row_index, column].set_yticks([])
