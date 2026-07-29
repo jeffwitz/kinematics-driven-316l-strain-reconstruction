@@ -14,6 +14,7 @@ authoritative option list for the installed revision.
 | `diagnose-section-equilibrium` | evaluate generalized section balance including lateral shear flux |
 | `characterise-dic-measurement-chain` | measure DISFlow null response and synthetic spatial transfer |
 | `replay-dic-observation` | pass archived FEM displacement through the image-level DISFlow operator |
+| `diagnose-dic-photometric-quality` | relate direct image residuals to archived V3 FEM/DIC field errors |
 | `diagnose-nonlocality` | run an output-only Helmholtz diagnostic |
 | `estimate-nonlocal-reference` | derive $H_{\mathrm{ref}}$ from a local campaign |
 | `validate-coupled-nonlocal` | compare raw coupled fields with DIC |
@@ -106,3 +107,10 @@ the archived displacement hash, resolves support bounds from the campaign
 manifest, applies the corrected image warp and writes DIC, raw-FEM and
 DISFlow-observed EVM separately. The default profile is
 `legacy_script_2021`; `declared_medium_v4` is the declared sensitivity.
+
+`diagnose-dic-photometric-quality` requires reference and final images, the
+prepared case, output and figure directories, plus one or more
+`--replay LABEL ALPHA PATH` triples. Every replay must be a completed
+`legacy_script_2021` V3 artefact with matching core bounds and immutable field
+hashes. The command performs no mechanics and does not replace primary
+unmasked metrics by its q90-residual sensitivity.

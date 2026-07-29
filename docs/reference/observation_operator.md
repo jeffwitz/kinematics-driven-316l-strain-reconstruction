@@ -114,3 +114,25 @@ The operator fingerprint and cache key include:
 The replay writes DIC EVM, raw FEM EVM, observed FEM EVM and recovered image
 flow separately. It never mutates the mechanical campaign and never applies a
 post-filter to the primary EVM.
+
+## Photometric-quality diagnostic
+
+`diagnose-dic-photometric-quality` evaluates the direct brightness residual
+
+\[
+\operatorname{cell\_average}
+\left(
+\left|I_k(x+u_{\mathrm{DIC}}(x))-I_0(x)\right|
+\right)
+\]
+
+on the element support used by V3. Sampling is bilinear and destination
+coordinates outside the image are excluded geometrically. The operation does
+not use the unavailable historical `mask.png`, does not normalise intensity
+and does not alter DIC or FEM fields.
+
+The command reports residual/error Pearson and Spearman association, fixed
+residual deciles, primary unmasked field metrics and a sensitivity excluding
+only residuals above the core q90. That sensitivity is never substituted for
+the primary comparison. A low association is a negative result; it is not
+permission to tune another residual threshold.

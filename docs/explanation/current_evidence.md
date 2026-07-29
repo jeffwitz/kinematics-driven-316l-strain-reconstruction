@@ -165,6 +165,42 @@ Increasing coupling redistributes and attenuates local plasticity. This is not
 an experimental PEEQ comparison.
 ```
 
+## Local image mismatch does not explain the remaining field error
+
+A pre-registered negative control tested whether the direct
+brightness-constancy residual,
+\(\lvert I_{40}(x+u_{\mathrm{DIC}}(x))-I_0(x)\rvert\), is locally associated
+with the remaining observed-FEM/DIC EVM error. The nodal image residual was
+averaged to the common element support; no intensity fit, spatial filter or
+mechanical rerun was used.
+
+```{include} ../_generated/dic_photometric_quality_metrics.inc
+```
+
+```{figure} ../_static/evidence/p43_photometric_quality.png
+:alt: P43 photometric residual, local-model EVM error, sensitivity mask, scatter plot and compared EVM fields.
+:width: 100%
+
+The high-residual pixels are spatially dispersed and do not reproduce the
+structured band-shaped EVM error. The q90 exclusion is a sensitivity only;
+the primary metrics remain unmasked.
+```
+
+```{figure} ../_static/evidence/p43_photometric_deciles.png
+:alt: Mean absolute EVM error versus photometric-residual decile for four coupling levels.
+:width: 82%
+
+The decile curves are nearly flat. Pearson residual/error association ranges
+from -0.025 to 0.023 and the Spearman result is likewise negligible.
+```
+
+Excluding the worst photometric decile retains 90.14% of the core, changes
+relative L2 by at most about 1.1%, changes FEM/DIC correlation by less than
+0.0015 and does not change candidate ordering. This does **not** support
+discarding pixels from the main comparison. It also does not turn the
+photometric residual into an uncertainty distribution: propagated
+measurement uncertainty remains a separate task.
+
 ## An independent structural scale
 
 The grain-mean maximum-Schmid-factor map provides a structural measurement

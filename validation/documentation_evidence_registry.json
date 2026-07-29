@@ -87,6 +87,12 @@
       "evidence_ids": ["E-DIC-004"]
     },
     {
+      "question": "Direct local brightness residual explains the remaining P43 FEM/DIC field error",
+      "status": "not supported",
+      "boundary": "One band-containing P43 core; direct unnormalised brightness residual; no propagated uncertainty claim",
+      "evidence_ids": ["E-DIC-005"]
+    },
+    {
       "question": "Hchi and ell statistically identified",
       "status": "not demonstrated",
       "boundary": "The earlier objective surface used raw FEM against observed DIC and must not be reused after the symmetric observation result",
@@ -407,6 +413,38 @@
       ]
     },
     {
+      "id": "E-DIC-005",
+      "question": "Does direct local brightness mismatch explain the remaining observed-FEM/DIC EVM error?",
+      "fidelity": "full-resolution P43 direct-image diagnostic on four archived V3 replays",
+      "parameters": "alpha 0, 1, 2 and 4; cell-averaged direct brightness residual; fixed q90 sensitivity; no mechanical rerun",
+      "status": "negative result",
+      "conclusion": "Residual/error Pearson and Spearman associations are negligible, and excluding the worst photometric decile leaves the candidate ordering and field metrics essentially unchanged. The primary V3 comparison therefore remains unmasked.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_baseline_no_acceptance_threshold"},
+            {"path": "/mechanics_rerun", "operator": "equals", "expected": false},
+            {"path": "/micromorphic_identification_run", "operator": "equals", "expected": false},
+            {"path": "/photometric_residual/valid_fraction", "operator": "equals", "expected": 1.0},
+            {"path": "/sensitivity_mask/primary_metrics_remain_unmasked", "operator": "equals", "expected": true},
+            {"path": "/rows/0/association/pearson", "operator": "greater_than", "expected": -0.05},
+            {"path": "/rows/0/association/pearson", "operator": "less_than", "expected": 0.05},
+            {"path": "/rows/1/association/pearson", "operator": "greater_than", "expected": -0.05},
+            {"path": "/rows/1/association/pearson", "operator": "less_than", "expected": 0.05},
+            {"path": "/rows/2/association/pearson", "operator": "greater_than", "expected": -0.05},
+            {"path": "/rows/2/association/pearson", "operator": "less_than", "expected": 0.05},
+            {"path": "/rows/3/association/pearson", "operator": "greater_than", "expected": -0.05},
+            {"path": "/rows/3/association/pearson", "operator": "less_than", "expected": 0.05},
+            {"path": "/rows/3/q90_masked_sensitivity/relative_l2_error", "operator": "less_than", "expected_path": "/rows/2/q90_masked_sensitivity/relative_l2_error"},
+            {"path": "/rows/2/q90_masked_sensitivity/relative_l2_error", "operator": "less_than", "expected_path": "/rows/1/q90_masked_sensitivity/relative_l2_error"},
+            {"path": "/rows/1/q90_masked_sensitivity/relative_l2_error", "operator": "less_than", "expected_path": "/rows/0/q90_masked_sensitivity/relative_l2_error"}
+          ]
+        }
+      ]
+    },
+    {
       "id": "E-EBSD-001",
       "question": "What structural scale is carried by the archived grain-mean Schmid field?",
       "fidelity": "independent EBSD/Schmid spatial statistic",
@@ -448,6 +486,16 @@
         [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/absolute_q90_active_fraction", "format": ".1%"}],
         [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/absolute_q90_active_fraction", "format": ".1%"}],
         [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/absolute_q90_active_fraction", "format": ".1%"}]
+      ]
+    },
+    {
+      "target": "dic_photometric_quality_metrics.inc",
+      "columns": ["Alpha", "Residual/error Pearson", "Residual/error Spearman", "Unmasked rel. L2", "q90 sensitivity rel. L2", "Unmasked FEM/DIC r", "q90 sensitivity FEM/DIC r"],
+      "rows": [
+        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}],
+        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}]
       ]
     },
     {
@@ -531,6 +579,14 @@
     {
       "source": "validation/figures/dic_symmetric_observation_p0043_v1/p43_peeq_separate.png",
       "target": "evidence/p43_peeq_separate.png"
+    },
+    {
+      "source": "validation/figures/dic_photometric_quality_p0043_v1/photometric_quality_and_error.png",
+      "target": "evidence/p43_photometric_quality.png"
+    },
+    {
+      "source": "validation/figures/dic_photometric_quality_p0043_v1/photometric_deciles.png",
+      "target": "evidence/p43_photometric_deciles.png"
     }
   ]
 }
