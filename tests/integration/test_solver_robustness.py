@@ -49,6 +49,40 @@ def test_increment_refinement_is_stable() -> None:
     assert np.all(relative_spread < 5e-4)
 
 
+def test_optional_newton_line_search_preserves_converged_solution() -> None:
+    case = reduced_biaxial_case(nx=4, ny=4, constitutive_backend="python")
+    indices = np.indices((4, 4))
+    modulation = (indices[0] + indices[1]) % 2
+    yield_map = np.where(modulation, 220.0, 280.0)
+    hardening_map = np.where(modulation, 420.0, 580.0)
+    baseline = _solve_case(case, yield_map=yield_map, hardening_map=hardening_map)
+    line_search_config = replace(
+        case.config,
+        solver=replace(case.config.solver, newton_line_search=True),
+    )
+    searched = _solve_case(
+        case,
+        config=line_search_config,
+        yield_map=yield_map,
+        hardening_map=hardening_map,
+    )
+
+    for baseline_field, searched_field in zip(
+        baseline.arrays(),
+        searched.arrays(),
+        strict=True,
+    ):
+        np.testing.assert_allclose(
+            searched_field,
+            baseline_field,
+            rtol=1.0e-10,
+            atol=1.0e-12,
+        )
+    assert searched.diagnostics is not None
+    assert searched.diagnostics.newton_line_search_enabled
+    assert searched.diagnostics.line_search_failures == 0
+
+
 def test_heterogeneous_case_converges_to_finite_balanced_result() -> None:
     case = reduced_biaxial_case(nx=6, ny=6, constitutive_backend="python")
     indices = np.indices((6, 6))
