@@ -36,11 +36,11 @@ class WarpResult:
 def _inputs(
     reference: NDArray[np.generic],
     displacement_pixels: NDArray[np.generic],
-) -> tuple[ByteImage, NDArray[np.float32]]:
+) -> tuple[ByteImage, NDArray[np.float64]]:
     image = np.asarray(reference)
     if image.ndim != 2 or image.dtype != np.uint8:
         raise TypeError("reference must be a two-dimensional uint8 image")
-    displacement = np.asarray(displacement_pixels, dtype=np.float32)
+    displacement = np.asarray(displacement_pixels, dtype=np.float64)
     if displacement.shape != (*image.shape, 2):
         raise ValueError("displacement_pixels must have shape (*image.shape, 2)")
     if not np.isfinite(displacement).all():
@@ -84,7 +84,7 @@ def warp_forward_displacement(
             f"minimum Jacobian={forward_jacobian:.6g}"
         )
 
-    destination_row, destination_column = np.indices(image.shape, dtype=np.float32)
+    destination_row, destination_column = np.indices(image.shape, dtype=np.float64)
     if mode == "legacy_approximate_inverse":
         source_column = destination_column - displacement[..., 0]
         source_row = destination_row - displacement[..., 1]
@@ -135,8 +135,8 @@ def warp_forward_displacement(
 
     warped = cv2.remap(
         image,
-        source_column,
-        source_row,
+        source_column.astype(np.float32),
+        source_row.astype(np.float32),
         interpolation=cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_REFLECT101,
     )
