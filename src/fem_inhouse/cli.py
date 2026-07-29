@@ -54,6 +54,7 @@ from fem_inhouse.workflows import (
     profile_coupling_modulus,
     propagate_dic_uncertainty,
     replay_dic_observation,
+    run_dic_multistep_mechanics,
     run_low_fidelity,
     run_nonlocality_diagnostic,
     scan_dic_partition_heterogeneity,
@@ -473,6 +474,18 @@ def _parser() -> argparse.ArgumentParser:
     multistep_history.add_argument("--partition-id", type=int, required=True)
     multistep_history.add_argument("--output", type=Path, required=True)
     multistep_history.add_argument("--overwrite", action="store_true")
+
+    multistep_mechanics = commands.add_parser(
+        "run-dic-multistep-mechanics",
+        help="run local mechanics with measured or proportional P43 boundaries",
+    )
+    multistep_mechanics.add_argument("--prepared-case", type=Path, required=True)
+    multistep_mechanics.add_argument("--source-campaign", type=Path, required=True)
+    multistep_mechanics.add_argument("--history", type=Path, required=True)
+    multistep_mechanics.add_argument("--partition-id", type=int, required=True)
+    multistep_mechanics.add_argument("--mode", choices=("measured", "proportional"), required=True)
+    multistep_mechanics.add_argument("--output", type=Path, required=True)
+    multistep_mechanics.add_argument("--overwrite", action="store_true")
 
     map_controls = commands.add_parser(
         "validate-material-map-controls",
@@ -907,6 +920,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(multistep_report)
+        return 0
+    if args.command == "run-dic-multistep-mechanics":
+        mechanics_report = run_dic_multistep_mechanics(
+            prepared_case=args.prepared_case,
+            source_campaign=args.source_campaign,
+            history_directory=args.history,
+            partition_id=args.partition_id,
+            mode=args.mode,
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(mechanics_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
