@@ -283,6 +283,35 @@ together while preserving their distributions reduces correlation from
 much of the smooth background, while the original map placement contributes
 genuine localisation information. Neither result establishes transferability.
 
+## Measured loading history: current numerical limit
+
+The archived image sequence provides 40 ordered displacement states. They
+were obtained by direct reference-to-current correlation, so this dataset does
+not accumulate incremental optical-flow drift. Two states contain a
+documented correlation failure: their maximum incremental EVM reaches 5.46%.
+The historical identification source also marks these frames as corrupted.
+
+A pre-registered displacement interpolation reduces the maximum incremental
+EVM to 0.562% while leaving every other state and the final endpoint
+unchanged. The unchanged local mechanical solver nevertheless fails earlier,
+on the transition from state 3 to state 4. Repeated cutback approaches the
+third converged state without finding an admissible Newton update.
+
+```{figure} ../_static/evidence/p43_multistep_corrupted_frames.png
+:alt: Original and repaired state and incremental EVM maps around the two corrupted DIC frames
+:width: 100%
+
+The first and third rows expose the transient correlation artefact. The
+second and fourth rows show the pre-registered displacement interpolation.
+Common scales are retained within each field family.
+```
+
+This is a reported negative result. It does not invalidate the measured path,
+but it means that a conditional temporal-prediction result is not yet
+available. The next numerical test must distinguish a MFront trial-integration
+limitation from overshoot of the undamped global Newton method. Solver changes
+must be pre-registered and must preserve the converged proportional baseline.
+
 ## Not demonstrated
 
 - one unique value of $H_\chi$;

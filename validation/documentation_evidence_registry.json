@@ -491,6 +491,39 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-DIC-007",
+      "question": "Can the local P43 mechanics replay the measured 40-state DIC boundary history?",
+      "fidelity": "full 660 by 610 element local MFront solve with measured boundary states",
+      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; unchanged constitutive and Newton settings",
+      "status": "blocked negative result",
+      "conclusion": "The documented optical-flow corruption is removed, but the unchanged local solver fails on the earlier state-3-to-state-4 transition. Measured-history prediction is not yet available.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
+          "role": "primary measurement-history repair",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_documented_corrupted_frame_repair"},
+            {"path": "/checks/finite", "operator": "equals", "expected": true},
+            {"path": "/checks/unaffected_states_bitwise_identical", "operator": "equals", "expected": true},
+            {"path": "/checks/final_state_bitwise_identical", "operator": "equals", "expected": true},
+            {"path": "/checks/largest_repaired_increment_evm_max", "operator": "less_than", "expected": 0.006}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_multistep_mechanics_p0043_measured_repaired_v1/failure_report.json",
+          "role": "primary mechanical failure",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "failed_local_measured_boundary_history"},
+            {"path": "/mechanics_completed", "operator": "equals", "expected": false},
+            {"path": "/constitutive_state_committed_after_failure", "operator": "equals", "expected": false},
+            {"path": "/diagnostics/converged_increments", "operator": "equals", "expected": 3},
+            {"path": "/diagnostics/first_cutback/increment", "operator": "equals", "expected": 4},
+            {"path": "/diagnostics/first_cutback/reason", "operator": "equals", "expected": "MFront integration failed with status -1"}
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -621,6 +654,10 @@
     {
       "source": "validation/figures/dic_uncertainty_propagation_p0043_v1/ranking_probabilities.png",
       "target": "evidence/p43_dic_uncertainty_rankings.png"
+    },
+    {
+      "source": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/corrupted_frames_diagnostic.png",
+      "target": "evidence/p43_multistep_corrupted_frames.png"
     }
   ]
 }
