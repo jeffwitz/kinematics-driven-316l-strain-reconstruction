@@ -12,6 +12,7 @@ from fem_inhouse.workflows.coupled_nonlocal_validation import (
     validate_coupled_nonlocal_campaign,
 )
 from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
+from fem_inhouse.workflows.dic_observation_replay import replay_dic_observation
 from fem_inhouse.workflows.dic_partition_selection import (
     scan_dic_partition_heterogeneity,
     write_dic_partition_heterogeneity_report,
@@ -82,6 +83,7 @@ __all__ = [
     "prepare_transfer_validation",
     "profile_coupling_modulus",
     "reconstruct_historical_evm",
+    "replay_dic_observation",
     "run_field_sweep",
     "run_low_fidelity",
     "run_nonlocality_diagnostic",

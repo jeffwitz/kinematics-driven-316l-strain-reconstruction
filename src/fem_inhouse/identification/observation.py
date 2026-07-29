@@ -24,6 +24,9 @@ class DICObservationOperatorConfig:
     """
 
     schema_version: int = 1
+    mode: Literal["direct_displacement_to_evm", "synthetic_disflow"] = (
+        "direct_displacement_to_evm"
+    )
     strain_measure: str = "historical_plane_stress_evm_from_displacement"
     support: str = "element_centres"
     grid_mapping: Literal["identity", "coincident-node-stride"] = "identity"
@@ -33,6 +36,9 @@ class DICObservationOperatorConfig:
     use_core_only: bool = True
     displacement_unit: Literal["mm"] = "mm"
     strain_unit: Literal["dimensionless"] = "dimensionless"
+    disflow_profile: str | None = None
+    warp_mode: str | None = None
+    mask_mode: str | None = None
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
@@ -41,6 +47,17 @@ class DICObservationOperatorConfig:
             raise ValueError("unsupported strain measure")
         if self.support != "element_centres":
             raise ValueError("unsupported observation support")
+        if self.mode == "direct_displacement_to_evm":
+            if any(
+                value is not None
+                for value in (self.disflow_profile, self.warp_mode, self.mask_mode)
+            ):
+                raise ValueError("direct observation cannot declare image-chain settings")
+        elif not all(
+            value is not None
+            for value in (self.disflow_profile, self.warp_mode, self.mask_mode)
+        ):
+            raise ValueError("synthetic_disflow requires profile, warp and mask modes")
         if self.grid_reduction < 1:
             raise ValueError("grid_reduction must be at least one")
         if self.grid_mapping == "identity" and self.grid_reduction != 1:
