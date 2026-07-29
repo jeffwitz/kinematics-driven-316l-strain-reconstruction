@@ -35,9 +35,12 @@ from fem_inhouse.workflows.dic_observation_replay import (
     RAW_CROP_COLUMN_START,
     RAW_CROP_ROW_START,
 )
+from fem_inhouse.workflows.nonlocality_diagnostic import reconstruct_historical_evm
 
 FloatArray = NDArray[np.float64]
 RAW_CROP_SHAPE = (3600, 3100)
+CORRUPTED_MEASURED_STATES = (31, 32)
+REPAIR_BRACKETING_STATES = (30, 33)
 
 
 def _sha256(path: Path) -> str:
@@ -71,6 +74,103 @@ def anchor_displacement_history(
     fractions = np.linspace(0.0, 1.0, history.shape[0], dtype=np.float64)
     correction = final - history[-1]
     return history + fractions[:, None, None, None] * correction
+
+
+def repair_corrupted_displacement_states(
+    history_mm: NDArray[np.generic],
+    *,
+    corrupted_states: tuple[int, ...] = CORRUPTED_MEASURED_STATES,
+    bracketing_states: tuple[int, int] = REPAIR_BRACKETING_STATES,
+) -> FloatArray:
+    """Linearly interpolate pre-registered corrupted measured states."""
+
+    history = np.asarray(history_mm, dtype=np.float64)
+    if history.ndim != 4 or history.shape[-1] != 2:
+        raise ValueError("history_mm must have shape (steps + 1, nx, ny, 2)")
+    if not np.isfinite(history).all():
+        raise ValueError("history_mm must contain finite values")
+    before, after = bracketing_states
+    if not 0 <= before < after < history.shape[0]:
+        raise ValueError("bracketing states must be ordered and inside the history")
+    if any(state <= before or state >= after for state in corrupted_states):
+        raise ValueError("corrupted states must lie strictly between the brackets")
+    repaired = history.copy()
+    interval = float(after - before)
+    for state in corrupted_states:
+        weight = (state - before) / interval
+        repaired[state] = (1.0 - weight) * history[before] + weight * history[after]
+    return repaired
+
+
+def _history_evm(
+    history: FloatArray,
+    *,
+    spacing_mm: float,
+    poisson_ratio: float,
+) -> tuple[FloatArray, FloatArray]:
+    state = np.stack(
+        [
+            reconstruct_historical_evm(
+                displacement,
+                spacing_x_mm=spacing_mm,
+                spacing_y_mm=spacing_mm,
+                poisson_ratio=poisson_ratio,
+            )
+            for displacement in history
+        ]
+    )
+    increment = np.zeros_like(state)
+    increment[1:] = np.stack(
+        [
+            reconstruct_historical_evm(
+                history[index] - history[index - 1],
+                spacing_x_mm=spacing_mm,
+                spacing_y_mm=spacing_mm,
+                poisson_ratio=poisson_ratio,
+            )
+            for index in range(1, history.shape[0])
+        ]
+    )
+    return state, increment
+
+
+def _corrupted_frame_figure(
+    path: Path,
+    *,
+    original_state: FloatArray,
+    repaired_state: FloatArray,
+    original_increment: FloatArray,
+    repaired_increment: FloatArray,
+) -> None:
+    states = range(29, 35)
+    figure, axes = plt.subplots(4, 6, figsize=(15, 9), constrained_layout=True)
+    rows = (
+        ("Original state EVM", original_state),
+        ("Repaired state EVM", repaired_state),
+        ("Original increment EVM", original_increment),
+        ("Repaired increment EVM", repaired_increment),
+    )
+    state_limit = float(np.max(original_state[29:35]))
+    increment_limit = float(np.max(original_increment[29:35]))
+    for row_index, (label, values) in enumerate(rows):
+        limit = state_limit if row_index < 2 else increment_limit
+        for column, state in enumerate(states):
+            image = axes[row_index, column].imshow(
+                values[state].T,
+                origin="lower",
+                vmin=0.0,
+                vmax=limit,
+                cmap="viridis",
+                interpolation="nearest",
+            )
+            axes[row_index, column].set_title(f"state {state}")
+            axes[row_index, column].set_xticks([])
+            axes[row_index, column].set_yticks([])
+        axes[row_index, 0].set_ylabel(label)
+        figure.colorbar(image, ax=axes[row_index], shrink=0.72)
+    figure.suptitle("P43 documented corrupted-frame repair (common scales by field type)")
+    figure.savefig(path, dpi=180)
+    plt.close(figure)
 
 
 def _history_figure(
@@ -255,6 +355,131 @@ def prepare_dic_multistep_history(
     return report
 
 
+def repair_dic_multistep_history(
+    *,
+    history_directory: str | Path,
+    source_campaign: str | Path,
+    partition_id: int,
+    output_directory: str | Path,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """Archive the pre-registered temporal repair and its strain diagnostics."""
+
+    history_root = Path(history_directory)
+    campaign = Path(source_campaign)
+    output = Path(output_directory)
+    if output.exists() and any(output.iterdir()) and not overwrite:
+        raise FileExistsError(f"refusing to overwrite non-empty directory: {output}")
+    output.mkdir(parents=True, exist_ok=True)
+
+    source_report_path = history_root / "report.json"
+    source_report = load_json_object(source_report_path)
+    if source_report.get("status") != "completed_direct_reference_history_endpoint_anchored":
+        raise ValueError("source history campaign is not complete")
+    if int(source_report["partition_id"]) != partition_id:
+        raise ValueError("source history identifies another partition")
+    source_path = history_root / "anchored_history_mm.npy"
+    if _sha256(source_path) != source_report["outputs"][source_path.name]:
+        raise ValueError("source history hash does not match its report")
+    original = np.asarray(
+        np.load(source_path, mmap_mode="r", allow_pickle=False),
+        dtype=np.float64,
+    )
+    repaired = repair_corrupted_displacement_states(original)
+
+    manifest_path = campaign / "manifest.json"
+    manifest = load_json_object(manifest_path)
+    _layout, partition = partition_from_manifest(manifest, partition_id)
+    material_config = MaterialConfig(**manifest["config"]["material"])
+    spacing_mm = float(manifest["config"]["mesh"]["base_pixel_size_mm"]) * float(
+        manifest["config"]["mesh"]["scale_factor"]
+    )
+    original_state, original_increment = _history_evm(
+        original,
+        spacing_mm=spacing_mm,
+        poisson_ratio=material_config.poisson_ratio,
+    )
+    repaired_state, repaired_increment = _history_evm(
+        repaired,
+        spacing_mm=spacing_mm,
+        poisson_ratio=material_config.poisson_ratio,
+    )
+    original_max = np.max(original_state, axis=(1, 2))
+    repaired_max = np.max(repaired_state, axis=(1, 2))
+    original_increment_max = np.max(original_increment, axis=(1, 2))
+    repaired_increment_max = np.max(repaired_increment, axis=(1, 2))
+    unaffected = [
+        index for index in range(original.shape[0]) if index not in CORRUPTED_MEASURED_STATES
+    ]
+    if not np.array_equal(repaired[unaffected], original[unaffected]):
+        raise RuntimeError("repair changed a state outside the pre-registered set")
+
+    repaired_path = output / "repaired_history_mm.npy"
+    figure_path = output / "corrupted_frames_diagnostic.png"
+    np.save(repaired_path, np.asarray(repaired, dtype=np.float32))
+    _corrupted_frame_figure(
+        figure_path,
+        original_state=original_state,
+        repaired_state=repaired_state,
+        original_increment=original_increment,
+        repaired_increment=repaired_increment,
+    )
+    rows = []
+    for state in range(original.shape[0]):
+        rows.append(
+            {
+                "state": state,
+                "image": None if state == 0 else f"{294 + state:06d}.tif",
+                "repaired": state in CORRUPTED_MEASURED_STATES,
+                "original_state_evm_max": float(original_max[state]),
+                "repaired_state_evm_max": float(repaired_max[state]),
+                "original_increment_evm_max": float(original_increment_max[state]),
+                "repaired_increment_evm_max": float(repaired_increment_max[state]),
+            }
+        )
+    report = {
+        "schema_version": 1,
+        "status": "completed_documented_corrupted_frame_repair",
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "git_sha": _git_sha(),
+        "partition_id": partition_id,
+        "solve_bounds": list(partition.solve_bounds),
+        "core_bounds": list(partition.core_bounds),
+        "repair": {
+            "corrupted_states": list(CORRUPTED_MEASURED_STATES),
+            "bracketing_states": list(REPAIR_BRACKETING_STATES),
+            "method": "piecewise_linear_displacement_interpolation",
+            "legacy_source_declares_corrupted_array_indices": [31, 32],
+            "legacy_source_repairs_evm_only": True,
+        },
+        "source": {
+            "history_report": str(source_report_path.resolve()),
+            "history_report_sha256": _sha256(source_report_path),
+            "history_sha256": _sha256(source_path),
+            "campaign_manifest_sha256": _sha256(manifest_path),
+        },
+        "checks": {
+            "finite": bool(np.isfinite(repaired).all()),
+            "unaffected_states_bitwise_identical": True,
+            "final_state_bitwise_identical": bool(np.array_equal(repaired[-1], original[-1])),
+            "largest_repaired_increment_evm_max": float(np.max(repaired_increment_max)),
+            "largest_original_increment_evm_max": float(np.max(original_increment_max)),
+        },
+        "state_diagnostics": rows,
+        "outputs": {
+            repaired_path.name: _sha256(repaired_path),
+            figure_path.name: _sha256(figure_path),
+        },
+        "mechanics_rerun": False,
+        "micromorphic_identification_run": False,
+    }
+    (output / "report.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report
+
+
 def run_dic_multistep_mechanics(
     *,
     prepared_case: str | Path,
@@ -301,11 +526,16 @@ def run_dic_multistep_mechanics(
     )
     history_report_path = history_root / "report.json"
     history_report = load_json_object(history_report_path)
-    if history_report.get("status") != "completed_direct_reference_history_endpoint_anchored":
+    accepted_statuses = {
+        "completed_direct_reference_history_endpoint_anchored": "anchored_history_mm.npy",
+        "completed_documented_corrupted_frame_repair": "repaired_history_mm.npy",
+    }
+    history_status = str(history_report.get("status"))
+    if history_status not in accepted_statuses:
         raise ValueError("history campaign is not complete")
     if int(history_report["partition_id"]) != partition_id:
         raise ValueError("history campaign identifies another partition")
-    history_path = history_root / "anchored_history_mm.npy"
+    history_path = history_root / accepted_statuses[history_status]
     if _sha256(history_path) != history_report["outputs"][history_path.name]:
         raise ValueError("anchored history hash does not match its report")
     history = np.array(
@@ -377,7 +607,11 @@ def run_dic_multistep_mechanics(
         "partition_id": partition_id,
         "mode": mode,
         "boundary_history": (
-            "measured_direct_reference_endpoint_anchored"
+            (
+                "measured_direct_reference_endpoint_anchored_corrupted_frames_repaired"
+                if history_status == "completed_documented_corrupted_frame_repair"
+                else "measured_direct_reference_endpoint_anchored"
+            )
             if mode == "measured"
             else "proportional_to_prepared_final"
         ),

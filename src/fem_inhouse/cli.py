@@ -53,6 +53,7 @@ from fem_inhouse.workflows import (
     prepare_transfer_validation,
     profile_coupling_modulus,
     propagate_dic_uncertainty,
+    repair_dic_multistep_history,
     replay_dic_observation,
     run_dic_multistep_mechanics,
     run_low_fidelity,
@@ -474,6 +475,16 @@ def _parser() -> argparse.ArgumentParser:
     multistep_history.add_argument("--partition-id", type=int, required=True)
     multistep_history.add_argument("--output", type=Path, required=True)
     multistep_history.add_argument("--overwrite", action="store_true")
+
+    multistep_repair = commands.add_parser(
+        "repair-dic-multistep-history",
+        help="apply the pre-registered repair of documented corrupted DIC states",
+    )
+    multistep_repair.add_argument("--history", type=Path, required=True)
+    multistep_repair.add_argument("--source-campaign", type=Path, required=True)
+    multistep_repair.add_argument("--partition-id", type=int, required=True)
+    multistep_repair.add_argument("--output", type=Path, required=True)
+    multistep_repair.add_argument("--overwrite", action="store_true")
 
     multistep_mechanics = commands.add_parser(
         "run-dic-multistep-mechanics",
@@ -920,6 +931,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(multistep_report)
+        return 0
+    if args.command == "repair-dic-multistep-history":
+        repair_report = repair_dic_multistep_history(
+            history_directory=args.history,
+            source_campaign=args.source_campaign,
+            partition_id=args.partition_id,
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(repair_report)
         return 0
     if args.command == "run-dic-multistep-mechanics":
         mechanics_report = run_dic_multistep_mechanics(
