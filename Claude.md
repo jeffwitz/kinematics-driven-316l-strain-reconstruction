@@ -265,8 +265,8 @@ Validation du lot : Ruff vert ; mypy vert sur les 53 fichiers source ;
 323 tests verts et 22 tests MFront ignorés faute de variable de bibliothèque
 dans cette exécution ; Sphinx HTML strict vert ; linkcheck strict vert ;
 PDF LuaLaTeX strict de 59 pages généré. Le code reproductible est publié au
-commit `83fcefd`; le commit des résultats et de la documentation est indiqué
-dans le journal Git suivant.
+commit `83fcefd`; les résultats, preuves et la documentation sont publiés au
+commit `5e5bced`.
 
 #### V2.3 Sensibilité aux paramètres DISFlow
 
