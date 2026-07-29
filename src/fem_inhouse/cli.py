@@ -48,6 +48,7 @@ from fem_inhouse.workflows import (
     load_joint_identification_config,
     measure_ebsd_structural_length,
     plot_coupled_alpha_fields,
+    prepare_dic_multistep_history,
     prepare_material_map_control,
     prepare_transfer_validation,
     profile_coupling_modulus,
@@ -461,6 +462,17 @@ def _parser() -> argparse.ArgumentParser:
     uncertainty.add_argument("--samples", type=int, default=256)
     uncertainty.add_argument("--seed", type=int, default=20260729)
     uncertainty.add_argument("--overwrite", action="store_true")
+
+    multistep_history = commands.add_parser(
+        "prepare-dic-multistep-history",
+        help="reconstruct direct-reference DIC boundary states for one partition",
+    )
+    multistep_history.add_argument("--images", type=Path, required=True)
+    multistep_history.add_argument("--prepared-case", type=Path, required=True)
+    multistep_history.add_argument("--source-campaign", type=Path, required=True)
+    multistep_history.add_argument("--partition-id", type=int, required=True)
+    multistep_history.add_argument("--output", type=Path, required=True)
+    multistep_history.add_argument("--overwrite", action="store_true")
 
     map_controls = commands.add_parser(
         "validate-material-map-controls",
@@ -884,6 +896,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(uncertainty_report)
+        return 0
+    if args.command == "prepare-dic-multistep-history":
+        multistep_report = prepare_dic_multistep_history(
+            image_directory=args.images,
+            prepared_case=args.prepared_case,
+            source_campaign=args.source_campaign,
+            partition_id=args.partition_id,
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(multistep_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
