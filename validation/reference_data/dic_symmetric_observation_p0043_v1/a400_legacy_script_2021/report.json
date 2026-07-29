@@ -1,0 +1,249 @@
+{
+  "axis_convention": "image row -> canonical x/ux via drow; image column -> canonical y/uy via dcolumn",
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-29T13:53:44.040876+00:00",
+  "evm_operator": "reconstruct_historical_evm",
+  "evm_post_filter_applied": false,
+  "git_sha": "c0e3c7ac9891327d0122e3acca89e8f1862a9263",
+  "mask": {
+    "dtype": "bool",
+    "mode": "declared_all_valid",
+    "sha256": "98f3930446549489ff7d6ca8b5e6e9e7ab29985bc54d82a9de83395f32fc01cf",
+    "unique_values": [
+      true
+    ]
+  },
+  "metrics": {
+    "dic_statistics": {
+      "maximum": 0.013100508959394535,
+      "mean": 0.003928251736548966,
+      "minimum": 0.0007471981067496132,
+      "q50": 0.0036518422505979206,
+      "q90": 0.005800441852673818,
+      "q95": 0.006674297264970143,
+      "q99": 0.00893440795605808,
+      "standard_deviation": 0.0014599955188661076
+    },
+    "observed": {
+      "absolute_q90": {
+        "absolute_threshold": 0.005800441852673818,
+        "intersection_count": 4592,
+        "intersection_over_union": 0.25488454706927177,
+        "prediction_active_fraction": 0.10258064516129033,
+        "prediction_count": 11448,
+        "prediction_precision": 0.40111809923130676,
+        "reference_active_fraction": 0.1,
+        "reference_count": 11160,
+        "reference_quantile": 0.9,
+        "reference_recall": 0.4114695340501792,
+        "valid_count": 111600
+      },
+      "diffusivity": {
+        "gradient_rms": 0.04120596640166291,
+        "maximum": 0.007952521152063567,
+        "mean": 0.003637400767790201,
+        "mean_drift": 0.0,
+        "minimum": 0.0013267810671844865,
+        "peak_ratio": 1.0,
+        "relative_change_norm": 0.0,
+        "standard_deviation": 0.0014343070154263589,
+        "standard_deviation_ratio": 1.0,
+        "total_variation": 0.015167537551450698
+      },
+      "errors": {
+        "count": 111600,
+        "mae": 0.0009328920069536833,
+        "maximum_absolute_error": 0.00694208281593824,
+        "pearson_correlation": 0.6635857571812368,
+        "relative_l2_error": 0.29168216792883933,
+        "rmse": 0.0012223796798701528,
+        "signed_mean_error": -0.0002908509687587635
+      },
+      "statistics": {
+        "maximum": 0.007952521152063567,
+        "mean": 0.003637400767790201,
+        "minimum": 0.0013267810671844865,
+        "q50": 0.003379543524273639,
+        "q90": 0.005836092549938112,
+        "q95": 0.006472998919403978,
+        "q99": 0.0073502945815423085,
+        "standard_deviation": 0.0014343070154263589
+      },
+      "top10": {
+        "dice_coefficient": 0.40340501792114697,
+        "intersection_count": 4502,
+        "intersection_over_union": 0.2526658435290156,
+        "prediction_count": 11160,
+        "prediction_precision": 0.40340501792114697,
+        "prediction_threshold": 0.005836092549938112,
+        "reference_count": 11160,
+        "reference_recall": 0.40340501792114697,
+        "reference_threshold": 0.005800441852673818,
+        "top_fraction": 0.1
+      }
+    },
+    "raw": {
+      "absolute_q90": {
+        "absolute_threshold": 0.005800441852673818,
+        "intersection_count": 5840,
+        "intersection_over_union": 0.26676411474511236,
+        "prediction_active_fraction": 0.14849462365591398,
+        "prediction_count": 16572,
+        "prediction_precision": 0.352401641322713,
+        "reference_active_fraction": 0.1,
+        "reference_count": 11160,
+        "reference_quantile": 0.9,
+        "reference_recall": 0.5232974910394266,
+        "valid_count": 111600
+      },
+      "diffusivity": {
+        "gradient_rms": 0.2627524283867545,
+        "maximum": 0.011969140493194835,
+        "mean": 0.0036235476082189843,
+        "mean_drift": 0.0,
+        "minimum": 0.000669404468153245,
+        "peak_ratio": 1.0,
+        "relative_change_norm": 0.0,
+        "standard_deviation": 0.002010457303050033,
+        "standard_deviation_ratio": 1.0,
+        "total_variation": 0.0821864379973428
+      },
+      "errors": {
+        "count": 111600,
+        "mae": 0.001433749469673033,
+        "maximum_absolute_error": 0.008185826640039548,
+        "pearson_correlation": 0.5035829730906514,
+        "relative_l2_error": 0.43413304102623257,
+        "rmse": 0.0018193618467624976,
+        "signed_mean_error": -0.0003047041283299809
+      },
+      "statistics": {
+        "maximum": 0.011969140493194835,
+        "mean": 0.0036235476082189843,
+        "minimum": 0.000669404468153245,
+        "q50": 0.003307154687710738,
+        "q90": 0.006551638576008017,
+        "q95": 0.007572360375769792,
+        "q99": 0.009146857138706275,
+        "standard_deviation": 0.002010457303050033
+      },
+      "top10": {
+        "dice_coefficient": 0.3950716845878136,
+        "intersection_count": 4409,
+        "intersection_over_union": 0.24616157668471889,
+        "prediction_count": 11160,
+        "prediction_precision": 0.3950716845878136,
+        "prediction_threshold": 0.006551638576008017,
+        "reference_count": 11160,
+        "reference_recall": 0.3950716845878136,
+        "reference_threshold": 0.005800441852673818,
+        "top_fraction": 0.1
+      }
+    }
+  },
+  "observation_operator": {
+    "disflow_profile": "legacy_script_2021",
+    "displacement_unit": "mm",
+    "grid_mapping": "identity",
+    "grid_reduction": 1,
+    "mask_mode": "declared_all_valid",
+    "missing_value_policy": "finite-intersection",
+    "mode": "synthetic_disflow",
+    "schema_version": 1,
+    "spatial_filter": "none",
+    "strain_measure": "historical_plane_stress_evm_from_displacement",
+    "strain_unit": "dimensionless",
+    "support": "element_centres",
+    "use_core_only": true,
+    "warp_mode": "iterative_forward_inverse"
+  },
+  "observation_operator_sha256": "269d6eea301330fe396d0ebf1dfe6146d81e099ba5b3f933939dc599958bd565",
+  "outputs": {
+    "comparison.png": "926246dac827031967fdc80537c9a7083ea31714f5e86606ea20728ab5c02773",
+    "dic_evm.npy": "f8cde6b0f120b7884f2abddc187712fa7ac3e2d1ae480c9606fc2a7b779af945",
+    "fem_observed_evm.npy": "0eb729d09460f9d0e263c13822819bf9ed8cd6e2ef3cb648ef774760ad978282",
+    "fem_raw_evm.npy": "eb1cb8c38fbb5bf47c36464406f443dd91eb6ed06fffb2ed2275a8e4df629aae",
+    "observed_flow_pixels.npy": "1b72b74e38a6d4a13197b20fc5bfde0ec326904d244017d53a24b5462bb05f83"
+  },
+  "partition_id": 43,
+  "pixel_size_mm": 0.00184,
+  "profile": {
+    "explicitly_set": [
+      "finest_scale",
+      "patch_size",
+      "patch_stride",
+      "variational_refinement_alpha",
+      "variational_refinement_delta",
+      "variational_refinement_epsilon",
+      "variational_refinement_gamma",
+      "variational_refinement_iterations"
+    ],
+    "left_to_factory": [
+      "gradient_descent_iterations",
+      "preset",
+      "use_mean_normalization",
+      "use_spatial_propagation"
+    ],
+    "name": "legacy_script_2021",
+    "queried_opencv": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 16,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.0020000000949949026,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "requested": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": null,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "preset": null,
+      "use_mean_normalization": null,
+      "use_spatial_propagation": null,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.002,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "source": "setters explicitly present in references/legacy_dic/dic_displacement_fields.py"
+  },
+  "provenance": {
+    "campaign_manifest": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/constitutive-nonlocal-p0043-pad150-a400/manifest.json",
+    "campaign_manifest_sha256": "9e9dc8149bbafa0a5d7a45f4c89f5f88e45c933ab2306bd78300de8eab5a26bb",
+    "campaign_status_sha256": "92eb43240667592917070e8f46dacf08e9b110db0064661ec04f73233dd588c0",
+    "prepared_case_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "reference_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+    "reference_image_sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da",
+    "source_displacement_sha256": "49609c20c19dcdfd9e2274f214acadee371567a18ce3462090fbcfad0b95a15c"
+  },
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "status": "completed_symmetric_image_observation",
+  "warp": {
+    "iterations": 4,
+    "minimum_forward_jacobian": 0.9957136830524344,
+    "mode": "iterative_forward_inverse",
+    "residual_pixels": 5.775002023256093e-07
+  }
+}
