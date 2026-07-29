@@ -23,6 +23,7 @@ from fem_inhouse.measurement import (
     canonical_to_image_flow,
     direct_photometric_residual,
 )
+from fem_inhouse.postprocessing import cell_average
 from fem_inhouse.postprocessing.metrics import field_error_metrics
 from fem_inhouse.workflows.dic_observation_replay import (
     PIXEL_SIZE_MM,
@@ -126,7 +127,7 @@ def _quality_figure(
     figure.colorbar(error_image, ax=axes[0, 1], label="Equivalent strain")
     good = valid & (residual <= threshold)
     axes[0, 2].imshow(good.T, origin="upper", cmap="gray", vmin=0, vmax=1)
-    axes[0, 2].set_title("Primary support after q90 sensitivity mask")
+    axes[0, 2].set_title("q90 sensitivity support (not primary)")
     for axis in axes[0]:
         axis.set_xlabel("x element")
         axis.set_ylabel("y element")
@@ -216,18 +217,25 @@ def diagnose_dic_photometric_quality(
         raise ValueError("reference and final images must have the same shape")
     ux = np.load(prepared / "displacement_x_mm.npy", mmap_mode="r", allow_pickle=False)
     uy = np.load(prepared / "displacement_y_mm.npy", mmap_mode="r", allow_pickle=False)
-    element_shape = (ux.shape[0] - 1, ux.shape[1] - 1)
     crop = (
-        slice(RAW_CROP_ROW_START, RAW_CROP_ROW_START + element_shape[0]),
-        slice(RAW_CROP_COLUMN_START, RAW_CROP_COLUMN_START + element_shape[1]),
+        slice(RAW_CROP_ROW_START, RAW_CROP_ROW_START + ux.shape[0]),
+        slice(RAW_CROP_COLUMN_START, RAW_CROP_COLUMN_START + ux.shape[1]),
     )
     reference = np.ascontiguousarray(reference_full[crop])
     final = np.ascontiguousarray(final_full[crop])
-    if reference.shape != element_shape or uy.shape != ux.shape:
+    if reference.shape != ux.shape or uy.shape != ux.shape:
         raise ValueError("prepared displacement and image crop supports are incompatible")
-    displacement = np.stack((ux[:-1, :-1], uy[:-1, :-1]), axis=-1)
+    displacement = np.stack((ux, uy), axis=-1)
     flow = canonical_to_image_flow(displacement, pixel_size_mm=PIXEL_SIZE_MM)
     photometric = direct_photometric_residual(reference, final, flow)
+    residual_elements = cell_average(photometric.absolute_residual_grey_levels)
+    valid_nodes = photometric.valid_mask
+    valid_elements = (
+        valid_nodes[:-1, :-1]
+        & valid_nodes[1:, :-1]
+        & valid_nodes[:-1, 1:]
+        & valid_nodes[1:, 1:]
+    )
 
     loaded: list[
         tuple[str, float, Path, dict[str, Any], FloatArray, FloatArray]
@@ -254,8 +262,8 @@ def diagnose_dic_photometric_quality(
         loaded.append((label, float(alpha), replay, report, dic, observed))
     assert core_bounds is not None
     x0, x1, y0, y1 = core_bounds
-    residual_core = photometric.absolute_residual_grey_levels[x0:x1, y0:y1]
-    valid_core = photometric.valid_mask[x0:x1, y0:y1]
+    residual_core = residual_elements[x0:x1, y0:y1]
+    valid_core = valid_elements[x0:x1, y0:y1]
     if residual_core.shape != loaded[0][4].shape or not np.any(valid_core):
         raise ValueError("photometric and V3 replay core supports are incompatible")
     threshold = float(np.quantile(residual_core[valid_core], 0.90))
@@ -304,7 +312,9 @@ def diagnose_dic_photometric_quality(
         "mechanics_rerun": False,
         "micromorphic_identification_run": False,
         "photometric_residual": {
-            "definition": "abs(I40(x + u_DIC(x)) - I0(x))",
+            "definition": (
+                "cell_average(abs(I40(x + u_DIC(x)) - I0(x)))"
+            ),
             "interpolation": "bilinear",
             "intensity_normalisation": "none",
             "unit": "8-bit grey levels",

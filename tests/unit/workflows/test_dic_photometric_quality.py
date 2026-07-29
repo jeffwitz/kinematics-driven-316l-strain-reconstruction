@@ -57,10 +57,24 @@ def test_photometric_quality_workflow_is_traceable_and_refuses_overwrite(
     np.save(prepared / "displacement_y_mm.npy", np.zeros((13, 11)))
     (prepared / "manifest.json").write_text("{}\n", encoding="utf-8")
 
-    reference = np.full((400 + shape[0], 1211 + shape[1]), 100, dtype=np.uint8)
+    nodal_shape = (shape[0] + 1, shape[1] + 1)
+    reference = np.full(
+        (400 + nodal_shape[0], 1211 + nodal_shape[1]),
+        100,
+        dtype=np.uint8,
+    )
     current = reference.copy()
-    ramp = np.arange(np.prod(shape), dtype=np.uint8).reshape(shape) // 5
-    current[400 : 400 + shape[0], 1211 : 1211 + shape[1]] += ramp
+    nodal_ramp = np.arange(np.prod(nodal_shape), dtype=np.uint8).reshape(nodal_shape) // 5
+    current[
+        400 : 400 + nodal_shape[0],
+        1211 : 1211 + nodal_shape[1],
+    ] += nodal_ramp
+    ramp = 0.25 * (
+        nodal_ramp[:-1, :-1]
+        + nodal_ramp[1:, :-1]
+        + nodal_ramp[:-1, 1:]
+        + nodal_ramp[1:, 1:]
+    )
     reference_path = tmp_path / "reference.tif"
     current_path = tmp_path / "current.tif"
     Image.fromarray(reference).save(reference_path)
@@ -72,13 +86,13 @@ def test_photometric_quality_workflow_is_traceable_and_refuses_overwrite(
         tmp_path,
         label="local",
         dic=dic,
-        observed=dic + ramp.astype(float) * 1.0e-4,
+        observed=dic + ramp * 1.0e-4,
     )
     coupled = _replay(
         tmp_path,
         label="a100",
         dic=dic,
-        observed=dic + ramp.astype(float) * 0.5e-4,
+        observed=dic + ramp * 0.5e-4,
     )
     output = tmp_path / "output"
     figures = tmp_path / "figures"
@@ -120,7 +134,7 @@ def test_photometric_quality_rejects_corrupted_replay(tmp_path: Path) -> None:
     np.save(prepared / "displacement_x_mm.npy", np.zeros((4, 5)))
     np.save(prepared / "displacement_y_mm.npy", np.zeros((4, 5)))
     (prepared / "manifest.json").write_text("{}\n", encoding="utf-8")
-    image = np.zeros((403, 1215), dtype=np.uint8)
+    image = np.zeros((404, 1216), dtype=np.uint8)
     image_path = tmp_path / "image.tif"
     Image.fromarray(image).save(image_path)
     replay = _replay(
