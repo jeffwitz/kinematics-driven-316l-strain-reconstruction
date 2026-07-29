@@ -60,6 +60,12 @@
 : Conclusion: At native finest scale 0, the candidate-repeat EVM RMS is 4.52 percent of the final DIC RMS but remains spatially coherent, so it is an upper bound rather than a certified noise floor. Synthetic sinusoidal and band tests show strongly scale-dependent transfer.
 : Sources: primary: `validation/reference_data/dic_measurement_chain_v4/manifest.json`<br>primary: `validation/reference_data/dic_measurement_chain_v4/null_test_report.json`<br>primary: `validation/reference_data/dic_measurement_chain_v4/transfer_report.json`.
 
+**E-DIC-002 — Can Charbonnier epsilon remove the waviness of a recovered 32 px strain band without biasing its width and amplitude?**
+: Fidelity: synthetic 1024 by 1024 real-speckle warp at native scale 0. Parameters: 32 px Gaussian-FWHM EVM band; epsilon from 0.0002 to 2; all other DISFlow settings fixed.
+: Status: **exploratory**.
+: Conclusion: Increasing epsilon strongly suppresses along-band waviness, but the strong reduction is inseparable from peak attenuation and excessive band broadening. Intermediate epsilon 0.01 reduces waviness while preserving peak amplitude, but narrows the band to 26 px.
+: Sources: primary: `validation/reference_data/dic_epsilon_band32_v2/manifest.json`.
+
 **E-EBSD-001 — What structural scale is carried by the archived grain-mean Schmid field?**
 : Fidelity: independent EBSD/Schmid spatial statistic. Parameters: frozen exponential-tail fit, directional profiles, 4 by 4 block bootstrap.
 : Status: **verified**.
