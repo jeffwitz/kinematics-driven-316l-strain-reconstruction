@@ -6,6 +6,7 @@ import hashlib
 import json
 import platform
 import subprocess
+from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,15 @@ from numpy.lib.format import open_memmap
 from numpy.typing import NDArray
 from PIL import Image
 
+from fem_inhouse.config import (
+    CaseStudyConfig,
+    MaterialConfig,
+    MeshConfig,
+    NonlocalPlasticityConfig,
+    SolverConfig,
+)
 from fem_inhouse.measurement import disflow_profile, image_flow_to_canonical, run_disflow
+from fem_inhouse.solver import run_case_study
 from fem_inhouse.workflows.campaign_access import (
     load_json_object,
     partition_from_manifest,
@@ -239,6 +248,148 @@ def prepare_dic_multistep_history(
             "python": platform.python_version(),
             "numpy": np.__version__,
         },
+    }
+    (output / "report.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return report
+
+
+def run_dic_multistep_mechanics(
+    *,
+    prepared_case: str | Path,
+    source_campaign: str | Path,
+    history_directory: str | Path,
+    partition_id: int,
+    mode: str,
+    output_directory: str | Path,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """Run local P43 mechanics with measured or proportional 40-step boundaries."""
+
+    if mode not in {"measured", "proportional"}:
+        raise ValueError("mode must be measured or proportional")
+    prepared = Path(prepared_case)
+    campaign = Path(source_campaign)
+    history_root = Path(history_directory)
+    output = Path(output_directory)
+    if output.exists() and any(output.iterdir()) and not overwrite:
+        raise FileExistsError(f"refusing to overwrite non-empty directory: {output}")
+    output.mkdir(parents=True, exist_ok=True)
+
+    manifest_path = campaign / "manifest.json"
+    source_manifest = load_json_object(manifest_path)
+    _layout, partition = partition_from_manifest(source_manifest, partition_id)
+    sx0, sx1, sy0, sy1 = partition.solve_bounds
+    config_data = source_manifest["config"]
+    source_solver = SolverConfig(**config_data["solver"])
+    source_mesh = config_data["mesh"]
+    config = CaseStudyConfig(
+        mesh=MeshConfig(
+            nx=sx1 - sx0,
+            ny=sy1 - sy0,
+            base_pixel_size_mm=float(source_mesh["base_pixel_size_mm"]),
+            scale_factor=float(source_mesh["scale_factor"]),
+        ),
+        material=MaterialConfig(**config_data["material"]),
+        solver=replace(source_solver, increments=40),
+        nonlocal_plasticity=replace(
+            NonlocalPlasticityConfig(**config_data["nonlocal_plasticity"]),
+            enabled=False,
+            coupling_modulus_mpa=0.0,
+        ),
+    )
+    history_report_path = history_root / "report.json"
+    history_report = load_json_object(history_report_path)
+    if history_report.get("status") != "completed_direct_reference_history_endpoint_anchored":
+        raise ValueError("history campaign is not complete")
+    if int(history_report["partition_id"]) != partition_id:
+        raise ValueError("history campaign identifies another partition")
+    history_path = history_root / "anchored_history_mm.npy"
+    if _sha256(history_path) != history_report["outputs"][history_path.name]:
+        raise ValueError("anchored history hash does not match its report")
+    history = np.asarray(np.load(history_path, mmap_mode="r", allow_pickle=False))
+
+    ux = np.load(prepared / "displacement_x_mm.npy", mmap_mode="r", allow_pickle=False)
+    uy = np.load(prepared / "displacement_y_mm.npy", mmap_mode="r", allow_pickle=False)
+    yield_map = np.load(prepared / "yield_stress_mpa.npy", mmap_mode="r", allow_pickle=False)
+    hardening_map = np.load(
+        prepared / "hardening_coefficient_mpa.npy",
+        mmap_mode="r",
+        allow_pickle=False,
+    )
+    final_x = np.asarray(ux[sx0 : sx1 + 1, sy0 : sy1 + 1], dtype=np.float64)
+    final_y = np.asarray(uy[sx0 : sx1 + 1, sy0 : sy1 + 1], dtype=np.float64)
+    local_yield = np.asarray(yield_map[sx0:sx1, sy0:sy1], dtype=np.float64)
+    local_hardening = np.asarray(hardening_map[sx0:sx1, sy0:sy1], dtype=np.float64)
+    result = run_case_study(
+        config,
+        displacement_x_mm=final_x,
+        displacement_y_mm=final_y,
+        yield_stress_mpa=local_yield,
+        hardening_coefficient_mpa=local_hardening,
+        boundary_displacement_history_mm=history if mode == "measured" else None,
+        snapshots=(0.25, 0.5, 0.75, 1.0),
+        verbose=True,
+    )
+    fields = {
+        "U.npy": result.displacement_mm,
+        "S.npy": result.stress_mpa,
+        "E.npy": result.total_strain,
+        "PE.npy": result.plastic_strain,
+        "PEEQ.npy": result.equivalent_plastic_strain,
+        "RF.npy": result.reaction_force,
+    }
+    output_hashes: dict[str, str] = {}
+    for name, values in fields.items():
+        path = output / name
+        np.save(path, values)
+        output_hashes[name] = _sha256(path)
+    frame_hashes: dict[str, dict[str, str]] = {}
+    for fraction, frame in sorted(result.frames.items()):
+        frame_key = f"{fraction:.2f}"
+        frame_hashes[frame_key] = {}
+        frame_fields = {
+            "U": frame.displacement_mm,
+            "E": frame.total_strain,
+            "S": frame.stress_mpa,
+            "PEEQ": frame.equivalent_plastic_strain,
+        }
+        for field_name, values in frame_fields.items():
+            name = f"frame_{frame_key}_{field_name}.npy"
+            path = output / name
+            np.save(path, values)
+            digest = _sha256(path)
+            output_hashes[name] = digest
+            frame_hashes[frame_key][field_name] = digest
+    report = {
+        "schema_version": 1,
+        "status": "completed_local_measured_boundary_history",
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "git_sha": _git_sha(),
+        "partition_id": partition_id,
+        "mode": mode,
+        "boundary_history": (
+            "measured_direct_reference_endpoint_anchored"
+            if mode == "measured"
+            else "proportional_to_prepared_final"
+        ),
+        "nominal_increments": 40,
+        "snapshot_fractions": [0.25, 0.5, 0.75, 1.0],
+        "config": asdict(config),
+        "solve_bounds": list(partition.solve_bounds),
+        "core_bounds": list(partition.core_bounds),
+        "source": {
+            "campaign_manifest_sha256": _sha256(manifest_path),
+            "prepared_manifest_sha256": _sha256(prepared / "manifest.json"),
+            "history_report_sha256": _sha256(history_report_path),
+            "history_sha256": _sha256(history_path),
+        },
+        "diagnostics": (asdict(result.diagnostics) if result.diagnostics is not None else None),
+        "frames": frame_hashes,
+        "outputs": output_hashes,
+        "micromorphic_identification_run": False,
+        "nonlocal_plasticity_enabled": False,
     }
     (output / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"

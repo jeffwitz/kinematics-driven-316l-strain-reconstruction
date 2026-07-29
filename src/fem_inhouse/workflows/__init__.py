@@ -15,6 +15,7 @@ from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measure
 from fem_inhouse.workflows.dic_multistep import (
     anchor_displacement_history,
     prepare_dic_multistep_history,
+    run_dic_multistep_mechanics,
 )
 from fem_inhouse.workflows.dic_observation_replay import replay_dic_observation
 from fem_inhouse.workflows.dic_partition_selection import (
@@ -102,6 +103,7 @@ __all__ = [
     "propagate_dic_uncertainty",
     "reconstruct_historical_evm",
     "replay_dic_observation",
+    "run_dic_multistep_mechanics",
     "run_field_sweep",
     "run_low_fidelity",
     "run_nonlocality_diagnostic",
