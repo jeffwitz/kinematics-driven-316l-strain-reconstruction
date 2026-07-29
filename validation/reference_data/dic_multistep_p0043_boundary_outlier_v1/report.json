@@ -1,0 +1,77 @@
+{
+  "created_at_utc": "2026-07-29T22:56:53.525005+00:00",
+  "failure_locations": {
+    "element_coordinates": [
+      {
+        "ix": 305,
+        "iy": 609
+      },
+      {
+        "ix": 306,
+        "iy": 609
+      }
+    ],
+    "element_indices": [
+      402245,
+      402246
+    ],
+    "first_rejected_trial_maximum_engineering_strain": 82.25710692445949,
+    "last_rejected_trial_maximum_engineering_strain": 58.011313199249265
+  },
+  "git_sha": "9eadd630ed6b410cadae675d2a50f061bc7296fa",
+  "interpretation": {
+    "claim_boundary": "This exploratory audit does not prove every measured history state is physically exact or force-synchronised.",
+    "dic_photometric_outlier_at_state4": "not_observed",
+    "dic_spatial_outlier_at_failure_location": "not_observed",
+    "most_supported_cause": "nonlinear solver/globalisation failure near the first local plastic transition, not a measured DIC boundary spike",
+    "newton_rejected_strain_explained_by_measured_boundary": false
+  },
+  "key_findings": {
+    "maximum_measured_failure_element_gauss_strain_states_1_to_n": 0.00015936600407075868,
+    "minimum_rejected_to_measured_strain_ratio": 364013.1001433165,
+    "state3_evm_rms_fraction_of_final": 0.047894747588824456,
+    "state4_affine_epsilon_xx_fraction_of_final": 0.07293490824171663,
+    "state4_affine_epsilon_yy_fraction_of_final": 0.010894256742401194,
+    "state4_boundary_nonaffine_fraction": 0.0027257810314635024,
+    "state4_failure_element_gauss_strain_maximum": 8.886810384467134e-05,
+    "state4_is_largest_photometric_rms_states_1_to_n": false,
+    "state4_photometric_rms_grey": 5.063378211400654
+  },
+  "outputs": {
+    "p0043_early_boundary_outlier_diagnostic.png": "f4c9ee10bf9a4eae69bee0b7da74c1f880e65bf39d515d64ec481e4fce653c92",
+    "p0043_measured_vs_proportional_path.png": "7d2a5084ab12d11c7c331f4329d19990e9b4dc865d835653afdc059cfe583214",
+    "state_metrics.csv": "6e5bd39308a7b6652591f874a252cc3cd32018147381db1ab1deacdb129a7620"
+  },
+  "partition_id": 43,
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "source": {
+    "failure_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_mechanics_p0043_measured_repaired_v1/failure_report.json",
+    "failure_report_sha256": "49bd2f53771ec1071faa698f7c42ea9de881ea3a9947dd860e096b0022e01043",
+    "history": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/repaired_history_mm.npy",
+    "history_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
+    "history_report_sha256": "d6e8e2f5d216b2e1f6c5e7f515c8d8aa558186579194de4ccf09797573560076",
+    "history_sha256": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0",
+    "reference_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+    "reference_image_sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da"
+  },
+  "state_index_semantics": "ordered direct-reference image index; not force-synchronised load fraction",
+  "status": "completed_exploratory_dic_boundary_outlier_audit",
+  "support": {
+    "axis_convention": "canonical array axes (x,y), components (ux,uy)",
+    "node_shape": [
+      661,
+      611
+    ],
+    "pixel_size_mm": 0.00184,
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ]
+  }
+}

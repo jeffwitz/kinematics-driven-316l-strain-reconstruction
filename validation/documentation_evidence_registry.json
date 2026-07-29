@@ -496,9 +496,9 @@
       "id": "E-DIC-007",
       "question": "Can the local P43 mechanics replay the measured 40-state DIC boundary history?",
       "fidelity": "full 660 by 610 element local MFront solve with measured boundary states",
-      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; state 3 measurement-only bridge diagnostic; transactional internal states; unchanged constitutive settings",
+      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; state 3 and state 4 measurement-only bridge diagnostics; transactional internal states; early-state spatial and photometric outlier audit; unchanged constitutive settings",
       "status": "blocked negative result",
-      "conclusion": "The documented optical-flow corruption is removed. A transparent bridge of the largest temporal-curvature state and a secant-corrected displacement predictor still fail on the state-3-to-state-4 transition. Measured-history prediction is not yet available.",
+      "conclusion": "The documented late optical-flow corruption is removed. Early states 3 and 4 contain no spatial or photometric spike at the rejected elements, while Newton creates strains at least 3.64e5 times larger than measured. Transparent state bridges do not move the limit. Measured-history prediction remains blocked by nonlinear globalisation.",
       "sources": [
         {
           "path": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
@@ -574,6 +574,19 @@
             {"path": "/diagnostics/boundary_history_predictor", "operator": "equals", "expected": "elastic"},
             {"path": "/diagnostics/first_cutback/pseudo_time", "operator": "equals", "expected": 0.1},
             {"path": "/diagnostics/last_cutback/pseudo_time", "operator": "less_than", "expected": 0.0751}
+          ]
+        },
+        {
+          "path": "validation/reference_data/dic_multistep_p0043_boundary_outlier_v1/report.json",
+          "role": "primary early-state boundary and image outlier audit",
+          "assertions": [
+            {"path": "/status", "operator": "equals", "expected": "completed_exploratory_dic_boundary_outlier_audit"},
+            {"path": "/key_findings/state3_evm_rms_fraction_of_final", "operator": "less_than", "expected": 0.05},
+            {"path": "/key_findings/state4_boundary_nonaffine_fraction", "operator": "less_than", "expected": 0.003},
+            {"path": "/key_findings/minimum_rejected_to_measured_strain_ratio", "operator": "greater_than", "expected": 300000.0},
+            {"path": "/key_findings/state4_is_largest_photometric_rms_states_1_to_n", "operator": "equals", "expected": false},
+            {"path": "/interpretation/dic_spatial_outlier_at_failure_location", "operator": "equals", "expected": "not_observed"},
+            {"path": "/interpretation/dic_photometric_outlier_at_state4", "operator": "equals", "expected": "not_observed"}
           ]
         }
       ]
@@ -711,6 +724,14 @@
     {
       "source": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/corrupted_frames_diagnostic.png",
       "target": "evidence/p43_multistep_corrupted_frames.png"
+    },
+    {
+      "source": "validation/figures/dic_multistep_p0043_boundary_outlier_v1/p0043_early_boundary_outlier_diagnostic.png",
+      "target": "evidence/p43_early_boundary_outlier_diagnostic.png"
+    },
+    {
+      "source": "validation/figures/dic_multistep_p0043_boundary_outlier_v1/p0043_measured_vs_proportional_path.png",
+      "target": "evidence/p43_measured_vs_proportional_path.png"
     }
   ]
 }

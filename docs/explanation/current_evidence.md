@@ -312,6 +312,40 @@ available. Instrumentation shows that the undamped Newton correction creates
 trial engineering strains of 82.3 and 58.0 in neighbouring upper-boundary
 elements; MFront is rejecting this nonphysical overshoot.
 
+State 3 is genuinely early: its EVM RMS is only 4.79% of the final EVM RMS.
+An image and boundary audit nevertheless finds no corresponding DIC outlier.
+At state 4, the non-affine part of the boundary increment is only 0.273% of
+its RMS amplitude; its photometric residual is not the largest among states
+1--6. The exact measured Gauss strain in the rejected elements is
+`8.89e-5`, while Newton proposes strains of order 58--82. Across states 1--6,
+the rejected-to-measured ratio remains above `3.64e5`.
+
+```{figure} ../_static/evidence/p43_early_boundary_outlier_diagnostic.png
+:alt: Audit of early measured EVM, boundary residuals, local strains and photometric residuals at the rejected elements
+:width: 100%
+
+The boundary remains smooth at the two upper-edge elements rejected by
+MFront. The enormous trial strain is created by the unconverged interior
+Newton correction, not imposed by the measured displacement.
+```
+
+The apparently surprising convergence of the final field is not a
+contradiction. The historical baseline reaches that field through a straight
+proportional displacement ramp; it does not replay the measured intermediate
+states. At state 4, measured affine transverse contraction has reached 7.29%
+of its final value, but affine axial extension only 1.09%. The two calculations
+therefore cross the heterogeneous plastic activation region along different
+paths.
+
+```{figure} ../_static/evidence/p43_measured_vs_proportional_path.png
+:alt: Measured affine boundary strain path and proportional path to the same final displacement field
+:width: 100%
+
+The left panel shows the complete paths; the right panel magnifies states
+0--6. Convergence on the dashed path does not validate Newton globalisation on
+the coloured measured path.
+```
+
 Two transparent temporal-bridge controls have since been run. Replacing the
 largest boundary-history curvature state by a linear interpolation, together
 with a secant-corrected displacement predictor, still stops after three
@@ -328,7 +362,10 @@ than interpolated. Further solver-driven frame deletion is not justified.
 A residual line search prevents the immediate overshoot but was stopped after
 2 h 47 min because it accumulated iterations and cutbacks. The remaining
 limit is therefore Newton globalisation near the onset reached at the third
-state, not one isolated DIC frame.
+state, not one isolated DIC frame. The next useful instrumentation is the
+free-DOF Newton correction immediately before the rejected constitutive trial,
+including its elementwise strain increment and tangent conditioning. Further
+frame deletion is not supported by the measurement audit.
 
 ## Not demonstrated
 

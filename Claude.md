@@ -693,10 +693,26 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   éléments de bord. La suppression de frames supplémentaires est donc
   arrêtée : le verrou est la globalisation de Newton au voisinage de cet état,
   pas une frame DIC isolée ;
+- un audit spatial et photométrique explicite des états 1–6 confirme que
+  l'état 3 est réellement précoce (`4,79 %` de l'EVM RMS finale), mais ne
+  trouve aucun outlier aux éléments 402245/402246. À l'état 4, le résidu
+  non affine du bord ne représente que `0,273 %` de l'amplitude RMS, le
+  résidu photométrique n'est pas maximal, et la déformation exacte aux points
+  de Gauss fautifs vaut au plus `8,89e-5`. Les essais Newton rejetés de
+  `58–82` sont au moins `3,64e5` fois plus grands que toute déformation
+  mesurée sur ces éléments aux états 1–6 ;
+- la convergence du champ final n'est pas contradictoire : le baseline suit
+  une rampe proportionnelle droite vers l'endpoint, alors que l'histoire DIC
+  suit un chemin différent. À l'état 4, la contraction affine transverse a
+  atteint `7,29 %` de sa valeur finale, mais l'extension affine axiale
+  seulement `1,09 %`. Les deux calculs ne traversent donc pas l'activation
+  plastique hétérogène par le même chemin ;
 - l'état constitutif est restauré après chaque tentative et aucun résultat
   mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
-  bloqué. Une éventuelle interpolation de l'état cible 4 doit constituer une
-  nouvelle expérience pré-enregistrée ; aucun rejet automatique piloté par la
+  bloqué. La prochaine instrumentation doit porter sur la correction Newton
+  des ddl libres avant l'essai constitutif rejeté (norme, incrément de
+  déformation élémentaire, conditionnement de la tangente), pas sur une
+  nouvelle suppression de frame. Aucun rejet automatique piloté par la
   convergence et aucun filtre de Kalman ne sont autorisés implicitement.
 
 Artefacts : `validation/dic_multistep_p0043_audit.md`,
@@ -707,7 +723,9 @@ Artefacts : `validation/dic_multistep_p0043_audit.md`,
 `validation/dic_multistep_p0043_state4_bridge_preregistration.md`,
 `validation/dic_multistep_p0043_state_bridge_indexing_amendment.md` et
 `validation/dic_multistep_p0043_blocked_state4_preregistration.md` et
-`validation/dic_multistep_p0043_state_bridge_results.md`.
+`validation/dic_multistep_p0043_state_bridge_results.md`, puis
+`validation/dic_multistep_p0043_boundary_outlier_analysis_plan.md` et
+`validation/dic_multistep_p0043_boundary_outlier_results.md`.
 
 ### Lot V7 — Test jumeau de la revendication data-driven
 

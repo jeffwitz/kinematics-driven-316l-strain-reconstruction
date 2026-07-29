@@ -15,6 +15,7 @@ authoritative option list for the installed revision.
 | `characterise-dic-measurement-chain` | measure DISFlow null response and synthetic spatial transfer |
 | `replay-dic-observation` | pass archived FEM displacement through the image-level DISFlow operator |
 | `diagnose-dic-photometric-quality` | relate direct image residuals to archived V3 FEM/DIC field errors |
+| `diagnose-dic-boundary-history` | audit early DIC boundary states at recorded nonlinear-failure locations |
 | `diagnose-nonlocality` | run an output-only Helmholtz diagnostic |
 | `estimate-nonlocal-reference` | derive $H_{\mathrm{ref}}$ from a local campaign |
 | `validate-coupled-nonlocal` | compare raw coupled fields with DIC |
@@ -114,6 +115,14 @@ prepared case, output and figure directories, plus one or more
 `legacy_script_2021` V3 artefact with matching core bounds and immutable field
 hashes. The command performs no mechanics and does not replace primary
 unmasked metrics by its q90-residual sensitivity.
+
+`diagnose-dic-boundary-history` requires an immutable history array, its
+report, a measured-history mechanical failure report, the raw-image directory,
+and separate data and figure outputs. `--maximum-state` defaults to 6. It
+separates affine and non-affine boundary motion, evaluates exact CPS4 strains
+at the rejected elements, and computes direct photometric residuals. It does
+not change the history, rerun mechanics, delete a frame or interpolate an
+internal variable.
 
 `propagate-dic-uncertainty` requires final and repeated-final images, the
 prepared case, output and figure directories, plus one or more
