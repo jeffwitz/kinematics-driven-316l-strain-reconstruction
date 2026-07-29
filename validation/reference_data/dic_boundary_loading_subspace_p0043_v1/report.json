@@ -1,0 +1,114 @@
+{
+  "affine_noise": {
+    "epsilon_xx_sigma": 1.5276440419289723e-05,
+    "epsilon_yy_sigma": 1.330655381445779e-05,
+    "excluded_repaired_states": [
+      31,
+      32
+    ],
+    "gamma_xy_sigma": 3.7621347518642962e-06,
+    "increment_epsilon_xx_sigma": 2.1604149225744058e-05,
+    "maximum_nonaffine_fraction": 0.3823649387099835,
+    "median_nonaffine_fraction": 0.09627639174037994,
+    "method": "affine fit of second-difference noise realisations",
+    "noise_realisations": 37
+  },
+  "created_at_utc": "2026-07-29T23:55:15.484182+00:00",
+  "git_sha": "5bcb864c47f51d149526022fb1771c99e99477ec",
+  "history_modified": false,
+  "loading_subspace": {
+    "energy_floor": 0.9,
+    "leading_energy_fraction": [
+      0.9991178446595507,
+      0.000869594610140323,
+      1.2215408663426842e-05,
+      1.0287614022604713e-07,
+      7.825409580575445e-08,
+      4.879254090860798e-08
+    ],
+    "leading_roughness": [
+      0.00230867331770421,
+      0.05390977971023944,
+      0.10872589288636013,
+      0.5810791640273227,
+      0.4714198868519296,
+      0.6143220625685153
+    ],
+    "low_dimensional_model_supported": true,
+    "retained_energy_fraction": 0.9999997329324503,
+    "roughness_threshold": 0.5,
+    "signal_mode_count": 5,
+    "signal_mode_indices": [
+      1,
+      2,
+      3,
+      5,
+      41
+    ]
+  },
+  "mechanics_rerun": false,
+  "outliers": {
+    "largest_affine_strain_z_state": 20,
+    "largest_loading_z_state": 3,
+    "registered_expectation": "state 4 keeps |z| >= 3 on at least one score",
+    "state4_affine_strain_z": 1.6649556588441843,
+    "state4_is_registered_outlier": false,
+    "state4_loading_z": 0.13013775443886416
+  },
+  "outputs": {
+    "p0043_boundary_loading_subspace.png": "de31111eae09141507d41ca9c096bf98572851ea3f0f3021fc7f9c224b30b0d9",
+    "state_metrics.csv": "ebd041cdbea498030da6247da36f644a7fd79fd43510933d2765adceee061dc7"
+  },
+  "partition_id": 43,
+  "preregistration": "validation/dic_boundary_temporal_regularisation_preregistration.md",
+  "schema_version": 1,
+  "signal_to_noise": {
+    "increments_below_unity": 5,
+    "maximum": 6.805725691416135,
+    "median": 3.521770370188542,
+    "minimum": 0.6215262843575279,
+    "minimum_state": 8
+  },
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "source": {
+    "history": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/repaired_history_mm.npy",
+    "history_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
+    "history_report_sha256": "d6e8e2f5d216b2e1f6c5e7f515c8d8aa558186579194de4ccf09797573560076",
+    "history_sha256": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0"
+  },
+  "status": "completed_stage0_boundary_noise_and_loading_subspace",
+  "support": {
+    "axis_convention": "canonical array axes (x,y), components (ux,uy)",
+    "boundary_nodes": 2540,
+    "core_bounds": [
+      1440,
+      1800,
+      930,
+      1240
+    ],
+    "node_shape": [
+      661,
+      611
+    ],
+    "pixel_size_mm": 0.00184,
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ],
+    "states": 41
+  },
+  "temporal_noise": {
+    "archived_repeated_frame_sigma_px": 0.06283,
+    "claim_boundary": "upper bound; real temporal curvature inflates it",
+    "estimator": "second temporal difference, Var(d2) = 6 sigma^2",
+    "rms_mm": 8.6508982075617e-05,
+    "rms_px": 0.047015751128052716,
+    "robust_mm": 9.40109211733192e-05,
+    "robust_px": 0.0510928919420213
+  }
+}

@@ -16,6 +16,11 @@ from fem_inhouse.workflows.dic_boundary_history import (
     diagnose_dic_boundary_history,
     element_gauss_engineering_strain,
 )
+from fem_inhouse.workflows.dic_boundary_loading_subspace import (
+    diagnose_dic_boundary_loading_subspace,
+    temporal_noise_estimate,
+    temporal_roughness,
+)
 from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
 from fem_inhouse.workflows.dic_multistep import (
     anchor_displacement_history,
@@ -94,6 +99,7 @@ __all__ = [
     "compute_reference_hardening_modulus",
     "contiguous_residual_on_support",
     "diagnose_dic_boundary_history",
+    "diagnose_dic_boundary_loading_subspace",
     "diagnose_dic_photometric_quality",
     "diagnose_section_equilibrium_campaigns",
     "element_gauss_engineering_strain",
@@ -125,6 +131,8 @@ __all__ = [
     "screen_frozen_field",
     "select_identification_candidates",
     "symmetric_color_limit",
+    "temporal_noise_estimate",
+    "temporal_roughness",
     "validate_coupled_nonlocal_campaign",
     "validate_low_fidelity_ranking",
     "validate_material_map_controls",
