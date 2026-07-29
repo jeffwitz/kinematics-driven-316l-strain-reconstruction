@@ -672,16 +672,35 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   dernier, dans deux éléments voisins du bord supérieur. MFront rejette donc
   correctement un sursaut du Newton non amorti ; ce n'est pas une limite
   constitutive sur la petite déformation DIC imposée ;
+- une tentative de line search résiduelle a empêché les premiers sursauts mais
+  a été arrêtée après `2 h 47` : elle accumulait les itérations et cutbacks
+  sans fournir un chemin de production acceptable ; aucun résultat partiel
+  n'a été conservé ;
+- un diagnostic indépendant de courbure temporelle place son maximum à l'état
+  3 (`4,214e-4 mm` RMS). Son remplacement pré-enregistré par
+  `u3=(u2+u4)/2` préserve bit-à-bit les autres états et l'endpoint, mais le
+  calcul échoue encore sur la transition vers l'état 4 : 3 incréments
+  convergés, 11 cutbacks, maximum de déformation rejetée `69,529` puis
+  `90,230` ;
+- le prédicteur `secant-corrected-elastic` n'extrapole que la correction de
+  déplacement intérieur. Il ne change pas le protocole MGIS : toutes les
+  variables internes repartent du dernier état engagé, sont intégrées pendant
+  l'incrément, puis engagées une seule fois après convergence. Leur
+  interpolation directe reste interdite ;
 - l'état constitutif est restauré après chaque tentative et aucun résultat
   mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
-  bloqué jusqu'à un essai pré-enregistré de line search résiduelle optionnelle,
-  avec non-régression stricte du chemin proportionnel.
+  bloqué. Une éventuelle interpolation de l'état cible 4 doit constituer une
+  nouvelle expérience pré-enregistrée ; aucun rejet automatique piloté par la
+  convergence et aucun filtre de Kalman ne sont autorisés implicitement.
 
 Artefacts : `validation/dic_multistep_p0043_audit.md`,
 `validation/dic_multistep_p0043_preregistration.md`,
 `validation/dic_multistep_p0043_endpoint_amendment.md`,
 `validation/dic_multistep_p0043_corrupted_frames_amendment.md` et
-`validation/dic_multistep_p0043_results.md`.
+`validation/dic_multistep_p0043_results.md`,
+`validation/dic_multistep_p0043_state4_bridge_preregistration.md`,
+`validation/dic_multistep_p0043_state_bridge_indexing_amendment.md` et
+`validation/dic_multistep_p0043_state_bridge_results.md`.
 
 ### Lot V7 — Test jumeau de la revendication data-driven
 
