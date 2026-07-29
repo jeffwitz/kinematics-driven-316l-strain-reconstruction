@@ -145,8 +145,9 @@ Livrable autonome :
   de mesure de l'épaisseur ;
 - les paramètres publiés sont `alpha=100`, `delta=1`, `gamma=0`,
   `epsilon=0,002`, 30 itérations ; la version OpenCV, le preset, la pyramide
-  et les patches restent absents, et l'API OpenCV publique ne permet pas de
-  régler explicitement l'epsilon Charbonnier ;
+  et les patches restent absents ; OpenCV 4.14 permet d'appliquer l'epsilon
+  Charbonnier rapporté, mais cela ne résout pas l'absence de version et de
+  configuration historique complète ;
 - `essais/CP_dataset.h5` contient orientations et facteur de Schmid déclarés
   co-enregistrés sur `3600×3100`, mais le pas EBSD natif et la méthode de
   recalage sont absents ; 60 valeurs hors domaine et six pixels nuls doivent

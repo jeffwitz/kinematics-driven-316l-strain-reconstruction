@@ -122,10 +122,11 @@ set:
 
 No executable DIC configuration file, OpenCV version, pyramid configuration,
 patch size, finest scale or patch stride was found. The standard OpenCV
-`DISOpticalFlow` API exposes the reported variational-refinement weights and
-iteration count, but does not expose the Charbonnier epsilon as a configurable
-property. Consequently, the historical chain cannot yet be reproduced
-bit-for-bit from the manuscript alone.
+`DISOpticalFlow` API in the declared reproduction environment exposes the
+reported variational-refinement weights, epsilon and iteration count.
+Consequently, these five values can be applied. The historical chain still
+cannot be reproduced bit-for-bit from the manuscript alone because its OpenCV
+version, preset and remaining DIS parameters are missing.
 
 The new raw sequence makes a declared **reproduction implementation**
 possible. Its OpenCV version, preset and every queryable parameter must be

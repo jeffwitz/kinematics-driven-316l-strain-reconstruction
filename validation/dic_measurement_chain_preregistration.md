@@ -43,10 +43,11 @@ Its report must record:
 - 30 variational-refinement iterations;
 - every other queryable DIS parameter.
 
-The manuscript value Charbonnier \(\epsilon=0.002\) shall be recorded as
-reported but **not applied** if the selected public API does not expose it.
-In that case, the result may not be called a bitwise reproduction of the
-historical production chain.
+The selected OpenCV 4.14 API exposes the Charbonnier epsilon. The manuscript
+value \(\epsilon=0.002\) shall therefore be applied and recorded. The result
+may still not be called a bitwise reproduction of the historical production
+chain because the historical OpenCV version and remaining DIS defaults are
+unknown.
 
 ## V2.1 — Null test
 
@@ -78,7 +79,10 @@ These labels do not replace the numerical value.
 ## V2.2 — Synthetic transfer and imposed bands
 
 Warp `000294.tif` using smooth, known displacement fields and recover them
-with the identical implementation and settings.
+with the identical implementation and settings. To make the 28 synthetic
+correlations tractable while avoiding any window chosen from a result, use
+the fixed central \(1024\times1024\) pixels of the registered crop. The null
+test remains full-crop.
 
 ### Sinusoidal sweep
 
