@@ -97,6 +97,34 @@ def periodic_residual_on_support(
     return sign * np.asarray(flow[np.ix_(x_indices, y_indices)], dtype=np.float64)
 
 
+def contiguous_residual_on_support(
+    centred_flow_pixels: NDArray[np.generic],
+    *,
+    support_shape: tuple[int, int],
+    origin_x: int,
+    origin_y: int,
+    sign: int,
+) -> FloatArray:
+    """Extract one signed measured window without wrap or interpolation."""
+
+    flow = np.asarray(centred_flow_pixels, dtype=np.float64)
+    if flow.ndim != 3 or flow.shape[-1] != 2 or not np.isfinite(flow).all():
+        raise ValueError("centred_flow_pixels must have finite shape (nx, ny, 2)")
+    nx, ny = (int(value) for value in support_shape)
+    if nx < 1 or ny < 1:
+        raise ValueError("support_shape must be positive")
+    if sign not in {-1, 1}:
+        raise ValueError("sign must be -1 or 1")
+    if origin_x < 0 or origin_y < 0:
+        raise ValueError("window origins must be nonnegative")
+    if origin_x + nx > flow.shape[0] or origin_y + ny > flow.shape[1]:
+        raise ValueError("contiguous residual window exceeds the recorded crop")
+    return sign * np.asarray(
+        flow[origin_x : origin_x + nx, origin_y : origin_y + ny],
+        dtype=np.float64,
+    )
+
+
 def _metric_row(reference: FloatArray, prediction: FloatArray) -> dict[str, float]:
     errors = field_error_metrics(reference, prediction)
     relative = localization_overlap_metrics(reference, prediction, top_fraction=0.1)
@@ -357,14 +385,15 @@ def propagate_dic_uncertainty(
     rng = np.random.default_rng(seed)
     rows: list[dict[str, Any]] = []
     for sample in range(sample_count):
-        shift_x = int(rng.integers(0, centred_flow.shape[0]))
-        shift_y = int(rng.integers(0, centred_flow.shape[1]))
+        support_shape = (sx1 - sx0 + 1, sy1 - sy0 + 1)
+        origin_x = int(rng.integers(0, centred_flow.shape[0] - support_shape[0] + 1))
+        origin_y = int(rng.integers(0, centred_flow.shape[1] - support_shape[1] + 1))
         sign = int(rng.choice((-1, 1)))
-        residual_image = periodic_residual_on_support(
+        residual_image = contiguous_residual_on_support(
             centred_flow,
-            solve_bounds=solve_bounds,
-            shift_x=shift_x,
-            shift_y=shift_y,
+            support_shape=support_shape,
+            origin_x=origin_x,
+            origin_y=origin_y,
             sign=sign,
         )
         residual_canonical_mm = image_flow_to_canonical(residual_image, pixel_size_mm=PIXEL_SIZE_MM)
@@ -378,8 +407,8 @@ def propagate_dic_uncertainty(
             rows.append(
                 {
                     "sample": sample,
-                    "shift_x": shift_x,
-                    "shift_y": shift_y,
+                    "origin_x": origin_x,
+                    "origin_y": origin_y,
                     "sign": sign,
                     "label": case["label"],
                     "alpha": case["alpha"],
@@ -412,7 +441,9 @@ def propagate_dic_uncertainty(
             "repeat_image_sha256": _sha256(repeat_path),
             "component_means_pixels": component_means.tolist(),
             "component_standard_deviations_pixels": np.std(centred_flow, axis=(0, 1)).tolist(),
-            "translation": "uniform periodic shifts over the canonical crop",
+            "translation": (
+                "uniform contiguous windows wholly inside the canonical crop; no periodic join"
+            ),
             "sign": "equiprobable -1 or +1",
         },
         "prepared_case": {

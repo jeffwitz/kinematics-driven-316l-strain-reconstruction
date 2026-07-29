@@ -21,6 +21,7 @@ from fem_inhouse.workflows.dic_photometric_quality import (
     diagnose_dic_photometric_quality,
 )
 from fem_inhouse.workflows.dic_uncertainty_propagation import (
+    contiguous_residual_on_support,
     periodic_residual_on_support,
     propagate_dic_uncertainty,
 )
@@ -74,6 +75,7 @@ __all__ = [
     "collect_identification_results",
     "common_color_limits",
     "compute_reference_hardening_modulus",
+    "contiguous_residual_on_support",
     "diagnose_dic_photometric_quality",
     "diagnose_section_equilibrium_campaigns",
     "estimate_reference_hardening_from_campaign",
