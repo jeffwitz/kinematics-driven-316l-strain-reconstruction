@@ -5,6 +5,7 @@ import numpy as np
 from fem_inhouse.workflows.dic_uncertainty_propagation import (
     _ranking_probabilities,
     _summaries,
+    contiguous_residual_on_support,
     periodic_residual_on_support,
 )
 
@@ -22,6 +23,18 @@ def test_periodic_residual_samples_nodal_support_and_sign() -> None:
     expected_y = (np.arange(4, 7) + 3) % 5
     assert sampled.shape == (3, 3, 2)
     np.testing.assert_array_equal(sampled, -flow[np.ix_(expected_x, expected_y)])
+
+
+def test_contiguous_residual_never_introduces_a_wrap_join() -> None:
+    flow = np.arange(7 * 8 * 2, dtype=float).reshape(7, 8, 2)
+    sampled = contiguous_residual_on_support(
+        flow,
+        support_shape=(3, 4),
+        origin_x=2,
+        origin_y=3,
+        sign=1,
+    )
+    np.testing.assert_array_equal(sampled, flow[2:5, 3:7])
 
 
 def test_surrogate_summaries_and_rankings_are_deterministic() -> None:
