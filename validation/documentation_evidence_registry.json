@@ -520,7 +520,9 @@
             {"path": "/constitutive_state_committed_after_failure", "operator": "equals", "expected": false},
             {"path": "/diagnostics/converged_increments", "operator": "equals", "expected": 3},
             {"path": "/diagnostics/first_cutback/increment", "operator": "equals", "expected": 4},
-            {"path": "/diagnostics/first_cutback/reason", "operator": "equals", "expected": "MFront integration failed with status -1"}
+            {"path": "/diagnostics/first_cutback/reason", "operator": "equals", "expected": "MFront integration failed with status -1"},
+            {"path": "/diagnostics/first_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 80.0},
+            {"path": "/diagnostics/last_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 50.0}
           ]
         }
       ]

@@ -308,9 +308,12 @@ Common scales are retained within each field family.
 
 This is a reported negative result. It does not invalidate the measured path,
 but it means that a conditional temporal-prediction result is not yet
-available. The next numerical test must distinguish a MFront trial-integration
-limitation from overshoot of the undamped global Newton method. Solver changes
-must be pre-registered and must preserve the converged proportional baseline.
+available. Instrumentation shows that the undamped Newton correction creates
+trial engineering strains of 82.3 and 58.0 in neighbouring upper-boundary
+elements; MFront is rejecting this nonphysical overshoot. An optional
+residual-controlled line search is therefore the next numerical experiment.
+It must be pre-registered and must preserve the converged proportional
+baseline.
 
 ## Not demonstrated
 
