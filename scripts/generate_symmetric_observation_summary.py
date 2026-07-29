@@ -16,13 +16,83 @@ CASES = (
     (2, "a200", "results/constitutive-nonlocal-p0043-pad150-a200"),
     (4, "a400", "results/constitutive-nonlocal-p0043-pad150-a400"),
 )
+PROFILES = ("legacy_script_2021", "declared_medium_v4")
 
 
 def _report(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _summary_row(
+    *,
+    alpha: int,
+    case: str,
+    profile: str,
+    report: dict[str, Any],
+) -> dict[str, Any]:
+    raw = report["metrics"]["raw"]
+    observed = report["metrics"]["observed"]
+    return {
+        "alpha": alpha,
+        "case": case,
+        "profile": profile,
+        "status": report["status"],
+        "evm_post_filter_applied": report["evm_post_filter_applied"],
+        "raw": {
+            "relative_l2": raw["errors"]["relative_l2_error"],
+            "pearson": raw["errors"]["pearson_correlation"],
+            "rmse": raw["errors"]["rmse"],
+            "top10_iou": raw["top10"]["intersection_over_union"],
+            "absolute_q90_iou": raw["absolute_q90"]["intersection_over_union"],
+            "absolute_q90_active_fraction": raw["absolute_q90"][
+                "prediction_active_fraction"
+            ],
+        },
+        "observed": {
+            "relative_l2": observed["errors"]["relative_l2_error"],
+            "pearson": observed["errors"]["pearson_correlation"],
+            "rmse": observed["errors"]["rmse"],
+            "top10_iou": observed["top10"]["intersection_over_union"],
+            "absolute_q90_iou": observed["absolute_q90"][
+                "intersection_over_union"
+            ],
+            "absolute_q90_active_fraction": observed["absolute_q90"][
+                "prediction_active_fraction"
+            ],
+        },
+    }
+
+
+def _write_summary(source: Path) -> None:
+    rows = []
+    for profile in PROFILES:
+        for alpha, case, _ in CASES:
+            report = _report(source / f"{case}_{profile}" / "report.json")
+            rows.append(
+                _summary_row(
+                    alpha=alpha,
+                    case=case,
+                    profile=profile,
+                    report=report,
+                )
+            )
+    payload = {
+        "schema_version": 1,
+        "status": "completed_symmetric_image_observation",
+        "partition_id": 43,
+        "primary_profile": "legacy_script_2021",
+        "sensitivity_profile": "declared_medium_v4",
+        "mechanics_rerun": False,
+        "rows": rows,
+    }
+    (source / "summary.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def generate(source: Path, figures: Path) -> None:
+    _write_summary(source)
     figures.mkdir(parents=True, exist_ok=True)
     primary = {
         alpha: source / f"{label}_legacy_script_2021"
