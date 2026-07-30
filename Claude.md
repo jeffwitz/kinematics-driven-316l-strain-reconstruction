@@ -818,6 +818,51 @@ Artefacts :
 `validation/dic_multistep_p0043_observed_path_comparison_preregistration.md`
 et `validation/dic_multistep_p0043_observed_path_comparison_results.md`.
 
+**Filtrage modal du bord, 2026-07-30.** Le bord mesuré est tronqué à 3 modes de
+son écart à la rampe droite vers l'endpoint. Origine, endpoint et intérieur
+restent bit-à-bit identiques ; le Dirichlet reste dur et exact, seule la donnée
+imposée change.
+
+- contenu retiré `0,00972 px` contre un bruit mesuré de `0,0511 px`, soit
+  **`5,3×` sous le plancher de bruit** ; `99,989 %` de l'énergie de l'écart
+  conservée ;
+- la règle de rugosité de l'étape 0 sélectionne **indépendamment exactement
+  3 modes** (`0,031 / 0,169 / 0,221` puis `0,561 / 0,512 / 0,660`). Le rang fixé
+  d'avance et le critère mesuré coïncident sans ajustement ;
+- **effet numérique majeur** : 40 incréments sur 40, **zéro cutback**, 245
+  itérations Newton en `34,8 min`, contre 65/68, 3 cutbacks et 469 itérations en
+  `68,1 min` sans filtre. C'est le comportement d'une rampe proportionnelle
+  (225 itérations). La difficulté numérique de l'histoire mesurée était donc
+  portée **entièrement par du contenu sous le plancher de bruit** ;
+- PEEQ perturbé de `1,63 %`, soit dix fois moins que l'effet de trajet ;
+- **la dépendance au trajet survit au filtre** : `15,36 %` contre la rampe, à
+  comparer aux `15,82 %` sans filtre. Les `15,8 %` ne sont donc pas un artefact
+  de bruit de bord mais une propriété du chemin de chargement ;
+- accord DIC **indiscernable** sur les quatre métriques et les deux profils, le
+  plus grand mouvement valant `+0,00346` pour une marge de `0,0202` ;
+- consigné sans explication : le run filtré accumule `+0,64 %` de PEEQ moyen de
+  plus que le non filtré, contraire à une image de rochet additif. Confondu en
+  partie par des structures de sous-incréments différentes, 40 contre 65.
+
+Ce que le filtre apporte est **numérique, pas probant** : moitié moins de
+travail Newton pour une perturbation de `1,63 %` d'une variable interne non
+observable et aucun changement mesurable face à la DIC. Bon compromis de
+production, à décrire comme tel et non comme un gain de fidélité.
+
+Artefacts :
+`validation/dic_multistep_p0043_modal_boundary_filter_preregistration.md` et
+`validation/dic_multistep_p0043_modal_boundary_filter_results.md`.
+
+**Pénalisation du bord disponible en option, 2026-07-30.**
+`boundary_enforcement="penalty"` conserve les DDL prescrits dans le système avec
+un ressort fini et expose `BOUNDARY_MISFIT`, l'écart nodal entre la mesure et
+la valeur réellement imposée, avec la réaction devenue force du ressort
+conjuguée. Erreur de cohérence en `1/k` vérifiée (`4,0e-9` mm à `k=1e8`,
+`4,0e-11` à `1e10`), puis remontée à `2,9e-6` à `k=1e12` : limite de
+conditionnement, d'où la nécessité d'un poids fini issu de la mesure.
+L'élimination reste le défaut, aucune campagne archivée n'est affectée. Le choix
+de `k` comme `1/sigma**2` normalisé reste à pré-enregistrer.
+
 **Cause racine identifiée le 2026-07-30 par l'instrumentation Newton — le
 blocage multi-pas est un défaut logiciel, pas numérique ni physique :**
 
@@ -2298,8 +2343,25 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-30 | Contrôle proportionnel 40 incréments | Même workflow `--mode proportional` | 40/40 incréments, 0 cutback, `31,0 min` | Réussi |
 | 2026-07-30 | Dépendance au trajet sur PEEQ | `compare-path-dependence`, cœur `360×310` | L2 `15,82 %`, contrôle `0,20 %`, structure de bande `13,11` | Réussi |
 | 2026-07-30 | Trajets mesuré/proportionnel face à la DIC | `replay-dic-observation`, deux profils, observation symétrique | Aucune métrique au-delà de sa marge | Indiscernable |
+| 2026-07-30 | Filtrage modal du bord à 3 modes | `filter-dic-boundary-history --rank 3` | Retire `0,00972 px`, soit `5,3×` sous le bruit | Réussi |
+| 2026-07-30 | Mécanique sur histoire filtrée | `run-dic-multistep-mechanics --mode measured` | 40/40, zéro cutback, 245 itérations en `34,8 min` | Réussi |
+| 2026-07-30 | Pénalisation contre élimination | Cas réduit, `k` de `1e8` à `1e12` | Erreur en `1/k` puis limite de conditionnement | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-30 — Filtrage modal du bord et pénalisation optionnelle
+
+- Filtre à 3 mode(s) sur l'écart à la rampe : retire `5,3×` sous le bruit,
+  Dirichlet dur conservé, extrémités et intérieur bit-à-bit identiques
+- Correction en cours de route : une troncature de rang 3 ne préserve pas une
+  ligne nulle. Épinglage linéaire explicite ajouté et pré-enregistrement corrigé
+  avant toute production
+- Gain numérique décisif : zéro cutback et moitié moins d'itérations Newton
+- La dépendance au trajet survit au filtre, donc elle n'est pas du bruit
+- Accord DIC inchangé : cet observable est désormais montré insensible au
+  trajet et au filtre
+- Pénalisation ajoutée en option avec `BOUNDARY_MISFIT` comme indicateur
+  d'écart mesure/imposé ; élimination toujours par défaut
 
 ### 2026-07-30 — Les deux trajets sont indiscernables face à la DIC
 
