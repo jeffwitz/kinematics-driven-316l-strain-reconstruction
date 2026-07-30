@@ -1,0 +1,143 @@
+{
+  "boundary_history_predictor": "elastic",
+  "config": {
+    "material": {
+      "first_positive_plastic_strain": 1e-06,
+      "hardening_exponent": 0.245,
+      "plastic_strain_max": 0.2,
+      "plastic_table_points": 1000,
+      "poisson_ratio": 0.3,
+      "young_modulus_mpa": 205000.0
+    },
+    "mesh": {
+      "base_pixel_size_mm": 0.001,
+      "nx": 660,
+      "ny": 610,
+      "scale_factor": 1.84
+    },
+    "nonlocal_plasticity": {
+      "aitken_residual_growth_factor": 1.25,
+      "coupling_modulus_mpa": 0.0,
+      "enabled": false,
+      "length_scale_mm": 0.05888,
+      "maximum_helmholtz_residual": 1e-10,
+      "maximum_iterations": 15,
+      "maximum_relaxation": 0.8,
+      "minimum_relaxation": 0.05,
+      "record_iteration_history": false,
+      "relative_tolerance": 1e-06,
+      "relaxation": 0.5,
+      "relaxation_strategy": "fixed"
+    },
+    "solver": {
+      "boundary_history_predictor": "elastic",
+      "constitutive_backend": "mfront-native-plane-stress",
+      "hardening_mode": "ludwik",
+      "increments": 40,
+      "line_search_armijo_coefficient": 0.0001,
+      "line_search_maximum_trials": 12,
+      "line_search_minimum_factor": 0.000244140625,
+      "line_search_reduction": 0.5,
+      "local_plane_stress_relative_tolerance": 1e-10,
+      "local_plane_stress_tolerance_mpa": 1e-08,
+      "max_newton_iterations": 15,
+      "maximum_cbb_condition_number": 1000000000000.0,
+      "maximum_local_plane_stress_iterations": 15,
+      "mfront_library": "build/mfront/src/libBehaviour.so",
+      "mfront_threads": 8,
+      "minimum_step_divisor": 1024,
+      "newton_line_search": false,
+      "require_pypardiso": true,
+      "residual_tolerance": 1e-06
+    }
+  },
+  "constitutive_state_committed_after_failure": false,
+  "created_at_utc": "2026-07-30T00:24:55.268840+00:00",
+  "diagnostics": {
+    "attempted_increments": 14,
+    "boundary_history_predictor": "elastic",
+    "converged_increments": 3,
+    "cutbacks": 11,
+    "first_constitutive_failure": {
+      "component_index": 2,
+      "component_maxima": [
+        48.08522862516458,
+        16.268966561893176,
+        82.2571069243599
+      ],
+      "component_minima": [
+        -29.75643536505467,
+        -57.01654315853741,
+        -46.68071878998289
+      ],
+      "element_index": 402245,
+      "gauss_point_index": 1,
+      "maximum_absolute_engineering_strain": 82.2571069243599,
+      "newton_iteration": 7,
+      "pseudo_time": 0.1,
+      "step_size": 0.025
+    },
+    "first_cutback": {
+      "failed_step_size": 0.025,
+      "increment": 4,
+      "newton_iteration": 7,
+      "next_step_size": 0.0125,
+      "pseudo_time": 0.1,
+      "reason": "MFront integration failed with status -1"
+    },
+    "fixed_point_history": [],
+    "last_constitutive_failure": {
+      "component_index": 1,
+      "component_maxima": [
+        8.646995570070706,
+        58.01131319941842,
+        39.58081656122516
+      ],
+      "component_minima": [
+        -21.028348428650737,
+        -19.84170931211831,
+        -47.586809568983995
+      ],
+      "element_index": 402246,
+      "gauss_point_index": 0,
+      "maximum_absolute_engineering_strain": 58.01131319941842,
+      "newton_iteration": 2,
+      "pseudo_time": 0.0750244140625,
+      "step_size": 2.44140625e-05
+    },
+    "last_cutback": {
+      "failed_step_size": 2.44140625e-05,
+      "increment": 14,
+      "newton_iteration": 2,
+      "next_step_size": 1.220703125e-05,
+      "pseudo_time": 0.0750244140625,
+      "reason": "MFront integration failed with status -1"
+    },
+    "last_failed_fixed_point_history": [],
+    "line_search_evaluations": 0,
+    "line_search_failures": 0,
+    "line_search_reductions": 0,
+    "minimum_accepted_line_search_factor": 1.0,
+    "relaxation_strategy": "fixed",
+    "secant_predictor_fallbacks": 0,
+    "secant_predictor_uses": 0,
+    "total_newton_iterations": 28
+  },
+  "error": "run_fem: increment cutback below minimum (1.22e-05) - solution not converging",
+  "git_sha": "cb96a967a0c574681c80883c9081c18bc0274f85",
+  "mechanics_completed": false,
+  "micromorphic_identification_run": false,
+  "mode": "measured",
+  "newton_line_search_enabled": false,
+  "newton_trace_recorded": true,
+  "nominal_increments": 40,
+  "partition_id": 43,
+  "schema_version": 1,
+  "source": {
+    "campaign_manifest_sha256": "81dbec648ace9012ae5898b24b1e50d58dab12ea73e906521c286f8d43ce4429",
+    "history_report_sha256": "d6e8e2f5d216b2e1f6c5e7f515c8d8aa558186579194de4ccf09797573560076",
+    "history_sha256": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0",
+    "prepared_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50"
+  },
+  "status": "failed_local_measured_boundary_history"
+}

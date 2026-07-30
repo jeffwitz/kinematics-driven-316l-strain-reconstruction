@@ -517,6 +517,11 @@ def _parser() -> argparse.ArgumentParser:
     multistep_mechanics.add_argument("--mode", choices=("measured", "proportional"), required=True)
     multistep_mechanics.add_argument("--newton-line-search", action="store_true")
     multistep_mechanics.add_argument(
+        "--record-newton-trace",
+        action="store_true",
+        help="write an observational per-iteration Newton trace, also on failure",
+    )
+    multistep_mechanics.add_argument(
         "--boundary-history-predictor",
         choices=("elastic", "secant-corrected-elastic"),
         default="elastic",
@@ -1012,6 +1017,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_directory=args.output,
             newton_line_search=args.newton_line_search,
             boundary_history_predictor=args.boundary_history_predictor,
+            record_newton_trace=args.record_newton_trace,
             overwrite=args.overwrite,
         )
         _print_json(mechanics_report)

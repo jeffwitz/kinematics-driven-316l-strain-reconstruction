@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import platform
@@ -42,6 +43,45 @@ FloatArray = NDArray[np.float64]
 RAW_CROP_SHAPE = (3600, 3100)
 CORRUPTED_MEASURED_STATES = (31, 32)
 REPAIR_BRACKETING_STATES = (30, 33)
+
+
+#: Union of the keys any Newton trace record may carry, in report order.
+NEWTON_TRACE_FIELDS = (
+    "increment",
+    "pseudo_time",
+    "step_size",
+    "newton_iteration",
+    "outcome",
+    "boundary_increment_norm",
+    "total_strain_maximum",
+    "residual_norm",
+    "relative_residual",
+    "elastic_tangent_maximum",
+    "constitutive_tangent_maximum",
+    "constitutive_to_elastic_tangent_ratio",
+    "tangent_diagonal_minimum",
+    "tangent_diagonal_maximum",
+    "tangent_diagonal_nonpositive_count",
+    "correction_norm",
+    "correction_maximum",
+    "correction_free_dof_argmax",
+    "correction_to_boundary_ratio",
+    "line_search_factor",
+    "failing_element_index",
+    "failing_component_index",
+)
+
+
+def _write_newton_trace(output: Path, trace: list[dict[str, Any]] | None) -> None:
+    """Persist an observational Newton trace, including after a failed solve."""
+
+    if not trace:
+        return
+    with (output / "newton_trace.csv").open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(NEWTON_TRACE_FIELDS), restval="")
+        writer.writeheader()
+        for record in trace:
+            writer.writerow({key: record.get(key, "") for key in NEWTON_TRACE_FIELDS})
 
 
 def _sha256(path: Path) -> str:
@@ -712,6 +752,7 @@ def run_dic_multistep_mechanics(
     boundary_history_predictor: Literal[
         "elastic", "secant-corrected-elastic"
     ] = "elastic",
+    record_newton_trace: bool = False,
     overwrite: bool = False,
 ) -> dict[str, Any]:
     """Run local P43 mechanics with measured or proportional 40-step boundaries."""
@@ -789,6 +830,7 @@ def run_dic_multistep_mechanics(
     history[-1] = prepared_final
     local_yield = np.asarray(yield_map[sx0:sx1, sy0:sy1], dtype=np.float64)
     local_hardening = np.asarray(hardening_map[sx0:sx1, sy0:sy1], dtype=np.float64)
+    newton_trace: list[dict[str, Any]] | None = [] if record_newton_trace else None
     try:
         result = run_case_study(
             config,
@@ -798,9 +840,11 @@ def run_dic_multistep_mechanics(
             hardening_coefficient_mpa=local_hardening,
             boundary_displacement_history_mm=history if mode == "measured" else None,
             snapshots=(0.25, 0.5, 0.75, 1.0),
+            newton_trace=newton_trace,
             verbose=True,
         )
     except NonlinearConvergenceError as error:
+        _write_newton_trace(output, newton_trace)
         failure_report = {
             "schema_version": 1,
             "status": "failed_local_measured_boundary_history",
@@ -813,6 +857,7 @@ def run_dic_multistep_mechanics(
             "nominal_increments": 40,
             "newton_line_search_enabled": newton_line_search,
             "boundary_history_predictor": boundary_history_predictor,
+            "newton_trace_recorded": bool(newton_trace),
             "config": asdict(config),
             "source": {
                 "campaign_manifest_sha256": _sha256(manifest_path),
@@ -859,6 +904,9 @@ def run_dic_multistep_mechanics(
             digest = _sha256(path)
             output_hashes[name] = digest
             frame_hashes[frame_key][field_name] = digest
+    _write_newton_trace(output, newton_trace)
+    if newton_trace:
+        output_hashes["newton_trace.csv"] = _sha256(output / "newton_trace.csv")
     report = {
         "schema_version": 1,
         "status": "completed_local_measured_boundary_history",
@@ -886,6 +934,7 @@ def run_dic_multistep_mechanics(
         "nominal_increments": 40,
         "newton_line_search_enabled": newton_line_search,
         "boundary_history_predictor": boundary_history_predictor,
+        "newton_trace_recorded": bool(newton_trace),
         "snapshot_fractions": [0.25, 0.5, 0.75, 1.0],
         "config": asdict(config),
         "solve_bounds": list(partition.solve_bounds),

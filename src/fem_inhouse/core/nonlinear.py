@@ -73,6 +73,37 @@ GP_W = GAUSS_WEIGHTS
 N_GP = GAUSS_POINT_COUNT
 
 
+def _record_newton_trace(trace, record, outcome, **fields):
+    """Append one observational Newton record, if tracing is enabled."""
+
+    if trace is None or record is None:
+        return
+    record.update(fields)
+    record["outcome"] = outcome
+    trace.append(record)
+
+
+def _tangent_diagonal_statistics(matrix):
+    """Return conditioning proxies of an assembled tangent, without factorising."""
+
+    diagonal = np.asarray(matrix.diagonal(), dtype=np.float64)
+    finite = diagonal[np.isfinite(diagonal)]
+    if finite.size == 0:
+        return {
+            "tangent_diagonal_minimum": float("nan"),
+            "tangent_diagonal_maximum": float("nan"),
+            "tangent_diagonal_nonpositive_count": int(diagonal.size),
+        }
+    magnitude = float(np.max(np.abs(finite)))
+    threshold = 1e-12 * magnitude
+    return {
+        "tangent_diagonal_minimum": float(np.min(finite)),
+        "tangent_diagonal_maximum": float(np.max(finite)),
+        "tangent_diagonal_nonpositive_count": int(np.count_nonzero(finite <= threshold))
+        + int(diagonal.size - finite.size),
+    }
+
+
 class NonlinearConvergenceError(RuntimeError):
     """Global convergence failure carrying machine-readable diagnostics."""
 
@@ -129,6 +160,7 @@ def run_fem(
     nonlocal_record_iteration_history=False,
     snapshot_fractions=None,
     boundary_displacement_history=None,
+    newton_trace=None,
     verbose=True,
 ):
     """
@@ -443,7 +475,23 @@ def run_fem(
             maximum_newton_iterations = max(maximum_newton_iterations, nrit + 1)
             u_e = u[ld]
             eps_tot = np.einsum("gak,ek->ega", Bs, u_e)
+            # Observational only: the trace never feeds back into the path.
+            trace_record: dict[str, object] | None = None
+            if newton_trace is not None:
+                finite_strain = np.isfinite(eps_tot).all()
+                trace_record = {
+                    "increment": int(inc),
+                    "pseudo_time": float(t + dt),
+                    "step_size": float(dt),
+                    "newton_iteration": int(nrit + 1),
+                    "boundary_increment_norm": float(np.linalg.norm(du_B)),
+                    "total_strain_maximum": (
+                        float(np.max(np.abs(eps_tot))) if finite_strain else float("nan")
+                    ),
+                    "outcome": "incomplete",
+                }
             if not np.isfinite(eps_tot).all():
+                _record_newton_trace(newton_trace, trace_record, "nonfinite_total_strain")
                 break
             # Constitutive trial from the last converged material state.
             constitutive_started_at = time.perf_counter()
@@ -574,6 +622,13 @@ def run_fem(
                     },
                 )
                 constitutive_seconds += time.perf_counter() - constitutive_started_at
+                _record_newton_trace(
+                    newton_trace,
+                    trace_record,
+                    "constitutive_rejection",
+                    failing_element_index=int(element_index),
+                    failing_component_index=int(component_index),
+                )
                 break
             sf = trial.stress_in_plane_mpa.reshape(n_e, N_GP, 3)
             eps_p_trial = trial.observables["plastic_strain_2d"].reshape(n_e, N_GP, 3)
@@ -581,6 +636,16 @@ def run_fem(
             material_tangents = trial.tangent_in_plane_mpa
             if material_tangents is None:
                 raise RuntimeError("constitutive backend did not return a consistent tangent")
+            if trace_record is not None:
+                elastic_magnitude = float(np.max(np.abs(C_ps)))
+                plastic_magnitude = float(np.max(np.abs(material_tangents)))
+                trace_record["elastic_tangent_maximum"] = elastic_magnitude
+                trace_record["constitutive_tangent_maximum"] = plastic_magnitude
+                trace_record["constitutive_to_elastic_tangent_ratio"] = (
+                    plastic_magnitude / elastic_magnitude
+                    if elastic_magnitude > 0.0
+                    else float("nan")
+                )
             if linear_system_matrix_type == "symmetric_positive_definite":
                 tangent_asymmetry = relative_tangent_asymmetry(material_tangents)
                 maximum_relative_constitutive_tangent_asymmetry = max(
@@ -606,10 +671,14 @@ def run_fem(
             R_I = R[dof_I]
             res = float(np.linalg.norm(R_I))
             if not np.isfinite(res):
+                _record_newton_trace(newton_trace, trace_record, "nonfinite_residual")
                 break  # diverged -> cutback
             if nrit == 0:
                 res0 = max(res, 1e-30)
             rel = res / res0
+            if trace_record is not None:
+                trace_record["residual_norm"] = float(res)
+                trace_record["relative_residual"] = float(rel)
             if nonlocal_plasticity_enabled and nonlocal_record_iteration_history:
                 for record in nonlocal_fixed_point_history[trace_start:]:
                     record["mechanical_residual_norm"] = float(res)
@@ -635,6 +704,7 @@ def run_fem(
                 final_convergence_criterion = (
                     "absolute_residual" if res < 1e-10 else "relative_residual"
                 )
+                _record_newton_trace(newton_trace, trace_record, "converged")
                 break
 
             # Build consistent tangent stiffness
@@ -657,11 +727,30 @@ def run_fem(
             KII = K_tang
             tangent_assembly_seconds += time.perf_counter() - tangent_started_at
 
+            if trace_record is not None:
+                trace_record.update(_tangent_diagonal_statistics(KII))
+
             du = timed_solve(KII, -R_I)
+            if trace_record is not None:
+                finite_correction = np.isfinite(du).all()
+                correction_norm = float(np.linalg.norm(du)) if finite_correction else float("nan")
+                boundary_norm = float(np.linalg.norm(du_B))
+                trace_record["correction_norm"] = correction_norm
+                trace_record["correction_maximum"] = (
+                    float(np.max(np.abs(du))) if finite_correction else float("nan")
+                )
+                trace_record["correction_free_dof_argmax"] = (
+                    int(np.argmax(np.abs(du))) if finite_correction else -1
+                )
+                trace_record["correction_to_boundary_ratio"] = (
+                    correction_norm / boundary_norm if boundary_norm > 0.0 else float("nan")
+                )
             if not np.isfinite(du).all():
+                _record_newton_trace(newton_trace, trace_record, "nonfinite_correction")
                 break  # singular tangent -> cutback
             if not newton_line_search:
                 u[dof_I] += du
+                _record_newton_trace(newton_trace, trace_record, "corrected")
                 continue
 
             base_u_I = u[dof_I].copy()
@@ -712,7 +801,11 @@ def run_fem(
                 u[dof_I] = base_u_I
                 line_search_failures += 1
                 increment_failure_reason = "Newton line search found no residual-decreasing trial"
+                _record_newton_trace(newton_trace, trace_record, "line_search_exhausted")
                 break
+            _record_newton_trace(
+                newton_trace, trace_record, "corrected", line_search_factor=float(factor)
+            )
 
         if not converged:
             material_batch.revert()
