@@ -2,6 +2,7 @@
 
 | Question | Status | Claim boundary | Evidence |
 |---|---|---|---|
+| Micromorphic coupling measurably improves agreement with DIC | **demonstrated** | Amplitude, correlation and active area only, under symmetric observation on P43; localisation overlap degrades and no unique alpha is selected | `E-DIC-004` |
 | Finite-element baseline passes its numerical regression contract | **verified** | Structured small-strain plane-stress Q4 integration scope | `E-LOCAL-002` |
 | Generalized section equilibrium has been quantified on the archived band-containing cases | **reported baseline** | Interior P43 partition; lateral shear flux included; no experimental force validation | `E-EQ-001` |
 | The pixel-wise material maps add spatial localisation information beyond boundary kinematics | **supported** | One band-containing ROI; translated-map and homogeneous controls; no transfer claim | `E-MAP-001` |
@@ -20,5 +21,5 @@
 | Hchi and ell statistically identified | **not demonstrated** | The earlier objective surface used raw FEM against observed DIC and must not be reused after the symmetric observation result | `E-ID-001`, `E-DIC-004` |
 | Transferable material internal length identified | **not claimed** | Requires unchanged-parameter transfer to independent observations | `E-ID-001` |
 | Measured temporal boundary history can be replayed end to end | **demonstrated** | Convergence only; says nothing about physical correctness of the intermediate states | `E-DIC-007` |
-| Loading path changes reconstructed plasticity at a shared endpoint | **supported** | 15.8 % on core PEEQ under one constitutive model; the DIC noise contribution is not subtracted | `E-DIC-008`, `E-DIC-010` |
+| Loading path changes reconstructed plasticity at a shared endpoint | **supported** | 15.8 % on core PEEQ under one constitutive model, invisible to the DIC observable; the DIC noise contribution is not subtracted | `E-DIC-008`, `E-DIC-010` |
 | Measured path is closer to DIC than a proportional ramp | **not supported** | Indistinguishable at the registered margins; the observable is insensitive at this scale | `E-DIC-009` |

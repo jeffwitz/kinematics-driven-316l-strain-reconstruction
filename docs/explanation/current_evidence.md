@@ -6,6 +6,41 @@ and what remains unresolved?
 ```{include} ../_generated/current_conclusion.inc
 ```
 
+## The one lever that closes the FEM/DIC gap
+
+Micromorphic coupling is, so far, **the only change that measurably brings the
+reconstruction closer to the DIC strain**. Under the symmetric image-level
+observation — the only admissible comparison — it improves amplitude and
+correlation by far more than the DIC-noise sensitivity of the metrics:
+
+```{include} ../_generated/micromorphic_dic_improvement.inc
+```
+
+Against the local model, $\alpha = 4$ reduces relative $L_2$ by `0.194`, which
+is **9.6 times** the noise margin of that metric, and raises correlation by
+`0.059`, **3.2 times** its margin. The improvement in *how much* the model
+localises is the most striking: the DIC q90 threshold selects 10 % of the field
+by construction, the local model is **over-active by 61 %**, and $\alpha = 4$
+lands at **+2.6 %**.
+
+The contrast with everything else tested is what makes this stand out:
+
+| Lever | Effect on agreement with DIC |
+|---|---|
+| micromorphic coupling | relative $L_2$ improved by 9.6 margins |
+| measured temporal loading path | no metric beyond its margin |
+| modal boundary filtering | no metric beyond its margin |
+| homogeneous material map | better global $L_2$, but by suppressing the bands |
+
+:::{important}
+This is the project's clearest positive result. It must be read with its own
+limit: coupling improves amplitude, correlation and active area, while
+**degrading where the localisation sits**. Top-10 % IoU falls by `0.046` and
+q90 IoU by `0.054`, respectively 2.4 and 2.5 margins. The ranking therefore
+depends on the objective, which is why no single $\alpha$ is selected and
+neither $H_\chi$ nor $\ell$ is identified.
+:::
+
 ## Demonstrated numerically
 
 - The local finite-element solver and its constitutive backends are coherent
