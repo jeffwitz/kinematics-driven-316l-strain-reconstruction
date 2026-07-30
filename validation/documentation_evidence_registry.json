@@ -1,108 +1,169 @@
 {
   "schema_version": 2,
-  "current_conclusion": "The local and coupled mechanics are numerically verified, but earlier scores compared raw FEM with image-observed DIC. Symmetric image-level replay shows that DISFlow materially changes amplitudes, morphology and the coupling ranking. Micromorphic coupling redistributes plasticity, but Hchi and ell remain unidentified and no material internal length is claimed.",
+  "current_conclusion": "The local and coupled mechanics are numerically verified, and the measured 40-state boundary history now replays end to end after a defect in the elastic predictor was found and fixed. The loading path changes core PEEQ by 15.8 % at a shared endpoint, concentrated in the localisation bands, but changes agreement with DIC total strain by less than DIC noise sensitivity. Earlier scores compared raw FEM with image-observed DIC; symmetric image-level replay shows DISFlow materially changes amplitudes, morphology and the coupling ranking. Micromorphic coupling redistributes plasticity, but Hchi and ell remain unidentified and no material internal length is claimed.",
   "claims": [
     {
       "question": "Finite-element baseline passes its numerical regression contract",
       "status": "verified",
       "boundary": "Structured small-strain plane-stress Q4 integration scope",
-      "evidence_ids": ["E-LOCAL-002"]
+      "evidence_ids": [
+        "E-LOCAL-002"
+      ]
     },
     {
       "question": "Generalized section equilibrium has been quantified on the archived band-containing cases",
       "status": "reported baseline",
       "boundary": "Interior P43 partition; lateral shear flux included; no experimental force validation",
-      "evidence_ids": ["E-EQ-001"]
+      "evidence_ids": [
+        "E-EQ-001"
+      ]
     },
     {
       "question": "The pixel-wise material maps add spatial localisation information beyond boundary kinematics",
       "status": "supported",
       "boundary": "One band-containing ROI; translated-map and homogeneous controls; no transfer claim",
-      "evidence_ids": ["E-MAP-001"]
+      "evidence_ids": [
+        "E-MAP-001"
+      ]
     },
     {
       "question": "Available Abaqus-oriented table definition reimplemented",
       "status": "verified at definition level",
       "boundary": "The versioned 1000-row generator is checked; Abaqus FE and ODB parity are excluded",
-      "evidence_ids": ["E-TABLE-001"]
+      "evidence_ids": [
+        "E-TABLE-001"
+      ]
     },
     {
       "question": "Abaqus/Table and InHouse/Table finite-element results agree",
       "status": "not demonstrated",
       "boundary": "Original input model, ODB and extraction procedure are unavailable",
-      "evidence_ids": ["E-TABLE-001"]
+      "evidence_ids": [
+        "E-TABLE-001"
+      ]
     },
     {
       "question": "InHouse/Table and InHouse/MFront are coherent",
       "status": "verified",
       "boundary": "Declared material-point and finite-element comparison thresholds",
-      "evidence_ids": ["E-LOCAL-001", "E-LOCAL-002"]
+      "evidence_ids": [
+        "E-LOCAL-001",
+        "E-LOCAL-002"
+      ]
     },
     {
       "question": "A 3D MFront law can be condensed without changing the 2D solver",
       "status": "verified",
       "boundary": "Native plane stress versus 3D-condensed J2 on the reduced DIC case",
-      "evidence_ids": ["E-3D-001"]
+      "evidence_ids": [
+        "E-3D-001"
+      ]
     },
     {
       "question": "Output-only spatial broadening supports a missing-width hypothesis",
       "status": "supported",
       "boundary": "Diagnostic only; mechanics is unchanged and no material length is identified",
-      "evidence_ids": ["E-DIAG-001"]
+      "evidence_ids": [
+        "E-DIAG-001"
+      ]
     },
     {
       "question": "Micromorphic interaction redistributes plasticity",
       "status": "verified",
       "boundary": "Converged full-resolution band-containing reconstruction campaigns",
-      "evidence_ids": ["E-NL-002"]
+      "evidence_ids": [
+        "E-NL-002"
+      ]
     },
     {
       "question": "Spatial length affects morphology independently of coupling strength",
       "status": "supported",
       "boundary": "Validated reduced-fidelity constant-Achi and fixed-alpha experiments",
-      "evidence_ids": ["E-ID-001"]
+      "evidence_ids": [
+        "E-ID-001"
+      ]
     },
     {
       "question": "An EBSD/Schmid structural correlation scale has been measured independently of FEM/DIC agreement",
       "status": "verified",
       "boundary": "Grain-mean maximum-Schmid map and declared 1.84 um grid; not a direct micromorphic or material length",
-      "evidence_ids": ["E-EBSD-001"]
+      "evidence_ids": [
+        "E-EBSD-001"
+      ]
     },
     {
       "question": "The declared DISFlow reproduction chain has a measured noise upper bound and spatial transfer",
       "status": "verified for the reproduction implementation",
       "boundary": "Candidate final-state repeat without acquisition log; OpenCV 4.14 reproduction, not bitwise historical DISFlow",
-      "evidence_ids": ["E-DIC-001"]
+      "evidence_ids": [
+        "E-DIC-001"
+      ]
     },
     {
       "question": "The supplied legacy DISFlow source and the declared V4 profile have different measured transfer",
       "status": "verified for OpenCV 4.14",
       "boundary": "The legacy source leaves factory defaults implicit; this is provenance sensitivity, not certification of the unavailable historical binary",
-      "evidence_ids": ["E-DIC-003"]
+      "evidence_ids": [
+        "E-DIC-003"
+      ]
     },
     {
       "question": "Symmetric image-level observation materially changes FEM/DIC metrics and candidate ranking",
       "status": "verified",
       "boundary": "Archived P43 displacement fields, legacy-source profile primary and declared V4 sensitivity; mechanics unchanged",
-      "evidence_ids": ["E-DIC-004"]
+      "evidence_ids": [
+        "E-DIC-004"
+      ]
     },
     {
       "question": "Direct local brightness residual explains the remaining P43 FEM/DIC field error",
       "status": "not supported",
       "boundary": "One band-containing P43 core; direct unnormalised brightness residual; no propagated uncertainty claim",
-      "evidence_ids": ["E-DIC-005"]
+      "evidence_ids": [
+        "E-DIC-005"
+      ]
     },
     {
       "question": "Hchi and ell statistically identified",
       "status": "not demonstrated",
       "boundary": "The earlier objective surface used raw FEM against observed DIC and must not be reused after the symmetric observation result",
-      "evidence_ids": ["E-ID-001", "E-DIC-004"]
+      "evidence_ids": [
+        "E-ID-001",
+        "E-DIC-004"
+      ]
     },
     {
       "question": "Transferable material internal length identified",
       "status": "not claimed",
       "boundary": "Requires unchanged-parameter transfer to independent observations",
-      "evidence_ids": ["E-ID-001"]
+      "evidence_ids": [
+        "E-ID-001"
+      ]
+    },
+    {
+      "question": "Measured temporal boundary history can be replayed end to end",
+      "status": "demonstrated",
+      "boundary": "Convergence only; says nothing about physical correctness of the intermediate states",
+      "evidence_ids": [
+        "E-DIC-007"
+      ]
+    },
+    {
+      "question": "Loading path changes reconstructed plasticity at a shared endpoint",
+      "status": "supported",
+      "boundary": "15.8 % on core PEEQ under one constitutive model; the DIC noise contribution is not subtracted",
+      "evidence_ids": [
+        "E-DIC-008",
+        "E-DIC-010"
+      ]
+    },
+    {
+      "question": "Measured path is closer to DIC than a proportional ramp",
+      "status": "not supported",
+      "boundary": "Indistinguishable at the registered margins; the observable is insensitive at this scale",
+      "evidence_ids": [
+        "E-DIC-009"
+      ]
     }
   ],
   "evidence": [
@@ -118,11 +179,31 @@
           "path": "validation/reference_data/material_map_controls_p0043_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_no_acceptance_threshold"},
-            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false},
-            {"path": "/rows/1/absolute_dic_q90/prediction_active_fraction", "operator": "equals", "expected": 0.0},
-            {"path": "/rows/2/error/pearson_correlation", "operator": "less_than", "expected_path": "/rows/0/error/pearson_correlation"},
-            {"path": "/rows/2/relative_top10/intersection_over_union", "operator": "less_than", "expected_path": "/rows/0/relative_top10/intersection_over_union"}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_no_acceptance_threshold"
+            },
+            {
+              "path": "/evm_post_filter_applied",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/rows/1/absolute_dic_q90/prediction_active_fraction",
+              "operator": "equals",
+              "expected": 0.0
+            },
+            {
+              "path": "/rows/2/error/pearson_correlation",
+              "operator": "less_than",
+              "expected_path": "/rows/0/error/pearson_correlation"
+            },
+            {
+              "path": "/rows/2/relative_top10/intersection_over_union",
+              "operator": "less_than",
+              "expected_path": "/rows/0/relative_top10/intersection_over_union"
+            }
           ]
         }
       ]
@@ -139,9 +220,21 @@
           "path": "validation/reference_data/section_equilibrium_p0043_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_baseline_no_acceptance_threshold"},
-            {"path": "/case_count", "operator": "equals", "expected": 4},
-            {"path": "/partition_id", "operator": "equals", "expected": 43}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_baseline_no_acceptance_threshold"
+            },
+            {
+              "path": "/case_count",
+              "operator": "equals",
+              "expected": 4
+            },
+            {
+              "path": "/partition_id",
+              "operator": "equals",
+              "expected": 43
+            }
           ]
         }
       ]
@@ -158,9 +251,21 @@
           "path": "validation/reference_data/historical_table_definition_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/table/rows", "operator": "equals", "expected": 1000},
-            {"path": "/table/maximum_formula_error_mpa", "operator": "equals", "expected": 0.0}
+            {
+              "path": "/passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/table/rows",
+              "operator": "equals",
+              "expected": 1000
+            },
+            {
+              "path": "/table/maximum_formula_error_mpa",
+              "operator": "equals",
+              "expected": 0.0
+            }
           ]
         }
       ]
@@ -177,10 +282,26 @@
           "path": "validation/reference_data/mfront_material_point_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/paths/uniaxial_strain/stress_relative_l2", "operator": "less_than", "expected_path": "/thresholds/stress_relative_l2_max"},
-            {"path": "/paths/equibiaxial_strain/stress_relative_l2", "operator": "less_than", "expected_path": "/thresholds/stress_relative_l2_max"},
-            {"path": "/paths/simple_shear/stress_relative_l2", "operator": "less_than", "expected_path": "/thresholds/stress_relative_l2_max"}
+            {
+              "path": "/passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/paths/uniaxial_strain/stress_relative_l2",
+              "operator": "less_than",
+              "expected_path": "/thresholds/stress_relative_l2_max"
+            },
+            {
+              "path": "/paths/equibiaxial_strain/stress_relative_l2",
+              "operator": "less_than",
+              "expected_path": "/thresholds/stress_relative_l2_max"
+            },
+            {
+              "path": "/paths/simple_shear/stress_relative_l2",
+              "operator": "less_than",
+              "expected_path": "/thresholds/stress_relative_l2_max"
+            }
           ]
         }
       ]
@@ -197,9 +318,21 @@
           "path": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/metrics/stress_mpa/relative_linf", "operator": "less_than", "expected_path": "/thresholds/stress_mpa/maximum"},
-            {"path": "/metrics/equivalent_plastic_strain/relative_linf", "operator": "less_than", "expected_path": "/thresholds/equivalent_plastic_strain/maximum"}
+            {
+              "path": "/passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/metrics/stress_mpa/relative_linf",
+              "operator": "less_than",
+              "expected_path": "/thresholds/stress_mpa/maximum"
+            },
+            {
+              "path": "/metrics/equivalent_plastic_strain/relative_linf",
+              "operator": "less_than",
+              "expected_path": "/thresholds/equivalent_plastic_strain/maximum"
+            }
           ]
         }
       ]
@@ -216,7 +349,11 @@
           "path": "validation/reference_data/nonlocality_helmholtz_article_p0042_confirmatory_v1/confirmation-report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/all_preregistered_requirements_passed", "operator": "equals", "expected": true}
+            {
+              "path": "/all_preregistered_requirements_passed",
+              "operator": "equals",
+              "expected": true
+            }
           ]
         }
       ]
@@ -233,9 +370,21 @@
           "path": "validation/reference_data/mfront_3d_condensed_dic_10x10_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/passed", "operator": "equals", "expected": true},
-            {"path": "/metrics/stress_mpa/relative_linf", "operator": "less_than", "expected_path": "/thresholds/stress_mpa/maximum"},
-            {"path": "/metrics/equivalent_plastic_strain/relative_linf", "operator": "less_than", "expected_path": "/thresholds/equivalent_plastic_strain/maximum"}
+            {
+              "path": "/passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/metrics/stress_mpa/relative_linf",
+              "operator": "less_than",
+              "expected_path": "/thresholds/stress_mpa/maximum"
+            },
+            {
+              "path": "/metrics/equivalent_plastic_strain/relative_linf",
+              "operator": "less_than",
+              "expected_path": "/thresholds/equivalent_plastic_strain/maximum"
+            }
           ]
         }
       ]
@@ -252,17 +401,37 @@
           "path": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
           "role": "primary",
           "assertions": [
-            {"path": "/rows/0/status", "operator": "equals", "expected": "complete"},
-            {"path": "/rows/3/status", "operator": "equals", "expected": "complete"},
-            {"path": "/rows/3/peeq_max", "operator": "less_than", "expected_path": "/rows/0/peeq_max"},
-            {"path": "/rows/3/peeq_gradient_rms", "operator": "less_than", "expected_path": "/rows/0/peeq_gradient_rms"}
+            {
+              "path": "/rows/0/status",
+              "operator": "equals",
+              "expected": "complete"
+            },
+            {
+              "path": "/rows/3/status",
+              "operator": "equals",
+              "expected": "complete"
+            },
+            {
+              "path": "/rows/3/peeq_max",
+              "operator": "less_than",
+              "expected_path": "/rows/0/peeq_max"
+            },
+            {
+              "path": "/rows/3/peeq_gradient_rms",
+              "operator": "less_than",
+              "expected_path": "/rows/0/peeq_gradient_rms"
+            }
           ]
         },
         {
           "path": "validation/figures/p0043-alpha-comparison/plot_metadata.json",
           "role": "secondary figure provenance",
           "assertions": [
-            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false}
+            {
+              "path": "/evm_post_filter_applied",
+              "operator": "equals",
+              "expected": false
+            }
           ]
         }
       ]
@@ -279,11 +448,31 @@
           "path": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
           "role": "primary",
           "assertions": [
-            {"path": "/scientific_status/f1_ranking_validation_passed", "operator": "equals", "expected": true},
-            {"path": "/scientific_status/design_status", "operator": "equals", "expected": "numerically_censored"},
-            {"path": "/scientific_status/separate_identifiability_demonstrated", "operator": "equals", "expected": false},
-            {"path": "/scientific_status/material_length_claim_allowed", "operator": "equals", "expected": false},
-            {"path": "/execution/high_fidelity_runs_started", "operator": "equals", "expected": 0}
+            {
+              "path": "/scientific_status/f1_ranking_validation_passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/scientific_status/design_status",
+              "operator": "equals",
+              "expected": "numerically_censored"
+            },
+            {
+              "path": "/scientific_status/separate_identifiability_demonstrated",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/scientific_status/material_length_claim_allowed",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/execution/high_fidelity_runs_started",
+              "operator": "equals",
+              "expected": 0
+            }
           ]
         }
       ]
@@ -300,27 +489,63 @@
           "path": "validation/reference_data/dic_measurement_chain_v4/manifest.json",
           "role": "primary",
           "assertions": [
-            {"path": "/disflow_requested/finest_scale", "operator": "equals", "expected": 0},
-            {"path": "/disflow_queried/finest_scale", "operator": "equals", "expected": 0}
+            {
+              "path": "/disflow_requested/finest_scale",
+              "operator": "equals",
+              "expected": 0
+            },
+            {
+              "path": "/disflow_queried/finest_scale",
+              "operator": "equals",
+              "expected": 0
+            }
           ]
         },
         {
           "path": "validation/reference_data/dic_measurement_chain_v4/null_test_report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_characterisation_no_pass_fail"},
-            {"path": "/frame_mapping_status", "operator": "equals", "expected": "provisional_without_acquisition_log"},
-            {"path": "/spurious_to_step40_rms_ratio", "operator": "less_than", "expected": 0.1},
-            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_characterisation_no_pass_fail"
+            },
+            {
+              "path": "/frame_mapping_status",
+              "operator": "equals",
+              "expected": "provisional_without_acquisition_log"
+            },
+            {
+              "path": "/spurious_to_step40_rms_ratio",
+              "operator": "less_than",
+              "expected": 0.1
+            },
+            {
+              "path": "/evm_post_filter_applied",
+              "operator": "equals",
+              "expected": false
+            }
           ]
         },
         {
           "path": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_algorithmic_transfer_characterisation"},
-            {"path": "/synthetic_transfer_only", "operator": "equals", "expected": true},
-            {"path": "/evm_post_filter_applied", "operator": "equals", "expected": false}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_algorithmic_transfer_characterisation"
+            },
+            {
+              "path": "/synthetic_transfer_only",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/evm_post_filter_applied",
+              "operator": "equals",
+              "expected": false
+            }
           ]
         }
       ]
@@ -337,15 +562,51 @@
           "path": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_exploratory_sensitivity"},
-            {"path": "/fixed/finest_scale", "operator": "equals", "expected": 0},
-            {"path": "/fixed/band_width_pixels", "operator": "equals", "expected": 32},
-            {"path": "/metrics/1/epsilon", "operator": "equals", "expected": 0.002},
-            {"path": "/metrics/1/fwhm_pixels", "operator": "equals", "expected": 28.0},
-            {"path": "/metrics/4/epsilon", "operator": "equals", "expected": 0.01},
-            {"path": "/metrics/4/fwhm_pixels", "operator": "equals", "expected": 26.0},
-            {"path": "/metrics/5/epsilon", "operator": "equals", "expected": 0.02},
-            {"path": "/metrics/5/fwhm_pixels", "operator": "equals", "expected": 39.0}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_exploratory_sensitivity"
+            },
+            {
+              "path": "/fixed/finest_scale",
+              "operator": "equals",
+              "expected": 0
+            },
+            {
+              "path": "/fixed/band_width_pixels",
+              "operator": "equals",
+              "expected": 32
+            },
+            {
+              "path": "/metrics/1/epsilon",
+              "operator": "equals",
+              "expected": 0.002
+            },
+            {
+              "path": "/metrics/1/fwhm_pixels",
+              "operator": "equals",
+              "expected": 28.0
+            },
+            {
+              "path": "/metrics/4/epsilon",
+              "operator": "equals",
+              "expected": 0.01
+            },
+            {
+              "path": "/metrics/4/fwhm_pixels",
+              "operator": "equals",
+              "expected": 26.0
+            },
+            {
+              "path": "/metrics/5/epsilon",
+              "operator": "equals",
+              "expected": 0.02
+            },
+            {
+              "path": "/metrics/5/fwhm_pixels",
+              "operator": "equals",
+              "expected": 39.0
+            }
           ]
         }
       ]
@@ -362,29 +623,73 @@
           "path": "validation/reference_data/dic_legacy_profile_comparison_v1/case_a_declared_legacy_warp/manifest.json",
           "role": "V4 non-regression",
           "assertions": [
-            {"path": "/disflow_profile", "operator": "equals", "expected": "declared_medium_v4"},
-            {"path": "/warp_mode", "operator": "equals", "expected": "legacy_approximate_inverse"},
-            {"path": "/disflow_queried/finest_scale", "operator": "equals", "expected": 0}
+            {
+              "path": "/disflow_profile",
+              "operator": "equals",
+              "expected": "declared_medium_v4"
+            },
+            {
+              "path": "/warp_mode",
+              "operator": "equals",
+              "expected": "legacy_approximate_inverse"
+            },
+            {
+              "path": "/disflow_queried/finest_scale",
+              "operator": "equals",
+              "expected": 0
+            }
           ]
         },
         {
           "path": "validation/reference_data/dic_legacy_profile_comparison_v1/case_b_declared_corrected_warp/manifest.json",
           "role": "corrected-warp control",
           "assertions": [
-            {"path": "/disflow_profile", "operator": "equals", "expected": "declared_medium_v4"},
-            {"path": "/warp_mode", "operator": "equals", "expected": "iterative_forward_inverse"},
-            {"path": "/disflow_queried/patch_size", "operator": "equals", "expected": 8}
+            {
+              "path": "/disflow_profile",
+              "operator": "equals",
+              "expected": "declared_medium_v4"
+            },
+            {
+              "path": "/warp_mode",
+              "operator": "equals",
+              "expected": "iterative_forward_inverse"
+            },
+            {
+              "path": "/disflow_queried/patch_size",
+              "operator": "equals",
+              "expected": 8
+            }
           ]
         },
         {
           "path": "validation/reference_data/dic_legacy_profile_comparison_v1/case_c_legacy_corrected_warp/manifest.json",
           "role": "legacy-source provenance profile",
           "assertions": [
-            {"path": "/disflow_profile", "operator": "equals", "expected": "legacy_script_2021"},
-            {"path": "/warp_mode", "operator": "equals", "expected": "iterative_forward_inverse"},
-            {"path": "/disflow_requested/gradient_descent_iterations", "operator": "equals", "expected": null},
-            {"path": "/disflow_queried/gradient_descent_iterations", "operator": "equals", "expected": 16},
-            {"path": "/disflow_queried/patch_size", "operator": "equals", "expected": 4}
+            {
+              "path": "/disflow_profile",
+              "operator": "equals",
+              "expected": "legacy_script_2021"
+            },
+            {
+              "path": "/warp_mode",
+              "operator": "equals",
+              "expected": "iterative_forward_inverse"
+            },
+            {
+              "path": "/disflow_requested/gradient_descent_iterations",
+              "operator": "equals",
+              "expected": null
+            },
+            {
+              "path": "/disflow_queried/gradient_descent_iterations",
+              "operator": "equals",
+              "expected": 16
+            },
+            {
+              "path": "/disflow_queried/patch_size",
+              "operator": "equals",
+              "expected": 4
+            }
           ]
         }
       ]
@@ -401,13 +706,41 @@
           "path": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
           "role": "primary consolidated metrics",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_symmetric_image_observation"},
-            {"path": "/mechanics_rerun", "operator": "equals", "expected": false},
-            {"path": "/rows/0/evm_post_filter_applied", "operator": "equals", "expected": false},
-            {"path": "/rows/0/observed/relative_l2", "operator": "less_than", "expected_path": "/rows/0/raw/relative_l2"},
-            {"path": "/rows/0/observed/pearson", "operator": "greater_than", "expected_path": "/rows/0/raw/pearson"},
-            {"path": "/rows/3/observed/relative_l2", "operator": "less_than", "expected_path": "/rows/0/observed/relative_l2"},
-            {"path": "/rows/1/observed/absolute_q90_iou", "operator": "greater_than", "expected_path": "/rows/3/observed/absolute_q90_iou"}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_symmetric_image_observation"
+            },
+            {
+              "path": "/mechanics_rerun",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/rows/0/evm_post_filter_applied",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/rows/0/observed/relative_l2",
+              "operator": "less_than",
+              "expected_path": "/rows/0/raw/relative_l2"
+            },
+            {
+              "path": "/rows/0/observed/pearson",
+              "operator": "greater_than",
+              "expected_path": "/rows/0/raw/pearson"
+            },
+            {
+              "path": "/rows/3/observed/relative_l2",
+              "operator": "less_than",
+              "expected_path": "/rows/0/observed/relative_l2"
+            },
+            {
+              "path": "/rows/1/observed/absolute_q90_iou",
+              "operator": "greater_than",
+              "expected_path": "/rows/3/observed/absolute_q90_iou"
+            }
           ]
         }
       ]
@@ -424,22 +757,86 @@
           "path": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_baseline_no_acceptance_threshold"},
-            {"path": "/mechanics_rerun", "operator": "equals", "expected": false},
-            {"path": "/micromorphic_identification_run", "operator": "equals", "expected": false},
-            {"path": "/photometric_residual/valid_fraction", "operator": "equals", "expected": 1.0},
-            {"path": "/sensitivity_mask/primary_metrics_remain_unmasked", "operator": "equals", "expected": true},
-            {"path": "/rows/0/association/pearson", "operator": "greater_than", "expected": -0.05},
-            {"path": "/rows/0/association/pearson", "operator": "less_than", "expected": 0.05},
-            {"path": "/rows/1/association/pearson", "operator": "greater_than", "expected": -0.05},
-            {"path": "/rows/1/association/pearson", "operator": "less_than", "expected": 0.05},
-            {"path": "/rows/2/association/pearson", "operator": "greater_than", "expected": -0.05},
-            {"path": "/rows/2/association/pearson", "operator": "less_than", "expected": 0.05},
-            {"path": "/rows/3/association/pearson", "operator": "greater_than", "expected": -0.05},
-            {"path": "/rows/3/association/pearson", "operator": "less_than", "expected": 0.05},
-            {"path": "/rows/3/q90_masked_sensitivity/relative_l2_error", "operator": "less_than", "expected_path": "/rows/2/q90_masked_sensitivity/relative_l2_error"},
-            {"path": "/rows/2/q90_masked_sensitivity/relative_l2_error", "operator": "less_than", "expected_path": "/rows/1/q90_masked_sensitivity/relative_l2_error"},
-            {"path": "/rows/1/q90_masked_sensitivity/relative_l2_error", "operator": "less_than", "expected_path": "/rows/0/q90_masked_sensitivity/relative_l2_error"}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_baseline_no_acceptance_threshold"
+            },
+            {
+              "path": "/mechanics_rerun",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/micromorphic_identification_run",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/photometric_residual/valid_fraction",
+              "operator": "equals",
+              "expected": 1.0
+            },
+            {
+              "path": "/sensitivity_mask/primary_metrics_remain_unmasked",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/rows/0/association/pearson",
+              "operator": "greater_than",
+              "expected": -0.05
+            },
+            {
+              "path": "/rows/0/association/pearson",
+              "operator": "less_than",
+              "expected": 0.05
+            },
+            {
+              "path": "/rows/1/association/pearson",
+              "operator": "greater_than",
+              "expected": -0.05
+            },
+            {
+              "path": "/rows/1/association/pearson",
+              "operator": "less_than",
+              "expected": 0.05
+            },
+            {
+              "path": "/rows/2/association/pearson",
+              "operator": "greater_than",
+              "expected": -0.05
+            },
+            {
+              "path": "/rows/2/association/pearson",
+              "operator": "less_than",
+              "expected": 0.05
+            },
+            {
+              "path": "/rows/3/association/pearson",
+              "operator": "greater_than",
+              "expected": -0.05
+            },
+            {
+              "path": "/rows/3/association/pearson",
+              "operator": "less_than",
+              "expected": 0.05
+            },
+            {
+              "path": "/rows/3/q90_masked_sensitivity/relative_l2_error",
+              "operator": "less_than",
+              "expected_path": "/rows/2/q90_masked_sensitivity/relative_l2_error"
+            },
+            {
+              "path": "/rows/2/q90_masked_sensitivity/relative_l2_error",
+              "operator": "less_than",
+              "expected_path": "/rows/1/q90_masked_sensitivity/relative_l2_error"
+            },
+            {
+              "path": "/rows/1/q90_masked_sensitivity/relative_l2_error",
+              "operator": "less_than",
+              "expected_path": "/rows/0/q90_masked_sensitivity/relative_l2_error"
+            }
           ]
         }
       ]
@@ -456,16 +853,56 @@
           "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_surrogate_sensitivity_no_acceptance_threshold"},
-            {"path": "/sample_count", "operator": "equals", "expected": 256},
-            {"path": "/seed", "operator": "equals", "expected": 20260729},
-            {"path": "/mechanics_rerun", "operator": "equals", "expected": false},
-            {"path": "/micromorphic_identification_run", "operator": "equals", "expected": false},
-            {"path": "/ranking_probabilities/relative_l2/alpha4", "operator": "equals", "expected": 1.0},
-            {"path": "/ranking_probabilities/pearson/alpha4", "operator": "equals", "expected": 1.0},
-            {"path": "/ranking_probabilities/absolute_q90_iou/alpha1", "operator": "equals", "expected": 1.0},
-            {"path": "/ranking_probabilities/top10_iou/local", "operator": "equals", "expected": 1.0},
-            {"path": "/peeq_max/status", "operator": "equals", "expected": "not_propagated_requires_mechanical_rerun"}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_surrogate_sensitivity_no_acceptance_threshold"
+            },
+            {
+              "path": "/sample_count",
+              "operator": "equals",
+              "expected": 256
+            },
+            {
+              "path": "/seed",
+              "operator": "equals",
+              "expected": 20260729
+            },
+            {
+              "path": "/mechanics_rerun",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/micromorphic_identification_run",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/ranking_probabilities/relative_l2/alpha4",
+              "operator": "equals",
+              "expected": 1.0
+            },
+            {
+              "path": "/ranking_probabilities/pearson/alpha4",
+              "operator": "equals",
+              "expected": 1.0
+            },
+            {
+              "path": "/ranking_probabilities/absolute_q90_iou/alpha1",
+              "operator": "equals",
+              "expected": 1.0
+            },
+            {
+              "path": "/ranking_probabilities/top10_iou/local",
+              "operator": "equals",
+              "expected": 1.0
+            },
+            {
+              "path": "/peeq_max/status",
+              "operator": "equals",
+              "expected": "not_propagated_requires_mechanical_rerun"
+            }
           ]
         }
       ]
@@ -482,12 +919,36 @@
           "path": "validation/reference_data/ebsd_structural_length_v1/report.json",
           "role": "primary",
           "assertions": [
-            {"path": "/schema_version", "operator": "equals", "expected": 1},
-            {"path": "/input/dataset", "operator": "equals", "expected": "/schmid/max_schmid_factor"},
-            {"path": "/mask/invalid_count", "operator": "equals", "expected": 66},
-            {"path": "/lengths/radial_decay/r_squared", "operator": "greater_than", "expected": 0.99},
-            {"path": "/bootstrap_block_median/valid_block_count", "operator": "equals", "expected": 16.0},
-            {"path": "/lengths/directional_anisotropy_ratio", "operator": "greater_than", "expected": 1.5}
+            {
+              "path": "/schema_version",
+              "operator": "equals",
+              "expected": 1
+            },
+            {
+              "path": "/input/dataset",
+              "operator": "equals",
+              "expected": "/schmid/max_schmid_factor"
+            },
+            {
+              "path": "/mask/invalid_count",
+              "operator": "equals",
+              "expected": 66
+            },
+            {
+              "path": "/lengths/radial_decay/r_squared",
+              "operator": "greater_than",
+              "expected": 0.99
+            },
+            {
+              "path": "/bootstrap_block_median/valid_block_count",
+              "operator": "equals",
+              "expected": 16.0
+            },
+            {
+              "path": "/lengths/directional_anisotropy_ratio",
+              "operator": "greater_than",
+              "expected": 1.5
+            }
           ]
         }
       ]
@@ -496,97 +957,205 @@
       "id": "E-DIC-007",
       "question": "Can the local P43 mechanics replay the measured 40-state DIC boundary history?",
       "fidelity": "full 660 by 610 element local MFront solve with measured boundary states",
-      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; state 3 and state 4 measurement-only bridge diagnostics; transactional internal states; early-state spatial and photometric outlier audit; unchanged constitutive settings",
-      "status": "blocked negative result",
-      "conclusion": "The documented late optical-flow corruption is removed. Early states 3 and 4 contain no spatial or photometric spike at the rejected elements, while Newton creates strains at least 3.64e5 times larger than measured. Transparent state bridges do not move the limit. Measured-history prediction remains blocked by nonlinear globalisation.",
+      "parameters": "40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; unchanged constitutive settings; per-iteration Newton trace",
+      "status": "resolved",
+      "conclusion": "Yes. The replay was blocked by a software defect, not by mechanics: the history-branch elastic predictor was solved against a CSR buffer already overwritten by the elastoplastic tangent. With the predictor given its own operator the full 40-state history completes, with 65 converged increments and 3 cutbacks. Only measured-history runs were affected, so no archived result changed.",
       "sources": [
         {
           "path": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
           "role": "primary measurement-history repair",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_documented_corrupted_frame_repair"},
-            {"path": "/checks/finite", "operator": "equals", "expected": true},
-            {"path": "/checks/unaffected_states_bitwise_identical", "operator": "equals", "expected": true},
-            {"path": "/checks/final_state_bitwise_identical", "operator": "equals", "expected": true},
-            {"path": "/checks/largest_repaired_increment_evm_max", "operator": "less_than", "expected": 0.006}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_documented_corrupted_frame_repair"
+            },
+            {
+              "path": "/checks/final_state_bitwise_identical",
+              "operator": "equals",
+              "expected": true
+            }
           ]
         },
         {
-          "path": "validation/reference_data/dic_multistep_mechanics_p0043_measured_repaired_v1/failure_report.json",
-          "role": "primary mechanical failure",
+          "path": "validation/reference_data/dic_multistep_predictor_fix_p0043_v1/report.json",
+          "role": "primary completed measured-history mechanics",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "failed_local_measured_boundary_history"},
-            {"path": "/mechanics_completed", "operator": "equals", "expected": false},
-            {"path": "/constitutive_state_committed_after_failure", "operator": "equals", "expected": false},
-            {"path": "/diagnostics/converged_increments", "operator": "equals", "expected": 3},
-            {"path": "/diagnostics/first_cutback/increment", "operator": "equals", "expected": 4},
-            {"path": "/diagnostics/first_cutback/reason", "operator": "equals", "expected": "MFront integration failed with status -1"},
-            {"path": "/diagnostics/first_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 80.0},
-            {"path": "/diagnostics/last_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 50.0}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_local_measured_boundary_history"
+            },
+            {
+              "path": "/mode",
+              "operator": "equals",
+              "expected": "measured"
+            },
+            {
+              "path": "/diagnostics/converged_increments",
+              "operator": "equals",
+              "expected": 65
+            },
+            {
+              "path": "/diagnostics/cutbacks",
+              "operator": "equals",
+              "expected": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-008",
+      "question": "Does the loading path change the reconstructed plasticity at a shared endpoint?",
+      "fidelity": "two full local MFront solves on P43, core 360 by 310, padding excluded",
+      "parameters": "identical endpoint boundary displacement; measured 40-state history against a proportional ramp at 40 increments; archived 20-increment ramp as discretisation control",
+      "status": "supported",
+      "conclusion": "Yes. Core PEEQ differs by 15.82 % in relative L2 while the discretisation control differs by 0.20 %, so the effect is 78 times the control. The excess is concentrated in the localisation bands, band structure ratio 13.11, so it is not the diffuse DIC noise ratchet. The measured path accumulates more plasticity.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_multistep_path_dependence_p0043_v1/report.json",
+          "role": "primary path-dependence comparison",
+          "assertions": [
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_final_state_path_dependence"
+            },
+            {
+              "path": "/conclusion/verdict",
+              "operator": "equals",
+              "expected": "present_not_dominant"
+            },
+            {
+              "path": "/conclusion/control_separates",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/path_dependence/relative_l2",
+              "operator": "greater_than",
+              "expected": 0.05
+            },
+            {
+              "path": "/discretisation_control/relative_l2",
+              "operator": "less_than",
+              "expected": 0.01
+            },
+            {
+              "path": "/discriminator/band_structure_ratio",
+              "operator": "greater_than",
+              "expected": 5.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-009",
+      "question": "Does the measured loading path agree better with DIC total strain than a proportional ramp?",
+      "fidelity": "symmetric image-level observation of both final fields through DISFlow, core only",
+      "parameters": "legacy_script_2021 primary profile and declared_medium_v4 sensitivity profile; significance margins taken from the archived DIC-noise sensitivity intervals",
+      "status": "indistinguishable",
+      "conclusion": "No. Under symmetric observation no registered metric moves by more than its margin, on either profile. A 15.8 % change of an unobservable internal variable produces less than DIC noise sensitivity on the observable, because EVM is dominated by the imposed kinematics and DISFlow smooths at about 49 px. This observable can neither validate nor falsify the measured history.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_multistep_observed_path_p0043_v1/measured_legacy_script_2021/report.json",
+          "role": "primary measured-path observation",
+          "assertions": [
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_symmetric_image_observation"
+            },
+            {
+              "path": "/evm_post_filter_applied",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/metrics/observed/errors/relative_l2_error",
+              "operator": "less_than",
+              "expected": 0.6
+            }
           ]
         },
         {
-          "path": "validation/reference_data/dic_multistep_history_p0043_state3_bridge_v1/report.json",
-          "role": "measurement-only state bridge",
+          "path": "validation/reference_data/dic_multistep_observed_path_p0043_v1/proportional40_legacy_script_2021/report.json",
+          "role": "primary proportional-path observation",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_declared_state_bridge"},
-            {"path": "/bridge/states/0", "operator": "equals", "expected": 3},
-            {"path": "/bridge/internal_variables_interpolated", "operator": "equals", "expected": false},
-            {"path": "/checks/largest_source_second_difference_state", "operator": "equals", "expected": 3},
-            {"path": "/checks/unaffected_states_bitwise_identical", "operator": "equals", "expected": true},
-            {"path": "/checks/final_state_bitwise_identical", "operator": "equals", "expected": true}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_symmetric_image_observation"
+            },
+            {
+              "path": "/metrics/observed/errors/relative_l2_error",
+              "operator": "less_than",
+              "expected": 0.6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-010",
+      "question": "Can the imposed boundary be restricted to the modes the DIC chain resolves?",
+      "fidelity": "rank-3 truncation of the boundary deviation from the endpoint ramp, then a full local MFront solve",
+      "parameters": "origin, endpoint and interior bit-identical; exact Dirichlet enforcement retained; rank fixed before the run",
+      "status": "supported",
+      "conclusion": "Yes. The filter removes 0.00972 px RMS against a measured noise floor of 0.0511 px, so 5.3 times below it, and the stage-0 roughness rule independently selects the same three modes. The filtered history converges in 245 Newton iterations with no cutback, against 469 iterations and 3 cutbacks unfiltered, while perturbing core PEEQ by only 1.63 % and leaving DIC agreement indistinguishable. The gain is numerical, not evidential.",
+      "sources": [
+        {
+          "path": "validation/reference_data/dic_multistep_history_p0043_modal3_v1/report.json",
+          "role": "primary boundary filter",
+          "assertions": [
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_modal_boundary_filter"
+            },
+            {
+              "path": "/filter/rank",
+              "operator": "equals",
+              "expected": 3
+            },
+            {
+              "path": "/filter/removed_within_measured_noise",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/filter/origin_and_endpoint_preserved",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/filter/interior_untouched",
+              "operator": "equals",
+              "expected": true
+            }
           ]
         },
         {
-          "path": "validation/reference_data/dic_multistep_mechanics_p0043_measured_state3_bridge_secant_v1/failure_report.json",
-          "role": "state-bridge mechanical failure",
+          "path": "validation/reference_data/dic_multistep_modal3_p0043_v1/report.json",
+          "role": "primary filtered-history mechanics",
           "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "failed_local_measured_boundary_history"},
-            {"path": "/mechanics_completed", "operator": "equals", "expected": false},
-            {"path": "/constitutive_state_committed_after_failure", "operator": "equals", "expected": false},
-            {"path": "/diagnostics/converged_increments", "operator": "equals", "expected": 3},
-            {"path": "/diagnostics/cutbacks", "operator": "equals", "expected": 11},
-            {"path": "/diagnostics/boundary_history_predictor", "operator": "equals", "expected": "secant-corrected-elastic"},
-            {"path": "/diagnostics/secant_predictor_uses", "operator": "greater_than", "expected": 0},
-            {"path": "/diagnostics/first_constitutive_failure/maximum_absolute_engineering_strain", "operator": "greater_than", "expected": 60.0}
-          ]
-        },
-        {
-          "path": "validation/reference_data/dic_multistep_history_p0043_blocked_state4_v1/report.json",
-          "role": "mechanically selected target-state bridge",
-          "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_declared_state_bridge"},
-            {"path": "/bridge/states/0", "operator": "equals", "expected": 4},
-            {"path": "/bridge/internal_variables_interpolated", "operator": "equals", "expected": false},
-            {"path": "/checks/unaffected_states_bitwise_identical", "operator": "equals", "expected": true},
-            {"path": "/checks/final_state_bitwise_identical", "operator": "equals", "expected": true}
-          ]
-        },
-        {
-          "path": "validation/reference_data/dic_multistep_mechanics_p0043_measured_blocked_state4_v1/failure_report.json",
-          "role": "blocked-target bridge mechanical failure",
-          "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "failed_local_measured_boundary_history"},
-            {"path": "/mechanics_completed", "operator": "equals", "expected": false},
-            {"path": "/constitutive_state_committed_after_failure", "operator": "equals", "expected": false},
-            {"path": "/diagnostics/converged_increments", "operator": "equals", "expected": 3},
-            {"path": "/diagnostics/cutbacks", "operator": "equals", "expected": 11},
-            {"path": "/diagnostics/boundary_history_predictor", "operator": "equals", "expected": "elastic"},
-            {"path": "/diagnostics/first_cutback/pseudo_time", "operator": "equals", "expected": 0.1},
-            {"path": "/diagnostics/last_cutback/pseudo_time", "operator": "less_than", "expected": 0.0751}
-          ]
-        },
-        {
-          "path": "validation/reference_data/dic_multistep_p0043_boundary_outlier_v1/report.json",
-          "role": "primary early-state boundary and image outlier audit",
-          "assertions": [
-            {"path": "/status", "operator": "equals", "expected": "completed_exploratory_dic_boundary_outlier_audit"},
-            {"path": "/key_findings/state3_evm_rms_fraction_of_final", "operator": "less_than", "expected": 0.05},
-            {"path": "/key_findings/state4_boundary_nonaffine_fraction", "operator": "less_than", "expected": 0.003},
-            {"path": "/key_findings/minimum_rejected_to_measured_strain_ratio", "operator": "greater_than", "expected": 300000.0},
-            {"path": "/key_findings/state4_is_largest_photometric_rms_states_1_to_n", "operator": "equals", "expected": false},
-            {"path": "/interpretation/dic_spatial_outlier_at_failure_location", "operator": "equals", "expected": "not_observed"},
-            {"path": "/interpretation/dic_photometric_outlier_at_state4", "operator": "equals", "expected": "not_observed"}
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "completed_local_measured_boundary_history"
+            },
+            {
+              "path": "/diagnostics/cutbacks",
+              "operator": "equals",
+              "expected": 0
+            },
+            {
+              "path": "/diagnostics/converged_increments",
+              "operator": "equals",
+              "expected": 40
+            }
           ]
         }
       ]
@@ -595,80 +1164,827 @@
   "tables": [
     {
       "target": "dic_measurement_chain_metrics.inc",
-      "columns": ["Quantity", "Horizontal / column", "Vertical / row"],
+      "columns": [
+        "Quantity",
+        "Horizontal / column",
+        "Vertical / row"
+      ],
       "rows": [
-        ["Centred displacement standard deviation (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/null_test_report.json", "path": "/flow_column_centered_pixels/standard_deviation", "format": ".4f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/null_test_report.json", "path": "/flow_row_centered_pixels/standard_deviation", "format": ".4f"}],
-        ["Sinusoidal MTF-50 wavelength (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/mtf50_wavelength_pixels/horizontal", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/mtf50_wavelength_pixels/vertical", "format": ".1f"}],
-        ["Recovered FWHM for imposed 16 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/2/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/6/recovered_width_pixels", "format": ".1f"}],
-        ["Recovered FWHM for imposed 32 px band (px)", {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/3/recovered_width_pixels", "format": ".1f"}, {"source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json", "path": "/band_rows/7/recovered_width_pixels", "format": ".1f"}]
+        [
+          "Centred displacement standard deviation (px)",
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/null_test_report.json",
+            "path": "/flow_column_centered_pixels/standard_deviation",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/null_test_report.json",
+            "path": "/flow_row_centered_pixels/standard_deviation",
+            "format": ".4f"
+          }
+        ],
+        [
+          "Sinusoidal MTF-50 wavelength (px)",
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
+            "path": "/mtf50_wavelength_pixels/horizontal",
+            "format": ".1f"
+          },
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
+            "path": "/mtf50_wavelength_pixels/vertical",
+            "format": ".1f"
+          }
+        ],
+        [
+          "Recovered FWHM for imposed 16 px band (px)",
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
+            "path": "/band_rows/2/recovered_width_pixels",
+            "format": ".1f"
+          },
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
+            "path": "/band_rows/6/recovered_width_pixels",
+            "format": ".1f"
+          }
+        ],
+        [
+          "Recovered FWHM for imposed 32 px band (px)",
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
+            "path": "/band_rows/3/recovered_width_pixels",
+            "format": ".1f"
+          },
+          {
+            "source": "validation/reference_data/dic_measurement_chain_v4/transfer_report.json",
+            "path": "/band_rows/7/recovered_width_pixels",
+            "format": ".1f"
+          }
+        ]
       ]
     },
     {
       "target": "dic_symmetric_observation_metrics.inc",
-      "columns": ["Alpha", "Raw rel. L2", "Observed rel. L2", "Raw Pearson", "Observed Pearson", "Observed q90 IoU", "Observed q90 active"],
+      "columns": [
+        "Alpha",
+        "Raw rel. L2",
+        "Observed rel. L2",
+        "Raw Pearson",
+        "Observed Pearson",
+        "Observed q90 IoU",
+        "Observed q90 active"
+      ],
       "rows": [
-        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/0/observed/absolute_q90_active_fraction", "format": ".1%"}],
-        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/1/observed/absolute_q90_active_fraction", "format": ".1%"}],
-        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/2/observed/absolute_q90_active_fraction", "format": ".1%"}],
-        [{"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/raw/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/relative_l2", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/raw/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/absolute_q90_iou", "format": ".3f"}, {"source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json", "path": "/rows/3/observed/absolute_q90_active_fraction", "format": ".1%"}]
+        [
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/raw/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/raw/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/absolute_q90_iou",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/absolute_q90_active_fraction",
+            "format": ".1%"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/raw/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/raw/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/absolute_q90_iou",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/absolute_q90_active_fraction",
+            "format": ".1%"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/raw/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/raw/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/absolute_q90_iou",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/absolute_q90_active_fraction",
+            "format": ".1%"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/raw/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/relative_l2",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/raw/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/absolute_q90_iou",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/absolute_q90_active_fraction",
+            "format": ".1%"
+          }
+        ]
       ]
     },
     {
       "target": "dic_photometric_quality_metrics.inc",
-      "columns": ["Alpha", "Residual/error Pearson", "Residual/error Spearman", "Unmasked rel. L2", "q90 sensitivity rel. L2", "Unmasked FEM/DIC r", "q90 sensitivity FEM/DIC r"],
+      "columns": [
+        "Alpha",
+        "Residual/error Pearson",
+        "Residual/error Spearman",
+        "Unmasked rel. L2",
+        "q90 sensitivity rel. L2",
+        "Unmasked FEM/DIC r",
+        "q90 sensitivity FEM/DIC r"
+      ],
       "rows": [
-        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/0/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/1/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/2/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/alpha", "format": ".0f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/association/pearson", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/association/spearman", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/unmasked/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/q90_masked_sensitivity/relative_l2_error", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/unmasked/pearson_correlation", "format": ".3f"}, {"source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json", "path": "/rows/3/q90_masked_sensitivity/pearson_correlation", "format": ".3f"}]
+        [
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/association/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/association/spearman",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/unmasked/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/q90_masked_sensitivity/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/unmasked/pearson_correlation",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/0/q90_masked_sensitivity/pearson_correlation",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/association/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/association/spearman",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/unmasked/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/q90_masked_sensitivity/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/unmasked/pearson_correlation",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/1/q90_masked_sensitivity/pearson_correlation",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/association/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/association/spearman",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/unmasked/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/q90_masked_sensitivity/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/unmasked/pearson_correlation",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/2/q90_masked_sensitivity/pearson_correlation",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/alpha",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/association/pearson",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/association/spearman",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/unmasked/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/q90_masked_sensitivity/relative_l2_error",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/unmasked/pearson_correlation",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_photometric_quality_p0043_v1/report.json",
+            "path": "/rows/3/q90_masked_sensitivity/pearson_correlation",
+            "format": ".3f"
+          }
+        ]
       ]
     },
     {
       "target": "dic_epsilon_band32_metrics.inc",
-      "columns": ["Epsilon", "FWHM (px)", "Peak gain", "Along-band CV", "Relative L2"],
+      "columns": [
+        "Epsilon",
+        "FWHM (px)",
+        "Peak gain",
+        "Along-band CV",
+        "Relative L2"
+      ],
       "rows": [
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/0/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/1/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/2/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/3/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/4/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/5/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/6/relative_l2", "format": ".3f"}],
-        [{"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/epsilon", "format": ".4g"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/fwhm_pixels", "format": ".0f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/peak_gain", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/along_band_peak_cv", "format": ".3f"}, {"source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json", "path": "/metrics/7/relative_l2", "format": ".3f"}]
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/0/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/0/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/0/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/0/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/0/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/1/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/1/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/1/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/1/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/1/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/2/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/2/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/2/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/2/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/2/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/3/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/3/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/3/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/3/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/3/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/4/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/4/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/4/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/4/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/4/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/5/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/5/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/5/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/5/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/5/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/6/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/6/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/6/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/6/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/6/relative_l2",
+            "format": ".3f"
+          }
+        ],
+        [
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/7/epsilon",
+            "format": ".4g"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/7/fwhm_pixels",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/7/peak_gain",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/7/along_band_peak_cv",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/dic_epsilon_band32_v2/manifest.json",
+            "path": "/metrics/7/relative_l2",
+            "format": ".3f"
+          }
+        ]
       ]
     },
     {
       "target": "local_material_point_metrics.inc",
-      "columns": ["Loading path", "Stress relative L2", "Maximum stress error (MPa)", "Maximum PEEQ error"],
+      "columns": [
+        "Loading path",
+        "Stress relative L2",
+        "Maximum stress error (MPa)",
+        "Maximum PEEQ error"
+      ],
       "rows": [
-        ["Uniaxial", {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/uniaxial_strain/stress_relative_l2", "format": ".3e"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/uniaxial_strain/maximum_stress_error_mpa", "format": ".3f"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/uniaxial_strain/maximum_peeq_absolute_error", "format": ".3e"}],
-        ["Equibiaxial", {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/equibiaxial_strain/stress_relative_l2", "format": ".3e"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/equibiaxial_strain/maximum_stress_error_mpa", "format": ".3f"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/equibiaxial_strain/maximum_peeq_absolute_error", "format": ".3e"}],
-        ["Simple shear", {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/simple_shear/stress_relative_l2", "format": ".3e"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/simple_shear/maximum_stress_error_mpa", "format": ".3f"}, {"source": "validation/reference_data/mfront_material_point_v1/report.json", "path": "/paths/simple_shear/maximum_peeq_absolute_error", "format": ".3e"}]
+        [
+          "Uniaxial",
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/uniaxial_strain/stress_relative_l2",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/uniaxial_strain/maximum_stress_error_mpa",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/uniaxial_strain/maximum_peeq_absolute_error",
+            "format": ".3e"
+          }
+        ],
+        [
+          "Equibiaxial",
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/equibiaxial_strain/stress_relative_l2",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/equibiaxial_strain/maximum_stress_error_mpa",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/equibiaxial_strain/maximum_peeq_absolute_error",
+            "format": ".3e"
+          }
+        ],
+        [
+          "Simple shear",
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/simple_shear/stress_relative_l2",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/simple_shear/maximum_stress_error_mpa",
+            "format": ".3f"
+          },
+          {
+            "source": "validation/reference_data/mfront_material_point_v1/report.json",
+            "path": "/paths/simple_shear/maximum_peeq_absolute_error",
+            "format": ".3e"
+          }
+        ]
       ]
     },
     {
       "target": "local_fem_metrics.inc",
-      "columns": ["Field", "Relative Linf", "Maximum absolute error", "Acceptance threshold"],
+      "columns": [
+        "Field",
+        "Relative Linf",
+        "Maximum absolute error",
+        "Acceptance threshold"
+      ],
       "rows": [
-        ["Stress (MPa)", {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/stress_mpa/relative_linf", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/stress_mpa/maximum_absolute_error", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/thresholds/stress_mpa/maximum", "format": ".1e"}],
-        ["PEEQ", {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/equivalent_plastic_strain/relative_linf", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/metrics/equivalent_plastic_strain/maximum_absolute_error", "format": ".3e"}, {"source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json", "path": "/thresholds/equivalent_plastic_strain/maximum", "format": ".1e"}]
+        [
+          "Stress (MPa)",
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "/metrics/stress_mpa/relative_linf",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "/metrics/stress_mpa/maximum_absolute_error",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "/thresholds/stress_mpa/maximum",
+            "format": ".1e"
+          }
+        ],
+        [
+          "PEEQ",
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "/metrics/equivalent_plastic_strain/relative_linf",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "/metrics/equivalent_plastic_strain/maximum_absolute_error",
+            "format": ".3e"
+          },
+          {
+            "source": "validation/reference_data/mfront_newton_dic_10x10_v1/report.json",
+            "path": "/thresholds/equivalent_plastic_strain/maximum",
+            "format": ".1e"
+          }
+        ]
       ]
     },
     {
       "target": "micromorphic_redistribution_metrics.inc",
-      "columns": ["Case", "Relative L2", "Pearson", "PEEQ max", "PEEQ gradient RMS"],
+      "columns": [
+        "Case",
+        "Relative L2",
+        "Pearson",
+        "PEEQ max",
+        "PEEQ gradient RMS"
+      ],
       "rows": [
-        ["Local", {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/relative_l2", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/correlation", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/peeq_max", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/0/peeq_gradient_rms", "format": ".4f"}],
-        ["Coupled alpha=4", {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/relative_l2", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/correlation", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/peeq_max", "format": ".4f"}, {"source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json", "path": "/rows/3/peeq_gradient_rms", "format": ".4f"}]
+        [
+          "Local",
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/0/relative_l2",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/0/correlation",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/0/peeq_max",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/0/peeq_gradient_rms",
+            "format": ".4f"
+          }
+        ],
+        [
+          "Coupled alpha=4",
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/3/relative_l2",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/3/correlation",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/3/peeq_max",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/joint_nonlocal_identification_p0043_v1/results.json",
+            "path": "/rows/3/peeq_gradient_rms",
+            "format": ".4f"
+          }
+        ]
       ]
     },
     {
       "target": "identifiability_status.inc",
-      "columns": ["Length (um)", "Amplitude-optimum alpha", "Status"],
+      "columns": [
+        "Length (um)",
+        "Amplitude-optimum alpha",
+        "Status"
+      ],
       "rows": [
-        ["20", "6", "higher coupling numerically censored"],
-        [{"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/0/length_scale_um", "format": ".0f"}, {"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/0/alpha", "format": ".0f"}, "interior optimum"],
-        [{"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/1/length_scale_um", "format": ".0f"}, {"source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json", "path": "/scientific_status/interior_amplitude_optima/1/alpha", "format": ".0f"}, "interior optimum"]
+        [
+          "20",
+          "6",
+          "higher coupling numerically censored"
+        ],
+        [
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "path": "/scientific_status/interior_amplitude_optima/0/length_scale_um",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "path": "/scientific_status/interior_amplitude_optima/0/alpha",
+            "format": ".0f"
+          },
+          "interior optimum"
+        ],
+        [
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "path": "/scientific_status/interior_amplitude_optima/1/length_scale_um",
+            "format": ".0f"
+          },
+          {
+            "source": "validation/joint_nonlocal_identifiability_p0043_newton25_execution.json",
+            "path": "/scientific_status/interior_amplitude_optima/1/alpha",
+            "format": ".0f"
+          },
+          "interior optimum"
+        ]
       ]
     }
   ],

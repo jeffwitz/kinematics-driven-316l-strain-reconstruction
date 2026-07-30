@@ -97,7 +97,25 @@
 : Sources: primary: `validation/reference_data/ebsd_structural_length_v1/report.json`.
 
 **E-DIC-007 — Can the local P43 mechanics replay the measured 40-state DIC boundary history?**
-: Fidelity: full 660 by 610 element local MFront solve with measured boundary states. Parameters: 40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; state 3 and state 4 measurement-only bridge diagnostics; transactional internal states; early-state spatial and photometric outlier audit; unchanged constitutive settings.
-: Status: **blocked negative result**.
-: Conclusion: The documented late optical-flow corruption is removed. Early states 3 and 4 contain no spatial or photometric spike at the rejected elements, while Newton creates strains at least 3.64e5 times larger than measured. Transparent state bridges do not move the limit. Measured-history prediction remains blocked by nonlinear globalisation.
-: Sources: primary measurement-history repair: `validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json`<br>primary mechanical failure: `validation/reference_data/dic_multistep_mechanics_p0043_measured_repaired_v1/failure_report.json`<br>measurement-only state bridge: `validation/reference_data/dic_multistep_history_p0043_state3_bridge_v1/report.json`<br>state-bridge mechanical failure: `validation/reference_data/dic_multistep_mechanics_p0043_measured_state3_bridge_secant_v1/failure_report.json`<br>mechanically selected target-state bridge: `validation/reference_data/dic_multistep_history_p0043_blocked_state4_v1/report.json`<br>blocked-target bridge mechanical failure: `validation/reference_data/dic_multistep_mechanics_p0043_measured_blocked_state4_v1/failure_report.json`<br>primary early-state boundary and image outlier audit: `validation/reference_data/dic_multistep_p0043_boundary_outlier_v1/report.json`.
+: Fidelity: full 660 by 610 element local MFront solve with measured boundary states. Parameters: 40 direct-reference states; endpoint anchored; documented states 31 and 32 linearly repaired; unchanged constitutive settings; per-iteration Newton trace.
+: Status: **resolved**.
+: Conclusion: Yes. The replay was blocked by a software defect, not by mechanics: the history-branch elastic predictor was solved against a CSR buffer already overwritten by the elastoplastic tangent. With the predictor given its own operator the full 40-state history completes, with 65 converged increments and 3 cutbacks. Only measured-history runs were affected, so no archived result changed.
+: Sources: primary measurement-history repair: `validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json`<br>primary completed measured-history mechanics: `validation/reference_data/dic_multistep_predictor_fix_p0043_v1/report.json`.
+
+**E-DIC-008 — Does the loading path change the reconstructed plasticity at a shared endpoint?**
+: Fidelity: two full local MFront solves on P43, core 360 by 310, padding excluded. Parameters: identical endpoint boundary displacement; measured 40-state history against a proportional ramp at 40 increments; archived 20-increment ramp as discretisation control.
+: Status: **supported**.
+: Conclusion: Yes. Core PEEQ differs by 15.82 % in relative L2 while the discretisation control differs by 0.20 %, so the effect is 78 times the control. The excess is concentrated in the localisation bands, band structure ratio 13.11, so it is not the diffuse DIC noise ratchet. The measured path accumulates more plasticity.
+: Sources: primary path-dependence comparison: `validation/reference_data/dic_multistep_path_dependence_p0043_v1/report.json`.
+
+**E-DIC-009 — Does the measured loading path agree better with DIC total strain than a proportional ramp?**
+: Fidelity: symmetric image-level observation of both final fields through DISFlow, core only. Parameters: legacy_script_2021 primary profile and declared_medium_v4 sensitivity profile; significance margins taken from the archived DIC-noise sensitivity intervals.
+: Status: **indistinguishable**.
+: Conclusion: No. Under symmetric observation no registered metric moves by more than its margin, on either profile. A 15.8 % change of an unobservable internal variable produces less than DIC noise sensitivity on the observable, because EVM is dominated by the imposed kinematics and DISFlow smooths at about 49 px. This observable can neither validate nor falsify the measured history.
+: Sources: primary measured-path observation: `validation/reference_data/dic_multistep_observed_path_p0043_v1/measured_legacy_script_2021/report.json`<br>primary proportional-path observation: `validation/reference_data/dic_multistep_observed_path_p0043_v1/proportional40_legacy_script_2021/report.json`.
+
+**E-DIC-010 — Can the imposed boundary be restricted to the modes the DIC chain resolves?**
+: Fidelity: rank-3 truncation of the boundary deviation from the endpoint ramp, then a full local MFront solve. Parameters: origin, endpoint and interior bit-identical; exact Dirichlet enforcement retained; rank fixed before the run.
+: Status: **supported**.
+: Conclusion: Yes. The filter removes 0.00972 px RMS against a measured noise floor of 0.0511 px, so 5.3 times below it, and the stage-0 roughness rule independently selects the same three modes. The filtered history converges in 245 Newton iterations with no cutback, against 469 iterations and 3 cutbacks unfiltered, while perturbing core PEEQ by only 1.63 % and leaving DIC agreement indistinguishable. The gain is numerical, not evidential.
+: Sources: primary boundary filter: `validation/reference_data/dic_multistep_history_p0043_modal3_v1/report.json`<br>primary filtered-history mechanics: `validation/reference_data/dic_multistep_modal3_p0043_v1/report.json`.

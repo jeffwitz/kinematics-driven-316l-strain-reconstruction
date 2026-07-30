@@ -16,6 +16,10 @@ authoritative option list for the installed revision.
 | `replay-dic-observation` | pass archived FEM displacement through the image-level DISFlow operator |
 | `diagnose-dic-photometric-quality` | relate direct image residuals to archived V3 FEM/DIC field errors |
 | `diagnose-dic-boundary-history` | audit early DIC boundary states at recorded nonlinear-failure locations |
+| `diagnose-dic-boundary-loading-subspace` | measure boundary temporal noise and the loading subspace |
+| `filter-dic-boundary-history` | truncate a measured boundary history to its resolved modes |
+| `compare-path-dependence` | compare final-state fields reached by two loading paths |
+| `export-run-as-campaign` | present a multistep run in the layout the DISFlow replay expects |
 | `diagnose-nonlocality` | run an output-only Helmholtz diagnostic |
 | `estimate-nonlocal-reference` | derive $H_{\mathrm{ref}}$ from a local campaign |
 | `validate-coupled-nonlocal` | compare raw coupled fields with DIC |
@@ -131,3 +135,57 @@ centred measured repeat-flow residual through the common EVM operator while
 keeping every FEM field fixed. Defaults are `--samples 256` and
 `--seed 20260729`. The reported intervals are surrogate sensitivities, not
 confidence intervals; PEEQ is not propagated without a mechanical rerun.
+
+`diagnose-dic-boundary-loading-subspace` requires an immutable history and its
+report, plus data and figure outputs. It estimates per-state measurement noise
+from temporal second differences, which is valid because the states are
+independent direct correlations of one reference image, and separates loading
+signal from noise by the temporal roughness of each SVD mode. States repaired
+by interpolation are excluded from the noise estimate, read from the immutable
+repair report rather than from a magnitude cutoff. It runs no mechanics.
+
+`filter-dic-boundary-history` requires an immutable history and its report, and
+writes a filtered copy whose boundary ring is a rank `--rank` reconstruction of
+its deviation from the straight endpoint ramp. Origin, endpoint and the whole
+interior stay bit-identical, and Dirichlet enforcement stays exact: only the
+imposed data changes. The report states the RMS amplitude removed, in pixels,
+against the measured noise floor. A filtered history is a drop-in input to
+`run-dic-multistep-mechanics`.
+
+`compare-path-dependence` requires a measured run directory, a proportional run
+directory with the **same increment count**, and one archived field as
+discretisation control. It evaluates the core only, padding excluded, and
+withdraws its verdict if the control is not at least three times smaller than
+the path effect. It also reports a band structure ratio separating a diffuse
+noise-like excess from one concentrated in the localisation bands.
+
+`export-run-as-campaign` copies a multistep run's `U.npy` into the
+`manifest.json` plus `partitions/<id>/` layout that `replay-dic-observation`
+expects, recomputing the hash from the copied array rather than carrying it
+over. It exists so a measured-history run can pass through the archived
+observation operator without duplicating that workflow.
+
+`run-dic-multistep-mechanics` accepts `--record-newton-trace`, which writes an
+observational per-iteration `newton_trace.csv` **including after a failed
+solve**. It records the correction norm, residual, tangent diagonal statistics,
+the constitutive-to-elastic tangent ratio and the degree of freedom carrying
+the largest correction. The trace never alters the numerical path; that
+invariance is asserted by a test requiring bitwise identical fields with and
+without it.
+
+## Boundary enforcement
+
+`run_case_study` accepts `boundary_enforcement`, which defaults to
+`"elimination"`. Elimination is the production formulation: prescribed degrees
+of freedom are removed from the solved system, the constraint holds exactly and
+conditioning is untouched.
+
+`"penalty"` keeps them in the system with a finite spring of
+`boundary_penalty_stiffness` on their diagonal, so the boundary becomes a
+weighted data term rather than a hard constraint. It returns
+`boundary_misfit_mm`, the nodal gap between the measurement and the value the
+solver actually imposes, and the reaction becomes the spring force conjugate to
+that gap. The consistency error scales as one over the spring stiffness, and
+conditioning degrades once the spring far exceeds the tangent diagonal, so a
+finite measurement-derived weight is intended rather than a large one. This
+mode is diagnostic; no archived campaign uses it.

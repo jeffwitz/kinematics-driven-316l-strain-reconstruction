@@ -283,89 +283,50 @@ together while preserving their distributions reduces correlation from
 much of the smooth background, while the original map placement contributes
 genuine localisation information. Neither result establishes transferability.
 
-## Measured loading history: current numerical limit
+## Measured loading history: resolved, and what it changes
 
-The archived image sequence provides 40 ordered displacement states. They
-were obtained by direct reference-to-current correlation, so this dataset does
-not accumulate incremental optical-flow drift. Two states contain a
-documented correlation failure: their maximum incremental EVM reaches 5.46%.
-The historical identification source also marks these frames as corrupted.
+The archived image sequence provides 40 ordered displacement states obtained by
+direct reference-to-current correlation, so this dataset does not accumulate
+incremental optical-flow drift. Two states contain a documented correlation
+failure reaching 5.46% incremental EVM; a pre-registered interpolation reduces
+that to 0.562% while leaving every other state and the endpoint unchanged.
 
-A pre-registered displacement interpolation reduces the maximum incremental
-EVM to 0.562% while leaving every other state and the final endpoint
-unchanged. The unchanged local mechanical solver nevertheless fails earlier,
-on the transition from state 3 to state 4. Repeated cutback approaches the
-third converged state without finding an admissible Newton update.
+This replay was blocked for a long time on the transition from state 3 to state
+4. The blockage was a **software defect**, not a mechanical limit: the elastic
+predictor of the history branch was solved against a stiffness buffer already
+overwritten by the elastoplastic tangent. The proportional path never met the
+defect because its predictor is computed once before the increment loop. Giving
+the predictor its own operator resolves it, and the full 40-state history now
+completes. No archived result changed, because every archived campaign uses the
+proportional path.
 
-```{figure} ../_static/evidence/p43_multistep_corrupted_frames.png
-:alt: Original and repaired state and incremental EVM maps around the two corrupted DIC frames
-:width: 100%
+With both paths available and sharing a bit-identical endpoint boundary
+displacement, the comparison isolates path dependence:
 
-The first and third rows expose the transient correlation artefact. The
-second and fourth rows show the pre-registered displacement interpolation.
-Common scales are retained within each field family.
-```
+- core PEEQ differs by **15.8 %** in relative $L_2$, against **0.20 %** for the
+  20-to-40 increment discretisation control;
+- the excess concentrates in the localisation bands, thirteen times stronger
+  inside the top decile than outside, so it is not the diffuse DIC noise
+  ratchet, whose one-sided bias is estimated at 3.6 %;
+- the measured path accumulates more plasticity, by 4.9 % on the mean and
+  14.8 % at the peak.
 
-This is a reported negative result. It does not invalidate the measured path,
-but it means that a conditional temporal-prediction result is not yet
-available. Instrumentation shows that the undamped Newton correction creates
-trial engineering strains of 82.3 and 58.0 in neighbouring upper-boundary
-elements; MFront is rejecting this nonphysical overshoot.
+Under symmetric image-level observation, however, **no registered metric
+separates the two paths** at the DIC-noise significance margins, on either
+profile. A raw comparison would report the measured path as worse, which is the
+observation asymmetry documented above. The measured history therefore changes
+an unobservable internal variable substantially while changing the observable by
+less than the noise: this observable can neither validate nor falsify it.
 
-State 3 is genuinely early: its EVM RMS is only 4.79% of the final EVM RMS.
-An image and boundary audit nevertheless finds no corresponding DIC outlier.
-At state 4, the non-affine part of the boundary increment is only 0.273% of
-its RMS amplitude; its photometric residual is not the largest among states
-1--6. The exact measured Gauss strain in the rejected elements is
-`8.89e-5`, while Newton proposes strains of order 58--82. Across states 1--6,
-the rejected-to-measured ratio remains above `3.64e5`.
+Restricting the imposed boundary to the three modes the chain resolves removes
+content of 0.00972 px RMS against a 0.0511 px noise floor. The filtered history
+converges in 245 Newton iterations with no cutback, against 469 iterations and
+3 cutbacks unfiltered, while moving core PEEQ by only 1.63 % and leaving DIC
+agreement indistinguishable. The gain is numerical, not evidential. The path
+dependence survives the filter, which independently confirms it is not a noise
+artefact.
 
-```{figure} ../_static/evidence/p43_early_boundary_outlier_diagnostic.png
-:alt: Audit of early measured EVM, boundary residuals, local strains and photometric residuals at the rejected elements
-:width: 100%
-
-The boundary remains smooth at the two upper-edge elements rejected by
-MFront. The enormous trial strain is created by the unconverged interior
-Newton correction, not imposed by the measured displacement.
-```
-
-The apparently surprising convergence of the final field is not a
-contradiction. The historical baseline reaches that field through a straight
-proportional displacement ramp; it does not replay the measured intermediate
-states. At state 4, measured affine transverse contraction has reached 7.29%
-of its final value, but affine axial extension only 1.09%. The two calculations
-therefore cross the heterogeneous plastic activation region along different
-paths.
-
-```{figure} ../_static/evidence/p43_measured_vs_proportional_path.png
-:alt: Measured affine boundary strain path and proportional path to the same final displacement field
-:width: 100%
-
-The left panel shows the complete paths; the right panel magnifies states
-0--6. Convergence on the dashed path does not validate Newton globalisation on
-the coloured measured path.
-```
-
-Two transparent temporal-bridge controls have since been run. Replacing the
-largest boundary-history curvature state by a linear interpolation, together
-with a secant-corrected displacement predictor, still stops after three
-converged states and 11 cutbacks. Replacing the mechanically blocked target
-state by the average of its two neighbours and restoring the elastic predictor
-gives the same limiting pseudo-time. The complete diagnostic maps and
-machine-readable failure reports are archived under
-`validation/reference_data/dic_multistep_history_p0043_state3_bridge_v1` and
-`validation/reference_data/dic_multistep_history_p0043_blocked_state4_v1`.
-
-The transaction protocol is not the issue: every MFront evaluation starts
-from the last committed state, and internal variables are integrated rather
-than interpolated. Further solver-driven frame deletion is not justified.
-A residual line search prevents the immediate overshoot but was stopped after
-2 h 47 min because it accumulated iterations and cutbacks. The remaining
-limit is therefore Newton globalisation near the onset reached at the third
-state, not one isolated DIC frame. The next useful instrumentation is the
-free-DOF Newton correction immediately before the rejected constitutive trial,
-including its elementwise strain increment and tangent conditioning. Further
-frame deletion is not supported by the measurement audit.
+The full argument is in {doc}`temporal_loading_path`.
 
 ## Not demonstrated
 
@@ -374,7 +335,9 @@ frame deletion is not supported by the measurement audit.
 - a material internal length for 316L;
 - unchanged-parameter transfer to an independent band-containing region;
 - complete Abaqus parity;
-- prediction before the experiment with the present local descriptor maps.
+- prediction before the experiment with the present local descriptor maps;
+- that either loading path is the one the specimen followed, since no force
+  synchronisation and no unloading branch exist.
 
 ## Identification consequence
 
@@ -401,9 +364,12 @@ reading path.
 ## Conclusion
 
 > Symmetric image-level observation removes a large part of the apparent
-> FEM/DIC discrepancy and changes the coupling ranking. Micromorphic
-> redistribution remains demonstrated, but neither \(H_\chi\) nor \(\ell\)
-> is identified and no material internal length is claimed.
+> FEM/DIC discrepancy and changes the coupling ranking. The measured temporal
+> loading path changes reconstructed plasticity by about 16 % but leaves that
+> observation unchanged, so it can neither be confirmed nor refuted by the
+> present measurement chain. Micromorphic redistribution remains demonstrated,
+> but neither \(H_\chi\) nor \(\ell\) is identified and no material internal
+> length is claimed.
 
 The final chapter, {doc}`scope_and_prediction`, states what the software can
 claim and what extension is required next.

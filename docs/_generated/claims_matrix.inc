@@ -19,3 +19,6 @@
 | Direct local brightness residual explains the remaining P43 FEM/DIC field error | **not supported** | One band-containing P43 core; direct unnormalised brightness residual; no propagated uncertainty claim | `E-DIC-005` |
 | Hchi and ell statistically identified | **not demonstrated** | The earlier objective surface used raw FEM against observed DIC and must not be reused after the symmetric observation result | `E-ID-001`, `E-DIC-004` |
 | Transferable material internal length identified | **not claimed** | Requires unchanged-parameter transfer to independent observations | `E-ID-001` |
+| Measured temporal boundary history can be replayed end to end | **demonstrated** | Convergence only; says nothing about physical correctness of the intermediate states | `E-DIC-007` |
+| Loading path changes reconstructed plasticity at a shared endpoint | **supported** | 15.8 % on core PEEQ under one constitutive model; the DIC noise contribution is not subtracted | `E-DIC-008`, `E-DIC-010` |
+| Measured path is closer to DIC than a proportional ramp | **not supported** | Indistinguishable at the registered margins; the observable is insensitive at this scale | `E-DIC-009` |

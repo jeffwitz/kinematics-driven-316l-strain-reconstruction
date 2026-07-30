@@ -12,8 +12,9 @@ commands, tensor layouts and solver implementation details live elsewhere.
 4. {doc}`dic_synthetic_measurement_tests` — see what the DIC chain resolves in EVM.
 5. {doc}`micromorphic_model` — introduce coupling strength and spatial length.
 6. {doc}`parameter_identification` — separate their effects with F0, F1 and F2.
-7. {doc}`current_evidence` — state the present evidence without campaign chronology.
-8. {doc}`scope_and_prediction` — distinguish reconstruction, identification and prediction.
+7. {doc}`temporal_loading_path` — ask whether the real loading sequence changes the answer.
+8. {doc}`current_evidence` — state the present evidence without campaign chronology.
+9. {doc}`scope_and_prediction` — distinguish reconstruction, identification and prediction.
 
 The operational entry points are {doc}`../how-to/index`; stable contracts are
 in {doc}`../reference/index`.
@@ -27,6 +28,7 @@ missing_spatial_interaction
 dic_synthetic_measurement_tests
 micromorphic_model
 parameter_identification
+temporal_loading_path
 current_evidence
 scope_and_prediction
 ```
