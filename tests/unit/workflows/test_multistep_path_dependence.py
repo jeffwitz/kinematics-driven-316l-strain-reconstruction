@@ -154,3 +154,70 @@ def test_comparison_rejects_a_swapped_mode(tmp_path: Path) -> None:
             output_directory=tmp_path / "out",
             figure_directory=tmp_path / "fig",
         )
+
+
+def test_export_run_as_observation_campaign_builds_the_expected_layout(tmp_path: Path) -> None:
+    from fem_inhouse.workflows.multistep_path_dependence import (
+        export_run_as_observation_campaign,
+    )
+
+    run = tmp_path / "run"
+    run.mkdir()
+    displacement = np.zeros((5, 4, 2))
+    np.save(run / "U.npy", displacement)
+    digest = __import__("hashlib").sha256((run / "U.npy").read_bytes()).hexdigest()
+    (run / "report.json").write_text(
+        json.dumps(
+            {
+                "partition_id": 43,
+                "status": "completed_local_measured_boundary_history",
+                "mode": "measured",
+                "solve_bounds": list(SOLVE),
+                "core_bounds": list(CORE),
+                "config": {"solver": {"increments": 40}},
+                "outputs": {"U.npy": digest},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = export_run_as_observation_campaign(
+        run_directory=run, output_directory=tmp_path / "campaign", partition_id=43
+    )
+
+    manifest = json.loads((tmp_path / "campaign" / "manifest.json").read_text())
+    status = json.loads(
+        (tmp_path / "campaign" / "partitions" / "0043" / "status.json").read_text()
+    )
+    assert manifest["layout"]["partitions"][0]["solve_bounds"] == list(SOLVE)
+    assert status["complete"] is True
+    assert status["outputs"]["U"] == result["u_sha256"] == digest
+
+
+def test_export_run_as_observation_campaign_rejects_a_tampered_field(tmp_path: Path) -> None:
+    from fem_inhouse.workflows.multistep_path_dependence import (
+        export_run_as_observation_campaign,
+    )
+
+    run = tmp_path / "run"
+    run.mkdir()
+    np.save(run / "U.npy", np.zeros((5, 4, 2)))
+    (run / "report.json").write_text(
+        json.dumps(
+            {
+                "partition_id": 43,
+                "status": "x",
+                "mode": "measured",
+                "solve_bounds": list(SOLVE),
+                "core_bounds": list(CORE),
+                "config": {"solver": {"increments": 40}},
+                "outputs": {"U.npy": "0" * 64},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="does not match the run report"):
+        export_run_as_observation_campaign(
+            run_directory=run, output_directory=tmp_path / "campaign", partition_id=43
+        )

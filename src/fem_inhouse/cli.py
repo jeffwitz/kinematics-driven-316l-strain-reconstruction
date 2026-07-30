@@ -45,6 +45,7 @@ from fem_inhouse.workflows import (
     diagnose_dic_photometric_quality,
     diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
+    export_run_as_observation_campaign,
     generate_high_fidelity_manifest,
     generate_joint_identification_report,
     inspect_joint_identification,
@@ -565,6 +566,15 @@ def _parser() -> argparse.ArgumentParser:
     path_dependence.add_argument("--figure-output", type=Path, required=True)
     path_dependence.add_argument("--overwrite", action="store_true")
 
+    export_campaign = commands.add_parser(
+        "export-run-as-campaign",
+        help="present a multistep run in the campaign layout the DISFlow replay expects",
+    )
+    export_campaign.add_argument("--run", type=Path, required=True)
+    export_campaign.add_argument("--partition-id", type=int, required=True)
+    export_campaign.add_argument("--output", type=Path, required=True)
+    export_campaign.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -1069,6 +1079,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(path_report)
+        return 0
+    if args.command == "export-run-as-campaign":
+        export_report = export_run_as_observation_campaign(
+            run_directory=args.run,
+            output_directory=args.output,
+            partition_id=args.partition_id,
+            overwrite=args.overwrite,
+        )
+        _print_json(export_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(

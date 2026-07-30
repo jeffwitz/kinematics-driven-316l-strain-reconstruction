@@ -777,6 +777,47 @@ des marges bien plus larges (IoU top-10 % EF/DIC autour de `0,25–0,30` contre
 Artefacts : `validation/dic_multistep_p0043_path_dependence_preregistration.md`
 et `validation/dic_multistep_p0043_path_dependence_results.md`.
 
+**Comparaison à la DIC : les deux trajets sont indiscernables.** Sous
+observation symétrique au niveau image, piloter le modèle par l'histoire
+incrémentale réellement mesurée ne rapproche **pas** la déformation totale
+finale de la DIC par rapport à une rampe proportionnelle au même point final.
+
+- profil primaire `legacy_script_2021`, écarts A−B : L2 relative `+0,01545`
+  (marge `0,0202`), Pearson `+0,00023` (marge `0,0185`), IoU top-10 %
+  `−0,00444` (marge `0,0189`), IoU q90 absolu `+0,01488` (marge `0,0217`).
+  **Aucune métrique ne franchit sa marge** ;
+- le profil de sensibilité `declared_medium_v4` donne les mêmes verdicts ; les
+  deux profils ne se contredisent pas ;
+- les marges viennent des intervalles de sensibilité au bruit DIC déjà mesurés
+  dans `dic_uncertainty_propagation_p0043_results.md`, pas d'un choix ad hoc ;
+- tendance faible mais cohérente sur les deux profils, **sous la marge** : le
+  trajet mesuré est légèrement moins bon en amplitude et légèrement meilleur en
+  recouvrement q90, avec une fraction active `0,152` contre `0,161` pour une
+  référence DIC à `0,10`. C'est la trace observable du résultat PEEQ, le trajet
+  mesuré concentre davantage la plasticité ;
+- la vue **brute**, biaisée et conservée comme contrôle, donnerait le trajet
+  mesuré *moins bon* en amplitude (`+0,02809`, au-delà de la marge). Ce n'est
+  pas la conclusion enregistrée ;
+- l'attente pré-enregistrée était que le trajet mesuré soit au moins aussi
+  proche. Elle n'est pas vérifiée.
+
+**Pourquoi `15,82 %` d'écart PEEQ ne donnent aucun gain mesurable** : l'EVM
+n'est pas le PEEQ et reste dominée par la cinématique imposée, identique aux
+deux trajets par construction ; et le MTF-50 de la chaîne à `49 px` lisse
+précisément les filaments étroits où les trajets diffèrent. Les EVM observées
+diffèrent de `1 %` au maximum et `0,08 %` en moyenne.
+
+**Conséquence d'identifiabilité** : l'histoire mesurée modifie de `15,8 %` une
+variable interne non observable tout en modifiant l'observable moins que la
+sensibilité au bruit DIC. Elle ne peut donc être ni validée ni réfutée par cet
+observable. Discriminer les trajets exigerait un observable sensible à la
+plasticité cumulée, que la chaîne de mesure actuelle ne fournit pas. La rampe
+proportionnelle reste un choix défendable, à `2,2×` moins de travail Newton.
+
+Artefacts :
+`validation/dic_multistep_p0043_observed_path_comparison_preregistration.md`
+et `validation/dic_multistep_p0043_observed_path_comparison_results.md`.
+
 **Cause racine identifiée le 2026-07-30 par l'instrumentation Newton — le
 blocage multi-pas est un défaut logiciel, pas numérique ni physique :**
 
@@ -2256,8 +2297,27 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-30 | Rejeu P43 histoire mesurée 40 états | `run-dic-multistep-mechanics --mode measured` | Complet en `68,1 min`, 65 incréments, 3 cutbacks | Réussi |
 | 2026-07-30 | Contrôle proportionnel 40 incréments | Même workflow `--mode proportional` | 40/40 incréments, 0 cutback, `31,0 min` | Réussi |
 | 2026-07-30 | Dépendance au trajet sur PEEQ | `compare-path-dependence`, cœur `360×310` | L2 `15,82 %`, contrôle `0,20 %`, structure de bande `13,11` | Réussi |
+| 2026-07-30 | Trajets mesuré/proportionnel face à la DIC | `replay-dic-observation`, deux profils, observation symétrique | Aucune métrique au-delà de sa marge | Indiscernable |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-30 — Les deux trajets sont indiscernables face à la DIC
+
+- Comparaison symétrique obligatoire : la vue brute reproduirait l'erreur
+  d'asymétrie d'observation que le lot V3 avait déjà documentée et corrigée
+- Marges de significativité reprises des intervalles de sensibilité au bruit
+  DIC déjà mesurés, pas choisies pour l'occasion
+- Verdict enregistré « indiscernable » sur les quatre métriques et les deux
+  profils. L'attente pré-enregistrée d'un trajet mesuré au moins aussi proche
+  n'est pas vérifiée
+- `15,8 %` d'écart sur PEEQ ne produisent aucun gain mesurable sur l'observable :
+  l'EVM est dominée par la cinématique imposée et DISFlow lisse à `49 px` les
+  filaments où les trajets diffèrent
+- Résultat d'identifiabilité : cet observable ne peut ni valider ni réfuter
+  l'histoire mesurée. La rampe proportionnelle reste défendable à `2,2×` moins
+  de travail Newton
+- `fem-inhouse export-run-as-campaign` ajoutée pour rejouer un run multipas au
+  travers de l'opérateur d'observation archivé
 
 ### 2026-07-30 — Dépendance au trajet mesurée sur PEEQ
 
