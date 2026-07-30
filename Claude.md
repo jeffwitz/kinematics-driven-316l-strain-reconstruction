@@ -97,7 +97,10 @@ les figures de preuve. Validation à ce jalon : Ruff vert, mypy vert sur
 les 44 fichiers d'alors, 321 tests verts avec MFront réel, HTML Sphinx strict
 vert, linkcheck strict vert, PDF LuaLaTeX strict de 48 pages. **Chiffres au
 2026-07-30 : 444 tests verts, mypy vert sur 69 fichiers, HTML Sphinx strict
-vert.** Le README compte 85 lignes. La consolidation est publiée jusqu'au
+vert, linkcheck strict vert, PDF LuaLaTeX strict de 82 pages compilé et rendu
+inspecté.** Le PDF est passé de 48 à 82 pages avec les chapitres et preuves
+ajoutés depuis. Reconstruction : `make -C docs html latexpdf`, venv actif ; le
+Makefile applique `-W --keep-going` par défaut. Le README compte 85 lignes. La consolidation est publiée jusqu'au
 commit `18f0fac`.
 
 Jalon atteint au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
