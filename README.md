@@ -73,6 +73,15 @@ pytest
 make -C docs html latexpdf
 ```
 
+Run these with the virtual environment active. The `docs` Makefile builds with
+`-W --keep-going`, so any Sphinx warning fails the build. `latexpdf` additionally
+needs a LaTeX toolchain providing `lualatex` and `latexmk`; on Debian or Ubuntu
+`texlive-luatex`, `texlive-latex-extra` and `latexmk` are sufficient. Outputs
+land in `docs/_build/html/` and
+`docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf`.
+Use `make -C docs linkcheck` for external links and `make -C docs clean` to
+start over.
+
 The evidence and claim boundaries are generated from
 `validation/documentation_evidence_registry.json`; detailed machine-readable
 reports remain under `validation/`.
