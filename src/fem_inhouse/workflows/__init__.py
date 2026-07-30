@@ -64,6 +64,7 @@ from fem_inhouse.workflows.material_map_control_validation import (
 from fem_inhouse.workflows.material_map_controls import prepare_material_map_control
 from fem_inhouse.workflows.multistep_path_dependence import (
     compare_multistep_path_dependence,
+    export_run_as_observation_campaign,
 )
 from fem_inhouse.workflows.nonlocal_coupling_campaign import (
     ReferenceHardeningReport,
@@ -108,6 +109,7 @@ __all__ = [
     "diagnose_section_equilibrium_campaigns",
     "element_gauss_engineering_strain",
     "estimate_reference_hardening_from_campaign",
+    "export_run_as_observation_campaign",
     "fingerprint_array",
     "generate_high_fidelity_manifest",
     "generate_joint_identification_report",

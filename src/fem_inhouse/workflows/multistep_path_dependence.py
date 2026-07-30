@@ -180,6 +180,72 @@ def _figure(
     plt.close(figure)
 
 
+def export_run_as_observation_campaign(
+    *,
+    run_directory: str | Path,
+    output_directory: str | Path,
+    partition_id: int,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """Present a multistep run in the campaign layout the DISFlow replay expects.
+
+    `replay_dic_observation` reads `manifest.json` and
+    `partitions/<id>/{U.npy,status.json}`. A multistep run stores the same
+    displacement at its top level, so this writes the expected layout with
+    hashes recomputed from the copied array rather than carried over.
+    """
+
+    run = Path(run_directory)
+    output = Path(output_directory)
+    _prepare_directory(output, overwrite=overwrite)
+
+    report = json.loads((run / "report.json").read_text(encoding="utf-8"))
+    if int(report["partition_id"]) != partition_id:
+        raise ValueError("the run does not hold the requested partition")
+    source = run / "U.npy"
+    if _sha256(source) != report["outputs"]["U.npy"]:
+        raise ValueError("U.npy does not match the run report")
+
+    partition_root = output / "partitions" / f"{partition_id:04d}"
+    partition_root.mkdir(parents=True, exist_ok=True)
+    destination = partition_root / "U.npy"
+    destination.write_bytes(source.read_bytes())
+    digest = _sha256(destination)
+
+    manifest = {
+        "schema_version": 1,
+        "config": report["config"],
+        "layout": {
+            "partitions": [
+                {
+                    "partition_id": partition_id,
+                    "solve_bounds": list(report["solve_bounds"]),
+                    "core_bounds": list(report["core_bounds"]),
+                }
+            ]
+        },
+        "provenance": {
+            "exported_from": str(run.resolve()),
+            "source_status": report["status"],
+            "source_mode": report["mode"],
+            "source_u_sha256": report["outputs"]["U.npy"],
+        },
+    }
+    (output / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    status = {
+        "partition_id": partition_id,
+        "complete": True,
+        "outputs": {"U": digest},
+        "manifest_sha256": _sha256(output / "manifest.json"),
+    }
+    (partition_root / "status.json").write_text(
+        json.dumps(status, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return {"manifest": str((output / "manifest.json").resolve()), "u_sha256": digest}
+
+
 def compare_multistep_path_dependence(
     *,
     measured_directory: str | Path,
