@@ -726,6 +726,43 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   second-différenciage la fait disparaître. L'instrumentation Newton différée
   est donc réinstaurée comme piste principale.
 
+**Cause racine identifiée le 2026-07-30 par l'instrumentation Newton — le
+blocage multi-pas est un défaut logiciel, pas numérique ni physique :**
+
+- `FixedCSRAssembler.assemble` renvoie **le même objet CSR** en réécrivant
+  `matrix.data` sur place, ce qui est documenté dans sa docstring. Dans
+  `run_fem`, `KII_el` et `K_tang` viennent du même assembleur, donc
+  `K_tang is KII_el`. Après le premier assemblage élastoplastique, `KII_el` ne
+  contient plus l'opérateur élastique ;
+- `solve_el` n'est utilisé qu'à deux endroits : **avant** la boucle pour le
+  chemin proportionnel, où le buffer est encore élastique et le prédicteur
+  n'est ensuite que multiplié par `dt` ; et **dans** la boucle pour le chemin
+  à histoire mesurée. Seule la branche histoire rencontre le buffer corrompu ;
+- cela explique la contradiction restée ouverte : la même partition converge en
+  rampe proportionnelle et échoue en histoire mesurée. L'explication est
+  logicielle, pas physique. L'argument sur les deux chemins traversant
+  différemment l'activation plastique reste vrai sur le chargement, mais il
+  n'est pas la cause de l'échec ;
+- signature décisive dans la trace : les incréments 5 à 11 échouent dès
+  l'itération 1 avec une déformation d'essai exactement proportionnelle à `dt`
+  (`4423, 2211, 1106, 553, 276, 138, 69,1`). Un halving exact sur sept
+  incréments est la signature d'un opérateur **gelé** : ces incréments
+  n'atteignent jamais un assemblage de tangente ;
+- la tangente constitutive est innocentée : le ratio `max|D_ep|/max|C_el|` vaut
+  exactement `1,000000` à chaque itération ;
+- **aucun résultat scientifique archivé n'est affecté** : toutes les campagnes
+  archivées utilisent le chemin proportionnel, dont le prédicteur est calculé
+  avant la corruption. Seules les exécutions à histoire mesurée le sont, et
+  elles avaient toutes déjà échoué ;
+- conséquence : la campagne de line search de `2 h 47`, les suppressions de
+  frames et l'hypothèse de bruit de bord traitaient tous un symptôme ;
+- le discriminateur pré-enregistré est consigné comme **inadéquat** : une
+  diagonale strictement positive n'établit pas un opérateur bien posé, et
+  l'opérateur inspecté n'était pas celui utilisé par le prédicteur.
+
+Artefacts : `validation/dic_multistep_p0043_newton_instrumentation_preregistration.md`
+et `validation/dic_multistep_p0043_newton_instrumentation_results.md`.
+
 **Acquis conservés du diagnostic étape 0, 2026-07-30 :**
 
 - bruit de mesure par état `0,047–0,051 px`, estimé par différences temporelles
@@ -2162,8 +2199,26 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-26 | Validation et figures P43 | EVM brute/DIC sur cœur, PEEQ interne | 8/8 critères pour les trois candidats ; `alpha=2` et `4` non dominés | Réussi |
 | 2026-07-30 | Bruit temporel et sous-espace de chargement P43 | `diagnose-dic-boundary-loading-subspace` sur 41 états | Bruit `0,047–0,051 px`, affine à `90 %`, un mode à `99,91 %` | Réussi |
 | 2026-07-30 | Outlier de bord pré-enregistré à l'état 4 | Même diagnostic, critère `|z| >= 3` | `z = 0,13` et `1,66` ; hypothèse réfutée | Échec enregistré |
+| 2026-07-30 | Instrumentation Newton P43 | `run-dic-multistep-mechanics --record-newton-trace`, 28 records | Prédicteur élastique résolu sur un buffer CSR écrasé | Cause racine trouvée |
+| 2026-07-30 | Aliasing du buffer d'assemblage | `FixedCSRAssembler.assemble` sur deux tangentes | `A is B` vrai, premier résultat muté | Défaut confirmé |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-30 — Cause racine du blocage multi-pas : prédicteur élastique corrompu
+
+- Trace Newton observationnelle ajoutée à `run_fem`, câblée jusqu'à
+  `--record-newton-trace`, écrite aussi en cas d'échec. Contrainte vérifiée : champs **bitwise identiques** avec et sans
+  trace, donc la trace ne modifie pas le chemin numérique
+- Le run instrumenté reproduit l'échec archivé avec les mêmes SHA-256 d'entrée
+- `FixedCSRAssembler.assemble` réécrit `matrix.data` sur place et renvoie le
+  même objet ; `KII_el` et `K_tang` sont donc le même buffer
+- Le prédicteur élastique de la branche histoire est résolu sur ce buffer après
+  qu'il a été écrasé par la tangente élastoplastique
+- Le chemin proportionnel est indemne : son prédicteur est calculé une fois
+  avant la boucle. Aucun résultat archivé n'est affecté
+- Le correctif et le rejeu sont pré-enregistrés séparément. Tant que le rejeu
+  n'est pas terminé, aucune affirmation n'est faite sur la convergence de
+  l'histoire mesurée
 
 ### 2026-07-30 — Réfutation de l'hypothèse d'outlier de bord mesuré
 

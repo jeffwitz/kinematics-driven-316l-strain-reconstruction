@@ -193,6 +193,7 @@ def run_case_study(
     hardening_coefficient_mpa: ArrayLike,
     boundary_displacement_history_mm: ArrayLike | None = None,
     snapshots: tuple[float, ...] = (),
+    newton_trace: list[dict[str, object]] | None = None,
     verbose: bool = False,
 ) -> FEMResult:
     """Solve one structured partition using prescribed boundary displacements.
@@ -302,6 +303,7 @@ def run_case_study(
         nonlocal_record_iteration_history=(config.nonlocal_plasticity.record_iteration_history),
         snapshot_fractions=snapshot_fractions,
         boundary_displacement_history=boundary_history,
+        newton_trace=newton_trace,
         verbose=verbose,
     )
     return _convert_result(raw, poisson_ratio=config.material.poisson_ratio)
