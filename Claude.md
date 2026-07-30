@@ -1,37 +1,46 @@
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-07-30
-Statut global : **pipeline autonome DIC → entrées canoniques → calcul
-partitionné validé sur une partition article de 234 600 éléments ; backend
-MFront/MGIS branché dans Newton et validé sur le crop DIC réel 10×10 ;
-tenseurs 3D complets reconstruits en post-traitement du solveur 2D et validés
-sur les deux backends sans modification des sorties historiques ;
-loi J2 tridimensionnelle condensée localement en contraintes planes et validée
-contre le backend MFront natif, les trois backends mesurés sur un crop DIC
-100×100 avec neuf exécutions intégralement sauvegardées, interface prête à
-recevoir une loi 3D ; diagnostic de largeur spatiale par filtre de Helmholtz
-implémenté avec sélection pré-enregistrée sur P48 et confirmation sans
-ajustement sur P42, avec hypothèse de largeur spatiale soutenue mais aucune
-longueur matérielle identifiée ;
-deux comportements MFront micromorphiques ajoutés, point fixe
-`p ↔ chi` transactionnel branché dans chaque Newton mécanique, sorties et
-diagnostics non locaux sauvegardés ; campagne P154 padding 128 terminée pour
-`alpha=0,5`, `1` et `2`, avec interaction spatiale partiellement soutenue mais
-aucun `Hchi` admissible à figer selon tous les critères pré-enregistrés ;
-P43 retenue après inspection visuelle comme prochaine ROI scientifique à deux
-bandes ; chemin constitutif micromorphique allégé et validé avant campagne,
-avec `1,89×` de gain sur le cœur P43 et `1,45×` sur un calcul EF complet
-intermédiaire sans changement scientifique ; CSR triangulaire et PARDISO
-symétrique `mtype=2` activés par défaut pour les comportements J2 vérifiés,
-avec `mtype=11` conservé pour les comportements non classifiés ;
-chaîne DIC consolidée avec profils historique-source et V4 explicites,
-convention d'axes vérifiée, warp direct inversé itérativement et métrologie
-FWHM sous-pixel ; opérateur d'observation image V3 appliqué sans recalcul
-mécanique aux cas P43 `alpha=0,1,2,4`, démontrant que DISFlow change
-fortement l'amplitude, la morphologie et le classement et suspendant toute
-nouvelle identification micromorphique sur l'ancien objectif ;
-exécution et raccordement des 100 partitions du ROI complet à planifier**
 Objectif de maturité : **au moins 4/5 sur tous les axes**
+
+## Où en est le projet
+
+Cette section se lit en deux minutes. Le détail chronologique est en section 14.
+
+**Ce qui fonctionne et est vérifié.** Le pipeline autonome va des quatre
+tableaux DIC bruts aux entrées canoniques puis au calcul partitionné, validé sur
+une partition à l'échelle de l'article (234 600 éléments). Le backend MFront/MGIS
+est branché dans Newton. Les tenseurs 3D complets sont reconstruits en
+post-traitement du solveur 2D. Une loi J2 3D est condensée en contraintes planes
+et validée contre le backend natif. Deux comportements micromorphiques existent,
+avec point fixe `p ↔ chi` transactionnel dans chaque Newton.
+
+**L'histoire temporelle mesurée s'exécute désormais de bout en bout.** Elle a
+longtemps échoué sur la transition état 3 → état 4 ; la cause était un **défaut
+logiciel** (prédicteur élastique résolu sur un buffer CSR écrasé), pas une limite
+mécanique. Corrigé le 2026-07-30. Aucun résultat archivé n'était affecté.
+
+**Ce que l'on sait du chargement.** À point final identique, le trajet change
+PEEQ de `15,8 %` sur le cœur, concentré dans les bandes — ce n'est ni de la
+discrétisation (`0,20 %`) ni du rochet de bruit. Mais sous observation
+symétrique, les deux trajets sont **indiscernables** face à la DIC. C'est un
+résultat d'identifiabilité : cet observable ne peut ni valider ni réfuter
+l'histoire mesurée.
+
+**Ce qui reste ouvert et bloquant scientifiquement.**
+
+- `Hchi` et `ell` ne sont pas identifiés séparément ; aucune longueur matérielle
+  transférable n'est revendiquée ;
+- l'opérateur d'observation V3 a montré que DISFlow change amplitude, morphologie
+  et classement : toute nouvelle identification micromorphique sur l'ancien
+  objectif reste suspendue ;
+- pas de branche de décharge ni de force synchronisée (lot V0), donc pas
+  d'observable sensible à la plasticité cumulée ;
+- exécution et raccordement des 100 partitions du ROI complet à planifier.
+
+**Systématique connu à porter.** Toutes les campagnes micromorphiques archivées
+utilisent le trajet proportionnel ; le systématique de `16 %` sur PEEQ ne
+renverse pas leurs classements (marges bien plus larges) mais doit être cité.
 
 Jalon documentaire au 2026-07-26 : **réécriture publique science-first
 terminée et vérifiée**. La navigation principale suit désormais un récit
@@ -44,10 +53,11 @@ rapports restent conservés sous `docs/archive/`, hors navigation et recherche.
 conclusions, claims et preuves synthétiques ; son schéma 2 vérifie désormais
 les assertions contre les JSON primaires avant génération. Le script
 `scripts/generate_documentation_evidence.py` produit les fragments Sphinx et
-les figures de preuve. Validation du jalon consolidé : Ruff vert, mypy vert
-sur les 44 fichiers du périmètre CI, 321 tests verts avec MFront réel, HTML Sphinx strict
-vert, linkcheck strict vert, PDF LuaLaTeX strict de 48 pages compilé et rendu
-inspecté. Le README compte 85 lignes. La consolidation est publiée jusqu'au
+les figures de preuve. Validation à ce jalon : Ruff vert, mypy vert sur
+les 44 fichiers d'alors, 321 tests verts avec MFront réel, HTML Sphinx strict
+vert, linkcheck strict vert, PDF LuaLaTeX strict de 48 pages. **Chiffres au
+2026-07-30 : 444 tests verts, mypy vert sur 69 fichiers, HTML Sphinx strict
+vert.** Le README compte 85 lignes. La consolidation est publiée jusqu'au
 commit `18f0fac`.
 
 Jalon atteint au 2026-07-25 : **couplage constitutif micromorphique J2 sur la
@@ -648,85 +658,37 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   proportionnel monotone ; ne pas la généraliser aux chemins locaux
   multiaxiaux.
 
-**État V6 au 2026-07-29 :**
+#### V6 — état au 2026-07-30 : **résolu**
 
-- le pilote EF accepte désormais une histoire nodale transactionnelle de
-  `N+1` états, interpole uniquement lors des cutbacks et conserve strictement
-  le chemin proportionnel historique lorsqu'aucune histoire n'est fournie ;
-- les 40 champs ont été reconstruits par corrélation directe de la même image
-  de référence vers chaque état : aucune accumulation DISFlow n'est présente
-  dans cette série, donc le test de dérive incrémentale ne s'applique pas à
-  cette provenance ;
-- l'état final OpenCV 4.14 diffère du champ préparé de `1,583 %` en norme
-  vectorielle ; l'histoire est ancrée linéairement sur l'endpoint immuable,
-  sans supprimer sa déviation au chemin proportionnel ;
-- les états 31 et 32 contiennent un artefact EVM massif, cohérent avec la
-  déclaration `CORRUPTED_FRAMES` du script historique. Une correction
-  pré-enregistrée interpole les déplacements entre les états 30 et 33 :
-  l'EVM incrémentale maximale passe de `5,459e-2` à `5,623e-3`, sans changer
-  les autres états ni l'endpoint ;
-- malgré cette réparation, le calcul local MFront échoue dès la transition
-  état 3 → état 4 (`pseudo-time=0,10`) puis sous cutback jusqu'à
-  `0,0750244`. L'échec précède donc les frames réparées et ne peut pas leur
-  être attribué ;
-- l'instrumentation du rejet montre des essais Newton non physiques :
-  déformation ingénieur maximale `82,257` au premier échec et `58,011` au
-  dernier, dans deux éléments voisins du bord supérieur. MFront rejette donc
-  correctement un sursaut du Newton non amorti ; ce n'est pas une limite
-  constitutive sur la petite déformation DIC imposée ;
-- une tentative de line search résiduelle a empêché les premiers sursauts mais
-  a été arrêtée après `2 h 47` : elle accumulait les itérations et cutbacks
-  sans fournir un chemin de production acceptable ; aucun résultat partiel
-  n'a été conservé ;
-- un diagnostic indépendant de courbure temporelle place son maximum à l'état
-  3 (`4,214e-4 mm` RMS). Son remplacement pré-enregistré par
-  `u3=(u2+u4)/2` préserve bit-à-bit les autres états et l'endpoint, mais le
-  calcul échoue encore sur la transition vers l'état 4 : 3 incréments
-  convergés, 11 cutbacks, maximum de déformation rejetée `69,529` puis
-  `90,230` ;
-- le prédicteur `secant-corrected-elastic` n'extrapole que la correction de
-  déplacement intérieur. Il ne change pas le protocole MGIS : toutes les
-  variables internes repartent du dernier état engagé, sont intégrées pendant
-  l'incrément, puis engagées une seule fois après convergence. Leur
-  interpolation directe reste interdite ;
-- un second contrôle pré-enregistré remplace uniquement l'état cible 4 par
-  `(u3+u5)/2` et rétablit le prédicteur élastique. Il échoue exactement à la
-  même limite (`t=0,0750244`, 3 incréments, 11 cutbacks), dans les mêmes
-  éléments de bord. La suppression de frames supplémentaires est donc
-  arrêtée : le verrou est la globalisation de Newton au voisinage de cet état,
-  pas une frame DIC isolée ;
-- un audit spatial et photométrique explicite des états 1–6 confirme que
-  l'état 3 est réellement précoce (`4,79 %` de l'EVM RMS finale), mais ne
-  trouve aucun outlier aux éléments 402245/402246. À l'état 4, le résidu
-  non affine du bord ne représente que `0,273 %` de l'amplitude RMS, le
-  résidu photométrique n'est pas maximal, et la déformation exacte aux points
-  de Gauss fautifs vaut au plus `8,89e-5`. Les essais Newton rejetés de
-  `58–82` sont au moins `3,64e5` fois plus grands que toute déformation
-  mesurée sur ces éléments aux états 1–6 ;
-- la convergence du champ final n'est pas contradictoire : le baseline suit
-  une rampe proportionnelle droite vers l'endpoint, alors que l'histoire DIC
-  suit un chemin différent. À l'état 4, la contraction affine transverse a
-  atteint `7,29 %` de sa valeur finale, mais l'extension affine axiale
-  seulement `1,09 %`. Les deux calculs ne traversent donc pas l'activation
-  plastique hétérogène par le même chemin ;
-- l'état constitutif est restauré après chaque tentative et aucun résultat
-  mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
-  bloqué. La prochaine instrumentation doit porter sur la correction Newton
-  des ddl libres avant l'essai constitutif rejeté (norme, incrément de
-  déformation élémentaire, conditionnement de la tangente), pas sur une
-  nouvelle suppression de frame. Aucun rejet automatique piloté par la
-  convergence et aucun filtre de Kalman ne sont autorisés implicitement ;
-- une hypothèse de bruit de bord a été pré-enregistrée puis **réfutée** le
-  2026-07-30 par le diagnostic étape 0 de sous-espace de chargement. Le critère
-  enregistré demandait `|z| >= 3` à l'état 4 : les scores mesurés valent `0,13`
-  sur le coefficient de chargement et `1,66` sur la déformation affine. Le
-  maximum sur les 40 états vaut `1,99`, sous le `~2,7` attendu de 39 tirages
-  gaussiens : le chemin de bord est plus lisse que du bruit pur et ne contient
-  aucun outlier. Le SNR de l'incrément à l'état 4 vaut `3,73`, au-dessus de la
-  médiane `3,52`. La lecture antérieure à `3,5 sigma` provenait d'une comparaison
-  d'incréments bruts à cinq voisins d'une série en tendance ; le
-  second-différenciage la fait disparaître. L'instrumentation Newton différée
-  est donc réinstaurée comme piste principale.
+Lecture rapide, avant le journal des tentatives qui suit.
+
+1. **L'histoire mesurée s'exécute intégralement.** 40 états, 65 incréments
+   convergés sur 68, 3 cutbacks, `68,1 min`.
+2. **La cause du blocage était logicielle**, pas mécanique : le prédicteur
+   élastique de la branche histoire était résolu sur un buffer CSR déjà écrasé
+   par la tangente élastoplastique. Le chemin proportionnel n'y était pas
+   exposé, d'où l'asymétrie qui a fait perdre des semaines.
+3. **Dépendance au trajet** : `15,8 %` sur PEEQ à point final identique,
+   concentrée dans les bandes (rapport `13,11`), contre `0,20 %` de
+   discrétisation. Ce n'est pas du bruit accumulé.
+4. **Mais indiscernable face à la DIC** sous observation symétrique, sur les
+   quatre métriques et les deux profils. Résultat d'identifiabilité.
+5. **Filtrage modal à 3 modes** : retire `5,3×` sous le bruit, supprime tous
+   les cutbacks et divise par deux le travail Newton, pour `1,63 %` sur PEEQ.
+   Gain numérique, pas gain de fidélité.
+
+Ce qui reste ouvert dans V6 : le test de prédiction temporelle conditionnelle
+(identification sur les pas 1–20, évaluation 21–40 à cartes gelées) est
+désormais **exécutable** et n'a pas été lancé. Les cases correspondantes de la
+liste ci-dessus restent non cochées.
+
+Documents : `dic_multistep_p0043_newton_instrumentation_results.md`,
+`dic_multistep_p0043_predictor_fix_results.md`,
+`dic_multistep_p0043_path_dependence_results.md`,
+`dic_multistep_p0043_observed_path_comparison_results.md`,
+`dic_multistep_p0043_modal_boundary_filter_results.md`.
+
+#### Résultats du 2026-07-30, en détail
 
 **BLOCAGE MULTI-PAS RÉSOLU le 2026-07-30.** L'histoire mesurée de 40 états
 s'exécute intégralement (`completed_local_measured_boundary_history`). Les
@@ -899,6 +861,92 @@ blocage multi-pas est un défaut logiciel, pas numérique ni physique :**
 
 Artefacts : `validation/dic_multistep_p0043_newton_instrumentation_preregistration.md`
 et `validation/dic_multistep_p0043_newton_instrumentation_results.md`.
+
+#### Journal des tentatives, conservé pour provenance
+
+Les points ci-dessous datent d'avant la résolution. Ils restent exacts comme
+compte rendu de ce qui a été essayé et écarté, mais leur conclusion
+(« globalisation de Newton ») a été **remplacée** par le point 2 ci-dessus.
+
+**État V6 au 2026-07-29 :**
+
+- le pilote EF accepte désormais une histoire nodale transactionnelle de
+  `N+1` états, interpole uniquement lors des cutbacks et conserve strictement
+  le chemin proportionnel historique lorsqu'aucune histoire n'est fournie ;
+- les 40 champs ont été reconstruits par corrélation directe de la même image
+  de référence vers chaque état : aucune accumulation DISFlow n'est présente
+  dans cette série, donc le test de dérive incrémentale ne s'applique pas à
+  cette provenance ;
+- l'état final OpenCV 4.14 diffère du champ préparé de `1,583 %` en norme
+  vectorielle ; l'histoire est ancrée linéairement sur l'endpoint immuable,
+  sans supprimer sa déviation au chemin proportionnel ;
+- les états 31 et 32 contiennent un artefact EVM massif, cohérent avec la
+  déclaration `CORRUPTED_FRAMES` du script historique. Une correction
+  pré-enregistrée interpole les déplacements entre les états 30 et 33 :
+  l'EVM incrémentale maximale passe de `5,459e-2` à `5,623e-3`, sans changer
+  les autres états ni l'endpoint ;
+- malgré cette réparation, le calcul local MFront échoue dès la transition
+  état 3 → état 4 (`pseudo-time=0,10`) puis sous cutback jusqu'à
+  `0,0750244`. L'échec précède donc les frames réparées et ne peut pas leur
+  être attribué ;
+- l'instrumentation du rejet montre des essais Newton non physiques :
+  déformation ingénieur maximale `82,257` au premier échec et `58,011` au
+  dernier, dans deux éléments voisins du bord supérieur. MFront rejette donc
+  correctement un sursaut du Newton non amorti ; ce n'est pas une limite
+  constitutive sur la petite déformation DIC imposée ;
+- une tentative de line search résiduelle a empêché les premiers sursauts mais
+  a été arrêtée après `2 h 47` : elle accumulait les itérations et cutbacks
+  sans fournir un chemin de production acceptable ; aucun résultat partiel
+  n'a été conservé ;
+- un diagnostic indépendant de courbure temporelle place son maximum à l'état
+  3 (`4,214e-4 mm` RMS). Son remplacement pré-enregistré par
+  `u3=(u2+u4)/2` préserve bit-à-bit les autres états et l'endpoint, mais le
+  calcul échoue encore sur la transition vers l'état 4 : 3 incréments
+  convergés, 11 cutbacks, maximum de déformation rejetée `69,529` puis
+  `90,230` ;
+- le prédicteur `secant-corrected-elastic` n'extrapole que la correction de
+  déplacement intérieur. Il ne change pas le protocole MGIS : toutes les
+  variables internes repartent du dernier état engagé, sont intégrées pendant
+  l'incrément, puis engagées une seule fois après convergence. Leur
+  interpolation directe reste interdite ;
+- un second contrôle pré-enregistré remplace uniquement l'état cible 4 par
+  `(u3+u5)/2` et rétablit le prédicteur élastique. Il échoue exactement à la
+  même limite (`t=0,0750244`, 3 incréments, 11 cutbacks), dans les mêmes
+  éléments de bord. La suppression de frames supplémentaires est donc
+  arrêtée : le verrou est la globalisation de Newton au voisinage de cet état,
+  pas une frame DIC isolée ;
+- un audit spatial et photométrique explicite des états 1–6 confirme que
+  l'état 3 est réellement précoce (`4,79 %` de l'EVM RMS finale), mais ne
+  trouve aucun outlier aux éléments 402245/402246. À l'état 4, le résidu
+  non affine du bord ne représente que `0,273 %` de l'amplitude RMS, le
+  résidu photométrique n'est pas maximal, et la déformation exacte aux points
+  de Gauss fautifs vaut au plus `8,89e-5`. Les essais Newton rejetés de
+  `58–82` sont au moins `3,64e5` fois plus grands que toute déformation
+  mesurée sur ces éléments aux états 1–6 ;
+- la convergence du champ final n'est pas contradictoire : le baseline suit
+  une rampe proportionnelle droite vers l'endpoint, alors que l'histoire DIC
+  suit un chemin différent. À l'état 4, la contraction affine transverse a
+  atteint `7,29 %` de sa valeur finale, mais l'extension affine axiale
+  seulement `1,09 %`. Les deux calculs ne traversent donc pas l'activation
+  plastique hétérogène par le même chemin ;
+- l'état constitutif est restauré après chaque tentative et aucun résultat
+  mécanique partiel n'est présenté comme convergé. Le test multi-pas reste
+  bloqué. La prochaine instrumentation doit porter sur la correction Newton
+  des ddl libres avant l'essai constitutif rejeté (norme, incrément de
+  déformation élémentaire, conditionnement de la tangente), pas sur une
+  nouvelle suppression de frame. Aucun rejet automatique piloté par la
+  convergence et aucun filtre de Kalman ne sont autorisés implicitement ;
+- une hypothèse de bruit de bord a été pré-enregistrée puis **réfutée** le
+  2026-07-30 par le diagnostic étape 0 de sous-espace de chargement. Le critère
+  enregistré demandait `|z| >= 3` à l'état 4 : les scores mesurés valent `0,13`
+  sur le coefficient de chargement et `1,66` sur la déformation affine. Le
+  maximum sur les 40 états vaut `1,99`, sous le `~2,7` attendu de 39 tirages
+  gaussiens : le chemin de bord est plus lisse que du bruit pur et ne contient
+  aucun outlier. Le SNR de l'incrément à l'état 4 vaut `3,73`, au-dessus de la
+  médiane `3,52`. La lecture antérieure à `3,5 sigma` provenait d'une comparaison
+  d'incréments bruts à cinq voisins d'une série en tendance ; le
+  second-différenciage la fait disparaître. L'instrumentation Newton différée
+  est donc réinstaurée comme piste principale.
 
 **Acquis conservés du diagnostic étape 0, 2026-07-30 :**
 
