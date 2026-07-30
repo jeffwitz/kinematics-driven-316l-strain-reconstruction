@@ -1,0 +1,58 @@
+{
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-07-30T15:00:02.446219+00:00",
+  "filter": {
+    "interior_untouched": true,
+    "kind": "modal_truncation_of_endpoint_ramp_deviation",
+    "leading_deviation_roughness": [
+      0.0313218172090096,
+      0.16918240799776582,
+      0.22053320088425285,
+      0.5605775425810567,
+      0.5115031400960149,
+      0.6595348710284158
+    ],
+    "measured_noise_px": 0.0511,
+    "origin_and_endpoint_preserved": true,
+    "rank": 3,
+    "removed_rms_mm": 1.7889735955902405e-05,
+    "removed_rms_px": 0.009722682584729568,
+    "removed_within_measured_noise": true,
+    "retained_deviation_energy_fraction": 0.9998946316382188
+  },
+  "git_sha": "50baa1f8430950767da9e299fefb28cfdccf8199",
+  "outputs": {
+    "modal_filtered_history_mm.npy": "eeacc2503b38bbdeeac076ba97af5c1b9a20ba7fa91e13dabce979ffc1af06c5"
+  },
+  "partition_id": 43,
+  "preregistration": "validation/dic_multistep_p0043_modal_boundary_filter_preregistration.md",
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "source": {
+    "history": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/repaired_history_mm.npy",
+    "history_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json",
+    "history_sha256": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0"
+  },
+  "status": "completed_modal_boundary_filter",
+  "support": {
+    "boundary_nodes": 2540,
+    "node_shape": [
+      661,
+      611
+    ]
+  }
+}

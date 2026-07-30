@@ -21,6 +21,10 @@ from fem_inhouse.workflows.dic_boundary_loading_subspace import (
     temporal_noise_estimate,
     temporal_roughness,
 )
+from fem_inhouse.workflows.dic_boundary_modal_filter import (
+    filter_dic_boundary_history,
+    truncate_modes,
+)
 from fem_inhouse.workflows.dic_measurement_chain import characterise_dic_measurement_chain
 from fem_inhouse.workflows.dic_multistep import (
     anchor_displacement_history,
@@ -110,6 +114,7 @@ __all__ = [
     "element_gauss_engineering_strain",
     "estimate_reference_hardening_from_campaign",
     "export_run_as_observation_campaign",
+    "filter_dic_boundary_history",
     "fingerprint_array",
     "generate_high_fidelity_manifest",
     "generate_joint_identification_report",
@@ -139,6 +144,7 @@ __all__ = [
     "symmetric_color_limit",
     "temporal_noise_estimate",
     "temporal_roughness",
+    "truncate_modes",
     "validate_coupled_nonlocal_campaign",
     "validate_low_fidelity_ranking",
     "validate_material_map_controls",

@@ -126,6 +126,7 @@ class FEMResult:
     nonlocal_hardening_mpa: FloatArray | None = None
     yield_surface_radius_mpa: FloatArray | None = None
     nonlocal_residual: FloatArray | None = None
+    boundary_misfit_mm: FloatArray | None = None
     frames: dict[float, FrameResult] = field(default_factory=dict)
     diagnostics: SolverDiagnostics | None = None
 

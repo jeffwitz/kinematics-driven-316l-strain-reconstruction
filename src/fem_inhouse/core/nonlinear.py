@@ -104,6 +104,20 @@ def _tangent_diagonal_statistics(matrix):
     }
 
 
+def _csr_diagonal_indices(matrix, rows):
+    """Data positions of the diagonal entries of the requested rows."""
+
+    indptr, indices = matrix.indptr, matrix.indices
+    positions = np.empty(rows.size, dtype=np.int64)
+    for order, row in enumerate(rows):
+        start, stop = int(indptr[row]), int(indptr[row + 1])
+        offset = int(np.searchsorted(indices[start:stop], row))
+        if start + offset >= stop or indices[start + offset] != row:
+            raise ValueError(f"row {int(row)} has no stored diagonal entry")
+        positions[order] = start + offset
+    return positions
+
+
 class NonlinearConvergenceError(RuntimeError):
     """Global convergence failure carrying machine-readable diagnostics."""
 
@@ -146,6 +160,8 @@ def run_fem(
     line_search_minimum_factor=2.0**-12,
     line_search_maximum_trials=12,
     boundary_history_predictor="elastic",
+    boundary_enforcement="elimination",
+    boundary_penalty_stiffness=None,
     nonlocal_plasticity_enabled=False,
     nonlocal_length_scale_mm=0.05888,
     nonlocal_coupling_modulus_mpa=0.0,
@@ -278,13 +294,19 @@ def run_fem(
     ld = mesh.location_matrix()
     dof_I = mesh.dofs_free
     dof_B = mesh.dofs_bc
+    if boundary_enforcement not in {"elimination", "penalty"}:
+        raise ValueError("boundary_enforcement must be elimination or penalty")
+    penalty_mode = boundary_enforcement == "penalty"
+    # Penalty keeps the prescribed degrees of freedom in the system, so the
+    # reduced index of a degree of freedom is its global index.
+    solve_dofs = np.arange(mesh.n_dof) if penalty_mode else dof_I
     initialization_seconds = time.perf_counter() - started_at
 
     # The reduced stiffness graph and contribution mapping remain fixed.
     assembly_started_at = time.perf_counter()
     fixed_free_assembler = FixedCSRAssembler.from_location_matrix(
         ld,
-        dof_I,
+        solve_dofs,
         storage=linear_solver.matrix_storage,
     )
 
@@ -295,6 +317,20 @@ def run_fem(
     # elastoplastic tangent overwrites this matrix. The elastic predictor needs
     # an operator that survives those assemblies, hence an owned copy.
     KII_el = fixed_free_assembler.assemble(Ke).copy()
+    penalty_stiffness = 0.0
+    penalty_data_indices = np.empty(0, dtype=np.int64)
+    if penalty_mode:
+        # Default weight is the largest elastic diagonal, a stiff but finite
+        # spring. A measurement-derived weight is passed explicitly.
+        penalty_stiffness = float(
+            boundary_penalty_stiffness
+            if boundary_penalty_stiffness is not None
+            else np.max(np.abs(KII_el.diagonal()))
+        )
+        if not np.isfinite(penalty_stiffness) or penalty_stiffness <= 0.0:
+            raise ValueError("boundary_penalty_stiffness must be finite and positive")
+        penalty_data_indices = _csr_diagonal_indices(KII_el, dof_B)
+        KII_el.data[penalty_data_indices] += penalty_stiffness
     sparse_assembly_seconds = time.perf_counter() - sparse_assembly_started_at
     extraction_started_at = time.perf_counter()
     KIB_el = K_el[dof_I][:, dof_B].tocsr()
@@ -361,10 +397,16 @@ def run_fem(
     else:
         history_dofs = None
         boundary_target = None
-        elastic_predictor_direction = solve_el(-KIB_el @ u_bc[dof_B])
+        if penalty_mode:
+            penalty_rhs = np.zeros(mesh.n_dof)
+            penalty_rhs[dof_B] = penalty_stiffness * u_bc[dof_B]
+            elastic_predictor_direction = solve_el(penalty_rhs)
+        else:
+            elastic_predictor_direction = solve_el(-KIB_el @ u_bc[dof_B])
 
     # State
     u = np.zeros(mesh.n_dof)
+    boundary_target_values = np.zeros(dof_B.size)
     eps_p = np.zeros((n_e, N_GP, 3))
     ep_bar = np.zeros((n_e, N_GP))
     sig = np.zeros((n_e, N_GP, 3))
@@ -429,11 +471,19 @@ def run_fem(
             du_B = boundary_target(t + dt) - boundary_target(t)
         u_save = u.copy()
 
-        u[dof_B] += du_B
+        if penalty_mode:
+            # The boundary is data, not a constraint: it moves the target only.
+            boundary_target_values = boundary_target_values + du_B
+        else:
+            u[dof_B] += du_B
         # Elastic predictor (reused factorization)
         if history is None:
             assert elastic_predictor_direction is not None
             elastic_free_increment = elastic_predictor_direction * dt
+        elif penalty_mode:
+            penalty_rhs = np.zeros(mesh.n_dof)
+            penalty_rhs[dof_B] = penalty_stiffness * du_B
+            elastic_free_increment = solve_el(penalty_rhs)
         else:
             elastic_free_increment = solve_el(-KIB_el @ du_B)
         predictor_free_increment = elastic_free_increment
@@ -457,7 +507,7 @@ def run_fem(
                 secant_predictor_uses += 1
             else:
                 secant_predictor_fallbacks += 1
-        u[dof_I] += predictor_free_increment
+        u[solve_dofs] += predictor_free_increment
 
         KII = KII_el  # start with elastic tangent, replaced after 1st iter
 
@@ -671,7 +721,11 @@ def run_fem(
             internal_force_started_at = time.perf_counter()
             R = internal_force(mesh, sf, Bs, dJs, ld)
             internal_force_seconds += time.perf_counter() - internal_force_started_at
-            R_I = R[dof_I]
+            if penalty_mode:
+                R_I = R[solve_dofs].copy()
+                R_I[dof_B] += penalty_stiffness * (u[dof_B] - boundary_target_values)
+            else:
+                R_I = R[dof_I]
             res = float(np.linalg.norm(R_I))
             if not np.isfinite(res):
                 _record_newton_trace(newton_trace, trace_record, "nonfinite_residual")
@@ -727,6 +781,8 @@ def run_fem(
             sparse_assembly_started_at = time.perf_counter()
             K_tang = fixed_free_assembler.assemble(Ke_ep)
             sparse_assembly_seconds += time.perf_counter() - sparse_assembly_started_at
+            if penalty_mode:
+                K_tang.data[penalty_data_indices] += penalty_stiffness
             KII = K_tang
             tangent_assembly_seconds += time.perf_counter() - tangent_started_at
 
@@ -752,18 +808,18 @@ def run_fem(
                 _record_newton_trace(newton_trace, trace_record, "nonfinite_correction")
                 break  # singular tangent -> cutback
             if not newton_line_search:
-                u[dof_I] += du
+                u[solve_dofs] += du
                 _record_newton_trace(newton_trace, trace_record, "corrected")
                 continue
 
-            base_u_I = u[dof_I].copy()
+            base_u_I = u[solve_dofs].copy()
             factor = 1.0
             accepted_line_search = False
             for _line_search_trial in range(line_search_maximum_trials):
                 if factor < line_search_minimum_factor:
                     break
                 line_search_evaluations += 1
-                u[dof_I] = base_u_I + factor * du
+                u[solve_dofs] = base_u_I + factor * du
                 candidate_eps = np.einsum("gak,ek->ega", Bs, u[ld])
                 try:
                     candidate_started_at = time.perf_counter()
@@ -801,7 +857,7 @@ def run_fem(
                 factor *= line_search_reduction
                 line_search_reductions += 1
             if not accepted_line_search:
-                u[dof_I] = base_u_I
+                u[solve_dofs] = base_u_I
                 line_search_failures += 1
                 increment_failure_reason = "Newton line search found no residual-decreasing trial"
                 _record_newton_trace(newton_trace, trace_record, "line_search_exhausted")
@@ -893,7 +949,7 @@ def run_fem(
         ep_bar = ep_new
         sig = sf_acc
         previous_accepted_boundary_increment = du_B.copy()
-        previous_accepted_free_increment = u[dof_I] - u_save[dof_I]
+        previous_accepted_free_increment = u[solve_dofs] - u_save[solve_dofs]
         previous_accepted_elastic_free_increment = elastic_free_increment.copy()
         previous_accepted_step_size = dt
         t += dt
@@ -928,6 +984,16 @@ def run_fem(
     U = np.zeros((nxn, nyn, 2))
     U[..., 0] = u[2 * nd_all].reshape(nxn, nyn)
     U[..., 1] = u[2 * nd_all + 1].reshape(nxn, nyn)
+    BOUNDARY_MISFIT = np.zeros((nxn, nyn, 2))
+    if penalty_mode:
+        # With a finite spring the reaction is the spring force, and the gap
+        # between measurement and imposed value becomes an inspectable field.
+        misfit = np.zeros(mesh.n_dof)
+        misfit[dof_B] = boundary_target_values - u[dof_B]
+        BOUNDARY_MISFIT[..., 0] = misfit[2 * nd_all].reshape(nxn, nyn)
+        BOUNDARY_MISFIT[..., 1] = misfit[2 * nd_all + 1].reshape(nxn, nyn)
+        F_all = np.zeros(mesh.n_dof)
+        F_all[dof_B] = penalty_stiffness * misfit[dof_B]
     RF = np.zeros((nxn, nyn, 2))
     RF[..., 0] = np.where(bc_m[2 * nd_all], F_all[2 * nd_all], 0.0).reshape(nxn, nyn)
     RF[..., 1] = np.where(bc_m[2 * nd_all + 1], F_all[2 * nd_all + 1], 0.0).reshape(nxn, nyn)
@@ -1003,6 +1069,7 @@ def run_fem(
         PE=PE,
         PEEQ=tg(gm(ep_bar)),
         RF=RF,
+        BOUNDARY_MISFIT=BOUNDARY_MISFIT,
         S_3D=stress_3d,
         E_3D=strain_3d,
         EE_3D=elastic_strain_3d,

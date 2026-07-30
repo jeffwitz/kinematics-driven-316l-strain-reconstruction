@@ -800,6 +800,7 @@ def run_dic_multistep_mechanics(
         "completed_direct_reference_history_endpoint_anchored": "anchored_history_mm.npy",
         "completed_documented_corrupted_frame_repair": "repaired_history_mm.npy",
         "completed_declared_state_bridge": "bridged_history_mm.npy",
+        "completed_modal_boundary_filter": "modal_filtered_history_mm.npy",
     }
     history_status = str(history_report.get("status"))
     if history_status not in accepted_statuses:
@@ -922,6 +923,9 @@ def run_dic_multistep_mechanics(
                     ),
                     "completed_declared_state_bridge": (
                         "measured_direct_reference_endpoint_anchored_declared_state_bridge"
+                    ),
+                    "completed_modal_boundary_filter": (
+                        "measured_direct_reference_endpoint_anchored_modal_boundary_filter"
                     ),
                 }.get(
                     history_status,
