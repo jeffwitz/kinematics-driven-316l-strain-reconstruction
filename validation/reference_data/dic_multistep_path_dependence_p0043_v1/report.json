@@ -1,0 +1,99 @@
+{
+  "conclusion": {
+    "claim_boundary": "compares two computed fields under one constitutive model and a shared endpoint; says nothing about which path the specimen followed",
+    "control_separates": true,
+    "exceeds_noise_ratchet": true,
+    "relative_l2_band": "present_not_dominant",
+    "verdict": "present_not_dominant"
+  },
+  "created_at_utc": "2026-07-30T13:55:32.415354+00:00",
+  "descriptive": {
+    "measured": {
+      "maximum": 0.07360751101728327,
+      "mean": 0.0032300695549450573,
+      "median": 0.0014618567994435206,
+      "percentile_99": 0.025707543440386
+    },
+    "proportional_20": {
+      "maximum": 0.0641909513152619,
+      "mean": 0.003079907846196098,
+      "median": 0.0014489038219037567,
+      "percentile_99": 0.023445273096894138
+    },
+    "proportional_40": {
+      "maximum": 0.06414773575708792,
+      "mean": 0.003078267620050857,
+      "median": 0.0014520848874310988,
+      "percentile_99": 0.023426100411898604
+    }
+  },
+  "discretisation_control": {
+    "activity_disagreement_fraction": 0.00045698924731182796,
+    "maximum_absolute_difference": 0.00019193403365938555,
+    "pearson_correlation": 0.999997780902662,
+    "relative_l2": 0.0020173757829211256,
+    "rmse": 1.1295446523056419e-05,
+    "signed_mean_difference": -1.640226145240935e-06,
+    "top_fraction_iou": 0.9978517722878625
+  },
+  "discriminator": {
+    "band_structure_ratio": 13.111734791998895,
+    "interpretation": "near 1 is a diffuse noise-like excess; well above 1 concentrates in the localisation bands"
+  },
+  "field": "PEEQ",
+  "git_sha": "951c4d0c4642f828952ca3df6ebc39f59416cb63",
+  "outputs": {
+    "p0043_path_dependence_peeq.png": "c8512bbb601583ac25288edb9ce3ef53f6e0730cfb9ee84eb64845892cc39b10",
+    "pair_metrics.csv": "c6fc133c186cf8e4141e7a4f6c58e91804da8062c8973a3c950a60cdd50bc5d8"
+  },
+  "partition_id": 43,
+  "path_dependence": {
+    "activity_disagreement_fraction": 0.01806451612903226,
+    "maximum_absolute_difference": 0.03688766505319192,
+    "pearson_correlation": 0.9872612953857214,
+    "relative_l2": 0.1581685639142276,
+    "rmse": 0.0008847570411376542,
+    "signed_mean_difference": 0.00015180193489420035,
+    "top_fraction_iou": 0.8631051752921536
+  },
+  "preregistration": "validation/dic_multistep_p0043_path_dependence_preregistration.md",
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "sources": {
+    "measured": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_predictor_fix_p0043_v1/PEEQ.npy",
+    "measured_sha256": "8fc744ad41646e44eb8e5742c8852e9f4f4cf00d4b7c988dfd51e551a7a3b27b",
+    "proportional_20_archived": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/constitutive-local-p0043-pad150/partitions/0043/PEEQ.npy",
+    "proportional_20_archived_sha256": "7b6d7fcb8ce4378fa084cead634501941d17a0d12eab2e52910117629a8b0fe8",
+    "proportional_40": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_proportional40_p0043_v1/PEEQ.npy",
+    "proportional_40_sha256": "d73dfefecd82e9965a14418f00b581673d82a3b904a46e102e7862c907de1892"
+  },
+  "status": "completed_final_state_path_dependence",
+  "support": {
+    "core_bounds": [
+      1440,
+      1800,
+      930,
+      1240
+    ],
+    "core_shape": [
+      360,
+      310
+    ],
+    "padding_excluded": true,
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ]
+  },
+  "thresholds": {
+    "control_separation_factor": 3.0,
+    "material_relative_l2": 0.2,
+    "negligible_relative_l2": 0.05,
+    "noise_ratchet_fraction": 0.036
+  }
+}

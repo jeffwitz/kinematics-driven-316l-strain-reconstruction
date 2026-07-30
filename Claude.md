@@ -740,10 +740,42 @@ diagonale non positive. Détails dans
 
 Ce que cela **n'établit pas** : que les champs intérieurs reconstruits ont un
 sens physique. Cette question reste régie par l'asymétrie de l'opérateur
-d'observation et les résultats de bruit DIC déjà consignés. La comparaison
-entre le chemin mesuré et le baseline proportionnel n'a **pas** été regardée :
-c'est le résultat scientifiquement intéressant et il doit être pré-enregistré
-avant lecture.
+d'observation et les résultats de bruit DIC déjà consignés.
+
+**Dépendance au trajet mesurée le 2026-07-30, sur PEEQ au dernier état.** Les
+deux calculs finissent sur une condition aux limites bit-à-bit identique, donc
+la différence intérieure est de la dépendance au trajet et non une différence
+de ce qui est imposé.
+
+- L2 relative sur le cœur `360×310` entre histoire mesurée et rampe
+  proportionnelle à 40 incréments : **`15,82 %`**, bande pré-enregistrée
+  « présente mais non dominante » ;
+- le trajet mesuré accumule **plus** de plasticité, et l'excès croît avec le
+  niveau : `+4,9 %` sur la moyenne, `+9,7 %` au p99, `+14,8 %` au maximum ;
+- **contrôle de discrétisation** : 40 contre 20 incréments en proportionnel ne
+  change PEEQ que de `0,20 %`, soit `78×` moins que l'effet de trajet. Le veto
+  pré-enregistré exigeait un facteur `3` : il ne se déclenche pas, et la marge
+  n'est pas serrée ;
+- **ce n'est pas le rochet de bruit** : `15,82 %` vaut `4,4×` l'estimation de
+  `3,6 %`, et surtout le rapport de structure de bande vaut **`13,11`**,
+  c'est-à-dire que l'excès est treize fois plus fort dans les bandes qu'en
+  dehors. Un rochet de bruit n'a aucune raison de préférer les bandes. La
+  contribution du bruit n'est toutefois **pas soustraite** ;
+- corrélation `0,987`, IoU top-10 % `0,863` : la morphologie est largement
+  conservée mais `13,7 %` du décile supérieur change d'appartenance ;
+- coût numérique : 469 itérations Newton et 3 cutbacks en mesuré, contre 225 et
+  zéro en proportionnel pour le même point final.
+
+**Conséquence pour les campagnes micromorphiques archivées**, qui utilisent
+toutes le trajet proportionnel : un systématique d'environ `16 %` sur PEEQ, non
+comptabilisé jusqu'ici, exactement là où les métriques de recouvrement de bande
+sont évaluées. Cela **ne renverse pas** les classements archivés, séparés par
+des marges bien plus larges (IoU top-10 % EF/DIC autour de `0,25–0,30` contre
+`0,863` entre trajets). À porter comme systématique connu, pas comme correction
+à appliquer.
+
+Artefacts : `validation/dic_multistep_p0043_path_dependence_preregistration.md`
+et `validation/dic_multistep_p0043_path_dependence_results.md`.
 
 **Cause racine identifiée le 2026-07-30 par l'instrumentation Newton — le
 blocage multi-pas est un défaut logiciel, pas numérique ni physique :**
@@ -2222,8 +2254,24 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-30 | Aliasing du buffer d'assemblage | `FixedCSRAssembler.assemble` sur deux tangentes | `A is B` vrai, premier résultat muté | Défaut confirmé |
 | 2026-07-30 | Non-régression du correctif | Cas analytique réduit avant/après, 423 tests MFront | Sortie identique bit à bit | Réussi |
 | 2026-07-30 | Rejeu P43 histoire mesurée 40 états | `run-dic-multistep-mechanics --mode measured` | Complet en `68,1 min`, 65 incréments, 3 cutbacks | Réussi |
+| 2026-07-30 | Contrôle proportionnel 40 incréments | Même workflow `--mode proportional` | 40/40 incréments, 0 cutback, `31,0 min` | Réussi |
+| 2026-07-30 | Dépendance au trajet sur PEEQ | `compare-path-dependence`, cœur `360×310` | L2 `15,82 %`, contrôle `0,20 %`, structure de bande `13,11` | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-30 — Dépendance au trajet mesurée sur PEEQ
+
+- Pré-enregistrement écrit avant tout calcul de métrique, avec seuils, veto de
+  discrétisation et discriminateur de structure spatiale
+- Contrôle proportionnel à 40 incréments produit spécialement : comparer au
+  seul archivé à 20 incréments aurait confondu trajet et discrétisation
+- Résultat : L2 relative `15,82 %` sur le cœur, excès positif concentré dans
+  les bandes (rapport `13,11`), contrôle de discrétisation `78×` plus petit
+- Le rochet de bruit est écarté comme terme dominant par la structure spatiale,
+  mais sa contribution n'est pas soustraite
+- Nouveau systématique à porter sur les campagnes micromorphiques archivées,
+  sans renverser leurs classements
+- `fem-inhouse compare-path-dependence` ajoutée avec 9 tests
 
 ### 2026-07-30 — Blocage multi-pas résolu, histoire mesurée complète
 
