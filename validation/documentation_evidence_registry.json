@@ -1,7 +1,15 @@
 {
   "schema_version": 2,
-  "current_conclusion": "The local and coupled mechanics are numerically verified, and the measured 40-state boundary history now replays end to end after a defect in the elastic predictor was found and fixed. The loading path changes core PEEQ by 15.8 % at a shared endpoint, concentrated in the localisation bands, but changes agreement with DIC total strain by less than DIC noise sensitivity. Earlier scores compared raw FEM with image-observed DIC; symmetric image-level replay shows DISFlow materially changes amplitudes, morphology and the coupling ranking. Micromorphic coupling redistributes plasticity, but Hchi and ell remain unidentified and no material internal length is claimed.",
+  "current_conclusion": "Micromorphic coupling is the only change tested that measurably brings the reconstruction closer to DIC: under symmetric image-level observation it improves relative L2 by 9.6 times the metric's noise margin and correlation by 3.2 times, and it brings the over-active q90 area from +61 % down to +2.6 % of the DIC reference. It does so while degrading where the localisation sits, by 2.4 and 2.5 margins on the two overlap measures, so the ranking depends on the objective and neither Hchi nor ell is identified. By contrast the measured 40-state loading path, which now replays end to end after a defect in the elastic predictor was fixed, changes core PEEQ by 15.8 % yet moves no DIC metric beyond its margin. The local and coupled mechanics are numerically verified; no transferable material internal length is claimed.",
   "claims": [
+    {
+      "question": "Micromorphic coupling measurably improves agreement with DIC",
+      "status": "demonstrated",
+      "boundary": "Amplitude, correlation and active area only, under symmetric observation on P43; localisation overlap degrades and no unique alpha is selected",
+      "evidence_ids": [
+        "E-DIC-004"
+      ]
+    },
     {
       "question": "Finite-element baseline passes its numerical regression contract",
       "status": "verified",
@@ -151,7 +159,7 @@
     {
       "question": "Loading path changes reconstructed plasticity at a shared endpoint",
       "status": "supported",
-      "boundary": "15.8 % on core PEEQ under one constitutive model; the DIC noise contribution is not subtracted",
+      "boundary": "15.8 % on core PEEQ under one constitutive model, invisible to the DIC observable; the DIC noise contribution is not subtracted",
       "evidence_ids": [
         "E-DIC-008",
         "E-DIC-010"
@@ -1984,6 +1992,131 @@
             "format": ".0f"
           },
           "interior optimum"
+        ]
+      ]
+    },
+    {
+      "target": "micromorphic_dic_improvement.inc",
+      "columns": [
+        "Case",
+        "Relative L2",
+        "Pearson",
+        "top-10 % IoU",
+        "q90 IoU",
+        "q90 active fraction"
+      ],
+      "rows": [
+        [
+          "local, no coupling",
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/relative_l2",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/pearson",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/top10_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/absolute_q90_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/0/observed/absolute_q90_active_fraction",
+            "format": ".4f"
+          }
+        ],
+        [
+          "alpha = 1",
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/relative_l2",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/pearson",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/top10_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/absolute_q90_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/1/observed/absolute_q90_active_fraction",
+            "format": ".4f"
+          }
+        ],
+        [
+          "alpha = 2",
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/relative_l2",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/pearson",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/top10_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/absolute_q90_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/2/observed/absolute_q90_active_fraction",
+            "format": ".4f"
+          }
+        ],
+        [
+          "alpha = 4",
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/relative_l2",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/pearson",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/top10_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/absolute_q90_iou",
+            "format": ".4f"
+          },
+          {
+            "source": "validation/reference_data/dic_symmetric_observation_p0043_v1/summary.json",
+            "path": "/rows/3/observed/absolute_q90_active_fraction",
+            "format": ".4f"
+          }
         ]
       ]
     }

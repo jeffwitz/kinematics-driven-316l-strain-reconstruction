@@ -7,6 +7,28 @@ Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 Cette section se lit en deux minutes. Le détail chronologique est en section 14.
 
+**Le résultat principal du projet.** Le couplage micromorphique est **le seul
+levier testé qui rapproche mesurablement l'EF de la DIC**. Sous observation
+symétrique, `alpha=4` améliore la L2 relative de `0,194`, soit **9,6× la marge
+de bruit** de cette métrique, et la corrélation de `0,059`, soit **3,2×** sa
+marge. Surtout, l'aire active q90 passe de **`+61,3 %`** au-dessus de la
+référence DIC pour le modèle local à **`+2,6 %`** pour `alpha=4`.
+
+Le contraste avec tout le reste est ce qui donne sa force au résultat :
+
+| Levier | Effet sur l'accord DIC |
+|---|---|
+| couplage micromorphique | L2 relative améliorée de `9,6` marges |
+| histoire temporelle mesurée | aucune métrique au-delà de sa marge |
+| filtrage modal du bord | aucune métrique au-delà de sa marge |
+| carte matériau homogène | meilleur L2 global, mais en supprimant les bandes |
+
+Limite à citer systématiquement : le couplage améliore amplitude, corrélation et
+aire active **en dégradant la position** de la localisation — IoU top-10 % en
+baisse de `0,046` et IoU q90 de `0,054`, soit `2,4` et `2,5` marges. Le
+classement dépend donc de l'objectif, et c'est pour cela qu'aucun `alpha` unique
+n'est retenu.
+
 **Ce qui fonctionne et est vérifié.** Le pipeline autonome va des quatre
 tableaux DIC bruts aux entrées canoniques puis au calcul partitionné, validé sur
 une partition à l'échelle de l'article (234 600 éléments). Le backend MFront/MGIS
@@ -41,6 +63,24 @@ l'histoire mesurée.
 **Systématique connu à porter.** Toutes les campagnes micromorphiques archivées
 utilisent le trajet proportionnel ; le systématique de `16 %` sur PEEQ ne
 renverse pas leurs classements (marges bien plus larges) mais doit être cité.
+
+## Prochaine action
+
+**La porte micromorphique est OUVERTE** — décision du 2026-07-30. Les lots V2 et
+V3 qui la conditionnaient sont terminés, et le résultat ci-dessus est le plus
+solide du projet. Une nouvelle campagne d'identification couplée est autorisée
+aux trois conditions suivantes :
+
+1. l'objectif est évalué **sous observation symétrique** ; l'objectif brut de
+   l'ancienne surface paramétrique n'est pas réutilisable ;
+2. la campagne est pré-enregistrée, avec des marges de significativité prises
+   dans les intervalles de sensibilité au bruit DIC déjà mesurés ;
+3. le systématique de `16 %` lié au trajet est cité, sans être appliqué comme
+   correction.
+
+Deux chantiers plus petits restent ouverts et non bloquants : la normalisation
+de `k` pour exploiter `BOUNDARY_MISFIT` comme indicateur, et le `+0,64 %` de
+PEEQ moyen consigné sans explication après filtrage.
 
 Jalon documentaire au 2026-07-26 : **réécriture publique science-first
 terminée et vérifiée**. La navigation principale suit désormais un récit
@@ -223,8 +263,10 @@ micromorphique.
 - [ ] Étiqueter chaque grandeur comme mesurée, calculée ou supposée.
 - [ ] Ne jamais comparer PEEQ ou une contrainte locale à la DIC comme s'il
   s'agissait de la même observable.
-- [ ] Ne lancer aucune nouvelle identification micromorphique couplée avant la
-  caractérisation DIC et l'opérateur d'observation honnête.
+- [x] Ne lancer aucune nouvelle identification micromorphique couplée avant la
+  caractérisation DIC et l'opérateur d'observation honnête. **Condition levée le
+  2026-07-30** : V2 et V3 sont terminés, la porte est ouverte sous les trois
+  conditions de la section « Prochaine action » en tête de fichier.
 
 ### Lot V0 — Inventaire expérimental, bloquant
 
@@ -1017,7 +1059,9 @@ Artefacts : `validation/dic_multistep_p0043_audit.md`,
    numérique.
 
 Une nouvelle campagne d'identification micromorphique n'est autorisée qu'après
-V2 et V3. Une revendication de longueur structurelle imposée exige V5. Une
+V2 et V3. **Les deux sont terminés, la porte est donc ouverte depuis le
+2026-07-30** ; voir « Prochaine action » en tête de fichier pour les trois
+conditions attachées. Une revendication de longueur structurelle imposée exige V5. Une
 revendication de longueur matérielle reste interdite sans transfert sur une
 autre ROI, une autre résolution d'observation et idéalement un autre essai.
 
