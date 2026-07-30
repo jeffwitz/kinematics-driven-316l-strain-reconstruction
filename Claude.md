@@ -630,8 +630,10 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
 
 ### Lot V6 — Histoire temporelle et validation conditionnelle
 
-- [!] Imposer les déplacements de bord mesurés à chaque pas disponible au lieu
-  d'une rampe proportionnelle vers l'état final.
+- [x] Imposer les déplacements de bord mesurés à chaque pas disponible au lieu
+  d'une rampe proportionnelle vers l'état final. **Débloqué le 2026-07-30** :
+  l'histoire mesurée de 40 états passe intégralement après correction du
+  prédicteur élastique (`68,1 min`, 65 incréments convergés, 3 cutbacks).
 - [x] Comparer accumulation incrémentale DISFlow et corrélation directe
   référence-vers-état courant pour quantifier la dérive.
 - [ ] Identifier les cartes sur les pas 1–20 et évaluer les pas 21–40 avec
@@ -725,6 +727,23 @@ Voir `validation/ell_ebsd_definition_preregistration.md` et
   d'incréments bruts à cinq voisins d'une série en tendance ; le
   second-différenciage la fait disparaître. L'instrumentation Newton différée
   est donc réinstaurée comme piste principale.
+
+**BLOCAGE MULTI-PAS RÉSOLU le 2026-07-30.** L'histoire mesurée de 40 états
+s'exécute intégralement (`completed_local_measured_boundary_history`). Les
+quatre critères pré-enregistrés passent : aucun résultat archivé ne bouge, la
+déformation d'essai à l'incrément 4 itération 1 tombe de `1,855e-02` à
+`5,440e-04`, la signature d'opérateur gelé disparaît, et la transition état 3
+vers état 4 est franchie. Bilan : `68,1 min`, 65 incréments convergés sur 68,
+3 cutbacks, 469 itérations Newton, `max|D_ep|/max|C_el| = 1,000000`, zéro
+diagonale non positive. Détails dans
+`validation/dic_multistep_p0043_predictor_fix_results.md`.
+
+Ce que cela **n'établit pas** : que les champs intérieurs reconstruits ont un
+sens physique. Cette question reste régie par l'asymétrie de l'opérateur
+d'observation et les résultats de bruit DIC déjà consignés. La comparaison
+entre le chemin mesuré et le baseline proportionnel n'a **pas** été regardée :
+c'est le résultat scientifiquement intéressant et il doit être pré-enregistré
+avant lecture.
 
 **Cause racine identifiée le 2026-07-30 par l'instrumentation Newton — le
 blocage multi-pas est un défaut logiciel, pas numérique ni physique :**
@@ -2201,8 +2220,27 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-30 | Outlier de bord pré-enregistré à l'état 4 | Même diagnostic, critère `|z| >= 3` | `z = 0,13` et `1,66` ; hypothèse réfutée | Échec enregistré |
 | 2026-07-30 | Instrumentation Newton P43 | `run-dic-multistep-mechanics --record-newton-trace`, 28 records | Prédicteur élastique résolu sur un buffer CSR écrasé | Cause racine trouvée |
 | 2026-07-30 | Aliasing du buffer d'assemblage | `FixedCSRAssembler.assemble` sur deux tangentes | `A is B` vrai, premier résultat muté | Défaut confirmé |
+| 2026-07-30 | Non-régression du correctif | Cas analytique réduit avant/après, 423 tests MFront | Sortie identique bit à bit | Réussi |
+| 2026-07-30 | Rejeu P43 histoire mesurée 40 états | `run-dic-multistep-mechanics --mode measured` | Complet en `68,1 min`, 65 incréments, 3 cutbacks | Réussi |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-30 — Blocage multi-pas résolu, histoire mesurée complète
+
+- Les quatre critères pré-enregistrés du correctif passent
+- Incrément 4, la transition qui bloquait depuis le début : converge en 4
+  itérations, déformation d'essai initiale `5,440e-04` contre `1,855e-02` avant
+- Les 40 états s'exécutent : 65 incréments convergés sur 68, 3 cutbacks aux
+  incréments 29, 50 et 59, tous aux itérations 10, 4 et 6, donc des dépassements
+  Newton ordinaires rattrapés par un cutback, plus les échecs pathologiques à
+  l'itération 1
+- `max||du||/||du_B|| = 4,295e-01` : les corrections restent plus petites que
+  l'incrément de bord qui les pilote, contre `2,696` en divergence avant
+- Prochaine étape ouverte : le test de prédiction temporelle conditionnelle
+  (identification sur les pas 1–20, évaluation 21–40 à cartes gelées) devient
+  exécutable
+- La régularisation temporelle de l'étape 1 ne débloque plus rien ; si elle est
+  poursuivie, c'est sur ses seuls mérites
 
 ### 2026-07-30 — Cause racine du blocage multi-pas : prédicteur élastique corrompu
 
