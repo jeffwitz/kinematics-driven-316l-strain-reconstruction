@@ -173,6 +173,9 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         nonlocal_hardening_mpa=nonlocal_arrays[2],
         yield_surface_radius_mpa=nonlocal_arrays[3],
         nonlocal_residual=nonlocal_arrays[4],
+        boundary_misfit_mm=(
+            np.asarray(raw["BOUNDARY_MISFIT"]) if "BOUNDARY_MISFIT" in raw else None
+        ),
         frames={
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()
@@ -192,6 +195,8 @@ def run_case_study(
     yield_stress_mpa: ArrayLike,
     hardening_coefficient_mpa: ArrayLike,
     boundary_displacement_history_mm: ArrayLike | None = None,
+    boundary_enforcement: str = "elimination",
+    boundary_penalty_stiffness: float | None = None,
     snapshots: tuple[float, ...] = (),
     newton_trace: list[dict[str, object]] | None = None,
     verbose: bool = False,
@@ -287,6 +292,8 @@ def run_case_study(
         line_search_minimum_factor=config.solver.line_search_minimum_factor,
         line_search_maximum_trials=config.solver.line_search_maximum_trials,
         boundary_history_predictor=config.solver.boundary_history_predictor,
+        boundary_enforcement=boundary_enforcement,
+        boundary_penalty_stiffness=boundary_penalty_stiffness,
         nonlocal_plasticity_enabled=config.nonlocal_plasticity.enabled,
         nonlocal_length_scale_mm=config.nonlocal_plasticity.length_scale_mm,
         nonlocal_coupling_modulus_mpa=(config.nonlocal_plasticity.coupling_modulus_mpa),

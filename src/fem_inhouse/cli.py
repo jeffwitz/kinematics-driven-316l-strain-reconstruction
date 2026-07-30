@@ -46,6 +46,7 @@ from fem_inhouse.workflows import (
     diagnose_section_equilibrium_campaigns,
     estimate_reference_hardening_from_campaign,
     export_run_as_observation_campaign,
+    filter_dic_boundary_history,
     generate_high_fidelity_manifest,
     generate_joint_identification_report,
     inspect_joint_identification,
@@ -575,6 +576,16 @@ def _parser() -> argparse.ArgumentParser:
     export_campaign.add_argument("--output", type=Path, required=True)
     export_campaign.add_argument("--overwrite", action="store_true")
 
+    modal_filter = commands.add_parser(
+        "filter-dic-boundary-history",
+        help="truncate a measured boundary history to its resolved modes",
+    )
+    modal_filter.add_argument("--history", type=Path, required=True)
+    modal_filter.add_argument("--history-report", type=Path, required=True)
+    modal_filter.add_argument("--rank", type=int, default=3)
+    modal_filter.add_argument("--output", type=Path, required=True)
+    modal_filter.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -1088,6 +1099,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(export_report)
+        return 0
+    if args.command == "filter-dic-boundary-history":
+        filter_report = filter_dic_boundary_history(
+            history_path=args.history,
+            history_report_path=args.history_report,
+            output_directory=args.output,
+            rank=args.rank,
+            overwrite=args.overwrite,
+        )
+        _print_json(filter_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(

@@ -221,3 +221,74 @@ def test_export_run_as_observation_campaign_rejects_a_tampered_field(tmp_path: P
         export_run_as_observation_campaign(
             run_directory=run, output_directory=tmp_path / "campaign", partition_id=43
         )
+
+
+def test_modal_filter_pins_ends_and_stays_within_noise(tmp_path: Path) -> None:
+    import hashlib
+
+    from fem_inhouse.workflows.dic_boundary_modal_filter import (
+        filter_dic_boundary_history,
+    )
+
+    states, nx, ny = 12, 9, 8
+    generator = np.random.default_rng(8)
+    load = np.linspace(0.0, 1.0, states)[:, None, None]
+    x = np.arange(nx, dtype=float)[None, :, None] * 0.00184
+    y = np.arange(ny, dtype=float)[None, None, :] * 0.00184
+    history = np.zeros((states, nx, ny, 2))
+    history[..., 0] = -2.0e-3 * load * x
+    history[..., 1] = 6.0e-3 * load * y
+    history += generator.normal(0.0, 2.0e-7, history.shape)
+    history[0] = 0.0
+
+    source = tmp_path / "h.npy"
+    np.save(source, history)
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    report = tmp_path / "r.json"
+    report.write_text(
+        json.dumps(
+            {
+                "outputs": {"h.npy": digest},
+                "partition_id": 43,
+                "solve_bounds": [0, nx - 1, 0, ny - 1],
+                "core_bounds": [1, nx - 2, 1, ny - 2],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = filter_dic_boundary_history(
+        history_path=source,
+        history_report_path=report,
+        output_directory=tmp_path / "out",
+        rank=3,
+    )
+
+    filtered = np.load(tmp_path / "out" / "modal_filtered_history_mm.npy")
+    np.testing.assert_array_equal(filtered[0], history[0])
+    np.testing.assert_array_equal(filtered[-1], history[-1])
+    np.testing.assert_array_equal(filtered[:, 1:-1, 1:-1, :], history[:, 1:-1, 1:-1, :])
+    assert result["filter"]["removed_within_measured_noise"] is True
+    assert result["status"] == "completed_modal_boundary_filter"
+
+
+def test_pin_endpoints_zeroes_both_ends_exactly() -> None:
+    from fem_inhouse.workflows.dic_boundary_modal_filter import pin_endpoints
+
+    generator = np.random.default_rng(1)
+    pinned = pin_endpoints(generator.random((7, 5)))
+
+    np.testing.assert_array_equal(pinned[0], np.zeros(5))
+    np.testing.assert_array_equal(pinned[-1], np.zeros(5))
+
+
+def test_endpoint_ramp_deviation_vanishes_at_both_ends() -> None:
+    from fem_inhouse.workflows.dic_boundary_modal_filter import endpoint_ramp_deviation
+
+    generator = np.random.default_rng(3)
+    states = generator.random((9, 4))
+    states[0] = 0.0
+    ramp, deviation = endpoint_ramp_deviation(states)
+
+    np.testing.assert_allclose(ramp[-1], states[-1])
+    np.testing.assert_array_equal(deviation[-1], np.zeros(4))
