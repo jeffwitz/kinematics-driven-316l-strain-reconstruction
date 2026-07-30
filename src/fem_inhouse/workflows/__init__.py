@@ -62,6 +62,9 @@ from fem_inhouse.workflows.material_map_control_validation import (
     validate_material_map_controls,
 )
 from fem_inhouse.workflows.material_map_controls import prepare_material_map_control
+from fem_inhouse.workflows.multistep_path_dependence import (
+    compare_multistep_path_dependence,
+)
 from fem_inhouse.workflows.nonlocal_coupling_campaign import (
     ReferenceHardeningReport,
     compute_reference_hardening_modulus,
@@ -96,6 +99,7 @@ __all__ = [
     "characterise_dic_measurement_chain",
     "collect_identification_results",
     "common_color_limits",
+    "compare_multistep_path_dependence",
     "compute_reference_hardening_modulus",
     "contiguous_residual_on_support",
     "diagnose_dic_boundary_history",

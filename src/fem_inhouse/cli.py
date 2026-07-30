@@ -39,6 +39,7 @@ from fem_inhouse.workflows import (
     bridge_dic_multistep_history,
     characterise_dic_measurement_chain,
     collect_identification_results,
+    compare_multistep_path_dependence,
     diagnose_dic_boundary_history,
     diagnose_dic_boundary_loading_subspace,
     diagnose_dic_photometric_quality,
@@ -552,6 +553,18 @@ def _parser() -> argparse.ArgumentParser:
     loading_subspace.add_argument("--figure-output", type=Path, required=True)
     loading_subspace.add_argument("--overwrite", action="store_true")
 
+    path_dependence = commands.add_parser(
+        "compare-path-dependence",
+        help="compare final-state fields reached by measured and proportional paths",
+    )
+    path_dependence.add_argument("--measured", type=Path, required=True)
+    path_dependence.add_argument("--proportional", type=Path, required=True)
+    path_dependence.add_argument("--archived-field", type=Path, required=True)
+    path_dependence.add_argument("--field", default="PEEQ")
+    path_dependence.add_argument("--output", type=Path, required=True)
+    path_dependence.add_argument("--figure-output", type=Path, required=True)
+    path_dependence.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -1044,6 +1057,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(subspace_report)
+        return 0
+    if args.command == "compare-path-dependence":
+        path_report = compare_multistep_path_dependence(
+            measured_directory=args.measured,
+            proportional_directory=args.proportional,
+            archived_field_path=args.archived_field,
+            output_directory=args.output,
+            figure_directory=args.figure_output,
+            field_name=args.field,
+            overwrite=args.overwrite,
+        )
+        _print_json(path_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
