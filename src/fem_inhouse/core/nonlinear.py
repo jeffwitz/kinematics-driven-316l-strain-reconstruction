@@ -291,7 +291,10 @@ def run_fem(
     # Assemble KIB once. KII is the fixed CSR object later updated in place.
     sparse_assembly_started_at = time.perf_counter()
     K_el = assemble_stiffness(mesh, Ke, ld)
-    KII_el = fixed_free_assembler.assemble(Ke)
+    # The assembler updates one CSR buffer in place and returns it, so every
+    # elastoplastic tangent overwrites this matrix. The elastic predictor needs
+    # an operator that survives those assemblies, hence an owned copy.
+    KII_el = fixed_free_assembler.assemble(Ke).copy()
     sparse_assembly_seconds = time.perf_counter() - sparse_assembly_started_at
     extraction_started_at = time.perf_counter()
     KIB_el = K_el[dof_I][:, dof_B].tocsr()
