@@ -12,7 +12,9 @@ compare separate noise realisations and inflate every difference.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -85,7 +87,7 @@ def block_indices(
 
 
 def paired_band_bootstrap(
-    per_band_sections: dict[str, dict[str, NDArray[np.generic]]],
+    per_band_sections: Mapping[str, Mapping[str, NDArray[Any]]],
     *,
     design: BootstrapDesign,
 ) -> dict[str, FloatArray]:
@@ -203,7 +205,7 @@ def compare_pair(
 
 
 def block_length_sensitivity(
-    per_band_sections: dict[str, dict[str, NDArray[np.generic]]],
+    per_band_sections: Mapping[str, Mapping[str, NDArray[Any]]],
     *,
     block_lengths: tuple[int, ...],
     draws: int,
