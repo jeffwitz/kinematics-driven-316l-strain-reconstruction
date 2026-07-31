@@ -80,10 +80,21 @@ with window **9**, resampling every **4 px**.
 Normal sections: half-length **40 px**, sampling step **1 px**, border margin
 **4 px**. Corridor half-width **12 px**; the background is taken outside it.
 
-**Manual assist.** Selecting which objects are "the two bands" may be done once,
-by hand, **with no candidate field visible**. The chosen identifiers and the
-resulting mask are versioned. This is the one human step and it belongs to the
-project owner, not to the analysis.
+**Selection is automatic. There is no manual step.** An object is a band when
+its extracted centreline is at least as long as the chain's MTF-50, `49 px`: a
+region whose main axis is shorter than the resolution length cannot be asserted
+to be a band. Measured on the DIC alone, this separates cleanly at every
+threshold, by a factor above six between the shortest retained band and the
+longest discarded fragment:
+
+| Threshold | Retained centrelines | Longest discarded |
+|---|---|---:|
+| q80 | `355`, `175 px` | `26 px` |
+| q90 | `273`, `111 px` | `18 px` |
+| q95 | `236 px` | `8 px` |
+
+The rule is fixed by the instrument, not by inspection, and it is reproducible
+without a human in the loop.
 
 ## Metrics
 
@@ -157,15 +168,39 @@ FSS activity thresholds, which is a different question.
 Blue outlines the objects, orange the pruned skeleton, green the extracted
 centreline.
 
-### 2. The skeletons are networks, not ribbons
+### 2. The regions are ragged, not networks — an earlier reading corrected
 
-Pruning saturates at about `26 %` of skeleton pixels on the main path and stops
-changing beyond `32 px`, tested to `128 px`. The surviving branches are
-therefore **loops**, which endpoint pruning cannot remove by construction.
+An earlier version of this amendment said the skeletons carried hundreds of
+loops and were therefore networks. **That was a defect in the measure, not a
+property of the data**, and it is corrected here.
 
-The extracted centreline remains the band axis, which is what normal sections
-need, but it does **not** summarise the object's topology. Any statement about
-band length or connectivity must come from the object, not from the centreline.
+The loop count had been taken as `E - V + C` on the eight-connected pixel graph
+of the skeleton. Under eight-connectivity three pixels in a corner form a
+triangle, so that formula scores every corner of a one-pixel-wide path as a
+loop. It reported `661` loops for the first band. Counted properly, on the
+region with four-connected background inside eight-connected foreground, the
+same band has **63 holes, the largest `32 px`** — and none reaches the `256 px`
+resolvable bound. There is no cellular structure.
+
+The branch statistics fail the same way. The first band has `1472` skeleton
+branches of which `96 %` are at most `2.4 px`: medial-axis noise from a ragged
+boundary, not band intersections. Only `28` reach `16 px`. Branch orientation
+on the unfiltered set returns modes at `7, 52, 97, 142` degrees, which are the
+four lattice directions and nothing else; orientation is therefore read only
+from branches at or above the resolvable length, and the second band has none.
+
+What survives as a real, usable measure of shape:
+
+| Measure | What it says |
+|---|---|
+| `main_path_share` | how ribbon-like the region is. `0.13` and `0.15` here: wide and ragged, not a thin band |
+| `enclosed_holes` with the resolvable bound | whether a cellular pattern exists. Here: none |
+| `resolvable_branch_count` | how many genuine sub-branches exist. `28` and `0` |
+| area, axis length, elongation | size and extent |
+
+The centreline remains the band axis, which is what the normal sections need.
+No statement about connectivity or sub-structure may be read from the raw
+skeleton.
 
 ### 3. E5 is demoted, and the FSS criterion is replaced
 

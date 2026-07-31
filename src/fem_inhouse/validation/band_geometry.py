@@ -350,6 +350,156 @@ def order_centreline(skeleton: NDArray[np.bool_]) -> FloatArray:
     return np.asarray(path[::-1], dtype=np.float64)
 
 
+@dataclass(frozen=True, slots=True)
+class NetworkMetrics:
+    """Shape and topology of a band region, beyond its main axis.
+
+    A single centreline describes a ribbon. These regions are not ribbons, so
+    the centreline captures only part of them and the rest needs measuring on
+    its own terms.
+    """
+
+    area_pixels: int
+    enclosed_holes: int
+    largest_hole_pixels: int
+    skeleton_pixels: int
+    branch_points: int
+    endpoints: int
+    total_length_pixels: float
+    main_path_length_pixels: float
+    main_path_share: float
+    branch_count: int
+    resolvable_branch_count: int
+    median_branch_length_pixels: float
+    orientation_modes_degrees: tuple[float, ...]
+
+
+def count_enclosed_holes(mask: NDArray[np.bool_]) -> tuple[int, int]:
+    """Return the number of enclosed holes and the largest one, in pixels.
+
+    Counted on the **region**, with four-connected background inside an
+    eight-connected foreground, which is the matching pair.
+
+    Not counted on the skeleton graph: under eight-connectivity three pixels in
+    a corner form a triangle, so ``E - V + C`` scores every corner of a
+    one-pixel-wide path as a loop and reports hundreds of holes that do not
+    exist.
+    """
+
+    region = np.asarray(mask, dtype=bool)
+    if region.ndim != 2:
+        raise ValueError("mask must be two-dimensional")
+    holes = ndimage.binary_fill_holes(region) & ~region
+    labels, count = ndimage.label(holes)  # four-connected by default
+    if count == 0:
+        return 0, 0
+    sizes = ndimage.sum_labels(holes, labels, index=range(1, count + 1))
+    return int(count), int(np.max(sizes))
+
+
+def network_metrics(
+    mask: NDArray[np.bool_],
+    *,
+    minimum_branch_pixels: int = 16,
+    orientation_bins: int = 12,
+    minimum_mode_share: float = 0.15,
+    resolvable_branch_pixels: float = 16.0,
+) -> NetworkMetrics:
+    """Measure a band region as a shape, not only as a path.
+
+    Takes the region rather than a skeleton, so holes and axis cannot be
+    computed from mismatched inputs.
+    """
+
+    region = np.asarray(mask, dtype=bool)
+    if not region.any():
+        raise ValueError("the region is empty")
+    holes, largest_hole = count_enclosed_holes(region)
+    skeleton = prune_skeleton_spurs(
+        zhang_suen_thinning(region), minimum_branch_pixels=minimum_branch_pixels
+    )
+    graph = _skeleton_neighbours(skeleton)
+    if not graph:
+        raise ValueError("the region has no skeleton")
+
+    degrees = {node: len(neighbours) for node, neighbours in graph.items()}
+    total_length = sum(
+        float(np.hypot(a[0] - b[0], a[1] - b[1]))
+        for a, neighbours in graph.items()
+        for b in neighbours
+        if a < b
+    )
+    main = order_centreline(skeleton)
+    main_length = (
+        float(np.sum(np.linalg.norm(np.diff(main, axis=0), axis=1)))
+        if len(main) > 1
+        else 0.0
+    )
+
+    nodes = {node for node, d in degrees.items() if d != 2}
+    lengths: list[float] = []
+    orientations: list[float] = []
+    seen: set[frozenset[SkeletonNode]] = set()
+    for start in nodes:
+        for first_step in graph[start]:
+            previous, node = start, first_step
+            length = float(np.hypot(node[0] - start[0], node[1] - start[1]))
+            while node not in nodes:
+                following = [n for n in graph[node] if n != previous]
+                if not following:
+                    break
+                previous, nxt = node, following[0]
+                length += float(np.hypot(nxt[0] - node[0], nxt[1] - node[1]))
+                node = nxt
+            key = frozenset((start, node))
+            if key in seen or start == node:
+                continue
+            seen.add(key)
+            lengths.append(length)
+            orientations.append(
+                float(np.degrees(np.arctan2(node[1] - start[1], node[0] - start[0])) % 180.0)
+            )
+
+    # Orientation is read only from branches the chain could resolve. On the
+    # raw set, most branches are one or two pixels long, so their direction can
+    # only be one of the four lattice directions and the histogram returns
+    # 0/45/90/135 whatever the shape is.
+    span = np.asarray(lengths, dtype=np.float64)
+    angle = np.asarray(orientations, dtype=np.float64)
+    resolvable = span >= resolvable_branch_pixels
+    modes: tuple[float, ...] = ()
+    if int(np.count_nonzero(resolvable)) >= 3:
+        counts, edges_deg = np.histogram(
+            angle[resolvable],
+            bins=orientation_bins,
+            range=(0.0, 180.0),
+            weights=span[resolvable],
+        )
+        share = counts / max(float(counts.sum()), 1.0)
+        centres = 0.5 * (edges_deg[:-1] + edges_deg[1:])
+        modes = tuple(
+            float(c) for c, sh in zip(centres, share, strict=True) if sh >= minimum_mode_share
+        )
+
+    return NetworkMetrics(
+        area_pixels=int(np.count_nonzero(region)),
+        enclosed_holes=holes,
+        largest_hole_pixels=largest_hole,
+        skeleton_pixels=len(graph),
+        branch_points=sum(1 for d in degrees.values() if d > 2),
+        endpoints=sum(1 for d in degrees.values() if d == 1),
+        total_length_pixels=total_length,
+        main_path_length_pixels=main_length,
+        main_path_share=(
+            float(main_length / total_length) if total_length > 0 else float("nan")
+        ),
+        branch_count=len(lengths),
+        resolvable_branch_count=int(np.count_nonzero(resolvable)),
+        median_branch_length_pixels=float(np.median(lengths)) if lengths else float("nan"),
+        orientation_modes_degrees=modes,
+    )
+
+
 def smooth_centreline(path: NDArray[np.generic], *, window: int = 9) -> FloatArray:
     """Apply a declared moving-average smoothing, endpoints preserved."""
 
