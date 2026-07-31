@@ -107,6 +107,10 @@ aux trois conditions suivantes :
 3. le systématique de `16 %` lié au trajet est cité, sans être appliqué comme
    correction.
 
+La campagne autorisée par cette décision est **spécifiée, chiffrée et prête à
+déléguer** : voir la section « Campagne à lancer » ci-dessous et le mode
+opératoire cluster `docs/how-to/run_micromorphic_identification.md`.
+
 **Normalisation de `k` réglée le 2026-07-31.** Le ressort n'est plus un
 paramètre libre : il est fixé par le **principe de l'écart**, le solveur ayant
 droit de s'écarter de la mesure d'exactement le bruit mesuré
@@ -128,35 +132,55 @@ faut assembler la raideur élastique hors de la boucle Newton.
 Artefacts : `validation/boundary_penalty_calibration_preregistration.md` et
 `validation/boundary_penalty_calibration_results.md`.
 
-**Campagne micromorphique : pré-enregistrée et chiffrée le 2026-07-31, non
-lancée.** Voir
-`validation/micromorphic_symmetric_identification_preregistration.md`.
+## Campagne à lancer — identification micromorphique
 
-Constat bloquant traité dans le pré-enregistrement : l'outillage d'identification
-existant **ne satisfait pas** la condition 1 de la porte.
-`identification/observation.py` déclare `spatial_filter: Literal["none"]` et
-n'offre que réduction de grille et masquage du cœur — c'est l'objectif brut
-asymétrique que V3 a réfuté. Le réutiliser tel quel reproduirait l'erreur qui a
-motivé la suspension.
+**Statut : spécifiée, chiffrée, prête à déléguer. Non lancée.**
+Protocole : `validation/micromorphic_symmetric_identification_preregistration.md`.
+Mode opératoire, y compris cluster :
+`docs/how-to/run_micromorphic_identification.md`.
+Table des points prête pour job array : `campaigns/mm_id_points.tsv`.
 
-Conséquence de conception : l'opérateur symétrique n'a de sens qu'à
-**un élément = un pixel**, donc le palier basse fidélité `spatial_reduction: 2`
-de la configuration existante est inutilisable. Seule la réduction temporelle
-reste admise, et elle est bornée à 20 incréments car la sensibilité de `0,20 %`
-mesurée porte sur 20 contre 40, pas sur 10.
+**Ce que la campagne répond.** Pas « quel `alpha` est le meilleur », mais :
+`Hchi` et `ell` sont-ils **séparément identifiables** depuis cette observation,
+ou l'objectif est-il dégénéré le long de `Achi = Hchi * ell**2` ? Si seul le
+produit est identifiable, aucune longueur spatiale distincte ne peut être
+revendiquée — et c'est un résultat négatif publiable.
 
-Design retenu : grille `5 x 5` sur `ell ∈ {20, 30, 40, 50, 58,88} µm` et
-`alpha ∈ {1, 2, 3, 4, 6}`, dont 3 points déjà archivés et observés. **22 calculs
-neufs, environ 11 à 12 h** à `~31 min` par run d'après les temps archivés.
+**Pourquoi maintenant.** Le couplage est le seul levier testé qui rapproche
+mesurablement l'EF de la DIC : la suractivité q90 passe de `+61 %` (local) à
+`+2,6 %` (`alpha=4`). Mais `Hchi` et `ell` n'ont jamais été variés
+indépendamment : toutes les campagnes archivées font varier `alpha` à
+`ell = 58,88 µm` figé.
 
-Question réellement visée : non pas « quel `alpha` », mais **`Hchi` et `ell`
-sont-ils séparément identifiables** ou l'objectif est-il dégénéré le long de
-`Achi = Hchi * ell**2` ? Aucun score scalaire unique n'est utilisé pour
-sélectionner, puisque le classement dépend déjà de l'objectif ; le livrable est
-l'ensemble Pareto plus les optima par objectif.
+**Deux pièges, documentés dans le guide.**
 
-Chantier restant : le `+0,64 %` de PEEQ moyen consigné sans explication après
-filtrage.
+1. **Ne pas réutiliser `configs/joint_nonlocal_identification_p0043.yaml` tel
+   quel.** Il contient déjà une grille 21×21 et paraît prêt, mais son objectif
+   n'applique **aucun opérateur d'observation côté EF**
+   (`spatial_filter: Literal["none"]`). C'est l'objectif brut asymétrique que
+   V3 a réfuté, et qui a motivé la suspension.
+2. **Ne pas activer `spatial_reduction: 2`.** C'est l'économie évidente et elle
+   est incompatible : l'opérateur symétrique n'a de sens qu'à un élément = un
+   pixel. Seule la réduction temporelle est admise, bornée à 20 incréments car
+   la sensibilité mesurée de `0,20 %` porte sur 20 contre 40, pas sur 10.
+
+**Design.** Grille `5 x 5`, `ell ∈ {20, 30, 40, 50, 58,88} µm` et
+`alpha ∈ {1, 2, 3, 4, 6}`, avec `Hchi = alpha * 5168,147582748343 MPa`. Trois
+points archivés et déjà observés sont réutilisés, donc **22 calculs neufs**.
+
+**Ressources.** `~31 min`, 8 cœurs (`~3,2` effectifs), `~10 Go` RSS et `~150 Mo`
+par point ; soit `11 à 12 h` en série, ou une passe de job array. L'étape
+d'observation symétrique est séparable et coûte des secondes par point : elle
+peut tourner ailleurs que sur le cluster, ce qui évite d'y copier les images DIC.
+
+**Règle de lecture, verrouillée.** Aucun score scalaire unique ne sélectionne un
+point : le classement dépend déjà de l'objectif. Livrable = quatre surfaces
+métriques, ensemble Pareto, optima par objectif. Marges de significativité fixées
+d'avance (`0,0202` / `0,0185` / `0,0189` / `0,0217`). Un Pareto large est un
+résultat probable et légitime, pas un échec.
+
+Chantier restant, plus petit : le `+0,64 %` de PEEQ moyen consigné sans
+explication après filtrage modal.
 
 Jalon documentaire au 2026-07-26 : **réécriture publique science-first
 terminée et vérifiée**. La navigation principale suit désormais un récit
