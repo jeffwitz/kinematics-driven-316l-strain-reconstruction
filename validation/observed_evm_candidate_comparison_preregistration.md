@@ -62,7 +62,13 @@ every candidate.
 
 ## Band geometry, from the DIC alone
 
-Thresholds q80, q90 and q95 on valid DIC values. Minimum object area
+**The threshold that defines the geometry and the thresholds that define
+"active" for the FSS are different things and are not the same here.** The
+first version of this document left the geometry threshold unspecified, which
+was a hole: it decides how many bands exist.
+
+Geometry threshold: **q80**, fixed after a DIC-only measurement recorded in the
+amendment below. Minimum object area
 **256 px**, which is `4 x 64` — narrower than the `49 px` MTF-50 of the chain in
 one direction, so no object the chain could not resolve survives, and it is not
 tuned to any candidate.
@@ -122,6 +128,56 @@ probably worse, `< 0.05` robustly worse.
 A conclusion that does not hold at all three block lengths is reported as
 scheme-dependent, not as a result.
 
+## Amendment before validation, 2026-07-31
+
+Three changes, made before the campaign is run and before any candidate is read
+with the lot 2 to 4 tooling.
+
+### 1. The geometry threshold is q80, chosen on a DIC-only measurement
+
+Segmenting the DIC alone at the three thresholds, minimum area 256 px:
+
+| Threshold | Objects | Second band |
+|---|---:|---|
+| q80 | 3 | full length, `5639 px`, centreline `175 px` |
+| q90 | 2 | reduced to its core, `1666 px`, centreline `111 px` |
+| q95 | **1** | **absent** |
+
+At q95 the two-band premise of section 3.4 collapses outright. At q90 the second
+band survives only as a fragment, and every worst-band conclusion would rest on
+it. **q80 is the only threshold at which both bands exist over their full
+length.** The third q80 object, `361 px` with a `26 px` centreline, is what the
+manual selection is there to discard.
+
+No candidate field was read to reach this. q80, q90 and q95 all remain in use as
+FSS activity thresholds, which is a different question.
+
+![DIC segmented at the three thresholds](figures/observed_evm_band_geometry_p0043_v1/dic_band_thresholds.png)
+
+Blue outlines the objects, orange the pruned skeleton, green the extracted
+centreline.
+
+### 2. The skeletons are networks, not ribbons
+
+Pruning saturates at about `26 %` of skeleton pixels on the main path and stops
+changing beyond `32 px`, tested to `128 px`. The surviving branches are
+therefore **loops**, which endpoint pruning cannot remove by construction.
+
+The extracted centreline remains the band axis, which is what normal sections
+need, but it does **not** summarise the object's topology. Any statement about
+band length or connectivity must come from the object, not from the centreline.
+
+### 3. E5 is demoted, and the FSS criterion is replaced
+
+- **E5 is no longer an elimination criterion.** The q90 active fractions are
+  already known, and a non-blind criterion must not be able to eliminate a
+  candidate on a number known in advance. It is computed and reported.
+- **The Pareto FSS criterion becomes the minimum scale reaching FSS 0.7 at
+  q90**, lower is better, replacing FSS at a fixed 16 px. The fixed scale was an
+  unjustified choice; the attaining scale is the natural summary of the curve.
+  A candidate never reaching 0.7 returns `nan` and is reported as such rather
+  than ranked.
+
 ## Elimination criteria
 
 Each bound and its origin. **None is derived from the archived score table.**
@@ -132,11 +188,11 @@ Each bound and its origin. **None is derived from the archived score table.**
 | E2 | each DIC band detected in at least half its sections | `0.50` | below half, "the band is reproduced" is not defensible in plain language |
 | E3 | median centreline error smaller than the DIC median integral width | band's own width | a band displaced by more than its own width is a different band |
 | E4 | no spurious band of area above the minimum object area inside the core and outside every corridor | `256 px` | same resolution bound as E |
-| E5 | q90 active fraction within the DIC-noise interval of the reference | measured interval | the uncertainty campaign, not the candidates |
+E1 to E4 have **never been computed** for any candidate.
 
-E2 to E4 have **never been computed** for any candidate. E5 uses a measured
-interval, but the active fractions in the table above are known, so E5 is
-declared **non-blind** and its outcome is reported as such.
+E5, the q90 active fraction, was an elimination criterion in the first version
+and is **withdrawn** to reported-only status by the amendment above: the active
+fractions are already known, and a non-blind criterion must not decide.
 
 ## Pareto criteria
 
@@ -148,7 +204,7 @@ continuity each enter once:
 | integrated mass error, worst band | lower is better |
 | median centreline error, worst band | lower is better |
 | median integral-width error, worst band | lower is better |
-| FSS at q90, scale 16 px | higher is better |
+| minimum scale reaching FSS 0.7 at q90 | lower is better |
 | corridor fraction of residual energy | lower is better |
 | detected fraction, worst band | higher is better |
 
