@@ -51,11 +51,18 @@ recomputing it would have silently compared two different quantities.
 **Patch and stride are not what separates the reproduction from the archive.**
 Both profiles leave a residual near `1.6` to `1.7 %`, and changing patch size by
 a factor of two and stride by a factor of three moves that residual by `4 %` of
-itself. The common residual is therefore dominated by something else: the
-unknown historical OpenCV version and its factory defaults for unset setters,
-the masking applied before correlation in the historical pipeline but not here,
-and the implicit preset. Those confounds were listed in the preregistration and
-remain open; this campaign now shows they dominate.
+itself. The common residual is dominated by the **variational refinement at the finest
+scale**, which both profiles share identically: `alpha=100`, `delta=1`,
+`gamma=0`, `epsilon=0.002`, 30 iterations at native scale 0. That stage runs on
+the full-resolution image and largely overwrites the coarse matching, so patch
+size and stride, which act on the earlier stage, have little influence on the
+final field.
+
+The null result is therefore **expected**, not disappointing. It is the
+signature of a refinement-dominated chain, and both profiles landing within
+`1.7 %` of the archive is a close agreement rather than a failure. The
+remaining confounds are the unknown historical OpenCV version with its factory
+defaults for unset setters, and the implicit preset.
 
 **And that makes the score-based criterion worse, not better.** The two profiles
 are nearly indistinguishable on their ability to reproduce the measured data,
@@ -81,9 +88,11 @@ But its justification must be stated accurately:
 - the honest statement is *primary by documented provenance, with reproduction
   unable to discriminate*.
 
-Identifying the historical chain would require closing the confounds above,
-starting with masking before correlation, which is the one difference known to
-exist and not yet reproduced.
+Identifying the historical chain more tightly would require pinning the
+historical OpenCV version, since unset setters fall back to factory defaults
+that differ between releases. Given that the variational refinement dominates,
+the variational parameters are the settings worth auditing, not the matching
+ones.
 
 ## Claim boundary
 

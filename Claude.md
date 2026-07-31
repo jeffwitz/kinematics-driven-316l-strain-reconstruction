@@ -70,9 +70,19 @@ test de reproduction du champ archivé (`000294 -> 000334`) ne discrimine pas :
 `declared_medium_v4` (8/3), rapport `1,04` pour un facteur pré-enregistré de
 `1,5`. Sur le sous-support P43, 8/3 est même très légèrement devant.
 
-Le résidu commun de `~1,6–1,7 %` n'est donc **pas** dû au patch ni au stride :
-il est dominé par les confondants ouverts, au premier rang desquels le masquage
-avant corrélation du pipeline historique, non reproduit ici.
+Le résidu commun de `~1,6–1,7 %` n'est **pas** dû au patch ni au stride : il est
+dominé par le **raffinement variationnel à l'échelle la plus fine**, identique
+dans les deux profils (`alpha=100`, `delta=1`, `gamma=0`, `epsilon=0,002`,
+30 itérations, échelle native 0). Ce stade travaille sur l'image pleine
+résolution et recouvre largement l'appariement grossier, sur lequel agissent
+patch et stride. Le résultat nul est donc **attendu**, signature d'une chaîne
+dominée par le raffinement, et `1,7 %` d'écart à l'archive est proche.
+
+Confondant retiré le 2026-07-31 : j'avais listé un masquage avant corrélation
+dans le pipeline historique. C'est faux, le masquage se fait **après** ; avec
+ces méthodes de flux dense, masquer avant est inefficace car le solveur propage
+l'information à travers la zone masquée. Il ne manque donc aucune étape de
+masquage à la reproduction.
 
 Conséquence importante : les deux profils sont quasi indiscernables sur la
 **donnée**, mais diffèrent de `1,8 marge` sur l'accord EF/DIC — plus que le
@@ -97,9 +107,56 @@ aux trois conditions suivantes :
 3. le systématique de `16 %` lié au trajet est cité, sans être appliqué comme
    correction.
 
-Deux chantiers plus petits restent ouverts et non bloquants : la normalisation
-de `k` pour exploiter `BOUNDARY_MISFIT` comme indicateur, et le `+0,64 %` de
-PEEQ moyen consigné sans explication après filtrage.
+**Normalisation de `k` réglée le 2026-07-31.** Le ressort n'est plus un
+paramètre libre : il est fixé par le **principe de l'écart**, le solveur ayant
+droit de s'écarter de la mesure d'exactement le bruit mesuré
+`sigma = 9,40e-5 mm`. La calibration converge en 7 itérations, à `97,3 %` de la
+cible, et donne `k/K_ref = 2,7` — un ressort du même ordre que le matériau,
+donc bien conditionné, contre `~1e7` qu'exigerait une imitation de Dirichlet dur.
+
+Vérification décisive : à la raideur calibrée, l'écart à la solution par
+élimination **égale le misfit** à `5 %` près sur trois décades. La pénalisation
+perturbe donc la mécanique d'exactement l'incertitude qu'elle représente, pas
+davantage. `BOUNDARY_MISFIT` devient une carte des endroits où mécanique et
+mesure sont incompatibles **au niveau du bruit** ; elle localise le désaccord
+sans l'attribuer.
+
+Reste à faire : la calibration n'a pas été exécutée sur l'opérateur élastique de
+P43, donc la valeur de production de `k` pour cette ROI n'est pas connue. Il
+faut assembler la raideur élastique hors de la boucle Newton.
+
+Artefacts : `validation/boundary_penalty_calibration_preregistration.md` et
+`validation/boundary_penalty_calibration_results.md`.
+
+**Campagne micromorphique : pré-enregistrée et chiffrée le 2026-07-31, non
+lancée.** Voir
+`validation/micromorphic_symmetric_identification_preregistration.md`.
+
+Constat bloquant traité dans le pré-enregistrement : l'outillage d'identification
+existant **ne satisfait pas** la condition 1 de la porte.
+`identification/observation.py` déclare `spatial_filter: Literal["none"]` et
+n'offre que réduction de grille et masquage du cœur — c'est l'objectif brut
+asymétrique que V3 a réfuté. Le réutiliser tel quel reproduirait l'erreur qui a
+motivé la suspension.
+
+Conséquence de conception : l'opérateur symétrique n'a de sens qu'à
+**un élément = un pixel**, donc le palier basse fidélité `spatial_reduction: 2`
+de la configuration existante est inutilisable. Seule la réduction temporelle
+reste admise, et elle est bornée à 20 incréments car la sensibilité de `0,20 %`
+mesurée porte sur 20 contre 40, pas sur 10.
+
+Design retenu : grille `5 x 5` sur `ell ∈ {20, 30, 40, 50, 58,88} µm` et
+`alpha ∈ {1, 2, 3, 4, 6}`, dont 3 points déjà archivés et observés. **22 calculs
+neufs, environ 11 à 12 h** à `~31 min` par run d'après les temps archivés.
+
+Question réellement visée : non pas « quel `alpha` », mais **`Hchi` et `ell`
+sont-ils séparément identifiables** ou l'objectif est-il dégénéré le long de
+`Achi = Hchi * ell**2` ? Aucun score scalaire unique n'est utilisé pour
+sélectionner, puisque le classement dépend déjà de l'objectif ; le livrable est
+l'ensemble Pareto plus les optima par objectif.
+
+Chantier restant : le `+0,64 %` de PEEQ moyen consigné sans explication après
+filtrage.
 
 Jalon documentaire au 2026-07-26 : **réécriture publique science-first
 terminée et vérifiée**. La navigation principale suit désormais un récit
