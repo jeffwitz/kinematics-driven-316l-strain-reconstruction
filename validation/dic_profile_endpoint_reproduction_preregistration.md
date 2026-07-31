@@ -118,3 +118,28 @@ therefore to report both supports:
 The registered outcome table and its `1.5x` factor are unchanged and are still
 read from the full-field relative vector norm. This amendment is fixed before
 the `declared_medium_v4` numbers were compared against the outcome table.
+
+## Correction of record, 2026-07-31, after the result
+
+Two statements in this preregistration were wrong on the facts and are
+corrected here rather than silently edited.
+
+**Masking.** The confound list asserted that the historical pipeline masks
+before correlation. It does not. Masking is applied **after** correlation in
+this practice, because with dense optical-flow methods masking beforehand is
+not effective: the solver propagates information across the masked region
+anyway. This confound is therefore withdrawn, and the reproduction is not
+missing a masking step.
+
+**The dominant cause of the common residual.** The preregistration listed the
+confounds as jointly unexplained. The residual is in fact expected to be driven
+mainly by the **variational refinement at the finest scale**, which both
+profiles share identically (`alpha=100`, `delta=1`, `gamma=0`,
+`epsilon=0.002`, 30 iterations, native scale 0). That stage operates on the
+full-resolution image and largely overwrites the coarse matching, so patch size
+and stride, which act on the earlier matching, have little influence on the
+final field.
+
+This makes the null result of this campaign **expected rather than
+disappointing**: it is the signature of a refinement-dominated chain, and the
+`1.6` to `1.7 %` agreement with the archive is close.
