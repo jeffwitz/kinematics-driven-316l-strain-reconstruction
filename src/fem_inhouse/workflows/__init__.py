@@ -42,6 +42,10 @@ from fem_inhouse.workflows.dic_partition_selection import (
 from fem_inhouse.workflows.dic_photometric_quality import (
     diagnose_dic_photometric_quality,
 )
+from fem_inhouse.workflows.dic_profile_reproduction import (
+    compare_profile_reproduction,
+    reproduction_metrics,
+)
 from fem_inhouse.workflows.dic_uncertainty_propagation import (
     contiguous_residual_on_support,
     periodic_residual_on_support,
@@ -105,6 +109,7 @@ __all__ = [
     "collect_identification_results",
     "common_color_limits",
     "compare_multistep_path_dependence",
+    "compare_profile_reproduction",
     "compute_reference_hardening_modulus",
     "contiguous_residual_on_support",
     "diagnose_dic_boundary_history",
@@ -134,6 +139,7 @@ __all__ = [
     "reconstruct_historical_evm",
     "repair_dic_multistep_history",
     "replay_dic_observation",
+    "reproduction_metrics",
     "run_dic_multistep_mechanics",
     "run_field_sweep",
     "run_low_fidelity",

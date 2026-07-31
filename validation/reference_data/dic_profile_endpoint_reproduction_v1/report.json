@@ -1,0 +1,72 @@
+{
+  "archived_consistency": {
+    "archived_legacy_relative_vector_norm": 0.01583,
+    "archived_support": "P43 partition, not the full field",
+    "recomputed_p43_matches_archive": true
+  },
+  "claim_boundary": "reproduction fidelity to the historical chain only; says nothing about which profile measures displacement more accurately, and does not identify the historical configuration uniquely",
+  "comparison": {
+    "best": "legacy_script_2021",
+    "discriminates": false,
+    "discrimination_factor": 1.5,
+    "relative_norm_ratio": 1.0388698513425068
+  },
+  "created_at_utc": "2026-07-31T07:49:26.044287+00:00",
+  "git_sha": "dfd179282c641449e8d1c1d752a9de9f7f96566c",
+  "mechanics_rerun": false,
+  "preregistration": "validation/dic_profile_endpoint_reproduction_preregistration.md",
+  "profiles": {
+    "declared_medium_v4": {
+      "component_rms_mm": 0.0008846901840786883,
+      "maximum_absolute_mm": 0.023808135757446287,
+      "p43_component_rms_mm": 0.0007749622548661544,
+      "p43_maximum_absolute_mm": 0.001241717834472661,
+      "p43_relative_vector_norm": 0.015801844353090996,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "relative_vector_norm": 0.017376210118699394,
+      "source": "pre-registered OpenCV 4.14 V4 reproduction profile"
+    },
+    "legacy_script_2021": {
+      "component_rms_mm": 0.0008515890445135396,
+      "maximum_absolute_mm": 0.019791765670776368,
+      "p43_component_rms_mm": 0.0007764130803753628,
+      "p43_maximum_absolute_mm": 0.0012085739135742207,
+      "p43_relative_vector_norm": 0.01583142736663269,
+      "patch_size": 4,
+      "patch_stride": 1,
+      "relative_vector_norm": 0.016726070254367793,
+      "source": "setters explicitly present in references/legacy_dic/dic_displacement_fields.py"
+    }
+  },
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "sources": {
+    "final_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000334.tif",
+    "final_image_sha256": "04f38d166cc186403b85424ccb14f15621c532fef0f1338e6bd6207ba8b8d830",
+    "prepared_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "reference_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+    "reference_image_sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da"
+  },
+  "status": "completed_profile_endpoint_reproduction",
+  "support": {
+    "compared_shape": [
+      3600,
+      3100
+    ],
+    "excludes_edge_pad_completion": true,
+    "p43_solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ],
+    "pixel_size_mm": 0.00184,
+    "raw_crop_column_start": 1211,
+    "raw_crop_row_start": 400
+  },
+  "verdict": "reproduction_does_not_discriminate"
+}

@@ -64,6 +64,25 @@ l'histoire mesurée.
 utilisent le trajet proportionnel ; le systématique de `16 %` sur PEEQ ne
 renverse pas leurs classements (marges bien plus larges) mais doit être cité.
 
+**Profil DISFlow : 4/1 primaire, mais par provenance documentée seulement.** Le
+test de reproduction du champ archivé (`000294 -> 000334`) ne discrimine pas :
+`1,673 %` pour `legacy_script_2021` (4/1) contre `1,738 %` pour
+`declared_medium_v4` (8/3), rapport `1,04` pour un facteur pré-enregistré de
+`1,5`. Sur le sous-support P43, 8/3 est même très légèrement devant.
+
+Le résidu commun de `~1,6–1,7 %` n'est donc **pas** dû au patch ni au stride :
+il est dominé par les confondants ouverts, au premier rang desquels le masquage
+avant corrélation du pipeline historique, non reproduit ici.
+
+Conséquence importante : les deux profils sont quasi indiscernables sur la
+**donnée**, mais diffèrent de `1,8 marge` sur l'accord EF/DIC — plus que le
+trajet de chargement ou le filtrage modal. Choisir un profil sur son score
+reviendrait donc à le choisir sur presque rien de mesurable dans les données.
+C'est la circularité que la règle du dépôt interdit, désormais chiffrée.
+
+Artefacts : `validation/dic_profile_endpoint_reproduction_preregistration.md` et
+`validation/dic_profile_endpoint_reproduction_results.md`.
+
 ## Prochaine action
 
 **La porte micromorphique est OUVERTE** — décision du 2026-07-30. Les lots V2 et
@@ -2441,8 +2460,24 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-30 | Filtrage modal du bord à 3 modes | `filter-dic-boundary-history --rank 3` | Retire `0,00972 px`, soit `5,3×` sous le bruit | Réussi |
 | 2026-07-30 | Mécanique sur histoire filtrée | `run-dic-multistep-mechanics --mode measured` | 40/40, zéro cutback, 245 itérations en `34,8 min` | Réussi |
 | 2026-07-30 | Pénalisation contre élimination | Cas réduit, `k` de `1e8` à `1e12` | Erreur en `1/k` puis limite de conditionnement | Réussi |
+| 2026-07-31 | Reproduction du champ archivé par profil | `compare-profile-reproduction`, 4/1 contre 8/3 | `1,673 %` contre `1,738 %`, rapport `1,04` | Ne discrimine pas |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-31 — Le profil DISFlow ne se départage pas sur la donnée
+
+- Test pré-enregistré : quel profil reproduit le mieux le champ archivé ?
+- Verdict **ne discrimine pas** : `1,04` de rapport pour un facteur `1,5` exigé.
+  L'attente pré-enregistrée d'un 4/1 meilleur n'est pas vérifiée
+- Le garde-fou de cohérence archivée s'est déclenché et était utile : le chiffre
+  de `1,583 %` portait sur le support P43, pas sur le champ complet. Après
+  correction, la recomputation reproduit l'archive exactement
+- Le résidu commun est dominé par les confondants non levés, pas par patch/stride
+- 4/1 reste primaire, mais la formulation exacte est désormais « primaire par
+  provenance documentée, la reproduction ne départageant pas »
+- Résultat de méthode : deux profils quasi identiques sur la donnée diffèrent de
+  `1,8 marge` sur l'accord EF/DIC, ce qui chiffre la circularité du critère par
+  score
 
 ### 2026-07-30 — Filtrage modal du bord et pénalisation optionnelle
 
