@@ -295,3 +295,71 @@ material internal length follows from any outcome here.
 `validation/observed_evm_candidate_comparison_results.md` and
 `reference_data/observed_evm_candidate_comparison_p0043_v1/`, in a **separate
 commit** from this one.
+
+## Amendment 2, 2026-07-31: Otsu segmentation and regionprops morphology
+
+The quantile approach of amendment 1 is **replaced**. Three reasons, the first
+of them an admission.
+
+**1. The quantile thresholds were arbitrary and the skeleton work was
+inconclusive.** Nothing justified q80 over q90 beyond "it keeps two bands", and
+the skeleton topology I built on top of it turned out to measure lattice
+artefacts rather than structure. That line of analysis is dropped.
+
+**2. Otsu is chosen by the data and separates better.** It maximises
+between-class variance, so no quantile has to be argued for. On the DIC it
+gives `4.535e-03`, equivalent to q74.5, and yields exactly two objects above
+`256 px` with a gap of a factor **34** to the next fragment, against a factor
+15 at q80.
+
+| | threshold | objects >= 256 px | gap to next fragment |
+|---|---|---:|---:|
+| q80 | `4.90e-03` | 3 | `5639` vs `361`, x15 |
+| **Otsu** | **`4.535e-03`** | **2** | **`8060` vs `234`, x34** |
+
+The threshold is computed **once on the DIC** and applied unchanged to every
+candidate. Recomputing it per field would let each candidate rescale its own
+notion of "active" and would hide an amplitude loss entirely; a test locks that.
+
+**3. Morphology comes from `regionprops`**, a standard descriptor set — area,
+perimeter, eccentricity, solidity, extent, major and minor axis, orientation,
+Euler number — rather than hand-rolled skeleton statistics. This adds
+`scikit-image` as a dependency, declared in `pyproject.toml`.
+
+### Why morphology and not area, demonstrated on the negative references
+
+Run on the two negative references only, so no scientific candidate is spent:
+
+| Field | active | objects >= 256 px | eccentricity | minor axis | orientation |
+|---|---:|---:|---:|---:|---:|
+| DIC | `26.2 %` | 2 | `0.94`, `0.93` | `104`, `72 px` | `-58`, `-46 deg` |
+| homogeneous | `0.0 %` | **0** | — | — | — |
+| translated | `27.0 %` | **1** | `0.65` | `269 px` | `-15 deg` |
+
+The homogeneous control collapses outright: nothing reaches the DIC threshold.
+
+The translated control is the decisive case. Its active fraction matches the
+DIC to within **one point**, `27.0 %` against `26.2 %`, and its morphology is
+unmistakably different: one cellular object instead of two elongated bands, an
+eccentricity of `0.65` against `0.94`, a minor axis nearly four times larger,
+and an orientation `30` to `43` degrees away.
+
+**An area-based score cannot separate these two fields. Morphology separates
+them immediately.** That is the specification's premise, now measured rather
+than asserted.
+
+![Otsu morphology on the negative references](figures/observed_evm_band_geometry_p0043_v1/otsu_morphology_controls.png)
+
+### What this changes in the registered design
+
+- geometry threshold: **Otsu on the DIC**, replacing q80;
+- object descriptors: **regionprops**, replacing the hand-rolled metrics and the
+  withdrawn network statistics;
+- automatic selection is unchanged in spirit — objects below `256 px` are not
+  bands — and no manual step is reintroduced;
+- q80, q90 and q95 remain **only** as FSS activity thresholds, a separate use;
+- centrelines and normal sections are unchanged: they are still needed for the
+  per-section width, position and amplitude metrics, and the Otsu mask feeds
+  them instead of the q80 mask.
+
+The four scientific candidates have **not** been segmented with this method.

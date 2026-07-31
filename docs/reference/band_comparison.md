@@ -25,10 +25,36 @@ The EVM support is element-centred while the image crop is nodal, so the two
 lattices differ by half a pixel — see the grid contract in
 {doc}`observation_operator`. Any centreline coordinate is on the EVM lattice.
 
-## Thresholds
+## Segmentation threshold
+
+**Otsu on the DIC, computed once and frozen.** `otsu_threshold` maximises
+between-class variance, so no quantile has to be argued for, and
+`describe_morphology` takes the threshold as an argument and never recomputes
+it. Recomputing per field would let each candidate rescale its own notion of
+"active" and hide an amplitude loss; a test locks that.
+
+Morphology comes from `skimage.measure.regionprops`: area, perimeter,
+eccentricity, solidity, extent, major and minor axis, orientation and Euler
+number. `morphology_distance` compares two segmentations object by object,
+largest first, and reports the object-count mismatch separately, because a
+candidate producing the wrong number of objects has already failed in a way no
+per-object difference expresses. Orientation error is taken modulo 180 degrees:
+a band has no head or tail.
+
+:::{important}
+On P43 the active fraction of the DIC and of the translated-map control agree
+to within one point, `26.2 %` against `27.0 %`, while their shapes are
+unmistakably different: two elongated bands, eccentricity `0.94`, against one
+cellular object, eccentricity `0.65`, with a minor axis nearly four times
+larger. **An area-based score cannot separate them.** This is why morphology is
+the primary comparison and not a supplement.
+:::
+
+## FSS activity thresholds
 
 `quantile_thresholds` computes absolute thresholds at q80, q90 and q95 on the
-**valid DIC values only**. Including invalid entries would move the threshold
+**valid DIC values only**. These are used for the multiscale skill score only,
+which is a different question from the segmentation above. Including invalid entries would move the threshold
 and change every downstream object. No single threshold is treated as truth;
 all three are carried.
 

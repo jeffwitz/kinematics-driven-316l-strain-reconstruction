@@ -56,6 +56,13 @@ from fem_inhouse.validation.fractions_skill_score import (
     skill_curve,
     skill_table,
 )
+from fem_inhouse.validation.otsu_morphology import (
+    FieldMorphology,
+    ObjectMorphology,
+    describe_morphology,
+    morphology_distance,
+    otsu_threshold,
+)
 from fem_inhouse.validation.pareto_decision import (
     DecisionReport,
     EliminationRule,
@@ -92,8 +99,10 @@ __all__ = [
     "DecisionReport",
     "EliminationRule",
     "EnergyPartition",
+    "FieldMorphology",
     "NetworkMetrics",
     "NormalProfile",
+    "ObjectMorphology",
     "PairwiseResult",
     "PerturbedField",
     "Sense",
@@ -114,6 +123,7 @@ __all__ = [
     "continuity_metrics",
     "count_enclosed_holes",
     "decide",
+    "describe_morphology",
     "directional_variogram",
     "dominates",
     "energy_partition",
@@ -126,8 +136,10 @@ __all__ = [
     "measure_position",
     "measure_width",
     "minimum_skilful_scale",
+    "morphology_distance",
     "network_metrics",
     "order_centreline",
+    "otsu_threshold",
     "paired_band_bootstrap",
     "pareto_front",
     "prune_skeleton_spurs",

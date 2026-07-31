@@ -319,6 +319,31 @@ Mesures de forme qui survivent : `main_path_share` (`0,13` et `0,15` — larges 
 dentelées, pas des rubans fins), nombre de trous avec borne de résolvabilité,
 nombre de branches résolvables, aire et longueur d'axe.
 
+**Approche de segmentation remplacée le 2026-07-31 : Otsu + `regionprops`.**
+Les seuils quantiles étaient arbitraires et mon analyse de squelette n'a rien
+conclu ; les deux sont abandonnés. Otsu est déterminé par les données, donne
+`4,535e-3` sur la DIC (= q74,5) et exactement **deux objets** avec un écart de
+facteur **34** au fragment suivant, contre 15 à q80. Le seuil est calculé **une
+fois sur la DIC** et appliqué inchangé : le recalculer par champ laisserait
+chaque candidat redéfinir « actif » et masquerait toute perte d'amplitude.
+
+**Le résultat le plus fort de la session, mesuré sur les seules références
+négatives** — aucun candidat scientifique n'a été consommé :
+
+| Champ | actif | objets ≥256 px | excentricité | petit axe | orientation |
+|---|---:|---:|---:|---:|---:|
+| DIC | `26,2 %` | 2 | `0,94`, `0,93` | `104`, `72 px` | `−58`, `−46°` |
+| homogène | `0,0 %` | **0** | — | — | — |
+| translaté | `27,0 %` | **1** | `0,65` | `269 px` | `−15°` |
+
+Le contrôle translaté a **la même aire active que la DIC à un point près** et
+une morphologie sans rapport : un objet cellulaire au lieu de deux bandes
+allongées. **Une métrique d'aire ne peut pas les séparer, la morphologie les
+sépare immédiatement.** C'est la prémisse du cahier des charges, désormais
+mesurée et non plus affirmée.
+
+`scikit-image` ajouté aux dépendances, déclaré dans `pyproject.toml`.
+
 Reste à toi avant le lot 6 : **valider le document amendé**.
 
 **Non fait** : lot 6, la campagne elle-même. Aucun calcul mécanique lancé, aucun paramètre
