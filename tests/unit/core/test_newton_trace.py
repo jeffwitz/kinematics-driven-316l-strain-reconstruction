@@ -48,13 +48,12 @@ def test_newton_trace_records_one_entry_per_iteration() -> None:
     _run(trace)
 
     assert all(record["outcome"] in {"converged", "corrected"} for record in trace)
-    assert [record["increment"] for record in trace] == sorted(
-        record["increment"] for record in trace
-    )
+    increments = [int(record["increment"]) for record in trace]  # type: ignore[call-overload]
+    assert increments == sorted(increments)
     for record in trace:
         assert set(record).issubset(set(NEWTON_TRACE_FIELDS))
-        assert record["boundary_increment_norm"] > 0.0
-        assert np.isfinite(float(record["total_strain_maximum"]))
+        assert float(record["boundary_increment_norm"]) > 0.0  # type: ignore[arg-type]
+        assert np.isfinite(float(record["total_strain_maximum"]))  # type: ignore[arg-type]
 
 
 def test_newton_trace_reports_an_elastic_tangent_ratio_of_one() -> None:
@@ -62,7 +61,7 @@ def test_newton_trace_reports_an_elastic_tangent_ratio_of_one() -> None:
     _run(trace)
 
     ratios = [
-        float(record["constitutive_to_elastic_tangent_ratio"])
+        float(record["constitutive_to_elastic_tangent_ratio"])  # type: ignore[arg-type]
         for record in trace
         if "constitutive_to_elastic_tangent_ratio" in record
     ]
