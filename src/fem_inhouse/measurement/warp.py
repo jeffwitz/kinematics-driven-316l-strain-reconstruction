@@ -12,6 +12,12 @@ from scipy.ndimage import map_coordinates
 WarpMode = Literal["legacy_approximate_inverse", "iterative_forward_inverse"]
 ByteImage = NDArray[np.uint8]
 
+#: Resampling used by the synthetic warp, named for the observation manifest so
+#: a replay is reproducible without reading this module. cv2 is imported lazily,
+#: so these are the symbolic names rather than the OpenCV enum values.
+WARP_INTERPOLATION = "cv2.INTER_LINEAR"
+WARP_BORDER_MODE = "cv2.BORDER_REFLECT101"
+
 
 def _cv2() -> Any:
     try:

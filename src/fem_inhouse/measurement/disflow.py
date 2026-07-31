@@ -132,6 +132,23 @@ def _byte_image(values: NDArray[np.generic], *, name: str) -> ByteImage:
     return np.ascontiguousarray(image)
 
 
+
+def require_native_finest_scale(config: DISFlowConfig) -> None:
+    """Refuse a coarse finest scale for metrological use.
+
+    The first measurement-chain campaign ran at finest scale 1, which skips
+    full-resolution variational refinement and reported an MTF-50 near 127 px
+    against 49 px at native scale. That run was invalidated. Any use of this
+    chain as a measurement instrument must therefore pin scale 0 explicitly.
+    """
+
+    if config.finest_scale != 0:
+        raise ValueError(
+            "metrological use requires finest_scale=0; "
+            f"got {config.finest_scale!r}, which skips full-resolution refinement"
+        )
+
+
 def run_disflow(
     reference: NDArray[np.generic],
     deformed: NDArray[np.generic],

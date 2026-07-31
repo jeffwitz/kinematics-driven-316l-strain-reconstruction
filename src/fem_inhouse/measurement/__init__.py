@@ -9,6 +9,7 @@ from .disflow import (
     DISFlowConfig,
     create_disflow,
     query_disflow_configuration,
+    require_native_finest_scale,
     run_disflow,
     warp_image,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "measurement_windows",
     "profile_metrology",
     "query_disflow_configuration",
+    "require_native_finest_scale",
     "run_disflow",
     "warp_forward_displacement",
     "warp_image",

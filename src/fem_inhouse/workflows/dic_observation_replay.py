@@ -22,9 +22,11 @@ from fem_inhouse.measurement import (
     declared_all_valid_mask,
     disflow_profile,
     image_flow_to_canonical,
+    require_native_finest_scale,
     run_disflow,
     warp_forward_displacement,
 )
+from fem_inhouse.measurement.warp import WARP_BORDER_MODE, WARP_INTERPOLATION
 from fem_inhouse.postprocessing.metrics import (
     absolute_threshold_overlap_metrics,
     field_diffusivity_metrics,
@@ -49,6 +51,24 @@ def _sha256(path: Path) -> str:
 
 def _json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _opencv_version() -> str:
+    try:
+        import cv2
+    except ImportError:  # pragma: no cover - measurement extra is optional
+        return "unavailable"
+    return str(cv2.__version__)
+
+
+def _repository_state() -> dict[str, Any]:
+    """Record whether the working tree was clean when the replay ran."""
+
+    dirty = subprocess.check_output(
+        ["git", "status", "--porcelain"],
+        text=True,
+    ).strip()
+    return {"git_sha": _git_sha(), "clean": not dirty}
 
 
 def _git_sha() -> str:
@@ -218,6 +238,9 @@ def replay_dic_observation(
         mode="iterative_forward_inverse",
     )
     profile = disflow_profile(profile_name)
+    # The symmetric replay is metrological use: a coarse finest scale skips
+    # full-resolution refinement and silently changes the measured transfer.
+    require_native_finest_scale(profile.config)
     flow_observed = run_disflow(reference, warp.image, config=profile.config)
     displacement_observed = image_flow_to_canonical(
         flow_observed,
@@ -281,6 +304,8 @@ def replay_dic_observation(
             "iterations": warp.iterations,
             "residual_pixels": warp.residual_pixels,
             "minimum_forward_jacobian": warp.minimum_forward_jacobian,
+            "interpolation": WARP_INTERPOLATION,
+            "border_mode": WARP_BORDER_MODE,
         },
         "mask": {
             "mode": "declared_all_valid",
@@ -300,13 +325,32 @@ def replay_dic_observation(
         "software": {
             "python": platform.python_version(),
             "numpy": np.__version__,
+            "opencv": _opencv_version(),
         },
+        "repository_state": _repository_state(),
         "axis_convention": (
             "image row -> canonical x/ux via drow; "
             "image column -> canonical y/uy via dcolumn"
         ),
         "pixel_size_mm": PIXEL_SIZE_MM,
+        "grid_contract": {
+            "fem_support": "nodal",
+            "image_crop_shape": list(reference.shape),
+            "fem_nodal_shape": list(displacement.shape[:2]),
+            "interpolation_to_image_grid": "identity (one node is one pixel)",
+            "evm_support": "element-centred",
+            "note": (
+                "the nodal and element-centred lattices differ by half a pixel; "
+                "identical for DIC and FEM, so it cancels in this comparison"
+            ),
+        },
         "evm_operator": "reconstruct_historical_evm",
+        "evm_differentiation": {
+            "scheme": "historical plane-stress EVM from nodal displacement",
+            "poisson_ratio": 0.3,
+            "spacing_x_mm": PIXEL_SIZE_MM,
+            "spacing_y_mm": PIXEL_SIZE_MM,
+        },
         "evm_post_filter_applied": False,
         "metrics": {
             "raw": _comparison(dic_evm, raw_evm),
@@ -318,6 +362,14 @@ def replay_dic_observation(
     np.save(output / "fem_raw_evm.npy", raw_evm)
     np.save(output / "fem_observed_evm.npy", observed_evm)
     np.save(output / "observed_flow_pixels.npy", flow_observed)
+    # Audit artefacts required by the observed-EVM comparison specification.
+    # The names above are kept because archived reports hash them; these are
+    # additions, not renames.
+    np.save(output / "fem_displacement_image_grid.npy", flow_imposed)
+    np.save(output / "recovered_displacement_column.npy", flow_observed[..., 0])
+    np.save(output / "recovered_displacement_row.npy", flow_observed[..., 1])
+    np.save(output / "valid_mask.npy", declared_mask)
+    Image.fromarray(warp.image).save(output / "synthetic_deformed_image.tif")
     _figure(
         output / "comparison.png",
         dic=dic_evm,
