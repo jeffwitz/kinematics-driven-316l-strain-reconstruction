@@ -15,6 +15,7 @@
 - {doc}`compare_fields`
 - {doc}`characterise_dic_measurement_chain`
 - {doc}`run_identification`
+- {doc}`run_micromorphic_identification` — **specified, not yet run**: the handover-ready campaign
 - {doc}`transfer_candidates`
 
 ## Extend
@@ -32,6 +33,7 @@ prepare_case
 run_local_reconstruction
 run_coupled_reconstruction
 run_identification
+run_micromorphic_identification
 inspect_campaign
 compare_fields
 characterise_dic_measurement_chain
