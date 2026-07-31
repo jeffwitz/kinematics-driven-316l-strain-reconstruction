@@ -407,7 +407,8 @@ def _parser() -> argparse.ArgumentParser:
     measurement_chain.add_argument(
         "--profile",
         choices=disflow_profile_names(),
-        default="declared_medium_v4",
+        # Primary by provenance: it reproduces the supplied historical setters.
+        default="legacy_script_2021",
     )
     measurement_chain.add_argument(
         "--warp-mode",

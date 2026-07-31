@@ -64,7 +64,9 @@ measured, imposed and reconstructed.
 The English documentation follows Diátaxis:
 [Tutorials](docs/tutorials/first_reconstruction.md),
 [How-to](docs/how-to/index.md), [Reference](docs/reference/index.md), and
-[Explanation](docs/explanation/index.md).
+[Explanation](docs/explanation/index.md). Run the checks below with the venv
+active; `latexpdf` needs `lualatex` and `latexmk` (Debian/Ubuntu:
+`texlive-luatex`, `texlive-latex-extra`, `latexmk`).
 
 ```bash
 ruff check .
@@ -73,18 +75,8 @@ pytest
 make -C docs html latexpdf
 ```
 
-Run these with the virtual environment active. The `docs` Makefile builds with
-`-W --keep-going`, so any Sphinx warning fails the build. `latexpdf` additionally
-needs a LaTeX toolchain providing `lualatex` and `latexmk`; on Debian or Ubuntu
-`texlive-luatex`, `texlive-latex-extra` and `latexmk` are sufficient. Outputs
-land in `docs/_build/html/` and
-`docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf`.
-Use `make -C docs linkcheck` for external links and `make -C docs clean` to
-start over.
-
-The evidence and claim boundaries are generated from
-`validation/documentation_evidence_registry.json`; detailed machine-readable
-reports remain under `validation/`.
+Evidence and claim boundaries come from
+`validation/documentation_evidence_registry.json`.
 
 ## Citation and licence
 
