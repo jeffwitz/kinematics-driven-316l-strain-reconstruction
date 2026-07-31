@@ -1,8 +1,13 @@
 # Observed-EVM candidate comparison — preregistration
 
 Date: 2026-07-31
-Lot 5 of the observed-EVM comparison specification. **This document must be
-validated before the campaign is run.** No candidate has been analysed with the
+Lot 5 of the observed-EVM comparison specification.
+
+> **VALIDATED by the project owner on 2026-07-31**, including amendments 1 and 2.
+> The campaign of lot 6 is authorised to run on the archived results.
+> No new constitutive calculation is authorised.
+
+**This document was validated before the campaign was run.** No candidate has been analysed with the
 lot 2 to 4 tooling; nothing in this file is written after seeing its output.
 
 ## What is blind here, and what is not
