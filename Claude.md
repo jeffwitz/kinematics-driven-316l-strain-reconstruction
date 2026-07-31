@@ -132,6 +132,56 @@ faut assembler la raideur élastique hors de la boucle Newton.
 Artefacts : `validation/boundary_penalty_calibration_preregistration.md` et
 `validation/boundary_penalty_calibration_results.md`.
 
+## Outils de comparaison objective EVM DIC/FEM — lots 1 et 2 livrés
+
+Cahier des charges « outils objectifs de comparaison spatiale entre EVM DIC et
+EVM FEM ». Décision d'architecture : `docs/adr/0009-observed-evm-comparison-operator.md`.
+Référence : `docs/reference/band_comparison.md` et
+`docs/reference/observation_operator.md`.
+
+**Lot 1 — opérateur d'observation symétrique.** Constat central : la chaîne
+`déplacements FEM → image déformée → DISFlow → EVM` **existait déjà** dans
+`replay_dic_observation`, dont le manifeste déclarait littéralement
+`"mode": "synthetic_disflow"`. En créer un second aurait rendu les résultats
+archivés incomparables. Étendu en place : 5 artefacts d'audit ajoutés, version
+d'OpenCV et état du dépôt enregistrés (sans la version, le manifeste n'était
+**pas** reproductible, ce profil laissant 4 réglages aux valeurs d'usine),
+contrat de grille et de résampling explicités, et **garde-fou métrologique**
+refusant une échelle finale non native — le défaut qui avait donné un MTF-50 à
+`127 px` au lieu de `49` et fait invalider la première campagne.
+
+**Lot 2 — géométrie des bandes et métriques.** Nouveau paquet
+`src/fem_inhouse/validation/` : `band_geometry.py`, `band_profiles.py`,
+`falsification_cases.py`. La géométrie est construite depuis la **seule** DIC
+puis gelée, pour qu'aucun candidat ne puisse déplacer les objets qui le jugent.
+
+Deux décisions prises sans arbitrage, à revoir si besoin :
+
+- **pas de scikit-image**. Amincissement Zhang-Suen implémenté ici, ~40 lignes
+  déterministes et testées, plutôt qu'une dépendance lourde ;
+- **ligne centrale par plus court chemin euclidien**, pas par nombre de sauts.
+  Piège trouvé en test : le pruning laisse un résidu d'un pixel à côté du tronc
+  (en 8-connexité un pixel au-dessus d'une ligne en touche trois, donc son degré
+  vaut 3 et la marche s'arrête avant), et ce résidu offrait un détour diagonal
+  **au même nombre de nœuds**, coudant la ligne centrale. La pondération
+  euclidienne le règle ; un test le verrouille.
+
+Les trois définitions de largeur (FWHM, intégrale, second moment) sont rapportées
+côte à côte, aucune n'est déclarée supérieure, et `measure_width` renvoie un
+statut explicite (`no_crossing`, `too_weak`, `peak_at_edge`, `multimodal`,
+`empty`) — une section sans croisement à mi-hauteur est un échec différent d'une
+bande absente, et les moyenner serait faux.
+
+Ambiguïtés consignées pour les lots suivants, dans l'ADR : support image nodal
+contre EVM centrée élément (décalage d'un demi-pixel, qui s'annule aujourd'hui
+mais pas pour une ligne centrale en coordonnées pixel), interpolation identité,
+mode de bord `BORDER_REFLECT101`, masque purement déclaratif, renommage
+historique `U = u_y`.
+
+**Non fait** : lots 3 à 6 (FSS multiscalaire, structure du résidu, bootstrap,
+Pareto, pré-enregistrement, campagne). Aucun calcul mécanique lancé, aucun
+paramètre micromorphique sélectionné, aucun claim modifié.
+
 ## Campagne à lancer — identification micromorphique
 
 **Statut : spécifiée, chiffrée, prête à déléguer. Non lancée.**
