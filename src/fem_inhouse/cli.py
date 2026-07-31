@@ -40,6 +40,7 @@ from fem_inhouse.workflows import (
     characterise_dic_measurement_chain,
     collect_identification_results,
     compare_multistep_path_dependence,
+    compare_profile_reproduction,
     diagnose_dic_boundary_history,
     diagnose_dic_boundary_loading_subspace,
     diagnose_dic_photometric_quality,
@@ -587,6 +588,15 @@ def _parser() -> argparse.ArgumentParser:
     modal_filter.add_argument("--output", type=Path, required=True)
     modal_filter.add_argument("--overwrite", action="store_true")
 
+    profile_reproduction = commands.add_parser(
+        "compare-profile-reproduction",
+        help="rank DISFlow profiles by their reproduction of the archived field",
+    )
+    profile_reproduction.add_argument("--images", type=Path, required=True)
+    profile_reproduction.add_argument("--prepared-case", type=Path, required=True)
+    profile_reproduction.add_argument("--output", type=Path, required=True)
+    profile_reproduction.add_argument("--overwrite", action="store_true")
+
     map_controls = commands.add_parser(
         "validate-material-map-controls",
         help="compare mapped, homogeneous and translated-map campaigns with DIC",
@@ -1110,6 +1120,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         _print_json(filter_report)
+        return 0
+    if args.command == "compare-profile-reproduction":
+        reproduction_report = compare_profile_reproduction(
+            raw_image_directory=args.images,
+            prepared_case=args.prepared_case,
+            output_directory=args.output,
+            overwrite=args.overwrite,
+        )
+        _print_json(reproduction_report)
         return 0
     if args.command == "validate-material-map-controls":
         control_report = validate_material_map_controls(
