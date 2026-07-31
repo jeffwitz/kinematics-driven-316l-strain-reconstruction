@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The repository records eight accepted architecture decisions. This page is the
+The repository records nine accepted architecture decisions. This page is the
 English public summary; the original ADR files remain the authoritative
 versioned records.
 
@@ -89,3 +89,12 @@ plane-stress condensation, and loading paths.
 
 **Consequence:** current J2 solves benefit from symmetric factorization
 without turning symmetry into a global assumption of the FEM kernel.
+
+## ADR 0009 — Extend the observation operator rather than add a second one
+
+The symmetric `synthetic_disflow` chain already existed and produced the
+archived V3 and loading-path results. It is extended with the missing audit
+artefacts, grid contract and metrological guard instead of being reimplemented.
+
+**Consequence:** archived observed-EVM results stay comparable with future
+candidates, which a second operator would have broken.
