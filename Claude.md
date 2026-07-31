@@ -242,8 +242,36 @@ tests : un développeur qui la suit voyait 4 erreurs, un autre zéro. Les quatre
 indices de tuple. **Vérifier mypy dans les deux environnements**, pas seulement
 dans le shell nu.
 
-**Non fait** : lots 5 et 6 (pré-enregistrement scientifique, campagne sur les
-résultats archivés). Aucun calcul mécanique lancé, aucun paramètre
+**Lot 5 — pré-enregistrement scientifique rédigé, EN ATTENTE DE TA VALIDATION.**
+`validation/observed_evm_candidate_comparison_preregistration.md`. Le §21 exige
+que la campagne ne soit lancée qu'après validation de ce document.
+
+Point d'intégrité placé en tête du document plutôt que caché : les scores
+**globaux** des quatre candidats sont **déjà archivés et connus** (`local`
+`0,4858`, `alpha=1` `0,3542`, `alpha=2` `0,3197`, `alpha=4` `0,2917` en L2
+relative). Une borne choisie juste au-dessus ou en dessous de ces valeurs serait
+du théâtre. **Aucune borne d'élimination n'en est tirée** : elles viennent
+toutes de la chaîne de mesure — plancher de bruit, MTF-50 à `49 px`, longueur de
+cohérence `38,2 px` — ou d'une propriété géométrique des bandes. Ce qui est
+réellement aveugle, et où le pré-enregistrement a force, c'est tout le
+par-bande, le multiscalaire et le bootstrap, jamais calculés.
+
+Six candidats, dont les deux références négatives (`homogeneous` pour le fond,
+`translated` pour la localisation), toutes converged à 20 incréments sur le
+chemin proportionnel. Les runs multipas du 2026-07-30 sont **exclus
+volontairement** : ils diffèrent par le trajet et le nombre d'incréments, les
+mélanger confondrait la question constitutive et la question de trajet.
+
+Bornes et leur origine : aire minimale d'objet `256 px` (plus étroite que le
+MTF-50 dans une direction), élagage à `16 px`, bloc bootstrap de 8 sections
+(`32 px`, sous la longueur de cohérence pour que les blocs ne soient pas
+artificiellement indépendants), 10 000 tirages, graine `20260731`.
+
+Deux choses t'appartiennent avant le lot 6 : **valider ce document**, et faire
+la **sélection manuelle des deux bandes P43** — autorisée une seule fois, sans
+qu'aucun champ candidat ne soit visible.
+
+**Non fait** : lot 6, la campagne elle-même. Aucun calcul mécanique lancé, aucun paramètre
 micromorphique sélectionné, aucun claim modifié.
 
 ## Campagne à lancer — identification micromorphique
