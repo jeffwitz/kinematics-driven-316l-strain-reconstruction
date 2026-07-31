@@ -203,9 +203,48 @@ avec le gradient » ; seules les dérivées **signées** détectent un défaut d
 placement. Les deux sont désormais rapportées et un test verrouille la cécité
 du module.
 
-**Non fait** : lots 4 à 6 (bootstrap spatial apparié, Pareto, pré-enregistrement,
-campagne). Aucun calcul mécanique lancé, aucun paramètre micromorphique
-sélectionné, aucun claim modifié.
+**Lot 4 — bootstrap spatial apparié et décision Pareto.**
+`spatial_bootstrap.py` rééchantillonne des **blocs de sections consécutives**,
+jamais des pixels : les pixels voisins d'une bande sont fortement corrélés et
+les traiter comme indépendants donnerait des intervalles assez étroits pour
+déclarer significative n'importe quelle différence. Le tirage est **apparié** —
+un réplicat choisit un jeu de sections et tous les candidats y sont notés — car
+tirer indépendamment par candidat comparerait des réalisations de bruit
+distinctes. Les bandes sont rééchantillonnées séparément puis moyennées à
+**poids égal**, pour qu'une bande longue ne domine pas une courte. Blocs
+circulaires, `seed` et nombre de tirages enregistrés.
+
+`pareto_decision.py` élimine d'abord, domine ensuite, et n'impose aucun
+vainqueur : « un seul non dominé », « plusieurs non dominés », « aucun candidat
+ne passe » sont les trois conclusions permises. Un critère obligatoire non
+mesuré **élimine** — ne pas mesurer n'est pas réussir. `worst_band_vector`
+renvoie un **vecteur, pas une somme** : sommer laisserait une bande très bien
+reproduite compenser une bande perdue, et la pire bande peut différer d'un
+critère à l'autre.
+
+Bug trouvé en test, qui aurait biaisé **toutes** les comparaisons : avec une
+inégalité stricte, deux candidats identiques donnent une différence nulle à
+chaque tirage, donc une probabilité de `0,0`, donc le verdict `robustly_worse`.
+Les ex æquo comptent désormais pour **une demi-victoire** ; deux tests
+verrouillent la règle et le cas entièrement ex æquo.
+
+**Piège d'outillage résolu le 2026-07-31, à connaître.** `mypy` donnait par
+intermittence 2 puis 4 erreurs, que j'avais d'abord attribuées à tort à un
+artefact de cache. La vraie cause est **l'environnement** : une fois
+`env.sh` de TFEL sourcé, `PYTHONPATH` expose
+`/home/jeff/.local/lib/python3.12/site-packages`, donc un second numpy, et la
+résolution des surcharges change — `np.gradient` et `array.shape` s'infèrent
+différemment.
+
+Cela compte parce que la procédure du §1.0 impose de sourcer `env.sh` avant les
+tests : un développeur qui la suit voyait 4 erreurs, un autre zéro. Les quatre
+étaient réelles et sont corrigées en fixant explicitement le rang et les
+indices de tuple. **Vérifier mypy dans les deux environnements**, pas seulement
+dans le shell nu.
+
+**Non fait** : lots 5 et 6 (pré-enregistrement scientifique, campagne sur les
+résultats archivés). Aucun calcul mécanique lancé, aucun paramètre
+micromorphique sélectionné, aucun claim modifié.
 
 ## Campagne à lancer — identification micromorphique
 

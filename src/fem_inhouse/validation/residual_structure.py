@@ -174,7 +174,12 @@ def residual_associations(
         raise ValueError("residual and reference must share a shape")
     if not np.isfinite(spacing_pixels) or spacing_pixels <= 0.0:
         raise ValueError("spacing_pixels must be finite and positive")
-    gx, gy = np.gradient(f, spacing_pixels)
+    # Indexing the tuple explicitly: np.gradient's overloads resolve differently
+    # depending on which numpy stubs are on the path, and the TFEL environment
+    # puts a second numpy there.
+    gradients = np.gradient(f, spacing_pixels)
+    gx = np.asarray(gradients[0], dtype=np.float64)
+    gy = np.asarray(gradients[1], dtype=np.float64)
     magnitude = np.sqrt(gx**2 + gy**2)
     finite = np.isfinite(r) & np.isfinite(f)
 
