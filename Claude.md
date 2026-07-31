@@ -294,9 +294,32 @@ fractions actives sont déjà connues, un critère non aveugle ne doit pas pouvo
 éliminer ; et le critère FSS du Pareto devient **l'échelle minimale atteignant
 0,7**, le `16 px` précédent étant un choix injustifié.
 
-Reste à toi avant le lot 6 : **valider le document amendé**, et faire la
-**sélection manuelle des deux bandes P43** — une seule fois, sans qu'aucun champ
-candidat ne soit visible.
+**Sélection automatique, décision du 2026-07-31 : plus aucune étape manuelle.**
+Un objet est une bande si sa ligne centrale atteint le MTF-50 de la chaîne
+(`49 px`) — une région dont l'axe principal est plus court que la longueur de
+résolution ne peut pas être affirmée comme bande. Mesuré sur la DIC seule, la
+règle sépare par un facteur **> 6** à chaque seuil (`175` contre `26 px` à q80).
+Fixée par l'instrument, pas par inspection, et reproductible sans humain.
+
+**Lecture « réseau » corrigée, c'était mon bug.** J'avais annoncé des centaines
+de boucles et conclu à des réseaux. Le compte se faisait par `E − V + C` sur le
+graphe de pixels en 8-connexité, où trois pixels en coin forment un triangle :
+chaque coin d'un chemin large d'un pixel était compté comme une boucle, d'où
+`661` pour la bande 1. Compté correctement sur la **région** (fond 4-connexe
+dans un avant-plan 8-connexe) : **63 trous, le plus grand `32 px`**, aucun
+n'atteignant la borne résolvable de `256 px`. **Aucune structure cellulaire.**
+
+Même écueil sur les branches : `1472` branches dont **96 % font ≤ 2,4 px**, du
+bruit d'axe médian sur un bord dentelé, et seulement `28` atteignent `16 px`.
+Les modes d'orientation non filtrés donnaient `7, 52, 97, 142°`, soit exactement
+les quatre directions du réseau de pixels. L'orientation n'est donc lue que sur
+les branches résolvables, et la bande 2 n'en a aucune.
+
+Mesures de forme qui survivent : `main_path_share` (`0,13` et `0,15` — larges et
+dentelées, pas des rubans fins), nombre de trous avec borne de résolvabilité,
+nombre de branches résolvables, aire et longueur d'axe.
+
+Reste à toi avant le lot 6 : **valider le document amendé**.
 
 **Non fait** : lot 6, la campagne elle-même. Aucun calcul mécanique lancé, aucun paramètre
 micromorphique sélectionné, aucun claim modifié.

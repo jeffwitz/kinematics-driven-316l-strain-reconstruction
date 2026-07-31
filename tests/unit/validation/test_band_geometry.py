@@ -211,3 +211,63 @@ def test_corridor_covers_the_declared_half_width() -> None:
     assert corridor[15, 20]
     assert corridor[18, 20]
     assert not corridor[19, 20]
+
+
+def test_hole_counting_uses_the_region_not_the_pixel_graph() -> None:
+    from fem_inhouse.validation.band_geometry import count_enclosed_holes
+
+    ribbon = np.zeros((21, 41), dtype=bool)
+    ribbon[8:13, 5:36] = True
+    ring = np.zeros((41, 41), dtype=bool)
+    r, c = np.ogrid[:41, :41]
+    distance = np.hypot(r - 20, c - 20)
+    ring[(distance > 10) & (distance < 15)] = True
+
+    # Under eight-connectivity, E - V + C on the skeleton graph scores every
+    # corner of a one-pixel path as a loop. Counting on the region does not.
+    assert count_enclosed_holes(ribbon) == (0, 0)
+    holes, largest = count_enclosed_holes(ring)
+    assert holes == 1
+    assert largest > 100
+
+
+def test_network_metrics_separate_a_ribbon_from_a_ragged_region() -> None:
+    from fem_inhouse.validation.band_geometry import network_metrics
+
+    ribbon = np.zeros((41, 81), dtype=bool)
+    ribbon[18:23, 5:76] = True
+    generator = np.random.default_rng(12)
+    ragged = ribbon | (generator.random((41, 81)) > 0.93)
+
+    clean = network_metrics(ribbon)
+    rough = network_metrics(ragged)
+
+    # A ribbon puts nearly all of its skeleton on the main axis; a ragged
+    # region does not, and that share is the usable "how band-like" measure.
+    assert clean.main_path_share > 0.9
+    assert rough.main_path_share < clean.main_path_share
+    assert clean.enclosed_holes == 0
+
+
+def test_orientation_ignores_unresolvable_branches() -> None:
+    from fem_inhouse.validation.band_geometry import network_metrics
+
+    generator = np.random.default_rng(7)
+    ragged = np.zeros((41, 81), dtype=bool)
+    ragged[18:23, 5:76] = True
+    ragged |= generator.random((41, 81)) > 0.93
+
+    permissive = network_metrics(ragged, resolvable_branch_pixels=1.0)
+    strict = network_metrics(ragged, resolvable_branch_pixels=16.0)
+
+    # Single-pixel branches can only point along the lattice, so an unfiltered
+    # histogram reports 0/45/90/135 whatever the shape is.
+    assert permissive.resolvable_branch_count > strict.resolvable_branch_count
+    assert len(strict.orientation_modes_degrees) <= len(permissive.orientation_modes_degrees)
+
+
+def test_network_metrics_reject_an_empty_region() -> None:
+    from fem_inhouse.validation.band_geometry import network_metrics
+
+    with pytest.raises(ValueError, match="empty"):
+        network_metrics(np.zeros((10, 10), dtype=bool))
