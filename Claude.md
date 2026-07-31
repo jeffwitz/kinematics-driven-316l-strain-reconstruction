@@ -267,9 +267,36 @@ MTF-50 dans une direction), élagage à `16 px`, bloc bootstrap de 8 sections
 (`32 px`, sous la longueur de cohérence pour que les blocs ne soient pas
 artificiellement indépendants), 10 000 tirages, graine `20260731`.
 
-Deux choses t'appartiennent avant le lot 6 : **valider ce document**, et faire
-la **sélection manuelle des deux bandes P43** — autorisée une seule fois, sans
-qu'aucun champ candidat ne soit visible.
+**Amendé le 2026-07-31 après trois arbitrages.** Un trou trouvé en relecture :
+le document ne disait pas **quel seuil définit la géométrie des bandes**, ce qui
+décide combien de bandes existent. Réglé par une mesure sur la DIC seule :
+
+| Seuil | Objets ≥256 px | Seconde bande |
+|---|---:|---|
+| q80 | 3 | complète, `5 639 px` |
+| q90 | 2 | tronquée, `1 666 px` |
+| q95 | **1** | **absente** |
+
+À q95 la prémisse « deux bandes » du §3.4 s'effondre ; à q90 la seconde n'est
+qu'un fragment sur lequel reposerait toute l'analyse « pire bande ». **q80
+retenu**, seul seuil où les deux bandes existent entières. Le seuil de géométrie
+et les seuils d'activité du FSS sont deux choses distinctes, ce que la première
+version confondait implicitement.
+
+Second constat structurel : l'élagage sature à `~26 %` du squelette sur le
+chemin principal et ne bouge plus au-delà de `32 px` (testé à `128`). Ce ne sont
+pas des barbules mais des **boucles**, que l'élagage par extrémités ne peut pas
+retirer. Les objets sont des réseaux, pas des rubans ; la ligne centrale reste
+l'axe mais ne résume pas la topologie.
+
+Deux autres arbitrages : **E5 rétrogradé** en « rapporté seulement » — les
+fractions actives sont déjà connues, un critère non aveugle ne doit pas pouvoir
+éliminer ; et le critère FSS du Pareto devient **l'échelle minimale atteignant
+0,7**, le `16 px` précédent étant un choix injustifié.
+
+Reste à toi avant le lot 6 : **valider le document amendé**, et faire la
+**sélection manuelle des deux bandes P43** — une seule fois, sans qu'aucun champ
+candidat ne soit visible.
 
 **Non fait** : lot 6, la campagne elle-même. Aucun calcul mécanique lancé, aucun paramètre
 micromorphique sélectionné, aucun claim modifié.
