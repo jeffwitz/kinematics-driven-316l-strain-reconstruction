@@ -178,9 +178,34 @@ mais pas pour une ligne centrale en coordonnées pixel), interpolation identité
 mode de bord `BORDER_REFLECT101`, masque purement déclaratif, renommage
 historique `U = u_y`.
 
-**Non fait** : lots 3 à 6 (FSS multiscalaire, structure du résidu, bootstrap,
-Pareto, pré-enregistrement, campagne). Aucun calcul mécanique lancé, aucun
-paramètre micromorphique sélectionné, aucun claim modifié.
+**Lot 3 — FSS multiscalaire et structure du résidu.**
+`fractions_skill_score.py` répond à « à quelle échelle spatiale l'aire active du
+candidat devient-elle compatible avec la DIC », ce qu'un recouvrement pixel à
+pixel ne peut pas : une bande légèrement déplacée y est punie deux fois. Seuils
+calculés sur la DIC et appliqués **sans recalage** au candidat ; échelles
+`1, 2, 4, 8, 16, 24, 32, 48, 64, 96` px pré-enregistrées ; fraction normalisée
+par les pixels **valides** et non par l'aire de fenêtre, ce qui garde le sens au
+bord du support. Deux champs vides donnent `nan`, pas `1.0` — annoncer une
+compétence parfaite à un candidat qui ne prédit rien serait trompeur.
+
+`residual_structure.py` fixe la convention `R = EVM_DIC − EVM_FEM,obs`, donc un
+résidu **positif est de la déformation manquante**. Partition d'énergie
+corridor/fond, spectre radial, variogrammes directionnels, associations avec la
+DIC, et typologie heuristique (§8.3) qui renvoie ses chiffres et **se déclare
+diagnostic, pas résultat démontré**. Les autocorrélations et longueurs de
+cohérence réutilisent `postprocessing.spatial_correlation`, déjà en place.
+
+Défaut de conception trouvé en test, à retenir : **le module du gradient est
+aveugle au déplacement**. Un résidu de décalage est antisymétrique en travers de
+la bande et le module est symétrique positif, donc leur corrélation s'annule
+(mesuré `2,9e-14` pour un décalage de 2 px). Le §8.2 demandait « corrélation
+avec le gradient » ; seules les dérivées **signées** détectent un défaut de
+placement. Les deux sont désormais rapportées et un test verrouille la cécité
+du module.
+
+**Non fait** : lots 4 à 6 (bootstrap spatial apparié, Pareto, pré-enregistrement,
+campagne). Aucun calcul mécanique lancé, aucun paramètre micromorphique
+sélectionné, aucun claim modifié.
 
 ## Campagne à lancer — identification micromorphique
 

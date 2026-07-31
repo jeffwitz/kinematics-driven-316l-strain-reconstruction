@@ -1,9 +1,10 @@
 # Band geometry and profile metrics
 
 **Category: Reference.** Exact definitions for the object-based comparison of
-observed EVM fields. This documents lot 2 of the observed-EVM comparison
+observed EVM fields. This documents lots 2 and 3 of the observed-EVM comparison
 specification: the geometry extracted from the DIC field, the metrics read
-across it, and the synthetic defects used to test those metrics.
+across it, the synthetic defects used to test those metrics, the multiscale
+skill score and the structure of the signed residual.
 
 Nothing here runs mechanics, selects a material parameter, or reads a candidate
 field while defining geometry.
@@ -155,6 +156,62 @@ rank a deliberately broken field cannot rank models.
 
 `standard_cases` assembles the minimal set covering position, amplitude, width,
 missing band and continuity.
+
+## Multiscale skill
+
+`fractions_skill_score` answers "at what spatial scale does the candidate's
+active area become compatible with the reference", which a pixel overlap cannot:
+a slightly displaced band is punished twice by overlap, once for being absent
+where it should be and once for being present where it should not.
+
+$$FSS(s,t) = 1 - \frac{\langle (f_c - f_r)^2 \rangle}{\langle f_c^2 + f_r^2 \rangle}$$
+
+where $f$ is the fraction of **valid** pixels active in a square neighbourhood
+of side $s$. Normalising by valid pixels rather than window area keeps the
+fraction meaningful at the support edge and around an invalid region.
+
+Thresholds come from the reference and are applied to the candidate unchanged.
+Recomputing a quantile per candidate would let each field define its own notion
+of "active".
+
+Registered neighbourhood sizes: `1, 2, 4, 8, 16, 24, 32, 48, 64, 96` pixels.
+`minimum_skilful_scale` reports the first size reaching 0.5, 0.7 and 0.9, and
+returns `nan` when a level is never reached — a result, not a failure.
+
+:::{note}
+Two fields with no active pixel give `0/0`. The score is `nan`, not `1.0`:
+reporting perfect skill for a candidate that predicts nothing would be
+misleading.
+:::
+
+## Residual structure
+
+`signed_residual` fixes the convention once: $R = E_\mathrm{DIC} -
+E_\mathrm{FEM,obs}$, so a **positive residual is missing strain**.
+
+| Diagnostic | Question it answers |
+|---|---|
+| `energy_partition` | is the error in the bands or in the background? |
+| `radial_power_spectrum` | is the error coarse or fine-grained? |
+| `directional_variogram` | is it organised along the bands or across them? |
+| `residual_associations` | is it an amplitude error or a placement error? |
+
+Autocorrelation, directional profiles and coherence lengths come from
+`postprocessing.spatial_correlation`, which already implements the
+mask-corrected estimator; they are not reimplemented.
+
+:::{warning}
+`residual_associations` reports the **signed** directional derivatives
+`with_reference_derivative_x` and `_y` as well as the gradient magnitude,
+because the magnitude alone cannot detect a displacement. A shift residual is
+antisymmetric across the band while the magnitude is symmetric and positive, so
+their correlation cancels to zero regardless of the shift. A test locks this.
+:::
+
+`classify_residual` names the dominant pattern — too narrow, too wide, shifted,
+amplitude too low or too high, or no dominant structure — from the residual sign
+at the band centre against its flanks. It returns the numbers behind the label
+and declares itself a **heuristic diagnostic, not a demonstrated result**.
 
 ## Limits
 
