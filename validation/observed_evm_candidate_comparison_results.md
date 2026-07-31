@@ -10,6 +10,17 @@ Machine-readable result:
 Archived fields only. No mechanics was run, no material parameter selected, no
 archived result modified.
 
+> **Reproducibility defect, found and repaired 2026-07-31 while preparing the
+> v2 criteria set.** The four models were read from `reference_data/`, but the
+> two controls were read from a **session scratchpad**, which is not
+> persistent. The conclusions that turn on the translated control were
+> therefore not reproducible from this repository. The scratchpad was still
+> intact, and both fields are now archived in
+> `reference_data/observed_evm_controls_p0043_v1/`; their SHA-256 reproduce
+> those in `report.json` exactly, so the archived controls are the fields this
+> campaign used, not regenerated substitutes. Nothing in the numbers below
+> changes.
+
 ## Short answer
 
 **Registered failure condition 2 fires: the criteria do not discriminate.**

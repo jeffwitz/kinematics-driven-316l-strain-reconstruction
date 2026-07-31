@@ -388,8 +388,56 @@ Le bootstrap confirme par ailleurs le classement global archivé : le couplage
 est **robustement meilleur** que le modèle local sur l'erreur de masse
 (`P = 1,000`).
 
-**Non fait** : lot 6, la campagne elle-même. Aucun calcul mécanique lancé, aucun paramètre
-micromorphique sélectionné, aucun claim modifié.
+Aucun calcul mécanique lancé, aucun paramètre micromorphique sélectionné,
+aucun claim modifié.
+
+### Ensemble de critères v2 — pré-enregistré, non lancé
+
+`validation/observed_evm_morphology_criteria_preregistration.md`, écrit le
+2026-07-31. **Non exécuté.**
+
+Il remplace les seuls critères Pareto de v1 ; candidats, opérateur
+d'observation, seuil Otsu, géométrie des bandes, bootstrap et vocabulaire de
+décision sont repris tels quels. Sept critères, dont **trois de morphologie**
+(nombre d'objets, `abs(log)` du rapport de petit axe, écart d'excentricité) ;
+l'erreur de largeur par section est retirée comme redondante avec le petit axe.
+
+**Ce document n'est pas aveugle et le dit.** La morphologie des six champs est
+déjà connue, et on sait qu'elle sépare le contrôle translaté : ces critères
+sont choisis *parce qu'ils* donnent la bonne réponse sur un contrôle. Trois
+dispositifs bornent ça, chacun portant sur quelque chose de jamais calculé :
+
+- **G1**, le banc de falsification de `falsification_cases.py`, qui **n'a
+  jamais tourné** hors de son test unitaire — un critère qui ne classe pas
+  correctement les défauts connus est retiré avant tout scoring ;
+- **G2**, la DIC contre elle-même, qui doit être parfaite sur chaque critère —
+  c'est ce contrôle qui avait révélé le défaut de détection de v1 ;
+- **la confirmation aveugle sur `declared_medium_v4`**, jamais passée dans ce
+  pipeline. Otsu y est **recalculé sur la DIC de ce profil**, pas repris du
+  premier. Les quatre modèles y sont archivés, **les deux contrôles non** : il
+  faut les ré-observer depuis leur grille de déplacement, sans remécanique.
+
+**Test d'acceptation enregistré** : les critères ne sont acceptés que si le
+contrôle translaté est dominé ou éliminé. C'est une condition sur les
+*critères*, pas sur les candidats.
+
+### Défaut de reproductibilité de v1, trouvé et corrigé
+
+En vérifiant l'archive avant d'écrire v2 : les quatre modèles venaient de
+`reference_data/`, mais **les deux contrôles étaient lus depuis un scratchpad
+de session**, non persistant. Les conclusions qui reposent sur le contrôle
+translaté — donc l'échec des critères — n'étaient pas reproductibles.
+
+Le scratchpad était encore intact. Les deux champs sont archivés dans
+`validation/reference_data/observed_evm_controls_p0043_v1/` (LFS, manifeste
+`SHA256SUMS`), et **leurs SHA-256 reproduisent exactement ceux du `report.json`
+de v1** : ce sont bien les champs utilisés, pas des régénérations. Aucun
+chiffre de v1 ne change ; v1 devient vérifiable. Les grilles de déplacement
+sont archivées avec, pour la ré-observation sur le second profil.
+
+**Leçon générale** : un contrôle négatif lu depuis un répertoire temporaire
+n'est pas un contrôle. Toute campagne doit archiver ses contrôles au même
+niveau que ses candidats.
 
 ## Campagne à lancer — identification micromorphique
 
