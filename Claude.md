@@ -344,7 +344,49 @@ mesurée et non plus affirmée.
 
 `scikit-image` ajouté aux dépendances, déclaré dans `pyproject.toml`.
 
-Reste à toi avant le lot 6 : **valider le document amendé**.
+**Lot 6 exécuté le 2026-07-31 sur les résultats archivés.** Résultats :
+`validation/observed_evm_candidate_comparison_results.md`.
+
+**Condition d'échec 2 déclenchée** : cinq candidats sur six sont non dominés,
+dont le contrôle négatif translaté. Les critères pré-enregistrés **ne
+discriminent pas**, aucun classement n'est publié.
+
+**Résultat scientifique, distinct de cet échec** : **aucun candidat ne
+reproduit la morphologie à deux bandes de la DIC**. Les quatre produisent un
+objet fusionné unique là où la DIC en a deux, avec un petit axe environ double
+(`198–217 px` contre `104` et `72`) et une excentricité de `0,79` contre `0,94`.
+De `alpha=1` à `alpha=4` le petit axe tombe de `213` à `198 px` : la tendance
+est dans le bon sens et très loin de suffire.
+
+**L'aire active est inutilisable ici** : tous les candidats et le contrôle
+négatif sont à moins de trois points de la DIC.
+
+**Le contrôle translaté n'est pas rejeté par les critères enregistrés.** Sur
+erreur de ligne centrale, de largeur et de masse il est *dans* la plage des
+candidats couplés, et son erreur de masse est statistiquement indiscernable de
+`alpha=1` (`P=0,391`) et `alpha=4` (`P=0,610`). Or c'est un contrôle construit
+en déplaçant les cartes matériau. La morphologie le sépare immédiatement
+(excentricité `0,645`, petit axe `269 px`) — **mais la morphologie n'est pas
+dans les critères Pareto enregistrés**. L'ensemble de critères est donc
+insuffisant, et c'est le contrôle négatif qui l'a prouvé. **Non réparé après
+coup** : ajouter la morphologie au Pareto maintenant, en sachant que ça
+changerait la réponse, serait exactement l'ajustement post-hoc que le protocole
+interdit. Un ensemble révisé demande un nouveau pré-enregistrement.
+
+Le contrôle homogène est correctement **éliminé** par E2 (`42,9 %` de sections
+portant une bande, sous la borne de `50 %`).
+
+**Deux défauts trouvés en exécutant, corrigés avant ces chiffres :** le critère
+de détection était vide de sens (l'excès est positif sur presque tout profil,
+le fond étant une médiane des queues) ; et validité de section et détection
+étaient confondues, si bien que **la DIC obtenait `0,46` sur sa propre bande** —
+band1 traverse le cœur en diagonale et seules `43` de ses `94` sections restent
+dans le support à ±40 px. Contrôle de correction retenu : la DIC doit détecter
+ses propres bandes à `100 %` des sections valides, ce qu'elle fait maintenant.
+
+Le bootstrap confirme par ailleurs le classement global archivé : le couplage
+est **robustement meilleur** que le modèle local sur l'erreur de masse
+(`P = 1,000`).
 
 **Non fait** : lot 6, la campagne elle-même. Aucun calcul mécanique lancé, aucun paramètre
 micromorphique sélectionné, aucun claim modifié.
