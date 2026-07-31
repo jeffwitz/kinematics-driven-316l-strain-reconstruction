@@ -69,15 +69,18 @@ Descriptive core PEEQ:
 | unfiltered | `3.2301e-03` | `2.5708e-02` | `7.3608e-02` |
 | proportional | `3.0783e-03` | `2.3426e-02` | `6.4148e-02` |
 
-**Recorded without explanation**: the filtered run accumulates slightly *more*
-mean PEEQ than the unfiltered one, `+0.64 %`, which is contrary to a simple
-additive noise-ratchet picture in which removing noise should reduce
-accumulation. The peak instead falls, `7.2394e-02` against `7.3608e-02`. Part
-of this is confounded: the two runs do not share a sub-increment structure,
-40 against 65, because the unfiltered run was cut back three times. The
-archived discretisation sensitivity for 20 against 40 increments is `0.20 %`,
-so that confound is of the right order to matter here and is not separated.
-This is not claimed as a physical effect.
+**Explained on 2026-07-31**, in
+`modal_filter_peeq_excess_results.md`: the filtered run accumulates `+0.64 %`
+more mean PEEQ while its peak falls `1.65 %`. This is **redistribution, not
+amplitude growth**. The filter removes scattered marginal yielding at low
+levels — deciles 3 and 4 go negative and 217 fewer elements plastify — adds
+plasticity across the band range, where the top four deciles carry `94.6 %` of
+the excess, and shaves the extreme tail.
+
+The sub-increment confound, 40 converged increments against 65, was originally
+asserted here to be "of the right order to matter". That was written without
+measurement and is **wrong**: calibrated on the zero-cutback proportional pair
+it explains only `5.8 %` of the excess.
 
 The band structure ratio of the filter's own effect is `3.95`, so the
 perturbation is mildly band-concentrated, as expected when plasticity amplifies
