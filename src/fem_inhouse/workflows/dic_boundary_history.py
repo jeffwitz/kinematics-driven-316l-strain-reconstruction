@@ -243,10 +243,16 @@ def _photometric_metrics(
     flow = canonical_to_image_flow(displacement, pixel_size_mm=PIXEL_SIZE_MM)
     result = direct_photometric_residual(reference, current, flow)
     values = result.absolute_residual_grey_levels[result.valid_mask]
-    local = np.zeros(result.valid_mask.shape, dtype=bool)
+    mask_shape = result.valid_mask.shape
+    if len(mask_shape) != 2:
+        raise ValueError("the photometric valid mask must be two-dimensional")
+    # Building the shape as a concrete pair keeps the rank known to the type
+    # checker, which otherwise varies with whichever numpy stubs are on the path.
+    rows, columns = int(mask_shape[0]), int(mask_shape[1])
+    local = np.zeros((rows, columns), dtype=bool)
     local[
-        max(min(failure_x_indices) - 10, 0) : min(max(failure_x_indices) + 12, local.shape[0]),
-        max(local.shape[1] - 12, 0) :,
+        max(min(failure_x_indices) - 10, 0) : min(max(failure_x_indices) + 12, rows),
+        max(columns - 12, 0) :,
     ] = True
     local &= result.valid_mask
     local_values = result.absolute_residual_grey_levels[local]

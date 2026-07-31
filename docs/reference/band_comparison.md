@@ -1,7 +1,7 @@
 # Band geometry and profile metrics
 
 **Category: Reference.** Exact definitions for the object-based comparison of
-observed EVM fields. This documents lots 2 and 3 of the observed-EVM comparison
+observed EVM fields. This documents lots 2 to 4 of the observed-EVM comparison
 specification: the geometry extracted from the DIC field, the metrics read
 across it, the synthetic defects used to test those metrics, the multiscale
 skill score and the structure of the signed residual.
@@ -212,6 +212,71 @@ their correlation cancels to zero regardless of the shift. A test locks this.
 amplitude too low or too high, or no dominant structure — from the residual sign
 at the band centre against its flanks. It returns the numbers behind the label
 and declares itself a **heuristic diagnostic, not a demonstrated result**.
+
+## Paired block bootstrap
+
+Hundreds of thousands of pixels are not independent degrees of freedom.
+Neighbouring pixels of a band are strongly correlated, so treating them as
+independent would produce intervals narrow enough to call any difference
+significant. The resampling unit is a **block of consecutive sections**.
+
+The draw is **paired**: one replicate selects a set of sections and every
+candidate is scored on that same set. Drawing independently per candidate would
+compare separate noise realisations and inflate every difference.
+
+Bands are resampled separately and averaged with **equal weight**, so a long
+band does not dominate a short one merely by carrying more sections. Blocks are
+circular, so the ends are not under-sampled. `BootstrapDesign` records block
+length, draw count and seed; nominal draws are 10 000.
+
+`block_length_sensitivity` repeats a comparison across several block lengths: a
+conclusion that survives only one length is a conclusion about the resampling
+scheme, not about the candidates.
+
+### Probability of superiority and the decision vocabulary
+
+| Probability | Decision |
+|---|---|
+| `> 0.95` | `robustly_better` |
+| `0.80` to `0.95` | `probably_better` |
+| `0.20` to `0.80` | `indistinguishable` |
+| `0.05` to `0.20` | `probably_worse` |
+| `< 0.05` | `robustly_worse` |
+
+:::{warning}
+**Ties count as half a win.** Strict inequality would score two identical
+candidates as a certain loss and return `robustly_worse`, and it biases every
+comparison downwards whenever a metric takes discrete values. A test locks
+both the half-win rule and the even probability for all-tied draws.
+:::
+
+Each comparison also reports the median difference, the 95 % interval and the
+sign-change fraction, so a conclusion can be read without the label.
+
+## Decision without a weighted sum
+
+Collapsing disagreeing criteria into one score hides the disagreement and
+manufactures a winner. `decide` eliminates first, then dominates:
+
+1. `apply_elimination` applies the mandatory rules and records, per eliminated
+   candidate, exactly which bound it failed. A missing or non-finite value
+   eliminates — an unmeasured mandatory criterion is not a pass;
+2. `pareto_front` returns the non-dominated set and each dominated candidate's
+   dominators. A candidate dominates when it is at least as good on every
+   criterion and strictly better on one.
+
+Permitted conclusions, all of them:
+
+| Conclusion | Meaning |
+|---|---|
+| `one_non_dominated_candidate` | a single survivor on the front |
+| `several_non_dominated_candidates` | a genuine trade-off; no winner is named |
+| `no_candidate_passes_all_mandatory_criteria` | elimination emptied the field |
+
+`worst_band_vector` returns, per criterion, the value of the band that performs
+worst. It is deliberately a **vector, not a sum**: summing would let a band
+scored very well offset a band that was lost, and the worst band can differ from
+one criterion to the next.
 
 ## Limits
 
