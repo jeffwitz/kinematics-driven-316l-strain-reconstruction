@@ -115,6 +115,55 @@ The replay writes DIC EVM, raw FEM EVM, observed FEM EVM and recovered image
 flow separately. It never mutates the mechanical campaign and never applies a
 post-filter to the primary EVM.
 
+### Grid contract
+
+The FEM displacement is nodal, shape `(nx + 1, ny + 1, 2)`, in canonical axes
+`(x, y)` with components `(ux, uy)` in millimetres. The image crop is taken at
+exactly that shape, so **one node is one pixel and the interpolation onto the
+image grid is the identity**. The operator asserts the two shapes agree and
+raises otherwise; it never resamples silently.
+
+Canonical-to-image conversion swaps axes: image flow component 0 is the column
+displacement `uy`, component 1 is the row displacement `ux`, both in pixels.
+
+EVM is element-centred, shape `(nx, ny)`. The nodal and element-centred
+lattices therefore differ by half a pixel. That offset is identical for DIC and
+FEM, so it cancels in this comparison — but any geometric object expressed in
+pixel coordinates, such as a band centreline, must declare which lattice it
+lives on.
+
+### Audit artefacts
+
+| File | Contents |
+|---|---|
+| `dic_evm.npy` | experimental EVM on the comparison support |
+| `fem_raw_evm.npy` | FEM EVM without observation, known-biased control |
+| `fem_observed_evm.npy` | FEM EVM after the symmetric operator |
+| `fem_displacement_image_grid.npy` | imposed flow in pixels, on the image grid |
+| `synthetic_deformed_image.tif` | the warped reference image fed to DISFlow |
+| `recovered_displacement_column.npy` | recovered column flow, pixels |
+| `recovered_displacement_row.npy` | recovered row flow, pixels |
+| `observed_flow_pixels.npy` | both recovered components, as one array |
+| `valid_mask.npy` | comparison mask |
+| `report.json` | the observation manifest |
+
+Three names differ from the observed-EVM comparison specification, which asks
+for `fem_evm_raw.npy`, `fem_evm_observed.npy` and `observation_manifest.json`.
+The existing names are kept because archived reports hash them by name;
+renaming would break the traceability of results already committed.
+
+`valid_mask.npy` is currently `declared_all_valid`: no invalid region exists in
+this dataset. It is written so downstream tooling can rely on the file being
+present, not because it filters anything today.
+
+### Metrological guard
+
+The symmetric replay refuses a DISFlow profile whose finest scale is not the
+native scale 0. The first measurement-chain campaign ran at scale 1, which
+skips full-resolution variational refinement and reported an MTF-50 near
+127 px against 49 px at native scale; that run was invalidated. Both archived
+profiles pass the guard.
+
 ## Photometric-quality diagnostic
 
 `diagnose-dic-photometric-quality` evaluates the direct brightness residual
