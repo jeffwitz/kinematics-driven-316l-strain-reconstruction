@@ -117,8 +117,13 @@ operator.
   --images /home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images \
   --prepared-case data/processed/case_study \
   --output validation/reference_data/dic_measurement_chain_v4 \
-  --figure-output validation/figures/dic_measurement_chain_v4
+  --figure-output validation/figures/dic_measurement_chain_v4 \
+  --profile declared_medium_v4
 ```
+
+The profile is named explicitly because this campaign predates the change that
+made `legacy_script_2021` the command default; omitting it would no longer
+reproduce these numbers.
 
 Machine-readable values and exact source hashes are in
 `validation/reference_data/dic_measurement_chain_v4/`.
