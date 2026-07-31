@@ -179,8 +179,8 @@ métriques, ensemble Pareto, optima par objectif. Marges de significativité fix
 d'avance (`0,0202` / `0,0185` / `0,0189` / `0,0217`). Un Pareto large est un
 résultat probable et légitime, pas un échec.
 
-Chantier restant, plus petit : le `+0,64 %` de PEEQ moyen consigné sans
-explication après filtrage modal.
+Artefacts du filtrage : `validation/modal_filter_peeq_excess_preregistration.md`
+et `validation/modal_filter_peeq_excess_results.md`.
 
 Jalon documentaire au 2026-07-26 : **réécriture publique science-first
 terminée et vérifiée**. La navigation principale suit désormais un récit
@@ -947,9 +947,15 @@ imposée change.
   de bruit de bord mais une propriété du chemin de chargement ;
 - accord DIC **indiscernable** sur les quatre métriques et les deux profils, le
   plus grand mouvement valant `+0,00346` pour une marge de `0,0202` ;
-- consigné sans explication : le run filtré accumule `+0,64 %` de PEEQ moyen de
-  plus que le non filtré, contraire à une image de rochet additif. Confondu en
-  partie par des structures de sous-incréments différentes, 40 contre 65.
+- le run filtré accumule `+0,64 %` de PEEQ moyen de plus que le non filtré alors
+  que son pic **baisse** de `1,65 %`. **Expliqué le 2026-07-31** : c'est une
+  **redistribution**, pas une hausse d'amplitude. Le filtre retire de la
+  plastification marginale éparse aux bas niveaux (déciles 3 et 4 négatifs,
+  `217` éléments plastifiés en moins), ajoute dans la gamme des bandes où les
+  quatre déciles supérieurs portent `94,6 %` de l'excès, et rabote la queue
+  extrême. Le confondant de sous-incréments, que j'avais affirmé « du bon
+  ordre » sans le mesurer, n'en explique que `5,8 %` : cette affirmation était
+  **fausse** et est corrigée.
 
 Ce que le filtre apporte est **numérique, pas probant** : moitié moins de
 travail Newton pour une perturbation de `1,63 %` d'une variable interne non
@@ -2542,8 +2548,29 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-30 | Mécanique sur histoire filtrée | `run-dic-multistep-mechanics --mode measured` | 40/40, zéro cutback, 245 itérations en `34,8 min` | Réussi |
 | 2026-07-30 | Pénalisation contre élimination | Cas réduit, `k` de `1e8` à `1e12` | Erreur en `1/k` puis limite de conditionnement | Réussi |
 | 2026-07-31 | Reproduction du champ archivé par profil | `compare-profile-reproduction`, 4/1 contre 8/3 | `1,673 %` contre `1,738 %`, rapport `1,04` | Ne discrimine pas |
+| 2026-07-31 | Calibration du ressort de pénalisation | Principe de l'écart, chaîne analytique | `k/K_ref = 2,7`, écart = misfit à `5 %` | Réussi |
+| 2026-07-31 | Excès de PEEQ moyen après filtrage | Déciles et aire active, données archivées | Redistribution ; confondant à `5,8 %` seulement | Expliqué |
 
 ## 14. Journal des mises à jour
+
+### 2026-07-31 — L'excès de PEEQ après filtrage est une redistribution
+
+- Question fermée : le `+0,64 %` de PEEQ moyen que j'avais consigné sans
+  explication est une **redistribution**, pas une hausse d'amplitude
+- Le confondant de sous-incréments (40 contre 65) n'en explique que `5,8 %`,
+  sous la borne de `20 %` fixée d'avance. Mon affirmation antérieure qu'il était
+  « du bon ordre » avait été écrite **sans mesure** et est corrigée dans le
+  document du filtre
+- Signature : déciles 3–4 négatifs, `217` éléments plastifiés en moins, quatre
+  déciles supérieurs portant `94,6 %` de l'excès, queue extrême rabotée
+  (`q0,9999` à `-3,55 %`, maximum à `-1,65 %`)
+- Lecture : le contenu de bord sous le plancher de bruit semait de la
+  plastification marginale éparse et quelques excursions extrêmes isolées ; le
+  retirer laisse la déformation se canaliser dans les bandes
+- Aucune revendication sur la correction physique : un champ plastique plus
+  concentré n'est pas pour autant plus juste. Le filtre reste justifié par le
+  bruit mesuré, pas par l'allure du champ qu'il produit
+- Analyse sur données archivées uniquement, aucun calcul mécanique
 
 ### 2026-07-31 — Le profil DISFlow ne se départage pas sur la donnée
 
