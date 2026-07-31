@@ -108,7 +108,10 @@ def test_history_predictor_stays_elastic_across_increments() -> None:
     )
 
     imposed = float(np.max(np.abs(final))) / case.config.mesh.base_pixel_size_mm
-    largest = max(float(record["total_strain_maximum"]) for record in trace)
+    largest = max(
+        float(record["total_strain_maximum"])  # type: ignore[arg-type]
+        for record in trace
+    )
 
     assert largest < imposed
     assert all(record["outcome"] in {"converged", "corrected"} for record in trace)
