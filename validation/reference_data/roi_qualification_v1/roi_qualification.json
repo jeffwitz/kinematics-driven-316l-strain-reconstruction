@@ -1,0 +1,922 @@
+{
+  "p0043_legacy_script_2021": {
+    "partition_id": 43,
+    "otsu_threshold": 0.004535225067423935,
+    "morphology": {
+      "dic_objects": 2,
+      "local_objects": 1,
+      "dic_minor_axes_px": [
+        104.42421837901064,
+        72.28311133576219
+      ],
+      "local_minor_axes_px": [
+        217.03337731114738
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 94,
+        "valid_fraction": 0.4574468085106383,
+        "dic_width_median": 19.642542736783962,
+        "local_width_median": 21.325169697009926,
+        "width_ratio": {
+          "count": 39,
+          "median": 0.9358562377999171,
+          "q05": 0.8754361042480796,
+          "q95": 1.0902284753215996
+        },
+        "narrower_fraction": 0.4358974358974359,
+        "centreline_offset_median": 11.652748563730924
+      },
+      "band2": {
+        "sections": 63,
+        "valid_fraction": 1.0,
+        "dic_width_median": 19.15868841001192,
+        "local_width_median": 20.856934518317498,
+        "width_ratio": {
+          "count": 49,
+          "median": 0.907678469874348,
+          "q05": 0.859638246863561,
+          "q95": 0.9934406528031896
+        },
+        "narrower_fraction": 0.3673469387755102,
+        "centreline_offset_median": 17.504076116103185
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 2,
+        "local": 1
+      },
+      "enough_usable_sections": {
+        "passed": false,
+        "worst_band_valid_fraction": 0.4574468085106383,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 19.15868841001192,
+        "in_mtf50": 0.39099364102065143,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 39,
+            "median": 0.9358562377999171,
+            "q05": 0.8754361042480796,
+            "q95": 1.0902284753215996
+          },
+          {
+            "count": 49,
+            "median": 0.907678469874348,
+            "q05": 0.859638246863561,
+            "q95": 0.9934406528031896
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          0.8754361042480796,
+          0.859638246863561
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.4358974358974359,
+          0.3673469387755102
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          0.5932403314520576,
+          0.9136364526371195
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "enough_usable_sections",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0017_legacy_script_2021": {
+    "partition_id": 17,
+    "otsu_threshold": 0.0038510988473756773,
+    "morphology": {
+      "dic_objects": 5,
+      "local_objects": 3,
+      "dic_minor_axes_px": [
+        96.65146449622496,
+        81.68720989429141,
+        52.16799626026323,
+        24.147421118118334,
+        18.493857577462933
+      ],
+      "local_minor_axes_px": [
+        52.44952213869659,
+        48.39221392261483,
+        26.199993482257092
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 131,
+        "valid_fraction": 0.6106870229007634,
+        "dic_width_median": 20.14827874552578,
+        "local_width_median": 16.818476272009136,
+        "width_ratio": {
+          "count": 78,
+          "median": 1.047651508695349,
+          "q05": 0.9395987896858681,
+          "q95": 1.1792732980661493
+        },
+        "narrower_fraction": 0.5384615384615384,
+        "centreline_offset_median": 15.395256931546268
+      },
+      "band2": {
+        "sections": 48,
+        "valid_fraction": 0.0,
+        "dic_width_median": NaN,
+        "local_width_median": NaN,
+        "width_ratio": {
+          "count": 0,
+          "median": NaN,
+          "q05": NaN,
+          "q95": NaN
+        },
+        "narrower_fraction": NaN,
+        "centreline_offset_median": NaN
+      },
+      "band3": {
+        "sections": 43,
+        "valid_fraction": 0.6511627906976745,
+        "dic_width_median": 19.564192533991402,
+        "local_width_median": 25.501136060141647,
+        "width_ratio": {
+          "count": 13,
+          "median": 0.681834913249992,
+          "q05": 0.6643523145018944,
+          "q95": 0.8447553930718307
+        },
+        "narrower_fraction": 0.23076923076923078,
+        "centreline_offset_median": 28.427858584154116
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 5,
+        "local": 3
+      },
+      "enough_usable_sections": {
+        "passed": false,
+        "worst_band_valid_fraction": 0.0,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 19.564192533991402,
+        "in_mtf50": 0.39926923538757964,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 78,
+            "median": 1.047651508695349,
+            "q05": 0.9395987896858681,
+            "q95": 1.1792732980661493
+          },
+          {
+            "count": 0,
+            "median": NaN,
+            "q05": NaN,
+            "q95": NaN
+          },
+          {
+            "count": 13,
+            "median": 0.681834913249992,
+            "q05": 0.6643523145018944,
+            "q95": 0.8447553930718307
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          0.9395987896858681,
+          NaN,
+          0.6643523145018944
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.5384615384615384,
+          NaN,
+          0.23076923076923078
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          0.7640978728748733,
+          NaN,
+          1.4530555521145438
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "enough_usable_sections",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0058_legacy_script_2021": {
+    "partition_id": 58,
+    "otsu_threshold": 0.0032072419510750013,
+    "morphology": {
+      "dic_objects": 2,
+      "local_objects": 1,
+      "dic_minor_axes_px": [
+        259.4803541191775,
+        21.13119134564865
+      ],
+      "local_minor_axes_px": [
+        231.24258780842007
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 138,
+        "valid_fraction": 0.8913043478260869,
+        "dic_width_median": 19.978800749514146,
+        "local_width_median": 21.559216352331006,
+        "width_ratio": {
+          "count": 51,
+          "median": 1.0441900729171922,
+          "q05": 0.9341273136700885,
+          "q95": 1.134966165734395
+        },
+        "narrower_fraction": 0.5490196078431373,
+        "centreline_offset_median": 28.455358867091373
+      },
+      "band2": {
+        "sections": 13,
+        "valid_fraction": 0.0,
+        "dic_width_median": NaN,
+        "local_width_median": NaN,
+        "width_ratio": {
+          "count": 0,
+          "median": NaN,
+          "q05": NaN,
+          "q95": NaN
+        },
+        "narrower_fraction": NaN,
+        "centreline_offset_median": NaN
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 2,
+        "local": 1
+      },
+      "enough_usable_sections": {
+        "passed": false,
+        "worst_band_valid_fraction": 0.0,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 19.978800749514146,
+        "in_mtf50": 0.407730627541105,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 51,
+            "median": 1.0441900729171922,
+            "q05": 0.9341273136700885,
+            "q95": 1.134966165734395
+          },
+          {
+            "count": 0,
+            "median": NaN,
+            "q05": NaN,
+            "q95": NaN
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          0.9341273136700885,
+          NaN
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.5490196078431373,
+          NaN
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          1.4242776242604733,
+          NaN
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "enough_usable_sections",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0084_legacy_script_2021": {
+    "partition_id": 84,
+    "otsu_threshold": 0.0043734570028474366,
+    "morphology": {
+      "dic_objects": 2,
+      "local_objects": 1,
+      "dic_minor_axes_px": [
+        79.98554281645285,
+        16.57952825432593
+      ],
+      "local_minor_axes_px": [
+        255.91718930867557
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 98,
+        "valid_fraction": 0.8163265306122449,
+        "dic_width_median": 20.68907425557209,
+        "local_width_median": 19.883359443774552,
+        "width_ratio": {
+          "count": 72,
+          "median": 1.0606348921409112,
+          "q05": 0.958771576767651,
+          "q95": 1.2319930322360189
+        },
+        "narrower_fraction": 0.5833333333333334,
+        "centreline_offset_median": 12.45230117472191
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 2,
+        "local": 1
+      },
+      "enough_usable_sections": {
+        "passed": true,
+        "worst_band_valid_fraction": 0.8163265306122449,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 20.68907425557209,
+        "in_mtf50": 0.422226005215757,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 72,
+            "median": 1.0606348921409112,
+            "q05": 0.958771576767651,
+            "q95": 1.2319930322360189
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          0.958771576767651
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.5833333333333334
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          0.6018781227665704
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0043_declared_medium_v4": {
+    "partition_id": 43,
+    "otsu_threshold": 0.004535225067423935,
+    "morphology": {
+      "dic_objects": 2,
+      "local_objects": 1,
+      "dic_minor_axes_px": [
+        104.42421837901064,
+        72.28311133576219
+      ],
+      "local_minor_axes_px": [
+        221.3802502650311
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 94,
+        "valid_fraction": 0.4574468085106383,
+        "dic_width_median": 19.642542736783962,
+        "local_width_median": 17.54102706180698,
+        "width_ratio": {
+          "count": 38,
+          "median": 1.1481242085862684,
+          "q05": 1.1034091905106824,
+          "q95": 1.2098655810511978
+        },
+        "narrower_fraction": 0.8157894736842105,
+        "centreline_offset_median": 13.332945774675629
+      },
+      "band2": {
+        "sections": 63,
+        "valid_fraction": 1.0,
+        "dic_width_median": 19.15868841001192,
+        "local_width_median": 20.856762484674718,
+        "width_ratio": {
+          "count": 47,
+          "median": 1.0307231910015717,
+          "q05": 0.8683720611367126,
+          "q95": 1.0954398213288887
+        },
+        "narrower_fraction": 0.5531914893617021,
+        "centreline_offset_median": 18.721696486377677
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 2,
+        "local": 1
+      },
+      "enough_usable_sections": {
+        "passed": false,
+        "worst_band_valid_fraction": 0.4574468085106383,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 19.15868841001192,
+        "in_mtf50": 0.39099364102065143,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 38,
+            "median": 1.1481242085862684,
+            "q05": 1.1034091905106824,
+            "q95": 1.2098655810511978
+          },
+          {
+            "count": 47,
+            "median": 1.0307231910015717,
+            "q05": 0.8683720611367126,
+            "q95": 1.0954398213288887
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          1.1034091905106824,
+          0.8683720611367126
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.8157894736842105,
+          0.5531914893617021
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          0.6787790131522762,
+          0.9771909269422703
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "enough_usable_sections",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0017_declared_medium_v4": {
+    "partition_id": 17,
+    "otsu_threshold": 0.0038510988473756773,
+    "morphology": {
+      "dic_objects": 5,
+      "local_objects": 3,
+      "dic_minor_axes_px": [
+        96.65146449622496,
+        81.68720989429141,
+        52.16799626026323,
+        24.147421118118334,
+        18.493857577462933
+      ],
+      "local_minor_axes_px": [
+        54.37113610823987,
+        47.580092543901394,
+        24.107663030490578
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 131,
+        "valid_fraction": 0.6106870229007634,
+        "dic_width_median": 20.14827874552578,
+        "local_width_median": 18.703278035537675,
+        "width_ratio": {
+          "count": 79,
+          "median": 1.0644798491125118,
+          "q05": 1.0174711535732992,
+          "q95": 1.167785421791002
+        },
+        "narrower_fraction": 0.6075949367088608,
+        "centreline_offset_median": 15.446195536949638
+      },
+      "band2": {
+        "sections": 48,
+        "valid_fraction": 0.0,
+        "dic_width_median": NaN,
+        "local_width_median": NaN,
+        "width_ratio": {
+          "count": 0,
+          "median": NaN,
+          "q05": NaN,
+          "q95": NaN
+        },
+        "narrower_fraction": NaN,
+        "centreline_offset_median": NaN
+      },
+      "band3": {
+        "sections": 43,
+        "valid_fraction": 0.6511627906976745,
+        "dic_width_median": 19.564192533991402,
+        "local_width_median": 26.630970112596003,
+        "width_ratio": {
+          "count": 11,
+          "median": 0.6474820665207908,
+          "q05": 0.6330069974475437,
+          "q95": 0.8250430332250773
+        },
+        "narrower_fraction": 0.09090909090909091,
+        "centreline_offset_median": 30.662428349207232
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 5,
+        "local": 3
+      },
+      "enough_usable_sections": {
+        "passed": false,
+        "worst_band_valid_fraction": 0.0,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 19.564192533991402,
+        "in_mtf50": 0.39926923538757964,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 79,
+            "median": 1.0644798491125118,
+            "q05": 1.0174711535732992,
+            "q95": 1.167785421791002
+          },
+          {
+            "count": 0,
+            "median": NaN,
+            "q05": NaN,
+            "q95": NaN
+          },
+          {
+            "count": 11,
+            "median": 0.6474820665207908,
+            "q05": 0.6330069974475437,
+            "q95": 0.8250430332250773
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          1.0174711535732992,
+          NaN,
+          0.6330069974475437
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.6075949367088608,
+          NaN,
+          0.09090909090909091
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          0.7666260593292463,
+          NaN,
+          1.567272878547552
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "enough_usable_sections",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0058_declared_medium_v4": {
+    "partition_id": 58,
+    "otsu_threshold": 0.0032072419510750013,
+    "morphology": {
+      "dic_objects": 2,
+      "local_objects": 1,
+      "dic_minor_axes_px": [
+        259.4803541191775,
+        21.13119134564865
+      ],
+      "local_minor_axes_px": [
+        260.73976995176497
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 138,
+        "valid_fraction": 0.8913043478260869,
+        "dic_width_median": 19.978800749514146,
+        "local_width_median": 21.20668938117921,
+        "width_ratio": {
+          "count": 50,
+          "median": 1.0335073604638065,
+          "q05": 0.9370168782036115,
+          "q95": 1.1254815032947354
+        },
+        "narrower_fraction": 0.54,
+        "centreline_offset_median": 27.998235607695808
+      },
+      "band2": {
+        "sections": 13,
+        "valid_fraction": 0.0,
+        "dic_width_median": NaN,
+        "local_width_median": NaN,
+        "width_ratio": {
+          "count": 0,
+          "median": NaN,
+          "q05": NaN,
+          "q95": NaN
+        },
+        "narrower_fraction": NaN,
+        "centreline_offset_median": NaN
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 2,
+        "local": 1
+      },
+      "enough_usable_sections": {
+        "passed": false,
+        "worst_band_valid_fraction": 0.0,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 19.978800749514146,
+        "in_mtf50": 0.407730627541105,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 50,
+            "median": 1.0335073604638065,
+            "q05": 0.9370168782036115,
+            "q95": 1.1254815032947354
+          },
+          {
+            "count": 0,
+            "median": NaN,
+            "q05": NaN,
+            "q95": NaN
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          0.9370168782036115,
+          NaN
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.54,
+          NaN
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          1.401397208907881,
+          NaN
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "enough_usable_sections",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  },
+  "p0084_declared_medium_v4": {
+    "partition_id": 84,
+    "otsu_threshold": 0.0043734570028474366,
+    "morphology": {
+      "dic_objects": 2,
+      "local_objects": 1,
+      "dic_minor_axes_px": [
+        79.98554281645285,
+        16.57952825432593
+      ],
+      "local_minor_axes_px": [
+        258.2525070405862
+      ]
+    },
+    "bands": {
+      "band1": {
+        "sections": 98,
+        "valid_fraction": 0.8163265306122449,
+        "dic_width_median": 20.68907425557209,
+        "local_width_median": 19.448118842005314,
+        "width_ratio": {
+          "count": 73,
+          "median": 1.1362294331436371,
+          "q05": 0.9742786389505163,
+          "q95": 1.20869136234819
+        },
+        "narrower_fraction": 0.5753424657534246,
+        "centreline_offset_median": 16.11186378953218
+      }
+    },
+    "checks": {
+      "same_object_count": {
+        "passed": false,
+        "dic": 2,
+        "local": 1
+      },
+      "enough_usable_sections": {
+        "passed": true,
+        "worst_band_valid_fraction": 0.8163265306122449,
+        "bound": 0.75
+      },
+      "dic_band_is_resolved": {
+        "passed": false,
+        "narrowest_dic_width_px": 20.68907425557209,
+        "in_mtf50": 0.422226005215757,
+        "bound_mtf50": 1.5
+      },
+      "local_is_measurably_narrower": {
+        "passed": false,
+        "width_ratios": [
+          {
+            "count": 73,
+            "median": 1.1362294331436371,
+            "q05": 0.9742786389505163,
+            "q95": 1.20869136234819
+          }
+        ],
+        "bound": 1.3333333333333333
+      },
+      "ratio_interval_excludes_one": {
+        "passed": false,
+        "q05": [
+          0.9742786389505163
+        ]
+      },
+      "deficit_sign_is_consistent": {
+        "passed": false,
+        "narrower_fraction": [
+          0.5753424657534246
+        ],
+        "bound": 0.7
+      },
+      "centreline_is_close": {
+        "passed": false,
+        "offset_over_dic_width": [
+          0.7787619489640938
+        ],
+        "bound": 0.25
+      }
+    },
+    "failed": [
+      "centreline_is_close",
+      "deficit_sign_is_consistent",
+      "dic_band_is_resolved",
+      "local_is_measurably_narrower",
+      "ratio_interval_excludes_one",
+      "same_object_count"
+    ],
+    "qualified": false
+  }
+}
