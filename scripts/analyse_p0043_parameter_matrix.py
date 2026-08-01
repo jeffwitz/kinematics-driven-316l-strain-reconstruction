@@ -34,6 +34,7 @@ from run_p0043_parameter_matrix import (  # noqa: E402
     ALPHAS,
     ARCHIVED,
     ELLS_MICROMETRES,
+    PARTITION_ID,
     _tag_alpha,
     _tag_ell,
 )
@@ -41,6 +42,32 @@ from run_p0043_parameter_matrix import (  # noqa: E402
 OBSERVATIONS = ROOT / "validation/reference_data/p0043_matrix_observations_v1"
 CONTROLS = ROOT / "validation/reference_data/observed_evm_controls_p0043_v1"
 VALIDATION = ROOT / "validation/reference_data/p0043_small_parameter_matrix_v1"
+
+
+def _solver_state(campaign: Path) -> str:
+    """`converged`, `failed` or `not_computed`, from the campaign directory.
+
+    The three are different claims and must not be merged. A point still in the
+    queue has no directory; a point the solver gave up on has a directory and a
+    manifest but no status. Reporting the first as "did not converge" would
+    invent a result.
+
+    A point being solved **right now** also has a manifest and no status, so
+    it is indistinguishable from a failure here. That is harmless because this
+    runs only after the mechanics driver has exited; run it mid-campaign and
+    the point in flight will be mislabelled.
+    """
+
+    if not (campaign / "manifest.json").is_file():
+        return "not_computed"
+    status = campaign / "partitions" / f"{PARTITION_ID:04d}" / "status.json"
+    if not status.is_file():
+        return "failed"
+    try:
+        complete = bool(json.loads(status.read_text(encoding="utf-8")).get("complete"))
+    except (OSError, json.JSONDecodeError):
+        return "failed"
+    return "converged" if complete else "failed"
 
 
 def _label(alpha: float, ell: float) -> str:
@@ -61,13 +88,17 @@ def build_points(profile: str) -> list[MatrixPoint]:
                 if (alpha, ell) in ARCHIVED
                 else ROOT / "results" / f"mm-id-p0043-{label}"
             )
+            # Convergence is the solver's verdict, read from the immutable
+            # status. Using the observation file instead would report a point
+            # whose mechanics succeeded but whose replay is still pending as
+            # "did not converge", which is a different and much stronger claim.
             points.append(
                 MatrixPoint(
                     label=label,
                     alpha=alpha,
                     ell_um=ell,
                     flow_path=flow,
-                    converged=flow.is_file(),
+                    converged=_solver_state(campaign) == "converged",
                     campaign=campaign,
                 )
             )
@@ -92,10 +123,28 @@ def main() -> int:
     self_defects = validation["defects"]["repetition_residual"][str(PRINCIPAL_SCALE_PIXELS)]
 
     points = build_points(arguments.profile)
+    states = {point.label: _solver_state(point.campaign) for point in points if point.campaign}
+    failed = sorted(label for label, state in states.items() if state == "failed")
+    not_computed = sorted(label for label, state in states.items() if state == "not_computed")
     missing = [point.label for point in points if not point.converged]
-    print(f"{len(points)} grid points, {len(points) - len(missing)} observed", flush=True)
-    if missing:
-        print(f"  not yet observed or non-converged: {missing}", flush=True)
+    unobserved = [
+        point.label
+        for point in points
+        if point.converged and not point.flow_path.is_file()
+    ]
+    print(
+        f"{len(points)} grid points, {len(points) - len(missing)} converged", flush=True
+    )
+    if failed:
+        print(f"  did not converge: {failed}", flush=True)
+    if not_computed:
+        print(f"  not computed yet: {not_computed}", flush=True)
+    if unobserved:
+        # Not a scientific finding, a pipeline gap: run the replay first.
+        print(
+            f"  CONVERGED BUT NOT OBSERVED, run the replay: {unobserved}", flush=True
+        )
+        return 1
     print(f"floor D_self: { {k: round(v, 6) for k, v in self_defects.items()} }", flush=True)
     if arguments.dry_run:
         return 0
