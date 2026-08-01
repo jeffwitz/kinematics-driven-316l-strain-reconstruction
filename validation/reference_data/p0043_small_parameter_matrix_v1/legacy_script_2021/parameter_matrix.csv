@@ -1,0 +1,17 @@
+label,alpha,ell_um,achi,converged
+a0p5-ell20,0.5,20.0,200,True
+a1-ell20,1.0,20.0,400,True
+a2-ell20,2.0,20.0,800,True
+a4-ell20,4.0,20.0,1600,False
+a0p5-ell40,0.5,40.0,800,True
+a1-ell40,1.0,40.0,1600,True
+a2-ell40,2.0,40.0,3200,True
+a4-ell40,4.0,40.0,6400,False
+a0p5-ell58p88,0.5,58.88,1733.43,True
+a1-ell58p88,1.0,58.88,3466.85,True
+a2-ell58p88,2.0,58.88,6933.71,True
+a4-ell58p88,4.0,58.88,13867.4,True
+a0p5-ell90,0.5,90.0,4050,True
+a1-ell90,1.0,90.0,8100,True
+a2-ell90,2.0,90.0,16200,True
+a4-ell90,4.0,90.0,32400,True

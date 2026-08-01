@@ -13,6 +13,7 @@
 
 - {doc}`inspect_campaign`
 - {doc}`compare_fields`
+- {doc}`inspect_p0043_evm_fields`
 - {doc}`characterise_dic_measurement_chain`
 - {doc}`run_identification`
 - {doc}`run_micromorphic_identification` — **specified, not yet run**: the handover-ready campaign
@@ -36,6 +37,7 @@ run_identification
 run_micromorphic_identification
 inspect_campaign
 compare_fields
+inspect_p0043_evm_fields
 characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour

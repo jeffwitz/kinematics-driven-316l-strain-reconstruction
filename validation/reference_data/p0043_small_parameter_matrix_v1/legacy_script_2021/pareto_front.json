@@ -1,0 +1,33 @@
+{
+  "computed_on": "raw defects, per correction C3",
+  "dominated": {
+    "a2-ell20": [
+      "a1-ell40"
+    ],
+    "a2-ell58p88": [
+      "a2-ell40"
+    ],
+    "a4-ell90": [
+      "a4-ell58p88"
+    ]
+  },
+  "front": [
+    "a0p5-ell20",
+    "a0p5-ell40",
+    "a0p5-ell58p88",
+    "a0p5-ell90",
+    "a1-ell20",
+    "a1-ell40",
+    "a1-ell58p88",
+    "a1-ell90",
+    "a2-ell40",
+    "a2-ell90",
+    "a4-ell58p88"
+  ],
+  "senses": {
+    "D_amplitude": "lower_is_better",
+    "D_localisation": "lower_is_better",
+    "D_presence": "lower_is_better",
+    "D_shape": "lower_is_better"
+  }
+}
