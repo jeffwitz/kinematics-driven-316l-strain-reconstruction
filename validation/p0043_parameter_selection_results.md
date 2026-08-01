@@ -88,6 +88,83 @@ another.** They do not: amplitude and presence separate them by factors of 66
 and 49. It is a statement about the aggregation rule, which is governed by the
 one indicator that does not discriminate.
 
+## `D_shape` is not merely flat, it is inverted
+
+The normalised table makes this sharper than the raw one. `Z_shape` by row,
+where `0` is the measurement floor and `1` the best negative control:
+
+| `alpha` | `ell=20` | `ell=40` | `ell=58.88` | `ell=90` |
+|---:|---:|---:|---:|---:|
+| 0.5 | `0.899` | `0.879` | `0.872` | `0.875` |
+| 1 | `0.875` | `0.859` | `0.857` | `0.855` |
+| 2 | `0.861` | `0.843` | `0.846` | `0.839` |
+| 4 | — | — | **`0.818`** | **`0.830`** |
+
+`Z_shape` **improves monotonically with `alpha`**. Its best values belong to
+`alpha = 4`, the two candidates every other indicator rejects by a factor of
+three. Shape is therefore not a weak indicator, it is a **mildly
+anti-correlated** one: a smoother field correlates marginally better with the
+DIC's high-pass magnitude, which is the double-penalty effect rewarding
+over-smoothing.
+
+Its total span across the fourteen candidates is `0.080`, against `3.017` for
+amplitude — a factor `38`. Combining a span of `0.08` that points the wrong way
+with a span of `3.0` that points the right way, through a maximum, gives a rule
+that is governed by the wrong one wherever the right one is small. That is
+precisely the eight best candidates.
+
+The minimax still rejects the bad candidates correctly, but only because
+amplitude and presence explode for them. **Among the candidates that matter it
+is reading an inverted indicator.**
+
+## The paired bootstrap is what made the campaign say anything at all
+
+Marginal bands are useless here. The best point spans `0.707` to `1.189`
+between its `5 %` and `95 %` quantiles, a width of `0.48` on a median of
+`0.886`; every candidate's band overlaps every other candidate's, including the
+two at `alpha = 4`.
+
+The paired differences are one to two orders of magnitude tighter, because the
+draws share their tiles:
+
+| against `a1-ell40` | paired `q05` | paired `q95` | width | in zone |
+|---|---:|---:|---:|:---:|
+| a2-ell20 | `-0.009` | `+0.034` | `0.043` | yes |
+| a1-ell58.88 | `-0.037` | `+0.136` | `0.173` | yes |
+| a2-ell40 | `-0.025` | `+0.565` | `0.590` | yes |
+| **a2-ell58.88** | **`+0.091`** | `+0.918` | — | **no** |
+| **a2-ell90** | **`+0.326`** | `+1.104` | — | **no** |
+| **a4-ell58.88** | **`+1.144`** | `+2.078` | — | **no** |
+| **a4-ell90** | **`+1.638`** | `+2.472` | — | **no** |
+
+The tightest comparison narrows by a factor `11`. **On marginal bands this
+campaign would have concluded nothing whatever; on paired differences it
+robustly rejects four candidates.** Amendment A4 was not a refinement, it was
+the difference between a result and no result.
+
+So the campaign does establish something robust: **`alpha = 2` is rejected at
+`ell >= 58.88`, and `alpha = 4` is rejected wherever it converges.** What it
+cannot do is choose inside the remaining ten.
+
+## The minimax winner is not a stable notion
+
+Section 10.4 selects on win frequency. Here it disagrees with the median:
+
+| point | median `J_inf` | win share |
+|---|---:|---:|
+| a1-ell40 | **`0.886`**, best | `8.5 %` |
+| a2-ell20 | `0.889` | `15.5 %` |
+| a1-ell58.88 | `0.891` | `14.3 %` |
+| a1-ell90 | `0.921`, fifth | **`32.9 %`** |
+| a2-ell40 | `1.040`, ninth | `14.8 %` |
+
+The most frequent winner has the fifth best median, and the best median wins
+less often than a point ranked ninth. The argmin of a maximum of four noisy
+quantities is driven by tail behaviour, not by central tendency, when the
+medians sit within noise of each other. **Reporting a single "winner" here would
+be reporting a tail artefact**, which is the second reason case B is the honest
+verdict.
+
 ## What the indicators say underneath the rule
 
 **Coupling removes fluctuation energy, monotonically in both parameters.** The
@@ -176,6 +253,25 @@ second low-dynamic indicator to dominate the minimax for the same reason.
 6. **Can the local model or a control still beat the micromorphic solutions?**
    The controls do not: both are worse than every candidate on the indicators
    that discriminate. The local model was not part of this grid.
+
+## Solver diagnostics, and what is missing from this pass
+
+**Zero cutbacks on all fourteen converged points**; total Newton iterations
+range from `149` to `253`. Convergence is clean everywhere it happens, which is
+what makes the two failures a boundary rather than a gradient.
+
+Two registered items are **not** in this pass and are stated rather than
+quietly omitted:
+
+- **the solver reproducibility floor.** The `(alpha = 2, ell = 40)` replicate at
+  40 increments finished after this scoring had already run, so the report
+  carries `available: false`. The replicate is computed and observed; obtaining
+  the floor needs one evaluation of the four defects on an existing field, not a
+  bootstrap;
+- **the blind profile.** `declared_medium_v4` was not scored. Every conclusion
+  above therefore rests on `legacy_script_2021` alone, and the registered
+  profile-agreement check of section 10.4 is outstanding. Given what the blind
+  profile did to criteria set v2, this is the gap that matters most.
 
 ## Limits
 
