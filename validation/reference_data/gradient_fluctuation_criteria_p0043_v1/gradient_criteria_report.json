@@ -1,0 +1,510 @@
+{
+  "contract": {
+    "core_bounds": [
+      1440,
+      1800,
+      930,
+      1240
+    ],
+    "differentiation": "np.gradient, array axis 0 = canonical x, then cell_average",
+    "edge_handling": "differentiated on the solve grid, then cropped to the core",
+    "highpass": "f - G_s * f, sigma = 0.5 * s",
+    "mask": "declared_all_valid",
+    "partition_id": 43,
+    "pixel_size_mm": 0.00184,
+    "scales_pixels": [
+      8,
+      16,
+      32,
+      49,
+      96
+    ],
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ]
+  },
+  "created_at_utc": "2026-08-01T07:24:46.621358+00:00",
+  "criteria": {
+    "affine_strain": {
+      "J_fluctuation": 3.338655128580645e-13,
+      "J_fluctuation_symmetric": 4.4928763407162025e-13,
+      "J_gradient": 0.1751197297101618,
+      "J_norm_map": 0.11439242648069546,
+      "J_strain": 0.20467280693550755,
+      "norm_map_mean_bias": -0.0006602381204825542,
+      "norm_map_pearson": 0.9974302555438549,
+      "norm_map_quantile_ratio_q90": 0.9196674224938292,
+      "norm_map_quantile_ratio_q95": 0.934230658561321,
+      "norm_map_relative_l2": 0.11439242648069546,
+      "norm_map_spearman": 0.9933951046789683
+    },
+    "alpha1": {
+      "J_fluctuation": 0.9473814345444793,
+      "J_fluctuation_symmetric": 1.0018812512288908,
+      "J_gradient": 0.5066594970934589,
+      "J_norm_map": 0.3211329903167746,
+      "J_strain": 0.46113973475887043,
+      "norm_map_mean_bias": -9.27888034953984e-05,
+      "norm_map_pearson": 0.7023530622546582,
+      "norm_map_quantile_ratio_q90": 1.1244643407907504,
+      "norm_map_quantile_ratio_q95": 1.1058967427139377,
+      "norm_map_relative_l2": 0.3211329903167746,
+      "norm_map_spearman": 0.6351460874847761
+    },
+    "alpha2": {
+      "J_fluctuation": 0.8788778601836109,
+      "J_fluctuation_symmetric": 0.9374248832373326,
+      "J_gradient": 0.4709799276857211,
+      "J_norm_map": 0.28818263077142864,
+      "J_strain": 0.4321360172102032,
+      "norm_map_mean_bias": -0.0001823423228210558,
+      "norm_map_pearson": 0.7218523342198419,
+      "norm_map_quantile_ratio_q90": 1.0547831394813338,
+      "norm_map_quantile_ratio_q95": 0.9890879550503688,
+      "norm_map_relative_l2": 0.28818263077142864,
+      "norm_map_spearman": 0.6686477289098572
+    },
+    "alpha4": {
+      "J_fluctuation": 0.8227103335924526,
+      "J_fluctuation_symmetric": 0.8847966802825575,
+      "J_gradient": 0.44151390885492275,
+      "J_norm_map": 0.27286942119789903,
+      "J_strain": 0.4086075243096717,
+      "norm_map_mean_bias": -0.00029623118961780165,
+      "norm_map_pearson": 0.7406121263176151,
+      "norm_map_quantile_ratio_q90": 0.9490844917892634,
+      "norm_map_quantile_ratio_q95": 0.8744637442166229,
+      "norm_map_relative_l2": 0.27286942119789903,
+      "norm_map_spearman": 0.6973846424257865
+    },
+    "amplitude_1p20": {
+      "J_fluctuation": 0.2000000000000001,
+      "J_fluctuation_symmetric": 0.20000000000000018,
+      "J_gradient": 0.20000000000000004,
+      "J_norm_map": 0.20000000000000004,
+      "J_strain": 0.20000000000000007,
+      "norm_map_mean_bias": 0.0010931937689275186,
+      "norm_map_pearson": 1.0000000000000002,
+      "norm_map_quantile_ratio_q90": 1.1999999999999376,
+      "norm_map_quantile_ratio_q95": 1.1999999999999804,
+      "norm_map_relative_l2": 0.20000000000000004,
+      "norm_map_spearman": 1.0
+    },
+    "band_merge_sigma24": {
+      "J_fluctuation": 0.5528437128631145,
+      "J_fluctuation_symmetric": 0.629770885264409,
+      "J_gradient": 0.2909455604714756,
+      "J_norm_map": 0.2015776330883243,
+      "J_strain": 0.2878061551365543,
+      "norm_map_mean_bias": -0.00025601139969432706,
+      "norm_map_pearson": 0.8971003101905946,
+      "norm_map_quantile_ratio_q90": 0.9020837632269624,
+      "norm_map_quantile_ratio_q95": 0.8769308030262853,
+      "norm_map_relative_l2": 0.2015776330883243,
+      "norm_map_spearman": 0.8576662313216169
+    },
+    "band_removal": {
+      "J_fluctuation": 9.309252178464677,
+      "J_fluctuation_symmetric": 10.320040792381045,
+      "J_gradient": 4.8988159790654375,
+      "J_norm_map": 4.740656770700856,
+      "J_strain": 4.715863497601233,
+      "norm_map_mean_bias": 0.003360565839912094,
+      "norm_map_pearson": 0.21510539972235623,
+      "norm_map_quantile_ratio_q90": 0.8868661305666703,
+      "norm_map_quantile_ratio_q95": 0.9452510854036761,
+      "norm_map_relative_l2": 4.740656770700856,
+      "norm_map_spearman": 0.501934590750378
+    },
+    "band_translation_16px": {
+      "J_fluctuation": 0.7402089682809653,
+      "J_fluctuation_symmetric": 0.8551342334882215,
+      "J_gradient": 0.38988864429117726,
+      "J_norm_map": 0.26069163041111004,
+      "J_strain": 0.3911890216683789,
+      "norm_map_mean_bias": -0.00010685646113012278,
+      "norm_map_pearson": 0.7790085537259372,
+      "norm_map_quantile_ratio_q90": 0.9719431387490389,
+      "norm_map_quantile_ratio_q95": 0.9542778121948885,
+      "norm_map_relative_l2": 0.26069163041111004,
+      "norm_map_spearman": 0.7506944329911488
+    },
+    "dic_self": {
+      "J_fluctuation": 0.0,
+      "J_fluctuation_symmetric": 0.0,
+      "J_gradient": 0.0,
+      "J_norm_map": 0.0,
+      "J_strain": 0.0,
+      "norm_map_mean_bias": 0.0,
+      "norm_map_pearson": 1.0,
+      "norm_map_quantile_ratio_q90": 1.0,
+      "norm_map_quantile_ratio_q95": 1.0,
+      "norm_map_relative_l2": 0.0,
+      "norm_map_spearman": 1.0
+    },
+    "homogeneous": {
+      "J_fluctuation": 0.9337678215286392,
+      "J_fluctuation_symmetric": 0.9365869610677708,
+      "J_gradient": 0.5093083520926862,
+      "J_norm_map": 0.3948879575290174,
+      "J_strain": 0.4378269632326814,
+      "norm_map_mean_bias": -0.0010051169509548952,
+      "norm_map_pearson": 0.4676786955640831,
+      "norm_map_quantile_ratio_q90": 0.6430728524325231,
+      "norm_map_quantile_ratio_q95": 0.5516116649090816,
+      "norm_map_relative_l2": 0.3948879575290174,
+      "norm_map_spearman": 0.5518790064548149
+    },
+    "local": {
+      "J_fluctuation": 1.2107487274232098,
+      "J_fluctuation_symmetric": 1.2535118610032596,
+      "J_gradient": 0.6442738328191263,
+      "J_norm_map": 0.47941737364524634,
+      "J_strain": 0.57550608554948,
+      "norm_map_mean_bias": 5.811785795358883e-05,
+      "norm_map_pearson": 0.6293974550367547,
+      "norm_map_quantile_ratio_q90": 1.2615964545575586,
+      "norm_map_quantile_ratio_q95": 1.3598589051792298,
+      "norm_map_relative_l2": 0.47941737364524634,
+      "norm_map_spearman": 0.541326709087346
+    },
+    "rigid_rotation": {
+      "J_fluctuation": 4.0627220674571535e-13,
+      "J_fluctuation_symmetric": 3.873061051908799e-13,
+      "J_gradient": 0.11860604695075404,
+      "J_norm_map": 0.05723755897876294,
+      "J_strain": 1.7698523885623457e-13,
+      "norm_map_mean_bias": 0.00030573680716554515,
+      "norm_map_pearson": 0.998274618544568,
+      "norm_map_quantile_ratio_q90": 1.0466496577851003,
+      "norm_map_quantile_ratio_q95": 1.042496482444519,
+      "norm_map_relative_l2": 0.05723755897876294,
+      "norm_map_spearman": 0.9952029505576295
+    },
+    "translated": {
+      "J_fluctuation": 1.2553318955255113,
+      "J_fluctuation_symmetric": 1.2384299330233781,
+      "J_gradient": 0.692786605477417,
+      "J_norm_map": 0.425743135909377,
+      "J_strain": 0.5709035174549698,
+      "norm_map_mean_bias": -0.0006840721321336588,
+      "norm_map_pearson": 0.4165046862535432,
+      "norm_map_quantile_ratio_q90": 0.9393254086589824,
+      "norm_map_quantile_ratio_q95": 0.8734428580748247,
+      "norm_map_relative_l2": 0.425743135909377,
+      "norm_map_spearman": 0.3845649081149209
+    },
+    "uniform_displacement": {
+      "J_fluctuation": 0.0,
+      "J_fluctuation_symmetric": 0.0,
+      "J_gradient": 0.0,
+      "J_norm_map": 0.0,
+      "J_strain": 0.0,
+      "norm_map_mean_bias": 0.0,
+      "norm_map_pearson": 1.0,
+      "norm_map_quantile_ratio_q90": 1.0,
+      "norm_map_quantile_ratio_q95": 1.0,
+      "norm_map_relative_l2": 0.0,
+      "norm_map_spearman": 1.0
+    },
+    "width_change_sigma8": {
+      "J_fluctuation": 0.3780791412992931,
+      "J_fluctuation_symmetric": 0.46541330806969233,
+      "J_gradient": 0.19895686869453547,
+      "J_norm_map": 0.1175920312717856,
+      "J_strain": 0.2126759966124924,
+      "norm_map_mean_bias": -0.0001333703272213471,
+      "norm_map_pearson": 0.9586628848171487,
+      "norm_map_quantile_ratio_q90": 0.9522808241840208,
+      "norm_map_quantile_ratio_q95": 0.9726991409509711,
+      "norm_map_relative_l2": 0.1175920312717856,
+      "norm_map_spearman": 0.9282120040914873
+    }
+  },
+  "existing_metrics": {
+    "alpha1": {
+      "evm_iou_q90": 0.3225898189401839,
+      "evm_pearson": 0.6512120234751524,
+      "evm_relative_l2": 0.3542009218665564
+    },
+    "alpha2": {
+      "evm_iou_q90": 0.3085429638854296,
+      "evm_pearson": 0.657948158073428,
+      "evm_relative_l2": 0.3197310037509215
+    },
+    "alpha4": {
+      "evm_iou_q90": 0.25488454706927177,
+      "evm_pearson": 0.6635857571812368,
+      "evm_relative_l2": 0.29168216792883933
+    },
+    "homogeneous": {
+      "evm_iou_q90": 0.0,
+      "evm_pearson": 0.45964335128946415,
+      "evm_relative_l2": 0.33556768704413414
+    },
+    "local": {
+      "evm_iou_q90": 0.3086242484070717,
+      "evm_pearson": 0.6042249226619091,
+      "evm_relative_l2": 0.4858381369436242
+    },
+    "translated": {
+      "evm_iou_q90": 0.15921838248597792,
+      "evm_pearson": 0.2762463576149174,
+      "evm_relative_l2": 0.4718793029828744
+    }
+  },
+  "git_sha": "e5d8d218c39c71a3aaff184fc0397eabd519d930",
+  "highpass_energy_ratio": {
+    "affine_strain": {
+      "16": 1.0000000000000153,
+      "32": 1.0000000000000118,
+      "49": 1.000000000000009,
+      "8": 1.0000000000000133,
+      "96": 1.0000000000000044
+    },
+    "alpha1": {
+      "16": 0.30974314276559783,
+      "32": 0.5719113591688489,
+      "49": 0.755573381235122,
+      "8": 0.17936261458073716,
+      "96": 0.9589811798686985
+    },
+    "alpha2": {
+      "16": 0.22809601407268104,
+      "32": 0.44578049918741247,
+      "49": 0.6089068833376707,
+      "8": 0.13292025948505595,
+      "96": 0.8116558412237348
+    },
+    "alpha4": {
+      "16": 0.1703170529273275,
+      "32": 0.3359113078212861,
+      "49": 0.4681318434366822,
+      "8": 0.10305755067769666,
+      "96": 0.6568520703472519
+    },
+    "amplitude_1p20": {
+      "16": 1.2000000000000008,
+      "32": 1.2000000000000006,
+      "49": 1.2000000000000002,
+      "8": 1.2000000000000022,
+      "96": 1.2000000000000002
+    },
+    "band_merge_sigma24": {
+      "16": 0.04913213519373687,
+      "32": 0.14163244023632954,
+      "49": 0.2415581594367031,
+      "8": 0.017069107873706888,
+      "96": 0.4143109808537175
+    },
+    "band_removal": {
+      "16": 20.435485101245305,
+      "32": 18.331000866619924,
+      "49": 16.573663960436658,
+      "8": 23.30391192106855,
+      "96": 13.633400888848115
+    },
+    "band_translation_16px": {
+      "16": 0.9901052891779133,
+      "32": 0.9860875518605248,
+      "49": 0.9803103483370215,
+      "8": 0.9914616053542321,
+      "96": 0.9703987765583386
+    },
+    "dic_self": {
+      "16": 1.0,
+      "32": 1.0,
+      "49": 1.0,
+      "8": 1.0,
+      "96": 1.0
+    },
+    "homogeneous": {
+      "16": 0.07675056974216586,
+      "32": 0.1169679881717295,
+      "49": 0.1369371549261325,
+      "8": 0.057945746025615676,
+      "96": 0.16798746851302898
+    },
+    "local": {
+      "16": 0.683467919859146,
+      "32": 1.0104034874147043,
+      "49": 1.2038804989738565,
+      "8": 0.4286545499253645,
+      "96": 1.366906662892802
+    },
+    "rigid_rotation": {
+      "16": 0.9999999999999981,
+      "32": 0.9999999999999987,
+      "49": 0.9999999999999988,
+      "8": 0.9999999999999973,
+      "96": 0.9999999999999971
+    },
+    "translated": {
+      "16": 0.2386579673825174,
+      "32": 0.4931811414287155,
+      "49": 0.6793014949747015,
+      "8": 0.11793815316942714,
+      "96": 0.9055007769969388
+    },
+    "uniform_displacement": {
+      "16": 1.0,
+      "32": 1.0,
+      "49": 1.0,
+      "8": 1.0,
+      "96": 1.0
+    },
+    "width_change_sigma8": {
+      "16": 0.18608233342694339,
+      "32": 0.39168211407898873,
+      "49": 0.5355536358157247,
+      "8": 0.07409172551778373,
+      "96": 0.708271265741426
+    }
+  },
+  "interpretation_limit": "The parameterisations tested at fixed spatial range do not necessarily reproduce the global amplitude and the spatial fluctuations simultaneously. Other combinations of spatial range and feedback intensity remain possible.",
+  "mechanics_rerun": false,
+  "multiscale": {
+    "affine_strain": {
+      "16": 9.628205626488399e-13,
+      "32": 8.109837235657332e-13,
+      "49": 7.116200179510463e-13,
+      "8": 1.0985161324845243e-12,
+      "96": 5.658453869434463e-13
+    },
+    "alpha1": {
+      "16": 0.978929891748815,
+      "32": 1.0182748886202753,
+      "49": 1.0441332172515043,
+      "8": 0.9629513933094666,
+      "96": 1.0414779494126203
+    },
+    "alpha2": {
+      "16": 0.9617780622138428,
+      "32": 0.9725274895565861,
+      "49": 0.9787100429074681,
+      "8": 0.9579337493605129,
+      "96": 0.9654667955391906
+    },
+    "alpha4": {
+      "16": 0.9542479329591151,
+      "32": 0.9465884367445397,
+      "49": 0.9359597817306595,
+      "8": 0.9560804242110658,
+      "96": 0.9069208327462738
+    },
+    "amplitude_1p20": {
+      "16": 0.20000000000000098,
+      "32": 0.20000000000000048,
+      "49": 0.20000000000000026,
+      "8": 0.2000000000000022,
+      "96": 0.2000000000000002
+    },
+    "band_merge_sigma24": {
+      "16": 0.9951433457415304,
+      "32": 0.9644111013783477,
+      "49": 0.9088889387883777,
+      "8": 0.9994277555502737,
+      "96": 0.7762465190803104
+    },
+    "band_removal": {
+      "16": 20.423177277066888,
+      "32": 18.304511356132398,
+      "49": 16.539497666608888,
+      "8": 23.295484988862285,
+      "96": 13.587963796524631
+    },
+    "band_translation_16px": {
+      "16": 1.410918194318621,
+      "32": 1.355032032591576,
+      "49": 1.249776765370301,
+      "8": 1.3999356221078392,
+      "96": 1.045725608390922
+    },
+    "dic_self": {
+      "16": 0.0,
+      "32": 0.0,
+      "49": 0.0,
+      "8": 0.0,
+      "96": 0.0
+    },
+    "homogeneous": {
+      "16": 0.9586884703209342,
+      "32": 0.9538022491453944,
+      "49": 0.9548817286151324,
+      "8": 0.9611174676826312,
+      "96": 0.9659839383388975
+    },
+    "local": {
+      "16": 1.1465948252428957,
+      "32": 1.2986619688409138,
+      "49": 1.3658639092452967,
+      "8": 1.0324971132248328,
+      "96": 1.3532259033013663
+    },
+    "rigid_rotation": {
+      "16": 8.347593490179595e-13,
+      "32": 7.013721166269308e-13,
+      "49": 6.156109874658116e-13,
+      "8": 1.0306103350004835e-12,
+      "96": 4.901854037204454e-13
+    },
+    "translated": {
+      "16": 0.9825551868741331,
+      "32": 1.0607661586665758,
+      "49": 1.1423412405291176,
+      "8": 0.9632478777033463,
+      "96": 1.2472521395410077
+    },
+    "uniform_displacement": {
+      "16": 0.0,
+      "32": 0.0,
+      "49": 0.0,
+      "8": 0.0,
+      "96": 0.0
+    },
+    "width_change_sigma8": {
+      "16": 0.9405621061524307,
+      "32": 0.8312869214728528,
+      "49": 0.7353379873475866,
+      "8": 0.9860684044234495,
+      "96": 0.5864221294872397
+    }
+  },
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "sources": {
+    "alpha1": {
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a100_legacy_script_2021/observed_flow_pixels.npy",
+      "sha256": "9e03a777bc54b69fd40e12d2b65307d2d3a1b96c7274bb3aeeca40ec7357b55b"
+    },
+    "alpha2": {
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a200_legacy_script_2021/observed_flow_pixels.npy",
+      "sha256": "727831338491ee56c2293a8b051bf64c913cb66dd944315f31f4223bb8241304"
+    },
+    "alpha4": {
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/a400_legacy_script_2021/observed_flow_pixels.npy",
+      "sha256": "1b72b74e38a6d4a13197b20fc5bfde0ec326904d244017d53a24b5462bb05f83"
+    },
+    "homogeneous": {
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/observed_evm_controls_p0043_v1/homogeneous/observed_flow_pixels.npy",
+      "sha256": "aee061c5c05013acba5deb2e286b843e637268866317730982a46f954566f86b"
+    },
+    "local": {
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_symmetric_observation_p0043_v1/local_legacy_script_2021/observed_flow_pixels.npy",
+      "sha256": "1ff870c2d3ec8c6a2a6813def5b6d9b1f41a912141c8093406747651b4b5b584"
+    },
+    "translated": {
+      "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/observed_evm_controls_p0043_v1/translated/observed_flow_pixels.npy",
+      "sha256": "a3b87c3c273fd265326196a39336a5ac242454bb82e42183ebe682455f56c110"
+    }
+  },
+  "spatial_range_micrometres": 58.88,
+  "status": "completed_gradient_fluctuation_diagnostic",
+  "study_type": "exploratory_diagnostic_no_selection"
+}

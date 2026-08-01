@@ -503,6 +503,70 @@ sont archivées avec, pour la ré-observation sur le second profil.
 n'est pas un contrôle. Toute campagne doit archiver ses contrôles au même
 niveau que ses candidats.
 
+## Diagnostic exploratoire — critères de fluctuation sur les gradients
+
+Exécuté le 2026-08-01. Rapport :
+`validation/gradient_fluctuation_criteria_diagnostic.md`.
+Code : `src/fem_inhouse/validation/gradient_fluctuation.py` et
+`src/fem_inhouse/workflows/compare_gradient_fluctuation_criteria.py`.
+
+**Étude exploratoire, pas une procédure de décision.** Aucun paramètre
+sélectionné, aucun candidat déclaré optimal, rien sur la validité de la
+formulation non locale. Les jeux v1 et v2 sont intacts et aucun de ces critères
+n'entre dans un front de Pareto. Travaille sur les **déplacements**, pas sur
+l'EVM.
+
+**Limite d'interprétation, à répéter partout** : toutes les solutions haute
+fidélité comparées ici utilisent une seule portée spatiale, `ell = 58,88 um`,
+avec `alpha` dans `{0,1,2,4}`. C'est une coupe de l'espace `(ell, alpha)`.
+
+**La séparation exigée fonctionne** : sur le champ DIC réel, une rotation
+rigide déplace `J_∇u` de `0,119` et laisse `J_ε` à `1,8e-13`. Un déplacement
+uniforme ne change rien ; un offset affine est invisible à `J_fluct`.
+
+**Résultat principal, négatif : aucun des quatre critères spécifiés ne rejette
+le contrôle homogène.** Il se classe 3e ou 4e sur six partout, **devant
+`alpha=1`** sur `J_ε` (`0,438` contre `0,461`) et sur `J_fluct` (`0,934` contre
+`0,947`).
+
+**Le mécanisme est structurel, pas accidentel.** `J_fluct` sature à `≈1` pour
+tout champ sans contenu à l'échelle considérée, car le résidu se réduit alors à
+la référence. **Prédire rien vaut `~1`, prédire au mauvais endroit vaut `>1`** :
+le critère récompense le lissage. Mesuré : à `8 px` les champs couplés portent
+`10` à `18 %` de l'énergie de déformation haute fréquence de la DIC, le contrôle
+homogène `5,8 %`, et tous scorent entre `0,956` et `1,032`. **Aucun critère n'a
+de pouvoir de résolution aux échelles fines.** Confusion connue à ne pas
+oublier : le rejeu n'ajoute aucun bruit de décorrélation, donc une part de
+l'énergie fine manquante est du bruit de mesure absent, pas du modèle absent.
+
+**Le contrôle translaté, lui, est correctement rejeté** par les quatre critères.
+Les critères mesurent donc le placement, mais pas la présence.
+
+**Deux quantités auxiliaires du §4.3 font mieux que les quatre critères
+principaux** :
+
+- la **corrélation de Pearson de la carte de norme** rejette **les deux**
+  contrôles (`0,468` homogène et `0,417` translaté contre `0,629` pour le pire
+  modèle) — la seule de tout le jeu spécifié à le faire ;
+- le **rapport de quantile q95** présente un **optimum intérieur** à `alpha=2`
+  (`0,989`, soit `1,1 %` d'écart) alors que `alpha=1` surestime de `10,6 %` et
+  `alpha=4` sous-estime de `12,6 %`. Les critères `L2` sont monotones vers
+  `alpha=4` sur les mêmes données.
+
+**Désaccord amplitude / fluctuations, mesuré deux fois** : `IoU q90` est
+**inversé** en `alpha` (meilleur à `alpha=1` avec `0,323`, pire à `alpha=4`
+avec `0,255`) tandis que tous les critères d'amplitude s'améliorent avec
+`alpha` ; et le q95 se retourne à `alpha=2` quand les distances `L2` continuent
+de descendre.
+
+**Ce qui reste à faire** : si l'un de ces critères doit servir, il faut un
+pré-enregistrement distinct, et **il devra enregistrer un critère de présence**
+— l'échec documenté ici est une incapacité à pénaliser l'absence.
+
+Réserve sur un cas synthétique : `band_removal` annule la fluctuation dans un
+couloir à bord franc, et la marche au bord du masque domine son score
+(`4,7` à `23`). Seul son signe est lisible.
+
 ## Campagne à lancer — identification micromorphique
 
 **Statut : spécifiée, chiffrée, prête à déléguer. Non lancée.**
