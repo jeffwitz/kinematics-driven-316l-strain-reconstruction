@@ -4,8 +4,9 @@ Date: 2026-08-01
 Specification: short specification of 2026-08-01, "Matrice (ell, alpha) sur P43
 et outil de sélection".
 
-**Not to be run until validated. To be committed before any new computation,
-separately from any result.**
+**Validated 2026-08-01, including corrections C1 to C4. Execution started the
+same day; the 13 missing points plus the reproducibility replicate are driven by
+`scripts/run_p0043_parameter_matrix.py`.**
 
 This campaign closes the P43 exploration phase with one of three registered
 outcomes: a provisional parameterisation, a zone of indistinguishable

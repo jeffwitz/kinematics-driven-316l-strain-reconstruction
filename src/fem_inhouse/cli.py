@@ -741,13 +741,48 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
     )
 
 
+#: Attributes every ``LogRecord`` carries. Anything else was passed through
+#: ``extra=`` by the caller and is worth printing.
+_STANDARD_LOG_RECORD_ATTRIBUTES = frozenset(
+    logging.LogRecord("", 0, "", 0, "", None, None).__dict__
+) | {"asctime", "message", "taskName"}
+
+
+class StructuredFormatter(logging.Formatter):
+    """Append the structured fields a record carries to the formatted line.
+
+    The solver already logs `increment`, `iteration` and residuals through
+    ``extra=``, but the default format discards them, so ``--verbose`` printed
+    a bare "Newton iteration" with no way to tell how far a run had got. A long
+    campaign is unwatchable that way.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        base = super().format(record)
+        extras = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in _STANDARD_LOG_RECORD_ATTRIBUTES
+        }
+        if not extras:
+            return base
+        rendered = " ".join(
+            f"{key}={value:.6g}" if isinstance(value, float) else f"{key}={value}"
+            for key, value in extras.items()
+        )
+        return f"{base} {rendered}"
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Execute one supported command and return a process exit status."""
 
     args = _parser().parse_args(argv)
+    handler = logging.StreamHandler()
+    handler.setFormatter(StructuredFormatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
     logging.basicConfig(
         level=logging.INFO if args.verbose else logging.WARNING,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        handlers=[handler],
+        force=True,
     )
     if args.command == "backend":
         require_pypardiso()
