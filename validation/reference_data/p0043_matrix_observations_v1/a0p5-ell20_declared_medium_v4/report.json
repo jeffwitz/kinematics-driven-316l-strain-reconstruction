@@ -1,0 +1,280 @@
+{
+  "axis_convention": "image row -> canonical x/ux via drow; image column -> canonical y/uy via dcolumn",
+  "core_bounds": [
+    1440,
+    1800,
+    930,
+    1240
+  ],
+  "created_at_utc": "2026-08-01T11:15:53.517668+00:00",
+  "evm_differentiation": {
+    "poisson_ratio": 0.3,
+    "scheme": "historical plane-stress EVM from nodal displacement",
+    "spacing_x_mm": 0.00184,
+    "spacing_y_mm": 0.00184
+  },
+  "evm_operator": "reconstruct_historical_evm",
+  "evm_post_filter_applied": false,
+  "git_sha": "b1931864ecc4d77893b2c0f4228af8264c9bcc45",
+  "grid_contract": {
+    "evm_support": "element-centred",
+    "fem_nodal_shape": [
+      661,
+      611
+    ],
+    "fem_support": "nodal",
+    "image_crop_shape": [
+      661,
+      611
+    ],
+    "interpolation_to_image_grid": "identity (one node is one pixel)",
+    "note": "the nodal and element-centred lattices differ by half a pixel; identical for DIC and FEM, so it cancels in this comparison"
+  },
+  "mask": {
+    "dtype": "bool",
+    "mode": "declared_all_valid",
+    "sha256": "98f3930446549489ff7d6ca8b5e6e9e7ab29985bc54d82a9de83395f32fc01cf",
+    "unique_values": [
+      true
+    ]
+  },
+  "metrics": {
+    "dic_statistics": {
+      "maximum": 0.013100508959394535,
+      "mean": 0.003928251736548966,
+      "minimum": 0.0007471981067496132,
+      "q50": 0.0036518422505979206,
+      "q90": 0.005800441852673818,
+      "q95": 0.006674297264970143,
+      "q99": 0.00893440795605808,
+      "standard_deviation": 0.0014599955188661076
+    },
+    "observed": {
+      "absolute_q90": {
+        "absolute_threshold": 0.005800441852673818,
+        "intersection_count": 6764,
+        "intersection_over_union": 0.2973840404484502,
+        "prediction_active_fraction": 0.16441756272401434,
+        "prediction_count": 18349,
+        "prediction_precision": 0.36863044307591697,
+        "reference_active_fraction": 0.1,
+        "reference_count": 11160,
+        "reference_quantile": 0.9,
+        "reference_recall": 0.6060931899641577,
+        "valid_count": 111600
+      },
+      "diffusivity": {
+        "gradient_rms": 0.10742874592688259,
+        "maximum": 0.014510387511044812,
+        "mean": 0.0037378152356268035,
+        "mean_drift": 0.0,
+        "minimum": 0.000993685344957953,
+        "peak_ratio": 1.0,
+        "relative_change_norm": 0.0,
+        "standard_deviation": 0.002336802262270124,
+        "standard_deviation_ratio": 1.0,
+        "total_variation": 0.028798245009794377
+      },
+      "errors": {
+        "count": 111600,
+        "mae": 0.001420691601402078,
+        "maximum_absolute_error": 0.009864971163590936,
+        "pearson_correlation": 0.6038482811608112,
+        "relative_l2_error": 0.44693496988411974,
+        "rmse": 0.0018730120846571995,
+        "signed_mean_error": -0.00019043650092216116
+      },
+      "statistics": {
+        "maximum": 0.014510387511044812,
+        "mean": 0.0037378152356268035,
+        "minimum": 0.000993685344957953,
+        "q50": 0.0029712507132636204,
+        "q90": 0.007266071138497705,
+        "q95": 0.00933241936538878,
+        "q99": 0.011062214774152446,
+        "standard_deviation": 0.002336802262270124
+      },
+      "top10": {
+        "dice_coefficient": 0.44587813620071687,
+        "intersection_count": 4976,
+        "intersection_over_union": 0.28690036900369004,
+        "prediction_count": 11160,
+        "prediction_precision": 0.44587813620071687,
+        "prediction_threshold": 0.007266071138497705,
+        "reference_count": 11160,
+        "reference_recall": 0.44587813620071687,
+        "reference_threshold": 0.005800441852673818,
+        "top_fraction": 0.1
+      }
+    },
+    "raw": {
+      "absolute_q90": {
+        "absolute_threshold": 0.005800441852673818,
+        "intersection_count": 6055,
+        "intersection_over_union": 0.23056126723021858,
+        "prediction_active_fraction": 0.18957885304659497,
+        "prediction_count": 21157,
+        "prediction_precision": 0.28619369475823603,
+        "reference_active_fraction": 0.1,
+        "reference_count": 11160,
+        "reference_quantile": 0.9,
+        "reference_recall": 0.5425627240143369,
+        "valid_count": 111600
+      },
+      "diffusivity": {
+        "gradient_rms": 0.5588411761665386,
+        "maximum": 0.02626388862159965,
+        "mean": 0.0037512095478377983,
+        "mean_drift": 0.0,
+        "minimum": 0.000433702010442874,
+        "peak_ratio": 1.0,
+        "relative_change_norm": 0.0,
+        "standard_deviation": 0.0034917527237679105,
+        "standard_deviation_ratio": 1.0,
+        "total_variation": 0.15262760878765197
+      },
+      "errors": {
+        "count": 111600,
+        "mae": 0.0023008425835911246,
+        "maximum_absolute_error": 0.02296079748158674,
+        "pearson_correlation": 0.4386031364968805,
+        "relative_l2_error": 0.7501622185755649,
+        "rmse": 0.003143774811824615,
+        "signed_mean_error": -0.0001770421887111662
+      },
+      "statistics": {
+        "maximum": 0.02626388862159965,
+        "mean": 0.0037512095478377983,
+        "minimum": 0.000433702010442874,
+        "q50": 0.0026044961334681415,
+        "q90": 0.008427532078457268,
+        "q95": 0.01131910414167238,
+        "q99": 0.016637413992582284,
+        "standard_deviation": 0.0034917527237679105
+      },
+      "top10": {
+        "dice_coefficient": 0.38243727598566307,
+        "intersection_count": 4268,
+        "intersection_over_union": 0.23642809660979394,
+        "prediction_count": 11160,
+        "prediction_precision": 0.38243727598566307,
+        "prediction_threshold": 0.008427532078457268,
+        "reference_count": 11160,
+        "reference_recall": 0.38243727598566307,
+        "reference_threshold": 0.005800441852673818,
+        "top_fraction": 0.1
+      }
+    }
+  },
+  "observation_operator": {
+    "disflow_profile": "declared_medium_v4",
+    "displacement_unit": "mm",
+    "grid_mapping": "identity",
+    "grid_reduction": 1,
+    "mask_mode": "declared_all_valid",
+    "missing_value_policy": "finite-intersection",
+    "mode": "synthetic_disflow",
+    "schema_version": 1,
+    "spatial_filter": "none",
+    "strain_measure": "historical_plane_stress_evm_from_displacement",
+    "strain_unit": "dimensionless",
+    "support": "element_centres",
+    "use_core_only": true,
+    "warp_mode": "iterative_forward_inverse"
+  },
+  "observation_operator_sha256": "f393efc76d08435c2e276cc1d1b48de3f459c3663954fc48733251bf1e02f657",
+  "outputs": {
+    "comparison.png": "3a0245dcab0e96ce1b6d4b836d1f64019d2d0c7cd93fca9698083dd9c7d08d35",
+    "dic_evm.npy": "f8cde6b0f120b7884f2abddc187712fa7ac3e2d1ae480c9606fc2a7b779af945",
+    "fem_displacement_image_grid.npy": "6997d4e4c019d3e8dc581d0f7ca490f0b977bc504d327ede9cba13cb6804f5ee",
+    "fem_observed_evm.npy": "bd86b8a3957f9dc8952e21643a2b2a1fadb83e4d5ef6ae9d703802ea6f01b1de",
+    "fem_raw_evm.npy": "e22b74a5deb2a604690357ed553565732b3a7b2d23ba2f69b89276bbe4d530bb",
+    "observed_flow_pixels.npy": "286c57634936d7f8c31e25f7a4ab8107fb7b7597be5e8c10c7c380506722a574",
+    "recovered_displacement_column.npy": "d118de66581fb3ea19fdc48b341d82c51f6fb7c505cfdff77684802c32dc6122",
+    "recovered_displacement_row.npy": "346a17059576417243ec0d4477307b1597debb0aeb8c137ac1f241935099054d",
+    "synthetic_deformed_image.tif": "a1ac78e33b9127c01c9b4933f558d9ce01c3bf6d9ed46adac1a8e405bea13dfb",
+    "valid_mask.npy": "436b92911096fc806cc8627cf3ac0ac69917a22371f3b904d7c7579bbdb2d08f"
+  },
+  "partition_id": 43,
+  "pixel_size_mm": 0.00184,
+  "profile": {
+    "explicitly_set": [
+      "finest_scale",
+      "gradient_descent_iterations",
+      "patch_size",
+      "patch_stride",
+      "preset",
+      "use_mean_normalization",
+      "use_spatial_propagation",
+      "variational_refinement_alpha",
+      "variational_refinement_delta",
+      "variational_refinement_epsilon",
+      "variational_refinement_gamma",
+      "variational_refinement_iterations"
+    ],
+    "left_to_factory": [],
+    "name": "declared_medium_v4",
+    "queried_opencv": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.0020000000949949026,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "requested": {
+      "finest_scale": 0,
+      "gradient_descent_iterations": 30,
+      "patch_size": 8,
+      "patch_stride": 3,
+      "preset": "medium",
+      "use_mean_normalization": true,
+      "use_spatial_propagation": true,
+      "variational_refinement_alpha": 100.0,
+      "variational_refinement_delta": 1.0,
+      "variational_refinement_epsilon": 0.002,
+      "variational_refinement_gamma": 0.0,
+      "variational_refinement_iterations": 30
+    },
+    "source": "pre-registered OpenCV 4.14 V4 reproduction profile"
+  },
+  "provenance": {
+    "campaign_manifest": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/results/mm-id-p0043-a0p5-ell20/manifest.json",
+    "campaign_manifest_sha256": "c7ba6d9b16e10edc4506ab03789f5bc77615470d469862877042b73da6ae0329",
+    "campaign_status_sha256": "2d9e88b6d16a67393a474674cc6b5cbc27acbbf6b60c42ce5e38ddbde70cb338",
+    "prepared_case_manifest_sha256": "4fddc15152c4c9c1969447fb36f2fb66f8f67184dc8e17284f8cb1a2a5c41b50",
+    "reference_image": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images/000294.tif",
+    "reference_image_sha256": "9a4cf912fcc7f989072e1acc075ae40e02f782faf14c4c70535d48daf52282da",
+    "source_displacement_sha256": "18d6f2c3118b5cc5aa55244a5585f5f094defaee9d22c5d8ef19265d50dadea6"
+  },
+  "repository_state": {
+    "clean": false,
+    "git_sha": "b1931864ecc4d77893b2c0f4228af8264c9bcc45"
+  },
+  "schema_version": 1,
+  "software": {
+    "numpy": "2.5.1",
+    "opencv": "4.14.0",
+    "python": "3.12.3"
+  },
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "status": "completed_symmetric_image_observation",
+  "warp": {
+    "border_mode": "cv2.BORDER_REFLECT101",
+    "interpolation": "cv2.INTER_LINEAR",
+    "iterations": 5,
+    "minimum_forward_jacobian": 0.983222681421316,
+    "mode": "iterative_forward_inverse",
+    "residual_pixels": 6.3763326352273e-07
+  }
+}
