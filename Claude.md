@@ -503,6 +503,75 @@ sont archivées avec, pour la ré-observation sur le second profil.
 n'est pas un contrôle. Toute campagne doit archiver ses contrôles au même
 niveau que ses candidats.
 
+## Campagne EN COURS — matrice (ell, alpha) sur P43 et outil de sélection
+
+**Lancée le 2026-08-01 vers 10 h. Mécanique en cours, fin estimée vers 19 h.**
+Protocole : `validation/p0043_small_parameter_matrix_preregistration.md`,
+validé avec corrections C1–C4 et amendements A1–A4.
+Validation §9 des indicateurs : **passée**, résultats dans
+`validation/p0043_indicator_validation_results.md`.
+
+### Comment reprendre si la session s'interrompt
+
+Tout est reprenable, dans cet ordre :
+
+```bash
+.venv/bin/python scripts/run_p0043_parameter_matrix.py        # saute les points complets
+bash scripts/finish_p0043_campaign.sh                          # attend, observe, score
+```
+
+Le second attend la fin du premier, lance les observations manquantes par
+l'opérateur symétrique, puis score les deux profils DISFlow. Suivi vivant dans
+`results/mm-matrix-logs/progress.txt` (point courant, incrément, ETA) et un log
+verbeux par point.
+
+### Ce qui est déjà acquis
+
+- **`(alpha=4, ell=20 um)` ne converge pas** : cascade de cutbacks depuis
+  l'incrément 9 jusqu'au plancher. Amendement A3 : le point est rapporté et
+  **exclu**, ses réglages ne sont pas retouchés — les retoucher le rendrait
+  incomparable aux quinze autres. Conséquence : la paire iso-`Achi` à `1600`
+  perd un membre, seule celle à `800` reste comparable ;
+- **la chaîne d'observation est reproductible octet pour octet** : les trois
+  points archivés à `ell=58,88`, ré-observés aujourd'hui, redonnent leurs
+  SHA-256 ;
+- **le §9 a rattrapé une erreur de facteur douze dans le plancher de mesure**.
+  Le résidu de répétition calé sur l'amplitude de déplacement produisait
+  `1,64e-3` d'EVM RMS contre `1,363e-4` mesuré. Il est désormais calé sur la
+  déformation, ce que les indicateurs consomment. Sans ça, `D_self` valait
+  `0,737` en présence, **pire que le modèle local lui-même**.
+
+### Décisions à connaître avant de lire les résultats
+
+- **le front de Pareto est calculé sur les défauts BRUTS** (correction C3), là
+  où la normalisation ancrée sur les contrôles ne peut pas agir. Seul le
+  minimax utilise `Z` ;
+- **`D_null` est pris par indicateur**, comme le meilleur score qu'atteint
+  l'un ou l'autre contrôle, et **lequel est enregistré** ;
+- **la zone se construit sur des différences appariées** (amendement A4), pas
+  sur des bandes qui se recouvrent — les tirages partagent leurs tuiles, donc
+  deux bandes peuvent se recouvrir pendant que la différence appariée n'approche
+  jamais zéro. Test : `test_the_zone_uses_paired_differences_not_overlapping_bands` ;
+- **le cas A exige en plus que le gagnant batte les deux contrôles** sur au
+  moins un indicateur chacun ;
+- **le bootstrap utilise des tuiles de 49 px** (amendement A2), pas le « bloc 8 »
+  du cahier des charges, qui vient du bootstrap 1D de v1 et se situe très en
+  dessous de la cohérence mesurée de `38,2 px` ;
+- **le plancher de reproductibilité solveur** vient du réplicat `(alpha=2,
+  ell=40)` à 40 incréments et s'imprime sous chaque carte thermique. Deux
+  points plus proches que lui sont indiscernables quoi que dise le bootstrap.
+
+### Modules
+
+`validation/selection_indicators.py` (les quatre défauts, normalisation,
+minimax), `validation/tile_bootstrap.py` (rééchantillonnage spatial, sommes par
+tuile exactes et 4x plus rapides), `workflows/validate_selection_indicators.py`
+(§9), `workflows/select_p0043_parameters.py` (front, minimax, stabilité,
+iso-`Achi`, sept figures, sept sorties §13).
+
+**Reste à faire** : le document de résultats interprétatif avec la conclusion
+§12 — cas A, B ou C — une fois les deux profils scorés.
+
 ## Diagnostic exploratoire — critères de fluctuation sur les gradients
 
 Exécuté le 2026-08-01. Rapport :
