@@ -391,10 +391,74 @@ est **robustement meilleur** que le modèle local sur l'erreur de masse
 Aucun calcul mécanique lancé, aucun paramètre micromorphique sélectionné,
 aucun claim modifié.
 
-### Ensemble de critères v2 — pré-enregistré, non lancé
+### Ensemble de critères v2 — exécuté le 2026-08-01, **non validé**
+
+Protocole : `validation/observed_evm_morphology_criteria_preregistration.md`,
+validé le 2026-08-01 avec ses deux amendements.
+Résultats : `validation/observed_evm_morphology_criteria_results.md`.
+Code : `src/fem_inhouse/workflows/compare_observed_evm_morphology.py`.
+
+**Conditions d'échec 3, 4 et 5 déclenchées. Aucun classement publié.**
+
+Le profil primaire donne une réponse propre — `alpha=2` seul non dominé, le
+contrôle translaté dominé, test d'acceptation réussi. **Le profil aveugle la
+refuse** : les cinq survivants sont non dominés, dont le contrôle translaté.
+L'ensemble de critères n'est donc **pas validé** : il réussit son test
+d'acceptation sur le profil dont la morphologie était déjà connue au moment de
+choisir les critères, et échoue sur celui qui n'était jamais passé dans le
+pipeline. C'est exactement la comparaison que la confirmation aveugle avait été
+enregistrée pour faire, et elle tranche contre les critères.
+
+**G1 n'est pas un tampon.** Il a retiré **deux critères sur sept**, à
+l'identique sur les deux profils, avant tout scoring :
+
+- `abs(log)` du rapport de petit axe, `tau = −0,111` — **aveugle à la
+  translation**. Un décalage de `16 px` le déplace de `0,0079`, une erreur
+  d'amplitude de `10 %` de `0,335`, quarante fois plus. C'est un descripteur de
+  largeur, et translater une bande ne change pas sa largeur. **C'était un des
+  trois critères de morphologie choisis pour cette campagne** ;
+- fraction d'énergie de couloir, `tau = −0,286` — **classe une bande parasite
+  comme le meilleur cas de toute l'échelle** (`0,218`, sous tous les autres
+  défauts) : une bande absente de la référence dépose son énergie *hors*
+  couloir, ce qui fait baisser la fraction. Le critère récompense le défaut.
+
+**G2 passe sur les deux profils**, grâce à l'amendement 2 : l'écart de ligne
+centrale est apparié à la DIC. La définition absolue de v1 n'est pas nulle pour
+la DIC contre elle-même.
+
+**Le défaut trouvé par le profil aveugle.** Sur `declared_medium_v4` le contrôle
+translaté obtient un **nombre d'objets parfait** — mais son second objet est un
+éclat de `413 px` (petit axe `17,5 px`) contre la seconde bande DIC de
+`8 340 px`. **Un comptage brut de composantes connexes n'est pas un descripteur
+de morphologie** : un fragment à peine au-dessus du plancher de `256 px` achète
+un score parfait. Le critère est jouable, et le contrôle négatif l'a joué.
+Figure : `object_count_speck.png`. **Non réparé** — tout correctif serait choisi
+en sachant ce qu'il fait à ce contrôle et relève d'un pré-enregistrement v3.
+Test qui verrouille le défaut :
+`test_the_object_count_is_satisfiable_by_a_speck`.
+
+**Limite trouvée dans le dispositif lui-même** : les deux profils **partagent
+leur référence**. `dic_evm.npy` est identique octet pour octet
+(`f8cde6b0…`) parce que l'EVM DIC est reconstruit depuis les déplacements
+mesurés et ne passe jamais par DISFlow. Le recalcul d'Otsu sur le second profil
+était donc un **no-op**. La confirmation aveugle teste un changement
+d'observation des candidats seulement, pas une mesure indépendante de la
+référence : elle est plus faible que le pré-enregistrement ne le laissait
+entendre.
+
+**Ce que la non-blindness a coûté, mesuré** : sans le profil aveugle, la
+campagne aurait publié un candidat unique non dominé et un contrôle négatif
+rejeté — conclusion propre, publiable, et fausse.
+
+Le bootstrap reste cohérent sur les deux profils : le couplage est robustement
+meilleur que le modèle local sur l'erreur de masse (`P = 1,000`), mais
+`alpha=2` ne se sépare **jamais robustement** du contrôle translaté
+(`0,845` et `0,895`), et `alpha=1` comme `alpha=4` en restent indiscernables.
+
+#### Le pré-enregistrement, pour mémoire
 
 `validation/observed_evm_morphology_criteria_preregistration.md`, écrit le
-2026-07-31. **Non exécuté.**
+2026-07-31.
 
 Il remplace les seuls critères Pareto de v1 ; candidats, opérateur
 d'observation, seuil Otsu, géométrie des bandes, bootstrap et vocabulaire de
