@@ -74,12 +74,46 @@ class MatrixPoint:
     ell_um: float
     flow_path: Path
     converged: bool
+    campaign: Path | None = None
 
     @property
     def achi(self) -> float:
         """``alpha * ell^2``, the direction the objective may be degenerate in."""
 
         return self.alpha * self.ell_um**2
+
+
+#: Section 8 secondary indicators taken from the solver, reported and never
+#: used for selection.
+SOLVER_DIAGNOSTICS = (
+    "cutbacks",
+    "total_newton_iterations",
+    "maximum_newton_iterations",
+    "total_nonlocal_iterations",
+    "mean_nonlocal_iterations",
+    "maximum_nonlocal_iterations",
+    "nonlocal_coupling_failures",
+    "elapsed_seconds",
+)
+
+
+def solver_diagnostics(campaign: Path, *, partition_id: int = 43) -> dict[str, Any]:
+    """Convergence diagnostics of one point, or why they are unavailable.
+
+    A non-converged point writes no status, so its absence is the diagnostic.
+    """
+
+    status = campaign / "partitions" / f"{partition_id:04d}" / "status.json"
+    if not status.is_file():
+        return {"available": False, "reason": "no status written, the solve did not complete"}
+    try:
+        payload = json.loads(status.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return {"available": False, "reason": f"unreadable status: {error}"}
+    diagnostics = payload.get("diagnostics", {})
+    return {"available": True, "complete": bool(payload.get("complete"))} | {
+        name: diagnostics.get(name) for name in SOLVER_DIAGNOSTICS
+    }
 
 
 def _defects_for(
@@ -386,6 +420,11 @@ def select_p0043_parameters(
             for point in points
         ],
         "non_converged": [point.label for point in points if not point.converged],
+        "solver_diagnostics": {
+            point.label: solver_diagnostics(point.campaign)
+            for point in points
+            if point.campaign is not None
+        },
         "self_defects": self_defects,
         "null_defects": null_defects,
         "null_defect_source": null_source,

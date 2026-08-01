@@ -56,6 +56,11 @@ def build_points(profile: str) -> list[MatrixPoint]:
             label = _label(alpha, ell)
             name = f"archived-{label}" if (alpha, ell) in ARCHIVED else label
             flow = OBSERVATIONS / f"{name}_{profile}" / "observed_flow_pixels.npy"
+            campaign = (
+                ROOT / ARCHIVED[(alpha, ell)]
+                if (alpha, ell) in ARCHIVED
+                else ROOT / "results" / f"mm-id-p0043-{label}"
+            )
             points.append(
                 MatrixPoint(
                     label=label,
@@ -63,6 +68,7 @@ def build_points(profile: str) -> list[MatrixPoint]:
                     ell_um=ell,
                     flow_path=flow,
                     converged=flow.is_file(),
+                    campaign=campaign,
                 )
             )
     return points
@@ -128,6 +134,12 @@ def main() -> int:
         print(f"  { {k: round(v, 5) for k, v in floor['floor'].items()} }")
     else:
         print(f"\nsolver reproducibility floor unavailable: {floor['reason']}")
+    cutbacks = {
+        label: value.get("cutbacks")
+        for label, value in report["solver_diagnostics"].items()
+        if value.get("available")
+    }
+    print(f"\ncutbacks: {cutbacks}")
     print(f"\npareto front: {report['pareto_front']}")
     print(f"zone: {report['zone']}")
     print(
