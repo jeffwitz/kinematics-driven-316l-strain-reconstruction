@@ -1,0 +1,28 @@
+{
+  "solver_floor": {
+    "D_shape": 0.0008997552981813151,
+    "D_amplitude": 0.001557895095783468,
+    "D_localisation": 0.006023114926320128,
+    "D_presence": 0.003833843892029676
+  },
+  "measurement_floor": {
+    "D_amplitude": 0.002261294131606149,
+    "D_localisation": 0.0009243105236059201,
+    "D_presence": 0.003911221914287745,
+    "D_shape": 0.004477917217492522
+  },
+  "replicate": {
+    "20_increments": {
+      "D_shape": 0.6440985625683168,
+      "D_amplitude": 0.18086686835447938,
+      "D_localisation": 0.309779112241628,
+      "D_presence": 0.8145830946054875
+    },
+    "40_increments": {
+      "D_shape": 0.6449983178664981,
+      "D_amplitude": 0.18242476345026284,
+      "D_localisation": 0.31580222716794815,
+      "D_presence": 0.8184169384975172
+    }
+  }
+}
