@@ -133,6 +133,58 @@ reported beside it as a secondary, so C4 can be checked on the data it was
 formed on. If the two disagree about which candidates are preferred, that
 disagreement is reported and no ranking rests on `D_localisation` alone.
 
+## Amendment A2, written 2026-08-01 while the matrix runs, before it is read
+
+**The spatial bootstrap uses 49 px square tiles, not blocks of 8.** Section
+10.4 carries "block 8" over from the section bootstrap of the v1 and v2
+campaigns, where a block was 8 consecutive centreline sections spaced 4 px, so
+about 32 px of band. Here the resampling is two-dimensional over the core, and
+an 8 px tile is far below the measured `38.2 px` coherence of this observable:
+resampling at that size would treat correlated pixels as independent and
+understate the uncertainty, which is the one direction a stability criterion
+must not err in.
+
+Tiles are therefore squares of `49 px`, the principal scale and the nearest
+round figure above the coherence length, giving 42 whole tiles on the
+`360 x 310` core. Tile sizes `32` and `96 px` are reported as sensitivities.
+Draws, `10 000`, and seed, `20260801`, are unchanged.
+
+Each defect is recomputed on the resampled pixel multiset. This is exact rather
+than approximate for all four: shape is a correlation, amplitude a quantile,
+presence a ratio of sums of squares, and localisation a ratio of spatial means
+of the fraction fields, which are computed once on the whole core at the
+registered neighbourhood size and only then averaged over the drawn tiles.
+
+## Amendment A3, written 2026-08-01 after the fourth point failed to converge
+
+`(alpha = 4, ell = 20 um)` does not converge under the registered settings. It
+cut back from increment 9 onwards, halving the step until it fell below the
+registered minimum divisor, and stopped with
+`NonlinearConvergenceError` after 39.6 min. The failure is the solver's, not the
+tooling's: the log shows a clean cutback cascade.
+
+**A non-converged point is reported and excluded from the selection. Its solver
+settings are not changed to make it converge.** Retuning increments or
+tolerances for one point would make it incomparable with the fifteen others and
+would be precisely the per-point adjustment this protocol exists to prevent. A
+parameterisation that cannot be computed under the settings every other point
+uses is not a candidate for a provisional parameterisation.
+
+Consequences, stated now:
+
+- the count of usable points drops, and the report gives the converged and
+  non-converged sets explicitly;
+- **the iso-`Achi` test at `1600` loses one of its two members**, since that
+  pair is `(alpha = 4, ell = 20)` and `(alpha = 1, ell = 40)`. If the point
+  stays non-converged the pair cannot be compared, and only the `800` pair
+  remains;
+- non-convergence is itself reportable. Where it falls in the `(ell, alpha)`
+  plane is a property of the formulation at these settings and belongs in the
+  heat maps, marked as such rather than left blank without comment.
+
+This amendment is written before any indicator has been computed on any matrix
+point. What is known at this moment is a solver outcome, not a score.
+
 ## Inventory of reusable computations
 
 | Point | Status | Source |
