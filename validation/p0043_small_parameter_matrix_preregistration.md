@@ -185,6 +185,27 @@ Consequences, stated now:
 This amendment is written before any indicator has been computed on any matrix
 point. What is known at this moment is a solver outcome, not a score.
 
+## Amendment A4, written 2026-08-01 during the end-to-end rehearsal
+
+**The zone is built from paired differences, not from overlapping bands.**
+
+The first implementation put a candidate in the zone when its `5 %` quantile
+sat below the best candidate's `95 %` quantile. That is the interval-overlap
+fallacy: the draws share their resampled tiles, so
+`J_inf(candidate) - J_inf(best)` has far less spread than either score alone,
+and two bands can overlap comfortably while the paired difference never comes
+near zero.
+
+A candidate now joins the zone when the bootstrap interval of that paired
+difference contains zero.
+
+Recorded plainly because of the direction it cuts: the paired test is stricter,
+so it **shrinks** the zone and makes the campaign more decisive. It was decided
+while rehearsing the pipeline on the points computed so far, which means partial
+scores were on screen. It is adopted because comparing marginal quantiles of
+paired samples is wrong whatever it returns, not because of what it returned;
+no indicator, threshold or bound is touched.
+
 ## Inventory of reusable computations
 
 | Point | Status | Source |

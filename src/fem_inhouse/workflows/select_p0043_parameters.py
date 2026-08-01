@@ -175,9 +175,11 @@ def _bootstrap_selection(
         verdict = "preferred"
     else:
         verdict = "indistinguishable_zone"
+    zone = _zone(scores, labels, usable=usable)
     return {
         "design": design.as_dict(),
         "usable_draws": total,
+        "zone": zone,
         "win_frequency": frequency,
         "most_frequent": best,
         "most_frequent_share": share,
@@ -194,31 +196,50 @@ def _bootstrap_selection(
 
 
 def _zone(
-    table: dict[str, dict[str, float]],
-    bootstrap: dict[str, Any],
-) -> list[str]:
-    """The indistinguishable zone, as an explicit point list.
+    scores: FloatArray,
+    labels: list[str],
+    *,
+    usable: NDArray[np.bool_],
+) -> dict[str, Any]:
+    """The indistinguishable zone, from **paired** differences.
 
-    Not a range of `ell` crossed with a range of `alpha`: a non-dominated set on
-    a grid need not be a rectangle, and a bounding box would claim points that
-    were never preferred.
+    Amendment A4. Comparing marginal quantiles is the interval-overlap fallacy:
+    two 5-95 % bands can overlap while the paired difference is clearly non-zero,
+    because the draws share their resampled tiles and the difference has far less
+    spread than either score alone. The draws here are paired by construction, so
+    the difference is what carries the information.
+
+    A candidate joins the zone when the bootstrap interval of
+    ``J_inf(candidate) - J_inf(best)`` contains zero. This is stricter than
+    overlapping bands, so it tends to make the zone smaller and the campaign more
+    decisive; that direction is why it is recorded rather than quietly applied.
+
+    The zone stays an explicit point list, never a range of `ell` crossed with a
+    range of `alpha`: a non-dominated set on a grid need not be a rectangle.
     """
 
-    quantiles = bootstrap["minimax_quantiles"]
-    finite = {
-        label: values["median"]
-        for label, values in quantiles.items()
-        if np.isfinite(values["median"])
+    if not usable.any():
+        return {"members": [], "reference": None, "differences": {}}
+    medians = np.nanmedian(scores[:, usable], axis=1)
+    best = int(np.nanargmin(medians))
+    differences: dict[str, dict[str, float]] = {}
+    members: list[str] = []
+    for row, label in enumerate(labels):
+        paired = scores[row, usable] - scores[best, usable]
+        low = float(np.quantile(paired, 0.05))
+        high = float(np.quantile(paired, 0.95))
+        differences[label] = {
+            "median": float(np.median(paired)),
+            "q05": low,
+            "q95": high,
+        }
+        if low <= 0.0 <= high:
+            members.append(label)
+    return {
+        "members": sorted(members),
+        "reference": labels[best],
+        "differences": differences,
     }
-    if not finite:
-        return []
-    best = min(finite, key=lambda label: finite[label])
-    ceiling = quantiles[best]["q95"]
-    return sorted(
-        label
-        for label, values in quantiles.items()
-        if np.isfinite(values["q05"]) and values["q05"] <= ceiling
-    )
 
 
 def select_p0043_parameters(
@@ -336,7 +357,8 @@ def select_p0043_parameters(
         "pareto_dominated": dominated,
         "bootstrap": bootstrap,
         "bootstrap_tile_sensitivity": sensitivity,
-        "zone": _zone(raw, bootstrap),
+        "zone": bootstrap["zone"]["members"],
+        "zone_detail": bootstrap["zone"],
         "iso_achi_pairs": _iso_achi(points, scores),
         "sources": sources,
         "software": {"python": platform.python_version(), "numpy": np.__version__},
