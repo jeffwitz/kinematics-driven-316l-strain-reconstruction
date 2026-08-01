@@ -27,4 +27,21 @@ reject it. That failure is what motivated
 through a different DISFlow profile without rerunning mechanics — the second
 profile of the blind confirmation needs exactly that.
 
+## The `declared_medium_v4` re-observations
+
+`homogeneous_declared_medium_v4/` and `translated_declared_medium_v4/` were
+produced 2026-08-01 for the blind confirmation of the v2 criteria set. The four
+models were already archived under that profile; the controls were not.
+
+They come from `replay_dic_observation` on the archived control campaigns
+(`results/control-{homogeneous,translated-maps}-local-p0043-pad150`), patch 8
+stride 3, prepared case `data/processed/case_study`. **No mechanics was rerun**:
+the replay checks the source `U.npy` against the immutable campaign status
+before observing it.
+
+Note that `dic_evm.npy` is byte-identical across profiles, SHA-256
+`f8cde6b0…`. The DIC EVM is reconstructed from the measured displacements of
+the prepared case and never passes through DISFlow, so only the FEM observation
+depends on the profile.
+
 `SHA256SUMS` covers every file here.
