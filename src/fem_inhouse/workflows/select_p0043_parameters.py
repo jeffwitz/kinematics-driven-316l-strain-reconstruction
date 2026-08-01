@@ -133,6 +133,45 @@ def _null_defects(
     return values, which
 
 
+def _solver_floor(
+    replicate: tuple[str, Path] | None,
+    reference: FloatArray,
+    defects: dict[str, dict[str, dict[str, float]]],
+    *,
+    scales: tuple[int, ...],
+) -> dict[str, Any]:
+    """The solver's own reproducibility, as a floor on every heat map.
+
+    One matrix point recomputed at 40 increments instead of 20. The spatial
+    bootstrap says nothing about this: it resamples the observation, not the
+    solve. Two neighbouring grid points differing by less than this floor are
+    declared indistinguishable whatever the bootstrap says, because the
+    difference is within what recomputing the same physics produces.
+    """
+
+    if replicate is None:
+        return {"available": False, "reason": "replicate not computed"}
+    twin, flow_path = replicate
+    if twin not in defects or not flow_path.is_file():
+        return {"available": False, "reason": f"no observation for the {twin} replicate"}
+    per_scale, _magnitude, ratio = _defects_for(
+        flow_path, reference, label=f"{twin}-replicate", scales=scales
+    )
+    principal = str(PRINCIPAL_SCALE_PIXELS)
+    floor = {
+        name: abs(per_scale[principal][name] - defects[twin][principal][name])
+        for name in DEFECT_NAMES
+    }
+    return {
+        "available": True,
+        "twin": twin,
+        "increments": "20 against 40",
+        "replicate_defects": per_scale,
+        "energy_ratio_49": ratio,
+        "floor": floor,
+    }
+
+
 def _bootstrap_selection(
     magnitudes: dict[str, FloatArray],
     reference_magnitude: FloatArray,
@@ -248,6 +287,7 @@ def select_p0043_parameters(
     points: list[MatrixPoint],
     controls: dict[str, str | Path],
     self_defects: dict[str, float],
+    replicate: tuple[str, Path] | None = None,
     output_directory: str | Path,
     profile: str,
     overwrite: bool = False,
@@ -290,6 +330,7 @@ def select_p0043_parameters(
         sources[label] = {"path": str(Path(path).resolve()), "sha256": _sha256(Path(path))}
 
     null_defects, null_source = _null_defects(defects, scale=PRINCIPAL_SCALE_PIXELS)
+    solver_floor = _solver_floor(replicate, reference, defects, scales=scales)
 
     selectable = [point.label for point in converged]
     raw = {label: dict(defects[label][str(PRINCIPAL_SCALE_PIXELS)]) for label in selectable}
@@ -348,6 +389,7 @@ def select_p0043_parameters(
         "self_defects": self_defects,
         "null_defects": null_defects,
         "null_defect_source": null_source,
+        "solver_reproducibility": solver_floor,
         "defects": defects,
         "energy_ratio_49": ratios,
         "raw_table": raw,
@@ -433,9 +475,17 @@ def _figures(output: Path, report: dict[str, Any], *, points: list[MatrixPoint])
         "localisation_indicator_heatmap.png": ("D_localisation", "localisation defect, 1 - FSS"),
         "presence_indicator_heatmap.png": ("D_presence", "presence defect, |log energy ratio|"),
     }
+    floor = report["solver_reproducibility"].get("floor", {})
     for filename, (field, title) in named.items():
         values = {label: row[field] for label, row in report["raw_table"].items()}
-        _draw_heatmap(plt, output / filename, points, values, title=title)
+        _draw_heatmap(
+            plt,
+            output / filename,
+            points,
+            values,
+            title=title,
+            floor=floor.get(field),
+        )
 
     _draw_heatmap(
         plt,
@@ -523,6 +573,7 @@ def _draw_heatmap(
     values: dict[str, float],
     *,
     title: str,
+    floor: float | None = None,
 ) -> None:
     grid, alphas, ells, absent = _heatmap_grid(points, values)
     fig, ax = plt.subplots(figsize=(5.6, 4.4), constrained_layout=True)
@@ -548,6 +599,10 @@ def _draw_heatmap(
     for row, column in absent:
         ax.text(column, row, "no\nconv.", ha="center", va="center", fontsize=7, color="crimson")
     fig.colorbar(image, ax=ax, shrink=0.85)
+    if floor is not None and np.isfinite(floor):
+        # Neighbouring points closer than this are within what recomputing the
+        # same physics produces, so the map must not be read below it.
+        title = f"{title}\nsolver reproducibility floor: {floor:.3g}"
     ax.set_title(title, fontsize=9)
     fig.savefig(path, dpi=130)
     plt.close(fig)

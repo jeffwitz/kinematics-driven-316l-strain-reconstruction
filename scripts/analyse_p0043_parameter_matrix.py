@@ -103,6 +103,10 @@ def main() -> int:
             "translated": CONTROLS / "translated/observed_flow_pixels.npy",
         },
         self_defects=self_defects,
+        replicate=(
+            "a2-ell40",
+            OBSERVATIONS / f"a2-ell40-inc40_{arguments.profile}" / "observed_flow_pixels.npy",
+        ),
         output_directory=output,
         profile=arguments.profile,
         overwrite=True,
@@ -118,6 +122,12 @@ def main() -> int:
         )
     print(f"\nnull D_null: { {k: round(v, 5) for k, v in report['null_defects'].items()} }")
     print(f"  taken from: {report['null_defect_source']}")
+    floor = report["solver_reproducibility"]
+    if floor["available"]:
+        print(f"\nsolver reproducibility floor (20 vs 40 increments on {floor['twin']}):")
+        print(f"  { {k: round(v, 5) for k, v in floor['floor'].items()} }")
+    else:
+        print(f"\nsolver reproducibility floor unavailable: {floor['reason']}")
     print(f"\npareto front: {report['pareto_front']}")
     print(f"zone: {report['zone']}")
     print(
