@@ -13,6 +13,7 @@ argue for the scientific model.
 - {doc}`DIC axis conventions </reference/dic_axis_conventions>`
 - {doc}`observation_operator`
 - {doc}`band_comparison`
+- {doc}`selection_indicators`
 - {doc}`convergence_criteria`
 
 ## Data and interfaces
@@ -48,6 +49,7 @@ tensor_conventions
 dic_axis_conventions
 observation_operator
 band_comparison
+selection_indicators
 convergence_criteria
 experimental_data_inventory
 input_contract
