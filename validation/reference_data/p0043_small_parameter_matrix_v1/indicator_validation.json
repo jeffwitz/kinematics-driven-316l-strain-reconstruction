@@ -1,0 +1,615 @@
+{
+  "acceptance": {
+    "32": {
+      "amplitude_and_position_are_distinguishable": {
+        "amplitude_case": {
+          "D_amplitude": 0.18232155679395923,
+          "D_localisation": 0.13710180410790762,
+          "D_presence": 0.36464311358791013,
+          "D_shape": 0.0
+        },
+        "passed": true,
+        "position_case": {
+          "D_amplitude": 0.015798595425848473,
+          "D_localisation": 0.11026099583512083,
+          "D_presence": 0.028020266662306424,
+          "D_shape": 0.8641243941739047
+        }
+      },
+      "homogeneous_fails_presence_and_amplitude": {
+        "amplitude": 2.053820714590932,
+        "floor_amplitude": 0.0011644099255005572,
+        "floor_presence": 0.00198102071305363,
+        "passed": true,
+        "presence": 4.291709973981985
+      },
+      "identity_is_optimal": {
+        "passed": true,
+        "values": {
+          "D_amplitude": 0.0,
+          "D_localisation": 0.0,
+          "D_presence": 0.0,
+          "D_shape": 0.0
+        }
+      },
+      "removed_band_is_worse_than_a_moderate_amplitude_error": {
+        "amplitude_worst": 0.36464311358791013,
+        "band_removed_worst": 5.8171873260268425,
+        "passed": true
+      },
+      "translated_fails_shape_or_localisation": {
+        "localisation": 0.7144408250251504,
+        "passed": true,
+        "shape": 0.8210195161263696
+      }
+    },
+    "49": {
+      "amplitude_and_position_are_distinguishable": {
+        "amplitude_case": {
+          "D_amplitude": 0.1823215567939444,
+          "D_localisation": 0.12454306674463944,
+          "D_presence": 0.3646431135879095,
+          "D_shape": 0.0
+        },
+        "passed": true,
+        "position_case": {
+          "D_amplitude": 0.026597317666344968,
+          "D_localisation": 0.061549826511710926,
+          "D_presence": 0.039772150948240215,
+          "D_shape": 0.7998458277089178
+        }
+      },
+      "homogeneous_fails_presence_and_amplitude": {
+        "amplitude": 1.919064078693231,
+        "floor_amplitude": 0.002261294131606149,
+        "floor_presence": 0.003911221914287745,
+        "passed": true,
+        "presence": 3.976466363133174
+      },
+      "identity_is_optimal": {
+        "passed": true,
+        "values": {
+          "D_amplitude": 0.0,
+          "D_localisation": 0.0,
+          "D_presence": 0.0,
+          "D_shape": 0.0
+        }
+      },
+      "removed_band_is_worse_than_a_moderate_amplitude_error": {
+        "amplitude_worst": 0.3646431135879095,
+        "band_removed_worst": 5.615629854235865,
+        "passed": true
+      },
+      "translated_fails_shape_or_localisation": {
+        "localisation": 0.41534513279809215,
+        "passed": true,
+        "shape": 0.7936123835570372
+      }
+    },
+    "96": {
+      "amplitude_and_position_are_distinguishable": {
+        "amplitude_case": {
+          "D_amplitude": 0.18232155679404471,
+          "D_localisation": 0.11795949414781037,
+          "D_presence": 0.3646431135879095,
+          "D_shape": 0.0
+        },
+        "passed": true,
+        "position_case": {
+          "D_amplitude": 0.0345178689094921,
+          "D_localisation": 0.021544758888852544,
+          "D_presence": 0.06009636422650735,
+          "D_shape": 0.6307298802676379
+        }
+      },
+      "homogeneous_fails_presence_and_amplitude": {
+        "amplitude": 1.762897328626105,
+        "floor_amplitude": 0.004805958151384147,
+        "floor_presence": 0.007086301284650955,
+        "passed": true,
+        "presence": 3.5677317890907294
+      },
+      "identity_is_optimal": {
+        "passed": true,
+        "values": {
+          "D_amplitude": 0.0,
+          "D_localisation": 0.0,
+          "D_presence": 0.0,
+          "D_shape": 0.0
+        }
+      },
+      "removed_band_is_worse_than_a_moderate_amplitude_error": {
+        "amplitude_worst": 0.3646431135879095,
+        "band_removed_worst": 5.225045459081206,
+        "passed": true
+      },
+      "translated_fails_shape_or_localisation": {
+        "localisation": 0.20147072429059842,
+        "passed": true,
+        "shape": 0.771166401581387
+      }
+    }
+  },
+  "all_acceptance_criteria_passed": true,
+  "created_at_utc": "2026-08-01T08:41:36.021318+00:00",
+  "defects": {
+    "amplitude_0p80": {
+      "32": {
+        "D_amplitude": 0.22314355131421748,
+        "D_localisation": 0.21584654522154678,
+        "D_presence": 0.4462871026284207,
+        "D_shape": 0.0
+      },
+      "49": {
+        "D_amplitude": 0.22314355131419347,
+        "D_localisation": 0.16758551348205797,
+        "D_presence": 0.44628710262842003,
+        "D_shape": 1.1102230246251565e-16
+      },
+      "96": {
+        "D_amplitude": 0.2231435513143435,
+        "D_localisation": 0.19706415003633715,
+        "D_presence": 0.4462871026284202,
+        "D_shape": -2.220446049250313e-16
+      }
+    },
+    "amplitude_1p20": {
+      "32": {
+        "D_amplitude": 0.18232155679395923,
+        "D_localisation": 0.13710180410790762,
+        "D_presence": 0.36464311358791013,
+        "D_shape": 0.0
+      },
+      "49": {
+        "D_amplitude": 0.1823215567939444,
+        "D_localisation": 0.12454306674463944,
+        "D_presence": 0.3646431135879095,
+        "D_shape": 0.0
+      },
+      "96": {
+        "D_amplitude": 0.18232155679404471,
+        "D_localisation": 0.11795949414781037,
+        "D_presence": 0.3646431135879095,
+        "D_shape": 0.0
+      }
+    },
+    "band_displaced_16px": {
+      "32": {
+        "D_amplitude": 0.015798595425848473,
+        "D_localisation": 0.11026099583512083,
+        "D_presence": 0.028020266662306424,
+        "D_shape": 0.8641243941739047
+      },
+      "49": {
+        "D_amplitude": 0.026597317666344968,
+        "D_localisation": 0.061549826511710926,
+        "D_presence": 0.039772150948240215,
+        "D_shape": 0.7998458277089178
+      },
+      "96": {
+        "D_amplitude": 0.0345178689094921,
+        "D_localisation": 0.021544758888852544,
+        "D_presence": 0.06009636422650735,
+        "D_shape": 0.6307298802676379
+      }
+    },
+    "band_removed": {
+      "32": {
+        "D_amplitude": 2.0259933141099804,
+        "D_localisation": 0.6355563497248573,
+        "D_presence": 5.8171873260268425,
+        "D_shape": 0.8790482664788541
+      },
+      "49": {
+        "D_amplitude": 2.2926869937173433,
+        "D_localisation": 0.5962871519198601,
+        "D_presence": 5.615629854235865,
+        "D_shape": 0.866376970057029
+      },
+      "96": {
+        "D_amplitude": 2.341221947966895,
+        "D_localisation": 0.4722889454491176,
+        "D_presence": 5.225045459081206,
+        "D_shape": 0.8385964017322667
+      }
+    },
+    "band_spurious": {
+      "32": {
+        "D_amplitude": 2.9784264088387653,
+        "D_localisation": 0.6863209867276291,
+        "D_presence": 4.881480307242045,
+        "D_shape": 0.9652078762338124
+      },
+      "49": {
+        "D_amplitude": 3.01867017771761,
+        "D_localisation": 0.6906634916570298,
+        "D_presence": 4.84725308181878,
+        "D_shape": 0.9615952258064941
+      },
+      "96": {
+        "D_amplitude": 2.8309588332692344,
+        "D_localisation": 0.5243600959392407,
+        "D_presence": 4.496362015141923,
+        "D_shape": 0.9379010439609544
+      }
+    },
+    "bands_merged": {
+      "32": {
+        "D_amplitude": 0.16763422200863337,
+        "D_localisation": 0.18826256524219853,
+        "D_presence": 0.9899978199261735,
+        "D_shape": 0.7190423834549537
+      },
+      "49": {
+        "D_amplitude": 0.16907715042194388,
+        "D_localisation": 0.196105891037754,
+        "D_presence": 0.8552392250611921,
+        "D_shape": 0.7314441726897984
+      },
+      "96": {
+        "D_amplitude": 0.12683849847867784,
+        "D_localisation": 0.18959576811194334,
+        "D_presence": 0.6321674223335196,
+        "D_shape": 0.6134269460689012
+      }
+    },
+    "dic_self": {
+      "32": {
+        "D_amplitude": 0.0,
+        "D_localisation": 0.0,
+        "D_presence": 0.0,
+        "D_shape": 0.0
+      },
+      "49": {
+        "D_amplitude": 0.0,
+        "D_localisation": 0.0,
+        "D_presence": 0.0,
+        "D_shape": 0.0
+      },
+      "96": {
+        "D_amplitude": 0.0,
+        "D_localisation": 0.0,
+        "D_presence": 0.0,
+        "D_shape": 0.0
+      }
+    },
+    "homogeneous": {
+      "32": {
+        "D_amplitude": 2.053820714590932,
+        "D_localisation": 1.0,
+        "D_presence": 4.291709973981985,
+        "D_shape": 0.7531329288837095
+      },
+      "49": {
+        "D_amplitude": 1.919064078693231,
+        "D_localisation": 1.0,
+        "D_presence": 3.976466363133174,
+        "D_shape": 0.7631310578880395
+      },
+      "96": {
+        "D_amplitude": 1.762897328626105,
+        "D_localisation": 1.0,
+        "D_presence": 3.5677317890907294,
+        "D_shape": 0.7386980713351237
+      }
+    },
+    "local": {
+      "32": {
+        "D_amplitude": 0.1716115935796166,
+        "D_localisation": 0.3266328060065333,
+        "D_presence": 0.02069948713419114,
+        "D_shape": 0.7731691075166159
+      },
+      "49": {
+        "D_amplitude": 0.3199691916048996,
+        "D_localisation": 0.33223860005432315,
+        "D_presence": 0.3711001772334344,
+        "D_shape": 0.7242746353242688
+      },
+      "96": {
+        "D_amplitude": 0.5419998521351188,
+        "D_localisation": 0.28188436167026987,
+        "D_presence": 0.6251005532395638,
+        "D_shape": 0.6353920214257717
+      }
+    },
+    "repetition_residual": {
+      "32": {
+        "D_amplitude": 0.0011644099255005572,
+        "D_localisation": 0.0007723021332194935,
+        "D_presence": 0.00198102071305363,
+        "D_shape": 0.0030174301338994902
+      },
+      "49": {
+        "D_amplitude": 0.002261294131606149,
+        "D_localisation": 0.0009243105236059201,
+        "D_presence": 0.003911221914287745,
+        "D_shape": 0.004477917217492522
+      },
+      "96": {
+        "D_amplitude": 0.004805958151384147,
+        "D_localisation": 0.0006896918008377217,
+        "D_presence": 0.007086301284650955,
+        "D_shape": 0.004408032489771674
+      }
+    },
+    "translated": {
+      "32": {
+        "D_amplitude": 0.5481727905151689,
+        "D_localisation": 0.7144408250251504,
+        "D_presence": 1.4137574911821231,
+        "D_shape": 0.8210195161263696
+      },
+      "49": {
+        "D_amplitude": 0.23661985666847832,
+        "D_localisation": 0.41534513279809215,
+        "D_presence": 0.7733804440592169,
+        "D_shape": 0.7936123835570372
+      },
+      "96": {
+        "D_amplitude": 0.016336444895268802,
+        "D_localisation": 0.20147072429059842,
+        "D_presence": 0.19853428714592886,
+        "D_shape": 0.771166401581387
+      }
+    }
+  },
+  "extras": {
+    "amplitude_0p80": {
+      "energy_ratio_49": 0.6399999999999997
+    },
+    "amplitude_1p20": {
+      "energy_ratio_49": 1.4400000000000004
+    },
+    "band_displaced_16px": {
+      "energy_ratio_49": 0.9610083790566525
+    },
+    "band_removed": {
+      "energy_ratio_49": 274.68633707347686
+    },
+    "band_spurious": {
+      "energy_ratio_49": 127.38997894206324
+    },
+    "bands_merged": {
+      "energy_ratio_49": 2.351936955543313
+    },
+    "dic_self": {
+      "energy_ratio_49": 1.0
+    },
+    "homogeneous": {
+      "energy_ratio_49": 0.01875178439926362
+    },
+    "local": {
+      "energy_ratio_49": 1.4493282558095417
+    },
+    "translated": {
+      "energy_ratio_49": 0.46145052107486445
+    }
+  },
+  "failed_criteria": [],
+  "git_sha": "7afec308640796911dbd3286b452122774996fc4",
+  "mechanics_rerun": false,
+  "preregistration": "validation/p0043_small_parameter_matrix_preregistration.md",
+  "principal_scale_pixels": 49,
+  "repetition_residual": {
+    "column_sigma_pixels": 0.0624,
+    "correlation_pixels": 38.2,
+    "note": "an upper bound on the floor, so every Z is a lower bound",
+    "realisations": 10,
+    "row_sigma_pixels": 0.0403,
+    "seed": 20260801
+  },
+  "scale_stability": {
+    "acceptance_verdicts": {
+      "32": {
+        "amplitude_and_position_are_distinguishable": true,
+        "homogeneous_fails_presence_and_amplitude": true,
+        "identity_is_optimal": true,
+        "removed_band_is_worse_than_a_moderate_amplitude_error": true,
+        "translated_fails_shape_or_localisation": true
+      },
+      "49": {
+        "amplitude_and_position_are_distinguishable": true,
+        "homogeneous_fails_presence_and_amplitude": true,
+        "identity_is_optimal": true,
+        "removed_band_is_worse_than_a_moderate_amplitude_error": true,
+        "translated_fails_shape_or_localisation": true
+      },
+      "96": {
+        "amplitude_and_position_are_distinguishable": true,
+        "homogeneous_fails_presence_and_amplitude": true,
+        "identity_is_optimal": true,
+        "removed_band_is_worse_than_a_moderate_amplitude_error": true,
+        "translated_fails_shape_or_localisation": true
+      }
+    },
+    "conclusions_stable": true,
+    "orderings": {
+      "D_amplitude": {
+        "32": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "bands_merged",
+          "local",
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "translated",
+          "band_removed",
+          "homogeneous",
+          "band_spurious"
+        ],
+        "49": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "bands_merged",
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "translated",
+          "local",
+          "homogeneous",
+          "band_removed",
+          "band_spurious"
+        ],
+        "96": [
+          "repetition_residual",
+          "translated",
+          "band_displaced_16px",
+          "bands_merged",
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "local",
+          "homogeneous",
+          "band_removed",
+          "band_spurious"
+        ]
+      },
+      "D_localisation": {
+        "32": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "amplitude_1p20",
+          "bands_merged",
+          "amplitude_0p80",
+          "local",
+          "band_removed",
+          "band_spurious",
+          "translated",
+          "homogeneous"
+        ],
+        "49": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "bands_merged",
+          "local",
+          "translated",
+          "band_removed",
+          "band_spurious",
+          "homogeneous"
+        ],
+        "96": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "amplitude_1p20",
+          "bands_merged",
+          "amplitude_0p80",
+          "translated",
+          "local",
+          "band_removed",
+          "band_spurious",
+          "homogeneous"
+        ]
+      },
+      "D_presence": {
+        "32": [
+          "repetition_residual",
+          "local",
+          "band_displaced_16px",
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "bands_merged",
+          "translated",
+          "homogeneous",
+          "band_spurious",
+          "band_removed"
+        ],
+        "49": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "amplitude_1p20",
+          "local",
+          "amplitude_0p80",
+          "translated",
+          "bands_merged",
+          "homogeneous",
+          "band_spurious",
+          "band_removed"
+        ],
+        "96": [
+          "repetition_residual",
+          "band_displaced_16px",
+          "translated",
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "local",
+          "bands_merged",
+          "homogeneous",
+          "band_spurious",
+          "band_removed"
+        ]
+      },
+      "D_shape": {
+        "32": [
+          "amplitude_0p80",
+          "amplitude_1p20",
+          "repetition_residual",
+          "bands_merged",
+          "homogeneous",
+          "local",
+          "translated",
+          "band_displaced_16px",
+          "band_removed",
+          "band_spurious"
+        ],
+        "49": [
+          "amplitude_1p20",
+          "amplitude_0p80",
+          "repetition_residual",
+          "local",
+          "bands_merged",
+          "homogeneous",
+          "translated",
+          "band_displaced_16px",
+          "band_removed",
+          "band_spurious"
+        ],
+        "96": [
+          "amplitude_0p80",
+          "amplitude_1p20",
+          "repetition_residual",
+          "bands_merged",
+          "band_displaced_16px",
+          "local",
+          "homogeneous",
+          "translated",
+          "band_removed",
+          "band_spurious"
+        ]
+      }
+    },
+    "rank_correlation_against_principal": {
+      "D_amplitude": {
+        "32": 0.9151515151515152,
+        "96": 0.8787878787878788
+      },
+      "D_localisation": {
+        "32": 0.9515151515151515,
+        "96": 0.9757575757575757
+      },
+      "D_presence": {
+        "32": 0.9515151515151515,
+        "96": 0.9151515151515152
+      },
+      "D_shape": {
+        "32": 0.9515151515151515,
+        "96": 0.8909090909090909
+      }
+    },
+    "verdicts_agree_with_principal": {
+      "32": true,
+      "49": true,
+      "96": true
+    }
+  },
+  "schema_version": 1,
+  "sensitivity_scales_pixels": [
+    32,
+    96
+  ],
+  "software": {
+    "numpy": "2.5.1",
+    "python": "3.12.3"
+  },
+  "status": "completed_indicator_validation"
+}

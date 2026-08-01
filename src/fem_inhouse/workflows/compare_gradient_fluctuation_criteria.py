@@ -73,7 +73,7 @@ class Case:
     kind: str
 
 
-def _core_slice() -> tuple[slice, slice]:
+def core_slice() -> tuple[slice, slice]:
     cx0, cx1, cy0, cy1 = CORE_BOUNDS
     sx0, _, sy0, _ = SOLVE_BOUNDS
     # One cell shorter on each side than the nodal core, because the gradient
@@ -81,7 +81,7 @@ def _core_slice() -> tuple[slice, slice]:
     return slice(cx0 - sx0, cx1 - sx0), slice(cy0 - sy0, cy1 - sy0)
 
 
-def _dic_displacement(prepared_case: Path) -> FloatArray:
+def dic_displacement(prepared_case: Path) -> FloatArray:
     """The measured DIC displacement on the solve grid, in mm."""
 
     sx0, sx1, sy0, sy1 = SOLVE_BOUNDS
@@ -98,25 +98,25 @@ def _dic_displacement(prepared_case: Path) -> FloatArray:
     )
 
 
-def _observed_displacement(flow_path: Path) -> FloatArray:
+def observed_displacement(flow_path: Path) -> FloatArray:
     """The FEM displacement as the image chain and DISFlow actually see it."""
 
     flow = np.load(flow_path, allow_pickle=False)
     return image_flow_to_canonical(flow, pixel_size_mm=PIXEL_SIZE_MM)
 
 
-def _gradient_on_core(displacement: FloatArray) -> FloatArray:
+def gradient_on_core(displacement: FloatArray) -> FloatArray:
     """Differentiate on the solve grid, then crop, so no edge touches the core."""
 
     gradient = displacement_gradient(
         displacement, spacing_x_mm=PIXEL_SIZE_MM, spacing_y_mm=PIXEL_SIZE_MM
     )
-    rows, columns = _core_slice()
+    rows, columns = core_slice()
     return np.ascontiguousarray(gradient[rows, columns])
 
 
 def _synthetic_cases(
-    dic_displacement: FloatArray,
+    displacement: FloatArray,
     *,
     band_region: NDArray[np.bool_],
 ) -> dict[str, FloatArray]:
@@ -126,7 +126,7 @@ def _synthetic_cases(
     exactly the same differentiation as a real candidate.
     """
 
-    shape = dic_displacement.shape[:2]
+    shape = displacement.shape[:2]
     x = np.arange(shape[0], dtype=np.float64)[:, None] * PIXEL_SIZE_MM
     y = np.arange(shape[1], dtype=np.float64)[None, :] * PIXEL_SIZE_MM
     x = np.broadcast_to(x, shape)
@@ -137,8 +137,8 @@ def _synthetic_cases(
             np.stack((a[0, 0] * x + a[0, 1] * y, a[1, 0] * x + a[1, 1] * y), axis=-1)
         )
 
-    mean = dic_displacement.mean(axis=(0, 1))
-    fluctuation = dic_displacement - mean
+    mean = displacement.mean(axis=(0, 1))
+    fluctuation = displacement - mean
 
     def smoothed(sigma: float) -> FloatArray:
         return np.ascontiguousarray(
@@ -150,10 +150,10 @@ def _synthetic_cases(
     without_band[band_region] = 0.0
 
     return {
-        "uniform_displacement": dic_displacement + np.array([3.7e-3, -1.2e-3]),
-        "affine_strain": dic_displacement + affine(np.array([[1.0e-3, 0.0], [0.0, -3.0e-4]])),
-        "rigid_rotation": dic_displacement + affine(np.array([[0.0, -angle], [angle, 0.0]])),
-        "band_translation_16px": np.ascontiguousarray(np.roll(dic_displacement, 16, axis=0)),
+        "uniform_displacement": displacement + np.array([3.7e-3, -1.2e-3]),
+        "affine_strain": displacement + affine(np.array([[1.0e-3, 0.0], [0.0, -3.0e-4]])),
+        "rigid_rotation": displacement + affine(np.array([[0.0, -angle], [angle, 0.0]])),
+        "band_translation_16px": np.ascontiguousarray(np.roll(displacement, 16, axis=0)),
         "amplitude_1p20": np.ascontiguousarray(mean + 1.20 * fluctuation),
         "width_change_sigma8": smoothed(8.0),
         "band_merge_sigma24": smoothed(24.0),
@@ -326,8 +326,8 @@ def compare_gradient_fluctuation_criteria(
         raise FileExistsError(f"refusing to overwrite non-empty directory: {output}")
     output.mkdir(parents=True, exist_ok=True)
 
-    dic_displacement = _dic_displacement(Path(prepared_case))
-    reference = _gradient_on_core(dic_displacement)
+    measured = dic_displacement(Path(prepared_case))
+    reference = gradient_on_core(measured)
 
     dic_evm_field = np.asarray(np.load(Path(dic_evm), allow_pickle=False), dtype=np.float64)
     bands = extract_bands(dic_evm_field, threshold=otsu_threshold(dic_evm_field))
@@ -336,19 +336,19 @@ def compare_gradient_fluctuation_criteria(
         corridor_core |= band["corridor"]
     # Lift the core-sized corridor back onto the solve grid the synthetic
     # perturbations act on.
-    band_region = np.zeros(dic_displacement.shape[:2], dtype=bool)
-    rows, columns = _core_slice()
+    band_region = np.zeros(measured.shape[:2], dtype=bool)
+    rows, columns = core_slice()
     band_region[rows, columns] = corridor_core
 
     gradients: dict[str, FloatArray] = {}
     sources: dict[str, dict[str, str]] = {}
     for label, path in cases.items():
-        gradients[label] = _gradient_on_core(_observed_displacement(Path(path)))
+        gradients[label] = gradient_on_core(observed_displacement(Path(path)))
         sources[label] = {"path": str(Path(path).resolve()), "sha256": _sha256(Path(path))}
 
     synthetic = {
-        label: _gradient_on_core(field)
-        for label, field in _synthetic_cases(dic_displacement, band_region=band_region).items()
+        label: gradient_on_core(field)
+        for label, field in _synthetic_cases(measured, band_region=band_region).items()
     }
 
     summary: dict[str, dict[str, float]] = {}
