@@ -22,10 +22,15 @@ validation/reference_data/p0043_small_parameter_matrix_v1/
   evm_fields_declared_medium_v4/
 ```
 
-Seventeen fields per profile, each written as **PNG and SVG**: the DIC, the
-fourteen converged matrix points, and the two negative controls. The two
-non-converged points, `(alpha=4, ell=20)` and `(alpha=4, ell=40)`, produce no
-file and the script says so.
+Eighteen fields per profile, each written as **PNG and SVG**: the DIC, the
+**local model** as the no-regularisation reference, the fourteen converged
+matrix points, and the two negative controls. The two non-converged points,
+`(alpha=4, ell=20)` and `(alpha=4, ell=40)`, produce no file and the script says
+so.
+
+The local run is the `alpha = 0` end of the sweep: coupling modulus zero,
+nonlocal plasticity disabled, everything else identical. It is what the matrix
+has to be compared against to see what regularisation actually does.
 
 ## What makes them comparable
 
@@ -50,12 +55,13 @@ rectangles rather than an automatic one.
 Names are built so that a plain alphabetical listing is already a sweep:
 
 ```
-evm_DIC.png                     the measurement, first
-evm_a0p5_ell020p00.png          then the matrix, by alpha then ell
+evm_DIC.png                            the measurement, first
+evm_a0p0_local_no_regularisation.png   then alpha = 0
+evm_a0p5_ell020p00.png                 then the matrix, by alpha then ell
 evm_a0p5_ell040p00.png
 ...
 evm_a4p0_ell090p00.png
-evm_zz_control_homogeneous.png  then the controls, last
+evm_zz_control_homogeneous.png         then the controls, last
 evm_zz_control_translated.png
 ```
 
@@ -83,6 +89,35 @@ several, and how wide they are.
 saturated area than the DIC is genuinely over-predicting the upper tail, since
 both are clipped at the same value. A candidate showing less is
 under-predicting. But two saturated regions cannot be compared with each other.
+
+## Regularisation against no regularisation
+
+This is what the local reference is for, and the sweep crosses the DIC rather
+than approaching it.
+
+| field | `q95` | high-pass energy `R` |
+|---|---:|---:|
+| **local, `alpha = 0`** | `9.63e-03` | **`1.45`** |
+| DIC | `6.67e-03` | `1` by definition |
+| `alpha = 0.5`, `ell = 20` | — | **`0.97`** |
+| `alpha = 1`, `ell = 40` | `8.33e-03` | `0.64` |
+| `alpha = 2`, `ell = 58.88` | — | `0.37` |
+| `alpha = 4`, `ell = 90` | — | `0.18` |
+
+**The local model has about `45 %` too much high-pass strain energy; every
+coupled run has too little.** Regularisation does not move the model towards the
+DIC and stop: it removes fluctuation monotonically and passes through the right
+amount somewhere near `alpha = 0.5` at short range, then keeps going.
+
+Visually, `alpha = 0` shows the narrowest, most saturated bands of the whole
+set — narrower than the DIC's, not wider. Raising `alpha` widens and dims them.
+By `alpha = 4` the field is visibly smooth and only the strongest band survives
+above mid-scale.
+
+So the two failure modes bracket the measurement, which is why `D_amplitude`
+has an interior optimum while `D_presence` does not: presence is monotone in
+`alpha` and its best value is the least coupling, whereas amplitude is best
+where the sweep crosses.
 
 ## What the images confirm, quantitatively
 
