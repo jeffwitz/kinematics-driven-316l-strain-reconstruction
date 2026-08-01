@@ -1,4 +1,5 @@
 import json
+import logging
 from dataclasses import replace
 
 import numpy as np
@@ -40,6 +41,7 @@ def _fake_solver(calls):
         yield_stress_mpa,
         hardening_coefficient_mpa,
         snapshots=(),
+        verbose=False,
     ):
         calls.append(config.mesh)
         stress = np.stack(
@@ -126,9 +128,7 @@ def test_manifest_is_deterministic_and_rejects_changed_inputs(tmp_path) -> None:
         _workflow(tmp_path, yield_offset=1.0).prepare()
 
 
-def test_nonlocal_campaign_persists_and_stitches_coupling_fields(
-    tmp_path, monkeypatch
-) -> None:
+def test_nonlocal_campaign_persists_and_stitches_coupling_fields(tmp_path, monkeypatch) -> None:
     workflow = _workflow(tmp_path)
     workflow.config = replace(
         workflow.config,
@@ -268,3 +268,36 @@ def test_invalid_workflow_layout_and_partition_id_are_rejected(tmp_path) -> None
     with pytest.raises(ValueError, match="snapshot_fractions"):
         workflow.snapshot_fractions = (0.0,)
         workflow.__post_init__()
+
+
+def _verbose_recording_solver(seen: list[bool]):
+    solver = _fake_solver([])
+
+    def solve(config, *, verbose=False, **kwargs):
+        seen.append(verbose)
+        return solver(config, verbose=verbose, **kwargs)
+
+    return solve
+
+
+@pytest.mark.parametrize(
+    ("level", "expected"),
+    [(logging.INFO, True), (logging.WARNING, False)],
+)
+def test_the_solver_follows_the_caller_logging_level(
+    tmp_path, monkeypatch, caplog, level, expected
+) -> None:
+    """`--verbose` must reach the solver, not just raise the logging level.
+
+    It did not: a partition solve ran silently from the first line to the last,
+    so a multi-hour campaign could not be followed at all.
+    """
+
+    seen: list[bool] = []
+    monkeypatch.setattr(partitioned, "run_case_study", _verbose_recording_solver(seen))
+    workflow = _workflow(tmp_path)
+
+    with caplog.at_level(level, logger=partitioned.LOGGER.name):
+        workflow.solve_partition(0)
+
+    assert seen == [expected]

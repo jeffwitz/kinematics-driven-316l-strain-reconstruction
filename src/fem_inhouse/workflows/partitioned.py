@@ -185,10 +185,7 @@ class PartitionWorkflow:
             if np.shape(values) != expected_shape:
                 raise ValueError(f"{name} has shape {np.shape(values)}, expected {expected_shape}")
         snapshot_fractions = tuple(float(value) for value in self.snapshot_fractions)
-        if any(
-            not np.isfinite(value) or not 0.0 < value <= 1.0
-            for value in snapshot_fractions
-        ):
+        if any(not np.isfinite(value) or not 0.0 < value <= 1.0 for value in snapshot_fractions):
             raise ValueError("snapshot_fractions must be finite and lie in (0, 1]")
         if len(set(snapshot_fractions)) != len(snapshot_fractions):
             raise ValueError("snapshot_fractions must be unique")
@@ -223,9 +220,7 @@ class PartitionWorkflow:
                 "hardening_coefficient_mpa": fingerprint_array(self.hardening_coefficient_mpa),
             },
             "result_fields": sorted(result_fields),
-            "result_field_metadata": {
-                name: RESULT_FIELD_METADATA[name] for name in result_fields
-            },
+            "result_field_metadata": {name: RESULT_FIELD_METADATA[name] for name in result_fields},
             "snapshots": {
                 "fractions": list(self.snapshot_fractions),
                 "fields": sorted(SNAPSHOT_FIELDS),
@@ -340,6 +335,11 @@ class PartitionWorkflow:
         )
         result = run_case_study(
             self._local_config(partition_id),
+            # Follow the caller's logging level rather than a separate flag.
+            # `--verbose` used to raise the level without ever reaching the
+            # solver, so a partition solve stayed silent from the first line to
+            # the last and a multi-hour campaign could not be followed.
+            verbose=LOGGER.isEnabledFor(logging.INFO),
             displacement_x_mm=extract_partition_field(
                 self.displacement_x_mm,
                 layout=self.layout,

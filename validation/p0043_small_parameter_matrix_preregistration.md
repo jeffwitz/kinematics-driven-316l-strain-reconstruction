@@ -114,6 +114,25 @@ is kept, because section 9 decides what is kept and it has not been run yet;
 but if the campaign ends on a trade-off between amplitude and localisation, the
 report must cite this paragraph.
 
+## Amendment A1, written 2026-08-01 while the matrix runs, before it is read
+
+**Which field `D_localisation` scores.** Section 6.3 of the specification says
+"FSS at the DIC absolute q90 threshold, scale 49 px" without naming the field,
+while 6.1 and 6.2 name `g_49` explicitly. The ambiguity is resolved **in favour
+of `g_49`**, so all four indicators read one observable and the fluctuation
+framing of section 5 is not broken halfway through.
+
+Recorded honestly: **correction C4 was calibrated on the other reading.** Its
+numbers — FSS q90 of `0.687` for the local model against `0.689` for
+`alpha = 1` — come from the archived FSS on the **EVM** field, not on `g_49`.
+The prediction that `D_localisation` discriminates poorly and is inverted in
+`alpha` therefore rests on the EVM variant and may not transfer.
+
+Both are computed. `g_49` is the registered primary; the EVM variant is
+reported beside it as a secondary, so C4 can be checked on the data it was
+formed on. If the two disagree about which candidates are preferred, that
+disagreement is reported and no ranking rests on `D_localisation` alone.
+
 ## Inventory of reusable computations
 
 | Point | Status | Source |
