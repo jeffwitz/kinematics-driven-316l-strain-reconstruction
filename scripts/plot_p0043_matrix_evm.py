@@ -9,8 +9,9 @@ few extreme pixels cannot stretch the range and flatten everything else, and a
 **fixed layout**: the field occupies exactly the same pixels in every file, so
 flipping through them in a file browser shows only what actually changes.
 
-Written as PNG and SVG. Names sort as DIC first, then the matrix by alpha then
-ell, then the two negative controls, so a directory listing is already a sweep.
+Written as PNG and SVG. Names sort as DIC first, then the **local model** as
+the no-regularisation reference, then the matrix by alpha then ell, then the two
+negative controls, so a directory listing is already a sweep.
 """
 
 from __future__ import annotations
@@ -117,6 +118,24 @@ def main() -> int:
         vmax=vmax,
     )
     written += 1
+
+    # The local model is the no-regularisation end of the sweep: coupling
+    # modulus zero, nonlocal disabled. Named a0p0 so it sits between the DIC
+    # and alpha = 0.5 in a plain listing.
+    local = SYM / f"local_{profile}" / "fem_observed_evm.npy"
+    if local.is_file():
+        field = np.load(local, allow_pickle=False)
+        write_image(
+            field,
+            output / "evm_a0p0_local_no_regularisation",
+            title="local model, no regularisation  (alpha = 0)",
+            subtitle=f"q95={np.percentile(field, 95):.4g}   {scale}",
+            vmin=vmin,
+            vmax=vmax,
+        )
+        written += 1
+    else:
+        print(f"  skipped the local reference: {local} missing")
 
     for alpha in ALPHAS:
         for ell in ELLS:
