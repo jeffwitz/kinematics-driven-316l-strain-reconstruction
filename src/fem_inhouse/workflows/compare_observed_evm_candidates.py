@@ -154,7 +154,7 @@ def extract_bands(
     return bands
 
 
-def _section_metrics(
+def section_metrics(
     field: FloatArray,
     band: dict[str, Any],
 ) -> dict[str, list[float]]:
@@ -216,7 +216,7 @@ def _section_metrics(
     }
 
 
-def _continuity_on_valid_sections(
+def continuity_on_valid_sections(
     *,
     detected: NDArray[np.bool_],
     valid: NDArray[np.bool_],
@@ -275,7 +275,7 @@ def compare_observed_evm_candidates(
     reference_morphology = describe_morphology(
         dic, threshold=threshold, label_name="dic", minimum_area_pixels=MINIMUM_AREA_PIXELS
     )
-    dic_sections = {name: _section_metrics(dic, band) for name, band in bands.items()}
+    dic_sections = {name: section_metrics(dic, band) for name, band in bands.items()}
     all_corridors = np.zeros(dic.shape, dtype=bool)
     for band in bands.values():
         all_corridors |= band["corridor"]
@@ -320,7 +320,7 @@ def compare_observed_evm_candidates(
 
         errors: dict[str, dict[str, list[float]]] = {}
         for name, band in bands.items():
-            candidate_sections = _section_metrics(field, band)
+            candidate_sections = section_metrics(field, band)
             reference_sections = dic_sections[name]
             errors[name] = {
                 "mass_error": [
@@ -375,7 +375,7 @@ def compare_observed_evm_candidates(
                     if key not in {"detected", "valid"}
                 }
                 | {
-                    "continuity": _continuity_on_valid_sections(
+                    "continuity": continuity_on_valid_sections(
                         detected=np.asarray(errors[name]["detected"], dtype=bool),
                         valid=np.asarray(errors[name]["valid"], dtype=bool),
                     )
