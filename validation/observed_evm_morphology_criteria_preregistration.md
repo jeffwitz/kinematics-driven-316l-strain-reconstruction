@@ -6,7 +6,8 @@ Supersedes the Pareto criteria of
 document — candidates, observation operator, Otsu segmentation, band geometry,
 bootstrap scheme, decision vocabulary — is carried over unchanged.
 
-**Not to be run until validated.**
+**Validated 2026-08-01, including both amendments below. Executed; results in
+`observed_evm_morphology_criteria_results.md`.**
 
 ## Why a second criteria set
 
@@ -214,6 +215,43 @@ One ROI, one loading path, an observed EVM field. Nothing about internal
 stresses; PEEQ is not a DIC observable. The FEM fields are smoother than the
 DIC because the replay adds no speckle-decorrelation noise, so texture is never
 counted as model error.
+
+## Amendments, written 2026-08-01 before execution
+
+Two things the document left implicit. Both are fixed here, before any
+criterion is evaluated, because settling them while running would be the
+adjustment this protocol exists to prevent.
+
+**Amendment 1 — how G1 decides that a ranking is "manifestly contrary".**
+The registered severity order places five levels: `band_removed` (4),
+`band_spurious` (3), `shift_16px` (2), `width_0p80` and `width_1p20` (1),
+`amplitude_0p90` (0). For each criterion, Kendall's tau is computed between the
+criterion value and that severity rank over those cases.
+
+- `tau < 0` — the criterion orders known defects backwards on balance. **It is
+  removed from the decision.**
+- `tau == 0`, or a constant value — the criterion is **insensitive** to this
+  ladder. It is kept, since being blind is not the same as lying, and reported
+  as insensitive so no reader mistakes its silence for agreement.
+- `tau > 0` — kept.
+
+The other ladder cases — `shift_1px`, `shift_4px`, `amplitude_1p50` — are
+computed and reported but excluded from the statistic, because the registered
+order does not place them. `add_spurious_band` is **not** part of
+`standard_cases` in the module; it is added explicitly here, since the
+registered severity order names it.
+
+**Amendment 2 — the centreline criterion is paired against the DIC.**
+v1 used the absolute offset between the intensity centroid of a section and the
+skeleton origin. That quantity is **not zero for the DIC against itself**: a
+smoothed skeleton and an intensity centroid do not coincide, so v1's criterion
+carried a constant geometric offset that had nothing to do with any candidate.
+It is redefined as the paired difference against the DIC's own offset on the
+same section, which is zero for the reference by construction.
+
+This was found by reading the code while preparing G2, not by running it. It is
+recorded here rather than presented later as a G2 discovery — G2 would have
+caught it, and did not get the chance.
 
 ## Deliverable
 
