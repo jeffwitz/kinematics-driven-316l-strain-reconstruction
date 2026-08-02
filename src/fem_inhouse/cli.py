@@ -94,6 +94,39 @@ PARTITION_FIELDS = (
 )
 
 
+def _json_mapping(value: str) -> dict[str, object]:
+    """Parse a JSON object from the command line, rejecting anything else."""
+
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as error:
+        raise argparse.ArgumentTypeError(f"invalid JSON: {error}") from error
+    if not isinstance(parsed, dict):
+        raise argparse.ArgumentTypeError("expected a JSON object")
+    if not all(isinstance(key, str) for key in parsed):
+        raise argparse.ArgumentTypeError("JSON object keys must be strings")
+    return parsed
+
+
+def _constitutive_backend(value: str) -> str:
+    """Accept a builtin backend or any registered plugin identifier.
+
+    `choices=` cannot be used here: a plugin registers itself at import or
+    through an entry point, so the admissible set is not known when the parser
+    is built. Validation is against the same registry the configuration uses,
+    and the error names what is available.
+    """
+
+    from fem_inhouse.config import known_constitutive_backends
+
+    known = known_constitutive_backends()
+    if value not in known:
+        raise argparse.ArgumentTypeError(
+            f"unknown constitutive backend {value!r}; available: {', '.join(sorted(known))}"
+        )
+    return value
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fem-inhouse",
@@ -108,13 +141,12 @@ def _parser() -> argparse.ArgumentParser:
     validate.add_argument("--ny", type=int, default=10)
     validate.add_argument(
         "--constitutive-backend",
-        choices=(
-            "python",
-            "mfront",
-            "mfront-native-plane-stress",
-            "mfront-3d-condensed-plane-stress",
-        ),
+        type=_constitutive_backend,
         default="mfront",
+        help=(
+            "builtin backend or a registered plugin identifier; "
+            "run with an unknown value to list what is available"
+        ),
     )
     validate.add_argument(
         "--mfront-library",
@@ -128,13 +160,12 @@ def _parser() -> argparse.ArgumentParser:
     example.add_argument("--ny", type=int, default=10)
     example.add_argument(
         "--constitutive-backend",
-        choices=(
-            "python",
-            "mfront",
-            "mfront-native-plane-stress",
-            "mfront-3d-condensed-plane-stress",
-        ),
+        type=_constitutive_backend,
         default="mfront",
+        help=(
+            "builtin backend or a registered plugin identifier; "
+            "run with an unknown value to list what is available"
+        ),
     )
     example.add_argument(
         "--mfront-library",
@@ -209,19 +240,40 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--minimum-step-divisor", type=int, default=1_024)
     partition.add_argument(
         "--constitutive-backend",
-        choices=(
-            "python",
-            "mfront",
-            "mfront-native-plane-stress",
-            "mfront-3d-condensed-plane-stress",
-        ),
+        type=_constitutive_backend,
         default="mfront",
+        help=(
+            "builtin backend or a registered plugin identifier; "
+            "run with an unknown value to list what is available"
+        ),
     )
     partition.add_argument(
         "--mfront-library",
         default="build/mfront/src/libBehaviour.so",
     )
     partition.add_argument("--mfront-threads", type=int, default=1)
+    partition.add_argument(
+        "--mfront-behaviour-id",
+        default=None,
+        help="catalogue identifier; defaults to the J2 law matching the coupling mode",
+    )
+    partition.add_argument(
+        "--constitutive-options",
+        type=_json_mapping,
+        default=None,
+        help="JSON object forwarded to a constitutive plugin",
+    )
+    partition.add_argument(
+        "--nonlocal-criterion",
+        default="peeq_helmholtz",
+        help="registered nonlocal criterion driving the fixed point",
+    )
+    partition.add_argument(
+        "--nonlocal-criterion-options",
+        type=_json_mapping,
+        default=None,
+        help="JSON object forwarded to the nonlocal criterion factory",
+    )
     partition.add_argument("--nonlocal-plasticity", action="store_true")
     partition.add_argument("--nonlocal-length-um", type=float, default=58.88)
     partition.add_argument("--nonlocal-coupling-modulus-mpa", type=float, default=0.0)
@@ -713,6 +765,8 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             residual_tolerance=args.residual_tolerance,
             minimum_step_divisor=args.minimum_step_divisor,
             constitutive_backend=args.constitutive_backend,
+            mfront_behaviour_id=args.mfront_behaviour_id,
+            constitutive_options=args.constitutive_options or {},
             mfront_library=args.mfront_library,
             mfront_threads=args.mfront_threads,
         ),
@@ -728,6 +782,8 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             relative_tolerance=args.nonlocal_tolerance,
             maximum_iterations=args.nonlocal_max_iterations,
             record_iteration_history=args.nonlocal_record_iteration_history,
+            criterion=args.nonlocal_criterion,
+            criterion_options=args.nonlocal_criterion_options or {},
         ),
     )
     return PartitionWorkflow(
