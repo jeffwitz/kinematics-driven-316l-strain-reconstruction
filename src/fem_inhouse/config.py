@@ -3,7 +3,34 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
+
+#: Backends the solver implements directly, without going through a plugin.
+BUILTIN_CONSTITUTIVE_BACKENDS = frozenset(
+    {
+        "python",
+        "mfront",
+        "mfront-native-plane-stress",
+        "mfront-3d-condensed-plane-stress",
+    }
+)
+
+
+def known_constitutive_backends() -> frozenset[str]:
+    """Builtin backends plus every registered plugin identifier.
+
+    Imported lazily: `constitutive_plugins` must not be a hard dependency of
+    the configuration layer, and entry-point discovery must not run at import
+    time of this module.
+    """
+
+    from fem_inhouse.core.constitutive_plugins import (
+        CONSTITUTIVE_PLUGINS,
+        load_constitutive_plugins,
+    )
+
+    load_constitutive_plugins()
+    return BUILTIN_CONSTITUTIVE_BACKENDS | frozenset(CONSTITUTIVE_PLUGINS.identifiers())
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,12 +102,13 @@ class SolverConfig:
     minimum_step_divisor: int = 1_024
     require_pypardiso: bool = True
     hardening_mode: Literal["ludwik", "tabular"] = "ludwik"
-    constitutive_backend: Literal[
-        "python",
-        "mfront",
-        "mfront-native-plane-stress",
-        "mfront-3d-condensed-plane-stress",
-    ] = "mfront"
+    #: No longer a `Literal`: a registered plugin identifier must be accepted.
+    #: Validity is still checked eagerly in `__post_init__`, against the builtin
+    #: names plus whatever the plugin registry knows, so a typo fails when the
+    #: configuration is read rather than minutes into a solve.
+    constitutive_backend: str = "mfront"
+    mfront_behaviour_id: str | None = None
+    constitutive_options: dict[str, Any] = field(default_factory=dict)
     mfront_library: str = "build/mfront/src/libBehaviour.so"
     mfront_threads: int = 1
     local_plane_stress_tolerance_mpa: float = 1e-8
@@ -108,13 +136,18 @@ class SolverConfig:
             raise ValueError("minimum_step_divisor must be at least 2")
         if self.hardening_mode not in {"ludwik", "tabular"}:
             raise ValueError("hardening_mode must be 'ludwik' or 'tabular'")
-        if self.constitutive_backend not in {
-            "python",
-            "mfront",
-            "mfront-native-plane-stress",
-            "mfront-3d-condensed-plane-stress",
-        }:
-            raise ValueError("unsupported constitutive_backend")
+        if not self.constitutive_backend:
+            raise ValueError("constitutive_backend must not be empty")
+        if self.constitutive_backend not in known_constitutive_backends():
+            known = ", ".join(sorted(known_constitutive_backends()))
+            raise ValueError(
+                f"unsupported constitutive_backend {self.constitutive_backend!r}; "
+                f"known: {known}"
+            )
+        if self.mfront_behaviour_id is not None and not self.mfront_behaviour_id:
+            raise ValueError("mfront_behaviour_id must not be empty")
+        if not all(isinstance(key, str) for key in self.constitutive_options):
+            raise TypeError("constitutive_options keys must be strings")
         if not self.mfront_library:
             raise ValueError("mfront_library must not be empty")
         if not 0.0 < self.line_search_reduction < 1.0:
@@ -167,10 +200,19 @@ class NonlocalPlasticityConfig:
     maximum_iterations: int = 15
     maximum_helmholtz_residual: float = 1e-10
     record_iteration_history: bool = False
+    #: Which registered criterion drives the fixed point. The default is the
+    #: historical PEEQ-Helmholtz coupling, so existing configurations are
+    #: unchanged.
+    criterion: str = "peeq_helmholtz"
+    criterion_options: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.length_scale_mm <= 0:
             raise ValueError("length_scale_mm must be positive")
+        if not self.criterion:
+            raise ValueError("nonlocal criterion must not be empty")
+        if not all(isinstance(key, str) for key in self.criterion_options):
+            raise TypeError("criterion_options keys must be strings")
         if self.coupling_modulus_mpa < 0:
             raise ValueError("coupling_modulus_mpa must be nonnegative")
         if not 0 < self.relaxation <= 1:

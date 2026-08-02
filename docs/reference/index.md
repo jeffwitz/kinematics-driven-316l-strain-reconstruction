@@ -24,6 +24,7 @@ argue for the scientific model.
 - {doc}`configuration`
 - {doc}`cli`
 - {doc}`api`
+- {doc}`extension_interfaces`
 
 ## Solver internals
 
@@ -57,6 +58,7 @@ output_contract
 configuration
 cli
 api
+extension_interfaces
 numerics/plane_stress
 numerics/mfront_transaction
 numerics/three_dimensional_condensation
