@@ -50,6 +50,7 @@ from fem_inhouse.core.linear_solver import (
     create_linear_solver,
 )
 from fem_inhouse.core.mesh import StructuredMesh
+from fem_inhouse.core.nonlocal_criteria import NONLOCAL_CRITERIA, load_nonlocal_criteria
 from fem_inhouse.core.nonlocal_plasticity import (
     NonlocalCouplingConvergenceError,
     NonlocalCouplingEvaluation,
@@ -148,6 +149,10 @@ def run_fem(
     first_positive_plastic_strain=1e-6,
     minimum_step_divisor=1024,
     constitutive_backend="mfront",
+    mfront_behaviour_id=None,
+    constitutive_options=None,
+    nonlocal_criterion="peeq_helmholtz",
+    nonlocal_criterion_options=None,
     mfront_library="build/mfront/src/libBehaviour.so",
     mfront_threads=1,
     local_plane_stress_tolerance_mpa=1e-8,
@@ -252,11 +257,24 @@ def run_fem(
         nonlocal_coupling_modulus_mpa=(
             nonlocal_coupling_modulus_mpa if nonlocal_plasticity_enabled else None
         ),
+        mfront_behaviour_id=mfront_behaviour_id,
+        constitutive_options=constitutive_options,
     )
     nonlocal_material_batch: NonlocalPlaneStressMaterialBatch | None = None
+    active_nonlocal_criterion = None
     if nonlocal_plasticity_enabled:
-        if not hasattr(material_batch, "set_nonlocal_equivalent_plastic_strain"):
-            raise TypeError("selected constitutive backend does not expose the nonlocal field")
+        # The criterion, not a hard-coded attribute name, decides whether this
+        # backend can be driven nonlocally.
+        load_nonlocal_criteria()
+        active_nonlocal_criterion = NONLOCAL_CRITERIA.create(
+            nonlocal_criterion,
+            nonlocal_criterion_options,
+        )
+        if not active_nonlocal_criterion.supports_material(material_batch):
+            raise TypeError(
+                f"selected constitutive backend does not support nonlocal criterion "
+                f"{nonlocal_criterion!r}"
+            )
         nonlocal_material_batch = cast(NonlocalPlaneStressMaterialBatch, material_batch)
     linear_system_matrix_type = cast(
         LinearSystemMatrixType,
@@ -572,6 +590,7 @@ def run_fem(
                         maximum_iterations=nonlocal_maximum_iterations,
                         maximum_helmholtz_residual=nonlocal_maximum_helmholtz_residual,
                         workspace=nonlocal_workspace,
+                        criterion=active_nonlocal_criterion,
                     )
                     trial = nonlocal_evaluation.constitutive_trial
                     np.copyto(chi_trial_guess, nonlocal_evaluation.nonlocal_peeq)
