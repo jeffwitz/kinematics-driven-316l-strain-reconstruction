@@ -3,12 +3,21 @@
 Dernière mise à jour : 2026-08-02
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
-## VOUS ÊTES SUR LA BRANCHE `crystal-plasticity-boundaries`
+## Frontières d'extension — fusionné le 2026-08-02
 
-Branche de travail, **non fusionnée**, qui porte le diff
-`kinematics_extension_v1.diff` de GPT Work : registres de plugins constitutifs,
-catalogue déclaratif des lois MFront, critères non locaux interchangeables.
-Objectif : accueillir une plasticité cristalline sans réécrire Newton.
+Le diff `kinematics_extension_v1.diff` de GPT Work est intégré : registres de
+plugins constitutifs, catalogue déclaratif des lois MFront, critères non locaux
+interchangeables. Objectif : accueillir une plasticité cristalline sans
+réécrire Newton. Travail fait sur `crystal-plasticity-boundaries`, fusionné
+dans `main` sans fast-forward pour que la séquence reste lisible.
+
+**Effet sur les campagnes archivées** : cinq champs de configuration
+s'ajoutent, donc tous les manifestes changent. Ce n'est pas une régression
+propre à ce travail — `_manifest_data()` hache déjà `_source_fingerprint()` sur
+tous les `.py`, donc le manifeste change à chaque commit — mais une campagne
+archivée qu'on tenterait de reprendre refusera avec
+`existing run manifest does not match`. Les résultats déjà écrits restent
+lisibles ; c'est la reprise et l'ajout de partitions qui sont concernés.
 
 **Le diff ne s'appliquait pas** — les six fichiers modifiés échouaient tous et
 la fusion à trois points était impossible, aucun blob de base n'étant dans la
