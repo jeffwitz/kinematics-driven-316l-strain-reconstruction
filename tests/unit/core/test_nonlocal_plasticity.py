@@ -3,6 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from fem_inhouse.core.nonlocal_criteria import (
+    NonlocalRegularisationContext,
+    NonlocalRegularisationResult,
+)
 from fem_inhouse.core.nonlocal_plasticity import (
     NonlocalCouplingConvergenceError,
     _mixed_relative_maximum_norm,
@@ -121,6 +125,7 @@ def _evaluate(
     maximum_iterations: int = 5,
     initial_nonlocal_peeq: np.ndarray | None = None,
     relaxation_strategy: str = "fixed",
+    criterion=None,
 ):
     return evaluate_nonlocal_fixed_point(
         batch,
@@ -139,6 +144,7 @@ def _evaluate(
         coupling_modulus_mpa=coupling_modulus_mpa,
         relaxation=relaxation,
         relaxation_strategy=relaxation_strategy,
+        criterion=criterion,
         minimum_relaxation=0.05,
         maximum_relaxation=0.8,
         relative_tolerance=1e-10,
@@ -243,3 +249,67 @@ def test_invalid_initial_nonlocal_field_is_rejected(value: np.ndarray) -> None:
 
     with pytest.raises(ValueError, match="finite and nonnegative"):
         _evaluate(batch, initial_nonlocal_peeq=value)
+
+
+class _SignedIdentityCriterion:
+    """A criterion whose field may be negative, and whose operator is identity.
+
+    Exists to pin that the fixed point no longer clips at zero on its own: the
+    nonnegativity of PEEQ is the criterion's property, not the solver's.
+    """
+
+    identifier = "signed_identity"
+    source_name = "signed_plastic_activity"
+    requires_nonnegative_field = False
+
+    def supports_material(self, material_batch: object) -> bool:
+        return isinstance(material_batch, _FakeNonlocalBatch)
+
+    def set_external_field(self, material_batch: object, values) -> None:
+        assert isinstance(material_batch, _FakeNonlocalBatch)
+        material_batch.external_chi = np.asarray(values).copy()
+
+    def evaluate_source_and_safety(
+        self,
+        material_batch: object,
+        in_plane_strain,
+        *,
+        time_increment: float,
+    ):
+        assert isinstance(material_batch, _FakeNonlocalBatch)
+        del time_increment
+        points = np.asarray(in_plane_strain).shape[0]
+        material_batch.evaluate_calls += 1
+        return np.full(points, -0.02), np.full(points, 300.0)
+
+    def source_from_trial(self, trial: ConstitutiveTrial):
+        return np.full(trial.stress_in_plane_mpa.shape[0], -0.02)
+
+    def safety_from_trial(self, trial: ConstitutiveTrial):
+        return trial.observables["yield_surface_radius_mpa"]
+
+    def regularise(
+        self,
+        source_element_field,
+        context: NonlocalRegularisationContext,
+    ) -> NonlocalRegularisationResult:
+        del context
+        return NonlocalRegularisationResult(
+            filtered_element_field=np.asarray(source_element_field).copy(),
+            residual_relative=0.0,
+            mean_drift=0.0,
+        )
+
+
+def test_custom_signed_criterion_passes_through_fixed_point_without_clipping() -> None:
+    batch = _FakeNonlocalBatch(24, local_peeq=0.03)
+
+    result = _evaluate(
+        batch,
+        coupling_modulus_mpa=0.0,
+        initial_nonlocal_peeq=np.full((3, 2), -0.02),
+        criterion=_SignedIdentityCriterion(),
+    )
+
+    np.testing.assert_allclose(result.nonlocal_peeq, -0.02, rtol=0.0, atol=0.0)
+    np.testing.assert_allclose(result.local_element_peeq, -0.02, rtol=0.0, atol=0.0)
