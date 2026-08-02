@@ -45,6 +45,8 @@ fields. They are element-wise input maps.
 | `constitutive_backend` | `"mfront"` | constitutive implementation |
 | `mfront_library` | `build/mfront/src/libBehaviour.so` | generic-interface library |
 | `mfront_threads` | `1` | explicit MGIS thread-pool size |
+| `mfront_behaviour_id` | `null` | optional declarative MFront catalogue entry |
+| `constitutive_options` | `{}` | options forwarded unchanged to a registered plugin |
 | `local_plane_stress_tolerance_mpa` | `1e-8` | absolute transverse-stress tolerance |
 | `local_plane_stress_relative_tolerance` | `1e-10` | relative transverse-stress tolerance |
 | `maximum_local_plane_stress_iterations` | `15` | local Newton iteration limit |
@@ -61,6 +63,7 @@ Supported backend values are:
 | `mfront-native-plane-stress` | explicit native MFront plane stress |
 | `mfront-3d-condensed-plane-stress` | experimental 3D law with local condensation |
 | `python` | historical analytical/tabulated J2 regression implementation |
+| any registered identifier | process-local constitutive plugin |
 
 The local plane-stress controls are used only by the condensed 3D backend.
 
@@ -72,6 +75,8 @@ extension. It does not alter a campaign when `enabled=false`.
 | Field | Default | Unit | Meaning |
 |---|---:|---|---|
 | `enabled` | `false` | — | select the micromorphic MFront behaviours and fixed point |
+| `criterion` | `peeq_helmholtz` | — | registered scalar source and spatial operator |
+| `criterion_options` | `{}` | — | options validated by the criterion factory |
 | `length_scale_mm` | `0.05888` | mm | Helmholtz interaction length |
 | `coupling_modulus_mpa` | `0.0` | MPa | energetic coupling modulus \(H_\chi\) |
 | `relaxation` | `0.5` | — | fixed-point relaxation \(\omega\) |
