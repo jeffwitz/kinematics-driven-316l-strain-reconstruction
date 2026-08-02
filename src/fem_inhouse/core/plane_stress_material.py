@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
@@ -329,6 +330,8 @@ def create_plane_stress_material_batch(
     mfront_threads: int,
     local_plane_stress_options: dict[str, Any] | None = None,
     nonlocal_coupling_modulus_mpa: float | None = None,
+    mfront_behaviour_id: str | None = None,
+    constitutive_options: Mapping[str, Any] | None = None,
 ) -> PlaneStressMaterialBatch:
     """Construct a backend without exposing its implementation to global Newton."""
 
@@ -359,6 +362,34 @@ def create_plane_stress_material_batch(
             MFront3DCondensedPlaneStressBatch,
             MFrontNativePlaneStressBatch,
         )
+        from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+
+        # The behaviour names come from the catalogue rather than from inline
+        # conditionals, so a new law is a catalogue entry rather than an edit
+        # here. The two registered entries reproduce the previous names exactly.
+        selected_behaviour_id = mfront_behaviour_id or (
+            "micromorphic_ludwik_j2"
+            if nonlocal_coupling_modulus_mpa is not None
+            else "ludwik_j2"
+        )
+        behaviour = MFRONT_BEHAVIOURS.get(selected_behaviour_id)
+        if behaviour.bridge_profile != "ludwik_j2_v1":
+            raise ValueError(
+                f"MFront behaviour {selected_behaviour_id!r} requires bridge profile "
+                f"{behaviour.bridge_profile!r}; register a constitutive plugin for that "
+                "profile"
+            )
+        exposes_nonlocal_peeq = any(
+            variable.canonical_name == "nonlocal_equivalent_plastic_strain"
+            for variable in behaviour.external_state_variables
+        )
+        if exposes_nonlocal_peeq != (nonlocal_coupling_modulus_mpa is not None):
+            raise ValueError(
+                f"MFront behaviour {selected_behaviour_id!r} and "
+                "nonlocal_coupling_modulus_mpa select incompatible local/nonlocal modes"
+            )
+        if exposes_nonlocal_peeq:
+            behaviour.external_entry_name("nonlocal_equivalent_plastic_strain")
 
         common = (
             mfront_library,
@@ -375,25 +406,50 @@ def create_plane_stress_material_batch(
             return MFrontNativePlaneStressBatch(
                 *common,
                 thread_count=mfront_threads,
-                behaviour_name=(
-                    "PixelMicromorphicLudwikJ2Plasticity"
-                    if nonlocal_coupling_modulus_mpa is not None
-                    else "PixelLudwikJ2Plasticity"
-                ),
+                behaviour_name=behaviour.behaviour_name("native"),
                 **micromorphic_options,
             )
         return MFront3DCondensedPlaneStressBatch(
             *common,
             thread_count=mfront_threads,
-            behaviour_name=(
-                "PixelMicromorphicLudwikJ2Plasticity3D"
-                if nonlocal_coupling_modulus_mpa is not None
-                else "PixelLudwikJ2Plasticity3D"
-            ),
+            behaviour_name=behaviour.behaviour_name("condensed_3d"),
             **micromorphic_options,
             **(local_plane_stress_options or {}),
         )
+
+    from fem_inhouse.core.constitutive_plugins import (
+        CONSTITUTIVE_PLUGINS,
+        PlaneStressMaterialRequest,
+        load_constitutive_plugins,
+    )
+
+    load_constitutive_plugins()
+    if CONSTITUTIVE_PLUGINS.contains(backend):
+        request = PlaneStressMaterialRequest(
+            initial_yield_stress_mpa=initial_yield_stress_mpa,
+            hardening_coefficient_mpa=hardening_coefficient_mpa,
+            hardening_exponent=hardening_exponent,
+            young_modulus_mpa=young_modulus_mpa,
+            poisson_ratio=poisson_ratio,
+            hardening_mode=hardening_mode,
+            plastic_strain_max=plastic_strain_max,
+            plastic_table_points=plastic_table_points,
+            first_positive_plastic_strain=first_positive_plastic_strain,
+            mfront_library=mfront_library,
+            mfront_threads=mfront_threads,
+            local_plane_stress_options=local_plane_stress_options or {},
+            nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
+            options=constitutive_options or {},
+        )
+        batch = CONSTITUTIVE_PLUGINS.get(backend).create_batch(request)
+        if not isinstance(batch, PlaneStressMaterialBatch):
+            raise TypeError(
+                f"constitutive plugin {backend!r} did not return a PlaneStressMaterialBatch"
+            )
+        return batch
+    plugins = ", ".join(CONSTITUTIVE_PLUGINS.identifiers())
+    plugin_suffix = f"; registered plugins: {plugins}" if plugins else ""
     raise ValueError(
         "constitutive_backend must be 'python', 'mfront-native-plane-stress', "
-        "or 'mfront-3d-condensed-plane-stress'"
+        f"or 'mfront-3d-condensed-plane-stress'{plugin_suffix}"
     )
