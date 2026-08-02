@@ -9,11 +9,15 @@ from typing import Literal, Protocol
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from fem_inhouse.core.nonlocal_criteria import (
+    EquivalentPlasticStrainHelmholtzCriterion,
+    NonlocalRegularisationContext,
+    ScalarNonlocalCriterion,
+)
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     InPlaneConstitutiveTrial,
 )
-from fem_inhouse.postprocessing.helmholtz import helmholtz_filter_element_field
 
 FloatArray = NDArray[np.float64]
 
@@ -271,9 +275,25 @@ def evaluate_nonlocal_fixed_point(
     maximum_iterations: int,
     maximum_helmholtz_residual: float,
     workspace: NonlocalFixedPointWorkspace | None = None,
+    criterion: ScalarNonlocalCriterion | None = None,
 ) -> NonlocalCouplingEvaluation:
-    """Solve the staggered ``p``--``chi`` fixed point from one committed state."""
+    """Solve the staggered ``p``--``chi`` fixed point from one committed state.
 
+    The criterion owns the constitutive source, the external field, the spatial
+    operator and the sign constraint. Relaxation, Aitken, the MFront
+    transactions, the diagnostics and the final tangent stay here. Passing
+    `None` selects the historical PEEQ-Helmholtz coupling, so existing callers
+    take exactly the same path as before.
+    """
+
+    active_criterion: ScalarNonlocalCriterion = (
+        EquivalentPlasticStrainHelmholtzCriterion() if criterion is None else criterion
+    )
+    if not active_criterion.supports_material(material_batch):
+        raise TypeError(
+            f"material batch does not support nonlocal criterion "
+            f"{active_criterion.identifier!r}"
+        )
     strain = np.asarray(in_plane_strain, dtype=np.float64)
     expected_points = element_shape[0] * element_shape[1] * gauss_points_per_element
     if strain.shape != (expected_points, 3):
@@ -281,8 +301,17 @@ def evaluate_nonlocal_fixed_point(
     initial_chi = np.asarray(initial_nonlocal_peeq, dtype=np.float64)
     if initial_chi.shape != element_shape:
         raise ValueError(f"initial_nonlocal_peeq must have shape {element_shape}")
-    if not np.isfinite(initial_chi).all() or np.any(initial_chi < 0):
-        raise ValueError("initial_nonlocal_peeq must be finite and nonnegative")
+    # A signed criterion must not have its field clipped at zero, which is a
+    # PEEQ-specific constraint rather than a property of the fixed point.
+    if not np.isfinite(initial_chi).all() or (
+        active_criterion.requires_nonnegative_field and np.any(initial_chi < 0)
+    ):
+        constraint = (
+            "finite and nonnegative"
+            if active_criterion.requires_nonnegative_field
+            else "finite"
+        )
+        raise ValueError(f"initial nonlocal field must be {constraint}")
     if relaxation_strategy not in {"fixed", "aitken"}:
         raise ValueError("relaxation_strategy must be 'fixed' or 'aitken'")
     if not 0 < minimum_relaxation <= maximum_relaxation <= 1:
@@ -321,18 +350,25 @@ def evaluate_nonlocal_fixed_point(
     # At Hchi=0 the mechanical response is independent of chi. One source
     # evaluation and one final evaluation preserve exact local mechanics while
     # still producing a consistent nonlocal output field.
+    regularisation_context = NonlocalRegularisationContext(
+        length_scale_mm=length_scale_mm,
+        spacing_x_mm=spacing_x_mm,
+        spacing_y_mm=spacing_y_mm,
+    )
     iteration_limit = 1 if coupling_modulus_mpa == 0.0 else maximum_iterations
     for iteration in range(1, iteration_limit + 1):
         iterations = iteration
-        material_batch.set_nonlocal_equivalent_plastic_strain(
+        active_criterion.set_external_field(
+            material_batch,
             _gauss_values(
                 chi,
                 gauss_points_per_element,
                 out=buffers.gauss_nonlocal_peeq,
-            )
+            ),
         )
         started = time.perf_counter()
-        point_peeq, point_yield_radius = material_batch.evaluate_nonlocal_state(
+        point_peeq, point_yield_radius = active_criterion.evaluate_source_and_safety(
+            material_batch,
             strain,
             time_increment=time_increment,
         )
@@ -341,13 +377,13 @@ def evaluate_nonlocal_fixed_point(
             point_peeq,
             element_shape=element_shape,
             gauss_points_per_element=gauss_points_per_element,
-            name="equivalent_plastic_strain",
+            name=active_criterion.source_name,
             out=buffers.local_element_peeq,
         )
-        if np.any(local_peeq < -1e-14):
+        if active_criterion.requires_nonnegative_field and np.any(local_peeq < -1e-14):
             raise NonlocalCouplingConvergenceError(
-                "MFront returned a negative equivalent plastic strain",
-                reason="negative_equivalent_plastic_strain",
+                f"constitutive model returned a negative {active_criterion.source_name}",
+                reason="negative_nonlocal_source",
                 iteration_history=tuple(history),
             )
         if not np.isfinite(point_yield_radius).all():
@@ -369,11 +405,9 @@ def evaluate_nonlocal_fixed_point(
             else None
         )
         started = time.perf_counter()
-        filter_result = helmholtz_filter_element_field(
+        filter_result = active_criterion.regularise(
             local_peeq,
-            length_scale_mm=length_scale_mm,
-            spacing_x_mm=spacing_x_mm,
-            spacing_y_mm=spacing_y_mm,
+            regularisation_context,
         )
         helmholtz_seconds += time.perf_counter() - started
         if filter_result.residual_relative > maximum_helmholtz_residual:
@@ -385,13 +419,16 @@ def evaluate_nonlocal_fixed_point(
                 iteration_history=tuple(history),
             )
         chi_star = filter_result.filtered_element_field
-        if np.min(chi_star) < -1e-12:
-            raise NonlocalCouplingConvergenceError(
-                f"Helmholtz solution is negative: minimum={np.min(chi_star):.3e}",
-                reason="negative_helmholtz_solution",
-                iteration_history=tuple(history),
-            )
-        np.maximum(chi_star, 0.0, out=chi_star)
+        # Both the rejection and the clamp belong to a nonnegative field. A
+        # signed criterion keeps its sign rather than being flattened at zero.
+        if active_criterion.requires_nonnegative_field:
+            if np.min(chi_star) < -1e-12:
+                raise NonlocalCouplingConvergenceError(
+                    f"regularised solution is negative: minimum={np.min(chi_star):.3e}",
+                    reason="negative_regularised_solution",
+                    iteration_history=tuple(history),
+                )
+            np.maximum(chi_star, 0.0, out=chi_star)
         np.subtract(chi_star, chi, out=buffers.raw_residual)
         absolute_residual = float(
             np.max(np.abs(buffers.raw_residual), initial=0.0)
@@ -540,12 +577,13 @@ def evaluate_nonlocal_fixed_point(
             iteration_history=history_tuple,
         )
 
-    material_batch.set_nonlocal_equivalent_plastic_strain(
+    active_criterion.set_external_field(
+        material_batch,
         _gauss_values(
             chi,
             gauss_points_per_element,
             out=buffers.gauss_nonlocal_peeq,
-        )
+        ),
     )
     started = time.perf_counter()
     trial = material_batch.evaluate_in_plane(
@@ -555,14 +593,14 @@ def evaluate_nonlocal_fixed_point(
     )
     mfront_with_tangent_seconds += time.perf_counter() - started
     local_peeq = _element_average(
-        trial.observables["equivalent_plastic_strain"],
+        active_criterion.source_from_trial(trial),
         element_shape=element_shape,
         gauss_points_per_element=gauss_points_per_element,
-        name="equivalent_plastic_strain",
+        name=active_criterion.source_name,
         out=buffers.local_element_peeq,
     )
     yield_radius = _element_average(
-        trial.observables["yield_surface_radius_mpa"],
+        active_criterion.safety_from_trial(trial),
         element_shape=element_shape,
         gauss_points_per_element=gauss_points_per_element,
         name="yield_surface_radius_mpa",
@@ -573,12 +611,7 @@ def evaluate_nonlocal_fixed_point(
             f"yield surface radius must remain positive; minimum={np.min(yield_radius):.3e}"
         )
     started = time.perf_counter()
-    final_filter = helmholtz_filter_element_field(
-        local_peeq,
-        length_scale_mm=length_scale_mm,
-        spacing_x_mm=spacing_x_mm,
-        spacing_y_mm=spacing_y_mm,
-    )
+    final_filter = active_criterion.regularise(local_peeq, regularisation_context)
     helmholtz_seconds += time.perf_counter() - started
     if final_filter.residual_relative > maximum_helmholtz_residual:
         raise NonlocalCouplingConvergenceError(
