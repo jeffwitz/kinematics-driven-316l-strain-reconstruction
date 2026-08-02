@@ -22,6 +22,7 @@
 ## Extend
 
 - {doc}`add_mfront_behaviour`
+- {doc}`add_nonlocal_criterion`
 
 The scientific reasons are in {doc}`../explanation/index`; authoritative
 parameters and field contracts are in {doc}`../reference/index`.
@@ -41,4 +42,5 @@ inspect_p0043_evm_fields
 characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
+add_nonlocal_criterion
 ```
