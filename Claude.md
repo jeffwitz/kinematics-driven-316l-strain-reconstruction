@@ -1,7 +1,82 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-07-30
+Dernière mise à jour : 2026-08-02
 Objectif de maturité : **au moins 4/5 sur tous les axes**
+
+## Frontières d'extension — fusionné le 2026-08-02
+
+Le diff `kinematics_extension_v1.diff` de GPT Work est intégré : registres de
+plugins constitutifs, catalogue déclaratif des lois MFront, critères non locaux
+interchangeables. Objectif : accueillir une plasticité cristalline sans
+réécrire Newton. Travail fait sur `crystal-plasticity-boundaries`, fusionné
+dans `main` sans fast-forward pour que la séquence reste lisible.
+
+**Effet sur les campagnes archivées** : cinq champs de configuration
+s'ajoutent, donc tous les manifestes changent. Ce n'est pas une régression
+propre à ce travail — `_manifest_data()` hache déjà `_source_fingerprint()` sur
+tous les `.py`, donc le manifeste change à chaque commit — mais une campagne
+archivée qu'on tenterait de reprendre refusera avec
+`existing run manifest does not match`. Les résultats déjà écrits restent
+lisibles ; c'est la reprise et l'ajout de partitions qui sont concernés.
+
+**Le diff ne s'appliquait pas** — les six fichiers modifiés échouaient tous et
+la fusion à trois points était impossible, aucun blob de base n'étant dans la
+base d'objets. Tout a été porté à la main, un commit par fichier.
+
+### Deux corrections apportées au diff
+
+- **Un défaut réel.** Le diff route la boucle du point fixe à travers le
+  critère mais laisse **l'évaluation finale** lire
+  `observables["equivalent_plastic_strain"]` en direct. Un critère personnalisé
+  aurait piloté la boucle puis été silencieusement contourné pour les champs
+  retournés. Verrouillé par
+  `test_custom_signed_criterion_passes_through_fixed_point_without_clipping`.
+- **Un trou fonctionnel.** `cli.py` n'était pas touché, et ses `choices=(...)`
+  rendaient tout le registre inatteignable en ligne de commande — la seule
+  façon dont ce dépôt lance des campagnes. L'option valide désormais contre le
+  registre, et `partition` a gagné `--mfront-behaviour-id`,
+  `--constitutive-options`, `--nonlocal-criterion`,
+  `--nonlocal-criterion-options`.
+
+J'ai aussi conservé la validation précoce du nom de backend, que le diff
+dégradait en simple test de non-vacuité.
+
+### Non-régression : conforme, après correction du critère
+
+Le critère bit à bit que j'avais annoncé **était inatteignable** — voir
+`validation/solver_reproducibility_note.md`. Mesuré : la même source relancée
+deux fois donne `5,55e-17` d'écart, à cause de `mfront_threads: 8` et de
+PyPardiso.
+
+| | écart relatif | verdict |
+|---|---:|---|
+| bruit run-à-run, source identique | `7,80e-16` | référence |
+| local P43, portage | `9,75e-16` | conforme |
+| **couplé a200, portage** | **`3,90e-16`** | **conforme** |
+
+Le couplé est le seul à exercer le point fixe refactorisé, et sa déviation est
+**plus faible que le bruit run-à-run**. 673 tests avec MFront, zéro skip.
+
+### Ce qui n'est pas fait
+
+La plasticité cristalline **n'est pas implémentée** : le diff ne pose que les
+frontières. Une loi au profil d'état différent de J2 doit fournir son propre
+plugin, l'adaptateur MGIS reste à écrire, et l'affectation des orientations
+EBSD aux points de Gauss est entièrement à définir.
+
+## Hygiène du dépôt — à connaître
+
+Le dépôt vit dans un **dossier synchronisé** qui fabrique des « conflicted
+copy ». 18 artefacts ont été supprimés le 2026-08-02, dont **5 copies de
+`.git/index`** et deux refs dupliquées ; sauvegardes dans
+`.git/conflicted-ref-backups/cleanup-2026-08-02/`.
+
+C'est ce mécanisme qui avait sorti le commit `553b806` du reflog. Il est
+préservé par le tag **`recovered/553b806`**, poussé sur `origin`. Son contenu
+est identique octet pour octet à `main` : rien n'était perdu comme travail,
+seulement le nœud d'historique.
+
+**Le risque reviendra** tant que `.git/` reste synchronisé.
 
 ## Où en est le projet
 
