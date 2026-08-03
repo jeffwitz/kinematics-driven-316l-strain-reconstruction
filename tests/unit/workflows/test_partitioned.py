@@ -152,7 +152,6 @@ def test_nonlocal_campaign_persists_and_stitches_coupling_fields(tmp_path, monke
     np.testing.assert_array_equal(stitched, workflow.yield_stress_mpa)
 
 
-
 def test_reduced_campaign_persists_and_stitches_hourglass_energy(
     tmp_path, monkeypatch
 ) -> None:
