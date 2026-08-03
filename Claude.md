@@ -3132,6 +3132,54 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (5) — Documentation §18 de l'intégration réduite, sur la PR #3
+
+- **Travail porté sur `agent/fix-cps4r-qualification`, pas sur `main`.** La PR
+  #3 (brouillon) traitait déjà §16 et la propagation des diagnostics ; écrire la
+  doc sur `main` aurait garanti un conflit. Ce qu'elle apporte et qu'il faut
+  connaître : le dénominateur du ratio hourglass était `|F_all @ u|`, un produit
+  scalaire final qui vaut deux fois l'énergie élastique sur un trajet linéaire
+  et n'a aucun sens de travail après plastification ; il est remplacé par un
+  travail interne trapézoïdal accumulé sur les seuls incréments acceptés, exposé
+  comme `INTERNAL_WORK`. Elle ajoute aussi le cas **non affine** qui manquait :
+  tous mes tests étaient affines, donc l'énergie hourglass y était nulle *par
+  construction* et le balayage de β ne prouvait rien
+- **`docs/explanation/reduced_integration_hourglass.md` complété** : fonctions de
+  forme bilinéaires, matrice `B` en cisaillement ingénieur, les deux règles de
+  quadrature et `Σw_g = 4`, exactitude du `2×2` sur maillage régulier (`J`
+  constant, intégrande au plus quadratique — c'est **ce qui rend β=1 exact et non
+  heuristique**), décomposition des 8 ddl en 3 rigides + 3 déformation constante
+  + 2 hourglass, identité `Σ h_a N_a = ξη` dont les deux dérivées s'annulent au
+  centroïde, comptage de rang `3 → 5` et `rang(K_hg) = 2`, condensation
+  `C^ps = C_aa − C_ab C_bb⁻¹ C_ba` écrite avec la partition Kelvin `a = {0,1,3}`,
+  `b = {2,4,5}` et les facteurs `(1,1,1/√2)`
+- **Sept références vérifiées une par une contre l'API Crossref** avant d'être
+  écrites — titre, revue, volume, pages, année, auteurs. Flanagan & Belytschko
+  1981 (l'origine du contrôle en raideur), Belytschko *et al.* 1984, Kosloff &
+  Frazier 1978, Belytschko & Bachrach 1986, Zienkiewicz, Taylor & Too 1971, plus
+  Belytschko & Bindeman 1993 et Simo & Rifai 1990 comme alternatives non
+  retenues. Trois manuels et le précédent Abaqus (`ALLAE`)
+- **Réserve de fond écrite dans la doc et dans le contrat** : `r_hg` compare une
+  grandeur **d'état** (l'énergie stockée au pas final) à une grandeur **de
+  trajet** qui inclut la dissipation plastique. Après plastification le
+  dénominateur croît, le numérateur non : le ratio baisse quand le trajet
+  s'allonge, à comportement élémentaire inchangé. Les seuils 1 % / 5 % dérivent
+  donc avec le nombre d'incréments, et deux runs ne sont comparables que sur des
+  trajets comparables. De plus il n'est évalué qu'à l'état final : une excitation
+  transitoire qui se décharge est invisible
+- **Job `quality` de la CI** : `test_warp_is_deterministic_bit_for_bit` était le
+  seul test non marqué à atteindre `cv2`. Le marqueur seul ne suffisait pas —
+  `quality` lance `pytest` sans `-m`, donc un test marqué **s'exécute quand
+  même**. Le motif du dépôt est marqueur **+** `pytest.importorskip("cv2")` ;
+  c'est ce qui a été appliqué. Le job `measurement`, qui échoue sur tout skip,
+  passe de 7 à 8 tests sélectionnés sans skip
+- Reste sur la PR : la barrière de couverture (`67,19 %` contre `85 %`), très
+  antérieure ; figure de diagnostic spatial (§13) ; balayage J2 non affine
+  plastique, comparaison SRIX inclinée et benchmark de temps réel avant que
+  CPS4R puisse remplacer CPS4 dans une campagne
+- 833 tests, zéro échec, zéro skip avec la bibliothèque MFront ; ruff, mypy et
+  Sphinx strict propres
+
 ### 2026-08-03 (4) — Tangente hourglass mesurée, et CPS4R validé en cristallin
 
 - **Le repli silencieux est supprimé.** `reference_in_plane_tangent_mpa()` est
