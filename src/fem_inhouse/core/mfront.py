@@ -250,11 +250,24 @@ def _apply_behaviour_parameters(
     values: Mapping[str, float] | None,
     behaviour_name: str,
 ) -> None:
-    """Override MFront `@Parameter` values on a freshly loaded behaviour.
+    """Override MFront `@Parameter` values on a loaded behaviour.
 
     This is how a registered parameter set reaches the law without editing and
-    recompiling the `.mfront` source. It is safe because every batch loads its
-    own behaviour: there is no shared handle for an override to leak through.
+    recompiling the `.mfront` source.
+
+    **`mgis.load` does not give you a private behaviour.** Two `load` calls for
+    the same library, name and hypothesis return handles onto the *same*
+    underlying object, so a `setParameter` through one is visible through the
+    other, process-wide. Measured, not assumed: setting `tau0 = 999` on one
+    handle moved the plateau of a run driven through a second, untouched handle.
+
+    The consequence is that applying a set once at construction is not enough.
+    Two batches with different sets alive in the same process would silently
+    share whichever set was applied last -- and the wrong one would be the
+    plausible-looking one. `_reassert_behaviour_parameters` therefore re-applies
+    the batch's own values immediately before every integration, which is exact
+    under any interleaving and costs a handful of `setParameter` calls against
+    the integration of every point in the batch.
 
     An unknown name is refused rather than ignored. MGIS `setParameter` on a
     name the behaviour does not export raises, but only when it is called, and
@@ -433,6 +446,10 @@ class MFrontMaterialPointBatch:
         self._behaviour = behaviour
         self._manager = manager
         self._point_count = yield_stress.size
+        #: The native plane-stress J2 law exposes no selectable parameter set,
+        #: so there is nothing to re-assert; the attribute exists so the shared
+        #: guard against MGIS's shared behaviour handles applies uniformly.
+        self._behaviour_parameters: dict[str, float] = {}
         self._material_values = material_values
         self._temperature_values = temperature_values
         self._behaviour_name = behaviour_name
@@ -581,6 +598,12 @@ class MFrontMaterialPointBatch:
         self._trial_nonlocal_values[:] = trial
         self._apply_trial_nonlocal_values()
 
+    def _reassert_behaviour_parameters(self) -> None:
+        """No-op for this law, kept so the integration path is uniform."""
+
+        for name, value in self._behaviour_parameters.items():
+            self._mgis.setParameter(self._behaviour, name, value)
+
     def _integrate_trial(
         self,
         total_strain: ArrayLike,
@@ -604,6 +627,7 @@ class MFrontMaterialPointBatch:
         if self._has_trial_state:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
+        self._reassert_behaviour_parameters()
         self._apply_trial_nonlocal_values()
 
         conversion_started = time.perf_counter()
@@ -1165,6 +1189,9 @@ class MFront3DMaterialPointBatch:
         self._behaviour = behaviour
         self._manager = manager
         self._point_count = resolved_point_count
+        #: Kept so they can be re-applied before every integration; see
+        #: `_apply_behaviour_parameters` for why once is not enough.
+        self._behaviour_parameters = dict(behaviour_parameters or {})
         self._material_values = material_values
         self._temperature_values = temperature_values
         self._behaviour_name = behaviour_name
@@ -1274,6 +1301,17 @@ class MFront3DMaterialPointBatch:
         self._trial_nonlocal_values[:] = trial
         self._apply_trial_nonlocal_values()
 
+    def _reassert_behaviour_parameters(self) -> None:
+        """Re-apply this batch's parameter values before integrating.
+
+        `mgis.load` hands out shared handles, so another batch in the same
+        process can have overwritten them since the last call. Cheap: a dozen
+        scalar writes against the integration of every point in the batch.
+        """
+
+        for name, value in self._behaviour_parameters.items():
+            self._mgis.setParameter(self._behaviour, name, value)
+
     def evaluate(self, total_strain_kelvin: ArrayLike, *, time_increment: float) -> _MFront3DTrial:
         strain = np.asarray(total_strain_kelvin, dtype=float)
         if strain.shape != (self._point_count, 6):
@@ -1285,6 +1323,7 @@ class MFront3DMaterialPointBatch:
         if self._has_trial_state:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
+        self._reassert_behaviour_parameters()
         self._apply_trial_nonlocal_values()
         # Step 3 of the plane-stress ordering: the strain arrives in the global
         # frame, complete with the current transverse components, and is turned
