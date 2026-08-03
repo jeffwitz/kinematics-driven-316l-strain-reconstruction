@@ -69,9 +69,28 @@ autodoc_member_order = "bysource"
 autosummary_generate = True
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
+# Each project lists the remote inventory first and a committed copy second.
+# Intersphinx only warns when *every* location for a project fails, so the local
+# copy keeps a strict `-W` build green when the remote is briefly unavailable --
+# numpy.org returned a 502 on 2026-08-03 and failed the documentation job on
+# main, on a commit whose own branch had passed minutes earlier.
+#
+# The warning carries no `type`/`subtype`, so `suppress_warnings` cannot reach
+# it; a fallback location is the mechanism Sphinx actually provides for this.
+#
+# The remote stays first, so references still resolve against current upstream
+# documentation and the copies are only a safety net. Refresh them with
+# `python scripts/refresh_intersphinx_inventories.py` when they drift.
+_INVENTORIES = Path(__file__).parent / "_inventories"
 intersphinx_mapping = {
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "python": ("https://docs.python.org/3/", None),
+    "numpy": (
+        "https://numpy.org/doc/stable/",
+        (None, str(_INVENTORIES / "numpy.inv")),
+    ),
+    "python": (
+        "https://docs.python.org/3/",
+        (None, str(_INVENTORIES / "python.inv")),
+    ),
 }
 
 templates_path = ["_templates"]

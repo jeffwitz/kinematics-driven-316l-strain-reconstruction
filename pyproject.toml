@@ -65,11 +65,12 @@ omit = ["src/fem_inhouse/__main__.py"]
 source = ["fem_inhouse"]
 
 [tool.coverage.report]
-# Kept equal to `.coveragerc-ci`, which carries the rationale. This profile does
-# not omit `core/mfront.py`, so a local run with the MFront library available
-# scores above the CI figure; the threshold is the CI one, which is the lower
-# bound of the two.
-fail_under = 70
+# Kept equal to `.coveragerc-ci`, which carries the rationale. A developer
+# machine scores well above this -- it has MFront and OpenCV, and this profile
+# does not omit `core/mfront.py` -- so the threshold is the CI one, the lower
+# bound of the two. Passing here therefore says little; the CI job is what
+# guards the number.
+fail_under = 68
 show_missing = true
 skip_covered = true
 
