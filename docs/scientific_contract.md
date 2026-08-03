@@ -198,6 +198,39 @@ active-area limit (`21.85%` predicted versus `20%` maximum). The current
 scientific status is therefore *partially supported*, with no confirmatory
 transfer authorized by this contract.
 
+## Optional reduced integration
+
+The reference finite element remains `CPS4`, integrated at four Gauss points.
+The optional `CPS4R` formulation uses one central constitutive point and
+stiffness-based hourglass control,
+
+\[
+K_{hg}=\beta\left(K_{ref}^{4pt}-K_{ref}^{1pt}\right),
+\qquad 0<\beta\leq1.
+\]
+
+The reference material operator is isotropic elastic for J2 and the rotated,
+plane-stress-condensed cubic elastic operator for a crystal behaviour. The
+stabilisation remains elastic after yielding and must never be interpreted as
+plastic dissipation, crystal hardening, or nonlocal physics.
+
+At \(\beta=1\), CPS4R must recover CPS4 for constant linear elasticity, including
+non-affine displacement fields that excite hourglass modes. This exact elastic
+property does not extend to elastoplastic response. CPS4 therefore remains the
+scientific reference until non-affine J2 and crystal-plasticity comparisons
+bound the reduced-integration error.
+
+For accepted equilibrium increments, internal work is accumulated by the
+trapezoidal rule from the mechanical internal-force vector. Failed trials and
+cutbacks contribute neither internal work nor diagnostic energy. A CPS4R
+campaign records the global hourglass energy, its ratio to accumulated internal
+work, and the spatial field `HOURGLASS_ENERGY_BY_ELEMENT`.
+The spatial field must be inspected beside the constitutive activity; a small
+global ratio alone is insufficient.
+
+CPS4R and the micromorphic nonlocal extension are deliberately incompatible
+until their interaction has been validated.
+
 ## Four macroscopic curves
 
 The workflow must keep these four curves distinct:
