@@ -3132,6 +3132,52 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (6) — Qualification CPS4R : elle échoue, et le diagnostic est réfuté
+
+- **Préinscription d'abord** (`validation/cps4r_qualification_preregistration.md`),
+  seuils dérivés et non choisis : le profil de référence archivé reproduit le
+  champ à `1,673 %`, exiger que la formulation élémentaire n'inflate ça que de
+  `10 %` en quadrature donne `0,766 %`, arrondi à `0,5 %` sur PEEQ et dix fois
+  plus serré sur le déplacement
+- **Verdict : CPS4R n'est pas autorisé, aucun β n'est recommandé.** A1 échoue
+  partout — erreur PEEQ de `1,9 %` à `10,1 %` contre CPS4 sur le cas J2
+  hétérogène `32×32`, `1,35 %` en contrainte sur le cas SRIX incliné
+- **F3 a tiré dans toutes les configurations** : chacune passe le seuil de `1 %`
+  d'un ordre de grandeur en ratant la borne de précision d'un facteur 4 à 20.
+  Et la lecture spatiale ne tient pas non plus : sur 1024 éléments, corrélation
+  énergie hourglass ↔ erreur PEEQ `r = 0,033`, énergie ↔ PEEQ `r = 0,066`. Les
+  seuils `1 % / 5 %` sont **retirés** de la doc et du contrat, conséquence
+  enregistrée à l'avance
+- **H2 réfutée dans sa direction, et c'est le résultat physique intéressant** :
+  baisser β **rapproche** de CPS4 au lieu d'en éloigner. `β=1` garde la référence
+  élastique complète alors que la tangente constitutive s'effondre, donc les
+  modes hourglass restent élastiquement raides pendant que tout le reste plastifie
+  — `β=1` sur-raidit exactement là où CPS4 s'assouplirait. `β=0,1` tombe six fois
+  plus près sur le déplacement
+- **Deux faits qui vont dans l'autre sens, conservés** : le coût tient
+  (`3,7×` à `4,8×` sur le constitutif, `1,9×` à `2,9×` sur le total, le meilleur
+  étant le cristal) ; et l'écart de déplacement est **30 à 200 fois sous le bruit
+  DIC**. L'échec est de cohérence numérique, pas de physique mesurable
+- **Deux défauts de mon propre script, corrigés avant tout enregistrement** :
+  les lois cristallines laissent PEEQ à zéro, donc la première version comparait
+  un champ vide à un champ vide et **annonçait un score parfait sur le critère le
+  plus important** — A1 bascule maintenant sur la contrainte et refuse une
+  référence sans aucun des deux champs (test de non-régression écrit). Et la
+  perturbation du cas cristallin valait `2,5×` le chargement, ce qui envoyait les
+  deux formulations en cutback et fabriquait `62 %` d'écart dû à des trajets
+  divergents, pas à l'élément
+- **Un chronométrage unique n'est pas une mesure** : le premier balayage donnait
+  `0,91×` à `β=1`, soit CPS4R plus lent que CPS4 à nombre d'itérations de Newton
+  identique. C'était du bruit machine, et j'ai failli le publier. Médiane de cinq
+  résolutions désormais
+- `pythonpath = ["."]` ajouté à pytest : le test importait `scripts`, ce qui
+  passait sous `python -m pytest` et **cassait sous le `pytest` nu de la CI**
+- Reste ouvert, listé dans le rapport : étude de convergence en maillage,
+  stabilisation bâtie sur la tangente courante plutôt que sur la référence
+  élastique figée (c'est là que pointe le résultat sur β), et un estimateur qui
+  prédise réellement l'écart
+- 843 tests, ruff, mypy et Sphinx strict propres
+
 ### 2026-08-03 (5) — Documentation §18 de l'intégration réduite, sur la PR #3
 
 - **Travail porté sur `agent/fix-cps4r-qualification`, pas sur `main`.** La PR
