@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,9 @@ from typing import Any
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from fem_inhouse.core.crystal_orientation import mgis_rotation_argument, validate_rotations
 from fem_inhouse.core.linear_solver import LinearSystemMatrixType
+from fem_inhouse.core.mfront_behaviours import MFrontBehaviourSpec
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     ConstitutiveTrial,
@@ -187,6 +190,58 @@ def _broadcast_point_property(
     if nonnegative and np.any(broadcast < 0):
         raise ValueError(f"{name} must be nonnegative")
     return broadcast
+
+
+def _declared_internal_slices(
+    mgis: Any,
+    behaviour: Any,
+    hypothesis: Any,
+    specification: MFrontBehaviourSpec | None,
+) -> dict[str, slice]:
+    """Locate each declared internal-state family in the flat MGIS array.
+
+    The offset is resolved from the first member of the family and the extent
+    from the declared `component_count`, checked against the sizes MGIS
+    reports. Names such as `PlasticSlip[7]` are never parsed: MFront indexes
+    array variables with a suffix, but relying on that spelling would break on
+    any behaviour that names its members differently.
+    """
+
+    if specification is None:
+        return {}
+    sizes = {
+        variable.name: int(mgis.getVariableSize(variable, hypothesis))
+        for variable in behaviour.isvs
+    }
+    offsets: dict[str, int] = {}
+    running = 0
+    for variable in behaviour.isvs:
+        offsets[variable.name] = running
+        running += sizes[variable.name]
+
+    slices: dict[str, slice] = {}
+    for declared in specification.internal_state_variables:
+        head = declared.entry_name
+        if head not in offsets:
+            # MFront suffixes the members of an array variable.
+            head = f"{declared.entry_name}[0]"
+        if head not in offsets:
+            if declared.required:
+                raise MFrontUnavailableError(
+                    f"MFront behaviour does not expose internal state "
+                    f"{declared.entry_name!r} declared by the catalogue"
+                )
+            continue
+        start = offsets[head]
+        stop = start + declared.component_count
+        if stop > running:
+            raise MFrontUnavailableError(
+                f"internal state {declared.entry_name!r} declares "
+                f"{declared.component_count} components but only {running - start} "
+                "remain in the behaviour"
+            )
+        slices[declared.canonical_name] = slice(start, stop)
+    return slices
 
 
 def _variable_offset(
@@ -837,18 +892,46 @@ class _MFront3DTrial:
     equivalent_plastic_strain: NDArray
     yield_surface_radius_mpa: NDArray
     consistent_tangent_kelvin_mpa: NDArray
+    #: Everything the behaviour spec declares, in the global frame for tensors
+    #: and in the material frame for per-slip-system quantities.
+    observables: dict[str, NDArray] = field(default_factory=dict)
 
 
-class _MFront3DMaterialPointBatch:
-    """Raw transaction-safe MGIS bridge for the tridimensional J2 behaviour."""
+#: The profile whose J2 conventions the bridge is allowed to assume.
+#:
+#: Every reference to InitialYieldStress, EquivalentPlasticStrain or
+#: YieldSurfaceRadius lives behind a check against this constant. A crystal has
+#: twelve slips and twelve critical resolved shear stresses, not a scalar pair,
+#: so those names must never be required of a behaviour that does not declare
+#: them.
+_LUDWIK_J2_PROFILE = "ludwik_j2_v1"
+
+
+class MFront3DMaterialPointBatch:
+    """Transaction-safe MGIS bridge for any tridimensional MFront behaviour.
+
+    The bridge is driven by an `MFrontBehaviourSpec`: material properties come
+    from a generic mapping, internal state variables are read at the offsets the
+    catalogue declares, and nothing here knows what a yield surface is.
+
+    Orientations are optional. When supplied they are one
+    `Q_global_to_material` per material point, so an EBSD map is a different
+    provider and not a different bridge. Strains are rotated into the crystal
+    frame before integration, and stresses and the consistent tangent are
+    rotated back, so everything crossing this boundary is in the global frame.
+    """
 
     def __init__(
         self,
         library_path: str | Path,
-        initial_yield_stress_mpa: ArrayLike,
-        hardening_coefficient_mpa: ArrayLike,
-        hardening_exponent: ArrayLike,
+        initial_yield_stress_mpa: ArrayLike | None = None,
+        hardening_coefficient_mpa: ArrayLike | None = None,
+        hardening_exponent: ArrayLike | None = None,
         *,
+        behaviour_spec: MFrontBehaviourSpec | None = None,
+        point_count: int | None = None,
+        material_property_values: Mapping[str, float | ArrayLike] | None = None,
+        rotation_global_to_material: ArrayLike | None = None,
         temperature_k: float = 293.15,
         thread_count: int = 1,
         behaviour_name: str = "PixelLudwikJ2Plasticity3D",
@@ -863,11 +946,57 @@ class _MFront3DMaterialPointBatch:
             raise TypeError("thread_count must be an integer")
         if thread_count < 1:
             raise ValueError("thread_count must be at least 1")
-        yield_stress, coefficient, exponent = _broadcast_material_properties(
-            initial_yield_stress_mpa,
-            hardening_coefficient_mpa,
-            hardening_exponent,
+        profile = behaviour_spec.bridge_profile if behaviour_spec is not None else (
+            _LUDWIK_J2_PROFILE
         )
+        is_j2 = profile == _LUDWIK_J2_PROFILE
+        if is_j2:
+            missing = [
+                name
+                for name, value in (
+                    ("initial_yield_stress_mpa", initial_yield_stress_mpa),
+                    ("hardening_coefficient_mpa", hardening_coefficient_mpa),
+                    ("hardening_exponent", hardening_exponent),
+                )
+                if value is None
+            ]
+            if missing:
+                raise ValueError(
+                    f"behaviour profile {_LUDWIK_J2_PROFILE!r} requires "
+                    f"{', '.join(missing)}"
+                )
+            assert initial_yield_stress_mpa is not None
+            assert hardening_coefficient_mpa is not None
+            assert hardening_exponent is not None
+            yield_stress, coefficient, exponent = _broadcast_material_properties(
+                initial_yield_stress_mpa,
+                hardening_coefficient_mpa,
+                hardening_exponent,
+            )
+            resolved_point_count = int(yield_stress.size)
+        else:
+            if point_count is None:
+                raise ValueError(
+                    f"behaviour profile {profile!r} carries no J2 material properties, "
+                    "so point_count must be given explicitly"
+                )
+            if isinstance(point_count, bool) or not isinstance(point_count, int):
+                raise TypeError("point_count must be an integer")
+            if point_count < 1:
+                raise ValueError("point_count must be at least 1")
+            if any(
+                value is not None
+                for value in (
+                    initial_yield_stress_mpa,
+                    hardening_coefficient_mpa,
+                    hardening_exponent,
+                )
+            ):
+                raise ValueError(
+                    f"behaviour profile {profile!r} does not accept the J2 hardening "
+                    "properties; pass material_property_values instead"
+                )
+            resolved_point_count = point_count
         mgis = _load_mgis()
         hypothesis = mgis.Hypothesis.Tridimensional
         behaviour = mgis.load(
@@ -890,29 +1019,41 @@ class _MFront3DMaterialPointBatch:
             hypothesis,
             expected_size=6,
         )
-        peeq_offset = _variable_offset(
-            mgis,
-            behaviour.isvs,
-            "EquivalentPlasticStrain",
-            hypothesis,
-            expected_size=1,
-        )
-        radius_offset = _variable_offset(
-            mgis,
-            behaviour.isvs,
-            "YieldSurfaceRadius",
-            hypothesis,
-            expected_size=1,
-        )
         assert elastic_offset is not None
-        assert peeq_offset is not None
-        assert radius_offset is not None
-        manager = mgis.MaterialDataManager(behaviour, yield_stress.size)
-        material_values = {
-            "InitialYieldStress": yield_stress,
-            "HardeningCoefficient": coefficient,
-            "HardeningExponent": exponent,
-        }
+        peeq_offset: int | None = None
+        radius_offset: int | None = None
+        if is_j2:
+            peeq_offset = _variable_offset(
+                mgis,
+                behaviour.isvs,
+                "EquivalentPlasticStrain",
+                hypothesis,
+                expected_size=1,
+            )
+            radius_offset = _variable_offset(
+                mgis,
+                behaviour.isvs,
+                "YieldSurfaceRadius",
+                hypothesis,
+                expected_size=1,
+            )
+            assert peeq_offset is not None
+            assert radius_offset is not None
+        observable_slices = _declared_internal_slices(mgis, behaviour, hypothesis, behaviour_spec)
+        manager = mgis.MaterialDataManager(behaviour, resolved_point_count)
+        material_values: dict[str, NDArray] = {}
+        if is_j2:
+            material_values.update(
+                {
+                    "InitialYieldStress": yield_stress,
+                    "HardeningCoefficient": coefficient,
+                    "HardeningExponent": exponent,
+                }
+            )
+        for name, value in (material_property_values or {}).items():
+            material_values[name] = _broadcast_point_property(
+                value, resolved_point_count, name=name
+            )
         nonlocal_values_s0: NDArray | None = None
         nonlocal_values_s1: NDArray | None = None
         committed_nonlocal_values: NDArray | None = None
@@ -920,7 +1061,7 @@ class _MFront3DMaterialPointBatch:
         if micromorphic_coupling_modulus_mpa is not None:
             coupling = _broadcast_point_property(
                 micromorphic_coupling_modulus_mpa,
-                yield_stress.size,
+                resolved_point_count,
                 name="micromorphic_coupling_modulus_mpa",
                 nonnegative=True,
             )
@@ -939,11 +1080,11 @@ class _MFront3DMaterialPointBatch:
                 expected_size=1,
             )
             material_values["MicromorphicCouplingModulus"] = coupling
-            nonlocal_values_s0 = np.zeros(yield_stress.size)
-            nonlocal_values_s1 = np.zeros(yield_stress.size)
-            committed_nonlocal_values = np.zeros(yield_stress.size)
-            trial_nonlocal_values = np.zeros(yield_stress.size)
-        temperature_values = np.full(yield_stress.size, temperature_k)
+            nonlocal_values_s0 = np.zeros(resolved_point_count)
+            nonlocal_values_s1 = np.zeros(resolved_point_count)
+            committed_nonlocal_values = np.zeros(resolved_point_count)
+            trial_nonlocal_values = np.zeros(resolved_point_count)
+        temperature_values = np.full(resolved_point_count, temperature_k)
         storage_mode = mgis.MaterialStateManagerStorageMode.ExternalStorage
         for state in (manager.s0, manager.s1):
             for name, values in material_values.items():
@@ -970,7 +1111,7 @@ class _MFront3DMaterialPointBatch:
         self._mgis = mgis
         self._behaviour = behaviour
         self._manager = manager
-        self._point_count = yield_stress.size
+        self._point_count = resolved_point_count
         self._material_values = material_values
         self._temperature_values = temperature_values
         self._behaviour_name = behaviour_name
@@ -981,6 +1122,17 @@ class _MFront3DMaterialPointBatch:
         self._elastic_offset = elastic_offset
         self._peeq_offset = peeq_offset
         self._radius_offset = radius_offset
+        self._specification = behaviour_spec
+        self._profile = profile
+        self._observable_slices = observable_slices
+        if rotation_global_to_material is None:
+            self._rotations: NDArray | None = None
+            self._mgis_rotations: NDArray | None = None
+        else:
+            self._rotations = validate_rotations(
+                rotation_global_to_material, point_count=resolved_point_count
+            )
+            self._mgis_rotations = mgis_rotation_argument(self._rotations)
         self._thread_pool = _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
         self._has_trial_state = False
 
@@ -995,9 +1147,21 @@ class _MFront3DMaterialPointBatch:
         return self._behaviour_name
 
     @property
+    def is_oriented(self) -> bool:
+        """Whether a crystallographic orientation is applied to each point."""
+
+        return self._rotations is not None
+
+    @property
+    def rotations_global_to_material(self) -> NDArray | None:
+        return None if self._rotations is None else self._rotations.copy()
+
+    @property
     def linear_system_matrix_type(self) -> LinearSystemMatrixType:
         """Return the verified matrix capability of the selected behaviour."""
 
+        if self._specification is not None:
+            return self._specification.linear_system_matrix_type
         if self._behaviour_name in _SYMMETRIC_POSITIVE_DEFINITE_J2_BEHAVIOURS:
             return "symmetric_positive_definite"
         return "nonsymmetric"
@@ -1055,7 +1219,18 @@ class _MFront3DMaterialPointBatch:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
         self._apply_trial_nonlocal_values()
-        self._manager.s1.gradients[:, :] = strain
+        # Step 3 of the plane-stress ordering: the strain arrives in the global
+        # frame, complete with the current transverse components, and is turned
+        # into the crystal frame here. The rotation call writes in place, so it
+        # is given a copy and never the caller's array.
+        if self._mgis_rotations is None:
+            self._manager.s1.gradients[:, :] = strain
+        else:
+            crystal_strain = np.ascontiguousarray(strain.reshape(-1).copy())
+            self._mgis.rotateGradients(
+                crystal_strain, self._behaviour, self._mgis_rotations
+            )
+            self._manager.s1.gradients[:, :] = crystal_strain.reshape(self._point_count, 6)
         integration_type = self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
         if self._thread_pool is None:
             status = self._mgis.integrate(
@@ -1076,20 +1251,49 @@ class _MFront3DMaterialPointBatch:
             self.revert()
             raise MFrontIntegrationError(f"3D MFront integration failed with status {status}")
         self._has_trial_state = True
-        elastic = self._manager.s1.internal_state_variables[
-            :, self._elastic_offset : self._elastic_offset + 6
-        ].copy()
+        state = self._manager.s1.internal_state_variables
+        elastic = state[:, self._elastic_offset : self._elastic_offset + 6].copy()
+        stress = self._manager.s1.thermodynamic_forces.copy()
+        tangent = self._manager.K.copy()
+        # Steps 5 and 6: bring the stress and the consistent tangent back to the
+        # global frame. The elastic strain is a crystal-frame quantity but is
+        # rotated too, because the solver subtracts it from the global total
+        # strain to obtain the plastic part.
+        if self._mgis_rotations is not None:
+            for tensor in (stress, elastic):
+                flat = np.ascontiguousarray(tensor.reshape(-1))
+                self._mgis.rotateThermodynamicForces(
+                    flat, self._behaviour, self._mgis_rotations
+                )
+                tensor[:, :] = flat.reshape(self._point_count, 6)
+            flat_tangent = np.ascontiguousarray(tangent.reshape(-1))
+            self._mgis.rotateTangentOperatorBlocks(
+                flat_tangent, self._behaviour, self._mgis_rotations
+            )
+            tangent = flat_tangent.reshape(tangent.shape)
+
+        observables = {
+            name: state[:, position].copy() for name, position in self._observable_slices.items()
+        }
+        if "equivalent_plastic_slip" in observables:
+            # Not a J2 equivalent plastic strain and deliberately not named like
+            # one: the sum of the twelve accumulated slips is a different scalar
+            # with a different meaning.
+            observables["accumulated_slip"] = observables["equivalent_plastic_slip"].sum(axis=1)
+
+        empty = np.empty(0)
         return _MFront3DTrial(
             total_strain_kelvin=strain.copy(),
-            stress_kelvin_mpa=self._manager.s1.thermodynamic_forces.copy(),
+            stress_kelvin_mpa=stress,
             elastic_strain_kelvin=elastic,
-            equivalent_plastic_strain=self._manager.s1.internal_state_variables[
-                :, self._peeq_offset
-            ].copy(),
-            yield_surface_radius_mpa=self._manager.s1.internal_state_variables[
-                :, self._radius_offset
-            ].copy(),
-            consistent_tangent_kelvin_mpa=self._manager.K.copy(),
+            equivalent_plastic_strain=(
+                state[:, self._peeq_offset].copy() if self._peeq_offset is not None else empty
+            ),
+            yield_surface_radius_mpa=(
+                state[:, self._radius_offset].copy() if self._radius_offset is not None else empty
+            ),
+            consistent_tangent_kelvin_mpa=tangent,
+            observables=observables,
         )
 
     def commit(self) -> None:
@@ -1141,6 +1345,10 @@ def condense_kelvin_tangent_to_engineering(tangent: ArrayLike) -> tuple[NDArray,
     return condensed_engineering, condition
 
 
+#: Retained so that existing imports of the private name keep working.
+_MFront3DMaterialPointBatch = MFront3DMaterialPointBatch
+
+
 class MFront3DCondensedPlaneStressBatch:
     """Impose three plane-stress constraints on a 3D MFront behaviour."""
 
@@ -1161,7 +1369,7 @@ class MFront3DCondensedPlaneStressBatch:
             raise ValueError("maximum_local_iterations must be positive")
         if not np.isfinite(maximum_cbb_condition_number) or maximum_cbb_condition_number <= 1:
             raise ValueError("maximum_cbb_condition_number must be finite and greater than one")
-        self._bridge = _MFront3DMaterialPointBatch(*args, **kwargs)
+        self._bridge = MFront3DMaterialPointBatch(*args, **kwargs)
         self._absolute_tolerance = float(local_tolerance_mpa)
         self._relative_tolerance = float(local_relative_tolerance)
         self._maximum_iterations = maximum_local_iterations
@@ -1314,8 +1522,19 @@ class MFront3DCondensedPlaneStressBatch:
             plane_stress_residual_mpa=residual,
             observables={
                 "plastic_strain_2d": tensor_to_engineering_strain_2d(plastic_strain),
-                "equivalent_plastic_strain": final.equivalent_plastic_strain,
-                "yield_surface_radius_mpa": final.yield_surface_radius_mpa,
+                # J2 scalars only when the behaviour actually has them. A
+                # crystal law exposes twelve slips instead, and inventing a
+                # scalar equivalent would let a consumer that needs a genuine
+                # PEEQ silently accept a different quantity.
+                **(
+                    {
+                        "equivalent_plastic_strain": final.equivalent_plastic_strain,
+                        "yield_surface_radius_mpa": final.yield_surface_radius_mpa,
+                    }
+                    if final.equivalent_plastic_strain.size
+                    else {}
+                ),
+                **final.observables,
             },
             local_plane_stress_iterations=first_converged,
             cbb_condition_number=condition,
