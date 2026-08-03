@@ -21,7 +21,7 @@ K_{hg}=\beta\left(K_{ref}^{4pt}-K_{ref}^{1pt}\right),
 
 The same reference operator is used in both terms. Consequently, translations,
 rigid rotation and affine displacement fields make no contribution to
-(K_{hg}). At (eta=1), a constant linear-elastic material recovers the
+\(K_{hg}\). At \(\beta=1\), a constant linear-elastic material recovers the
 fully integrated element stiffness exactly.
 
 The stabilisation is stiffness based. No viscous control is used because this is
