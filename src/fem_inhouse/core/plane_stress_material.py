@@ -314,6 +314,67 @@ class PythonJ2PlaneStressBatch:
         self._trial_peeq = None
 
 
+def _create_fcc_single_crystal_batch(
+    backend: str,
+    behaviour: Any,
+    *,
+    point_count: int,
+    mfront_library: str,
+    mfront_threads: int,
+    nonlocal_coupling_modulus_mpa: float | None,
+    local_plane_stress_options: dict[str, Any] | None,
+    constitutive_options: Mapping[str, Any] | None,
+) -> PlaneStressMaterialBatch:
+    """Build a crystal-plasticity batch through the condensed 3D bridge.
+
+    A crystal has no native plane-stress hypothesis, so the 3D law is condensed
+    and the plane-stress condition is imposed in the GLOBAL frame, never in the
+    crystal frame.
+    """
+
+    from fem_inhouse.core.crystal_orientation import (
+        HomogeneousOrientationProvider,
+        orientation_provider_from_mapping,
+    )
+    from fem_inhouse.core.mfront import MFront3DCondensedPlaneStressBatch
+
+    if backend == "mfront-native-plane-stress":
+        raise ValueError(
+            f"MFront behaviour {behaviour.identifier!r} is a tridimensional single "
+            "crystal and has no native plane-stress hypothesis; use "
+            "'mfront-3d-condensed-plane-stress'"
+        )
+    if nonlocal_coupling_modulus_mpa is not None:
+        raise ValueError(
+            f"MFront behaviour {behaviour.identifier!r} exposes twelve slips and no "
+            "scalar equivalent plastic strain, so it cannot drive the micromorphic "
+            "coupling, which is defined on a J2 PEEQ"
+        )
+
+    options = dict(constitutive_options or {})
+    orientation_configuration = options.pop("crystal_orientation", None)
+    provider = (
+        HomogeneousOrientationProvider.identity()
+        if orientation_configuration is None
+        else orientation_provider_from_mapping(dict(orientation_configuration))
+    )
+    if options:
+        raise ValueError(
+            f"unsupported constitutive_options for {behaviour.identifier!r}: "
+            f"{', '.join(sorted(options))}"
+        )
+
+    return MFront3DCondensedPlaneStressBatch(
+        mfront_library,
+        behaviour_spec=behaviour,
+        point_count=point_count,
+        rotation_global_to_material=provider.rotations_global_to_material(point_count),
+        thread_count=mfront_threads,
+        behaviour_name=behaviour.behaviour_name("condensed_3d"),
+        **(local_plane_stress_options or {}),
+    )
+
+
 def create_plane_stress_material_batch(
     backend: str,
     initial_yield_stress_mpa: ArrayLike,
@@ -352,12 +413,6 @@ def create_plane_stress_material_batch(
         "mfront-native-plane-stress",
         "mfront-3d-condensed-plane-stress",
     }:
-        if not np.isclose(young_modulus_mpa, 205_000.0) or not np.isclose(poisson_ratio, 0.3):
-            raise ValueError("the compiled MFront behaviours require E=205000 MPa and nu=0.3")
-        if not np.isclose(first_positive_plastic_strain, 1e-6):
-            raise ValueError(
-                "the compiled MFront behaviours require first_positive_plastic_strain=1e-6"
-            )
         from fem_inhouse.core.mfront import (
             MFront3DCondensedPlaneStressBatch,
             MFrontNativePlaneStressBatch,
@@ -373,11 +428,32 @@ def create_plane_stress_material_batch(
             else "ludwik_j2"
         )
         behaviour = MFRONT_BEHAVIOURS.get(selected_behaviour_id)
+        if behaviour.bridge_profile == "fcc_single_crystal_v1":
+            return _create_fcc_single_crystal_batch(
+                backend,
+                behaviour,
+                point_count=int(np.asarray(initial_yield_stress_mpa).size),
+                mfront_library=mfront_library,
+                mfront_threads=mfront_threads,
+                nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
+                local_plane_stress_options=local_plane_stress_options,
+                constitutive_options=constitutive_options,
+            )
         if behaviour.bridge_profile != "ludwik_j2_v1":
             raise ValueError(
                 f"MFront behaviour {selected_behaviour_id!r} requires bridge profile "
                 f"{behaviour.bridge_profile!r}; register a constitutive plugin for that "
                 "profile"
+            )
+        # The elastic constants and the hardening table are conventions of the
+        # J2 behaviours, which hardcode them. A crystal law carries its own
+        # cubic elasticity inside MFront, so this check is reached only after
+        # the crystal profile has returned above.
+        if not np.isclose(young_modulus_mpa, 205_000.0) or not np.isclose(poisson_ratio, 0.3):
+            raise ValueError("the compiled MFront behaviours require E=205000 MPa and nu=0.3")
+        if not np.isclose(first_positive_plastic_strain, 1e-6):
+            raise ValueError(
+                "the compiled MFront behaviours require first_positive_plastic_strain=1e-6"
             )
         exposes_nonlocal_peeq = any(
             variable.canonical_name == "nonlocal_equivalent_plastic_strain"

@@ -19,10 +19,20 @@ class MFrontVariableSpec:
     entry_name: str
     kind: VariableKind = "scalar"
     required: bool = True
+    #: Members of the family, in the order MFront lays them out.
+    #:
+    #: One for a scalar, six for a symmetric tensor, and twelve for a
+    #: per-slip-system quantity of an FCC crystal. The bridge reads consecutive
+    #: slots from the declared offset rather than parsing entry names like
+    #: "PlasticSlip[7]", which would break on any behaviour that names its
+    #: members differently.
+    component_count: int = 1
 
     def __post_init__(self) -> None:
         if not self.canonical_name or not self.entry_name:
             raise ValueError("MFront variable names must not be empty")
+        if self.component_count < 1:
+            raise ValueError("component_count must be at least one")
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,12 +171,21 @@ MFRONT_BEHAVIOURS.register(
 # so these behaviours must drive the linear solver in its nonsymmetric mode.
 
 
+#: Octahedral slip systems of an FCC crystal.
+FCC_SLIP_SYSTEM_COUNT = 12
+
+
 def _fcc_internal(slip_entry: str, equivalent_entry: str) -> tuple[MFrontVariableSpec, ...]:
+    per_system = FCC_SLIP_SYSTEM_COUNT
     return (
-        MFrontVariableSpec("elastic_strain", "ElasticStrain", "symmetric_tensor"),
-        MFrontVariableSpec("plastic_slip", slip_entry, "scalar"),
-        MFrontVariableSpec("equivalent_plastic_slip", equivalent_entry, "scalar"),
-        MFrontVariableSpec("back_strain", "BackStrain", "scalar"),
+        MFrontVariableSpec(
+            "elastic_strain", "ElasticStrain", "symmetric_tensor", component_count=6
+        ),
+        MFrontVariableSpec("plastic_slip", slip_entry, "scalar", component_count=per_system),
+        MFrontVariableSpec(
+            "equivalent_plastic_slip", equivalent_entry, "scalar", component_count=per_system
+        ),
+        MFrontVariableSpec("back_strain", "BackStrain", "scalar", component_count=per_system),
     )
 
 
