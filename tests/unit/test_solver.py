@@ -265,6 +265,7 @@ def test_solver_can_skip_backend_requirement_for_diagnostics(monkeypatch) -> Non
     )
     assert result.stress_mpa.shape == (2, 2, 3)
 
+
 def test_typed_api_preserves_the_spatial_hourglass_energy(monkeypatch) -> None:
     raw = _raw_result()
     field = np.arange(4, dtype=float).reshape(2, 2)
