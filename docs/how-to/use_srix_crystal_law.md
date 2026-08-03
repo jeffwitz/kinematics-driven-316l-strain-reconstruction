@@ -33,9 +33,9 @@ Neither declares a native plane-stress hypothesis, so the solver condenses the
 explicit reference strain rate:
 
 ```python
-from fem_inhouse.core.single_crystal_presets import srix_reference_stress
+from fem_inhouse.core.single_crystal_presets import srix_overstress_modulus_from_meric
 
-R = srix_reference_stress(
+R = srix_overstress_modulus_from_meric(
     norton_strength_mpa=12.0,
     norton_exponent=11.0,
     reference_strain_rate=1.0e-3,

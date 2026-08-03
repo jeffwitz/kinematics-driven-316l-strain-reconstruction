@@ -13,11 +13,12 @@ from typing import Any
 import numpy as np
 import pytest
 
+from fem_inhouse.core import single_crystal_presets
 from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
 from fem_inhouse.core.single_crystal_presets import (
     get_preset,
     get_srix_preset,
-    srix_reference_stress,
+    srix_overstress_modulus_from_meric,
 )
 
 SRIX = "Fcc316LForestRubinSrix"
@@ -162,13 +163,33 @@ def _ramp(
 def test_equation_sixteen_reproduces_the_published_value() -> None:
     """Forest and Rubin (2016), equation (16), at the specified operating point."""
 
-    value = srix_reference_stress(
+    value = srix_overstress_modulus_from_meric(
         norton_strength_mpa=12.0,
         norton_exponent=11.0,
         reference_strain_rate=1.0e-3,
     )
 
     assert value == pytest.approx(18.7819100705, abs=1e-9)
+
+
+def test_the_old_name_still_works_and_says_it_is_deprecated() -> None:
+    """Section 3.2. The rename must not silently break an existing script.
+
+    `srix_reference_stress` named what the number was used for, not where it
+    came from, so reading it in a manifest gave no hint that the value was
+    transposed from a rate-dependent law rather than measured.
+    """
+
+    arguments = {
+        "norton_strength_mpa": 12.0,
+        "norton_exponent": 11.0,
+        "reference_strain_rate": 1.0e-3,
+    }
+
+    with pytest.warns(DeprecationWarning, match="srix_overstress_modulus_from_meric"):
+        legacy = single_crystal_presets.srix_reference_stress(**arguments)
+
+    assert legacy == srix_overstress_modulus_from_meric(**arguments)
 
 
 @pytest.mark.parametrize(
@@ -192,16 +213,16 @@ def test_the_conversion_rejects_unphysical_arguments(
         **kwargs,
     }
     with pytest.raises(ValueError, match=message):
-        srix_reference_stress(**arguments)  # type: ignore[arg-type]
+        srix_overstress_modulus_from_meric(**arguments)  # type: ignore[arg-type]
 
 
 def test_a_faster_reference_rate_needs_a_larger_modulus() -> None:
     """R absorbs the rate the viscous law was frozen at; it is not a constant."""
 
-    slow = srix_reference_stress(
+    slow = srix_overstress_modulus_from_meric(
         norton_strength_mpa=12.0, norton_exponent=11.0, reference_strain_rate=1e-4
     )
-    fast = srix_reference_stress(
+    fast = srix_overstress_modulus_from_meric(
         norton_strength_mpa=12.0, norton_exponent=11.0, reference_strain_rate=1e-2
     )
 

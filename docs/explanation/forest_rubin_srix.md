@@ -63,7 +63,7 @@ the tension of a `[001]` single crystal at a chosen reference strain rate:
 
 $$R = \frac{8}{\sqrt 6}K\left(\frac{\sqrt 6\,\dot\varepsilon_{\mathrm{ref}}}{8}\right)^{1/n}$$
 
-`srix_reference_stress` implements it. For `K = 12` MPa, `n = 11` and
+`srix_overstress_modulus_from_meric` implements it. For `K = 12` MPa, `n = 11` and
 `ε̇_ref = 1e-3 s⁻¹` it returns **18.7819100705 MPa**, which is the default of
 the `R` parameter and the value used in every test on this page.
 
@@ -80,10 +80,29 @@ Three things this is not:
    elsewhere, so the correspondence cannot be quietly overstated.
 3. **Not tied to our experiment.** The reference rate of `1e-3 s⁻¹` is a
    placeholder chosen to make the number reproducible. The strain rate of our
-   DIC test has not been documented. `srix_reference_stress` therefore takes
+   DIC test has not been documented. `srix_overstress_modulus_from_meric` therefore takes
    the rate as a required argument with no default: `R` carries the rate at
    which the viscous law was frozen, and a default would silently attach an
    unstated experimental condition to every result.
+
+### Transposition is one route to R, not the definition of R
+
+The function is named `..._from_meric` because equation (16) is a *bridge from a
+rate-dependent law*, not the meaning of the parameter. In the SRIX model `R` is
+the overstress modulus of the flow rule: it sets how much overstress
+$|\tau_s - X_s| - r_s$ is needed to drive a given slip increment, and therefore
+how abrupt the elastic-plastic transition is.
+
+That makes it **directly identifiable**, with no Méric-Cailletaud law anywhere in
+the chain: fit it to the *width of the measured transition* on a monotonic
+curve. This is the route registered in
+`validation/srix_316l_calibration_preregistration.md`, and it is the one that
+would let a result claim `R` as an identified 316L parameter.
+
+The distinction is carried in the manifest rather than left to the reader. A
+value from this function is recorded with status `analytical_transposition`; a
+fitted one would be recorded as `identified`. Only the second may support a
+statement about the material.
 
 ## Why the equivalent strain increment is built from the unknowns
 

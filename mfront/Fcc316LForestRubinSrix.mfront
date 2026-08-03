@@ -32,36 +32,57 @@
   equation (8). Incrementally, over a step in which the strain varies linearly:
 
       Dg_s = Deq <f_s / R> sign(tau_s - X_s),
-      Deq  = sqrt(2/3 dev(deto) : dev(deto)).
+      Deq  = sqrt(2/3 De : De),  De = dev(deel) + sum_s Dg_s dev(m_s).
 
   Time enters only through Deq, which is itself a strain measure, so the
   response depends on the strain PATH and not on how fast it is traversed.
   There is no dt anywhere below, and test_srix_is_time_independent asserts it
   stays that way.
 
-  Why the local Jacobian is simpler than the Meric-Cailletaud one
+  How Deq is built, and why it is not built from deto
 
-  The unknowns of the implicit system are deel and dg; deto is data. Deq is
-  therefore a constant during the local Newton iteration, and the flow function
-  is linear in f, so d(flow)/df = Deq / R replaces the Norton n v / f.
+  Deq is assembled from the UNKNOWNS of the implicit system, deel and dg, and
+  not from the data deto. The two agree at convergence -- the elastic residual
+  of the StandardElasticity brick is feel = deel - deto + sum_s Dg_s m_s, so
+  deto = deel + sum_s Dg_s m_s exactly there -- but they are not
+  interchangeable while iterating, and the choice decides whether the tangent
+  is right.
 
-  That same fact creates an EXPLICIT dependence of fg on deto which the
-  StandardElasticity brick does not know about, so the consistent tangent it
-  assembles is missing a rank-one correction. The size of that omission is
-  measured against finite differences in
-  tests/unit/core/test_forest_rubin_srix.py rather than assumed negligible.
+  Writing Deq from deto would make it a CONSTANT of the local Newton system.
+  The flow function would then carry an explicit dependence on deto that the
+  brick does not know about, and the consistent tangent it assembles would be
+  missing a rank-one term. That was measured, not feared: the tangent was
+  exact in the elastic range and wrong by 2e-2 to 4e-1 relative once any
+  system became active. Building Deq from deel and dg instead puts the whole
+  dependence inside the Jacobian, where the brick can see it, and the same
+  finite-difference comparison then agrees to 7e-7, which is the truncation
+  floor of the difference itself.
+
+  The Jacobian is still simpler than the Meric-Cailletaud one: the flow
+  function is linear in f, so d(flow)/df = Deq / R replaces the Norton n v / f.
+  What that linearity costs is that the Macaulay bracket no longer
+  self-differentiates, so an inactive system must contribute nothing rather
+  than a constant; see the dflow switch in the integrator.
 
   Parameters
 
-  The registered parameter set is the SRIX preset of
-  fem_inhouse.core.single_crystal_presets, derived from Nasri and others, 2018.
+  Every parameter below is an MFront @Parameter and can therefore be overridden
+  at run time through MGIS, without editing or recompiling this file. The
+  registered sets live in fem_inhouse.core.single_crystal_presets and are
+  selected by identifier; the values compiled in here are the historical set
+  derived from Nasri and others, 2018, kept as the default so that an
+  unconfigured run reproduces the archived behaviour.
 
-  R is NOT an identified 316L parameter: it is the analytical transposition of
-  the Meric-Cailletaud pair (K, n) through equation (16) at a chosen reference
-  strain rate, computed by srix_reference_stress in that same module. The
-  default below corresponds to K = 12 MPa, n = 11 and a reference rate of one
-  thousandth per second, and it must be overridden once the real strain rate of
-  the DIC experiment is documented.
+  R is NOT an identified 316L parameter. The default is the analytical
+  transposition of a Meric-Cailletaud pair (K, n) through equation (16) at a
+  chosen reference strain rate, computed by srix_overstress_modulus_from_meric
+  in that same module: K = 12 MPa, n = 11, reference rate one thousandth per
+  second. That is one way to obtain R and not the only one -- it can equally be
+  identified directly, from the width of the elastic-plastic transition of a
+  measured curve, which is what
+  validation/srix_316l_calibration_preregistration.md registers as the intended
+  route. Until then the value carries the status analytical_transposition and
+  no result computed with it may be presented as a 316L identification.
 }
 
 @ModellingHypothesis Tridimensional;
@@ -182,10 +203,12 @@ a.setEntryName("BackStrain");
     // The slope of the flow rule with respect to f is Deq / R on an active
     // system and ZERO on an inactive one, where the bracket clamps. Unlike
     // Meric-Cailletaud, where dv = n v / f vanishes on its own as f goes to
-    // zero, nothing here vanishes by itself: Deq / R is a constant. Writing the
-    // active slope on an inactive system corrupts the Jacobian by exactly the
-    // number of inactive systems, which makes the local Newton fail
-    // non-monotonically in the step size.
+    // zero, nothing here vanishes by itself: Deq / R does not depend on f at
+    // all, so it stays finite as the bracket closes. (Deq itself is a function
+    // of the unknowns, as built above; it is only with respect to f that this
+    // slope is constant.) Writing the active slope on an inactive system
+    // corrupts the Jacobian by exactly the number of inactive systems, which
+    // makes the local Newton fail non-monotonically in the step size.
     const auto dflow = (overstress > stress(0)) ? flow_slope : 0 * flow_slope;
     const auto sgn = tau - x > 0 ? 1 : -1;
     // elasticity

@@ -34,6 +34,7 @@ set is stored verbatim and marked incomplete.
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 from typing import Any
 
@@ -259,7 +260,7 @@ GUERY_316LN_D50 = _register(
 _SRIX_UNIAXIAL_FACTOR = 8.0 / math.sqrt(6.0)
 
 
-def srix_reference_stress(
+def srix_overstress_modulus_from_meric(
     *,
     norton_strength_mpa: float,
     norton_exponent: float,
@@ -277,6 +278,15 @@ def srix_reference_stress(
     an identification, and nothing here makes `R` a measured property of any
     particular 316L.
 
+    The name says `from_meric` because **this is one route to `R` and not the
+    definition of `R`.** `R` is the overstress modulus of the SRIX flow rule and
+    can be identified directly, from the width of the measured elastic-plastic
+    transition, without any rate-dependent law in the way; that is the route
+    registered in `validation/srix_316l_calibration_preregistration.md`. A value
+    produced here carries the status `analytical_transposition`, a value fitted
+    to data would carry `identified`, and the two must not be confused in a
+    manifest.
+
     The reference strain rate is a required argument with no default. `R`
     carries the rate at which the rate-dependent law was frozen, so a default
     would silently attach an unstated experimental condition to every result.
@@ -290,6 +300,33 @@ def srix_reference_stress(
         raise ValueError("reference_strain_rate must be positive")
     scaled_rate = reference_strain_rate / _SRIX_UNIAXIAL_FACTOR
     return _SRIX_UNIAXIAL_FACTOR * norton_strength_mpa * scaled_rate ** (1.0 / norton_exponent)
+
+
+def srix_reference_stress(
+    *,
+    norton_strength_mpa: float,
+    norton_exponent: float,
+    reference_strain_rate: float,
+) -> float:
+    """Deprecated alias of `srix_overstress_modulus_from_meric`.
+
+    The old name said what the number is used for, not where it comes from, and
+    reading it in a manifest gave no hint that the value was transposed from a
+    rate-dependent law rather than measured.
+    """
+
+    warnings.warn(
+        "srix_reference_stress is deprecated; use "
+        "srix_overstress_modulus_from_meric, which names the Meric-Cailletaud "
+        "transposition it performs",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return srix_overstress_modulus_from_meric(
+        norton_strength_mpa=norton_strength_mpa,
+        norton_exponent=norton_exponent,
+        reference_strain_rate=reference_strain_rate,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -329,7 +366,7 @@ class SrixPreset:
         source = self.source
         assert source.norton_strength_mpa is not None
         assert source.norton_exponent is not None
-        return srix_reference_stress(
+        return srix_overstress_modulus_from_meric(
             norton_strength_mpa=source.norton_strength_mpa,
             norton_exponent=source.norton_exponent,
             reference_strain_rate=self.reference_strain_rate,
