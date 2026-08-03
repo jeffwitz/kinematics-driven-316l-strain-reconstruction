@@ -7,9 +7,8 @@ omit =
 
 [report]
 # A ratchet, not an aspiration. Set just below the level the suite actually
-# holds in CI conditions -- no MFront behaviour, no OpenCV -- so that it locks
-# in what exists and fails on a regression, instead of failing on every run and
-# telling nobody anything.
+# holds in this job, so that it locks in what exists and fails on a regression,
+# instead of failing on every run and telling nobody anything.
 #
 # 85 was the previous value. It had never been met, so the job was red on every
 # branch including main, and a genuine new failure was indistinguishable from
@@ -18,8 +17,17 @@ omit =
 # read multi-gigabyte archives and run hour-long solves; see the 2026-08-03
 # entry in Claude.md for the measurement.
 #
+# The figure is the one THIS job produces, which is lower than a developer
+# machine reports. The locked environment has neither the MFront behaviour
+# library nor OpenCV, so the crystal-plasticity and image-chain tests do not
+# run. Measure before changing this, in an environment that omits both --
+# a venv built from `requirements-lock.txt` alone. Simulating it by unsetting
+# `MFRONT_BEHAVIOUR_LIBRARY` while OpenCV stays installed overstates the result
+# by about two and a half points, which is how 70 was briefly set here and
+# turned the job red on main.
+#
 # Raise this whenever coverage genuinely improves. Lowering it again requires a
 # reason written down, in the same way this one is.
-fail_under = 70
+fail_under = 68
 show_missing = true
 skip_covered = true
