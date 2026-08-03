@@ -11,6 +11,7 @@ argue for the scientific model.
 - {doc}`fcc_interaction_matrix_mapping`
 - {doc}`srix_parameter_sets`
 - {doc}`ebsd_orientation_contract`
+- {doc}`quas4_assumed_strain_derivation`
 - {doc}`nonlocal_parameters`
 - {doc}`tensor_conventions`
 - {doc}`DIC axis conventions </reference/dic_axis_conventions>`
@@ -51,6 +52,7 @@ constitutive_models
 fcc_interaction_matrix_mapping
 srix_parameter_sets
 ebsd_orientation_contract
+quas4_assumed_strain_derivation
 nonlocal_parameters
 tensor_conventions
 dic_axis_conventions
