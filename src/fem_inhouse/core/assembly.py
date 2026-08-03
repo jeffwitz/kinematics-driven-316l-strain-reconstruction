@@ -252,3 +252,44 @@ def internal_force(
     force = np.zeros(mesh.n_dof)
     np.add.at(force, location_matrix, element_force)
     return force
+
+
+def hourglass_force(
+    mesh: StructuredMesh,
+    hourglass_stiffness: NDArray,
+    displacement: NDArray,
+    location_matrix: NDArray,
+) -> NDArray:
+    """Nodal force of the hourglass stabilisation, `sum_e K_hg u_e`.
+
+    It must be added to the internal force everywhere the internal force is
+    used -- residual, line-search trials, reactions -- or the Newton iteration
+    would be solving a different problem from the one its tangent describes.
+    The stabilisation is already inside the element tangent, which starts from
+    the elastic stiffness.
+    """
+
+    element_displacement = displacement[location_matrix]
+    element_force = element_displacement @ hourglass_stiffness
+    force = np.zeros(mesh.n_dof)
+    np.add.at(force, location_matrix, element_force)
+    return force
+
+
+def hourglass_energy_by_element(
+    hourglass_stiffness: NDArray,
+    displacement: NDArray,
+    location_matrix: NDArray,
+) -> NDArray:
+    """`0.5 u_e^T K_hg u_e` for every element.
+
+    This is a NUMERICAL energy, not a physical one: it is the work done against
+    a stabilisation that exists only because one integration point cannot see
+    the hourglass modes. It is reported separately from the constitutive energy
+    for exactly that reason.
+    """
+
+    element_displacement = displacement[location_matrix]
+    return 0.5 * np.einsum(
+        "ei,ij,ej->e", element_displacement, hourglass_stiffness, element_displacement
+    )

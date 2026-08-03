@@ -100,6 +100,22 @@ class SolverConfig:
     max_newton_iterations: int = 15
     residual_tolerance: float = 1e-6
     minimum_step_divisor: int = 1_024
+    #: `cps4` is the reference formulation and stays the default.
+    #:
+    #: `cps4r` integrates one material point per element instead of four, which
+    #: is what makes crystal plasticity affordable, and always carries stiffness
+    #: hourglass control. It is an approximation of `cps4`, exact only while the
+    #: response stays elastic; after yielding the stabilisation remains built on
+    #: the elastic reference, so the two formulations genuinely differ and the
+    #: hourglass energy ratio is what says by how much.
+    element_formulation: Literal["cps4", "cps4r"] = "cps4"
+    #: Hourglass stiffness scale, `0 < beta <= 1`. At one, the reduced element
+    #: reproduces the fully integrated one exactly in the elastic range.
+    hourglass_scale: float = 1.0
+    #: Warn above this hourglass-to-internal energy ratio; `None` disables it.
+    hourglass_energy_warning_ratio: float | None = 0.01
+    #: Fail above this ratio. `None`, the default, never fails the solve.
+    hourglass_energy_failure_ratio: float | None = None
     require_pypardiso: bool = True
     hardening_mode: Literal["ludwik", "tabular"] = "ludwik"
     #: No longer a `Literal`: a registered plugin identifier must be accepted.
@@ -136,6 +152,27 @@ class SolverConfig:
             raise ValueError("minimum_step_divisor must be at least 2")
         if self.hardening_mode not in {"ludwik", "tabular"}:
             raise ValueError("hardening_mode must be 'ludwik' or 'tabular'")
+        if self.element_formulation not in ("cps4", "cps4r"):
+            raise ValueError(
+                f"unsupported element_formulation {self.element_formulation!r}; "
+                "available: cps4, cps4r"
+            )
+        if self.element_formulation == "cps4":
+            # Accepting a hourglass setting that does nothing would let a reader
+            # believe the fully integrated element was being stabilised.
+            if self.hourglass_scale != 1.0:
+                raise ValueError(
+                    "hourglass_scale has no meaning for the fully integrated cps4 "
+                    "formulation; it is a cps4r stabilisation parameter"
+                )
+        elif not 0.0 < self.hourglass_scale <= 1.0:
+            raise ValueError(
+                f"hourglass_scale must satisfy 0 < beta <= 1, got {self.hourglass_scale}"
+            )
+        for name in ("hourglass_energy_warning_ratio", "hourglass_energy_failure_ratio"):
+            ratio = getattr(self, name)
+            if ratio is not None and not ratio > 0.0:
+                raise ValueError(f"{name} must be positive when set")
         if not self.constitutive_backend:
             raise ValueError("constitutive_backend must not be empty")
         if self.constitutive_backend not in known_constitutive_backends():
