@@ -3132,6 +3132,41 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 — Loi cristalline SRIX de Forest-Rubin, indépendante du temps
+
+- Deux comportements MFront ajoutés : `Fcc316LMericCailletaud` (galerie TFEL,
+  référence de comparaison) et `Fcc316LForestRubinSrix`. **Aucune loi
+  cristalline n'existait dans le dépôt** avant cela — MC n'avait vécu que dans
+  un bac à sable de chiffrage, or les §9.7 et §10 du cahier des charges en font
+  la référence de non-régression, d'où son ajout
+- **Indépendance au temps acquise** : même chemin, `dt` varié d'un facteur 1e6,
+  écart `0,000e+00` bit à bit sur contraintes, variables internes **et**
+  tangente. Contrôle MC obligatoire : il dérive bien de `9,1 MPa`
+- **Δε̄ est construit depuis les inconnues, pas depuis `deto`.** Lu sur `deto`,
+  il est constant pour le système local et la brique `StandardElasticity`
+  produit une tangente amputée d'un terme de rang un : exacte en élastique,
+  fausse de `2e-2` à `4e-1` dès que le glissement s'active. Comme
+  `feel = deel - deto + Σ dg·m`, les deux lectures sont identiques à
+  convergence ; passer par `deel` et `dg` fait descendre l'écart à `7e-7`, soit
+  le plancher de troncature des différences finies elles-mêmes
+- Deux pièges de jacobien trouvés **par la mesure**, pas par relecture : le
+  crochet de Macaulay ne se dérive pas tout seul ici (la pente `Δε̄/R` est
+  constante, contrairement à `n·v/f`), et le garde-fou `f > 1.1 K` de MC ne doit
+  pas être recopié. Sans lui, SRIX encaisse `5 %` de déformation en un seul
+  incrément là où MC refuse à `1 %`
+- `R = 18,7819100705 MPa` par l'équation (16), pour `K=12`, `n=11`,
+  `1e-3 s⁻¹`. **Transposition analytique, pas identification** : la vitesse de
+  référence est un argument obligatoire sans défaut, car celle de notre essai
+  DIC n'est pas documentée. Accord `0,32 %` en `[001]`, désaccord `7,1 %` en
+  `[111]` et `14,2 %` en `[123]`, tous deux assertés
+- **Reste ouvert : le §8/§9.6 contraintes planes n'est pas exercé.** Le pont 3D
+  (`mfront.py:886-908`) code en dur `EquivalentPlasticStrain` et
+  `YieldSurfaceRadius` et les `assert` non nuls ; une loi cristalline n'a ni
+  l'un ni l'autre, donc `MFront3DCondensedPlaneStressBatch` refuse de la
+  charger. Le catalogue déclare déjà les bonnes liaisons, il reste à les lui
+  faire lire
+- 719 tests, aucun skip ; ruff propre ; doc en `-W`
+
 ### 2026-07-31 — L'excès de PEEQ après filtrage est une redistribution
 
 - Question fermée : le `+0,64 %` de PEEQ moyen que j'avais consigné sans

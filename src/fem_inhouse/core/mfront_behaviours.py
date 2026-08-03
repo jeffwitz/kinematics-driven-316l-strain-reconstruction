@@ -146,3 +146,53 @@ MFRONT_BEHAVIOURS.register(
         bridge_profile="ludwik_j2_v1",
     )
 )
+
+# FCC single crystals. Both laws share their slip systems, interaction matrix
+# and hardening; they differ only in the flow rule, so their bindings have the
+# same shape and differ only in the entry names MFront generated.
+#
+# Neither exposes EquivalentPlasticStrain or YieldSurfaceRadius: a crystal has
+# twelve slips and twelve critical resolved shear stresses, not one scalar pair.
+# That is why the 3D bridge reads its internal-state bindings from this
+# catalogue instead of assuming the J2 triple.
+#
+# The consistent tangent of a single crystal is NOT symmetric, unlike the J2
+# radial return: measured at 4.0e-05 median relative asymmetry against 1.4e-16,
+# so these behaviours must drive the linear solver in its nonsymmetric mode.
+
+
+def _fcc_internal(slip_entry: str, equivalent_entry: str) -> tuple[MFrontVariableSpec, ...]:
+    return (
+        MFrontVariableSpec("elastic_strain", "ElasticStrain", "symmetric_tensor"),
+        MFrontVariableSpec("plastic_slip", slip_entry, "scalar"),
+        MFrontVariableSpec("equivalent_plastic_slip", equivalent_entry, "scalar"),
+        MFrontVariableSpec("back_strain", "BackStrain", "scalar"),
+    )
+
+
+MFRONT_BEHAVIOURS.register(
+    MFrontBehaviourSpec(
+        identifier="fcc_meric_cailletaud",
+        native_plane_stress_behaviour=None,
+        tridimensional_behaviour="Fcc316LMericCailletaud",
+        material_properties=(),
+        internal_state_variables=_fcc_internal(
+            "ViscoplasticSlip", "EquivalentViscoplasticSlip"
+        ),
+        linear_system_matrix_type="nonsymmetric",
+        requires_rotation_matrix=True,
+        bridge_profile="fcc_single_crystal_v1",
+    )
+)
+MFRONT_BEHAVIOURS.register(
+    MFrontBehaviourSpec(
+        identifier="fcc_forest_rubin_srix",
+        native_plane_stress_behaviour=None,
+        tridimensional_behaviour="Fcc316LForestRubinSrix",
+        material_properties=(),
+        internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
+        linear_system_matrix_type="nonsymmetric",
+        requires_rotation_matrix=True,
+        bridge_profile="fcc_single_crystal_v1",
+    )
+)

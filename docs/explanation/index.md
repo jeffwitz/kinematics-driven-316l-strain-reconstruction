@@ -15,6 +15,7 @@ commands, tensor layouts and solver implementation details live elsewhere.
 7. {doc}`temporal_loading_path` — ask whether the real loading sequence changes the answer.
 8. {doc}`current_evidence` — state the present evidence without campaign chronology.
 9. {doc}`scope_and_prediction` — distinguish reconstruction, identification and prediction.
+10. {doc}`forest_rubin_srix` — the rate-independent crystal law, and the limits of its transposition.
 
 The operational entry points are {doc}`../how-to/index`; stable contracts are
 in {doc}`../reference/index`.
@@ -31,4 +32,5 @@ parameter_identification
 temporal_loading_path
 current_evidence
 scope_and_prediction
+forest_rubin_srix
 ```
