@@ -156,3 +156,72 @@ def test_a_failure_threshold_that_is_met_stops_the_solve() -> None:
 
     with pytest.raises(Exception, match="hourglass energy ratio"):
         _solve("cps4r", hourglass_energy_failure_ratio=1e-30)
+
+def _nonaffine_elastic_solve(formulation: str) -> dict:
+    """Small Dirichlet case that genuinely excites the hourglass modes."""
+
+    nodes = np.linspace(0.0, SIZE, MESH + 1)
+    grid_x, grid_y = np.meshgrid(nodes, nodes, indexing="ij")
+    displacement_x = (
+        0.01 * grid_x
+        + 2.0e-5 * (grid_x / SIZE) * np.sin(np.pi * grid_y / SIZE)
+    )
+    displacement_y = (
+        -0.003 * grid_y
+        + 1.0e-5 * (grid_y / SIZE) * np.sin(2.0 * np.pi * grid_x / SIZE)
+    )
+    return run_fem(
+        displacement_x,
+        displacement_y,
+        np.full((MESH, MESH), 1.0e9),
+        np.zeros((MESH, MESH)),
+        0.245,
+        SIZE,
+        SIZE,
+        ELEMENT,
+        1.0,
+        N_inc=2,
+        constitutive_backend="python",
+        element_formulation=formulation,
+        verbose=False,
+    )
+
+
+def test_a_nonaffine_elastic_case_excites_the_stabilisation() -> None:
+    """Unlike the affine baseline, this test makes the diagnostic observable."""
+
+    reduced = _nonaffine_elastic_solve("cps4r")
+
+    assert reduced["HOURGLASS_ENERGY"] > 0.0
+    assert reduced["HOURGLASS_ENERGY_BY_ELEMENT"].max() > 0.0
+    assert reduced["INTERNAL_WORK"] > 0.0
+    assert reduced["HOURGLASS_ENERGY_RATIO"] == pytest.approx(
+        reduced["HOURGLASS_ENERGY"] / reduced["INTERNAL_WORK"]
+    )
+
+
+def test_beta_one_recovers_cps4_on_a_nonaffine_elastic_case() -> None:
+    """The full-minus-reduced control must work when its modes are active."""
+
+    full = _nonaffine_elastic_solve("cps4")
+    reduced = _nonaffine_elastic_solve("cps4r")
+
+    np.testing.assert_allclose(reduced["U"], full["U"], rtol=1e-10, atol=1e-14)
+    np.testing.assert_allclose(reduced["S"], full["S"], rtol=1e-10, atol=1e-9)
+    np.testing.assert_allclose(reduced["RF"], full["RF"], rtol=1e-9, atol=1e-9)
+
+
+def test_internal_work_is_integrated_over_the_accepted_path() -> None:
+    """For a linear path, the trapezoidal integral has an analytical value."""
+
+    reduced = _nonaffine_elastic_solve("cps4r")
+    analytical_work = 0.5 * abs(
+        float(np.sum(reduced["RF"] * reduced["U"]))
+    )
+
+    assert reduced["INTERNAL_WORK"] == pytest.approx(
+        analytical_work,
+        rel=1e-10,
+        abs=1e-18,
+    )
+
