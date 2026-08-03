@@ -2,6 +2,11 @@
 
 Use CPS4R only after keeping a CPS4 result as the reference for the same case.
 
+The element algebra, the stabilisation and what its energy diagnostic does and
+does not measure are in
+{doc}`../explanation/reduced_integration_hourglass`; read it before choosing a
+value of `beta`.
+
 ## Run a partition
 
 The partition command exposes the reduced formulation and its numerical
@@ -46,6 +51,11 @@ HOURGLASS_ENERGY_BY_ELEMENT.npy
 on the element grid. Inspect that field beside PEEQ for J2 or accumulated slip
 for a crystal law. A low global ratio is not enough if the numerical energy is
 concentrated in the same band as the constitutive activity.
+
+Do not compare ratios across runs with different loading paths. The numerator is
+the stabilisation energy stored at the final state, the denominator accumulates
+along the path, so a longer history lowers the ratio without the element
+behaving any better.
 
 ## Qualify a value of beta
 
