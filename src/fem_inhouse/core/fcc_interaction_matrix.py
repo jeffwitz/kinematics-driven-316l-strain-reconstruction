@@ -231,3 +231,65 @@ def class_pair_counts() -> dict[InteractionClass, int]:
         for name in row:
             counts[name] = counts.get(name, 0) + 1
     return counts
+
+
+def cubic_rotations() -> tuple[IntArray, ...]:
+    """The 24 proper rotations of the cube, as integer matrices.
+
+    Every signed permutation matrix with determinant `+1`. Improper operations
+    are excluded: a reflection maps a right-handed crystal onto a left-handed
+    one, and `validate_rotations` refuses them elsewhere for the same reason.
+    """
+
+    from itertools import permutations, product
+
+    matrices = []
+    for order in permutations(range(3)):
+        for signs in product((1, -1), repeat=3):
+            matrix = np.zeros((3, 3), dtype=int)
+            for row, (column, sign) in enumerate(zip(order, signs, strict=True)):
+                matrix[row, column] = sign
+            if round(float(np.linalg.det(matrix))) == 1:
+                matrices.append(matrix)
+    return tuple(matrices)
+
+
+def slip_system_permutation(rotation: IntArray) -> tuple[IntArray, IntArray]:
+    """Where a cubic symmetry sends each slip system, and with which slip sign.
+
+    Returns `(destination, sign)`. Applying `rotation` to system `s` gives the
+    system `destination[s]`, and a slip `gamma_s` on the original becomes
+    `sign[s] * gamma_s` on the image.
+
+    The sign is not a detail. A slip system is `(b, n)` with `b` defined up to
+    its sense: `(-b, n)` describes the same physical system slipping backwards.
+    The rotated Burgers vector matches the catalogue entry either directly or
+    negated, and comparing slips across a symmetry without applying that sign
+    reports a spurious disagreement on half the systems.
+    """
+
+    matrix = np.asarray(rotation, dtype=int)
+    if matrix.shape != (3, 3):
+        raise ValueError("a cubic symmetry is a 3x3 integer matrix")
+    if round(float(np.linalg.det(matrix))) != 1:
+        raise ValueError("a cubic symmetry must have determinant +1")
+    systems = slip_systems()
+    destination = np.full(SLIP_SYSTEM_COUNT, -1, dtype=int)
+    sign = np.zeros(SLIP_SYSTEM_COUNT, dtype=int)
+    for index, system in enumerate(systems):
+        rotated_burgers = matrix @ system.burgers
+        rotated_normal = matrix @ system.normal
+        for candidate, target in enumerate(systems):
+            if not _parallel(rotated_normal, target.normal):
+                continue
+            if np.array_equal(rotated_burgers, target.burgers):
+                destination[index], sign[index] = candidate, 1
+                break
+            if np.array_equal(rotated_burgers, -target.burgers):
+                destination[index], sign[index] = candidate, -1
+                break
+        else:  # pragma: no cover - the octahedral family is closed under the group
+            raise AssertionError(f"system {index} left the family under {matrix.tolist()}")
+    if sorted(destination.tolist()) != list(range(SLIP_SYSTEM_COUNT)):
+        raise AssertionError("a cubic symmetry must permute the systems bijectively")
+    return destination, sign
