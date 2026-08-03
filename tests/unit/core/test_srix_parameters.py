@@ -405,3 +405,56 @@ class TestResolve:
             "d",
         }
         assert set(ELASTIC_PARAMETER_NAMES) == {"C11_mpa", "C12_mpa", "C44_mpa"}
+
+
+class TestRunProvenance:
+    """Section 5's other half: the machine and the moment, not the parameters."""
+
+    def test_the_record_carries_the_mfront_source_digest(self) -> None:
+        from fem_inhouse.core.srix_parameters import srix_provenance
+
+        record = srix_provenance(mfront_source="mfront/Fcc316LForestRubinSrix.mfront")
+        source = record["run"]["mfront_source"]
+
+        assert source["path"].endswith("Fcc316LForestRubinSrix.mfront")
+        assert len(source["sha256"]) == 64
+
+    def test_a_missing_source_is_reported_rather_than_faked(self) -> None:
+        from fem_inhouse.core.srix_parameters import srix_provenance
+
+        source = srix_provenance(mfront_source="no/such/file.mfront")["run"][
+            "mfront_source"
+        ]
+
+        assert source["sha256"] is None
+        assert "not found" in source["note"]
+
+    def test_an_absent_source_path_is_recorded_as_absent(self) -> None:
+        from fem_inhouse.core.srix_parameters import srix_provenance
+
+        source = srix_provenance()["run"]["mfront_source"]
+
+        assert source["path"] is None
+        assert source["sha256"] is None
+
+    def test_the_toolchain_and_commit_keys_always_exist(self) -> None:
+        """They may be `None` off a checkout, but the reader must see the key.
+
+        A fabricated version string is worse than an absent one, so nothing here
+        guesses; the contract is that the field is present and honest.
+        """
+
+        from fem_inhouse.core.srix_parameters import srix_provenance
+
+        run = srix_provenance()["run"]
+
+        assert set(run) == {"mfront_source", "toolchain", "git_commit"}
+        assert set(run["toolchain"]) == {"tfel", "mgis"}
+
+    def test_the_parameter_half_is_unchanged_by_the_run_half(self) -> None:
+        from fem_inhouse.core.srix_parameters import srix_provenance
+
+        resolved = resolve_srix_parameters(parameter_set=HISTORICAL)[1]
+        full = srix_provenance(parameter_set=HISTORICAL)
+
+        assert {k: v for k, v in full.items() if k != "run"} == resolved

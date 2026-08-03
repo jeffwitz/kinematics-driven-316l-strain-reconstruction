@@ -98,5 +98,5 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["cv2", "h5py", "pypardiso", "scipy.*"]
+module = ["cv2", "h5py", "mgis.*", "pypardiso", "scipy.*", "tfel.*"]
 ignore_missing_imports = true

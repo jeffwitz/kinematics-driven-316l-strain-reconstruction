@@ -627,6 +627,109 @@ def resolve_srix_parameters(
     return overrides, record
 
 
+def _behaviour_source_digest(mfront_source: Any) -> dict[str, Any]:
+    """SHA-256 of the `.mfront` source, when it can be found on disk.
+
+    The compiled library is what actually runs, but its digest changes with the
+    compiler and the flags. The source digest is what says whether the *law*
+    changed, and it is the one a reader can check against the repository.
+    """
+
+    from hashlib import sha256
+    from pathlib import Path
+
+    if mfront_source is None:
+        return {"path": None, "sha256": None, "note": "source path not supplied"}
+    path = Path(mfront_source)
+    if not path.is_file():
+        return {
+            "path": str(path),
+            "sha256": None,
+            "note": "source file not found at solve time",
+        }
+    return {"path": str(path), "sha256": sha256(path.read_bytes()).hexdigest()}
+
+
+def _toolchain_versions() -> dict[str, Any]:
+    """TFEL and MGIS versions, reported as unavailable rather than guessed."""
+
+    versions: dict[str, Any] = {"tfel": None, "mgis": None}
+    try:
+        import mgis
+
+        versions["mgis"] = getattr(mgis, "__version__", None)
+    except ImportError:
+        pass
+    try:  # `tfel.__version__` is only present in the Python bindings
+        import tfel
+
+        versions["tfel"] = getattr(tfel, "__version__", None)
+    except ImportError:
+        pass
+    if versions["tfel"] is None:
+        import shutil
+        import subprocess
+
+        executable = shutil.which("tfel-config")
+        if executable is not None:
+            try:
+                versions["tfel"] = subprocess.run(
+                    [executable, "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=True,
+                ).stdout.strip()
+            except (subprocess.SubprocessError, OSError):
+                versions["tfel"] = None
+    return versions
+
+
+def _git_commit() -> str | None:
+    """Current commit, or `None` outside a checkout. Never a fabricated value."""
+
+    import subprocess
+    from pathlib import Path
+
+    repository = Path(__file__).resolve().parents[3]
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repository), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    commit = completed.stdout.strip()
+    return commit or None
+
+
+def srix_provenance(
+    *,
+    parameter_set: Any = None,
+    explicit: Any = None,
+    mfront_source: Any = None,
+) -> dict[str, Any]:
+    """The complete section 5 record: the parameters plus the run that used them.
+
+    Split from `resolve_srix_parameters` because the parameter half is a
+    property of the registered set and reproducible anywhere, while this half
+    describes one machine at one moment. Anything that cannot be determined is
+    recorded as `None` with a note; nothing here is ever guessed, because a
+    fabricated version string is worse than an absent one.
+    """
+
+    _, record = resolve_srix_parameters(parameter_set=parameter_set, explicit=explicit)
+    record["run"] = {
+        "mfront_source": _behaviour_source_digest(mfront_source),
+        "toolchain": _toolchain_versions(),
+        "git_commit": _git_commit(),
+    }
+    return record
+
+
 def _groups_touched(applied: Mapping[str, float]) -> tuple[str, ...]:
     """Which provenance groups an explicit override invalidates."""
 

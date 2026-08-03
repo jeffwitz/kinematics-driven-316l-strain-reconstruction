@@ -335,3 +335,35 @@ def test_the_solver_follows_the_caller_logging_level(
         workflow.solve_partition(0)
 
     assert seen == [expected]
+
+
+def test_a_crystal_campaign_manifest_carries_its_parameter_provenance(tmp_path) -> None:
+    """Section 5. A reader of the archive must be able to tell an identified
+    value from a transposed one without leaving the manifest."""
+
+    workflow = _workflow(tmp_path)
+    workflow.config = replace(
+        workflow.config,
+        solver=replace(
+            workflow.config.solver,
+            constitutive_backend="mfront-3d-condensed-plane-stress",
+            mfront_behaviour_id="fcc_forest_rubin_srix",
+            constitutive_options={"parameter_set": "316l_srix_exploratory_r2"},
+        ),
+    )
+
+    crystal = workflow._manifest_data()["crystal_parameters"]
+
+    assert crystal["identifier"] == "316l_srix_exploratory_r2"
+    assert crystal["values"]["R_mpa"] == 2.0
+    assert crystal["units"]["R_mpa"] == "MPa"
+    assert crystal["claims_material_identification"] is False
+    assert crystal["origins"]["overstress_modulus"]["status"] == "exploratory"
+    assert len(crystal["interaction_matrix"]["coefficients"]) == 7
+    assert set(crystal["run"]) == {"mfront_source", "toolchain", "git_commit"}
+
+
+def test_a_j2_campaign_manifest_has_no_crystal_provenance(tmp_path) -> None:
+    """There is no selectable parameter set, so an empty block would mislead."""
+
+    assert "crystal_parameters" not in _workflow(tmp_path)._manifest_data()

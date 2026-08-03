@@ -212,8 +212,33 @@ class PartitionWorkflow:
             fields.update(NONLOCAL_RESULT_FIELDS)
         return fields
 
+    def _crystal_provenance(self) -> dict[str, Any] | None:
+        """Section 5. Where this campaign's crystal parameters came from.
+
+        Absent for a J2 campaign, which has no selectable parameter set. Present
+        and complete for a crystal one, so that a reader of the archive can tell
+        an identified value from a transposed one without leaving the manifest.
+        """
+
+        from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+        from fem_inhouse.core.srix_parameters import srix_provenance
+
+        identifier = self.config.solver.mfront_behaviour_id
+        if identifier is None:
+            return None
+        behaviour = MFRONT_BEHAVIOURS.get(identifier)
+        if behaviour.parameter_registry != "srix":
+            return None
+        options = self.config.solver.constitutive_options
+        return srix_provenance(
+            parameter_set=options.get("parameter_set"),
+            explicit=options.get("parameters"),
+            mfront_source=Path("mfront") / f"{behaviour.tridimensional_behaviour}.mfront",
+        )
+
     def _manifest_data(self) -> dict[str, Any]:
         result_fields = self._result_fields
+        crystal = self._crystal_provenance()
         return {
             "schema_version": 1,
             "software": {
@@ -221,6 +246,7 @@ class PartitionWorkflow:
                 "version": __version__,
                 "source_sha256": _source_fingerprint(),
             },
+            **({"crystal_parameters": crystal} if crystal is not None else {}),
             "config": asdict(self.config),
             "layout": self.layout.as_dict(),
             "inputs": {
