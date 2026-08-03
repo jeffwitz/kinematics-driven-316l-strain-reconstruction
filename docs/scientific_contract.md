@@ -198,6 +198,66 @@ active-area limit (`21.85%` predicted versus `20%` maximum). The current
 scientific status is therefore *partially supported*, with no confirmatory
 transfer authorized by this contract.
 
+## Optional reduced integration
+
+The reference finite element remains `CPS4`, integrated at four Gauss points.
+The optional `CPS4R` formulation uses one central constitutive point and
+stiffness-based hourglass control,
+
+$$K_{hg}=\beta\left(K_{ref}^{4pt}-K_{ref}^{1pt}\right),
+\qquad 0<\beta\leq1.$$
+
+The reference material operator is isotropic elastic for J2 and the rotated,
+plane-stress-condensed cubic elastic operator for a crystal behaviour. It is
+measured from the behaviour rather than reconstructed from nominal constants,
+and an isotropic fallback is refused. The stabilisation remains elastic after
+yielding and must never be interpreted as plastic dissipation, crystal
+hardening, or nonlocal physics.
+
+At $\beta=1$, CPS4R must recover CPS4 for constant linear elasticity, including
+non-affine displacement fields that excite hourglass modes. This exact elastic
+property does not extend to elastoplastic response.
+
+Those comparisons have now been run, under
+`validation/cps4r_qualification_preregistration.md`. **They failed.** The
+plastic-strain error against CPS4 is 1.9 to 10 percent against a 0.5 percent
+bound, on both a heterogeneous J2 case and a tilted-orientation crystal case.
+**CPS4R is not authorised for scientific elastoplastic campaigns and no value of
+$\beta$ is recommended.** CPS4 remains the reference formulation and the default.
+Two qualifications belong with that verdict: the cost case did hold, at 1.9 to
+2.9 times on total wall time, and the displacement difference is 30 to 200 times
+below the DIC measurement noise, so the failure is one of numerical
+self-consistency rather than of measurable physics.
+
+After yielding, $\beta=1$ is the least accurate choice rather than the natural
+one: the stabilisation keeps the elastic reference while the constitutive
+tangent softens, so the hourglass modes stay elastically stiff while every other
+mode yields.
+
+For accepted equilibrium increments, internal work is accumulated by the
+trapezoidal rule from the mechanical internal-force vector. Failed trials and
+cutbacks contribute neither internal work nor diagnostic energy. A CPS4R
+campaign records the global hourglass energy, its ratio to accumulated internal
+work, and the spatial field `HOURGLASS_ENERGY_BY_ELEMENT`.
+
+The ratio compares a state quantity, the stabilisation energy stored at the
+final configuration, with a path quantity that includes plastic dissipation. It
+therefore decreases as the loading path lengthens, at fixed element behaviour,
+and is only comparable between runs with comparable paths. It is evaluated at
+the final state alone, so a transient excitation that unloads leaves no trace in
+it.
+
+**The ratio must not be used as a validity gate.** The qualification campaign
+measured a correlation of `0.033` between the element hourglass energy and the
+CPS4-to-CPS4R plastic-strain error, and `0.066` between that energy and the
+plastic strain itself; every configuration tested passed a one percent ratio by
+an order of magnitude while missing the accuracy bound by four to twenty times.
+The ratio reports how hard the stabilisation is working. This contract makes no
+claim that it reports how wrong the answer is.
+
+CPS4R and the micromorphic nonlocal extension are deliberately incompatible
+until their interaction has been validated.
+
 ## Four macroscopic curves
 
 The workflow must keep these four curves distinct:

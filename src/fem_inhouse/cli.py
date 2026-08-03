@@ -239,6 +239,30 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--residual-tolerance", type=float, default=1e-6)
     partition.add_argument("--minimum-step-divisor", type=int, default=1_024)
     partition.add_argument(
+        "--element-formulation",
+        choices=("cps4", "cps4r"),
+        default="cps4",
+        help="fully integrated CPS4 reference or one-point CPS4R with stiffness hourglass control",
+    )
+    partition.add_argument(
+        "--hourglass-scale",
+        type=float,
+        default=1.0,
+        help="CPS4R stiffness scale beta, with 0 < beta <= 1",
+    )
+    partition.add_argument(
+        "--hourglass-energy-warning-ratio",
+        type=float,
+        default=0.01,
+        help="warn when numerical hourglass energy exceeds this fraction of internal work",
+    )
+    partition.add_argument(
+        "--hourglass-energy-failure-ratio",
+        type=float,
+        default=None,
+        help="optional ratio above which a CPS4R solve is rejected",
+    )
+    partition.add_argument(
         "--constitutive-backend",
         type=_constitutive_backend,
         default="mfront",
@@ -764,6 +788,10 @@ def _partition_workflow(args: argparse.Namespace) -> PartitionWorkflow:
             max_newton_iterations=args.max_newton_iterations,
             residual_tolerance=args.residual_tolerance,
             minimum_step_divisor=args.minimum_step_divisor,
+            element_formulation=args.element_formulation,
+            hourglass_scale=args.hourglass_scale,
+            hourglass_energy_warning_ratio=args.hourglass_energy_warning_ratio,
+            hourglass_energy_failure_ratio=args.hourglass_energy_failure_ratio,
             constitutive_backend=args.constitutive_backend,
             mfront_behaviour_id=args.mfront_behaviour_id,
             constitutive_options=args.constitutive_options or {},

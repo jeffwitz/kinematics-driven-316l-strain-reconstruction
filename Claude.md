@@ -3132,6 +3132,100 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (6) — Qualification CPS4R : elle échoue, et le diagnostic est réfuté
+
+- **Préinscription d'abord** (`validation/cps4r_qualification_preregistration.md`),
+  seuils dérivés et non choisis : le profil de référence archivé reproduit le
+  champ à `1,673 %`, exiger que la formulation élémentaire n'inflate ça que de
+  `10 %` en quadrature donne `0,766 %`, arrondi à `0,5 %` sur PEEQ et dix fois
+  plus serré sur le déplacement
+- **Verdict : CPS4R n'est pas autorisé, aucun β n'est recommandé.** A1 échoue
+  partout — erreur PEEQ de `1,9 %` à `10,1 %` contre CPS4 sur le cas J2
+  hétérogène `32×32`, `1,35 %` en contrainte sur le cas SRIX incliné
+- **F3 a tiré dans toutes les configurations** : chacune passe le seuil de `1 %`
+  d'un ordre de grandeur en ratant la borne de précision d'un facteur 4 à 20.
+  Et la lecture spatiale ne tient pas non plus : sur 1024 éléments, corrélation
+  énergie hourglass ↔ erreur PEEQ `r = 0,033`, énergie ↔ PEEQ `r = 0,066`. Les
+  seuils `1 % / 5 %` sont **retirés** de la doc et du contrat, conséquence
+  enregistrée à l'avance
+- **H2 réfutée dans sa direction, et c'est le résultat physique intéressant** :
+  baisser β **rapproche** de CPS4 au lieu d'en éloigner. `β=1` garde la référence
+  élastique complète alors que la tangente constitutive s'effondre, donc les
+  modes hourglass restent élastiquement raides pendant que tout le reste plastifie
+  — `β=1` sur-raidit exactement là où CPS4 s'assouplirait. `β=0,1` tombe six fois
+  plus près sur le déplacement
+- **Deux faits qui vont dans l'autre sens, conservés** : le coût tient
+  (`3,7×` à `4,8×` sur le constitutif, `1,9×` à `2,9×` sur le total, le meilleur
+  étant le cristal) ; et l'écart de déplacement est **30 à 200 fois sous le bruit
+  DIC**. L'échec est de cohérence numérique, pas de physique mesurable
+- **Deux défauts de mon propre script, corrigés avant tout enregistrement** :
+  les lois cristallines laissent PEEQ à zéro, donc la première version comparait
+  un champ vide à un champ vide et **annonçait un score parfait sur le critère le
+  plus important** — A1 bascule maintenant sur la contrainte et refuse une
+  référence sans aucun des deux champs (test de non-régression écrit). Et la
+  perturbation du cas cristallin valait `2,5×` le chargement, ce qui envoyait les
+  deux formulations en cutback et fabriquait `62 %` d'écart dû à des trajets
+  divergents, pas à l'élément
+- **Un chronométrage unique n'est pas une mesure** : le premier balayage donnait
+  `0,91×` à `β=1`, soit CPS4R plus lent que CPS4 à nombre d'itérations de Newton
+  identique. C'était du bruit machine, et j'ai failli le publier. Médiane de cinq
+  résolutions désormais
+- `pythonpath = ["."]` ajouté à pytest : le test importait `scripts`, ce qui
+  passait sous `python -m pytest` et **cassait sous le `pytest` nu de la CI**
+- Reste ouvert, listé dans le rapport : étude de convergence en maillage,
+  stabilisation bâtie sur la tangente courante plutôt que sur la référence
+  élastique figée (c'est là que pointe le résultat sur β), et un estimateur qui
+  prédise réellement l'écart
+- 843 tests, ruff, mypy et Sphinx strict propres
+
+### 2026-08-03 (5) — Documentation §18 de l'intégration réduite, sur la PR #3
+
+- **Travail porté sur `agent/fix-cps4r-qualification`, pas sur `main`.** La PR
+  #3 (brouillon) traitait déjà §16 et la propagation des diagnostics ; écrire la
+  doc sur `main` aurait garanti un conflit. Ce qu'elle apporte et qu'il faut
+  connaître : le dénominateur du ratio hourglass était `|F_all @ u|`, un produit
+  scalaire final qui vaut deux fois l'énergie élastique sur un trajet linéaire
+  et n'a aucun sens de travail après plastification ; il est remplacé par un
+  travail interne trapézoïdal accumulé sur les seuls incréments acceptés, exposé
+  comme `INTERNAL_WORK`. Elle ajoute aussi le cas **non affine** qui manquait :
+  tous mes tests étaient affines, donc l'énergie hourglass y était nulle *par
+  construction* et le balayage de β ne prouvait rien
+- **`docs/explanation/reduced_integration_hourglass.md` complété** : fonctions de
+  forme bilinéaires, matrice `B` en cisaillement ingénieur, les deux règles de
+  quadrature et `Σw_g = 4`, exactitude du `2×2` sur maillage régulier (`J`
+  constant, intégrande au plus quadratique — c'est **ce qui rend β=1 exact et non
+  heuristique**), décomposition des 8 ddl en 3 rigides + 3 déformation constante
+  + 2 hourglass, identité `Σ h_a N_a = ξη` dont les deux dérivées s'annulent au
+  centroïde, comptage de rang `3 → 5` et `rang(K_hg) = 2`, condensation
+  `C^ps = C_aa − C_ab C_bb⁻¹ C_ba` écrite avec la partition Kelvin `a = {0,1,3}`,
+  `b = {2,4,5}` et les facteurs `(1,1,1/√2)`
+- **Sept références vérifiées une par une contre l'API Crossref** avant d'être
+  écrites — titre, revue, volume, pages, année, auteurs. Flanagan & Belytschko
+  1981 (l'origine du contrôle en raideur), Belytschko *et al.* 1984, Kosloff &
+  Frazier 1978, Belytschko & Bachrach 1986, Zienkiewicz, Taylor & Too 1971, plus
+  Belytschko & Bindeman 1993 et Simo & Rifai 1990 comme alternatives non
+  retenues. Trois manuels et le précédent Abaqus (`ALLAE`)
+- **Réserve de fond écrite dans la doc et dans le contrat** : `r_hg` compare une
+  grandeur **d'état** (l'énergie stockée au pas final) à une grandeur **de
+  trajet** qui inclut la dissipation plastique. Après plastification le
+  dénominateur croît, le numérateur non : le ratio baisse quand le trajet
+  s'allonge, à comportement élémentaire inchangé. Les seuils 1 % / 5 % dérivent
+  donc avec le nombre d'incréments, et deux runs ne sont comparables que sur des
+  trajets comparables. De plus il n'est évalué qu'à l'état final : une excitation
+  transitoire qui se décharge est invisible
+- **Job `quality` de la CI** : `test_warp_is_deterministic_bit_for_bit` était le
+  seul test non marqué à atteindre `cv2`. Le marqueur seul ne suffisait pas —
+  `quality` lance `pytest` sans `-m`, donc un test marqué **s'exécute quand
+  même**. Le motif du dépôt est marqueur **+** `pytest.importorskip("cv2")` ;
+  c'est ce qui a été appliqué. Le job `measurement`, qui échoue sur tout skip,
+  passe de 7 à 8 tests sélectionnés sans skip
+- Reste sur la PR : la barrière de couverture (`67,19 %` contre `85 %`), très
+  antérieure ; figure de diagnostic spatial (§13) ; balayage J2 non affine
+  plastique, comparaison SRIX inclinée et benchmark de temps réel avant que
+  CPS4R puisse remplacer CPS4 dans une campagne
+- 833 tests, zéro échec, zéro skip avec la bibliothèque MFront ; ruff, mypy et
+  Sphinx strict propres
+
 ### 2026-08-03 (4) — Tangente hourglass mesurée, et CPS4R validé en cristallin
 
 - **Le repli silencieux est supprimé.** `reference_in_plane_tangent_mpa()` est
