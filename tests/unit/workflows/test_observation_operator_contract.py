@@ -145,7 +145,15 @@ def test_flow_conversion_does_not_transpose_or_flip() -> None:
     )
 
 
+@pytest.mark.measurement
 def test_warp_is_deterministic_bit_for_bit() -> None:
+    # The only test in this file that reaches OpenCV: `warp_forward_displacement`
+    # imports `cv2`. Everything else here is a pure-numpy contract check, so the
+    # marker belongs on this test rather than on the module. The marker routes it
+    # into the measurement job; `importorskip` is what keeps it out of the locked
+    # quality environment, which deliberately installs no OpenCV.
+    pytest.importorskip("cv2")
+
     reference = _speckle(SHAPE)
     flow = canonical_to_image_flow(
         _affine_displacement(SHAPE, exx=1.0e-3), pixel_size_mm=PIXEL
