@@ -3132,6 +3132,34 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (3) — CPS4R et contrôle hourglass en raideur : algèbre élémentaire
+
+- **Livré** : abstraction `QuadratureRule` (§6), règles CPS4/CPS4R, stabilisation
+  `K_hg = β(K_ref^4pt − K_ref^1pt)` (§9), tangente de référence anisotrope
+  validée (§11), et le découplage de `assembly.py` des constantes globales
+  (§19.3). 30 tests élémentaires, tous analytiques
+- **Pourquoi la forme en différence évite tout projecteur** : tout champ que la
+  règle à un point intègre exactement — corps rigides et champs affines, à
+  déformation constante — contribue identiquement aux deux termes et donc rien
+  à leur différence. Mesuré : force hourglass `3e-17`, énergie `1e-23` sur
+  traction, biaxial, cisaillement, rotation et translation
+- Équivalence β=1 : **`7,2e-17`** en relatif, contre `1e-11` demandé. C'est une
+  identité algébrique, pas une coïncidence — mais elle casse dès que la
+  stabilisation est bâtie sur un autre opérateur que le matériau
+- Rang 3 non stabilisé → 5 stabilisé, noyau exactement les 3 corps rigides,
+  `K_hg` de rang 2 : les deux modes hourglass et rien d'autre
+- **La tangente de référence isotrope est fausse pour un cristal orienté** :
+  plus de 10 % d'écart sur `K_hg` à 30°, qu'aucun ratio énergétique global ne
+  révélerait. D'où sa validation (forme, symétrie, définie positive) et le refus
+  d'une dissymétrie réelle, seul le bruit étant symétrisé
+- **NON livré, le câblage solveur** : option `element_formulation` en
+  configuration (§5), intégration matérielle réduite à un point par élément
+  (§7), force hourglass dans le résidu et les réactions (§9), énergie hourglass
+  et diagnostics (§12-13), refus `cps4r + non-local` (§4), tests §15.7-15.9,
+  benchmark et étude de β (§16), documentation (§18). L'élément existe et est
+  vérifié ; il n'est pas encore sélectionnable depuis une configuration
+- 803 tests, ruff propre. Non poussé
+
 ### 2026-08-03 (2) — Pont MGIS générique et anisotropie cristalline
 
 - Le pont 3D est piloté par le catalogue : plus aucune référence obligatoire à

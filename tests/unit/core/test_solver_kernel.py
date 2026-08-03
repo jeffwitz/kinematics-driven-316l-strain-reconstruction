@@ -17,7 +17,7 @@ from fem_inhouse.core import (
     von_mises,
 )
 from fem_inhouse.core.assembly import FixedCSRAssembler, internal_force
-from fem_inhouse.core.element import GAUSS_POINT_COUNT
+from fem_inhouse.core.element import GAUSS_POINT_COUNT, GAUSS_WEIGHTS
 from fem_inhouse.core.plane_stress_material import (
     PythonJ2PlaneStressBatch,
     relative_tangent_asymmetry,
@@ -108,6 +108,7 @@ def test_assembly_and_internal_force_contracts() -> None:
         matrices_b,
         determinants,
         location,
+        GAUSS_WEIGHTS,
     )
 
     assert stiffness.shape == (mesh.n_dof, mesh.n_dof)
@@ -272,6 +273,7 @@ def test_chunked_plastic_tangent_matches_dense_gauss_tensor() -> None:
         plastic_indices,
         operators.strain_displacement,
         operators.jacobian_determinants,
+        GAUSS_WEIGHTS,
         element_count=mesh.n_elems,
         chunk_size=2,
     )
@@ -291,6 +293,7 @@ def test_chunked_plastic_tangent_rejects_invalid_contracts() -> None:
             np.array([], dtype=int),
             matrices_b,
             determinants,
+            GAUSS_WEIGHTS,
             element_count=1,
         )
     with pytest.raises(ValueError, match="out-of-range"):
@@ -301,6 +304,7 @@ def test_chunked_plastic_tangent_rejects_invalid_contracts() -> None:
             np.array([4]),
             matrices_b,
             determinants,
+            GAUSS_WEIGHTS,
             element_count=1,
         )
 
@@ -328,6 +332,7 @@ def test_chunked_plastic_tangent_rejects_each_invalid_shape(
         "plastic_flat_indices": np.array([], dtype=int),
         "strain_displacement": np.zeros((GAUSS_POINT_COUNT, 3, 8)),
         "jacobian_determinants": np.ones(GAUSS_POINT_COUNT),
+        "gauss_weights": GAUSS_WEIGHTS,
         "element_count": 1,
         "chunk_size": 2,
     }

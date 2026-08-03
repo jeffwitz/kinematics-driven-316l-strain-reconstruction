@@ -755,7 +755,7 @@ def run_fem(
 
             # Internal forces and residual
             internal_force_started_at = time.perf_counter()
-            R = internal_force(mesh, sf, Bs, dJs, ld)
+            R = internal_force(mesh, sf, Bs, dJs, ld, GP_W)
             internal_force_seconds += time.perf_counter() - internal_force_started_at
             if penalty_mode:
                 R_I = R[solve_dofs].copy()
@@ -811,6 +811,7 @@ def run_fem(
                 plastic_point_indices,
                 Bs,
                 dJs,
+                GP_W,
                 element_count=n_e,
             )
             element_matrix_seconds += time.perf_counter() - element_matrix_started_at
@@ -877,6 +878,7 @@ def run_fem(
                         Bs,
                         dJs,
                         ld,
+                        GP_W,
                     )[dof_I]
                     internal_force_seconds += time.perf_counter() - candidate_force_started_at
                     candidate_norm = float(np.linalg.norm(candidate_residual))
@@ -1012,7 +1014,7 @@ def run_fem(
     # Output
     output_started_at = time.perf_counter()
     internal_force_started_at = time.perf_counter()
-    F_all = internal_force(mesh, sig, Bs, dJs, ld)
+    F_all = internal_force(mesh, sig, Bs, dJs, ld, GP_W)
     internal_force_seconds += time.perf_counter() - internal_force_started_at
     bc_m = np.zeros(mesh.n_dof, dtype=bool)
     bc_m[dof_B] = True
