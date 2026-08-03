@@ -39,7 +39,7 @@ REFERENCE_TANGENT_SYMMETRY_TOLERANCE = 1e-10
 #: Relative tolerance on negative eigenvalues of the hourglass stiffness.
 HOURGLASS_POSITIVITY_TOLERANCE = 1e-10
 
-ElementFormulation = Literal["cps4", "cps4r"]
+ElementFormulation = Literal["cps4", "cps4r", "cps4r_as"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +72,10 @@ CPS4R_QUADRATURE = QuadratureRule(np.zeros((1, 2)), np.array([4.0]))
 QUADRATURE_RULES: dict[str, QuadratureRule] = {
     "cps4": CPS4_QUADRATURE,
     "cps4r": CPS4R_QUADRATURE,
+    # The assumed-strain element integrates the constitutive law at the same
+    # single central point. Its four geometric points are not a quadrature of
+    # the material and never appear here.
+    "cps4r_as": CPS4R_QUADRATURE,
 }
 
 
@@ -279,7 +283,25 @@ def precompute_element(
         determinants[index] = determinant
 
     stabilisation: NDArray | None = None
-    if formulation == "cps4r":
+    if formulation == "cps4r_as":
+        # The assumed-strain stabilisation depends on the CURRENT tangent, so it
+        # cannot be precomputed. The elastic predictor still needs a
+        # non-singular element, so the elastic stiffness is completed here with
+        # the assumed-strain stabilisation evaluated on the elastic operator --
+        # a starting point, replaced at the first Newton iteration.
+        from fem_inhouse.core.assumed_strain import (
+            batched_stabilisation,
+            central_operators,
+        )
+
+        reference = elasticity if reference_tangent is None else reference_tangent
+        _, elastic_stabilisation, _ = batched_stabilisation(
+            central_operators(coordinates),
+            np.zeros((1, 8)),
+            reference[None, :, :],
+        )
+        stiffness = stiffness + elastic_stabilisation[0]
+    elif formulation == "cps4r":
         stabilisation = hourglass_stiffness(
             coordinates,
             elasticity if reference_tangent is None else reference_tangent,

@@ -412,3 +412,71 @@ def make_stabilisation(
         )
     known = ", ".join(sorted(STABILISATION_STRATEGIES))
     raise ValueError(f"unknown stabilisation strategy {strategy!r}; available: {known}")
+
+
+def batched_stabilisation(
+    operators: CentralOperators,
+    displacements: ArrayLike,
+    tangents: ArrayLike,
+    *,
+    projection: ProjectionName = "asmd",
+    relative_floor: float | None = None,
+) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Stabilisation of every element at once, from its own current tangent.
+
+    On a regular mesh all elements share one geometry, so `operators` is built
+    once and only the tangents differ. That is what makes recomputing the
+    stabilisation at every Newton iteration affordable: the per-element work is
+    four small triple products, against one constitutive integration.
+
+    `relative_floor` selects the energy variant. `None` uses the algorithmic
+    tangent as it comes, asymmetry included.
+
+    Returns `(forces, stiffnesses, energies)` shaped `(n, 8)`, `(n, 8, 8)`
+    and `(n,)`.
+    """
+
+    nodal = np.asarray(displacements, dtype=float)
+    material = np.asarray(tangents, dtype=float)
+    if nodal.ndim != 2 or nodal.shape[1] != 8:
+        raise ValueError(f"displacements must have shape (n, 8), got {nodal.shape}")
+    if material.shape != (nodal.shape[0], 3, 3):
+        raise ValueError(
+            f"tangents must have shape {(nodal.shape[0], 3, 3)}, got {material.shape}"
+        )
+    if not np.isfinite(material).all():
+        raise ValueError("constitutive tangents must be finite")
+
+    if relative_floor is not None:
+        if not 0.0 < relative_floor < 1.0:
+            raise ValueError("relative_floor must lie in (0, 1)")
+        symmetric = 0.5 * (material + np.swapaxes(material, 1, 2))
+        eigenvalues, vectors = np.linalg.eigh(symmetric)
+        largest = eigenvalues[:, -1]
+        if np.any(largest <= 0.0):
+            raise ValueError(
+                "a constitutive tangent has no positive eigenvalue; the "
+                "stabilisation cannot be made positive from it"
+            )
+        lifted = np.maximum(eigenvalues, (relative_floor * largest)[:, None])
+        material = np.einsum("nij,nj,nkj->nik", vectors, lifted, vectors)
+
+    centre = operators.strain_displacement_centre
+    stiffness = np.zeros((nodal.shape[0], 8, 8))
+    force = np.zeros_like(nodal)
+    energy = np.zeros(nodal.shape[0])
+    for point in range(operators.jacobian_weights.size):
+        enriched = enrichment_operator(operators, point, projection)
+        weight = float(operators.jacobian_weights[point])
+        total = centre + enriched
+        # (n, 3, 8) products, one per element, in one einsum each.
+        centre_tangent = np.einsum("ij,njk->nik", centre.T, material)
+        enriched_tangent = np.einsum("ij,njk->nik", enriched.T, material)
+        stiffness += weight * (
+            centre_tangent @ enriched + enriched_tangent @ centre + enriched_tangent @ enriched
+        )
+        strain = nodal @ enriched.T
+        stress = np.einsum("nij,nj->ni", material, strain)
+        force += weight * (stress @ total)
+        energy += 0.5 * weight * np.einsum("ni,ni->n", strain, stress)
+    return force, stiffness, energy

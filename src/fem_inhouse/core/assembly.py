@@ -276,6 +276,24 @@ def hourglass_force(
     return force
 
 
+def scatter_element_forces(
+    mesh: StructuredMesh,
+    element_forces: NDArray,
+    location_matrix: NDArray,
+) -> NDArray:
+    """Assemble per-element nodal forces into the global vector.
+
+    The assumed-strain stabilisation produces a force per element rather than
+    one shared matrix, because each element stabilises on its own current
+    tangent. `hourglass_force` cannot be reused: it multiplies one matrix by
+    every element's displacement.
+    """
+
+    force = np.zeros(mesh.n_dof)
+    np.add.at(force, location_matrix, element_forces)
+    return force
+
+
 def hourglass_energy_by_element(
     hourglass_stiffness: NDArray,
     displacement: NDArray,

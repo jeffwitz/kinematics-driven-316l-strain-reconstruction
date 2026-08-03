@@ -38,7 +38,9 @@ from fem_inhouse.core.assembly import (
     hourglass_energy_by_element,
     hourglass_force,
     internal_force,
+    scatter_element_forces,
 )
+from fem_inhouse.core.assumed_strain import batched_stabilisation
 from fem_inhouse.core.constitutive import von_mises
 from fem_inhouse.core.element import (
     GAUSS_POINT_COUNT,
@@ -153,6 +155,9 @@ def run_fem(
     minimum_step_divisor=1024,
     element_formulation="cps4",
     hourglass_scale=1.0,
+    stabilisation_strategy="assumed_strain_energy",
+    stabilisation_projection="asmd",
+    stabilisation_tangent_floor=1.0e-6,
     hourglass_energy_warning_ratio=0.01,
     hourglass_energy_failure_ratio=None,
     constitutive_backend="mfront",
@@ -347,6 +352,35 @@ def run_fem(
         reference_tangent=reference_tangent,
     )
     hourglass = operators.hourglass_stiffness
+    # Section 4. The assumed-strain stabilisation is rebuilt from the CURRENT
+    # tangent at every Newton iteration, so only its geometry is precomputed.
+    # On a regular mesh every element shares it.
+    assumed_strain_operators = None
+    assumed_strain_elastic_baseline = None
+    if element_formulation == "cps4r_as":
+        from fem_inhouse.core.assumed_strain import central_operators
+
+        assumed_strain_operators = central_operators(mesh.coords[mesh.conn[0]])
+        # `precompute_element` folded the ELASTIC stabilisation into `Ke` so the
+        # elastic predictor sees a non-singular element, and
+        # `element_tangent_stiffness` starts every element from `Ke`. The current
+        # stabilisation therefore has to REPLACE that baseline, not add to it.
+        # Adding to it double-counts the stabilisation, which passes every
+        # elastic test -- the two contributions are then equal and the element is
+        # merely too stiff by a constant -- and destroys Newton convergence as
+        # soon as the tangent softens.
+        _, baseline, _ = batched_stabilisation(
+            assumed_strain_operators,
+            np.zeros((1, 8)),
+            (C_ps if reference_tangent is None else reference_tangent)[None, :, :],
+            projection=stabilisation_projection,
+        )
+        assumed_strain_elastic_baseline = baseline[0]
+    stabilisation_floor = (
+        stabilisation_tangent_floor
+        if stabilisation_strategy == "assumed_strain_energy"
+        else None
+    )
     Ke = operators.elastic_stiffness
     Bs = operators.strain_displacement
     dJs = operators.jacobian_determinants
@@ -358,6 +392,23 @@ def run_fem(
     ld = mesh.location_matrix()
     dof_I = mesh.dofs_free
     dof_B = mesh.dofs_bc
+
+    def assumed_strain_contribution(displacement, tangents):
+        """Per-element stabilisation force, stiffness and energy.
+
+        Four small triple products per element against one constitutive
+        integration; the four geometric points carry no state and never reach a
+        material model.
+        """
+
+        assert assumed_strain_operators is not None
+        return batched_stabilisation(
+            assumed_strain_operators,
+            displacement[ld],
+            tangents,
+            projection=stabilisation_projection,
+            relative_floor=stabilisation_floor,
+        )
     if boundary_enforcement not in {"elimination", "penalty"}:
         raise ValueError("boundary_enforcement must be elimination or penalty")
     penalty_mode = boundary_enforcement == "penalty"
@@ -810,6 +861,12 @@ def run_fem(
             R = internal_force(mesh, sf, Bs, dJs, ld, GP_W)
             if hourglass is not None:
                 R = R + hourglass_force(mesh, hourglass, u, ld)
+            assumed_strain_stiffness = None
+            if assumed_strain_operators is not None:
+                stab_force, assumed_strain_stiffness, _ = assumed_strain_contribution(
+                    u, material_tangents
+                )
+                R = R + scatter_element_forces(mesh, stab_force, ld)
             internal_force_seconds += time.perf_counter() - internal_force_started_at
             if penalty_mode:
                 R_I = R[solve_dofs].copy()
@@ -868,6 +925,8 @@ def run_fem(
                 GP_W,
                 element_count=n_e,
             )
+            if assumed_strain_stiffness is not None:
+                Ke_ep = Ke_ep - assumed_strain_elastic_baseline + assumed_strain_stiffness
             element_matrix_seconds += time.perf_counter() - element_matrix_started_at
             sparse_assembly_started_at = time.perf_counter()
             K_tang = fixed_free_assembler.assemble(Ke_ep)
@@ -932,6 +991,13 @@ def run_fem(
                     if hourglass is not None:
                         candidate_internal = candidate_internal + hourglass_force(
                             mesh, hourglass, u, ld
+                        )
+                    if assumed_strain_operators is not None:
+                        candidate_stab, _, _ = assumed_strain_contribution(
+                            u, candidate_trial.tangent_in_plane_mpa
+                        )
+                        candidate_internal = candidate_internal + scatter_element_forces(
+                            mesh, candidate_stab, ld
                         )
                     candidate_residual = candidate_internal[dof_I]
                     internal_force_seconds += time.perf_counter() - candidate_force_started_at

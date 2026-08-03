@@ -108,7 +108,18 @@ class SolverConfig:
     #: response stays elastic; after yielding the stabilisation remains built on
     #: the elastic reference, so the two formulations genuinely differ and the
     #: hourglass energy ratio is what says by how much.
-    element_formulation: Literal["cps4", "cps4r"] = "cps4"
+    #: `cps4r_as` is the QUAS4 assumed-strain element: one constitutive point,
+    #: stabilised on the CURRENT tangent and with no free coefficient. Not
+    #: qualified; see validation/cps4r_assumed_strain_preregistration.md.
+    element_formulation: Literal["cps4", "cps4r", "cps4r_as"] = "cps4"
+    #: Assumed-strain strategy and projection, used only by `cps4r_as`.
+    stabilisation_strategy: Literal[
+        "assumed_strain_current", "assumed_strain_energy"
+    ] = "assumed_strain_energy"
+    stabilisation_projection: Literal["quad4", "asmd", "asoi", "asoi_half"] = "asmd"
+    #: Spectral floor of the energy variant, as a fraction of the largest
+    #: eigenvalue. A conditioning rule, not a tuning knob.
+    stabilisation_tangent_floor: float = 1.0e-6
     #: Hourglass stiffness scale, `0 < beta <= 1`. At one, the reduced element
     #: reproduces the fully integrated one exactly in the elastic range.
     hourglass_scale: float = 1.0
@@ -152,11 +163,21 @@ class SolverConfig:
             raise ValueError("minimum_step_divisor must be at least 2")
         if self.hardening_mode not in {"ludwik", "tabular"}:
             raise ValueError("hardening_mode must be 'ludwik' or 'tabular'")
-        if self.element_formulation not in ("cps4", "cps4r"):
+        if self.element_formulation not in ("cps4", "cps4r", "cps4r_as"):
             raise ValueError(
                 f"unsupported element_formulation {self.element_formulation!r}; "
-                "available: cps4, cps4r"
+                "available: cps4, cps4r, cps4r_as"
             )
+        if self.element_formulation != "cps4r_as":
+            # Accepting an assumed-strain setting on a formulation that ignores
+            # it would let a reader believe the run used it.
+            if self.stabilisation_projection != "asmd":
+                raise ValueError(
+                    "stabilisation_projection only applies to the cps4r_as "
+                    f"formulation, not to {self.element_formulation!r}"
+                )
+        elif not 0.0 < self.stabilisation_tangent_floor < 1.0:
+            raise ValueError("stabilisation_tangent_floor must lie in (0, 1)")
         if self.element_formulation == "cps4":
             # Accepting a hourglass setting that does nothing would let a reader
             # believe the fully integrated element was being stabilised.
