@@ -140,8 +140,18 @@ assumed-strain alternatives exist and are cited below; they are not used here.
 The role of $\beta$ is to soften the hourglass modes only. It scales $K_{hg}$
 linearly and leaves the response to every affine field untouched. Values below
 one are therefore a deliberate trade: less artificial stiffness in the hourglass
-modes, at the cost of losing the exact CPS4 equivalence. Nothing in the current
-evidence selects a value; see the qualification sequence in
+modes, at the cost of losing the exact CPS4 equivalence.
+
+**After yielding, $\beta=1$ is the worst choice, not the natural one.** The
+assembled element is $K^{1pt}(C_{\text{tangent}}) + K_{hg}(C_{\text{elastic}})$.
+Once the material yields, the constitutive tangent collapses while the
+stabilisation keeps the full elastic reference, so the hourglass modes retain
+elastic stiffness while every other mode softens: the element is over-stiffened
+exactly where CPS4 would have softened. Measured on a heterogeneous J2 case,
+$\beta=0.1$ lands six times closer to CPS4 on displacement and five times closer
+on plastic strain than $\beta=1$, monotonically. No value is nevertheless
+recommended, because none of them met the accuracy criterion; see
+`validation/cps4r_qualification_results.md` and the sequence in
 {doc}`../how-to/use_reduced_integration`.
 
 ## The reference operator
@@ -220,24 +230,34 @@ energy stored in the stabilisation at the final configuration; $W_{int}$
 accumulates along the whole loading history and includes plastic dissipation.
 After appreciable yielding the denominator keeps growing while the numerator does
 not, so the ratio decreases as the path lengthens. A longer loading history makes
-the diagnostic look better without any change in the element behaviour, and the
-thresholds below therefore drift with the number of increments. Compare ratios
-only between runs with comparable loading paths.
+the diagnostic look better without any change in the element behaviour. Compare
+ratios only between runs with comparable loading paths.
 
 It is evaluated **only at the final state**. A transient hourglass excitation that
 appears mid-path and unloads is invisible in the ratio.
 
-A **small global ratio is not sufficient**. Averaging over the domain hides local
-concentration, and a hourglass mode sitting inside a localisation band is exactly
-the case that matters. Inspect the element field beside PEEQ for J2, or beside
-accumulated slip for a crystal law.
+Most importantly, **it does not predict the error.** This was measured, not
+assumed. On a pixel-wise heterogeneous J2 case at `beta = 1`, over 1024 elements,
+the correlation between the element hourglass energy and the CPS4-to-CPS4R
+plastic-strain error is `r = 0.033`, and between the energy and PEEQ itself
+`r = 0.066`. Both are indistinguishable from zero: the stabilisation energy does
+not concentrate in the plastic band, and it does not sit where the error is. At
+the same time every configuration tested passed a `1 %` ratio by an order of
+magnitude while missing the accuracy bound by four to twenty times. See
+`validation/cps4r_qualification_results.md`.
 
-With those caveats, the following are analysis guides for this project, not
-universal validity limits:
+**Read `r_hg` as a measure of how hard the stabilisation is working, not of how
+wrong the answer is.** An earlier version of this page offered `1 %` and `5 %`
+bands as analysis guides. They are withdrawn as a gate: the campaign above found
+no relationship between the ratio and the error it was supposed to bound. The
+`hourglass_energy_failure_ratio` setting remains available as a blunt guard
+against a solve whose stabilisation energy runs away, which is a different
+purpose — it protects against a broken run, not against an inaccurate one.
 
-- below 1 percent: weak global influence;
-- between 1 and 5 percent: inspect the spatial field;
-- above 5 percent: the reduced result may be contaminated.
+Inspecting the element field beside PEEQ, or beside accumulated slip for a
+crystal law, is still worth doing: a visible concentration is informative when it
+appears. What is not supported is the converse, that a flat field or a small
+average certifies anything.
 
 ## What is verified, and what is not
 
@@ -263,11 +283,28 @@ Covered by automated tests, with the asserted tolerances:
 - the reported ratio equals $E_{hg}/W_{int}$, and $W_{int}$ matches its analytical
   value on a linear path.
 
-Not covered, and required before CPS4R may replace CPS4 in a scientific campaign:
-a non-affine **plastic** J2 comparison across $\beta$, a homogeneous
-tilted-orientation SRIX comparison, and a wall-time benchmark. Until those exist,
-the elastic equivalence proved above must not be read as an elastoplastic
-equivalence. **CPS4 remains the reference formulation.**
+Measured by the qualification campaign, preregistered in
+`validation/cps4r_qualification_preregistration.md` and reported in
+`validation/cps4r_qualification_results.md`:
+
+- **the elastoplastic accuracy criterion fails at every $\beta$**, on a
+  pixel-wise heterogeneous J2 case and on a tilted-orientation SRIX case. The
+  plastic-strain relative error against CPS4 runs from 1.9 to 10 percent against
+  a 0.5 percent bound derived from the reproduction error the project already
+  accepts;
+- the cost case holds: constitutive time falls by 3.7 to 4.8 times and total
+  wall time by 1.9 to 2.9 times, the larger figure being the crystal law;
+- the displacement difference between the two formulations is 30 to 200 times
+  **below** the DIC measurement noise. The failure is one of numerical
+  self-consistency, not of measurable physics — which is a reason to state the
+  result precisely, not a licence to ignore it.
+
+**CPS4R is therefore not authorised for scientific elastoplastic campaigns, and
+no value of $\beta$ is recommended. CPS4 remains the reference formulation and
+the default.** What would change that verdict is listed in the results document:
+a mesh-convergence study, a stabilisation built on the current tangent rather
+than the fixed elastic reference, and an error estimator that actually predicts
+the difference.
 
 CPS4R is also deliberately refused in combination with the micromorphic nonlocal
 coupling: a hourglass mode inside a localisation band would be indistinguishable
