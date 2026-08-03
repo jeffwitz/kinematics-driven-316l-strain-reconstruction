@@ -55,6 +55,21 @@ class SolverDiagnostics:
     secant_predictor_uses: int = 0
     secant_predictor_fallbacks: int = 0
     tensor_reconstruction_source: str = "unspecified"
+    #: Element formulation actually used, and what it cost in material points.
+    element_formulation: str = "cps4"
+    gauss_points_per_element: int = 4
+    constitutive_material_point_count: int = 0
+    #: Work done against the hourglass stabilisation. NUMERICAL, not physical:
+    #: it exists only because one integration point cannot see the hourglass
+    #: modes, and it is reported apart from the constitutive energy for that
+    #: reason. Zero for the fully integrated element.
+    hourglass_energy: float = 0.0
+    #: Hourglass energy over the internal work actually done. Below 1 percent
+    #: the influence is small; between 1 and 5 the result deserves a look; above
+    #: 5 it may be contaminated. These are analysis rules, not universal truths,
+    #: and a small ratio hiding a concentration inside a plasticity band is the
+    #: case they do not cover -- read the per-element field for that.
+    hourglass_energy_ratio: float = 0.0
     linear_system_matrix_type: str = "unspecified"
     maximum_relative_constitutive_tangent_asymmetry: float = 0.0
     maximum_gauss_point_plane_stress_residual_mpa: float = 0.0

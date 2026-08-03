@@ -321,9 +321,24 @@ def run_fem(
     element_matrix_started_at = time.perf_counter()
     reference_tangent = None
     if element_formulation == "cps4r":
-        reference_tangent = getattr(
-            material_batch, "reference_in_plane_tangent_mpa", lambda: C_ps
-        )()
+        # The stabilisation must be built on the material the element is made
+        # of. Falling back to the isotropic matrix when a backend does not say
+        # is the one thing that must not happen silently: for a crystal at 30
+        # degrees it gets the hourglass stiffness wrong by more than 10 percent,
+        # and no downstream quantity would reveal it.
+        probe = getattr(material_batch, "reference_in_plane_tangent_mpa", None)
+        if probe is not None:
+            reference_tangent = probe()
+        elif constitutive_backend == "python":
+            # The in-house return mapping is isotropic by construction, so the
+            # plane-stress elasticity matrix IS its elastic tangent.
+            reference_tangent = C_ps
+        else:
+            raise ValueError(
+                f"constitutive backend {constitutive_backend!r} does not expose "
+                "reference_in_plane_tangent_mpa, so the hourglass stabilisation of "
+                "element_formulation='cps4r' cannot be built on the right elasticity"
+            )
     operators = precompute_element(
         mesh,
         C_ps,
