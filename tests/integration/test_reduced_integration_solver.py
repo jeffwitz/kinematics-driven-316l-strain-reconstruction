@@ -157,6 +157,7 @@ def test_a_failure_threshold_that_is_met_stops_the_solve() -> None:
     with pytest.raises(Exception, match="hourglass energy ratio"):
         _solve("cps4r", hourglass_energy_failure_ratio=1e-30)
 
+
 def _nonaffine_elastic_solve(formulation: str) -> dict:
     """Small Dirichlet case that genuinely excites the hourglass modes."""
 
@@ -215,9 +216,7 @@ def test_internal_work_is_integrated_over_the_accepted_path() -> None:
     """For a linear path, the trapezoidal integral has an analytical value."""
 
     reduced = _nonaffine_elastic_solve("cps4r")
-    analytical_work = 0.5 * abs(
-        float(np.sum(reduced["RF"] * reduced["U"]))
-    )
+    analytical_work = 0.5 * abs(float(np.sum(reduced["RF"] * reduced["U"])))
 
     assert reduced["INTERNAL_WORK"] == pytest.approx(
         analytical_work,
