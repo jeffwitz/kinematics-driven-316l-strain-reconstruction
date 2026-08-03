@@ -10,6 +10,8 @@ behaviour_files=(
   "${repository_dir}/mfront/PixelLudwikJ2Plasticity3D.mfront"
   "${repository_dir}/mfront/PixelMicromorphicLudwikJ2Plasticity.mfront"
   "${repository_dir}/mfront/PixelMicromorphicLudwikJ2Plasticity3D.mfront"
+  "${repository_dir}/mfront/Fcc316LMericCailletaud.mfront"
+  "${repository_dir}/mfront/Fcc316LForestRubinSrix.mfront"
 )
 
 if [[ ! -f "${tfel_env_file}" ]]; then

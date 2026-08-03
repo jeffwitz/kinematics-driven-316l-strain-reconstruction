@@ -33,6 +33,7 @@ set is stored verbatim and marked incomplete.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -254,6 +255,150 @@ GUERY_316LN_D50 = _register(
 )
 
 
+#: `8 / sqrt(6)`, the geometric factor of equation (16) of Forest and Rubin.
+_SRIX_UNIAXIAL_FACTOR = 8.0 / math.sqrt(6.0)
+
+
+def srix_reference_stress(
+    *,
+    norton_strength_mpa: float,
+    norton_exponent: float,
+    reference_strain_rate: float,
+) -> float:
+    """Transpose a Meric-Cailletaud pair `(K, n)` into the SRIX modulus `R`.
+
+    Equation (16) of Forest and Rubin (2016):
+
+    ``R = (8 / sqrt(6)) K (sqrt(6) rate / 8) ** (1 / n)``
+
+    It equates the overstress of the two models for the tension of a `[001]`
+    single crystal at `reference_strain_rate`. Away from that configuration the
+    two laws differ, by construction: this is an analytical transposition, not
+    an identification, and nothing here makes `R` a measured property of any
+    particular 316L.
+
+    The reference strain rate is a required argument with no default. `R`
+    carries the rate at which the rate-dependent law was frozen, so a default
+    would silently attach an unstated experimental condition to every result.
+    """
+
+    if norton_strength_mpa <= 0.0:
+        raise ValueError("norton_strength_mpa must be positive")
+    if norton_exponent <= 0.0:
+        raise ValueError("norton_exponent must be positive")
+    if reference_strain_rate <= 0.0:
+        raise ValueError("reference_strain_rate must be positive")
+    scaled_rate = reference_strain_rate / _SRIX_UNIAXIAL_FACTOR
+    return _SRIX_UNIAXIAL_FACTOR * norton_strength_mpa * scaled_rate ** (1.0 / norton_exponent)
+
+
+@dataclass(frozen=True, slots=True)
+class SrixPreset:
+    """A SRIX parameter set obtained by transposing a Meric-Cailletaud one.
+
+    Everything but the flow rule is inherited from `source`, so the two laws
+    cannot drift apart: the elasticity, the interaction matrix and the hardening
+    are read from the parent rather than copied.
+    """
+
+    identifier: str
+    source_identifier: str
+    reference_strain_rate: float
+    provenance: str
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if self.reference_strain_rate <= 0.0:
+            raise ValueError("reference_strain_rate must be positive")
+        if not self.source.complete:
+            raise ValueError(
+                f"SRIX preset {self.identifier!r} derives from the incomplete preset "
+                f"{self.source_identifier!r}; missing: {', '.join(self.source.missing())}"
+            )
+
+    @property
+    def source(self) -> SingleCrystalPreset:
+        """The Meric-Cailletaud set this one is transposed from."""
+
+        return get_preset(self.source_identifier)
+
+    @property
+    def overstress_modulus_mpa(self) -> float:
+        """`R`, recomputed from the parent every time rather than stored."""
+
+        source = self.source
+        assert source.norton_strength_mpa is not None
+        assert source.norton_exponent is not None
+        return srix_reference_stress(
+            norton_strength_mpa=source.norton_strength_mpa,
+            norton_exponent=source.norton_exponent,
+            reference_strain_rate=self.reference_strain_rate,
+        )
+
+    @property
+    def elasticity(self) -> CubicElasticity:
+        return self.source.elasticity
+
+    @property
+    def interaction_matrix(self) -> tuple[float, ...]:
+        return self.source.interaction_matrix
+
+    def mfront_parameters(self) -> dict[str, Any]:
+        """Parameters of the SRIX law: the hardening set, with `R` for `(K, n)`."""
+
+        inherited = self.source.mfront_parameters()
+        for rate_dependent in ("K", "n"):
+            del inherited[rate_dependent]
+        return {"R": self.overstress_modulus_mpa, **inherited}
+
+    def elastic_brick_options(self) -> dict[str, float]:
+        return self.source.elastic_brick_options()
+
+    def provenance_record(self) -> dict[str, Any]:
+        """Everything needed to reproduce `R` and to attribute the parameters."""
+
+        source = self.source
+        return {
+            "identifier": self.identifier,
+            "source_preset": self.source_identifier,
+            "source_provenance": source.provenance,
+            "srix_reference": (
+                "Forest and Rubin, European Journal of Mechanics A/Solids 55, "
+                "278-288, 2016, doi:10.1016/j.euromechsol.2015.08.012, equation (16)"
+            ),
+            "hardening_reference": self.provenance,
+            "norton_strength_mpa": source.norton_strength_mpa,
+            "norton_exponent": source.norton_exponent,
+            "reference_strain_rate": self.reference_strain_rate,
+            "overstress_modulus_mpa": self.overstress_modulus_mpa,
+            "status": (
+                "analytical transposition of a rate-dependent parameter set, NOT an "
+                "identification of 316L for the SRIX law"
+            ),
+        }
+
+
+#: Registered SRIX sets, kept apart from the rate-dependent ones.
+SRIX_PRESETS: dict[str, SrixPreset] = {}
+
+
+def _register_srix(preset: SrixPreset) -> SrixPreset:
+    if preset.identifier in SRIX_PRESETS:
+        raise ValueError(f"SRIX preset {preset.identifier!r} is already registered")
+    SRIX_PRESETS[preset.identifier] = preset
+    return preset
+
+
+def get_srix_preset(identifier: str) -> SrixPreset:
+    """Return one registered SRIX preset, naming the alternatives if unknown."""
+
+    try:
+        return SRIX_PRESETS[identifier]
+    except KeyError:
+        known = ", ".join(sorted(SRIX_PRESETS))
+        raise KeyError(f"unknown SRIX preset {identifier!r}; registered: {known}") from None
+
+
 def get_preset(identifier: str) -> SingleCrystalPreset:
     """Return one registered preset, naming the alternatives if it is unknown."""
 
@@ -262,3 +407,24 @@ def get_preset(identifier: str) -> SingleCrystalPreset:
     except KeyError:
         known = ", ".join(sorted(SINGLE_CRYSTAL_PRESETS))
         raise KeyError(f"unknown preset {identifier!r}; registered: {known}") from None
+
+
+# Registered last: a SRIX preset validates its parent on construction, so
+# get_preset must already exist by the time this runs.
+FOREST_RUBIN_SRIX_316L = _register_srix(
+    SrixPreset(
+        identifier="316l_forest_rubin_srix_from_nasri2018",
+        source_identifier="316l_guilhem2013_nasri2018",
+        reference_strain_rate=1.0e-3,
+        provenance=(
+            "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, "
+            "doi:10.1016/j.crme.2017.11.009"
+        ),
+        notes=(
+            "R is a transposition, not a measurement. The reference strain rate of "
+            "1e-3 per second is a placeholder chosen to make the number reproducible; "
+            "it is NOT the rate of our DIC experiment, which has not been documented "
+            "yet. Any campaign result depending on R must state the rate it used."
+        ),
+    )
+)

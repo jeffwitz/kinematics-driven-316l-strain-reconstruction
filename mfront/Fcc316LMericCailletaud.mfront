@@ -1,0 +1,122 @@
+@DSL Implicit;
+@Behaviour Fcc316LMericCailletaud;
+@Author Adapted from the TFEL gallery by the fem_inhouse project;
+@Date 03 / 08 / 2026;
+@Description {
+  Meric-Cailletaud FCC single-crystal viscoplasticity, small strain.
+
+  Reference implementation:
+  https://thelfer.github.io/tfel/web/MericCailletaudSingleCrystalPlasticity.html
+
+  Twelve octahedral slip systems <0,1,-1>{1,1,1}. Norton flow with exponent n
+  and drag stress K, saturating isotropic hardening (Q, b) coupled through the
+  interaction matrix, and Armstrong-Frederick kinematic hardening (C, d).
+
+  This law is RATE DEPENDENT: the flow rule carries an explicit dt, so the
+  answer depends on how the loading is discretised in time. It is kept as the
+  reference against which the rate-independent SRIX law of
+  Fcc316LForestRubinSrix is compared; see equation (16) of Forest and Rubin
+  (2016) for the analytical correspondence between (K, n) and R.
+
+  Parameter set: preset 316l_guilhem2013_nasri2018 of
+  fem_inhouse.core.single_crystal_presets. The elastic constants below are
+  derived from the cubic stiffnesses C11 = 197000, C12 = 125000, C44 = 122000
+  MPa and are checked against that preset by the unit tests.
+}
+
+@ModellingHypothesis Tridimensional;
+@OrthotropicBehaviour;
+
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-14;
+@Theta 1;
+
+@Brick StandardElasticity{
+  young_modulus1 : 99950.29765841035,
+  young_modulus2 : 99950.29765841035,
+  young_modulus3 : 99950.29765841035,
+  poisson_ratio12 : 0.3881987577639752,
+  poisson_ratio23 : 0.3881987577639752,
+  poisson_ratio13 : 0.3881987577639752,
+  shear_modulus12 : 122000.,
+  shear_modulus23 : 122000.,
+  shear_modulus13 : 122000.
+};
+
+@CrystalStructure FCC;
+@SlidingSystem<0, 1, -1>{1, 1, 1};
+@InteractionMatrix{1.0, 1.0, 0.6, 1.8, 1.6, 12.3, 1.6};
+
+@Parameter real n = 11.;
+@Parameter stress K = 12.;
+@Parameter stress tau0 = 40.;
+@Parameter stress Q = 10.;
+@Parameter real b = 3.;
+@Parameter real d = 1500.;
+@Parameter stress C = 40000.;
+
+@StateVariable strain g[Nss];
+g.setEntryName("ViscoplasticSlip");
+
+@AuxiliaryStateVariable strain p[Nss];
+p.setEntryName("EquivalentViscoplasticSlip");
+
+@AuxiliaryStateVariable strain a[Nss];
+a.setEntryName("BackStrain");
+
+@Integrator {
+  using size_type = unsigned short;
+  const auto& ss = Fcc316LMericCailletaudSlipSystems<real>::getSlipSystems();
+  const auto& m = ss.him;
+  constexpr const auto eeps = 1.e-12;
+  const auto seps = eeps * D(0, 0);
+  real exp_bp[Nss];
+  for (size_type i = 0; i != Nss; ++i) {
+    const auto p_ = p[i] + theta * abs(dg[i]);
+    exp_bp[i] = exp(-b * p_);
+  }
+  for (size_type i = 0; i != Nss; ++i) {
+    const auto tau = sig | ss.mus[i];
+    auto r = tau0;
+    for (size_type j = 0; j != Nss; ++j) {
+      r += Q * m(i, j) * (1 - exp_bp[j]);
+    }
+    const auto da =  //
+        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+    const auto x = C * (a[i] + theta * da);
+    const auto f = max(abs(tau - x) - r, stress(0));
+    // Guards the Norton power against overflow; specific to the rate-dependent
+    // flow rule and deliberately absent from the SRIX law, which is linear in f.
+    if (f > 1.1 * K) {
+      return false;
+    }
+    const auto sgn = tau - x > 0 ? 1 : -1;
+    // elasticity
+    feel += dg[i] * ss.mus[i];
+    dfeel_ddg(i) = ss.mus[i];
+    // viscoplasticity
+    const auto v = pow(f / K, n);
+    const auto dv = n * v / (max(f, seps));
+    fg[i] -= dt * v * sgn;
+    dfg_ddeel(i) = -dt * dv * theta * (ss.mus[i] | D);
+    const auto sgn_gi = dg(i) > 0 ? 1 : -1;
+    const auto dda_ddg =
+        (1 - d * a[i] * sgn_gi) / (power<2>(1 + theta * d * abs(dg[i])));
+    dfg_ddg(i, i) += dt * dv * C * theta * dda_ddg;
+    for (size_type j = 0; j != Nss; ++j) {
+      const auto sgn_gj = dg(j) > 0 ? 1 : -1;
+      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj;
+      dfg_ddg(i, j) += dt * dv * dr * sgn;
+    }
+  }
+}
+
+@UpdateAuxiliaryStateVariables {
+  using size_type = unsigned short;
+  for (size_type i = 0; i != Nss; ++i) {
+    p[i] += abs(dg[i]);
+    const auto da =  //
+        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+    a[i] += da;
+  }
+}

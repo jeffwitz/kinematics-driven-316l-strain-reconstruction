@@ -1,0 +1,224 @@
+@DSL Implicit;
+@Behaviour Fcc316LForestRubinSrix;
+@Author fem_inhouse project;
+@Date 03 / 08 / 2026;
+@Description {
+  Forest-Rubin SRIX (also published as RubiX) rate-independent FCC single
+  crystal plasticity, small strain.
+
+  Samuel Forest and M. B. Rubin, A rate-independent crystal plasticity model
+  with a smooth elastic-plastic transition and no slip indeterminacy,
+  European Journal of Mechanics A/Solids, volume 55, pages 278 to 288, 2016.
+  The DOI is quoted in docs/explanation/forest_rubin_srix.md; MFront parses
+  bare DOI strings as malformed numbers, so it is deliberately absent here.
+
+  Everything except the flow rule is shared with Fcc316LMericCailletaud: the
+  same twelve octahedral slip systems, the same interaction matrix, the same
+  saturating isotropic hardening (tau0, Q, b), the same Armstrong-Frederick
+  kinematic hardening (C, d), the same cubic elasticity and the same implicit
+  update Dp_s = |Dg_s|.
+
+  The flow rule, equation (7)
+
+  Meric-Cailletaud, rate dependent:
+
+      dg_s/dt = <f_s / K>^n sign(tau_s - X_s)
+
+  SRIX, rate independent:
+
+      dg_s/dt = eqrate <f_s / R> sign(tau_s - X_s)
+
+  where eqrate is the von Mises equivalent rate of the deviatoric total strain,
+  equation (8). Incrementally, over a step in which the strain varies linearly:
+
+      Dg_s = Deq <f_s / R> sign(tau_s - X_s),
+      Deq  = sqrt(2/3 dev(deto) : dev(deto)).
+
+  Time enters only through Deq, which is itself a strain measure, so the
+  response depends on the strain PATH and not on how fast it is traversed.
+  There is no dt anywhere below, and test_srix_is_time_independent asserts it
+  stays that way.
+
+  Why the local Jacobian is simpler than the Meric-Cailletaud one
+
+  The unknowns of the implicit system are deel and dg; deto is data. Deq is
+  therefore a constant during the local Newton iteration, and the flow function
+  is linear in f, so d(flow)/df = Deq / R replaces the Norton n v / f.
+
+  That same fact creates an EXPLICIT dependence of fg on deto which the
+  StandardElasticity brick does not know about, so the consistent tangent it
+  assembles is missing a rank-one correction. The size of that omission is
+  measured against finite differences in
+  tests/unit/core/test_forest_rubin_srix.py rather than assumed negligible.
+
+  Parameters
+
+  The registered parameter set is the SRIX preset of
+  fem_inhouse.core.single_crystal_presets, derived from Nasri and others, 2018.
+
+  R is NOT an identified 316L parameter: it is the analytical transposition of
+  the Meric-Cailletaud pair (K, n) through equation (16) at a chosen reference
+  strain rate, computed by srix_reference_stress in that same module. The
+  default below corresponds to K = 12 MPa, n = 11 and a reference rate of one
+  thousandth per second, and it must be overridden once the real strain rate of
+  the DIC experiment is documented.
+}
+
+@ModellingHypothesis Tridimensional;
+@OrthotropicBehaviour;
+
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-14;
+@Theta 1;
+
+@Brick StandardElasticity{
+  young_modulus1 : 99950.29765841035,
+  young_modulus2 : 99950.29765841035,
+  young_modulus3 : 99950.29765841035,
+  poisson_ratio12 : 0.3881987577639752,
+  poisson_ratio23 : 0.3881987577639752,
+  poisson_ratio13 : 0.3881987577639752,
+  shear_modulus12 : 122000.,
+  shear_modulus23 : 122000.,
+  shear_modulus13 : 122000.
+};
+
+@CrystalStructure FCC;
+@SlidingSystem<0, 1, -1>{1, 1, 1};
+@InteractionMatrix{1.0, 1.0, 0.6, 1.8, 1.6, 12.3, 1.6};
+
+//! Overstress modulus of the SRIX flow rule, equation (7). Replaces (K, n).
+@Parameter stress R = 18.7819100705;
+R.setEntryName("SrixOverstressModulus");
+
+@Parameter stress tau0 = 40.;
+@Parameter stress Q = 10.;
+@Parameter real b = 3.;
+@Parameter real d = 1500.;
+@Parameter stress C = 40000.;
+
+/*!
+ * Equivalent strain increment below which the step is treated as producing no
+ * slip at all. Guards the rate-independent flow rule against a vanishing or
+ * purely hydrostatic increment; see section 4.3 of the specification.
+ */
+@Parameter strain deqeps = 1.e-14;
+deqeps.setEntryName("MinimumEquivalentStrainIncrement");
+
+@StateVariable strain g[Nss];
+g.setEntryName("PlasticSlip");
+
+@AuxiliaryStateVariable strain p[Nss];
+p.setEntryName("EquivalentPlasticSlip");
+
+@AuxiliaryStateVariable strain a[Nss];
+a.setEntryName("BackStrain");
+
+@Integrator {
+  using size_type = unsigned short;
+  const auto& ss = Fcc316LForestRubinSrixSlipSystems<real>::getSlipSystems();
+  const auto& m = ss.him;
+
+  // Equation (8): equivalent measure of the deviatoric total strain increment.
+  //
+  // It is built from the UNKNOWNS rather than from deto. The elastic residual
+  // of the StandardElasticity brick is feel = deel - deto + sum(dg_s m_s), so
+  // at convergence deto = deel + sum(dg_s m_s) exactly, and since the Schmid
+  // tensors are deviatoric the two readings of Deq are algebraically the same.
+  //
+  // Writing it this way is what makes the consistent tangent correct. Built
+  // from deto, Deq is a constant of the local system and its dependence on the
+  // imposed strain is invisible to the brick, which then returns a tangent
+  // missing a rank-one term: measured at 2 to 42 percent in established
+  // plasticity, and exact only in the elastic range. Built from deel and dg,
+  // the same dependence flows through the implicit Jacobian and the brick
+  // assembles the right operator with no hand-written @TangentOperator.
+  //
+  // It also keeps the plane-stress closure honest: every update of the
+  // transverse strain changes deel and therefore Deq, so Deq is never frozen on
+  // the in-plane components alone.
+  auto de = deviator(deel);
+  for (size_type i = 0; i != Nss; ++i) {
+    de += dg[i] * ss.mus[i];
+  }
+  const auto deq = sqrt(2 * (de | de) / 3);
+
+  // Section 4.3. A null or purely hydrostatic increment produces no slip. The
+  // default residual fg = dg with an identity Jacobian already expresses
+  // Dg = 0, and feel = deel - deto left untouched by the brick is the purely
+  // elastic answer, so skipping the loop is exactly the required branch. No
+  // division by deq is ever reached.
+  //
+  // This is a guarded block rather than an early return: the StandardElasticity
+  // brick appends its own code after this one, and returning from here would
+  // skip it.
+  if (deq >= deqeps) {
+  const auto flow_slope = deq / R;
+  // Gradient of Deq with respect to the deviatoric strain increment:
+  // dDeq/dDe = (2 / (3 Deq)) De. Already deviatoric, so contracting it with the
+  // deviator projector leaves it unchanged and dDeq/ddeel is simply this.
+  const auto ndeq = (2 / (3 * deq)) * de;
+
+  real exp_bp[Nss];
+  for (size_type i = 0; i != Nss; ++i) {
+    const auto p_ = p[i] + theta * abs(dg[i]);
+    exp_bp[i] = exp(-b * p_);
+  }
+  for (size_type i = 0; i != Nss; ++i) {
+    const auto tau = sig | ss.mus[i];
+    auto r = tau0;
+    for (size_type j = 0; j != Nss; ++j) {
+      r += Q * m(i, j) * (1 - exp_bp[j]);
+    }
+    const auto da =  //
+        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+    const auto x = C * (a[i] + theta * da);
+    // Macaulay bracket of equation (7), kept alongside its unclamped argument.
+    const auto overstress = abs(tau - x) - r;
+    const auto f = max(overstress, stress(0));
+    // No overflow guard here: the flow rule is linear in f, unlike the Norton
+    // power of Meric-Cailletaud. Rejecting a large f would discard valid states.
+    //
+    // The slope of the flow rule with respect to f is Deq / R on an active
+    // system and ZERO on an inactive one, where the bracket clamps. Unlike
+    // Meric-Cailletaud, where dv = n v / f vanishes on its own as f goes to
+    // zero, nothing here vanishes by itself: Deq / R is a constant. Writing the
+    // active slope on an inactive system corrupts the Jacobian by exactly the
+    // number of inactive systems, which makes the local Newton fail
+    // non-monotonically in the step size.
+    const auto dflow = (overstress > stress(0)) ? flow_slope : 0 * flow_slope;
+    const auto sgn = tau - x > 0 ? 1 : -1;
+    // elasticity
+    feel += dg[i] * ss.mus[i];
+    dfeel_ddg(i) = ss.mus[i];
+    // rate-independent plasticity
+    fg[i] -= flow_slope * f * sgn;
+    // Two distinct routes carry the strain increment into this residual: f
+    // through the stress, and Deq through the flow amplitude. Differentiating
+    // f alone would reproduce the incomplete tangent this formulation exists to
+    // avoid, so the Deq route is carried explicitly below as -(f sgn / R) dDeq.
+    const auto damplitude = f * sgn / R;
+    dfg_ddeel(i) = -dflow * theta * (ss.mus[i] | D) - damplitude * ndeq;
+    const auto sgn_gi = dg(i) > 0 ? 1 : -1;
+    const auto dda_ddg =
+        (1 - d * a[i] * sgn_gi) / (power<2>(1 + theta * d * abs(dg[i])));
+    dfg_ddg(i, i) += dflow * C * theta * dda_ddg;
+    for (size_type j = 0; j != Nss; ++j) {
+      const auto sgn_gj = dg(j) > 0 ? 1 : -1;
+      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj;
+      dfg_ddg(i, j) += dflow * dr * sgn - damplitude * (ndeq | ss.mus[j]);
+    }
+  }
+  }  // end of the Deq >= deqeps branch
+}
+
+@UpdateAuxiliaryStateVariables {
+  using size_type = unsigned short;
+  for (size_type i = 0; i != Nss; ++i) {
+    // Same implicit hardening update as Meric-Cailletaud: Dp_s = |Dg_s|.
+    p[i] += abs(dg[i]);
+    const auto da =  //
+        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+    a[i] += da;
+  }
+}

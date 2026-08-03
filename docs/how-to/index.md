@@ -22,6 +22,7 @@
 ## Extend
 
 - {doc}`add_mfront_behaviour`
+- {doc}`use_srix_crystal_law`
 - {doc}`add_nonlocal_criterion`
 
 The scientific reasons are in {doc}`../explanation/index`; authoritative
@@ -42,5 +43,6 @@ inspect_p0043_evm_fields
 characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
+use_srix_crystal_law
 add_nonlocal_criterion
 ```
