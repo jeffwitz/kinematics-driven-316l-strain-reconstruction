@@ -84,6 +84,7 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         ("GAUSS_POINTS_PER_ELEMENT", "gauss_points_per_element"),
         ("CONSTITUTIVE_MATERIAL_POINT_COUNT", "constitutive_material_point_count"),
         ("HOURGLASS_ENERGY", "hourglass_energy"),
+        ("INTERNAL_WORK", "internal_work"),
         ("HOURGLASS_ENERGY_RATIO", "hourglass_energy_ratio"),
     ):
         if key in raw:
@@ -164,6 +165,15 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         if all(nonlocal_present)
         else (None, None, None, None, None)
     )
+    hourglass_energy_by_element = None
+    if raw.get("ELEMENT_FORMULATION") == "cps4r":
+        if "HOURGLASS_ENERGY_BY_ELEMENT" not in raw:
+            raise RuntimeError("CPS4R result is missing its spatial hourglass energy field")
+        hourglass_energy_by_element = np.asarray(raw["HOURGLASS_ENERGY_BY_ELEMENT"])
+        if hourglass_energy_by_element.shape != stress.shape[:2]:
+            raise RuntimeError(
+                "HOURGLASS_ENERGY_BY_ELEMENT shape does not match the element grid"
+            )
     result = FEMResult(
         displacement_mm=displacement,
         stress_mpa=stress,
@@ -185,6 +195,7 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
         boundary_misfit_mm=(
             np.asarray(raw["BOUNDARY_MISFIT"]) if "BOUNDARY_MISFIT" in raw else None
         ),
+        hourglass_energy_by_element=hourglass_energy_by_element,
         frames={
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()
