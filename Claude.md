@@ -3132,6 +3132,46 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (7) — Couverture : trois modules qui comptent, et pourquoi 85 % est hors d'atteinte
+
+- **Choix des cibles par la valeur d'appropriation, pas par le coût en lignes.**
+  `qualify_roi` : **0 % → 100 %**. Aucun test, alors qu'il décide si un ROI vaut
+  dix heures de matrice et que son verdict est cité dans
+  `validation/roi_qualification_results.md`. `campaign_access` : **71 % → 100 %**,
+  porte unique par laquelle six workflows lisent les campagnes archivées, et
+  **toutes** ses lignes non couvertes étaient des refus (partition incomplète,
+  empreinte de manifeste discordante, champ réécrit après coup, NaN archivé
+  d'un calcul divergé). `dic_partition_selection` : **60 % → 96 %**, le score
+  qui remplace la sélection manuelle de ROI, dont toute la branche de notation
+  n'était jamais exécutée
+- **Quatre de mes attentes étaient fausses ; les tests enregistrent le vrai
+  comportement.** Le score de bande est **exactement invariant par recalage
+  affine** du champ — il classe la forme et ne peut pas comparer l'intensité de
+  localisation entre ROI. Le seuil q85 **fixe l'aire détectée à ~15 %** quelle
+  que soit la largeur réelle de la bande, donc aspect et aire sont identiques
+  d'une largeur à l'autre et seul le contraste sépare, **non monotonement** : un
+  score plus bas ne veut pas dire une bande plus étroite. Un champ uniforme
+  score zéro par la borne de contraste, pas par le filtre d'aire
+- **Une observation sur le filtre ROI** : `dic_band_is_resolved` exige `73,5 px`
+  alors que l'estimateur de largeur intégrale sature vers `35 px` — plafond déjà
+  mesuré et documenté dans le rapport de validation. Cette condition ne peut donc
+  passer pour aucun champ. Ça n'enlève rien à la conclusion archivée, qui repose
+  sur les conditions directionnelles (`1,06` contre `1,33` requis), mais elle ne
+  porte aucune information et ne devrait pas être comptée parmi les motifs de
+  rejet
+- **Le verdict sur la barrière à 85 % : elle n'est pas atteignable par des tests
+  qui portent leur poids.** Mesuré : `67,16 % → 70,88 %`. Il resterait à couvrir
+  **~2317 des 4780 lignes et branches manquantes**, dont **70 % (3359) vivent
+  dans 14 modules pilotes de campagne** — `joint_nonlocal_identification` à lui
+  seul en concentre 871. Ces modules lisent des archives de plusieurs Go, lancent
+  des calculs d'une heure et écrivent rapports et figures. Les tester
+  sérieusement demande des jeux de données de campagne ; les tester
+  superficiellement veut dire tout simuler, ce qui ne documente rien et fige des
+  détails d'implémentation
+- 906 tests avec MFront, ruff et mypy propres
+
+
+
 ### 2026-08-03 (6) — Qualification CPS4R : elle échoue, et le diagnostic est réfuté
 
 - **Préinscription d'abord** (`validation/cps4r_qualification_preregistration.md`),

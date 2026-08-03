@@ -30,7 +30,12 @@ jobs:
         # MGIS is source-built and unavailable on the generic runner. Its
         # adapter is exercised by the preserved real-MGIS validation suite;
         # CI still covers the dependency-free protocol and conversions.
-        run: pytest --cov=fem_inhouse --cov-branch --cov-config=.coveragerc-ci --cov-fail-under=85
+        #
+        # The threshold lives in `.coveragerc-ci`, with the reason for its
+        # value. It is not repeated on this command line: a `--cov-fail-under`
+        # here silently overrides the file, which is how the two drifted apart
+        # before.
+        run: pytest --cov=fem_inhouse --cov-branch --cov-config=.coveragerc-ci
 
   measurement:
     runs-on: ubuntu-latest
