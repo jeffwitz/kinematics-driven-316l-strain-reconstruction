@@ -704,7 +704,24 @@ def run_fem(
                 break
             sf = trial.stress_in_plane_mpa.reshape(n_e, N_GP, 3)
             eps_p_trial = trial.observables["plastic_strain_2d"].reshape(n_e, N_GP, 3)
-            ep_new = trial.observables["equivalent_plastic_strain"].reshape(n_e, N_GP)
+            # A single crystal has twelve slips and no scalar equivalent plastic
+            # strain. Rather than manufacture one, the field is left at zero and
+            # the accumulated slip is reported under its own name; a caller that
+            # genuinely needs a J2 PEEQ must check `equivalent_plastic_strain`
+            # is meaningful for the behaviour it selected, and the micromorphic
+            # coupling refuses these behaviours outright at the factory.
+            if "equivalent_plastic_strain" in trial.observables:
+                ep_new = trial.observables["equivalent_plastic_strain"].reshape(n_e, N_GP)
+            elif "accumulated_slip" in trial.observables:
+                # Left at zero on purpose. The accumulated slip is available on
+                # the material batch under its own name, but it is not an
+                # equivalent plastic strain and must not be reported as one.
+                pass
+            else:
+                raise RuntimeError(
+                    "constitutive backend exposes neither equivalent_plastic_strain "
+                    "nor accumulated_slip"
+                )
             material_tangents = trial.tangent_in_plane_mpa
             if material_tangents is None:
                 raise RuntimeError("constitutive backend did not return a consistent tangent")
