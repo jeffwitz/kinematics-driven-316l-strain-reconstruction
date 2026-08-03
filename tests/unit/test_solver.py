@@ -264,3 +264,39 @@ def test_solver_can_skip_backend_requirement_for_diagnostics(monkeypatch) -> Non
         hardening_coefficient_mpa=hardening_map,
     )
     assert result.stress_mpa.shape == (2, 2, 3)
+
+def test_typed_api_preserves_the_spatial_hourglass_energy(monkeypatch) -> None:
+    raw = _raw_result()
+    field = np.arange(4, dtype=float).reshape(2, 2)
+    raw.update(
+        ELEMENT_FORMULATION="cps4r",
+        GAUSS_POINTS_PER_ELEMENT=1,
+        CONSTITUTIVE_MATERIAL_POINT_COUNT=4,
+        HOURGLASS_ENERGY=float(field.sum()),
+        HOURGLASS_ENERGY_BY_ELEMENT=field,
+        HOURGLASS_ENERGY_RATIO=0.02,
+        INTERNAL_WORK=300.0,
+    )
+    monkeypatch.setattr(solver.nonlinear, "run_fem", lambda *args, **kwargs: raw)
+    ux, uy, yield_map, hardening_map = _fields()
+
+    result = solver.run_case_study(
+        CaseStudyConfig(
+            MeshConfig(nx=2, ny=2),
+            solver=SolverConfig(
+                constitutive_backend="python",
+                element_formulation="cps4r",
+            ),
+        ),
+        displacement_x_mm=ux,
+        displacement_y_mm=uy,
+        yield_stress_mpa=yield_map,
+        hardening_coefficient_mpa=hardening_map,
+    )
+
+    assert result.hourglass_energy_by_element is not None
+    np.testing.assert_array_equal(result.hourglass_energy_by_element, field)
+    assert result.diagnostics is not None
+    assert result.diagnostics.internal_work == 300.0
+    assert result.diagnostics.hourglass_energy_ratio == 0.02
+
