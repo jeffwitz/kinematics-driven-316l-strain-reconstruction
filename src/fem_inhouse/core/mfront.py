@@ -1135,6 +1135,10 @@ class MFront3DMaterialPointBatch:
             self._mgis_rotations = mgis_rotation_argument(self._rotations)
         self._thread_pool = _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
         self._has_trial_state = False
+        #: Committed total strain in the global frame; see
+        #: committed_transverse_strain_kelvin for why it is not read from s0.
+        self._committed_global_strain = np.zeros((resolved_point_count, 6))
+        self._trial_global_strain = np.zeros((resolved_point_count, 6))
 
     @property
     def point_count(self) -> int:
@@ -1168,7 +1172,17 @@ class MFront3DMaterialPointBatch:
 
     @property
     def committed_transverse_strain_kelvin(self) -> NDArray:
-        return self._manager.s0.gradients[:, _TRANSVERSE_COMPONENTS_3D].copy()
+        """Out-of-plane components of the committed strain, in the GLOBAL frame.
+
+        The condensation seeds each increment with this, then drives the global
+        out-of-plane stresses to zero. Reading it from `s0.gradients` would
+        return crystal-frame components, which the condensation would then treat
+        as global ones: harmless at the identity orientation, where the two
+        frames coincide, and silently wrong at every other. The global strain is
+        therefore tracked separately rather than recovered by rotating back.
+        """
+
+        return self._committed_global_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
 
     @property
     def supports_nonlocal_equivalent_plastic_strain(self) -> bool:
@@ -1251,6 +1265,7 @@ class MFront3DMaterialPointBatch:
             self.revert()
             raise MFrontIntegrationError(f"3D MFront integration failed with status {status}")
         self._has_trial_state = True
+        self._trial_global_strain[:, :] = strain
         state = self._manager.s1.internal_state_variables
         elastic = state[:, self._elastic_offset : self._elastic_offset + 6].copy()
         stress = self._manager.s1.thermodynamic_forces.copy()
@@ -1300,6 +1315,7 @@ class MFront3DMaterialPointBatch:
         if not self._has_trial_state:
             raise RuntimeError("no successful 3D MFront trial state to commit")
         self._mgis.update(self._manager)
+        self._committed_global_strain[:, :] = self._trial_global_strain
         if self._committed_nonlocal_values is not None:
             assert self._trial_nonlocal_values is not None
             self._committed_nonlocal_values[:] = self._trial_nonlocal_values

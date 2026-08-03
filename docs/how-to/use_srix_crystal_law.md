@@ -84,10 +84,48 @@ reports independence, the harness is broken and the first result means nothing.
 
 ## Run a small plane-stress case
 
-Use a small mesh and few increments, and keep the nonlocal coupling off so it
-finishes quickly. A crystal point costs roughly sixteen times a J2 point, so
-size the case accordingly and read {doc}`../explanation/forest_rubin_srix` on
-cost before scaling anything up.
+The crystal laws have no native plane-stress hypothesis, so the 3D behaviour is
+condensed. Select the condensed backend and, optionally, an orientation:
+
+```yaml
+solver:
+  constitutive_backend: mfront-3d-condensed-plane-stress
+  mfront_behaviour_id: fcc_forest_rubin_srix
+  constitutive_options:
+    crystal_orientation:
+      mode: homogeneous
+      matrix:
+        - [1.0, 0.0, 0.0]
+        - [0.0, 1.0, 0.0]
+        - [0.0, 0.0, 1.0]
+```
+
+`euler_bunge_deg: [phi1, Phi, phi2]` may be given instead of `matrix`. Omitting
+`crystal_orientation` entirely means the identity: crystal axes aligned with the
+specimen axes.
+
+The matrix is `Q_global_to_material`, so `eps_crystal = Q eps_global Q^T`. The
+plane-stress condition is imposed in the GLOBAL frame, and all three out-of-plane
+components are solved for, because an arbitrary orientation couples the normal
+and the out-of-plane shears.
+
+A homogeneous orientation is a validation step, **not a polycrystal**: every
+point being the same crystal is exactly what a real aggregate is not. Assigning
+EBSD orientations to Gauss points is the next step; the bridge already accepts an
+`(n_points, 3, 3)` array, so that will be a new provider and not a new bridge.
+
+Keep the mesh small and the nonlocal coupling off. A crystal point costs roughly
+sixteen times a J2 point; read {doc}`../explanation/forest_rubin_srix` on cost
+before scaling anything up.
+
+### What the crystal does not produce
+
+There is no equivalent plastic strain. `FEMResult.equivalent_plastic_strain`
+stays at zero for these behaviours rather than being filled with a substitute,
+and the micromorphic coupling, which is defined on a J2 PEEQ, refuses them
+outright. The twelve-component families -- `plastic_slip`,
+`equivalent_plastic_slip`, `back_strain` -- and the scalar `accumulated_slip`
+are available on the material batch.
 
 ## What not to do
 

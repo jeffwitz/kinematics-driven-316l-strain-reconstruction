@@ -3132,6 +3132,33 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (2) — Pont MGIS générique et anisotropie cristalline
+
+- Le pont 3D est piloté par le catalogue : plus aucune référence obligatoire à
+  `InitialYieldStress`, `EquivalentPlasticStrain` ni `YieldSurfaceRadius` dans
+  le cœur. `MFrontVariableSpec.component_count` déclare les familles à 12
+  composantes plutôt que de parser `PlasticSlip[7]`
+- Nouveau module `core/crystal_orientation.py`. **Convention** :
+  `Q_global_to_material`, donc `eps_c = Q eps_g Qᵀ`. **MGIS attend la
+  transposée** (matériau→global, aplatie ligne-major) — mesuré contre une
+  rigidité cubique tournée à la main, pas contre MGIS. Un seul point du code
+  applique cette transposition
+- **Défaut de repère trouvé et corrigé** : la condensation s'amorçait sur
+  `s0.gradients`, devenu cristallin depuis l'ajout des rotations, et le
+  consommait comme global. Invisible à l'identité (les repères coïncident).
+  Ce qui l'a démasqué : raffiner les incréments faisait échouer **plus tôt**
+  (4,50e-3 → 4,05e-3 → 3,75e-3), l'inverse d'un pas trop grand
+- **Piège du champ affine** : `reduced_biaxial_case` impose un champ affine sur
+  les quatre bords, qui est solution exacte pour *tout* matériau homogène. Le
+  déplacement EF ne peut donc pas dépendre de l'orientation ; la contrainte, si.
+  Un test qui aurait affirmé le contraire aurait affirmé une fausseté
+- Aucune PEEQ-J2 fabriquée : le champ reste nul pour une loi cristalline, et le
+  couplage micromorphique refuse explicitement ces comportements
+- Reste ouvert : les 12 composantes ne remontent pas jusqu'à `FEMResult` (elles
+  sont accessibles sur le batch) ; orientations EBSD par point de Gauss non
+  faites, mais l'API accepte déjà `(n_points, 3, 3)`
+- 773 tests, ruff et mypy propres, doc en `-W`. Non poussé
+
 ### 2026-08-03 — Loi cristalline SRIX de Forest-Rubin, indépendante du temps
 
 - Deux comportements MFront ajoutés : `Fcc316LMericCailletaud` (galerie TFEL,
