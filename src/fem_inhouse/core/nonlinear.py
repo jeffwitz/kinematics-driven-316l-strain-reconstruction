@@ -35,6 +35,8 @@ from fem_inhouse.core.assembly import (
     FixedCSRAssembler,
     assemble_stiffness,
     element_tangent_stiffness,
+    hourglass_energy_by_element,
+    hourglass_force,
     internal_force,
 )
 from fem_inhouse.core.constitutive import von_mises
@@ -44,6 +46,7 @@ from fem_inhouse.core.element import (
     GAUSS_WEIGHTS,
     plane_stress_elasticity,
     precompute_element,
+    quadrature_for,
 )
 from fem_inhouse.core.linear_solver import (
     LinearSystemMatrixType,
@@ -148,6 +151,10 @@ def run_fem(
     n_table=1000,
     first_positive_plastic_strain=1e-6,
     minimum_step_divisor=1024,
+    element_formulation="cps4",
+    hourglass_scale=1.0,
+    hourglass_energy_warning_ratio=0.01,
+    hourglass_energy_failure_ratio=None,
     constitutive_backend="mfront",
     mfront_behaviour_id=None,
     constitutive_options=None,
@@ -204,6 +211,15 @@ def run_fem(
     constitutive_backend : 'python' uses the in-house return mapping; 'mfront'
                 delegates stress, state update and consistent tangent to MGIS.
     """
+    if element_formulation == "cps4r" and nonlocal_plasticity_enabled:
+        # Refused rather than attempted. The reduced element and the staggered
+        # micromorphic fixed point have not been validated together, and a
+        # hourglass mode inside a localisation band would be indistinguishable
+        # from the physics the coupling exists to capture.
+        raise ValueError(
+            "element_formulation='cps4r' is not validated with the micromorphic "
+            "coupling; run the reduced element locally first"
+        )
     if nonlocal_plasticity_enabled and constitutive_backend == "python":
         raise ValueError("nonlocal plasticity currently requires an MFront backend")
     if newton_line_search and nonlocal_plasticity_enabled:
@@ -218,6 +234,9 @@ def run_fem(
             "secant-corrected-elastic predictor requires boundary_displacement_history"
         )
     started_at = time.perf_counter()
+    element_rule = quadrature_for(element_formulation)
+    GP_W = element_rule.weights
+    N_GP = element_rule.point_count
     mesh = StructuredMesh(x_size, y_size, element_size, scale_factor)
     nx, ny = mesh.nx, mesh.ny
     nxn, nyn = nx + 1, ny + 1
@@ -300,7 +319,19 @@ def run_fem(
 
     C_ps = plane_stress_elasticity(E_mod, nu)
     element_matrix_started_at = time.perf_counter()
-    operators = precompute_element(mesh, C_ps)
+    reference_tangent = None
+    if element_formulation == "cps4r":
+        reference_tangent = getattr(
+            material_batch, "reference_in_plane_tangent_mpa", lambda: C_ps
+        )()
+    operators = precompute_element(
+        mesh,
+        C_ps,
+        formulation=element_formulation,
+        hourglass_scale=hourglass_scale,
+        reference_tangent=reference_tangent,
+    )
+    hourglass = operators.hourglass_stiffness
     Ke = operators.elastic_stiffness
     Bs = operators.strain_displacement
     dJs = operators.jacobian_determinants
@@ -756,6 +787,8 @@ def run_fem(
             # Internal forces and residual
             internal_force_started_at = time.perf_counter()
             R = internal_force(mesh, sf, Bs, dJs, ld, GP_W)
+            if hourglass is not None:
+                R = R + hourglass_force(mesh, hourglass, u, ld)
             internal_force_seconds += time.perf_counter() - internal_force_started_at
             if penalty_mode:
                 R_I = R[solve_dofs].copy()
@@ -872,14 +905,14 @@ def run_fem(
                         3,
                     )
                     candidate_force_started_at = time.perf_counter()
-                    candidate_residual = internal_force(
-                        mesh,
-                        candidate_stress,
-                        Bs,
-                        dJs,
-                        ld,
-                        GP_W,
-                    )[dof_I]
+                    candidate_internal = internal_force(
+                        mesh, candidate_stress, Bs, dJs, ld, GP_W
+                    )
+                    if hourglass is not None:
+                        candidate_internal = candidate_internal + hourglass_force(
+                            mesh, hourglass, u, ld
+                        )
+                    candidate_residual = candidate_internal[dof_I]
                     internal_force_seconds += time.perf_counter() - candidate_force_started_at
                     candidate_norm = float(np.linalg.norm(candidate_residual))
                 except ConstitutiveIntegrationError:
@@ -1015,6 +1048,11 @@ def run_fem(
     output_started_at = time.perf_counter()
     internal_force_started_at = time.perf_counter()
     F_all = internal_force(mesh, sig, Bs, dJs, ld, GP_W)
+    if hourglass is not None:
+        # Reactions at prescribed degrees of freedom must carry the
+        # stabilisation too, or they would not balance the tangent that
+        # produced them.
+        F_all = F_all + hourglass_force(mesh, hourglass, u, ld)
     internal_force_seconds += time.perf_counter() - internal_force_started_at
     bc_m = np.zeros(mesh.n_dof, dtype=bool)
     bc_m[dof_B] = True
@@ -1084,6 +1122,45 @@ def run_fem(
             "NONLOCAL_RESIDUAL": accepted_nonlocal_evaluation.residual_field,
         }
 
+    hourglass_energy_total = 0.0
+    hourglass_energy_field = np.zeros((mesh.nx, mesh.ny))
+    hourglass_energy_ratio = 0.0
+    if hourglass is not None:
+        by_element = hourglass_energy_by_element(hourglass, u, ld)
+        hourglass_energy_total = float(by_element.sum())
+        hourglass_energy_field = by_element.reshape(mesh.nx, mesh.ny, order="F")
+        # Against the internal work actually done, not against an elastic
+        # estimate: after yielding the two differ by the dissipation, which is
+        # most of it.
+        internal_work = float(np.abs(F_all @ u))
+        hourglass_energy_ratio = hourglass_energy_total / max(internal_work, 1e-30)
+        if (
+            hourglass_energy_failure_ratio is not None
+            and hourglass_energy_ratio > hourglass_energy_failure_ratio
+        ):
+            raise NonlinearConvergenceError(
+                f"hourglass energy ratio {hourglass_energy_ratio:.3%} exceeds the "
+                f"configured failure threshold {hourglass_energy_failure_ratio:.3%}",
+                diagnostics={
+                    "hourglass_energy": hourglass_energy_total,
+                    "hourglass_energy_ratio": hourglass_energy_ratio,
+                    "internal_work": internal_work,
+                    "element_formulation": element_formulation,
+                    "hourglass_scale": hourglass_scale,
+                },
+            )
+        if (
+            hourglass_energy_warning_ratio is not None
+            and hourglass_energy_ratio > hourglass_energy_warning_ratio
+        ):
+            LOGGER.warning(
+                "hourglass energy is a non-negligible fraction of the internal work",
+                extra={
+                    "event": "hourglass_energy_high",
+                    "hourglass_energy_ratio": hourglass_energy_ratio,
+                    "hourglass_energy": hourglass_energy_total,
+                },
+            )
     output_seconds = time.perf_counter() - output_started_at
     linear_solver_statistics = linear_solver.statistics
     linear_solver.close()
@@ -1107,6 +1184,12 @@ def run_fem(
         PE=PE,
         PEEQ=tg(gm(ep_bar)),
         RF=RF,
+        HOURGLASS_ENERGY=hourglass_energy_total,
+        HOURGLASS_ENERGY_BY_ELEMENT=hourglass_energy_field,
+        HOURGLASS_ENERGY_RATIO=hourglass_energy_ratio,
+        ELEMENT_FORMULATION=element_formulation,
+        GAUSS_POINTS_PER_ELEMENT=N_GP,
+        CONSTITUTIVE_MATERIAL_POINT_COUNT=n_e * N_GP,
         BOUNDARY_MISFIT=BOUNDARY_MISFIT,
         S_3D=stress_3d,
         E_3D=strain_3d,
