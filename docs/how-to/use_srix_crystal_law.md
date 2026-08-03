@@ -135,3 +135,45 @@ are available on the material batch.
   agreement: measured at 7 % for `[111]` and 14 % for `[123]`.
 - Do not copy the `f > 1.1 K` guard from the viscous law. It exists to protect
   a Norton power that SRIX does not have.
+
+## Select a registered parameter set
+
+Every SRIX parameter is an MFront `@Parameter`, so a set is applied at run time
+and nothing is recompiled:
+
+```yaml
+solver:
+  constitutive_backend: mfront-3d-condensed-plane-stress
+  mfront_behaviour_id: fcc_forest_rubin_srix
+  constitutive_options:
+    parameter_set: 316l_srix_transposed_from_nasri2018_rate_1e-3
+    crystal_orientation:
+      mode: homogeneous
+      euler_bunge_deg: [0.0, 0.0, 0.0]
+```
+
+Individual values may be overridden on top of a set with a `parameters` block;
+an inline value demotes its provenance group to `exploratory`, because nothing
+knows where it came from. Unknown set identifiers and unknown parameter names
+are refused before the first solve. The registered sets, their values and their
+statuses are in {doc}`../reference/srix_parameter_sets`.
+
+Selecting nothing applies the historical set, so an unconfigured run reproduces
+every archived result.
+
+## Read the crystal state back
+
+A crystal result carries what a J2 one cannot:
+
+```python
+result.plastic_slip             # (nx, ny, 12) signed slip
+result.equivalent_plastic_slip  # (nx, ny, 12) accumulated slip
+result.back_strain              # (nx, ny, 12)
+result.cumulated_slip           # (nx, ny) sum of the twelve
+result.active_slip_systems      # (nx, ny)
+```
+
+`result.equivalent_plastic_strain` stays at **zero** for these runs and must not
+be used. The sum of twelve accumulated slips is a different scalar with a
+different definition; `cumulated_slip` carries it under its own name so the two
+are never confused.

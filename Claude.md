@@ -3132,6 +3132,62 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (9) — Qualification SRIX : le modèle est prêt à calibrer, les paramètres ne le sont pas
+
+Cahier des charges §1 à §19. **Conclusion : cas B.** La formulation et son
+intégration sont qualifiées ; aucun paramètre 316L n'est identifié.
+
+- **§3** L'en-tête MFront décrivait encore la *première* implémentation — `Deq`
+  lu sur `deto`, tangente amputée d'un terme de rang un. Un lecteur en aurait
+  conclu que la tangente était sciemment fausse. Réécrit avec la mesure qui a
+  tranché : `2e-2` à `4e-1` depuis `deto` contre `7e-7` depuis les inconnues.
+  `srix_reference_stress` → `srix_overstress_modulus_from_meric`, alias déprécié
+  conservé ; la doc dit maintenant que l'équation (16) est **une** route vers `R`
+  et pas sa définition
+- **§4 §5 §6** Tous les paramètres sont des `@Parameter` : **rien à recompiler**,
+  un jeu s'applique par `setParameter`. Sept jeux enregistrés, provenance **par
+  groupe de paramètres** avec les cinq statuts, et un test qui assène qu'**aucun
+  jeu ne revendique une identification**. Les constantes élastiques actualisées
+  n'ont pas de citation : le registre écrit « primary publication not supplied
+  and deliberately not invented » plutôt que d'accrocher un papier vraisemblable
+- **§7** Matrice d'interaction **dérivée de la géométrie**, pas de l'ordre des
+  nombres, et vérifiée entrée par entrée contre `mfront-query`. Trouvaille :
+  MFront **scinde la jonction glissile en deux rangs** selon quel système peut la
+  faire glisser, donc la matrice de rangs **n'est pas symétrique** et le résultat
+  numérique ne l'est que parce que le coefficient publié unique est écrit dans
+  les deux cases. J'avais d'abord affirmé que le littéral de la galerie TFEL
+  différait du nôtre : **c'était faux**, il est identique case par case
+- **§8** Solution analytique dérivée puis vérifiée : `σ = √6·τ0 + (6/8)·R`,
+  reproduite à `1e-16`, 8 systèmes actifs, les quatre autres exactement nuls. La
+  surcontrainte relative sur ce plateau **est** exactement `O_R`
+- **§9** Dissipation positive partout, indépendance temporelle **bit à bit** sur
+  pseudo-temps uniforme, rampé et aléatoire. **Trouvaille conservée** : sous
+  ~20 incréments, un renversement ne produit **aucun glissement inverse** — pas
+  une grosse erreur, une autre solution
+- **§10 §13** Les 24 symétries laissent la réponse axiale invariante à `1e-9` et
+  le spectre des glissements à `1e-12`. **Point ouvert assumé** : la carte
+  d'indices entre ma permutation et l'ordre MFront ne se réduit à aucune règle
+  testée ; propriété donc affirmée sous forme invariante par permutation plutôt
+  qu'ajustée à la règle qui passait. Contraintes hors plan sous `1e-6 MPa` sur
+  4 orientations × 4 chargements × 3 valeurs de `R`
+- **§11** R compte **plus hors axe** : 7,7 % d'écart à `[001]`, 18,6 % à `[123]`,
+  et il change le **nombre de systèmes actifs**. Donc `R` ne peut pas être
+  calibré sur `[001]` puis transféré — contrainte inscrite dans la préinscription
+- **§14** Les douze glissements remontent jusqu'à `FEMResult` et aux archives ;
+  **PEEQ reste à zéro** et un test l'assène
+- **Trois défauts trouvés.** `mgis.load` **ne donne pas un comportement privé** :
+  deux batches avec des jeux différents se seraient silencieusement écrasés —
+  paramètres réappliqués avant chaque intégration. Le module d'Young compilé était
+  faux de `1,3e-7`, donc « appliquer le jeu historique » n'était pas neutre. Et
+  trois erreurs dans mes propres tests, chacune ressemblant d'abord à une loi
+  cassée : composition `Q Sᵀ` au lieu de `S Q`, lecture des contraintes sans les
+  ramener en repère global, tangente évaluée à incrément nul
+- **Non fait, et non simulé** : les cas cuivre et PWA1489 de l'article demandent
+  leurs jeux de paramètres, absents. §16 interdit d'inventer les coefficients
+  manquants
+- 1070 tests, ruff, mypy et Sphinx strict propres
+
+
 ### 2026-08-03 (8) — Remise à plat du dépôt, et travail direct sur `main`
 
 - **Consigne : plus de branches ni de PR.** Personne d'autre ne travaille ici, et
