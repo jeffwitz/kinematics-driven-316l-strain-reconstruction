@@ -27,7 +27,13 @@ def _library() -> str:
     return library
 
 
-def _run(orientation: np.ndarray | None = None, *, nx: int = 3, ny: int = 3):
+def _run(
+    orientation: np.ndarray | None = None,
+    *,
+    nx: int = 3,
+    ny: int = 3,
+    element_formulation: str = "cps4",
+):
     case = reduced_biaxial_case(nx=nx, ny=ny)
     options: dict[str, object] = {}
     if orientation is not None:
@@ -43,6 +49,7 @@ def _run(orientation: np.ndarray | None = None, *, nx: int = 3, ny: int = 3):
         constitutive_options=options,
         mfront_threads=1,
         increments=8,
+        element_formulation=element_formulation,
     )
     return run_case_study(
         replace(case.config, solver=solver),
@@ -134,3 +141,110 @@ def test_a_cubic_symmetry_rotation_leaves_the_field_alone() -> None:
     np.testing.assert_allclose(
         quarter_turn.displacement_mm, aligned.displacement_mm, rtol=1e-6, atol=1e-12
     )
+
+
+# --------------------------------------------------------------------------
+# Section 15.9 - the crystal law under reduced integration
+# --------------------------------------------------------------------------
+
+TILTED = rotation_from_euler_bunge_deg(30.0, 45.0, 60.0)
+
+
+@pytest.mark.mfront
+@pytest.mark.parametrize(("label", "orientation"), [("identity", None), ("tilted", TILTED)])
+def test_the_crystal_runs_with_one_material_point_per_element(
+    label: str, orientation: np.ndarray | None
+) -> None:
+    """One constitutive state per element, and four times fewer of them.
+
+    This is the whole reason the reduced element exists: a crystal point costs
+    roughly sixteen times a J2 point, so removing three of the four is worth
+    more here than anywhere else in the solver.
+    """
+
+    full = _run(orientation)
+    reduced = _run(orientation, element_formulation="cps4r")
+
+    assert full.diagnostics.gauss_points_per_element == 4
+    assert reduced.diagnostics.gauss_points_per_element == 1
+    assert (
+        full.diagnostics.constitutive_material_point_count
+        == 4 * reduced.diagnostics.constitutive_material_point_count
+    )
+    assert reduced.diagnostics.cutbacks == 0
+
+
+@pytest.mark.mfront
+@pytest.mark.parametrize(("label", "orientation"), [("identity", None), ("tilted", TILTED)])
+def test_the_reduced_crystal_agrees_with_the_full_one_on_an_affine_load(
+    label: str, orientation: np.ndarray | None
+) -> None:
+    """Every Gauss point sees the same strain, so the two must coincide.
+
+    Including for a tilted crystal, which is the case that would expose a
+    stabilisation built on the wrong elasticity.
+    """
+
+    full = _run(orientation)
+    reduced = _run(orientation, element_formulation="cps4r")
+
+    np.testing.assert_allclose(reduced.displacement_mm, full.displacement_mm, rtol=1e-9, atol=1e-14)
+    np.testing.assert_allclose(reduced.stress_mpa, full.stress_mpa, rtol=1e-7, atol=1e-7)
+    assert np.abs(reduced.plane_stress_residual_mpa).max() < 1e-6
+
+
+@pytest.mark.mfront
+@pytest.mark.parametrize(("label", "orientation"), [("identity", None), ("tilted", TILTED)])
+def test_the_reduced_crystal_excites_no_hourglass_energy_on_an_affine_load(
+    label: str, orientation: np.ndarray | None
+) -> None:
+    reduced = _run(orientation, element_formulation="cps4r")
+
+    assert reduced.diagnostics.hourglass_energy_ratio < 1e-9
+
+
+@pytest.mark.mfront
+def test_the_stabilisation_uses_the_rotated_cubic_elasticity() -> None:
+    """Section 11, asserted rather than trusted.
+
+    The reference tangent is measured from the behaviour itself, so it carries
+    the orientation. Were it the isotropic matrix instead, the two orientations
+    would return the same operator.
+    """
+
+    from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
+
+    def reference(orientation: np.ndarray) -> np.ndarray:
+        batch = create_plane_stress_material_batch(
+            "mfront-3d-condensed-plane-stress",
+            np.full(1, 124.0),
+            np.full(1, 380.0),
+            0.245,
+            young_modulus_mpa=205_000.0,
+            poisson_ratio=0.3,
+            hardening_mode="ludwik",
+            plastic_strain_max=0.2,
+            plastic_table_points=1000,
+            first_positive_plastic_strain=1e-6,
+            mfront_library=_library(),
+            mfront_threads=1,
+            mfront_behaviour_id=SRIX,
+            constitutive_options={
+                "crystal_orientation": {
+                    "mode": "homogeneous",
+                    "matrix": orientation.tolist(),
+                }
+            },
+        )
+        return batch.reference_in_plane_tangent_mpa()
+
+    aligned = reference(np.eye(3))
+    tilted = reference(TILTED)
+
+    # Cubic in plane stress, crystal axes aligned: the shear modulus is C44.
+    assert aligned[2, 2] == pytest.approx(122_000.0, rel=1e-6)
+    assert aligned[0, 0] == pytest.approx(197_000.0 - 125_000.0**2 / 197_000.0, rel=1e-6)
+    assert aligned[0, 2] == pytest.approx(0.0, abs=1e-6)
+    # Tilted: extension and shear couple, which an isotropic reference cannot do.
+    assert abs(tilted[0, 2]) > 1e3
+    assert np.abs(tilted - tilted.T).max() < 1e-9 * np.abs(tilted).max()

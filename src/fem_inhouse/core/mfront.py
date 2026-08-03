@@ -870,6 +870,22 @@ class MFrontNativePlaneStressBatch:
         )
         return self.complete_trial(trial)
 
+    def reference_in_plane_tangent_mpa(self) -> NDArray:
+        """Elastic plane-stress tangent, measured the same way as the 3D bridge.
+
+        See MFront3DCondensedPlaneStressBatch.reference_in_plane_tangent_mpa;
+        the reasoning is identical and the probe is reverted here too.
+        """
+
+        probe = self.evaluate(
+            np.zeros((self.point_count, 3)), time_increment=1.0, consistent_tangent=True
+        )
+        self.revert()
+        tangent = probe.tangent_in_plane_mpa
+        if tangent is None:  # pragma: no cover - requested explicitly above
+            raise MFrontUnavailableError("behaviour returned no consistent tangent")
+        return np.asarray(tangent[0], dtype=float)
+
     def commit(self) -> None:
         self._bridge.commit()
 
@@ -1432,6 +1448,46 @@ class MFront3DCondensedPlaneStressBatch:
         self._failures += 1
         self._bridge.revert()
         raise LocalPlaneStressConvergenceError(message)
+
+    def reference_in_plane_tangent_mpa(self) -> NDArray:
+        """Condensed elastic tangent in the GLOBAL frame, for hourglass control.
+
+        Measured rather than reconstructed. A zero strain increment from the
+        committed state leaves every behaviour in its elastic branch -- the
+        crystal laws take their guarded no-slip branch, a J2 law has not
+        yielded -- so the condensed tangent the bridge returns IS the elastic
+        plane-stress operator, already rotated into the global frame by whatever
+        orientation this batch carries.
+
+        Rebuilding it instead from C11, C12 and C44 would mean restating the
+        elasticity that already lives inside the MFront behaviour, and keeping
+        the two in step by hand. The difference is not academic: for a crystal
+        at 30 degrees the isotropic matrix gets the hourglass stiffness wrong by
+        more than 10 percent, and nothing downstream would say so.
+
+        The batch is left exactly as it was found: the probe is reverted.
+        """
+
+        probe = self.evaluate(
+            np.zeros((self.point_count, 3)), time_increment=1.0, consistent_tangent=True
+        )
+        self.revert()
+        tangent = probe.tangent_in_plane_mpa
+        if tangent is None:  # pragma: no cover - requested explicitly above
+            raise MFrontUnavailableError(
+                f"{self._bridge.behaviour_name} returned no consistent tangent"
+            )
+        # One matrix per point today; the element needs one per element, and a
+        # homogeneous orientation makes every point identical. A per-element
+        # orientation will return the full stack instead.
+        first = np.asarray(tangent[0], dtype=float)
+        spread = float(np.abs(tangent - first).max())
+        if spread > 1e-8 * float(np.abs(first).max()):
+            raise ValueError(
+                "the elastic reference tangent is not homogeneous over the batch "
+                f"(spread {spread:.3e}); a per-element hourglass reference is needed"
+            )
+        return first
 
     def evaluate(
         self,

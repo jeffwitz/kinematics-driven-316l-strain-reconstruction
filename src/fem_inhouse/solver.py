@@ -79,6 +79,15 @@ def _convert_frame(frame: dict[str, Any]) -> FrameResult:
 
 def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
     diagnostics = raw["diagnostics"]
+    for key, field_name in (
+        ("ELEMENT_FORMULATION", "element_formulation"),
+        ("GAUSS_POINTS_PER_ELEMENT", "gauss_points_per_element"),
+        ("CONSTITUTIVE_MATERIAL_POINT_COUNT", "constitutive_material_point_count"),
+        ("HOURGLASS_ENERGY", "hourglass_energy"),
+        ("HOURGLASS_ENERGY_RATIO", "hourglass_energy_ratio"),
+    ):
+        if key in raw:
+            diagnostics[field_name] = raw[key]
     displacement = np.asarray(raw["U"])
     stress = np.asarray(raw["S"])
     total_strain = np.asarray(raw["E"])

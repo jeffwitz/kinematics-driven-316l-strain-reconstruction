@@ -3132,6 +3132,35 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (4) — Tangente hourglass mesurée, et CPS4R validé en cristallin
+
+- **Le repli silencieux est supprimé.** `reference_in_plane_tangent_mpa()` est
+  exposé par les deux ponts MFront ; le backend `python` garde `C_ps`, qui EST
+  sa tangente élastique puisqu'il est isotrope par construction ; tout autre
+  backend sans la méthode **lève** au lieu de retomber sur l'isotrope
+- **La tangente n'est pas reconstruite, elle est mesurée** : un incrément de
+  déformation nul depuis l'état committé laisse tout comportement dans sa
+  branche élastique (le cristal prend sa branche gardée sans glissement), donc
+  la tangente condensée retournée EST l'opérateur élastique, déjà tourné dans
+  le repère global par l'orientation du batch. La sonde est annulée par
+  `revert`. Rebâtir depuis `C11/C12/C44` aurait dupliqué l'élasticité qui vit
+  déjà dans MFront
+- Contrôles : à l'identité `G = C44 = 122000` et
+  `C11_ps = 197000 − 125000²/197000 = 117685,3`, soit la condensation
+  analytique exacte ; le J2 condensé retombe sur `plane_stress_elasticity` à
+  `2,9e-11` ; à 30/45/60 le couplage extension–cisaillement apparaît, ce qu'une
+  référence isotrope ne peut pas produire
+- **§15.9 fait** : SRIX en CPS4R, orientations identité et inclinée. Un seul
+  état constitutif par élément, facteur 4 sur les points matériels, accord avec
+  CPS4 à `1e-9` sur le déplacement, contraintes hors plan sous `1e-6`, énergie
+  hourglass sous `1e-9`, zéro cutback
+- `SolverDiagnostics` expose `element_formulation`,
+  `gauss_points_per_element`, `constitutive_material_point_count`,
+  `hourglass_energy` et `hourglass_energy_ratio`
+- Reste : figure de diagnostic spatial (§13), benchmark de temps réel et cas
+  excitant réellement les modes pour choisir β (§16), documentation (§18)
+- 826 tests, ruff propre
+
 ### 2026-08-03 (3) — CPS4R et contrôle hourglass en raideur : algèbre élémentaire
 
 - **Livré** : abstraction `QuadratureRule` (§6), règles CPS4/CPS4R, stabilisation
