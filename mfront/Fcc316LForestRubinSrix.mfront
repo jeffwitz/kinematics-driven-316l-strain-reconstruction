@@ -93,9 +93,9 @@
 @Theta 1;
 
 @Brick StandardElasticity{
-  young_modulus1 : 99950.29765841035,
-  young_modulus2 : 99950.29765841035,
-  young_modulus3 : 99950.29765841035,
+  young_modulus1 : 99950.31055900622,
+  young_modulus2 : 99950.31055900622,
+  young_modulus3 : 99950.31055900622,
   poisson_ratio12 : 0.3881987577639752,
   poisson_ratio23 : 0.3881987577639752,
   poisson_ratio13 : 0.3881987577639752,

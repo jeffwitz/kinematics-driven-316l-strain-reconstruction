@@ -48,6 +48,11 @@ class MFrontBehaviourSpec:
     linear_system_matrix_type: LinearSystemMatrixType = "nonsymmetric"
     requires_rotation_matrix: bool = False
     bridge_profile: str = "custom"
+    #: Registry of selectable parameter sets, or `None` when the law exposes no
+    #: configurable set. Two crystal laws share the FCC bridge but not their
+    #: flow parameters -- SRIX has `R`, Meric-Cailletaud has `(K, n)` -- so the
+    #: bridge cannot assume that one law's parameter names exist on the other.
+    parameter_registry: str | None = None
 
     def __post_init__(self) -> None:
         if not self.identifier:
@@ -213,5 +218,6 @@ MFRONT_BEHAVIOURS.register(
         linear_system_matrix_type="nonsymmetric",
         requires_rotation_matrix=True,
         bridge_profile="fcc_single_crystal_v1",
+        parameter_registry="srix",
     )
 )

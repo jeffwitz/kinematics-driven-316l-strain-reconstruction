@@ -244,6 +244,41 @@ def _declared_internal_slices(
     return slices
 
 
+def _apply_behaviour_parameters(
+    mgis: Any,
+    behaviour: Any,
+    values: Mapping[str, float] | None,
+    behaviour_name: str,
+) -> None:
+    """Override MFront `@Parameter` values on a freshly loaded behaviour.
+
+    This is how a registered parameter set reaches the law without editing and
+    recompiling the `.mfront` source. It is safe because every batch loads its
+    own behaviour: there is no shared handle for an override to leak through.
+
+    An unknown name is refused rather than ignored. MGIS `setParameter` on a
+    name the behaviour does not export raises, but only when it is called, and
+    a silently mistyped parameter would otherwise look like a run that simply
+    used the defaults -- which is exactly the failure that must not be possible
+    to publish. The check happens here, before the first integration.
+    """
+
+    if not values:
+        return
+    declared = set(behaviour.parameters)
+    unknown = sorted(name for name in values if name not in declared)
+    if unknown:
+        raise ValueError(
+            f"MFront behaviour {behaviour_name!r} does not expose the parameter(s) "
+            f"{', '.join(unknown)}; it exposes: {', '.join(sorted(declared))}"
+        )
+    for name, value in values.items():
+        numeric = float(value)
+        if not np.isfinite(numeric):
+            raise ValueError(f"parameter {name!r} must be finite, got {value!r}")
+        mgis.setParameter(behaviour, name, numeric)
+
+
 def _variable_offset(
     mgis: Any,
     variables: Any,
@@ -952,6 +987,7 @@ class MFront3DMaterialPointBatch:
         thread_count: int = 1,
         behaviour_name: str = "PixelLudwikJ2Plasticity3D",
         micromorphic_coupling_modulus_mpa: ArrayLike | None = None,
+        behaviour_parameters: Mapping[str, float] | None = None,
     ) -> None:
         library = Path(library_path)
         if not library.is_file():
@@ -1020,6 +1056,7 @@ class MFront3DMaterialPointBatch:
             behaviour_name,
             hypothesis,
         )
+        _apply_behaviour_parameters(mgis, behaviour, behaviour_parameters, behaviour_name)
         _variable_offset(mgis, behaviour.gradients, "Strain", hypothesis, expected_size=6)
         _variable_offset(
             mgis,

@@ -337,6 +337,7 @@ def _create_fcc_single_crystal_batch(
         orientation_provider_from_mapping,
     )
     from fem_inhouse.core.mfront import MFront3DCondensedPlaneStressBatch
+    from fem_inhouse.core.srix_parameters import resolve_srix_parameters
 
     if backend == "mfront-native-plane-stress":
         raise ValueError(
@@ -353,6 +354,8 @@ def _create_fcc_single_crystal_batch(
 
     options = dict(constitutive_options or {})
     orientation_configuration = options.pop("crystal_orientation", None)
+    parameter_set = options.pop("parameter_set", None)
+    explicit_parameters = options.pop("parameters", None)
     provider = (
         HomogeneousOrientationProvider.identity()
         if orientation_configuration is None
@@ -363,6 +366,24 @@ def _create_fcc_single_crystal_batch(
             f"unsupported constitutive_options for {behaviour.identifier!r}: "
             f"{', '.join(sorted(options))}"
         )
+    # Both crystal laws share this bridge but not their flow parameters: SRIX
+    # has R, Meric-Cailletaud has (K, n). Applying one law's names to the other
+    # is what the parameter guard in the batch caught the first time this was
+    # wired, so the selection is gated on the registry the behaviour declares
+    # rather than assumed.
+    if behaviour.parameter_registry == "srix":
+        overrides, _ = resolve_srix_parameters(
+            parameter_set=parameter_set,
+            explicit=explicit_parameters,
+        )
+    elif parameter_set is not None or explicit_parameters is not None:
+        raise ValueError(
+            f"MFront behaviour {behaviour.identifier!r} exposes no selectable "
+            "parameter set; 'parameter_set' and 'parameters' are only accepted by "
+            "behaviours that declare one"
+        )
+    else:
+        overrides = None
 
     return MFront3DCondensedPlaneStressBatch(
         mfront_library,
@@ -371,6 +392,7 @@ def _create_fcc_single_crystal_batch(
         rotation_global_to_material=provider.rotations_global_to_material(point_count),
         thread_count=mfront_threads,
         behaviour_name=behaviour.behaviour_name("condensed_3d"),
+        behaviour_parameters=overrides,
         **(local_plane_stress_options or {}),
     )
 
