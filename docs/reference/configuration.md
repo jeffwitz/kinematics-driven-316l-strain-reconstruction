@@ -40,6 +40,10 @@ fields. They are element-wise input maps.
 | `max_newton_iterations` | `15` | iteration limit per attempted increment |
 | `residual_tolerance` | `1e-6` | relative residual convergence threshold |
 | `minimum_step_divisor` | `1024` | smallest accepted fraction of nominal step |
+| `element_formulation` | `"cps4"` | `cps4` reference or one-point `cps4r` |
+| `hourglass_scale` | `1.0` | CPS4R stiffness scale, with `0 < beta <= 1` |
+| `hourglass_energy_warning_ratio` | `0.01` | warn above this energy ratio; `None` disables |
+| `hourglass_energy_failure_ratio` | `None` | optional hard failure threshold |
 | `require_pypardiso` | `true` | require MKL-backed sparse direct solve |
 | `hardening_mode` | `"ludwik"` | analytical nominal mode |
 | `constitutive_backend` | `"mfront"` | constitutive implementation |
