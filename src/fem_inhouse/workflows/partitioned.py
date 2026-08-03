@@ -47,6 +47,9 @@ BASE_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     ),
     "RF": ("reaction_force", "node"),
 }
+REDUCED_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
+    "HOURGLASS_ENERGY_BY_ELEMENT": ("hourglass_energy_by_element", "element"),
+}
 NONLOCAL_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "PEEQ_NONLOCAL": ("nonlocal_equivalent_plastic_strain", "element"),
     "PEEQ_MISMATCH": ("equivalent_plastic_strain_mismatch", "element"),
@@ -71,6 +74,10 @@ RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
         "unit": "MPa",
     },
     "RF": {"components": "[r1, r2]", "unit": "N for implicit 1 mm thickness"},
+    "HOURGLASS_ENERGY_BY_ELEMENT": {
+        "components": "numerical stabilisation energy per element",
+        "unit": "N mm for implicit 1 mm thickness",
+    },
     "PEEQ_NONLOCAL": {
         "components": "element-centred micromorphic equivalent plastic strain chi",
         "unit": "1",
@@ -198,9 +205,12 @@ class PartitionWorkflow:
 
     @property
     def _result_fields(self) -> dict[str, tuple[str, FieldLocation]]:
+        fields = dict(BASE_RESULT_FIELDS)
+        if self.config.solver.element_formulation == "cps4r":
+            fields.update(REDUCED_RESULT_FIELDS)
         if self.config.nonlocal_plasticity.enabled:
-            return RESULT_FIELDS
-        return BASE_RESULT_FIELDS
+            fields.update(NONLOCAL_RESULT_FIELDS)
+        return fields
 
     def _manifest_data(self) -> dict[str, Any]:
         result_fields = self._result_fields
