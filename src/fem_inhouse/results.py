@@ -64,6 +64,8 @@ class SolverDiagnostics:
     #: modes, and it is reported apart from the constitutive energy for that
     #: reason. Zero for the fully integrated element.
     hourglass_energy: float = 0.0
+    #: Mechanical internal work integrated over accepted increments.
+    internal_work: float = 0.0
     #: Hourglass energy over the internal work actually done. Below 1 percent
     #: the influence is small; between 1 and 5 the result deserves a look; above
     #: 5 it may be contaminated. These are analysis rules, not universal truths,
@@ -142,6 +144,9 @@ class FEMResult:
     yield_surface_radius_mpa: FloatArray | None = None
     nonlocal_residual: FloatArray | None = None
     boundary_misfit_mm: FloatArray | None = None
+    #: Numerical hourglass energy at element level. Present for CPS4R runs,
+    #: absent for the fully integrated reference formulation.
+    hourglass_energy_by_element: FloatArray | None = None
     frames: dict[float, FrameResult] = field(default_factory=dict)
     diagnostics: SolverDiagnostics | None = None
 
@@ -168,6 +173,7 @@ class FEMResult:
             self.nonlocal_hardening_mpa,
             self.yield_surface_radius_mpa,
             self.nonlocal_residual,
+            self.hourglass_energy_by_element,
         )
         return historical + tuple(field for field in reconstructed if field is not None)
 
