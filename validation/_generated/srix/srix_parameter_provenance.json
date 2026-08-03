@@ -1,0 +1,856 @@
+{
+  "316l_srix_exploratory_r1": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_exploratory_r1",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "Material-point sensitivity only. Everything but R matches the historical set so a difference is attributable to R alone.",
+    "origins": {
+      "elasticity": {
+        "note": "Cubic constants of the Meric-Cailletaud set the SRIX one was transposed from; adopted, not measured here.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Chosen to span the transition width, not measured and not transposed. Carries no claim about any material.",
+        "reference": "Sensitivity sweep registered in section 6.3 of the 2026-08-03 specification",
+        "status": "exploratory"
+      },
+      "tau0": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "registered_sensitivity_sweep",
+    "reference_strain_rate": null,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44_mpa": 122000.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 1.0,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.007654655446197431,
+      "poisson_ratio_100": 0.38819875776397517,
+      "tau0_mpa": 40.0,
+      "young_modulus_100_mpa": 99950.31055900622,
+      "zener_anisotropy": 3.388888888888889
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  },
+  "316l_srix_exploratory_r18p7819": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_exploratory_r18p7819",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "Material-point sensitivity only. Everything but R matches the historical set so a difference is attributable to R alone.",
+    "origins": {
+      "elasticity": {
+        "note": "Cubic constants of the Meric-Cailletaud set the SRIX one was transposed from; adopted, not measured here.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Chosen to span the transition width, not measured and not transposed. Carries no claim about any material.",
+        "reference": "Sensitivity sweep registered in section 6.3 of the 2026-08-03 specification",
+        "status": "exploratory"
+      },
+      "tau0": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "registered_sensitivity_sweep",
+    "reference_strain_rate": null,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44_mpa": 122000.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 18.7819100705,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.1437690502111432,
+      "poisson_ratio_100": 0.38819875776397517,
+      "tau0_mpa": 40.0,
+      "young_modulus_100_mpa": 99950.31055900622,
+      "zener_anisotropy": 3.388888888888889
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  },
+  "316l_srix_exploratory_r2": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_exploratory_r2",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "Material-point sensitivity only. Everything but R matches the historical set so a difference is attributable to R alone.",
+    "origins": {
+      "elasticity": {
+        "note": "Cubic constants of the Meric-Cailletaud set the SRIX one was transposed from; adopted, not measured here.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Chosen to span the transition width, not measured and not transposed. Carries no claim about any material.",
+        "reference": "Sensitivity sweep registered in section 6.3 of the 2026-08-03 specification",
+        "status": "exploratory"
+      },
+      "tau0": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "registered_sensitivity_sweep",
+    "reference_strain_rate": null,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44_mpa": 122000.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 2.0,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.015309310892394862,
+      "poisson_ratio_100": 0.38819875776397517,
+      "tau0_mpa": 40.0,
+      "young_modulus_100_mpa": 99950.31055900622,
+      "zener_anisotropy": 3.388888888888889
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  },
+  "316l_srix_exploratory_r4": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_exploratory_r4",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "Material-point sensitivity only. Everything but R matches the historical set so a difference is attributable to R alone.",
+    "origins": {
+      "elasticity": {
+        "note": "Cubic constants of the Meric-Cailletaud set the SRIX one was transposed from; adopted, not measured here.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Chosen to span the transition width, not measured and not transposed. Carries no claim about any material.",
+        "reference": "Sensitivity sweep registered in section 6.3 of the 2026-08-03 specification",
+        "status": "exploratory"
+      },
+      "tau0": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "registered_sensitivity_sweep",
+    "reference_strain_rate": null,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44_mpa": 122000.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 4.0,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.030618621784789725,
+      "poisson_ratio_100": 0.38819875776397517,
+      "tau0_mpa": 40.0,
+      "young_modulus_100_mpa": 99950.31055900622,
+      "zener_anisotropy": 3.388888888888889
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  },
+  "316l_srix_exploratory_r8": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_exploratory_r8",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "Material-point sensitivity only. Everything but R matches the historical set so a difference is attributable to R alone.",
+    "origins": {
+      "elasticity": {
+        "note": "Cubic constants of the Meric-Cailletaud set the SRIX one was transposed from; adopted, not measured here.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Chosen to span the transition width, not measured and not transposed. Carries no claim about any material.",
+        "reference": "Sensitivity sweep registered in section 6.3 of the 2026-08-03 specification",
+        "status": "exploratory"
+      },
+      "tau0": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "registered_sensitivity_sweep",
+    "reference_strain_rate": null,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44_mpa": 122000.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 8.0,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.06123724356957945,
+      "poisson_ratio_100": 0.38819875776397517,
+      "tau0_mpa": 40.0,
+      "young_modulus_100_mpa": 99950.31055900622,
+      "zener_anisotropy": 3.388888888888889
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  },
+  "316l_srix_transposed_from_nasri2018_rate_1e-3": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_transposed_from_nasri2018_rate_1e-3",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "The historical set. Reproduces every archived SRIX result. Not an identification of 316L for the SRIX law: the flow parameter is transposed and everything else is a prior.",
+    "origins": {
+      "elasticity": {
+        "note": "Cubic constants of the Meric-Cailletaud set the SRIX one was transposed from; adopted, not measured here.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Transposed from K = 12 MPa and n = 11 at a reference rate of 1e-3 per second. The rate is a placeholder that makes the number reproducible; it is NOT the rate of the DIC experiment, which has not been documented.",
+        "reference": "Forest and Rubin, European Journal of Mechanics A/Solids 55, 278-288, 2016, doi:10.1016/j.euromechsol.2015.08.012, equation (16)",
+        "status": "analytical_transposition"
+      },
+      "tau0": {
+        "note": "",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "meric_cailletaud_transposition_equation_16",
+    "reference_strain_rate": 0.001,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44_mpa": 122000.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 18.781910070526294,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.14376905021134448,
+      "poisson_ratio_100": 0.38819875776397517,
+      "tau0_mpa": 40.0,
+      "young_modulus_100_mpa": 99950.31055900622,
+      "zener_anisotropy": 3.388888888888889
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  },
+  "316l_srix_updated_elasticity_prior": {
+    "claims_material_identification": false,
+    "explicit_overrides": {},
+    "identifier": "316l_srix_updated_elasticity_prior",
+    "interaction_matrix": {
+      "coefficients": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "convention": "MFront FCC ordering, seven coefficients; slot 6 is the colinear interaction. See docs/reference/fcc_interaction_matrix_mapping.md"
+    },
+    "mfront_parameter_names": [
+      "C",
+      "PoissonRatio12",
+      "PoissonRatio13",
+      "PoissonRatio23",
+      "Q",
+      "ShearModulus12",
+      "ShearModulus13",
+      "ShearModulus23",
+      "SrixOverstressModulus",
+      "YoungModulus1",
+      "YoungModulus2",
+      "YoungModulus3",
+      "b",
+      "d",
+      "tau0"
+    ],
+    "notes": "Updated elasticity and threshold, everything else explicitly inherited from the historical set and provisional. Changing tau0 without re-identifying (Q, b, C, d) moves the whole hardening curve, so this set is for sensitivity work, not for reporting a material response.",
+    "origins": {
+      "elasticity": {
+        "note": "Zener anisotropy 3.41 against 3.39 for the historical set, so the anisotropy is essentially unchanged and the stiffness level is not.",
+        "reference": "Supplied by the 2026-08-03 specification as updated 316L single-crystal constants; primary publication not supplied and deliberately not invented",
+        "status": "literature_prior"
+      },
+      "interaction_matrix": {
+        "note": "Inherited unchanged from the historical set; provisional.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "isotropic_hardening": {
+        "note": "Inherited unchanged from the historical set; provisional.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "kinematic_hardening": {
+        "note": "Inherited unchanged from the historical set; provisional.",
+        "reference": "Nasri and others, Comptes Rendus Mecanique 346, 132-151, 2018, doi:10.1016/j.crme.2017.11.009",
+        "status": "literature_prior"
+      },
+      "overstress_modulus": {
+        "note": "Transposed from K = 12 MPa and n = 11 at a reference rate of 1e-3 per second. The rate is a placeholder that makes the number reproducible; it is NOT the rate of the DIC experiment, which has not been documented.",
+        "reference": "Forest and Rubin, European Journal of Mechanics A/Solids 55, 278-288, 2016, doi:10.1016/j.euromechsol.2015.08.012, equation (16)",
+        "status": "analytical_transposition"
+      },
+      "tau0": {
+        "note": "38.33 MPa is adopted as a prior, not established here.",
+        "reference": "Supplied by the 2026-08-03 specification as updated 316L single-crystal constants; primary publication not supplied and deliberately not invented",
+        "status": "literature_prior"
+      }
+    },
+    "overstress_method": "meric_cailletaud_transposition_equation_16",
+    "reference_strain_rate": 0.001,
+    "run": {
+      "git_commit": "7c31fb0f11c54573809973f959ef4fd4e5d4e883",
+      "mfront_source": {
+        "path": "mfront/Fcc316LForestRubinSrix.mfront",
+        "sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f"
+      },
+      "toolchain": {
+        "mgis": null,
+        "tfel": "tfel-config 5.1.0 (git hash: deee4cd)"
+      }
+    },
+    "selected_explicitly": true,
+    "temperature_k": 293.15,
+    "units": {
+      "C11_mpa": "MPa",
+      "C12_mpa": "MPa",
+      "C44_mpa": "MPa",
+      "C_mpa": "MPa",
+      "Q_mpa": "MPa",
+      "R_mpa": "MPa",
+      "b": "1",
+      "d": "1",
+      "overstress_ratio": "1",
+      "poisson_ratio_100": "1",
+      "reference_strain_rate": "1/s",
+      "tau0_mpa": "MPa",
+      "temperature_k": "K",
+      "young_modulus_100_mpa": "MPa",
+      "zener_anisotropy": "1"
+    },
+    "values": {
+      "C11_mpa": 218300.0,
+      "C12_mpa": 144800.0,
+      "C44_mpa": 125400.0,
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "R_mpa": 18.781910070526294,
+      "b": 3.0,
+      "d": 1500.0,
+      "overstress_ratio": 0.15003292482269187,
+      "poisson_ratio_100": 0.39878821261360514,
+      "tau0_mpa": 38.33,
+      "young_modulus_100_mpa": 102810.93362709998,
+      "zener_anisotropy": 3.4122448979591837
+    },
+    "weakest_statuses": [
+      "elasticity",
+      "interaction_matrix",
+      "isotropic_hardening",
+      "kinematic_hardening",
+      "overstress_modulus",
+      "tau0"
+    ]
+  }
+}
