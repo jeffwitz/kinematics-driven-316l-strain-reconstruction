@@ -32,7 +32,7 @@ def _workflow(tmp_path, *, yield_offset: float = 0.0) -> PartitionWorkflow:
     )
 
 
-def _fake_solver(calls):
+def _fake_solver(calls, *, include_hourglass: bool = False):
     def solve(
         config,
         *,
@@ -85,6 +85,9 @@ def _fake_solver(calls):
             nonlocal_hardening_mpa=np.zeros_like(yield_stress_mpa),
             yield_surface_radius_mpa=np.asarray(yield_stress_mpa),
             nonlocal_residual=np.zeros_like(yield_stress_mpa),
+            hourglass_energy_by_element=(
+                np.asarray(yield_stress_mpa) if include_hourglass else None
+            ),
             frames=frames,
         )
 
@@ -145,6 +148,38 @@ def test_nonlocal_campaign_persists_and_stitches_coupling_fields(tmp_path, monke
     assert "PEEQ_NONLOCAL" in manifest["result_fields"]
     workflow.solve_pending()
     stitched = workflow.stitch("PEEQ_NONLOCAL")
+
+    np.testing.assert_array_equal(stitched, workflow.yield_stress_mpa)
+
+
+
+def test_reduced_campaign_persists_and_stitches_hourglass_energy(
+    tmp_path, monkeypatch
+) -> None:
+    workflow = _workflow(tmp_path)
+    workflow.config = replace(
+        workflow.config,
+        solver=replace(
+            workflow.config.solver,
+            element_formulation="cps4r",
+        ),
+    )
+    workflow.output_directory = tmp_path / "reduced-run"
+    monkeypatch.setattr(
+        partitioned,
+        "run_case_study",
+        _fake_solver([], include_hourglass=True),
+    )
+
+    manifest = workflow._manifest_data()
+    assert "HOURGLASS_ENERGY_BY_ELEMENT" in manifest["result_fields"]
+    assert (
+        manifest["result_field_metadata"]["HOURGLASS_ENERGY_BY_ELEMENT"]["unit"]
+        == "N mm for implicit 1 mm thickness"
+    )
+
+    workflow.solve_pending()
+    stitched = workflow.stitch("HOURGLASS_ENERGY_BY_ELEMENT")
 
     np.testing.assert_array_equal(stitched, workflow.yield_stress_mpa)
 
