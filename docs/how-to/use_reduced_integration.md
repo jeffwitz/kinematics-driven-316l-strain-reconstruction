@@ -57,23 +57,46 @@ the stabilisation energy stored at the final state, the denominator accumulates
 along the path, so a longer history lowers the ratio without the element
 behaving any better.
 
-## Qualify a value of beta
+**Do not use the ratio as a validity gate.** The qualification campaign found no
+relationship between it and the CPS4-to-CPS4R error, globally or element by
+element. A low ratio certifies nothing.
 
-Do not select `hourglass_scale` on an affine test. Every affine field is
-orthogonal to the stabilised modes, so all values appear equivalent.
+## Read this before choosing beta
 
-Use this sequence:
+The sequence this page previously recommended has been run. It is in
+`validation/cps4r_qualification_preregistration.md`, and its outcome is in
+`validation/cps4r_qualification_results.md`:
 
-1. run a small non-affine elastic case at `beta=1`;
-2. verify that CPS4 and CPS4R agree while hourglass energy is nonzero;
-3. run a small non-affine plastic J2 comparison for
-   `beta = 0.1, 0.25, 0.5, 1.0`;
-4. retain at most two candidates using displacement, reactions, plastic-field
-   differences and the spatial hourglass-energy map;
-5. compare those candidates with CPS4 using SRIX and one homogeneous tilted
-   orientation;
-6. measure constitutive and total wall time;
-7. only then consider an experimental ROI.
+- **no value of `beta` met the accuracy criterion**, on either a heterogeneous
+  J2 case or a tilted-orientation SRIX case. The plastic-strain error against
+  CPS4 ran from 1.9 to 10 percent against a 0.5 percent bound;
+- **`beta = 1` was the least accurate value tested**, not the safest. The
+  stabilisation keeps the elastic reference while the constitutive tangent
+  softens, so at `beta = 1` the hourglass modes stay elastically stiff while
+  everything else yields. `beta = 0.1` landed six times closer to CPS4;
+- the cost case did hold: 3.7 to 4.8 times on constitutive time, 1.9 to 2.9
+  times on total wall time.
 
-CPS4 remains the scientific reference whenever the CPS4R sensitivity is not
-bounded.
+So: **CPS4R is not qualified for a scientific elastoplastic campaign, and this
+page recommends no value of `beta`.** Use it for exploration, for cost studies,
+and for elastic work where the equivalence at `beta = 1` is exact. Keep a CPS4
+result as the reference for anything you intend to report.
+
+If you want to move the verdict, the three openings are listed at the end of the
+results document: a mesh-convergence study, a stabilisation built on the current
+tangent instead of the fixed elastic reference, and an error estimator that
+actually predicts the difference.
+
+To re-run the campaign:
+
+```bash
+MFRONT_BEHAVIOUR_LIBRARY="$PWD/build/mfront/src/libBehaviour.so" \
+python scripts/qualify_reduced_integration.py \
+  --mesh 32 --crystal-mesh 8 --repeats 5 \
+  --output validation/_generated/cps4r_qualification
+python scripts/plot_reduced_integration_diagnostic.py
+```
+
+Whatever it reports, do not select `hourglass_scale` on an affine test: every
+affine field is orthogonal to the stabilised modes, so all values look
+equivalent and the comparison is empty.
