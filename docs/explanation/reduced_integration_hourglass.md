@@ -14,10 +14,10 @@ stabilisation would make its stiffness singular.
 
 For the regular rectangular mesh used by this project, the stabilisation is
 
-[
+\[
 K_{hg}=\beta\left(K_{ref}^{4pt}-K_{ref}^{1pt}\right),
 \qquad 0<\beta\leq1.
-]
+\]
 
 The same reference operator is used in both terms. Consequently, translations,
 rigid rotation and affine displacement fields make no contribution to
@@ -44,17 +44,17 @@ interaction.
 The final element field is stored as
 `HOURGLASS_ENERGY_BY_ELEMENT.npy` for CPS4R campaigns:
 
-[
+\[
 E_{hg,e}=\frac12u_e^T K_{hg,e}u_e.
-]
+\]
 
 The global ratio is
 
-[
+\[
 r_{hg}=\frac{\sum_e E_{hg,e}}{|W_{int}|},
-]
+\]
 
-where (W_{int}) is integrated by the trapezoidal rule over accepted equilibrium
+where \(W_{int}\) is integrated by the trapezoidal rule over accepted equilibrium
 increments. Failed trials and cutbacks do not contribute.
 
 A small global ratio is not sufficient evidence. The element field must also be
