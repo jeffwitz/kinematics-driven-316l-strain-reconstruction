@@ -9,7 +9,6 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.sparse import coo_matrix, csr_matrix
 
-from fem_inhouse.core.element import GAUSS_WEIGHTS
 from fem_inhouse.core.mesh import StructuredMesh
 
 AssemblyIndices = tuple[NDArray, NDArray]
@@ -178,13 +177,19 @@ def element_tangent_stiffness(
     plastic_flat_indices: NDArray,
     strain_displacement: NDArray,
     jacobian_determinants: NDArray,
+    gauss_weights: NDArray,
     *,
     element_count: int,
     chunk_size: int = 8_192,
 ) -> NDArray:
-    """Add plastic Gauss-point corrections without a dense all-point tensor."""
+    """Add plastic Gauss-point corrections without a dense all-point tensor.
 
-    gauss_count = len(GAUSS_WEIGHTS)
+    The quadrature arrives as an argument rather than a module constant so the
+    reduced formulation, which has one point instead of four, uses the same
+    code path.
+    """
+
+    gauss_count = len(gauss_weights)
     indices = np.asarray(plastic_flat_indices, dtype=np.int64)
     if elastic_element_stiffness.shape != (8, 8):
         raise ValueError("elastic_element_stiffness must have shape (8, 8)")
@@ -214,7 +219,7 @@ def element_tangent_stiffness(
         gauss_indices = chunk_indices % gauss_count
         matrices_b = strain_displacement[gauss_indices]
         tangent_difference = plastic_tangents[start:stop] - elasticity
-        integration_weights = GAUSS_WEIGHTS[gauss_indices] * jacobian_determinants[gauss_indices]
+        integration_weights = gauss_weights[gauss_indices] * jacobian_determinants[gauss_indices]
         correction = np.einsum(
             "n,nai,nab,nbj->nij",
             integration_weights,
@@ -233,12 +238,13 @@ def internal_force(
     strain_displacement: NDArray,
     jacobian_determinants: NDArray,
     location_matrix: NDArray,
+    gauss_weights: NDArray,
 ) -> NDArray:
     """Assemble nodal internal forces from Gauss-point stresses."""
 
     element_force = np.einsum(
         "g,g,gak,ega->ek",
-        GAUSS_WEIGHTS,
+        gauss_weights,
         jacobian_determinants,
         strain_displacement,
         stress,
