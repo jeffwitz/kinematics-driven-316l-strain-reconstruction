@@ -23,6 +23,7 @@
 
 - {doc}`add_mfront_behaviour`
 - {doc}`use_srix_crystal_law`
+- {doc}`use_reduced_integration`
 - {doc}`add_nonlocal_criterion`
 
 The scientific reasons are in {doc}`../explanation/index`; authoritative
@@ -44,5 +45,6 @@ characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
 use_srix_crystal_law
+use_reduced_integration
 add_nonlocal_criterion
 ```

@@ -65,6 +65,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      - name: Install Graphviz
+        run: sudo apt-get install -y --no-install-recommends graphviz
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"

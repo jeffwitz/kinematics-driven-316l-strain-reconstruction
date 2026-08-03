@@ -476,6 +476,12 @@ def run_fem(
     sig = np.zeros((n_e, N_GP, 3))
     eps_tot = np.zeros((n_e, N_GP, 3))
     accepted_constitutive_trial: ConstitutiveTrial | None = None
+    # Accumulated only over accepted increments. The final scalar product
+    # F_int(u_final) . u_final is not an internal work: it is already twice the
+    # elastic strain energy on a linear monotonic path and has no work meaning
+    # after plastic yielding.
+    committed_internal_force = np.zeros(mesh.n_dof)
+    cumulative_internal_work = 0.0
     chi_committed = np.zeros((nx, ny), dtype=np.float64)
     chi_trial_guess = chi_committed.copy()
     nonlocal_workspace = (
@@ -1023,6 +1029,18 @@ def run_fem(
                 accepted_constitutive_trial = constitutive_trial_acc
             else:
                 accepted_constitutive_trial = complete_trial(constitutive_trial_acc)
+        # R is the complete mechanical internal force at the converged state,
+        # including the stiffness hourglass contribution when CPS4R is active.
+        # Integrate its work only now, so failed trials and cutbacks contribute
+        # nothing. This definition is independent of elimination or penalty
+        # enforcement because R is captured before the boundary residual is
+        # modified.
+        increment_internal_work = 0.5 * float(
+            (committed_internal_force + R) @ (u - u_save)
+        )
+        cumulative_internal_work += increment_internal_work
+        committed_internal_force = R.copy()
+
         material_batch.commit()
         if nonlocal_plasticity_enabled:
             if nonlocal_evaluation_acc is None:
@@ -1140,14 +1158,14 @@ def run_fem(
     hourglass_energy_total = 0.0
     hourglass_energy_field = np.zeros((mesh.nx, mesh.ny))
     hourglass_energy_ratio = 0.0
+    internal_work = float(abs(cumulative_internal_work))
     if hourglass is not None:
         by_element = hourglass_energy_by_element(hourglass, u, ld)
         hourglass_energy_total = float(by_element.sum())
         hourglass_energy_field = by_element.reshape(mesh.nx, mesh.ny, order="F")
-        # Against the internal work actually done, not against an elastic
-        # estimate: after yielding the two differ by the dissipation, which is
-        # most of it.
-        internal_work = float(np.abs(F_all @ u))
+        # Compare the final stabilisation energy with the work accumulated
+        # along the accepted equilibrium path. This remains meaningful after
+        # yielding and does not depend on how Dirichlet data are enforced.
         hourglass_energy_ratio = hourglass_energy_total / max(internal_work, 1e-30)
         if (
             hourglass_energy_failure_ratio is not None
@@ -1202,6 +1220,7 @@ def run_fem(
         HOURGLASS_ENERGY=hourglass_energy_total,
         HOURGLASS_ENERGY_BY_ELEMENT=hourglass_energy_field,
         HOURGLASS_ENERGY_RATIO=hourglass_energy_ratio,
+        INTERNAL_WORK=internal_work,
         ELEMENT_FORMULATION=element_formulation,
         GAUSS_POINTS_PER_ELEMENT=N_GP,
         CONSTITUTIVE_MATERIAL_POINT_COUNT=n_e * N_GP,
@@ -1241,6 +1260,7 @@ def run_fem(
             secant_predictor_uses=secant_predictor_uses,
             secant_predictor_fallbacks=secant_predictor_fallbacks,
             tensor_reconstruction_source=material_batch.completion_strategy,
+            internal_work=internal_work,
             linear_system_matrix_type=linear_system_matrix_type,
             maximum_relative_constitutive_tangent_asymmetry=(
                 maximum_relative_constitutive_tangent_asymmetry
