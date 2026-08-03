@@ -50,6 +50,10 @@ fem_inhouse = ["py.typed"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers -ra"
 testpaths = ["tests"]
+# `scripts` is a repository package, not an installed one. Without this the
+# suite passes under `python -m pytest`, which puts the working directory on the
+# path, and fails under the bare `pytest` that CI runs.
+pythonpath = ["."]
 markers = [
     "mfront: requires a compiled MFront behaviour and MGIS runtime",
     "measurement: requires OpenCV and exercises the image observation chain",
