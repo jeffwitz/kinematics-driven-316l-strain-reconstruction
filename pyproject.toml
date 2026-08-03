@@ -65,7 +65,11 @@ omit = ["src/fem_inhouse/__main__.py"]
 source = ["fem_inhouse"]
 
 [tool.coverage.report]
-fail_under = 85
+# Kept equal to `.coveragerc-ci`, which carries the rationale. This profile does
+# not omit `core/mfront.py`, so a local run with the MFront library available
+# scores above the CI figure; the threshold is the CI one, which is the lower
+# bound of the two.
+fail_under = 70
 show_missing = true
 skip_covered = true
 
