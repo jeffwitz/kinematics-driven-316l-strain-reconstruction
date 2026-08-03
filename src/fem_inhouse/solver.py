@@ -196,6 +196,17 @@ def _convert_result(raw: dict[str, Any], *, poisson_ratio: float) -> FEMResult:
             np.asarray(raw["BOUNDARY_MISFIT"]) if "BOUNDARY_MISFIT" in raw else None
         ),
         hourglass_energy_by_element=hourglass_energy_by_element,
+        **{
+            field: np.asarray(raw[key])
+            for key, field in (
+                ("PLASTIC_SLIP", "plastic_slip"),
+                ("EQUIVALENT_PLASTIC_SLIP", "equivalent_plastic_slip"),
+                ("BACK_STRAIN", "back_strain"),
+                ("CUMULATED_SLIP", "cumulated_slip"),
+                ("ACTIVE_SLIP_SYSTEMS", "active_slip_systems"),
+            )
+            if key in raw
+        },
         frames={
             float(fraction): _convert_frame(frame)
             for fraction, frame in raw.get("frames", {}).items()

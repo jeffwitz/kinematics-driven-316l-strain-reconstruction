@@ -248,3 +248,87 @@ def test_the_stabilisation_uses_the_rotated_cubic_elasticity() -> None:
     # Tilted: extension and shear couple, which an isotropic reference cannot do.
     assert abs(tilted[0, 2]) > 1e3
     assert np.abs(tilted - tilted.T).max() < 1e-9 * np.abs(tilted).max()
+
+
+@pytest.mark.mfront
+def test_the_crystal_state_reaches_the_typed_result() -> None:
+    """Section 14. Twelve slips cannot be flattened into a scalar PEEQ."""
+
+    result = _run(nx=3, ny=3)
+
+    assert result.plastic_slip is not None
+    assert result.plastic_slip.shape == (3, 3, 12)
+    assert result.equivalent_plastic_slip.shape == (3, 3, 12)
+    assert result.back_strain.shape == (3, 3, 12)
+    assert result.cumulated_slip.shape == (3, 3)
+    assert result.active_slip_systems.shape == (3, 3)
+
+
+@pytest.mark.mfront
+def test_the_equivalent_plastic_strain_is_never_filled_with_cumulated_slip() -> None:
+    """Section 14 and prohibition 16.
+
+    The sum of twelve accumulated slips is a different scalar with a different
+    definition and a different magnitude. Reporting it as a J2 equivalent
+    plastic strain would make two incomparable campaigns look comparable, so the
+    field stays at exactly zero and the slip travels under its own name.
+    """
+
+    result = _run(nx=3, ny=3)
+
+    assert float(np.abs(result.equivalent_plastic_strain).max()) == 0.0
+    assert float(result.cumulated_slip.max()) > 1e-3
+
+
+@pytest.mark.mfront
+def test_the_accumulated_slips_are_non_negative_and_sum_to_the_scalar() -> None:
+    result = _run(nx=3, ny=3)
+
+    assert float(result.equivalent_plastic_slip.min()) >= 0.0
+    np.testing.assert_allclose(
+        result.equivalent_plastic_slip.sum(axis=2), result.cumulated_slip, rtol=1e-12
+    )
+
+
+@pytest.mark.mfront
+def test_the_active_count_matches_the_nonzero_slips() -> None:
+    result = _run(nx=3, ny=3)
+
+    expected = np.count_nonzero(np.abs(result.plastic_slip) > 1e-12, axis=2)
+    np.testing.assert_array_equal(result.active_slip_systems.astype(int), expected)
+
+
+@pytest.mark.mfront
+def test_a_crystal_campaign_declares_the_slip_fields_for_archiving(tmp_path) -> None:
+    """Section 14: archivable, not merely present in memory."""
+
+    from dataclasses import replace as _replace
+
+    from fem_inhouse.partitioning import PartitionLayout
+    from fem_inhouse.workflows.partitioned import PartitionWorkflow
+
+    case = reduced_biaxial_case(nx=4, ny=4)
+    solver = _replace(
+        case.config.solver,
+        constitutive_backend="mfront-3d-condensed-plane-stress",
+        mfront_behaviour_id=SRIX,
+        mfront_library=_library(),
+    )
+    workflow = PartitionWorkflow(
+        config=_replace(case.config, solver=solver),
+        layout=PartitionLayout(global_shape=(4, 4), partition_shape=(2, 2), padding=0),
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        output_directory=tmp_path / "campaign",
+    )
+
+    manifest = workflow._manifest_data()
+
+    assert "PLASTIC_SLIP" in manifest["result_fields"]
+    assert "CUMULATED_SLIP" in manifest["result_fields"]
+    assert (
+        "NOT an equivalent plastic strain"
+        in manifest["result_field_metadata"]["CUMULATED_SLIP"]["components"]
+    )

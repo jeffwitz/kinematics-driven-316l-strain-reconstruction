@@ -147,6 +147,20 @@ class FEMResult:
     #: Numerical hourglass energy at element level. Present for CPS4R runs,
     #: absent for the fully integrated reference formulation.
     hourglass_energy_by_element: FloatArray | None = None
+    #: Section 14. Crystal-plasticity state, present only for a single-crystal
+    #: behaviour. The three per-system fields are `(nx, ny, 12)`; the two
+    #: scalars are `(nx, ny)`.
+    #:
+    #: `equivalent_plastic_strain` stays at zero for these runs and must not be
+    #: filled with `cumulated_slip`: the sum of twelve accumulated slips is a
+    #: different scalar, with a different definition and a different magnitude,
+    #: and reporting it as a J2 equivalent plastic strain would make two
+    #: incomparable campaigns look comparable.
+    plastic_slip: FloatArray | None = None
+    equivalent_plastic_slip: FloatArray | None = None
+    back_strain: FloatArray | None = None
+    cumulated_slip: FloatArray | None = None
+    active_slip_systems: FloatArray | None = None
     frames: dict[float, FrameResult] = field(default_factory=dict)
     diagnostics: SolverDiagnostics | None = None
 
@@ -174,6 +188,11 @@ class FEMResult:
             self.yield_surface_radius_mpa,
             self.nonlocal_residual,
             self.hourglass_energy_by_element,
+            self.plastic_slip,
+            self.equivalent_plastic_slip,
+            self.back_strain,
+            self.cumulated_slip,
+            self.active_slip_systems,
         )
         return historical + tuple(field for field in reconstructed if field is not None)
 

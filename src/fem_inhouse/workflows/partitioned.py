@@ -50,6 +50,15 @@ BASE_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
 REDUCED_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "HOURGLASS_ENERGY_BY_ELEMENT": ("hourglass_energy_by_element", "element"),
 }
+#: Section 14. Archived only for a single-crystal behaviour; a J2 campaign has
+#: no slip systems and an empty set of these fields would be misleading.
+CRYSTAL_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
+    "PLASTIC_SLIP": ("plastic_slip", "element"),
+    "EQUIVALENT_PLASTIC_SLIP": ("equivalent_plastic_slip", "element"),
+    "BACK_STRAIN": ("back_strain", "element"),
+    "CUMULATED_SLIP": ("cumulated_slip", "element"),
+    "ACTIVE_SLIP_SYSTEMS": ("active_slip_systems", "element"),
+}
 NONLOCAL_RESULT_FIELDS: dict[str, tuple[str, FieldLocation]] = {
     "PEEQ_NONLOCAL": ("nonlocal_equivalent_plastic_strain", "element"),
     "PEEQ_MISMATCH": ("equivalent_plastic_strain_mismatch", "element"),
@@ -77,6 +86,28 @@ RESULT_FIELD_METADATA: dict[str, dict[str, str]] = {
     "HOURGLASS_ENERGY_BY_ELEMENT": {
         "components": "numerical stabilisation energy per element",
         "unit": "N mm for implicit 1 mm thickness",
+    },
+    "PLASTIC_SLIP": {
+        "components": "signed slip on each of the twelve octahedral systems",
+        "unit": "1",
+    },
+    "EQUIVALENT_PLASTIC_SLIP": {
+        "components": "accumulated slip on each of the twelve systems",
+        "unit": "1",
+    },
+    "BACK_STRAIN": {
+        "components": "Armstrong-Frederick back strain per system",
+        "unit": "1",
+    },
+    "CUMULATED_SLIP": {
+        "components": (
+            "sum of the twelve accumulated slips; NOT an equivalent plastic strain"
+        ),
+        "unit": "1",
+    },
+    "ACTIVE_SLIP_SYSTEMS": {
+        "components": "count of systems carrying nonzero slip",
+        "unit": "1",
     },
     "PEEQ_NONLOCAL": {
         "components": "element-centred micromorphic equivalent plastic strain chi",
@@ -208,6 +239,12 @@ class PartitionWorkflow:
         fields = dict(BASE_RESULT_FIELDS)
         if self.config.solver.element_formulation == "cps4r":
             fields.update(REDUCED_RESULT_FIELDS)
+        identifier = self.config.solver.mfront_behaviour_id
+        if identifier is not None:
+            from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+
+            if MFRONT_BEHAVIOURS.get(identifier).parameter_registry == "srix":
+                fields.update(CRYSTAL_RESULT_FIELDS)
         if self.config.nonlocal_plasticity.enabled:
             fields.update(NONLOCAL_RESULT_FIELDS)
         return fields

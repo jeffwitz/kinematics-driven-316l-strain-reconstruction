@@ -10,6 +10,7 @@ argue for the scientific model.
 - {doc}`constitutive_models`
 - {doc}`fcc_interaction_matrix_mapping`
 - {doc}`srix_parameter_sets`
+- {doc}`ebsd_orientation_contract`
 - {doc}`nonlocal_parameters`
 - {doc}`tensor_conventions`
 - {doc}`DIC axis conventions </reference/dic_axis_conventions>`
@@ -49,6 +50,7 @@ model_contract
 constitutive_models
 fcc_interaction_matrix_mapping
 srix_parameter_sets
+ebsd_orientation_contract
 nonlocal_parameters
 tensor_conventions
 dic_axis_conventions

@@ -1210,12 +1210,39 @@ def run_fem(
             "total_newton_iterations": total_newton_iterations,
         },
     )
+    # Section 14. Crystal laws carry twelve slips and no scalar equivalent
+    # plastic strain, so their state cannot be flattened into PEEQ -- which
+    # stays at zero for them -- and has to travel under its own names. Each
+    # field is (elements, gauss points, 12) except the two scalars.
+    crystal_fields: dict[str, np.ndarray] = {}
+    observables = accepted_constitutive_trial.observables
+    for source, name in (
+        ("plastic_slip", "PLASTIC_SLIP"),
+        ("equivalent_plastic_slip", "EQUIVALENT_PLASTIC_SLIP"),
+        ("back_strain", "BACK_STRAIN"),
+    ):
+        values = observables.get(source)
+        if values is not None:
+            crystal_fields[name] = tg(
+                gm(np.asarray(values).reshape(n_e, N_GP, -1))
+            )
+    if "equivalent_plastic_slip" in observables:
+        per_system = np.asarray(observables["equivalent_plastic_slip"]).reshape(
+            n_e, N_GP, -1
+        )
+        crystal_fields["CUMULATED_SLIP"] = tg(gm(per_system.sum(axis=2)))
+        slips = np.asarray(observables["plastic_slip"]).reshape(n_e, N_GP, -1)
+        crystal_fields["ACTIVE_SLIP_SYSTEMS"] = tg(
+            gm(np.count_nonzero(np.abs(slips) > 1e-12, axis=2).astype(float))
+        )
+
     return dict(
         U=U,
         S=S,
         E=E,
         PE=PE,
         PEEQ=tg(gm(ep_bar)),
+        **crystal_fields,
         RF=RF,
         HOURGLASS_ENERGY=hourglass_energy_total,
         HOURGLASS_ENERGY_BY_ELEMENT=hourglass_energy_field,
