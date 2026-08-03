@@ -3132,6 +3132,37 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 
 ## 14. Journal des mises à jour
 
+### 2026-08-03 (8) — Remise à plat du dépôt, et travail direct sur `main`
+
+- **Consigne : plus de branches ni de PR.** Personne d'autre ne travaille ici, et
+  la fusion est de toute façon refusée par le classificateur de permissions, donc
+  chaque PR se terminait par une commande rendue à l'utilisateur. Le commit
+  explicatif et l'entrée `Claude.md` remplacent la description de PR comme trace
+- **`main` était déjà à jour**, mais une branche distante ne l'était pas :
+  `agent/docs-evidence-hardening`, **15 commits absents de `main`**, que j'ai
+  failli supprimer avec les autres. Vérification faite, sa PR #1 avait été
+  **fermée comme supplantée** par `dadec1b7` — présent dans `main` — et ses
+  fichiers ont bougé de 17 à 20 commits depuis le fork. La fusionner
+  ressusciterait une documentation antérieure à la conclusion P43. Elle est donc
+  à supprimer, pas à fusionner
+- Cinq autres branches entièrement contenues dans `main`, supprimées localement.
+  **La suppression côté distant est refusée par les permissions** : six branches
+  restent sur `origin`, c'est cosmétique et ça vous revient
+- `BCC_CrystalPlasticity_PhaseFieldFracture.mfront` versé dans `mfront/`,
+  **non compilé** : le script de build utilise une liste explicite, pas un glob,
+  donc l'ajouter ne l'active pas. Loi non relue, non testée, sans point d'entrée
+  Python — c'est une mise à l'abri sous contrôle de version, pas une intégration
+- `.codebase-memory/` **sorti du suivi git** (`git rm --cached`) et ignoré :
+  cache d'index régénérable, spécifique à la machine, dont le `graph.db.zst` de
+  `5,2 Mo` mettait un diff binaire illisible dans chaque commit et invitait les
+  « conflicted copy » du dossier synchronisé. Son `.gitattributes` auto-généré
+  (`merge=ours`) existait précisément pour contenir ce problème ; il devient
+  sans objet
+- Fichiers de reprise de session et `kinematics_extension_v1.diff` ignorés sans
+  être supprimés
+
+
+
 ### 2026-08-03 (7) — Couverture : trois modules qui comptent, et pourquoi 85 % est hors d'atteinte
 
 - **Choix des cibles par la valeur d'appropriation, pas par le coût en lignes.**

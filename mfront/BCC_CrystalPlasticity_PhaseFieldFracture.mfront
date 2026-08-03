@@ -1,0 +1,266 @@
+//// General definition 
+// MFront Domain Specific Language
+@DSL		ImplicitFiniteStrain;
+// Name of the law
+@Behaviour	BCCDislocationDensitiesFiniteStrainSingleCrystalViscoPlasticity;
+@Author Jean-Michel Scherer;
+@Date 10 / 01 / 2025;
+@Description {
+    A dislocation-density based crystal plasticity model for BCC crystals.
+    Grain size effect accounted for in the evolution of dislocation densities.
+    Extended for brittle fracture with a phase-field approach. 
+}
+
+@ModellingHypothesis Tridimensional;
+@OrthotropicBehaviour;
+
+//// Algorithmic parameters
+// Discretization of the constitutive equations with a theta-method
+// Theta value
+@Theta 1.;
+// Algorithm to solve the non-linear discretized equations
+@Algorithm      NewtonRaphson;
+// Stopping criterion for the iterative algorithm
+@Epsilon 1.e-12;
+// Maximal iteration number of the algorithm
+@IterMax 1000;
+// (for UMAT interface only) allows for substepping if IterMax is reached
+//@UMATUseTimeSubStepping[umat] true;
+// (for UMAT interface only) Maximal number of substepping allowed
+//@UMATMaximumSubStepping 100;
+
+// MFront Behavior Brick
+@Brick FiniteStrainSingleCrystal{
+  young_modulus1 : "((1-damage)*(1-damage)+kres)*E",
+  young_modulus2 : "((1-damage)*(1-damage)+kres)*E",
+  young_modulus3 : "((1-damage)*(1-damage)+kres)*E",
+  poisson_ratio12 : "nu",
+  poisson_ratio23 : "nu",
+  poisson_ratio13 : "nu",
+  shear_modulus12 : "((1-damage)*(1-damage)+kres)*G",
+  shear_modulus23 : "((1-damage)*(1-damage)+kres)*G",
+  shear_modulus13 : "((1-damage)*(1-damage)+kres)*G",
+  shifted_elastic_deformation_gradient : true
+};
+
+//// Crystal plasticity options
+// Crystal symmetry
+@CrystalStructure BCC;
+// Set of slip systems
+@SlipSystems{ <1,1,1>{0,1,-1}, <1,1,1>{1,1,-2} };
+
+/* Hoc & Forest */
+// a0 = 0.4 // 110 x 110 self
+// k1 * a0 = 1.*0.4 = 0.4 // 110 x 110 colinear
+// k2 * k1 * a0 = 1.15*1.*0.4 = 0.46 // 110 x 110 non-colinear
+// kp1 * a0 = 1.05*0.4 = 0.42 // 110 x 112 colinear
+// kp2 * kp1 * a0 = 1.05*1.05*0.4 = 0.441 // 110 x 112 non-colinear
+// ks0 * a0 = 1.3*0.4 = 0.52 // 112 x 112 self
+// ks0 * k1 * a0 = 1.3*1.*0.4 = 0.52 // 112 x 112 colinear
+// ks0 * k2 * k1 * a0 = 1.3*1.15*1.*0.4 = 0.598 // 112 x 112 non-colinear
+@InteractionMatrix{
+0.4, 0.46, 0.46, 0.4, 0.46, 0.46, 0.46, // 110 x 110
+0.42, 0.441, 0.441, 0.441, 0.441, 0.441, 0.42, 0.42, 0.441, 0.441, 0.441, 0.441, 0.441, 0.42, // 110 x 112
+0.52, 0.598, 0.598, 0.598, 0.598, 0.52, 0.598 // 112 x 112
+};
+
+//// Material parameters
+// Young's modulus
+@MaterialProperty real E;
+// Poisson's ratio
+@MaterialProperty real nu;
+// Shear modulus
+@MaterialProperty real G;
+
+// Normalized (by b**-2) initial dislocation density (per system)
+@MaterialProperty real rho0;
+// Normalized (by b) annihilation distance
+@MaterialProperty real y;
+// Grain boundary dislocation storage coefficient
+@MaterialProperty real KS;
+
+// Obstacle mean free path
+@MaterialProperty real Kobs;
+// Coplanar mean free path
+@MaterialProperty real Kcop;
+// Norton exponent
+@MaterialProperty real n;
+// Norton strength
+@MaterialProperty real K;
+// Thermal part of the critical resolved shear stress (in MPa)
+@MaterialProperty real tau0;
+// Shear modulus used for the Bacon-Scattergood approximation (in MPa)
+@MaterialProperty real mu;
+// Normalized (by b) distance to the closest grain boundary
+@MaterialProperty real GB_distance;
+// Taylor coefficient
+@MaterialProperty real alpha;
+
+//// Auxiliary variables
+// Normalized (by b**-2) dislocation density (per system)
+@AuxiliaryStateVariable real rho[Nss];
+// Normalized (by b**-2) dislocation density increment (per system)
+@AuxiliaryStateVariable real incr_rho[Nss];
+
+// Distance to the closest grain boundary
+@LocalVariable real dd;
+
+// Resolved shear stress
+@AuxiliaryStateVariable stress tau[Nss];
+tau.setEntryName("ResolvedShearStress");
+
+// Plastic dissipated energy
+@AuxiliaryStateVariable strain Psi_pl;
+Psi_pl.setEntryName("DissipatedEnergy");
+
+// Plastic part of the deformation gradient
+@AuxiliaryStateVariable tensor<3u,real> Fp;
+Fp.setEntryName("PlasticPartOfTheDeformationGradient");
+
+// Number of active slip systems
+@AuxiliaryStateVariable real nbact;
+nbact.setEntryName("NumberOfActiveSlipSystems");
+
+// Residual stiffness parameter
+@Parameter real kres = 1e-4;
+kres.setEntryName("ResidualStiffness");
+
+// Damage variable (phase-field)
+@ExternalStateVariable real damage;
+damage.setGlossaryName("Damage");
+
+// Total dislocation density
+@AuxiliaryStateVariable real rho_tot;
+rho_tot.setEntryName("TotalDislocationDensity");
+
+// Accumulated plastic slip
+@AuxiliaryStateVariable real gcum;
+gcum.setEntryName("AccumulatedPlasticSlip");
+
+// Increment of the plastic dissipated energy
+@LocalVariable strain dPsi_d;
+
+@InitLocalVariables{
+  dd = max(GB_distance,1.);
+}
+
+@Integrator{
+
+  // Compute the damage degradation function
+  const auto gd = power<2>(1-(damage + ddamage)) + kres;
+
+  // Definition of a_ij rho_j with split of coplanar and obstacle interactions
+  tfel::math::tmatrix<Nss,Nss,real> a = alpha * ss.him;
+
+  real sum_a_rho_obs[Nss];
+  real sum_a_rho_cop[Nss];
+
+  for(unsigned short i=0;i!=Nss;i++){
+    sum_a_rho_obs[i] = 0.;
+    sum_a_rho_cop[i] = 0.;
+    for(unsigned short j=0;j!=Nss;j++){
+      if (ss.areCoplanar(i,j)){
+         sum_a_rho_cop[i] += a(i,j)*(rho0 + rho[j]); // + theta*drho[j]);
+      } else {
+         sum_a_rho_obs[i] += a(i,j)*(rho0 + rho[j]); // + theta*drho[j]);
+      }
+    }
+  }
+
+  // Definition of the residuals to be solved
+  real dp[Nss];
+  real sgndp[Nss];
+  real sgn[Nss];
+  real Hsi[Nss];
+  for(unsigned short i=0;i!=Nss;i++){
+    const stress  tauc = gd * (tau0 + mu*sqrt(sum_a_rho_cop[i] + sum_a_rho_obs[i]));
+    tau[i]  = ss.mu[i] | M;
+    sgn[i]  = (tau[i] > 0) ? 1 : -1;
+    dp[i]   = abs(dg[i]);
+    sgndp[i] = (dg[i] > 0) ? 1 : ((dg[i] < 0) ? -1 : 0);
+    const stress  Dtau = abs(tau[i]) - tauc;
+    Hsi[i] = dt*pow(max(Dtau,0.)/K,n-1)*(n/K);
+
+    real dgi = dt*pow(max(Dtau,0.)/K,n)*sgn[i];
+    fg[i] -= dgi;
+    
+    //frho[i] =(drho[i]-dp[i]*(max(sqrt(sum_a_rho_obs[i])/Kobs + sqrt(sum_a_rho_cop[i])/Kcop,KS/(dd)) - y*(rho0+rho[i]+theta*drho[i])))/rho0; 
+    if (dp[i]<1.) {
+        incr_rho[i] = dp[i]*(max(sqrt(sum_a_rho_obs[i])/Kobs + sqrt(sum_a_rho_cop[i])/Kcop,KS/(dd)) - y*(rho0+rho[i]));
+    }
+  }
+
+  // Definition of the derivatives of the residuals
+  dPsi_d = 0.;
+  for(unsigned short i=0;i!=Nss;i++){
+    tfel::math::tmatrix<12,12,real> sqrt_sum_a_rho_prime;        
+    tfel::math::tmatrix<12,12,real> sqrt_sum_a_rho_obs_prime;
+    tfel::math::tmatrix<12,12,real> sqrt_sum_a_rho_cop_prime;
+    
+    for(unsigned short j=0;j!=Nss;j++){
+      if (ss.areCoplanar(i,j)){
+        sqrt_sum_a_rho_cop_prime(i,j) = (a(i,j) / 2) / sqrt(sum_a_rho_cop[i]);
+        sqrt_sum_a_rho_obs_prime(i,j) = 0;
+      } else {
+        sqrt_sum_a_rho_cop_prime(i,j) = 0;
+        sqrt_sum_a_rho_obs_prime(i,j) = (a(i,j) / 2) / sqrt(sum_a_rho_obs[i]);
+      }
+      sqrt_sum_a_rho_prime(i,j) = (a(i,j) / 2) / sqrt(sum_a_rho_obs[i] + sum_a_rho_cop[i]);
+    }
+    
+    dfg_ddeel(i) = -Hsi[i]*(ss.mu[i]|dM_ddeel); 
+    for(unsigned short j=0;j!=Nss;j++){
+      //dfg_ddrho(i,j) = gd*sgn[i]*Hsi[i]*mu*theta*sqrt_sum_a_rho_prime(i,j);
+      dfg_ddg(i,j) = ((i == j) ? 1 : 0);
+      //if ((sqrt(sum_a_rho_obs[i])/Kobs + sqrt(sum_a_rho_cop[i])/Kcop) > KS/(dd)){
+         //dfrho_ddg(i,j) = ((i == j) ? (-sgndp[i]*(sqrt(sum_a_rho_obs[i])/Kobs + sqrt(sum_a_rho_cop[i])/Kcop - y*(rho0+rho[i]+theta*drho[i])))/rho0 : 0); 
+         //dfrho_ddrho(i,j) = (((i == j) ? (1 + dp[i]*y) : 0) - dp[i]*(sqrt_sum_a_rho_obs_prime(i,j)/Kobs + sqrt_sum_a_rho_cop_prime(i,j)/Kcop))/rho0;
+      //} else {
+         //dfrho_ddg(i,j) = ((i == j) ? (-sgndp[i]*((KS/(dd)) - y*(rho0+rho[i]+theta*drho[i])))/rho0 : 0);
+         //dfrho_ddrho(i,j) = (((i == j) ? (1 + dp[i]*y) : 0) - dp[i]*(KS/(dd)))/rho0;
+      //}
+    }
+    dPsi_d += tau[i] * dg[i]; 
+  }
+
+}
+
+@UpdateAuxiliaryStateVariables {
+  using size_type = unsigned short;
+  auto dgmax = 0.;
+  rho_tot = 0.;
+
+  // Compute the total dislocation density and the accumulated plastic slip
+  for (size_type i = 0; i != Nss; ++i) {
+    dgmax = max(abs(dg[i]),dgmax);
+    rho[i] += incr_rho[i];
+    rho_tot += rho0 + rho[i]; // + drho[i];
+    gcum += abs(dg[i]);
+  }
+
+  // Compute the number of active slip systems
+  nbact = 0.;
+  if (dgmax > 0.) {
+    for (size_type i = 0; i != Nss; ++i) {
+      nbact += abs(dg[i]) / dgmax;
+    }
+  }
+
+  // Compute the increment of plastic dissipated energy
+  Psi_pl += dPsi_d;
+
+  // Compute the plastic part of the deformation gradient
+  Fp = invert(Fe+tensor<3u,real>::Id())*F1;
+}
+
+@DissipatedEnergy{
+  // Compute the total dissipated energy (without the damage degradation contribution)
+  const auto gd = power<2>(1-(damage+ddamage)) + kres;
+  Psi_d += (dPsi_d / gd);
+}
+
+@InternalEnergy {
+  // Compute the total stored energy (without the damage degradation contribution)
+  const auto gd = power<2>(1-(damage+ddamage)) + kres;
+  Psi_s = (0.5 / gd) * (convertCauchyStressToSecondPiolaKirchhoffStress(sig, Fe+tensor<3u,real>::Id()) | eel);
+}

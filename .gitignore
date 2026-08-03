@@ -25,3 +25,16 @@ results/
 .vscode/
 .DS_Store
 *~
+
+# Session-resume shortcuts and a superseded patch, kept on disk but not tracked.
+# `kinematics_extension_v1.diff` was applied by hand in July 2026; its content is
+# in main and the diff no longer applies against any blob in the object store.
+codex_session.txt
+session_claude.txt
+kinematics_extension_v1.diff
+
+# Local code-index cache of the codebase-memory MCP server. Regenerated on
+# demand, machine-specific, and a compressed binary: tracking it put an
+# unreadable diff in every commit and, in a file-sync folder, invited conflicted
+# copies. Untracked on 2026-08-03 with `git rm --cached`.
+.codebase-memory/
