@@ -234,18 +234,29 @@ pairs are strongly correlated because displacements are not independent
 variables (review claim 3) is consistent with everything measured here and was
 not tested separately.
 
-### On what to try next
+### Global inverse Broyden — qualified negative result
 
 The review's suggestion — a **global** limited-memory inverse Broyden on
 `R(u) = 0` with periodic restarts, safeguards and a fallback to the base Newton
-direction — is not contradicted by anything here. It is a different method: it
-operates on the square global residual, which is precisely what the global
-secant measurement above says matters. It is recorded as a candidate and is not
-started, because the scientific priority is the campaign 2 qualification of
-`assumed_strain_energy` — spatial and incremental convergence, spectral-floor
-sensitivity, and real crystal heterogeneity. Ten recoverable iterations do not
-justify more element-level complexity while the behaviour at grain boundaries is
-unestablished.
+direction — was implemented and tested on the registered 12x12 SRIX case.
+The protocol used the same exact Armijo line search for the baseline and the
+candidate, a block solve from one factorisation, the true candidate tangent,
+and a Newton fallback.
+
+| variant | Newton iterations | line-search evaluations | total median |
+|---|---:|---:|---:|
+| CPS4R-AS, historical | 47 | 0 | 2.53 s |
+| CPS4R-AS, exact line search | 47 | 39 | 4.21 s |
+| global Broyden, m=1 | 47 | 39 | 3.80 s |
+| global Broyden, m=3 | 49 | 41 | 3.92 s |
+
+For `m=1`, all 31 proposed directions passed the safeguards and were used at
+full step; there were no rejections or Newton fallbacks. Nevertheless, Newton
+iterations did not decrease. The small timing difference against the line
+search baseline is therefore not an algorithmic gain; the historical
+CPS4R-AS path remains the usable option. The method is marked
+`qualified_negative_result`, retained for reproducibility, and disabled by
+default. The CPS4R-AS campaign 2 is now the next priority.
 
 ## Code retained
 

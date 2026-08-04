@@ -3232,9 +3232,14 @@ ce journal ; elles sont dans `validation/cps4r_assumed_strain_report.md` et
 
 La suggestion de la revue — un Broyden **inverse global** sur `R(u)=0`, à
 mémoire limitée, avec redémarrages, sauvegardes et repli sur la direction de
-Newton — n'est contredite par rien ici, et opère précisément sur le résidu
-carré global que la mesure ci-dessus désigne. Consignée comme candidate, non
-entamée : la priorité est la campagne 2 de `assumed_strain_energy`.
+Newton — a été implémentée puis qualifiée négativement sur le cas SRIX
+enregistré. Avec la même line-search exacte, `m=1` reste à 47 itérations et
+`m=3` passe à 49 ; les 31 directions `m=1` proposées passent toutes les
+garde-fous et sont utilisées à plein pas. Le temps `m=1` (3,80 s contre 4,21 s)
+ne constitue donc pas un gain algorithmique exploitable, et la référence
+historique sans line-search reste à 2,53 s. Statut :
+`qualified_negative_result`, code conservé pour reproductibilité, désactivé par
+défaut. La priorité revient à la campagne 2 de `assumed_strain_energy`.
 
 Route restante pour les dix itérations : fournir le terme manquant plutôt que
 l'ajuster — un vrai `dC/du`, ou une formulation décalée dont la matrice est la

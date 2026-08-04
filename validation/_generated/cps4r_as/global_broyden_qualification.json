@@ -1,15 +1,15 @@
 {
   "baseline": {
     "broyden": {},
-    "constitutive_median": 1.8631176260023494,
+    "constitutive_median": 1.97036810300051,
     "cutbacks": 0,
-    "elapsed_median": 2.5252118759999576,
+    "elapsed_median": 2.631042877001164,
     "elapsed_seconds": [
-      2.436170693999884,
-      2.5252118759999576,
-      2.9203454369999235,
-      2.6120793049994973,
-      2.358315531999324
+      2.733650727999702,
+      2.631042877001164,
+      2.637512114999481,
+      2.415246983000543,
+      2.301398933999735
     ],
     "errors_against_cps4": {
       "E_Gamma": 0.011663373140449287,
@@ -21,25 +21,23 @@
     "line_search_evaluations": 0,
     "line_search_failures": 0,
     "material_points": 144,
-    "mfront_integration_with_tangent_calls": 0,
-    "mfront_integration_without_tangent_calls": 0,
     "newton_iterations": 47,
     "pardiso_factorization_calls": 40,
-    "pardiso_factorization_seconds": 0.021238808007183252,
+    "pardiso_factorization_seconds": 0.03706267900815874,
     "pardiso_solve_calls": 40,
-    "pardiso_solve_seconds": 0.09589863400287868
+    "pardiso_solve_seconds": 0.040269095996336546
   },
   "baseline_line_search": {
     "broyden": {},
-    "constitutive_median": 3.521503784992092,
+    "constitutive_median": 3.623641148004026,
     "cutbacks": 0,
-    "elapsed_median": 4.213713483000902,
+    "elapsed_median": 4.328521287001422,
     "elapsed_seconds": [
-      4.056776331000947,
-      4.213713483000902,
-      4.744392597000115,
-      4.690490701999806,
-      4.078766815000563
+      4.917528443000265,
+      4.086122896998859,
+      4.125909031001356,
+      4.771674849000192,
+      4.328521287001422
     ],
     "errors_against_cps4": {
       "E_Gamma": 0.011663373140449287,
@@ -51,37 +49,33 @@
     "line_search_evaluations": 39,
     "line_search_failures": 0,
     "material_points": 144,
-    "mfront_integration_with_tangent_calls": 0,
-    "mfront_integration_without_tangent_calls": 0,
     "newton_iterations": 47,
     "pardiso_factorization_calls": 40,
-    "pardiso_factorization_seconds": 0.025062855000214768,
+    "pardiso_factorization_seconds": 0.02714398500029347,
     "pardiso_solve_calls": 40,
-    "pardiso_solve_seconds": 0.06782008600021072
+    "pardiso_solve_seconds": 0.1508314699985931
   },
   "cps4": {
     "broyden": {},
-    "constitutive_median": 5.525135885001873,
+    "constitutive_median": 5.883720023002752,
     "cutbacks": 0,
-    "elapsed_median": 5.977031473999887,
+    "elapsed_median": 6.430580705999091,
     "elapsed_seconds": [
-      6.15279880900016,
-      5.829684562999319,
-      6.082047432000763,
-      5.9528244829998584,
-      5.977031473999887
+      7.061188064999442,
+      6.182040343001063,
+      6.541987855000116,
+      6.430580705999091,
+      6.3907721059986216
     ],
     "jacobian_correction": "none",
     "line_search_evaluations": 0,
     "line_search_failures": 0,
     "material_points": 576,
-    "mfront_integration_with_tangent_calls": 0,
-    "mfront_integration_without_tangent_calls": 0,
     "newton_iterations": 37,
     "pardiso_factorization_calls": 30,
-    "pardiso_factorization_seconds": 0.018267834002472227,
+    "pardiso_factorization_seconds": 0.02194291499472456,
     "pardiso_solve_calls": 30,
-    "pardiso_solve_seconds": 0.06044480099808425
+    "pardiso_solve_seconds": 0.16290693499468034
   },
   "increments": 8,
   "memories": {
@@ -98,8 +92,8 @@
         "global_broyden_newton_fallbacks": 0.0,
         "global_broyden_pairs_accepted": 39.0
       },
-      "constitutive_median": 3.2635810040010256,
-      "constitutive_speedup": 1.692967289069359,
+      "constitutive_median": 3.4368185399962385,
+      "constitutive_speedup": 1.7119670283811934,
       "converged": true,
       "cps4_error_drift_points": {
         "E_Gamma": 6.735452404149633e-07,
@@ -108,13 +102,13 @@
         "E_u": 6.287983289436638e-08
       },
       "cutbacks": 0,
-      "elapsed_median": 3.8042277789991203,
+      "elapsed_median": 4.042587891000949,
       "elapsed_seconds": [
-        3.775804122000409,
-        3.7642452780000895,
-        3.819400668999151,
-        3.8042277789991203,
-        3.864359045001038
+        4.074874174999422,
+        3.9999260579988913,
+        4.188919613001417,
+        3.9886110779989394,
+        4.042587891000949
       ],
       "errors_against_baseline": {
         "E_Gamma": 1.2988627805214128e-08,
@@ -133,14 +127,12 @@
       "line_search_evaluations": 39,
       "line_search_failures": 0,
       "material_points": 144,
-      "mfront_integration_with_tangent_calls": 0,
-      "mfront_integration_without_tangent_calls": 0,
       "newton_iterations": 47,
       "pardiso_factorization_calls": 40,
-      "pardiso_factorization_seconds": 0.02322599400758918,
+      "pardiso_factorization_seconds": 0.0243335350023699,
       "pardiso_solve_calls": 40,
-      "pardiso_solve_seconds": 0.02632679499220103,
-      "total_speedup": 1.5711549941871314
+      "pardiso_solve_seconds": 0.041250982001656666,
+      "total_speedup": 1.5907089417434714
     },
     "3": {
       "additional_material_points": 0,
@@ -155,8 +147,8 @@
         "global_broyden_newton_fallbacks": 0.0,
         "global_broyden_pairs_accepted": 41.0
       },
-      "constitutive_median": 3.3749057040058688,
-      "constitutive_speedup": 1.6371230397470877,
+      "constitutive_median": 3.6424230090033234,
+      "constitutive_speedup": 1.6153313353389767,
       "converged": true,
       "cps4_error_drift_points": {
         "E_Gamma": 1.3697039041166148e-07,
@@ -165,13 +157,13 @@
         "E_u": 1.686777874494727e-08
       },
       "cutbacks": 0,
-      "elapsed_median": 3.924211389999982,
+      "elapsed_median": 4.2785173729989765,
       "elapsed_seconds": [
-        3.924211389999982,
-        3.9184242810006253,
-        3.967936290999205,
-        3.905486193998513,
-        3.986599775000286
+        4.3308984949999285,
+        4.214298308999787,
+        4.166401873999348,
+        4.2785173729989765,
+        4.4436735050003335
       ],
       "errors_against_baseline": {
         "E_Gamma": 2.8036820206042015e-09,
@@ -190,14 +182,12 @@
       "line_search_evaluations": 41,
       "line_search_failures": 0,
       "material_points": 144,
-      "mfront_integration_with_tangent_calls": 0,
-      "mfront_integration_without_tangent_calls": 0,
       "newton_iterations": 49,
       "pardiso_factorization_calls": 42,
-      "pardiso_factorization_seconds": 0.02042596699357091,
+      "pardiso_factorization_seconds": 0.02646019700114266,
       "pardiso_solve_calls": 42,
-      "pardiso_solve_seconds": 0.03131361399937305,
-      "total_speedup": 1.5231165908215545
+      "pardiso_solve_seconds": 0.16341845200804528,
+      "total_speedup": 1.5029927765588693
     }
   },
   "mesh": 12,

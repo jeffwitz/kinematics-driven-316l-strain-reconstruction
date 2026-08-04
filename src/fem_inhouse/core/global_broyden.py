@@ -1,4 +1,9 @@
-"""Safeguarded global multisecant direction for the nonlinear solve."""
+"""Safeguarded global multisecant direction for the nonlinear solve.
+
+Status: ``qualified_negative_result``. On the registered SRIX case the
+correction is transparent but does not reduce Newton iterations; it remains
+available for reproducibility and is disabled by default.
+"""
 
 from __future__ import annotations
 

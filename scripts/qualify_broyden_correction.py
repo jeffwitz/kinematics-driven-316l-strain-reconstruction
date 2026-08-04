@@ -150,8 +150,6 @@ def solve(
         "pardiso_solve_seconds",
         "line_search_evaluations",
         "line_search_failures",
-        "mfront_integration_with_tangent_calls",
-        "mfront_integration_without_tangent_calls",
     ):
         timing[field] = getattr(diagnostics, field)
     return result, timing
