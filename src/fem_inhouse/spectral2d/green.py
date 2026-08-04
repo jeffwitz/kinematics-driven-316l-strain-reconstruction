@@ -1,0 +1,192 @@
+"""Discrete Green operators and plane-stress reference projection."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal
+
+import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
+FloatArray = NDArray[np.float64]
+
+
+@dataclass(frozen=True, slots=True)
+class ReferenceOperatorSymbols:
+    """Spectral symbols assembled from the actual discrete gradient-adjoint."""
+
+    laplacian: FloatArray
+    directional_x: FloatArray
+    directional_y: FloatArray
+
+    def __post_init__(self) -> None:
+        shapes = {self.laplacian.shape, self.directional_x.shape, self.directional_y.shape}
+        if len(shapes) != 1:
+            raise ValueError("reference operator symbols must have identical shapes")
+        if not all(np.isfinite(values).all() for values in self.as_tuple()):
+            raise ValueError("reference operator symbols must be finite")
+
+    def as_tuple(self) -> tuple[FloatArray, FloatArray, FloatArray]:
+        return self.laplacian, self.directional_x, self.directional_y
+
+
+@dataclass(frozen=True, slots=True)
+class GreenDiagnostics:
+    minimum_denominator_x: float
+    minimum_denominator_y: float
+    null_modes: int
+
+
+class _DiagonalGreen2D:
+    def __init__(
+        self,
+        symbols: ReferenceOperatorSymbols,
+        *,
+        lambda_0: float,
+        mu_0: float,
+        symbol_null_tolerance: float = 1.0e-12,
+        mode: Literal["b0", "two_mu"] = "b0",
+    ) -> None:
+        if mu_0 <= 0.0 or lambda_0 + mu_0 <= 0.0:
+            raise ValueError("reference Lamé parameters must satisfy mu>0 and lambda+mu>0")
+        if symbol_null_tolerance <= 0.0:
+            raise ValueError("symbol_null_tolerance must be positive")
+        self.symbols = symbols
+        self.lambda_0 = float(lambda_0)
+        self.mu_0 = float(mu_0)
+        self.symbol_null_tolerance = float(symbol_null_tolerance)
+        self.mode = mode
+        if mode == "b0":
+            self._denominator_x = 2.0 * mu_0 * symbols.laplacian + lambda_0 * symbols.directional_x
+            self._denominator_y = 2.0 * mu_0 * symbols.laplacian + lambda_0 * symbols.directional_y
+        else:
+            self._denominator_x = 2.0 * mu_0 * symbols.laplacian
+            self._denominator_y = self._denominator_x.copy()
+        scale = max(
+            1.0,
+            float(np.max(np.abs(self._denominator_x))),
+            float(np.max(np.abs(self._denominator_y))),
+        )
+        null = self.symbol_null_tolerance * scale
+        self._null_mask = (np.abs(self._denominator_x) <= null) | (
+            np.abs(self._denominator_y) <= null
+        )
+        self._diagnostics = GreenDiagnostics(
+            minimum_denominator_x=float(np.min(np.abs(self._denominator_x))),
+            minimum_denominator_y=float(np.min(np.abs(self._denominator_y))),
+            null_modes=int(np.count_nonzero(self._null_mask)),
+        )
+
+    @property
+    def diagnostics(self) -> GreenDiagnostics:
+        return self._diagnostics
+
+    def apply(self, transformed_polarization: ArrayLike) -> FloatArray:
+        polarization = np.asarray(transformed_polarization, dtype=np.float64)
+        if polarization.shape[: self._denominator_x.ndim] != self._denominator_x.shape:
+            raise ValueError("polarization leading shape must match reference operator symbols")
+        if polarization.shape[-1] != 2:
+            raise ValueError("polarization must have two displacement components")
+        result = np.zeros_like(polarization)
+        scale_x = max(1.0, float(np.max(np.abs(self._denominator_x))))
+        scale_y = max(1.0, float(np.max(np.abs(self._denominator_y))))
+        safe_x = np.abs(self._denominator_x) > self.symbol_null_tolerance * scale_x
+        safe_y = np.abs(self._denominator_y) > self.symbol_null_tolerance * scale_y
+        result[..., 0] = np.divide(
+            -polarization[..., 0], self._denominator_x, out=result[..., 0], where=safe_x
+        )
+        result[..., 1] = np.divide(
+            -polarization[..., 1], self._denominator_y, out=result[..., 1], where=safe_y
+        )
+        return result
+
+    def reference_force(self, transformed_displacement: ArrayLike) -> FloatArray:
+        """Apply the exact negative reference operator in transform space."""
+        displacement = np.asarray(transformed_displacement, dtype=np.float64)
+        if displacement.shape[: self._denominator_x.ndim] != self._denominator_x.shape:
+            raise ValueError("displacement leading shape must match reference operator symbols")
+        if displacement.shape[-1] != 2:
+            raise ValueError("displacement must have two components")
+        result = np.zeros_like(displacement)
+        result[..., 0] = -self._denominator_x * displacement[..., 0]
+        result[..., 1] = -self._denominator_y * displacement[..., 1]
+        return result
+
+
+class B0Green2D(_DiagonalGreen2D):
+    """Production diagonal Green operator for non-periodic Dirichlet data."""
+
+    def __init__(
+        self,
+        symbols: ReferenceOperatorSymbols,
+        *,
+        lambda_0: float,
+        mu_0: float,
+        symbol_null_tolerance: float = 1.0e-12,
+    ) -> None:
+        super().__init__(
+            symbols,
+            lambda_0=lambda_0,
+            mu_0=mu_0,
+            symbol_null_tolerance=symbol_null_tolerance,
+            mode="b0",
+        )
+
+
+class TwoMuGreen2D(_DiagonalGreen2D):
+    """Control Green operator retaining only the ``2 mu`` part of ``B0``."""
+
+    def __init__(
+        self,
+        symbols: ReferenceOperatorSymbols,
+        *,
+        mu_0: float,
+        symbol_null_tolerance: float = 1.0e-12,
+    ) -> None:
+        super().__init__(
+            symbols,
+            lambda_0=0.0,
+            mu_0=mu_0,
+            symbol_null_tolerance=symbol_null_tolerance,
+            mode="two_mu",
+        )
+
+
+def isotropic_plane_stress_matrix(lambda_0: float, mu_0: float) -> FloatArray:
+    """Return the engineering-component isotropic plane-stress matrix."""
+
+    return np.array(
+        [
+            [lambda_0 + 2.0 * mu_0, lambda_0, 0.0],
+            [lambda_0, lambda_0 + 2.0 * mu_0, 0.0],
+            [0.0, 0.0, mu_0],
+        ],
+        dtype=np.float64,
+    )
+
+
+def project_isotropic_plane_stress_tangent(
+    tangent: ArrayLike, *, tolerance: float = 1.0e-12
+) -> tuple[float, float, float]:
+    """Project a symmetric reference tangent onto isotropic plane stress."""
+
+    matrix = np.asarray(tangent, dtype=np.float64)
+    if matrix.shape != (3, 3):
+        raise ValueError("reference tangent must have shape (3, 3)")
+    if not np.isfinite(matrix).all():
+        raise ValueError("reference tangent must be finite")
+    symmetric = 0.5 * (matrix + matrix.T)
+    basis_lambda = isotropic_plane_stress_matrix(1.0, 0.0)
+    basis_mu = isotropic_plane_stress_matrix(0.0, 1.0)
+    coefficients, *_ = np.linalg.lstsq(
+        np.column_stack((basis_lambda.reshape(-1), basis_mu.reshape(-1))),
+        symmetric.reshape(-1),
+        rcond=None,
+    )
+    lambda_0, mu_0 = (float(value) for value in coefficients)
+    scale = max(1.0, float(np.linalg.norm(symmetric)))
+    mu_0 = max(mu_0, tolerance * scale)
+    lambda_0 = max(lambda_0, tolerance * scale - mu_0)
+    projected = isotropic_plane_stress_matrix(lambda_0, mu_0)
+    error = float(np.linalg.norm(symmetric - projected) / scale)
+    return lambda_0, mu_0, error

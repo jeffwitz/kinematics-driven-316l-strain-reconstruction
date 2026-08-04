@@ -1,4 +1,4 @@
-"""Common contract for constitutive batches used by the 2D plane-stress FEM."""
+"""Common contract for two-dimensional plane-stress mechanics solvers."""
 
 from __future__ import annotations
 
