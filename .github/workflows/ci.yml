@@ -97,3 +97,15 @@ jobs:
           docs/_static docs/_generated
       - name: Build strict HTML documentation
         run: sphinx-build -M html docs docs/_build -W --keep-going
+      - name: Build and validate publication PDF
+        run: |
+          TEXMFVAR=/tmp/texmfvar TEXMFCACHE=/tmp/texmfcache \
+            sphinx-build -M latexpdf docs docs/_build -W --keep-going
+          python scripts/check_documentation_pdf.py
+      - name: Upload publication PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spectral-documentation-pdf
+          path: docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf
+          if-no-files-found: error
