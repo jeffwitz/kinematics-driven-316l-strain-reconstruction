@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from fem_inhouse.spectral2d import QUAD1_2D, TRI2_2D, FullDirichletDSTIPlan2D, StructuredGrid2D
+from fem_inhouse.spectral2d.kinematics import _modal_symbols
 
 
 @pytest.mark.parametrize("kinematics", [QUAD1_2D, TRI2_2D])
@@ -59,6 +60,35 @@ def test_reference_symbols_are_positive_and_consistent(kinematics) -> None:
     assert np.all(symbols.directional_x > 0.0)
     assert np.all(symbols.directional_y > 0.0)
     assert np.all(symbols.laplacian > 0.0)
+
+
+@pytest.mark.parametrize("kinematics", [QUAD1_2D, TRI2_2D])
+@pytest.mark.parametrize("nx,ny", [(4, 4), (5, 4), (4, 5), (7, 6)])
+def test_closed_form_symbols_match_modal_oracle(kinematics, nx, ny) -> None:
+    grid = StructuredGrid2D(nx, ny, 2.0, 1.0)
+    plan = FullDirichletDSTIPlan2D(grid)
+    analytical = kinematics(grid).reference_operator_symbols(plan)
+    modal = _modal_symbols(kinematics(grid), plan)
+    for actual, expected in zip(analytical.as_tuple(), modal, strict=True):
+        np.testing.assert_allclose(actual, expected, rtol=0.0, atol=1.0e-12)
+
+
+@pytest.mark.parametrize("kinematics", [QUAD1_2D, TRI2_2D])
+@pytest.mark.parametrize("nx,ny", [(4, 4), (5, 4), (4, 5), (7, 6)])
+def test_full_dirichlet_kinematic_matrix_has_full_column_rank(kinematics, nx, ny) -> None:
+    grid = StructuredGrid2D(nx, ny, 2.0, 1.0)
+    operator = kinematics(grid)
+    columns = []
+    for component in range(2):
+        for i in range(1, nx):
+            for j in range(1, ny):
+                displacement = np.zeros((*grid.node_shape, 2))
+                displacement[i, j, component] = 1.0
+                columns.append(operator.strain(displacement).reshape(-1))
+    matrix = np.column_stack(columns)
+    singular_values = np.linalg.svd(matrix, compute_uv=False)
+    rank = np.count_nonzero(singular_values > 1.0e-11 * singular_values[0])
+    assert rank == matrix.shape[1]
 
 
 @pytest.mark.parametrize("kinematics", [QUAD1_2D, TRI2_2D])

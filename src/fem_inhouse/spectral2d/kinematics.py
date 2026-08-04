@@ -65,13 +65,8 @@ class QUAD1_2D:  # noqa: N801
     def reference_operator_symbols(
         self, transform_plan: TransformPlan2D
     ) -> ReferenceOperatorSymbols:
-        """Return symbols obtained by probing the actual gradient-adjoint pair."""
-        laplacian, directional_x, directional_y = _modal_symbols(self, transform_plan)
-        return ReferenceOperatorSymbols(
-            laplacian=laplacian,
-            directional_x=directional_x,
-            directional_y=directional_y,
-        )
+        """Return closed-form symbols of the four-node quadrilateral stencil."""
+        return _closed_form_symbols(self.grid, transform_plan, averaged=True)
 
     def strain(self, nodal_displacement: ArrayLike) -> FloatArray:
         u = _nodal_displacement(nodal_displacement, self.grid)
@@ -130,13 +125,8 @@ class TRI2_2D:  # noqa: N801
     def reference_operator_symbols(
         self, transform_plan: TransformPlan2D
     ) -> ReferenceOperatorSymbols:
-        """Return symbols obtained by probing the actual gradient-adjoint pair."""
-        laplacian, directional_x, directional_y = _modal_symbols(self, transform_plan)
-        return ReferenceOperatorSymbols(
-            laplacian=laplacian,
-            directional_x=directional_x,
-            directional_y=directional_y,
-        )
+        """Return closed-form symbols of the two-triangle stencil."""
+        return _closed_form_symbols(self.grid, transform_plan, averaged=False)
 
     def strain(self, nodal_displacement: ArrayLike) -> FloatArray:
         u = _nodal_displacement(nodal_displacement, self.grid)
@@ -179,6 +169,30 @@ class TRI2_2D:  # noqa: N801
                 result[tl][1] += area * (s2[2] / self.grid.spacing_x)
                 result[br][1] += area * (s2[1] / self.grid.spacing_y)
         return result
+
+
+def _closed_form_symbols(
+    grid: StructuredGrid2D, transform_plan: TransformPlan2D, *, averaged: bool
+) -> ReferenceOperatorSymbols:
+    frequencies_x = np.asarray(transform_plan.frequencies_x, dtype=np.float64)
+    frequencies_y = np.asarray(transform_plan.frequencies_y, dtype=np.float64)
+    shape = (frequencies_x.size, frequencies_y.size)
+    directional_x = np.broadcast_to(
+        4.0 * grid.spacing_y / grid.spacing_x * np.sin(frequencies_x[:, None] / 2.0) ** 2,
+        shape,
+    ).copy()
+    directional_y = np.broadcast_to(
+        4.0 * grid.spacing_x / grid.spacing_y * np.sin(frequencies_y[None, :] / 2.0) ** 2,
+        shape,
+    ).copy()
+    if averaged:
+        directional_x *= np.cos(frequencies_y[None, :] / 2.0) ** 2
+        directional_y *= np.cos(frequencies_x[:, None] / 2.0) ** 2
+    return ReferenceOperatorSymbols(
+        laplacian=directional_x + directional_y,
+        directional_x=directional_x,
+        directional_y=directional_y,
+    )
 
 
 def _modal_symbols(
