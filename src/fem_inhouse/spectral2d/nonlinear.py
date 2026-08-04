@@ -194,6 +194,7 @@ def solve_dirichlet_plane_stress_spectral(
         anderson.reset()
         attempt_id += 1
         attempt_residuals: list[float] = []
+        previous_polarization: np.ndarray | None = None
         accepted = False
         failed = False
         for iteration in range(config.maximum_fixed_point_iterations):
@@ -291,30 +292,27 @@ def solve_dirichlet_plane_stress_spectral(
             image = raw_image
             fixed_residual = image - fluctuation
             candidate = image
-            if (
-                config.anderson_enabled
-                and iteration + 1 >= config.anderson_start_iteration
-                and config.anderson_target == "polarization"
-            ):
-                probe_strain = operator.strain(applied + image)
-                try:
-                    _, probe_stress = _evaluate_material(material, probe_strain, time_increment)
-                    probe_residual = operator.divergence(probe_stress)
-                    probe_polarization = green.reference_force(
-                        plan.forward_displacement(image[1:-1, 1:-1])
-                    ) - plan.forward_displacement(probe_residual[1:-1, 1:-1])
+            if config.anderson_enabled and config.anderson_target == "polarization":
+                if previous_polarization is None:
                     accelerated_polarization = anderson.propose(
-                        polarization,
-                        probe_polarization,
-                        probe_polarization - polarization,
+                        polarization, polarization, np.zeros_like(polarization)
                     )
+                else:
+                    accelerated_polarization = anderson.propose(
+                        previous_polarization,
+                        polarization,
+                        polarization - previous_polarization,
+                    )
+                previous_polarization = polarization.copy()
+                if (
+                    iteration + 1 >= config.anderson_start_iteration
+                    and (iteration + 1) % config.anderson_period == 0
+                ):
                     accelerated_image = plan.embed_interior(
                         plan.inverse_displacement(green.apply(accelerated_polarization))
                     )
                     candidate = accelerated_image
                     fixed_residual = candidate - fluctuation
-                except ConstitutiveIntegrationError:
-                    material.revert()
             elif (
                 config.anderson_enabled
                 and config.anderson_target == "displacement"
