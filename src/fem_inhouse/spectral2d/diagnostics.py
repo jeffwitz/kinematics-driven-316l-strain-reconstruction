@@ -29,3 +29,5 @@ class Spectral2DDiagnostics:
     iteration_diagnostics: tuple[dict[str, float | int | bool], ...] = ()
     residual_ratios: tuple[float, ...] = ()
     verification_residual: float = 0.0
+    verification_residual_history: tuple[float, ...] = ()
+    verification_relative_mismatch_history: tuple[float, ...] = ()

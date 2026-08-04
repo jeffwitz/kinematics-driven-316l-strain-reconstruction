@@ -162,6 +162,8 @@ def solve_dirichlet_plane_stress_spectral(
     residual_ratios: list[float] = []
     constitutive_evaluations = 0
     verification_residual = 0.0
+    verification_residual_history: list[float] = []
+    verification_mismatch_history: list[float] = []
     iterations_per_increment: list[int] = []
     anderson = DisplacementAndersonAccelerator(
         config.anderson_memory, config.anderson_regularization
@@ -191,7 +193,7 @@ def solve_dirichlet_plane_stress_spectral(
         for iteration in range(config.maximum_fixed_point_iterations):
             total_u = applied + fluctuation
             strain = operator.strain(total_u)
-            trial, stress = _evaluate_material(material, strain, time_increment)
+            _trial, stress = _evaluate_material(material, strain, time_increment)
             constitutive_evaluations += 1
             residual = operator.divergence(stress)
             relative, divergence_norm, _residual_norm = _equilibrium_metrics(
@@ -240,21 +242,36 @@ def solve_dirichlet_plane_stress_spectral(
                 }
             )
             if relative <= config.relative_equilibrium_tolerance:
-                final_trial = _reshape_constitutive_trial(
-                    material.complete_trial(trial), strain.shape[:-1]
+                solver_residual = relative
+                material.revert()
+                verification_trial, verification_stress = _evaluate_material(
+                    material, strain, time_increment
                 )
-                material.commit()
-                _, verification_stress = _evaluate_material(material, strain, time_increment)
                 verification_residual = _equilibrium_metrics(
                     verification_stress,
                     operator.divergence(verification_stress),
                     grid,
                     operator.points_per_pixel,
                 )[0]
-                material.revert()
+                verification_residual_history.append(verification_residual)
+                verification_mismatch = abs(verification_residual - solver_residual) / max(
+                    solver_residual, 1.0e-30
+                )
+                verification_mismatch_history.append(verification_mismatch)
+                if (
+                    verification_residual > config.relative_equilibrium_tolerance
+                    or verification_mismatch > 1.0e-3
+                ):
+                    material.revert()
+                    failed = True
+                    break
+                final_trial = _reshape_constitutive_trial(
+                    material.complete_trial(verification_trial), strain.shape[:-1]
+                )
+                material.commit()
                 final_applied = applied.copy()
                 final_strain = np.asarray(strain).copy()
-                final_stress = stress.copy()
+                final_stress = verification_stress.copy()
                 accepted = True
                 iterations_per_increment.append(iteration + 1)
                 break
@@ -380,6 +397,8 @@ def solve_dirichlet_plane_stress_spectral(
         iteration_diagnostics=tuple(iteration_diagnostics),
         residual_ratios=tuple(residual_ratios),
         verification_residual=verification_residual,
+        verification_residual_history=tuple(verification_residual_history),
+        verification_relative_mismatch_history=tuple(verification_mismatch_history),
         total_seconds=perf_counter() - started,
     )
     return Spectral2DResult(
