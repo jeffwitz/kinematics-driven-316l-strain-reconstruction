@@ -33,6 +33,24 @@ def test_explicit_pardiso_reuses_analysis_for_changing_values() -> None:
     assert "mtype=11" in solver.backend_name
 
 
+def test_explicit_pardiso_solves_a_block_with_one_factorization() -> None:
+    pytest.importorskip("pypardiso")
+    matrix = csr_matrix(np.array([[4.0, 1.0], [2.0, 3.0]]))
+    right_hand_sides = np.array([[1.0, 2.0], [2.0, -1.0]])
+
+    with ExplicitPardisoSolver() as solver:
+        solver.factorize(matrix)
+        solutions = solver.solve_many(right_hand_sides)
+        statistics = solver.statistics
+
+    np.testing.assert_allclose(
+        solutions,
+        np.linalg.solve(matrix.toarray(), right_hand_sides),
+    )
+    assert statistics.factorization_calls == 1
+    assert statistics.solve_calls == 1
+
+
 def test_explicit_pardiso_symmetric_spd_uses_upper_storage() -> None:
     pytest.importorskip("pypardiso")
     matrix = csr_matrix(np.array([[4.0, 1.0], [0.0, 3.0]]))

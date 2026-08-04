@@ -10,7 +10,7 @@ from typing import Any, Literal
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.sparse import csr_matrix, tril
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import splu
 
 FloatArray = NDArray[np.float64]
 LinearSystemMatrixType = Literal[
@@ -88,6 +88,7 @@ class ExplicitPardisoSolver:
         self._shape: tuple[int, int] | None = None
         self._indptr: NDArray[np.int32] | None = None
         self._indices: NDArray[np.int32] | None = None
+        self._factorized_matrix: csr_matrix | None = None
         self._analysis_seconds = 0.0
         self._factorization_seconds = 0.0
         self._solve_seconds = 0.0
@@ -166,7 +167,13 @@ class ExplicitPardisoSolver:
         matrix: csr_matrix,
         right_hand_side: ArrayLike,
     ) -> FloatArray:
-        """Run phase 11 once, then phases 22 and 33 for current values."""
+        """Factorize once and solve one right-hand side."""
+
+        self.factorize(matrix)
+        return self.solve_many(right_hand_side).squeeze()
+
+    def factorize(self, matrix: csr_matrix) -> None:
+        """Run phases 11 and 22 for the current matrix values."""
 
         if self._closed:
             raise RuntimeError("PARDISO solver is closed")
@@ -176,11 +183,8 @@ class ExplicitPardisoSolver:
             raise ValueError("matrix must be square")
         if matrix.data.dtype != np.float64:
             raise TypeError("matrix data must use float64")
-        rhs = np.asarray(right_hand_side, dtype=np.float64)
-        if rhs.shape not in {(matrix.shape[0],), (matrix.shape[0], 1)}:
-            raise ValueError("right_hand_side has an incompatible shape")
-        if not np.isfinite(matrix.data).all() or not np.isfinite(rhs).all():
-            raise ValueError("matrix and right_hand_side must be finite")
+        if not np.isfinite(matrix.data).all():
+            raise ValueError("matrix must be finite")
 
         self._analyse(matrix)
 
@@ -188,12 +192,35 @@ class ExplicitPardisoSolver:
         self._call_phase(22, matrix, np.zeros(matrix.shape[0], dtype=np.float64))
         self._factorization_seconds += time.perf_counter() - started
         self._factorization_calls += 1
+        self._factorized_matrix = matrix
+
+    def solve_many(self, right_hand_side: ArrayLike) -> FloatArray:
+        """Solve one or more right-hand sides using the last factorization."""
+
+        if self._closed:
+            raise RuntimeError("PARDISO solver is closed")
+        if self._factorized_matrix is None:
+            raise RuntimeError("factorize must be called before solve_many")
+        rhs = np.asarray(right_hand_side, dtype=np.float64)
+        if rhs.shape not in {
+            (self._factorized_matrix.shape[0],),
+            (self._factorized_matrix.shape[0], 1),
+        } and not (
+            rhs.ndim == 2 and rhs.shape[0] == self._factorized_matrix.shape[0]
+        ):
+            raise ValueError("right_hand_side has an incompatible shape")
+        if not np.isfinite(rhs).all():
+            raise ValueError("right_hand_side must be finite")
 
         started = time.perf_counter()
-        solution = self._call_phase(33, matrix, rhs)
+        solution = self._call_phase(33, self._factorized_matrix, rhs)
         self._solve_seconds += time.perf_counter() - started
         self._solve_calls += 1
-        return solution.squeeze()
+        # PyPardiso returns multiple right-hand sides as (nrhs, n), while the
+        # public adapter contract is the SciPy convention (n, nrhs).
+        if rhs.ndim == 2 and rhs.shape[1] > 1 and solution.shape == rhs.T.shape:
+            solution = solution.T
+        return solution
 
     def close(self) -> None:
         """Release PARDISO internal memory once."""
@@ -201,6 +228,7 @@ class ExplicitPardisoSolver:
         if self._closed:
             return
         self._closed = True
+        self._factorized_matrix = None
         self._solver.free_memory(everything=True)
 
     def __enter__(self) -> ExplicitPardisoSolver:
@@ -227,8 +255,11 @@ class ScipySparseSolver:
         if matrix_type not in _MATRIX_TYPES:
             raise ValueError(f"unsupported linear-system matrix type: {matrix_type}")
         self._matrix_type = matrix_type
+        self._factorization_seconds = 0.0
+        self._factorization_calls = 0
         self._solve_seconds = 0.0
         self._solve_calls = 0
+        self._factorization: Any = None
 
     @property
     def matrix_type(self) -> LinearSystemMatrixType:
@@ -243,7 +274,9 @@ class ScipySparseSolver:
     @property
     def statistics(self) -> LinearSolverStatistics:
         return LinearSolverStatistics(
+            factorization_seconds=self._factorization_seconds,
             solve_seconds=self._solve_seconds,
+            factorization_calls=self._factorization_calls,
             solve_calls=self._solve_calls,
         )
 
@@ -252,8 +285,20 @@ class ScipySparseSolver:
         matrix: csr_matrix,
         right_hand_side: ArrayLike,
     ) -> FloatArray:
+        self.factorize(matrix)
+        return self.solve_many(right_hand_side).squeeze()
+
+    def factorize(self, matrix: csr_matrix) -> None:
         started = time.perf_counter()
-        solution = spsolve(matrix, np.asarray(right_hand_side, dtype=np.float64))
+        self._factorization = splu(matrix.tocsc())
+        self._factorization_seconds += time.perf_counter() - started
+        self._factorization_calls += 1
+
+    def solve_many(self, right_hand_side: ArrayLike) -> FloatArray:
+        if self._factorization is None:
+            raise RuntimeError("factorize must be called before solve_many")
+        started = time.perf_counter()
+        solution = self._factorization.solve(np.asarray(right_hand_side, dtype=np.float64))
         self._solve_seconds += time.perf_counter() - started
         self._solve_calls += 1
         return np.asarray(solution, dtype=np.float64)

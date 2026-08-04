@@ -1067,18 +1067,34 @@ def run_fem(
             if trace_record is not None:
                 trace_record.update(_tangent_diagonal_statistics(KII))
 
-            du = timed_solve(KII, -R_I)
             if global_broyden is not None:
-                def solve_global_columns(columns, matrix=KII):
-                    return np.column_stack(
-                        [timed_solve(matrix, column) for column in columns.T]
+                residual_changes = global_broyden.residual_change_matrix()
+                if residual_changes is not None:
+                    linear_solver.factorize(KII)
+                    solutions = linear_solver.solve_many(
+                        np.asfortranarray(np.column_stack((-R_I, residual_changes)))
                     )
-
-                du = global_broyden.direction(
-                    du,
-                    R_I,
-                    solve_global_columns,
-                )
+                    du_newton = solutions[:, 0]
+                    du = global_broyden.direction(
+                        du_newton,
+                        R_I,
+                        base_residual_solutions=solutions[:, 1:],
+                    )
+                else:
+                    du_newton = timed_solve(KII, -R_I)
+                    du = du_newton
+                newton_predicted_descent = float(R_I @ (KII @ du_newton))
+                predicted_descent = float(R_I @ (KII @ du))
+                if (
+                    not np.isfinite(predicted_descent)
+                    or predicted_descent >= -1.0e-3 * max(res * res, 1.0e-30)
+                    or predicted_descent >= 0.1 * newton_predicted_descent
+                ):
+                    global_broyden.reject()
+                    du = du_newton
+            else:
+                du_newton = timed_solve(KII, -R_I)
+                du = du_newton
             if trace_record is not None:
                 finite_correction = np.isfinite(du).all()
                 correction_norm = float(np.linalg.norm(du)) if finite_correction else float("nan")
@@ -1101,77 +1117,167 @@ def run_fem(
                 _record_newton_trace(newton_trace, trace_record, "corrected")
                 continue
 
-            base_u_I = u[solve_dofs].copy()
-            factor = 1.0
-            accepted_line_search = False
-            for _line_search_trial in range(line_search_maximum_trials):
-                if factor < line_search_minimum_factor:
-                    break
-                line_search_evaluations += 1
-                u[solve_dofs] = base_u_I + factor * du
-                candidate_eps = np.einsum("gak,ek->ega", Bs, u[ld])
-                try:
-                    candidate_started_at = time.perf_counter()
-                    candidate_trial = evaluate_in_plane(
-                        candidate_eps.reshape(-1, 3),
-                        time_increment=dt,
-                        consistent_tangent=False,
-                    )
-                    constitutive_seconds += time.perf_counter() - candidate_started_at
-                    candidate_stress = candidate_trial.stress_in_plane_mpa.reshape(
-                        n_e,
-                        N_GP,
-                        3,
-                    )
-                    candidate_force_started_at = time.perf_counter()
-                    candidate_internal = internal_force(
-                        mesh, candidate_stress, Bs, dJs, ld, GP_W
-                    )
-                    if hourglass is not None:
-                        candidate_internal = candidate_internal + hourglass_force(
-                            mesh, hourglass, u, ld
+            def try_line_search(
+                direction,
+                *,
+                u,
+                solve_dofs,
+                Bs,
+                ld,
+                dt,
+                evaluate_in_plane,
+                n_e,
+                N_GP,
+                mesh,
+                dJs,
+                GP_W,
+                hourglass,
+                assumed_strain_operators,
+                stabilisation_is_lagged,
+                stabilisation_tangents,
+                assumed_strain_contribution,
+                scatter_element_forces,
+                dof_I,
+                line_search_maximum_trials,
+                line_search_minimum_factor,
+                line_search_reduction,
+                line_search_armijo_coefficient,
+                res,
+                base_u_I,
+                counters,
+            ):
+                factor = 1.0
+                for _line_search_trial in range(line_search_maximum_trials):
+                    if factor < line_search_minimum_factor:
+                        break
+                    counters["evaluations"] += 1
+                    u[solve_dofs] = base_u_I + factor * direction
+                    candidate_eps = np.einsum("gak,ek->ega", Bs, u[ld])
+                    try:
+                        candidate_started_at = time.perf_counter()
+                        candidate_trial = evaluate_in_plane(
+                            candidate_eps.reshape(-1, 3),
+                            time_increment=dt,
+                            consistent_tangent=True,
                         )
-                    if assumed_strain_operators is not None:
-                        # The same stabilisation tangent for every trial factor:
-                        # otherwise the function whose decrease is being measured
-                        # changes with lambda and the search is not working on a
-                        # consistent residual.
-                        candidate_tangent = candidate_trial.tangent_in_plane_mpa
-                        if candidate_tangent is None:
-                            # Line-search constitutive probes intentionally omit
-                            # the tangent. Global Broyden still needs the current
-                            # tangent to evaluate the stabilisation force.
-                            candidate_tangent = stabilisation_tangents
-                        candidate_stab, _, _ = assumed_strain_contribution(
-                            u,
-                            stabilisation_tangents
-                            if stabilisation_is_lagged
-                            else candidate_tangent,
+                        counters["constitutive_seconds"] += (
+                            time.perf_counter() - candidate_started_at
                         )
-                        candidate_internal = candidate_internal + scatter_element_forces(
-                            mesh, candidate_stab, ld
+                        candidate_stress = candidate_trial.stress_in_plane_mpa.reshape(
+                            n_e, N_GP, 3
                         )
-                    candidate_residual = candidate_internal[dof_I]
-                    internal_force_seconds += time.perf_counter() - candidate_force_started_at
-                    candidate_norm = float(np.linalg.norm(candidate_residual))
-                except ConstitutiveIntegrationError:
-                    candidate_norm = float("inf")
-                target_norm = (1.0 - line_search_armijo_coefficient * factor) * res
-                if np.isfinite(candidate_norm) and candidate_norm <= target_norm:
-                    accepted_line_search = True
-                    minimum_accepted_line_search_factor = min(
-                        minimum_accepted_line_search_factor,
-                        factor,
-                    )
-                    break
-                factor *= line_search_reduction
-                line_search_reductions += 1
-            if not accepted_line_search:
+                        candidate_force_started_at = time.perf_counter()
+                        candidate_internal = internal_force(
+                            mesh, candidate_stress, Bs, dJs, ld, GP_W
+                        )
+                        if hourglass is not None:
+                            candidate_internal = candidate_internal + hourglass_force(
+                                mesh, hourglass, u, ld
+                            )
+                        if assumed_strain_operators is not None:
+                            candidate_tangent = candidate_trial.tangent_in_plane_mpa
+                            if candidate_tangent is None:
+                                if not stabilisation_is_lagged:
+                                    raise RuntimeError(
+                                        "line-search candidate did not return a tangent"
+                                    )
+                                candidate_tangent = stabilisation_tangents
+                            candidate_stab, _, _ = assumed_strain_contribution(
+                                u,
+                                stabilisation_tangents
+                                if stabilisation_is_lagged
+                                else candidate_tangent,
+                            )
+                            candidate_internal = candidate_internal + scatter_element_forces(
+                                mesh, candidate_stab, ld
+                            )
+                        candidate_residual = candidate_internal[dof_I]
+                        counters["internal_force_seconds"] += (
+                            time.perf_counter() - candidate_force_started_at
+                        )
+                        candidate_norm = float(np.linalg.norm(candidate_residual))
+                    except ConstitutiveIntegrationError:
+                        candidate_norm = float("inf")
+                    target_norm = (1.0 - line_search_armijo_coefficient * factor) * res
+                    if np.isfinite(candidate_norm) and candidate_norm <= target_norm:
+                        counters["minimum_factor"] = min(
+                            counters["minimum_factor"],
+                            factor,
+                        )
+                        return True, factor
+                    factor *= line_search_reduction
+                    counters["reductions"] += 1
                 u[solve_dofs] = base_u_I
+                return False, factor
+
+            search_base_u_I = u[solve_dofs].copy()
+            search_counters = {
+                "evaluations": line_search_evaluations,
+                "reductions": line_search_reductions,
+                "minimum_factor": minimum_accepted_line_search_factor,
+                "constitutive_seconds": 0.0,
+                "internal_force_seconds": 0.0,
+            }
+            search_arguments = dict(
+                u=u,
+                solve_dofs=solve_dofs,
+                Bs=Bs,
+                ld=ld,
+                dt=dt,
+                evaluate_in_plane=evaluate_in_plane,
+                n_e=n_e,
+                N_GP=N_GP,
+                mesh=mesh,
+                dJs=dJs,
+                GP_W=GP_W,
+                hourglass=hourglass,
+                assumed_strain_operators=assumed_strain_operators,
+                stabilisation_is_lagged=stabilisation_is_lagged,
+                stabilisation_tangents=stabilisation_tangents,
+                assumed_strain_contribution=assumed_strain_contribution,
+                scatter_element_forces=scatter_element_forces,
+                dof_I=dof_I,
+                line_search_maximum_trials=line_search_maximum_trials,
+                line_search_minimum_factor=line_search_minimum_factor,
+                line_search_reduction=line_search_reduction,
+                line_search_armijo_coefficient=line_search_armijo_coefficient,
+                res=res,
+                base_u_I=search_base_u_I,
+                counters=search_counters,
+            )
+            accepted_line_search, factor = try_line_search(du, **search_arguments)
+            if global_broyden is not None and (
+                not accepted_line_search
+                or (
+                    residual_changes is not None
+                    and factor < 1.0
+                )
+            ):
+                global_broyden.discard()
+                u[solve_dofs] = search_base_u_I
+                accepted_line_search, factor = try_line_search(du_newton, **search_arguments)
+                if accepted_line_search:
+                    _record_newton_trace(
+                        newton_trace,
+                        trace_record,
+                        "newton_fallback",
+                        line_search_factor=float(factor),
+                    )
+            if not accepted_line_search:
+                line_search_evaluations = int(search_counters["evaluations"])
+                line_search_reductions = int(search_counters["reductions"])
+                minimum_accepted_line_search_factor = search_counters["minimum_factor"]
+                constitutive_seconds += search_counters["constitutive_seconds"]
+                internal_force_seconds += search_counters["internal_force_seconds"]
                 line_search_failures += 1
                 increment_failure_reason = "Newton line search found no residual-decreasing trial"
                 _record_newton_trace(newton_trace, trace_record, "line_search_exhausted")
                 break
+            line_search_evaluations = int(search_counters["evaluations"])
+            line_search_reductions = int(search_counters["reductions"])
+            minimum_accepted_line_search_factor = search_counters["minimum_factor"]
+            constitutive_seconds += search_counters["constitutive_seconds"]
+            internal_force_seconds += search_counters["internal_force_seconds"]
             _record_newton_trace(
                 newton_trace, trace_record, "corrected", line_search_factor=float(factor)
             )

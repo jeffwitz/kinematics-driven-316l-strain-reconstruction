@@ -67,7 +67,8 @@ class GlobalInverseBroyden:
         self,
         base_direction: ArrayLike,
         residual: ArrayLike,
-        solve_columns: Callable[[FloatArray], FloatArray],
+        solve_columns: Callable[[FloatArray], FloatArray] | None = None,
+        base_residual_solutions: ArrayLike | None = None,
     ) -> FloatArray:
         """Apply the multisecant inverse update around the current Newton solve."""
 
@@ -78,7 +79,11 @@ class GlobalInverseBroyden:
         steps = np.column_stack(self._steps)
         residual_changes = np.column_stack(self._residual_changes)
         coefficients, *_ = np.linalg.lstsq(residual_changes, rhs, rcond=1e-10)
-        base_residual_solutions = np.asarray(solve_columns(residual_changes), dtype=np.float64)
+        if base_residual_solutions is None:
+            if solve_columns is None:
+                raise ValueError("base residual solves are required")
+            base_residual_solutions = solve_columns(residual_changes)
+        base_residual_solutions = np.asarray(base_residual_solutions, dtype=np.float64)
         if base_residual_solutions.shape != steps.shape:
             raise ValueError("global Broyden base solves have an incompatible shape")
         candidate = base + (steps - base_residual_solutions) @ coefficients
@@ -93,6 +98,18 @@ class GlobalInverseBroyden:
             return base.copy()
         self._used += 1
         return candidate
+
+    def residual_change_matrix(self) -> FloatArray | None:
+        """Return the active residual-change columns for a block solve."""
+
+        if not self._residual_changes:
+            return None
+        return np.column_stack(self._residual_changes)
+
+    def reject(self) -> None:
+        """Record rejection of a correction before falling back to Newton."""
+
+        self._rejected += 1
 
     @property
     def diagnostics(self) -> dict[str, float]:

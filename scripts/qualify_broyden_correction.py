@@ -133,7 +133,7 @@ def solve(
         constitutive.append(result.diagnostics.constitutive_seconds)
     assert result is not None and result.diagnostics is not None
     diagnostics = result.diagnostics
-    return result, {
+    timing = {
         "elapsed_seconds": elapsed,
         "elapsed_median": statistics.median(elapsed),
         "constitutive_median": statistics.median(constitutive),
@@ -143,6 +143,18 @@ def solve(
         "jacobian_correction": diagnostics.jacobian_correction,
         "broyden": diagnostics.jacobian_correction_diagnostics,
     }
+    for field in (
+        "pardiso_factorization_calls",
+        "pardiso_solve_calls",
+        "pardiso_factorization_seconds",
+        "pardiso_solve_seconds",
+        "line_search_evaluations",
+        "line_search_failures",
+        "mfront_integration_with_tangent_calls",
+        "mfront_integration_without_tangent_calls",
+    ):
+        timing[field] = getattr(diagnostics, field)
+    return result, timing
 
 
 def main() -> int:
