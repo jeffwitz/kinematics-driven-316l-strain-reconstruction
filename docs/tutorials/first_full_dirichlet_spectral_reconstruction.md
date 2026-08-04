@@ -17,7 +17,7 @@ Run the executable tests that do not require an MFront library:
 ```bash
 python -m pytest -q \
   tests/unit/spectral2d/test_grid_transforms_boundary.py \
-  tests/unit/spectral2d/test_kinematics.py \
+  tests/unit/spectral2d/test_spectral_kinematics.py \
   tests/unit/spectral2d/test_newton_two_state.py
 ```
 
