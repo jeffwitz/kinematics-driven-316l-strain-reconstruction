@@ -151,6 +151,102 @@ formulation whose matrix is the exact derivative of the force it uses. The
 lagged variant was implemented and does not converge (`f95d351`); that remains
 the other open route, and it is open for a different reason.
 
+## Post-mortem: three review claims, checked rather than applied
+
+A review of this result raised five design objections. Three of them are
+decidable by measurement, so they were measured. One is upheld and is the
+sharpest statement of the failure, one is upheld in part, and one does not hold.
+
+### Upheld — it was never good Broyden (review claim 1)
+
+Broyden's method and its convergence theory concern a **square** Jacobian of the
+global residual, updated from global pairs. What this module builds is a
+rectangular `2 x 5` least-change multisecant regression of a **local** map, one
+per element, assembled afterwards. The algebra is well posed; the theory does
+not transfer. The module docstring called it `good-Broyden`, which was too
+strong. Renamed to *local multisecant least-change correction*, and both modules
+are now marked `experimental_falsified`.
+
+### Upheld and decisive — the local fit degrades the global Jacobian (review claim 5)
+
+The measurement the review asked for, on the pairs the solver actually produced:
+`s = u_{k+1} - u_k` and `y = R_{k+1} - R_k` on accepted Newton steps, comparing
+`|y - K_0 s| / |y|` against `|y - (K_0 + K_B) s| / |y|`. Both matrices are the
+assembled global ones. Raw data in
+`validation/_generated/cps4r_as/broyden_global_secant_defect.json`.
+
+| variant | steps | global defect, base | global defect, corrected | steps improved |
+|---|---|---|---|---|
+| no correction | 39 | 0.0776 | — | — |
+| m = 1 | 41 | 0.0980 | 0.1335 | 55 % |
+| m = 3 | 47 | 0.0721 | 0.1808 | 33 % |
+| m = 5 | 54 | 0.0677 | **0.3615** | 26 % |
+
+Every local secant condition is satisfied to `1e-15`, and the global secant
+defect grows by 1.4, 2.5 and 5.3 times. The fraction of steps improved falls
+from 55 % to 26 % and tracks the iteration counts (50, 57, 64) exactly. This is
+the cleanest statement of the failure available: **assembling local approximations
+does not improve the Jacobian of the system actually solved.** It also settles
+why the correction hurts rather than merely failing to help, which the
+element-level diagnostic alone could not.
+
+Note also that the base global defect is only 3 to 8 %, not 370 %. The global
+matrix is dominated by the physical tangent, which is consistent to `1.9e-6`;
+the stabilisation defect is a small part of the assembled operator, and still
+costs ten iterations.
+
+### Upheld in part — the scaling (review claim 2)
+
+The review argued that `xi = [eps_c ; q]` concatenates dimensionless strains
+with lengths, so the correction depends on the unit system.
+
+**The conditioning half is right, and is worth four orders of magnitude.** On
+the campaign element (`h = 1.84e-3 mm`) the hourglass amplitudes sit a thousand
+times below the strains. Measured on the secant matrix: `cond(S) = 1.1e4`
+unscaled against `23.6` with the amplitudes divided by `sqrt(area)`, and
+`cond(T) = 1537` against `1.54`. Fixed: `modal_coordinates` now takes a
+`length_scale` defaulting to `sqrt(area)`, so all five coordinates are
+dimensionless. `length_scale=1.0` reproduces what the campaign above ran with.
+
+**The invariance half does not hold.** Rescaling the coordinates by an
+invertible diagonal `D` sends `T -> D T`, and at full row rank
+`(D T)^+ = T^+ D^{-1}` exactly; the factors carried by the base Jacobian, the
+secant matrix and the modal forces then cancel in the composite
+`K_B = H^T dG T`. Measured, millimetres against micrometres with the **unscaled**
+coordinates: `3e-15`. The scaling can only bite where that cancellation breaks —
+a truncated rank, or precision already eaten by the condition number.
+
+A first version of this check reported a 41 % discrepancy and was wrong: it used
+a constant elastic tangent, which makes the stabilising force exactly linear, the
+base Jacobian exact, `Z` zero to round-off and the correction pure noise. It was
+comparing two noise fields. The test now uses a state-dependent tangent.
+
+**And it changes nothing.** Re-running the directional diagnostic with the
+dimensionless coordinates: out-of-sample mean `0.99` becomes `0.84` at `m = 1`,
+`1.05` at `m = 3`, `1.52` at `m = 5` — still no generalisation, still degrading
+with memory. The rejection is not an artefact of the scaling defect.
+
+### The two remaining claims
+
+Non-stationarity of the learned term (review claim 4) is what this document
+already concluded independently, from the directional diagnostic. That local
+pairs are strongly correlated because displacements are not independent
+variables (review claim 3) is consistent with everything measured here and was
+not tested separately.
+
+### On what to try next
+
+The review's suggestion — a **global** limited-memory inverse Broyden on
+`R(u) = 0` with periodic restarts, safeguards and a fallback to the base Newton
+direction — is not contradicted by anything here. It is a different method: it
+operates on the square global residual, which is precisely what the global
+secant measurement above says matters. It is recorded as a candidate and is not
+started, because the scientific priority is the campaign 2 qualification of
+`assumed_strain_energy` — spatial and incremental convergence, spectral-floor
+sensitivity, and real crystal heterogeneity. Ten recoverable iterations do not
+justify more element-level complexity while the behaviour at grain boundaries is
+unestablished.
+
 ## Code retained
 
 `jacobian_correction` stays in the configuration with `none` as its default. The

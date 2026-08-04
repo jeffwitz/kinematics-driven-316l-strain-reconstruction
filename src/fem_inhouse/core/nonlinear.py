@@ -27,7 +27,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import asdict
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 
@@ -667,6 +667,7 @@ def run_fem(
         # Section 17. Secant information of a previous increment describes a
         # tangent that has since moved, so it is not carried across.
         jacobian_corrector.begin_increment()
+        global_secant_probe: tuple[np.ndarray, np.ndarray, Any, Any] | None = None
 
         for nrit in range(max_nr):
             failed_newton_iteration = nrit + 1
@@ -919,6 +920,27 @@ def run_fem(
             if trace_record is not None:
                 trace_record["residual_norm"] = float(res)
                 trace_record["relative_residual"] = float(rel)
+            if trace_record is not None and global_secant_probe is not None:
+                # `|y - K s| / |y|` on the pair the solver actually produced,
+                # with `s` the accepted correction and `y` the change of the
+                # true residual. This is the only secant condition that says
+                # anything about the system being solved.
+                previous_u, previous_residual, previous_base, previous_correction = (
+                    global_secant_probe
+                )
+                secant_step = u[solve_dofs] - previous_u
+                secant_force = R_I - previous_residual
+                secant_scale = float(np.linalg.norm(secant_force))
+                if secant_scale > 0.0:
+                    predicted = previous_base @ secant_step
+                    trace_record["global_secant_defect_base"] = float(
+                        np.linalg.norm(secant_force - predicted) / secant_scale
+                    )
+                    if previous_correction is not None:
+                        predicted = predicted + previous_correction @ secant_step
+                        trace_record["global_secant_defect_corrected"] = float(
+                            np.linalg.norm(secant_force - predicted) / secant_scale
+                        )
             if nonlocal_plasticity_enabled and nonlocal_record_iteration_history:
                 for record in nonlocal_fixed_point_history[trace_start:]:
                     record["mechanical_residual_norm"] = float(res)
@@ -987,14 +1009,36 @@ def run_fem(
                 GP_W,
                 element_count=n_e,
             )
+            broyden_matrix = None
             if assumed_strain_stiffness is not None:
                 Ke_ep = Ke_ep - assumed_strain_elastic_baseline + assumed_strain_stiffness
                 # Section 15. The correction is applied to the MATRIX only, and
                 # only here: `R_I` above is already formed and is never rebuilt
                 # from it, so the equilibrium being solved is unchanged.
                 broyden_matrix = jacobian_corrector.matrix(assumed_strain_stiffness)
-                if broyden_matrix is not None:
-                    Ke_ep = Ke_ep + broyden_matrix
+            if newton_trace is not None:
+                # A local correction can satisfy every element-level secant
+                # condition and still make the GLOBAL Jacobian worse, because
+                # what Newton inverts is the assembly. Keeping the uncorrected
+                # matrix and the correction separately is what allows the next
+                # iteration to measure both against the true global secant pair.
+                # Two extra assemblies, and only while tracing.
+                probe_base = fixed_free_assembler.assemble(Ke_ep).copy()
+                if penalty_mode:
+                    probe_base.data[penalty_data_indices] += penalty_stiffness
+                probe_correction = (
+                    fixed_free_assembler.assemble(broyden_matrix).copy()
+                    if broyden_matrix is not None
+                    else None
+                )
+                global_secant_probe = (
+                    u[solve_dofs].copy(),
+                    R_I.copy(),
+                    probe_base,
+                    probe_correction,
+                )
+            if broyden_matrix is not None:
+                Ke_ep = Ke_ep + broyden_matrix
             element_matrix_seconds += time.perf_counter() - element_matrix_started_at
             sparse_assembly_started_at = time.perf_counter()
             K_tang = fixed_free_assembler.assemble(Ke_ep)

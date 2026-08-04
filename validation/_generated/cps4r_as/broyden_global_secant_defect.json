@@ -1,0 +1,34 @@
+{
+  "broyden m=1": {
+    "base_mean": 0.09795294670160491,
+    "base_median": 0.030115588223781967,
+    "corrected_mean": 0.13348594345212006,
+    "corrected_median": 0.02545453073818766,
+    "improved_fraction": 0.5454545454545454,
+    "pairs": 41
+  },
+  "broyden m=3": {
+    "base_mean": 0.07209989231729128,
+    "base_median": 0.029154041583398023,
+    "corrected_mean": 0.1807708151692141,
+    "corrected_median": 0.057129232287827,
+    "improved_fraction": 0.3333333333333333,
+    "pairs": 47
+  },
+  "broyden m=5": {
+    "base_mean": 0.06770601725175217,
+    "base_median": 0.029566903276787772,
+    "corrected_mean": 0.36152831909184985,
+    "corrected_median": 0.08292655200308303,
+    "improved_fraction": 0.2608695652173913,
+    "pairs": 54
+  },
+  "none": {
+    "base_mean": 0.07758265756962912,
+    "base_median": 0.037908277102584015,
+    "corrected_mean": null,
+    "corrected_median": null,
+    "improved_fraction": null,
+    "pairs": 39
+  }
+}

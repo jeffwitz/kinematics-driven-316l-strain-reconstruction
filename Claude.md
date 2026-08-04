@@ -3203,6 +3203,39 @@ ce journal ; elles sont dans `validation/cps4r_assumed_strain_report.md` et
   négatif vérifiable, et `scripts/diagnose_broyden_directional_prediction.py`
   est réutilisable contre tout candidat futur.
 
+#### Revue du CdC : trois objections vérifiées plutôt qu'appliquées
+
+- **« Ce n'est pas good Broyden » — retenue.** La théorie de Broyden porte sur
+  une jacobienne **carrée** du résidu global, mise à jour depuis des paires
+  globales. Ce module construit une régression multisécante de moindre
+  changement **locale** et rectangulaire `2×5`, assemblée ensuite. Renommé, et
+  les deux modules sont marqués `experimental_falsified`.
+- **« La correction locale dégrade la matrice globale » — retenue, et
+  décisive.** Mesure sur les paires que le solveur produit réellement,
+  `s = u_{k+1}-u_k` et `y = R_{k+1}-R_k` : défaut sécant global moyen `0,0776`
+  sans correction, puis `0,1335`, `0,1808`, `0,3615` pour `m = 1, 3, 5`. Les
+  conditions sécantes **locales** sont satisfaites à `1e-15` pendant que le
+  défaut **global** est multiplié par 5,3, et la fraction de pas améliorés
+  (55 %, 33 %, 26 %) suit exactement les itérations (50, 57, 64). C'est
+  l'énoncé le plus propre de l'échec.
+- **« Mélange déformations/longueurs » — retenue à moitié.** Le
+  conditionnement, oui : `cond(S) = 1,1e4` contre `23,6` une fois les
+  amplitudes divisées par `sqrt(aire)`, et `cond(T) = 1537` contre `1,54`.
+  Corrigé, `modal_coordinates` prend un `length_scale` valant `sqrt(aire)` par
+  défaut. **L'invariance aux unités, non** : à rang plein `(DT)^+ = T^+D^{-1}`
+  exactement, et les facteurs se compensent dans `K_B = H^T ΔG T`. Mesuré,
+  millimètres contre micromètres en coordonnées **non pondérées** : `3e-15`.
+  Une première version de ce contrôle annonçait 41 % et était fausse — tangente
+  élastique constante, donc force exactement linéaire, `Z` nul à l'arrondi près
+  et correction de bruit pur. Et la nondimensionnalisation ne change pas le
+  verdict : hors échantillon, `0,99` devient `0,84`, `1,05`, `1,52`.
+
+La suggestion de la revue — un Broyden **inverse global** sur `R(u)=0`, à
+mémoire limitée, avec redémarrages, sauvegardes et repli sur la direction de
+Newton — n'est contredite par rien ici, et opère précisément sur le résidu
+carré global que la mesure ci-dessus désigne. Consignée comme candidate, non
+entamée : la priorité est la campagne 2 de `assumed_strain_energy`.
+
 Route restante pour les dix itérations : fournir le terme manquant plutôt que
 l'ajuster — un vrai `dC/du`, ou une formulation décalée dont la matrice est la
 dérivée exacte de la force qu'elle emploie. La variante décalée est implémentée

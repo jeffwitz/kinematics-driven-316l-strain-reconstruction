@@ -1,6 +1,20 @@
-"""Limited-memory multisecant good-Broyden correction, per element.
+"""Limited-memory local multisecant least-change correction, per element.
+
+Status: **experimental_falsified**. Not qualified for a solver, off by default,
+kept as the reproducible record of a negative result. See
+`validation/cps4r_as_broyden_results.md` before using any of this.
 
 Sections 9 to 14 of the 2026-08-04 specification.
+
+A note on the name, because the first version of this module got it wrong. This
+is **not** good Broyden. Broyden's method and its convergence theory concern a
+*square* Jacobian of the global residual `R: R^n -> R^n`, updated from global
+pairs `(s_k, y_k)`. What is built here is a rectangular `2 x 5` least-change
+multisecant regression of a *local* map, one per element, assembled afterwards.
+The algebra is well posed; the convergence results do not transfer, and
+measurement confirms they do not: the local secant conditions are met to
+`1e-15` while the **global** secant defect of the assembled matrix grows by a
+factor of five.
 
 What this learns, and what it must never touch. The residual, the stresses, the
 slips, the internal variables and the stabilising force are all left exactly as

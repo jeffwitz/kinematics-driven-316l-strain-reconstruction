@@ -125,10 +125,30 @@ class ModalCoordinates:
         )
 
 
-def modal_coordinates(operators: CentralOperators) -> ModalCoordinates:
-    """Build the reduced-coordinate operators of one element geometry."""
+def modal_coordinates(
+    operators: CentralOperators, *, length_scale: float | None = None
+) -> ModalCoordinates:
+    """Build the reduced-coordinate operators of one element geometry.
 
-    gamma = operators.gamma
+    `length_scale` divides the two amplitude rows, so the reduced state is
+    `[eps_c ; q / L]` and all five coordinates are dimensionless. **This is not
+    cosmetic.** Without it the first three entries are strains and the last two
+    are lengths, the SVD sees the hourglass columns at `q / eps ~ h`, and on the
+    campaign element (`h = 1.84e-3 mm`) that is three orders of magnitude. The
+    consequence is measured in
+    `tests/unit/core/test_limited_memory_broyden.py`: the same physical problem
+    described in millimetres and in micrometres yields corrections differing by
+    **41 %**, while the element stiffness it corrects is identical to `6e-16`.
+
+    `None` selects `sqrt(area)`, the only length the element supplies. Passing
+    `1.0` reproduces the unscaled coordinates the falsified campaign of
+    `validation/cps4r_as_broyden_results.md` ran with.
+    """
+
+    scale = float(np.sqrt(operators.area)) if length_scale is None else float(length_scale)
+    if not np.isfinite(scale) or scale <= 0.0:
+        raise ValueError(f"length_scale must be finite and positive, got {scale}")
+    gamma = operators.gamma / scale
     amplitude = np.zeros((2, 8))
     amplitude[0, 0::2] = gamma
     amplitude[1, 1::2] = gamma

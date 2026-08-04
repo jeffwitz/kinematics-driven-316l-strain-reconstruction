@@ -107,7 +107,19 @@ class NoJacobianCorrection:
 
 
 class BroydenHourglassCorrection:
-    """Limited-memory multisecant correction of the hourglass Jacobian defect.
+    """Limited-memory local multisecant correction of the hourglass Jacobian.
+
+    Status: **experimental_falsified**. Measured on the registered SRIX case it
+    costs iterations rather than saving them -- 50, 57, 64 against 47 for
+    memories 1, 3, 5 -- and the global secant defect of the assembled matrix
+    grows by up to a factor of five while every local secant condition is met to
+    `1e-15`. It is kept, off by default, as the record of that measurement.
+    Read `validation/cps4r_as_broyden_results.md` before switching it on.
+
+    Do not attempt to rescue it with a different memory, a different rank
+    tolerance, a relaxation coefficient or a local damping: the failure is that
+    a local rectangular fit does not improve the global Jacobian, and none of
+    those touch it.
 
     The defect being repaired is measured, not supposed: the physical element
     tangent is consistent to `1.9e-6`, and the stabilisation tangent is wrong by

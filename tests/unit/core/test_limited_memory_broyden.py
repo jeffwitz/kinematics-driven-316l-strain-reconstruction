@@ -11,7 +11,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fem_inhouse.core.assumed_strain import AssumedStrainStabilisation, central_operators
+from fem_inhouse.core.assumed_strain import (
+    AssumedStrainStabilisation,
+    batched_stabilisation,
+    central_operators,
+)
 from fem_inhouse.core.element import plane_stress_elasticity
 from fem_inhouse.core.hourglass_modal_coordinates import (
     MODAL_PROJECTION_TOLERANCE,
@@ -84,8 +88,12 @@ class TestModalCoordinates:
         np.testing.assert_allclose(
             reduced[:3], operators.strain_displacement_centre @ displacement, atol=1e-18
         )
+        # The amplitudes are divided by `sqrt(area)`, so all five coordinates are
+        # dimensionless and the SVD compares like with like.
         np.testing.assert_allclose(
-            reduced[3], operators.gamma @ displacement[0::2], atol=1e-18
+            reduced[3],
+            (operators.gamma @ displacement[0::2]) / np.sqrt(operators.area),
+            atol=1e-18,
         )
 
     @pytest.mark.parametrize("name", sorted(GEOMETRIES))
@@ -401,3 +409,122 @@ class TestElementMemories:
     def test_a_non_positive_element_count_is_refused(self) -> None:
         with pytest.raises(ValueError, match="element_count"):
             ElementBroydenMemories(0, memory=3)
+
+
+class TestUnitInvariance:
+    """The scaling of the reduced coordinates, and what it does and does not do.
+
+    A review argued that concatenating three strains with two lengths breaks
+    unit invariance. Measured here: the conditioning claim holds and is worth
+    four orders of magnitude, the invariance claim does not. Both are recorded,
+    because a review is checked, not applied.
+    """
+
+    #: The campaign element: 1.84 micrometres expressed in millimetres, so the
+    #: hourglass amplitudes sit three orders of magnitude below the strains.
+    SPACING_MM = 0.00184
+
+    def _setup(self, factor: float) -> tuple[np.ndarray, np.ndarray]:
+        spacing = self.SPACING_MM * factor
+        nodes = np.array(
+            [[0.0, 0.0], [spacing, 0.0], [spacing, spacing], [0.0, spacing]]
+        )
+        generator = np.random.default_rng(7)
+        return nodes, 1.0e-2 * spacing * generator.standard_normal((6, 8))
+
+    @staticmethod
+    def _softening_tangents(operators, states: np.ndarray) -> np.ndarray:
+        """A tangent that MOVES with the state, or the test measures round-off.
+
+        With a constant `C` the stabilising force is exactly linear in `u`, the
+        base Jacobian is exact, `Z` is zero to round-off and the correction is
+        pure noise -- a first version of this test compared two noise fields and
+        reported a meaningless 41 %. The softening below is dimensionless in the
+        strain, so it describes the same physics in any unit system.
+        """
+
+        strains = states @ operators.strain_displacement_centre.T
+        factors = 1.0 / (1.0 + 40.0 * np.linalg.norm(strains, axis=1))
+        return factors[:, None, None] * ELASTICITY[None, :, :]
+
+    def _correction(self, factor: float, *, length_scale: float | None) -> np.ndarray:
+        nodes, states = self._setup(factor)
+        operators = central_operators(nodes)
+        coordinates = modal_coordinates(operators, length_scale=length_scale)
+        tangents = self._softening_tangents(operators, states)
+        forces, stiffness, _ = batched_stabilisation(operators, states, tangents)
+        reduced = coordinates.reduced_state(states)
+        modal = coordinates.modal_force(forces)
+        memory = BroydenMemory(memory=5)
+        for index in range(1, states.shape[0]):
+            memory.add(
+                reduced[index] - reduced[index - 1],
+                modal[index] - modal[index - 1],
+                scale=float(np.linalg.norm(reduced[index])),
+            )
+        result = build_correction(memory, coordinates.reduced_jacobian(stiffness[-1]))
+        return coordinates.expand_correction(result.correction)
+
+    def test_the_element_stiffness_itself_is_unit_invariant(self) -> None:
+        """The baseline: whatever fails below, the element does not."""
+
+        stiffnesses = []
+        for factor in (1.0, 1.0e3):
+            nodes, _ = self._setup(factor)
+            _, stiffness, _ = batched_stabilisation(
+                central_operators(nodes), np.zeros((1, 8)), ELASTICITY[None, :, :]
+            )
+            stiffnesses.append(stiffness[0])
+        difference = np.abs(stiffnesses[0] - stiffnesses[1]).max()
+        assert difference / np.abs(stiffnesses[0]).max() < 1.0e-14
+
+    def test_even_the_unscaled_coordinates_are_unit_invariant_at_full_rank(self) -> None:
+        """A predicted defect that does not exist, measured rather than assumed.
+
+        A review argued that concatenating strains with lengths makes the
+        correction depend on the unit system, since minimum-Frobenius depends on
+        the norm. The conditioning half of that argument is right and is
+        measured below. The invariance half does not follow, and here is why.
+
+        Rescaling the reduced coordinates by an invertible diagonal `D` sends
+        `T -> D T`, and for a full-row-rank `T` the pseudo-inverse satisfies
+        `(D T)^+ = T^+ D^{-1}` exactly. The base Jacobian, the secant matrix and
+        the modal forces then carry compensating factors that cancel in the
+        composite `K_B = H^T dG T`. So at full rank the correction is invariant
+        to any diagonal rescaling, units included.
+
+        Millimetres against micrometres, unscaled coordinates: `3e-15`.
+
+        The scaling can only matter where the cancellation breaks -- when the
+        rank test truncates a direction, or when the condition number has eaten
+        the precision. That is a real risk, and it is the next test's subject.
+        """
+
+        millimetres = self._correction(1.0, length_scale=1.0)
+        micrometres = self._correction(1.0e3, length_scale=1.0)
+        discrepancy = np.abs(millimetres - micrometres).max() / np.abs(millimetres).max()
+        assert discrepancy < 1.0e-10, discrepancy
+
+    def test_the_dimensionless_coordinates_are_invariant_too(self) -> None:
+        millimetres = self._correction(1.0, length_scale=None)
+        micrometres = self._correction(1.0e3, length_scale=None)
+        discrepancy = np.abs(millimetres - micrometres).max() / np.abs(millimetres).max()
+        assert discrepancy < 1.0e-10, discrepancy
+
+    def test_the_conditioning_of_the_secant_matrix_improves_by_orders(self) -> None:
+        """Why it happened: the hourglass columns were invisible to the SVD."""
+
+        conditions = {}
+        for scale, label in ((1.0, "unscaled"), (None, "dimensionless")):
+            nodes, states = self._setup(1.0)
+            coordinates = modal_coordinates(central_operators(nodes), length_scale=scale)
+            reduced = coordinates.reduced_state(states)
+            steps = np.array(
+                [
+                    (reduced[i] - reduced[i - 1]) / np.linalg.norm(reduced[i] - reduced[i - 1])
+                    for i in range(1, states.shape[0])
+                ]
+            ).T
+            conditions[label] = float(np.linalg.cond(steps))
+        assert conditions["unscaled"] > 1.0e3
+        assert conditions["dimensionless"] < 1.0e2
