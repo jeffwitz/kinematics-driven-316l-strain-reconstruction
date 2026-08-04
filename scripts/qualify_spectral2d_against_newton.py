@@ -39,6 +39,11 @@ def relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
     return difference / scale if scale > 0.0 else difference
 
 
+def pixel_average_if_needed(values: np.ndarray, scheme: str) -> np.ndarray:
+    values = np.asarray(values)
+    return values.mean(axis=2) if scheme == "tri2" else values
+
+
 def build_case(mesh_size: int) -> dict[str, Any]:
     mesh = MeshConfig(nx=mesh_size, ny=mesh_size, base_pixel_size_mm=SPACING_MM, scale_factor=1.0)
     span = mesh.physical_size_mm[0]
@@ -88,7 +93,7 @@ def solve_fem(case: dict[str, Any], formulation: str, library: str, increments: 
 
 
 def solve_spectral(
-    case: dict[str, Any], scheme: str, library: str, increments: int
+    case: dict[str, Any], scheme: str, library: str, increments: int, tolerance: float
 ) -> tuple[Any, float]:
     mesh = case["mesh"]
     grid = StructuredGrid2D(mesh.nx, mesh.ny, *mesh.physical_size_mm)
@@ -123,6 +128,7 @@ def solve_spectral(
         boundary_displacement_history=history,
         config=Spectral2DConfig(
             spatial_scheme=cast(Literal["quad1", "tri2"], scheme),
+            relative_equilibrium_tolerance=tolerance,
             reference_lambda_0=69_230.76923076923,
             reference_mu_0=78_846.15384615384,
         ),
@@ -135,6 +141,7 @@ def main() -> int:
     parser.add_argument("--mesh", type=int, default=12)
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument("--tolerance", type=float, default=1.0e-6)
     parser.add_argument("--output", type=Path, default=Path("validation/_generated/spectral2d"))
     arguments = parser.parse_args()
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", "build/mfront/src/libBehaviour.so")
@@ -153,6 +160,7 @@ def main() -> int:
     report: dict[str, Any] = {
         "mesh": arguments.mesh,
         "increments": arguments.increments,
+        "spectral_tolerance": arguments.tolerance,
         "orientation_bunge_deg": list(ORIENTATION_BUNGE_DEG),
         "variants": {},
     }
@@ -164,7 +172,7 @@ def main() -> int:
         for _ in range(arguments.repeats):
             try:
                 spectral_result, elapsed = solve_spectral(
-                    case, scheme, library, arguments.increments
+                    case, scheme, library, arguments.increments, arguments.tolerance
                 )
                 timings.append(elapsed)
             except Exception as exception:
@@ -178,6 +186,10 @@ def main() -> int:
             }
             continue
         spectral_diagnostics = spectral_result.diagnostics
+        spectral_slip = spectral_result.observables.get("accumulated_slip")
+        fem_slip = reference.cumulated_slip
+        if spectral_slip is None or fem_slip is None:
+            raise RuntimeError("both solvers must expose accumulated slip")
         report["variants"][scheme] = {
             "converged": True,
             "elapsed_median": statistics.median(timings),
@@ -187,18 +199,34 @@ def main() -> int:
                 spectral_result.displacement, reference.displacement_mm
             ),
             "E_sigma_against_cps4": relative_l2(
-                spectral_result.pixel_average(spectral_result.stress_in_plane_mpa)
-                if scheme == "tri2"
-                else spectral_result.stress_in_plane_mpa,
+                pixel_average_if_needed(spectral_result.stress_in_plane_mpa, scheme),
                 reference.stress_mpa,
             ),
-            "equilibrium_residual": spectral_diagnostics.absolute_residual_history[-1],
+            "E_Gamma_against_cps4": relative_l2(
+                pixel_average_if_needed(spectral_slip, scheme), fem_slip
+            ),
+            "E_R_against_cps4": relative_l2(
+                spectral_result.reaction_forces, reference.reaction_force
+            ),
+            "plane_stress_residual_mpa": spectral_diagnostics.maximum_plane_stress_residual_mpa,
+            "fem_plane_stress_residual_mpa": (
+                float(np.max(np.abs(reference.plane_stress_residual_mpa)))
+                if reference.plane_stress_residual_mpa is not None
+                else None
+            ),
+            "equilibrium_residual_dimensionless": (
+                spectral_diagnostics.dimensionless_equilibrium_history[-1]
+            ),
+            "equilibrium_residual_dimensional": spectral_diagnostics.absolute_residual_history[-1],
+            "verification_residual": spectral_diagnostics.verification_residual,
             "material_points": spectral_diagnostics.material_points,
         }
     report["fem_baselines"] = {
         name: {
             "iterations": result.diagnostics.total_newton_iterations,
             "cutbacks": result.diagnostics.cutbacks,
+            "final_relative_residual": result.diagnostics.final_relative_residual,
+            "final_residual_norm": result.diagnostics.final_residual_norm,
             "elapsed_seconds": None,
         }
         for name, result in references.items()

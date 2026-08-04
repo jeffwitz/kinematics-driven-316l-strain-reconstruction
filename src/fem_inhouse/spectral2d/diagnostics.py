@@ -26,3 +26,6 @@ class Spectral2DDiagnostics:
     maximum_plane_stress_residual_mpa: float = 0.0
     total_seconds: float = 0.0
     timings: dict[str, float] = field(default_factory=dict)
+    iteration_diagnostics: tuple[dict[str, float | int | bool], ...] = ()
+    residual_ratios: tuple[float, ...] = ()
+    verification_residual: float = 0.0

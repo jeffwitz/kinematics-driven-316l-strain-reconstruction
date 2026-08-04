@@ -156,6 +156,10 @@ def solve_dirichlet_plane_stress_spectral(
     relative_history: list[float] = []
     dimensionless_history: list[float] = []
     absolute_history: list[float] = []
+    iteration_diagnostics: list[dict[str, float | int | bool]] = []
+    residual_ratios: list[float] = []
+    constitutive_evaluations = 0
+    verification_residual = 0.0
     iterations_per_increment: list[int] = []
     anderson = DisplacementAndersonAccelerator(
         config.anderson_memory, config.anderson_regularization
@@ -183,6 +187,7 @@ def solve_dirichlet_plane_stress_spectral(
             total_u = applied + fluctuation
             strain = operator.strain(total_u)
             trial, stress = _evaluate_material(material, strain, time_increment)
+            constitutive_evaluations += 1
             residual = operator.divergence(stress)
             relative, divergence_norm, _residual_norm = _equilibrium_metrics(
                 stress, residual, grid, operator.points_per_pixel
@@ -190,11 +195,34 @@ def solve_dirichlet_plane_stress_spectral(
             relative_history.append(relative)
             dimensionless_history.append(relative)
             absolute_history.append(divergence_norm)
+            residual_ratios.append(
+                relative / relative_history[-2] if len(relative_history) > 1 else 0.0
+            )
+            iteration_diagnostics.append(
+                {
+                    "iteration": len(relative_history),
+                    "equilibrium_residual_relative": relative,
+                    "equilibrium_residual_absolute": divergence_norm,
+                    "fixed_point_residual": float(np.linalg.norm(residual)),
+                    "relaxation_factor": 1.0,
+                    "anderson_used": False,
+                    "constitutive_evaluations": constitutive_evaluations,
+                    "maximum_plane_stress_residual": 0.0,
+                }
+            )
             if relative <= config.relative_equilibrium_tolerance:
                 final_trial = _reshape_constitutive_trial(
                     material.complete_trial(trial), strain.shape[:-1]
                 )
                 material.commit()
+                _, verification_stress = _evaluate_material(material, strain, time_increment)
+                verification_residual = _equilibrium_metrics(
+                    verification_stress,
+                    operator.divergence(verification_stress),
+                    grid,
+                    operator.points_per_pixel,
+                )[0]
+                material.revert()
                 final_applied = applied.copy()
                 final_strain = np.asarray(strain).copy()
                 final_stress = stress.copy()
@@ -320,6 +348,9 @@ def solve_dirichlet_plane_stress_spectral(
         maximum_plane_stress_residual_mpa=float(
             np.max(np.abs(final_trial.plane_stress_residual_mpa))
         ),
+        iteration_diagnostics=tuple(iteration_diagnostics),
+        residual_ratios=tuple(residual_ratios),
+        verification_residual=verification_residual,
         total_seconds=perf_counter() - started,
     )
     return Spectral2DResult(
