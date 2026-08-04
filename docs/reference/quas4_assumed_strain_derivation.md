@@ -155,10 +155,15 @@ $(e_1,e_2,e_3)$ *is* a choice of element:
 
 Two things are decided by this table.
 
-**The shear row.** Every assumed-strain variant sets $e_3=0$: the hourglass
-contribution to the shear strain is **cancelled**. That is the cure for the
-shear locking of QUAD4 in bending, which §1 of R3.06.10 diagnoses as excessive
-stiffness from the shear terms of the discretised gradient.
+**The shear row.** The *OI family* sets $e_3=0$: the hourglass contribution to
+the shear strain is **cancelled**. That is the cure for the shear locking of
+QUAD4 in bending, which §1 of R3.06.10 diagnoses as excessive stiffness from the
+shear terms of the discretised gradient.
+
+**ASMD keeps $e_3=1$.** It is not an OI variant: it acts on the two normal rows
+only, leaving the shear untouched. So "every assumed-strain variant cancels the
+shear" is false, and matters here because ASMD is the default of this project —
+it buys frame invariance (below) rather than the bending cure.
 
 **The coupling between the two normal rows.** $e_2$ ties $\varepsilon_x$ and
 $\varepsilon_y$ together. ASBQI sets $e_2=-\bar\nu$, so **ASBQI depends on

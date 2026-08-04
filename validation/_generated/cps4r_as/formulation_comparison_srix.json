@@ -1,0 +1,160 @@
+{
+  "case": "srix",
+  "gauss_reduction": "arithmetic mean over Gauss points; identity for the one-point formulations, an average of four states for CPS4, and therefore part of the measured difference rather than a neutral projection",
+  "increments": 8,
+  "mesh": 12,
+  "orientation_bunge_deg": [
+    35.0,
+    20.0,
+    15.0
+  ],
+  "reference": {
+    "constitutive_median": 5.754603644367307,
+    "constitutive_seconds": [
+      5.6900827386416495,
+      5.70943147665821,
+      6.005327014951035,
+      5.793363307137042,
+      5.754603644367307
+    ],
+    "cutbacks": 0,
+    "elapsed_median": 6.303241841960698,
+    "elapsed_seconds": [
+      6.562526832101867,
+      6.241423903033137,
+      6.640082465019077,
+      6.303241841960698,
+      6.239898904925212
+    ],
+    "formulation": "cps4",
+    "gauss_points_per_element": 4,
+    "material_points": 576,
+    "newton_iterations": 37
+  },
+  "repeats": 5,
+  "variants": {
+    "CPS4R-AS-current-asmd": {
+      "converged": false,
+      "failure": "NonlinearConvergenceError",
+      "message": "run_fem: increment cutback below minimum (1.03e-04) - solution not converging"
+    },
+    "CPS4R-AS-energy-asmd": {
+      "constitutive_median": 2.0033152610994875,
+      "constitutive_seconds": [
+        2.0458159879781306,
+        1.9302303495351225,
+        2.0033152610994875,
+        2.180867457995191,
+        1.9106297853868455
+      ],
+      "constitutive_speedup": 2.872540211773251,
+      "converged": true,
+      "cutbacks": 0,
+      "elapsed_median": 2.7815672259312123,
+      "elapsed_seconds": [
+        2.7845609430223703,
+        2.6435578200034797,
+        2.7815672259312123,
+        2.7888567310292274,
+        2.6093045019079
+      ],
+      "errors": {
+        "E_Gamma": {
+          "candidate_sha256": "0d1224916f3b8f95750172aa4e284bf838ec278a1a7e3d68eec3bfb27961a1f1",
+          "field": "cumulated_slip",
+          "reference_sha256": "1cc58cd534b8457b26994ab7c47695bc0459bc849719ce3e555dd2fbfd1dd5f3",
+          "relative_l2": 0.011663373140449287
+        },
+        "E_R": {
+          "candidate_sha256": "f70b3fc21e74fecbdfacfe6e44435ad13024e256724962473264fe4773c8ca2a",
+          "field": "reaction_force",
+          "reference_sha256": "3c62d9fc00afe370bc3c90ee092c50c6feb9ab52ca6caf65fdfbe5a3b4a77ca2",
+          "relative_l2": 0.006888075701120297
+        },
+        "E_p": {
+          "candidate_sha256": "3e98ea64e87f897e5ad9f7a93d46d4baef68eb53450f5a406009491d6636a918",
+          "field": "equivalent_plastic_strain",
+          "reference_sha256": "3e98ea64e87f897e5ad9f7a93d46d4baef68eb53450f5a406009491d6636a918",
+          "relative_l2": 0.0
+        },
+        "E_sigma": {
+          "candidate_sha256": "5caf7d13efa359d1c20a4ce775d8a27e77475236d88e01aa76dcd52cd316ee8b",
+          "field": "stress_mpa",
+          "reference_sha256": "87de32f6665a97eebd4a17a83477f800fdf4f8e017eb99e3538fa1dc90a25fe6",
+          "relative_l2": 0.002519479219361766
+        },
+        "E_u": {
+          "candidate_sha256": "9b5834ba5f89b89f09bdf05f748a714f1e0511433ae677d17bb0810cdbef9ce5",
+          "field": "displacement_mm",
+          "reference_sha256": "3f361904ac9e6e97ca8f2fb72a1b420adb754b599a82c72a9d1312574618999b",
+          "relative_l2": 0.002026165474227492
+        }
+      },
+      "formulation": "cps4r_as",
+      "gauss_points_per_element": 1,
+      "material_points": 144,
+      "newton_iterations": 47,
+      "stabilisation": {},
+      "total_speedup": 2.2660756796379427
+    },
+    "CPS4R-elastic": {
+      "constitutive_median": 1.2472376539371908,
+      "constitutive_seconds": [
+        1.2962774846237153,
+        1.2380236382596195,
+        1.2895640518981963,
+        1.2472376539371908,
+        1.2031736369244754
+      ],
+      "constitutive_speedup": 4.613879019929831,
+      "converged": true,
+      "cutbacks": 0,
+      "elapsed_median": 1.6846212879754603,
+      "elapsed_seconds": [
+        1.8616103690583259,
+        1.6683241438586265,
+        1.6846212879754603,
+        1.8091834029182792,
+        1.6768723281566054
+      ],
+      "errors": {
+        "E_Gamma": {
+          "candidate_sha256": "ccf9a4fe54526d92524a2a9622ce13150519b50d67d1df783efd0cc581f60007",
+          "field": "cumulated_slip",
+          "reference_sha256": "1cc58cd534b8457b26994ab7c47695bc0459bc849719ce3e555dd2fbfd1dd5f3",
+          "relative_l2": 0.05894076298452979
+        },
+        "E_R": {
+          "candidate_sha256": "28dda01765d0c525a7a82aa266bb33273037870dfd1644bbdff854811b0fd251",
+          "field": "reaction_force",
+          "reference_sha256": "3c62d9fc00afe370bc3c90ee092c50c6feb9ab52ca6caf65fdfbe5a3b4a77ca2",
+          "relative_l2": 0.0518565943843055
+        },
+        "E_p": {
+          "candidate_sha256": "3e98ea64e87f897e5ad9f7a93d46d4baef68eb53450f5a406009491d6636a918",
+          "field": "equivalent_plastic_strain",
+          "reference_sha256": "3e98ea64e87f897e5ad9f7a93d46d4baef68eb53450f5a406009491d6636a918",
+          "relative_l2": 0.0
+        },
+        "E_sigma": {
+          "candidate_sha256": "e8830e4ef7d40ac5ba880b1bbbc3175085cf42044d31ee8e3fc0ade9daf7e88d",
+          "field": "stress_mpa",
+          "reference_sha256": "87de32f6665a97eebd4a17a83477f800fdf4f8e017eb99e3538fa1dc90a25fe6",
+          "relative_l2": 0.013143453243259615
+        },
+        "E_u": {
+          "candidate_sha256": "d20a008f7c12b6f4bbb2c375d665011b1429f101e98e8e95dddda231d7c7bbf2",
+          "field": "displacement_mm",
+          "reference_sha256": "3f361904ac9e6e97ca8f2fb72a1b420adb754b599a82c72a9d1312574618999b",
+          "relative_l2": 0.012476950103729496
+        }
+      },
+      "formulation": "cps4r",
+      "gauss_points_per_element": 1,
+      "material_points": 144,
+      "newton_iterations": 32,
+      "stabilisation": {},
+      "total_speedup": 3.7416372967337908
+    }
+  }
+}

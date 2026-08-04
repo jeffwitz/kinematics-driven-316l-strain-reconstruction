@@ -4,6 +4,21 @@ Date: 2026-08-04
 Preregistration: `validation/cps4r_assumed_strain_preregistration.md`
 Derivation: `docs/reference/quas4_assumed_strain_derivation.md`
 
+Generator: `scripts/compare_reduced_integration_formulations.py`
+Archive: `validation/_generated/cps4r_as/formulation_comparison_srix.json`
+
+```bash
+MFRONT_BEHAVIOUR_LIBRARY="$PWD/build/mfront/src/libBehaviour.so" \
+python scripts/compare_reduced_integration_formulations.py \
+  --case srix --mesh 12 --increments 8 --repeats 5
+```
+
+The archive carries the five individual elapsed and constitutive times per
+formulation, the Newton and cutback counts, the SHA-256 of every compared field
+on both sides, and the reduction used. The first version of this report quoted
+the numbers without a generator; with 0.17 points of margin that was not good
+enough, and a review said so.
+
 **Interim. No verdict of section 26 is issued yet**: the campaign of sections 13
 and 14 is not complete, and the performance figures below were taken on the
 cheap J2 backend, which is the wrong law to measure a constitutive speed-up on.
@@ -43,10 +58,20 @@ and measures nothing. Eight increments, medians of five runs.
 CPS4 reference: 576 material points, 6.28 s total, 5.75 s constitutive, 37 Newton
 iterations, no cutback.
 
+**The reduction, stated because the margin is 0.17 points.** CPS4 carries four
+constitutive states per element and CPS4R-AS one. Every field compared here is
+reduced to the element grid by the **arithmetic mean over Gauss points**, which
+for CPS4R-AS is the identity and for CPS4 averages four states. Comparing an
+average of four against one central value is therefore *part of* the measured
+difference, not a neutral projection, and a different reduction — the central
+value of the four, or a volume-weighted mean — would give a different number.
+`E_Gamma` is computed on `cumulated_slip`, itself the sum over the twelve systems
+of the accumulated slip `p_s`, after that reduction.
+
 | formulation | `E_Gamma` | `E_sigma` | `E_R` | `E_u` | total | constitutive | Newton |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | `CPS4R-elastic` | 5.89 % | 1.31 % | 5.19 % | 1.25 % | 3.58× | 4.53× | 32 |
-| **`CPS4R-AS`, ASMD, energy** | **1.17 %** | **0.25 %** | **0.69 %** | 0.20 % | **2.18×** | 2.72× | 47 |
+| **`CPS4R-AS`, ASMD, energy** | **1.17 %** | **0.25 %** | **0.69 %** | 0.20 % | **2.18–2.27×** | 2.72–2.87× | 47 |
 | `CPS4R-AS`, ASMD, current | did not converge | | | | | | |
 
 Against the preregistered bounds: `E_sigma` **passes**, `E_R` **passes**,
@@ -72,6 +97,11 @@ case, where the two were identical to every digit because the tangent never lost
 definiteness. A crystal tangent does, and section 6.2 exists for exactly that.
 
 **No cutback is introduced**, so falsifier F2 does not fire.
+
+The speed ranges are two independent runs of the same command on the same
+machine — 2.18 and 2.27 on total, 2.72 and 2.87 on constitutive. Both sides of
+each range fall on the same side of their bound, so the conclusion does not
+depend on which run is quoted.
 
 ## What the J2 numbers say
 
@@ -132,12 +162,18 @@ not have hit every projection and both strategies equally.
 
 ## Provisional reading
 
-**Case B, and a near miss rather than a failure.** Fourteen of the sixteen
-acceptance criteria of section 25 are met or not yet contradicted; two are
-missed, both narrowly and both on SRIX: the cumulated-slip error at 1.17 %
-against 1 %, and the constitutive speed-up at 2.72 against 3.5 — the latter
-because Newton needs 27 % more iterations, not because any element calls the
-material more than once.
+**No verdict can be issued.** Two quantitative SRIX criteria are **missed**:
+the cumulated-slip error at 1.17 % against 1 %, and the constitutive speed-up at
+2.72 against 3.5 — the latter because Newton needs 27 % more iterations, not
+because any element calls the material more than once. Several other criteria
+are **not evaluated**: the homogeneous battery, every crystal heterogeneity case,
+the instrumented constitutive-call count, increment sensitivity, the spectral
+floor sweep, and the localisation diagnostics.
+
+An earlier draft of this section said "fourteen of the sixteen criteria are met
+or not yet contradicted". That was too favourable: **not contradicted is not
+satisfied**, and counting unevaluated criteria as near-passes is exactly the
+arithmetic a preregistration exists to prevent.
 
 That is a materially better position than the formulation it replaces, which
 misses the same bounds by five to seven times. But the preregistration does not
