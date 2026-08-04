@@ -1,0 +1,32 @@
+{
+  "increments": 8,
+  "kinematic_samples_per_pixel": 2,
+  "material_states_per_pixel": 1,
+  "mesh": 8,
+  "orientation_bunge_deg": [
+    35.0,
+    20.0,
+    15.0
+  ],
+  "runs": [
+    {
+      "E_Gamma": 0.07336789178937769,
+      "E_R": 0.1447715945917788,
+      "E_sigma": 0.02257866223876349,
+      "E_u": 0.021021313514672457,
+      "converged": true,
+      "cps4_elapsed_seconds": 3.646388401000877,
+      "elapsed_seconds": 2.156998703001591,
+      "field_sha256": "fa9501d1a1b5455aa30937efa8f14c3abf9fe6b3f9d3c3d255515f3915a8abe2",
+      "final_residual": 2.2453269948355733e-11,
+      "gmres_iterations": 717,
+      "high_frequency_fraction_max": 2.878992354215869e-07,
+      "material_evaluations": 64,
+      "newton_iterations": 32,
+      "reference_scale": 1.0,
+      "tolerance": 1e-08,
+      "verification_residual": 2.2453269948355733e-11
+    }
+  ],
+  "status": "experimental"
+}

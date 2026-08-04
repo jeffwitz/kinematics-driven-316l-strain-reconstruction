@@ -1,0 +1,122 @@
+{
+  "passed": true,
+  "states": [
+    {
+      "orientation_bunge_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "state": 0,
+      "relative_error": 0.0,
+      "full_3d_relative_error": 0.0,
+      "accumulated_slip": 0.0,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "state": 1,
+      "relative_error": 1.4304896245381992e-17,
+      "full_3d_relative_error": 1.596721913284263e-17,
+      "accumulated_slip": 0.0,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "state": 2,
+      "relative_error": 2.1059127584684706e-15,
+      "full_3d_relative_error": 7.873478081654598e-17,
+      "accumulated_slip": 0.02044464534526433,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        35.0,
+        20.0,
+        15.0
+      ],
+      "state": 0,
+      "relative_error": 0.0,
+      "full_3d_relative_error": 0.0,
+      "accumulated_slip": 0.0,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        35.0,
+        20.0,
+        15.0
+      ],
+      "state": 1,
+      "relative_error": 6.359601310784502e-17,
+      "full_3d_relative_error": 8.220613681001163e-17,
+      "accumulated_slip": 0.0,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        35.0,
+        20.0,
+        15.0
+      ],
+      "state": 2,
+      "relative_error": 1.1880114463459392e-15,
+      "full_3d_relative_error": 6.701770590450942e-16,
+      "accumulated_slip": 0.025718261201014437,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        71.0,
+        37.0,
+        11.0
+      ],
+      "state": 0,
+      "relative_error": 0.0,
+      "full_3d_relative_error": 0.0,
+      "accumulated_slip": 0.0,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        71.0,
+        37.0,
+        11.0
+      ],
+      "state": 1,
+      "relative_error": 8.441528768080324e-17,
+      "full_3d_relative_error": 9.667516110294077e-17,
+      "accumulated_slip": 0.0,
+      "plastic_state_reached": true,
+      "passed": true
+    },
+    {
+      "orientation_bunge_deg": [
+        71.0,
+        37.0,
+        11.0
+      ],
+      "state": 2,
+      "relative_error": 3.7900747184203053e-14,
+      "full_3d_relative_error": 2.7288352732264145e-16,
+      "accumulated_slip": 0.02673906005536144,
+      "plastic_state_reached": true,
+      "passed": true
+    }
+  ]
+}

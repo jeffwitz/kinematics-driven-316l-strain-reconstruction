@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "accumulated_slip": 0.0118394710448897,
+  "relative_errors": {
+    "1e-06": 2.862470136216504e-05,
+    "3e-07": 8.585515233580925e-06,
+    "1e-07": 2.8616626583833895e-06,
+    "3e-08": 8.584891560204236e-07
+  },
+  "minimum_relative_error": 8.584891560204236e-07,
+  "material_states_per_pixel": 1,
+  "kinematic_samples_per_pixel": 2
+}
