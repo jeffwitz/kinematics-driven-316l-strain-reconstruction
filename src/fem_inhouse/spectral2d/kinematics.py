@@ -34,6 +34,16 @@ class DiscreteKinematics2D(Protocol):
     """Spatial contract shared by pixel and sub-pixel discretisations."""
 
     @property
+    def kinematic_samples_per_pixel(self) -> int: ...
+
+    @property
+    def material_states_per_pixel(self) -> int: ...
+
+    def strain_samples(self, nodal_displacement: ArrayLike) -> FloatArray: ...
+
+    def divergence_from_sample_stress(self, stress: ArrayLike) -> FloatArray: ...
+
+    @property
     def material_point_count(self) -> int: ...
 
     @property
@@ -59,6 +69,14 @@ class CellCenteredOnePoint2D:
         self.grid = grid
 
     @property
+    def kinematic_samples_per_pixel(self) -> int:
+        return 1
+
+    @property
+    def material_states_per_pixel(self) -> int:
+        return 1
+
+    @property
     def material_point_count(self) -> int:
         return self.grid.nx * self.grid.ny
 
@@ -82,6 +100,9 @@ class CellCenteredOnePoint2D:
             2.0 * self.grid.spacing_y
         ) + (uy[1:, :-1] + uy[1:, 1:] - uy[:-1, :-1] - uy[:-1, 1:]) / (2.0 * self.grid.spacing_x)
         return np.stack((exx, eyy, gamma), axis=-1)
+
+    def strain_samples(self, nodal_displacement: ArrayLike) -> FloatArray:
+        return self.strain(nodal_displacement)[..., None, :]
 
     def divergence(self, stress: ArrayLike) -> FloatArray:
         sigma = _stress(stress, (*self.grid.pixel_shape, 3))
@@ -111,12 +132,24 @@ class CellCenteredOnePoint2D:
         result[1:, 1:, 1] -= shear_y
         return result
 
+    def divergence_from_sample_stress(self, stress: ArrayLike) -> FloatArray:
+        values = np.asarray(stress, dtype=np.float64)
+        return self.divergence(values[..., 0, :])
+
 
 class TwoSubcellDiagnostic2D:
     """Two independent constant-strain triangles per pixel."""
 
     def __init__(self, grid: StructuredGrid2D) -> None:
         self.grid = grid
+
+    @property
+    def kinematic_samples_per_pixel(self) -> int:
+        return 2
+
+    @property
+    def material_states_per_pixel(self) -> int:
+        return 2
 
     @property
     def material_point_count(self) -> int:
@@ -149,6 +182,9 @@ class TwoSubcellDiagnostic2D:
         ) / self.grid.spacing_x
         return result
 
+    def strain_samples(self, nodal_displacement: ArrayLike) -> FloatArray:
+        return self.strain(nodal_displacement)
+
     def divergence(self, stress: ArrayLike) -> FloatArray:
         sigma = _stress(stress, (*self.grid.pixel_shape, 2, 3))
         result = np.zeros((*self.grid.node_shape, 2), dtype=np.float64)
@@ -173,6 +209,28 @@ class TwoSubcellDiagnostic2D:
                 result[tl][1] += area * (s2[2] / self.grid.spacing_x)
                 result[br][1] += area * (s2[1] / self.grid.spacing_y)
         return result
+
+    def divergence_from_sample_stress(self, stress: ArrayLike) -> FloatArray:
+        return self.divergence(stress)
+
+
+class EBITwoTriangleKinematics2D(TwoSubcellDiagnostic2D):
+    """Two triangle strain samples and one element state per pixel."""
+
+    @property
+    def material_states_per_pixel(self) -> int:
+        return 1
+
+    @property
+    def material_point_count(self) -> int:
+        return self.grid.nx * self.grid.ny
+
+    @staticmethod
+    def mean_strain(sample_strains: ArrayLike) -> FloatArray:
+        values = np.asarray(sample_strains, dtype=np.float64)
+        if values.shape[-2:] != (2, 3):
+            raise ValueError("EBI sample strains must have trailing shape (2, 3)")
+        return 0.5 * (values[..., 0, :] + values[..., 1, :])
 
 
 def _closed_form_symbols(

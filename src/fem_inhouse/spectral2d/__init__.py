@@ -16,6 +16,11 @@ from fem_inhouse.spectral2d.boundary import (
 )
 from fem_inhouse.spectral2d.config import Spectral2DConfig
 from fem_inhouse.spectral2d.diagnostics import Spectral2DDiagnostics
+from fem_inhouse.spectral2d.ebi import (
+    EBIPlaneStressElementBatch,
+    EBIPlaneStressTrial,
+    hookean_plane_stress_relative_error,
+)
 from fem_inhouse.spectral2d.green import (
     B0Green2D,
     GreenDiagnostics,
@@ -27,7 +32,14 @@ from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import (
     CellCenteredOnePoint2D,
     DiscreteKinematics2D,
+    EBITwoTriangleKinematics2D,
     TwoSubcellDiagnostic2D,
+)
+from fem_inhouse.spectral2d.newton_ebi import (
+    EBISpectralSolverConfig,
+    pack_interior,
+    solve_ebi_dirichlet_plane_stress,
+    unpack_interior,
 )
 from fem_inhouse.spectral2d.nonlinear import (
     SpectralIncrementConvergenceError,
@@ -43,6 +55,10 @@ __all__ = [
     "CellCenteredOnePoint2D",
     "DiscreteKinematics2D",
     "DisplacementAndersonAccelerator",
+    "EBIPlaneStressElementBatch",
+    "EBIPlaneStressTrial",
+    "EBISpectralSolverConfig",
+    "EBITwoTriangleKinematics2D",
     "FullDirichletDSTIPlan2D",
     "GreenDiagnostics",
     "HarmonicDirichletExtension2D",
@@ -56,6 +72,10 @@ __all__ = [
     "TransformPlan2D",
     "TwoMuGreen2D",
     "TwoSubcellDiagnostic2D",
+    "hookean_plane_stress_relative_error",
+    "pack_interior",
     "project_isotropic_plane_stress_tangent",
     "solve_dirichlet_plane_stress_spectral",
+    "solve_ebi_dirichlet_plane_stress",
+    "unpack_interior",
 ]

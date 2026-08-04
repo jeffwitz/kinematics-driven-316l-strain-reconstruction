@@ -125,6 +125,108 @@ class PlaneStressMaterialBatch(Protocol):
     def revert(self) -> None: ...
 
 
+@runtime_checkable
+class HookeanPlaneStressMaterialBatch(PlaneStressMaterialBatch, Protocol):
+    """Plane-stress material with an immutable elastic condensed tangent."""
+
+    @property
+    def elastic_tangent_in_plane_mpa(self) -> FloatArray:
+        """Return fixed per-state tangents with shape ``(point_count, 3, 3)``."""
+
+
+class CachedHookeanPlaneStressMaterialBatch:
+    """Cache the unloaded elastic tangent of a transactional material batch."""
+
+    def __init__(self, material: PlaneStressMaterialBatch) -> None:
+        self._material = material
+        trial = material.evaluate_in_plane(
+            np.zeros((material.point_count, 3), dtype=np.float64),
+            time_increment=1.0,
+            consistent_tangent=True,
+        )
+        material.revert()
+        if trial.tangent_in_plane_mpa is None:
+            raise ValueError("Hookean EBI requires an unloaded elastic tangent")
+        if np.max(np.abs(trial.stress_in_plane_mpa)) > 1.0e-10:
+            raise ValueError("Hookean EBI tangent cache requires an unloaded state")
+        tangent = np.asarray(trial.tangent_in_plane_mpa, dtype=np.float64)
+        self._elastic_tangent = tangent.reshape(material.point_count, 3, 3).copy()
+        self._elastic_tangent.setflags(write=False)
+        full_tangent_probe = getattr(material, "reference_full_tangent_kelvin_mpa", None)
+        self._elastic_tangent_3d = (
+            np.asarray(full_tangent_probe(), dtype=np.float64).copy()
+            if callable(full_tangent_probe)
+            else None
+        )
+        if self._elastic_tangent_3d is not None:
+            self._elastic_tangent_3d.setflags(write=False)
+
+    @property
+    def point_count(self) -> int:
+        return self._material.point_count
+
+    @property
+    def backend_name(self) -> str:
+        return self._material.backend_name
+
+    @property
+    def completion_strategy(self) -> str:
+        return self._material.completion_strategy
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        return self._material.linear_system_matrix_type
+
+    @property
+    def statistics(self) -> PlaneStressBatchStatistics:
+        return self._material.statistics
+
+    @property
+    def elastic_tangent_in_plane_mpa(self) -> FloatArray:
+        return self._elastic_tangent
+
+    @property
+    def elastic_tangent_3d_kelvin_mpa(self) -> FloatArray | None:
+        """Return the measured full tangent when the backend exposes it."""
+
+        return self._elastic_tangent_3d
+
+    def evaluate(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> ConstitutiveTrial:
+        return self._material.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        return self._material.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
+        return self._material.complete_trial(trial)
+
+    def commit(self) -> None:
+        self._material.commit()
+
+    def revert(self) -> None:
+        self._material.revert()
+
+
 class PythonJ2PlaneStressBatch:
     """Transaction-safe adapter for the historical in-house J2 return mapping."""
 
@@ -445,9 +547,7 @@ def create_plane_stress_material_batch(
         # conditionals, so a new law is a catalogue entry rather than an edit
         # here. The two registered entries reproduce the previous names exactly.
         selected_behaviour_id = mfront_behaviour_id or (
-            "micromorphic_ludwik_j2"
-            if nonlocal_coupling_modulus_mpa is not None
-            else "ludwik_j2"
+            "micromorphic_ludwik_j2" if nonlocal_coupling_modulus_mpa is not None else "ludwik_j2"
         )
         behaviour = MFRONT_BEHAVIOURS.get(selected_behaviour_id)
         if behaviour.bridge_profile == "fcc_single_crystal_v1":

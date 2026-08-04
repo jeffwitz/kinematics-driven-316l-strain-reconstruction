@@ -3,14 +3,21 @@ import pytest
 
 from fem_inhouse.spectral2d import (
     CellCenteredOnePoint2D,
+    EBITwoTriangleKinematics2D,
     FullDirichletDSTIPlan2D,
     StructuredGrid2D,
     TwoSubcellDiagnostic2D,
 )
 from fem_inhouse.spectral2d.kinematics import _modal_symbols
 
+KINEMATICS = (
+    CellCenteredOnePoint2D,
+    TwoSubcellDiagnostic2D,
+    EBITwoTriangleKinematics2D,
+)
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_affine_displacement_has_exact_constant_strain(kinematics) -> None:
     grid = StructuredGrid2D(5, 4, 2.0, 3.0)
     x, y = grid.coordinates
@@ -28,7 +35,7 @@ def test_affine_displacement_has_exact_constant_strain(kinematics) -> None:
     )
 
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_divergence_is_the_negative_adjoint_of_strain(kinematics) -> None:
     grid = StructuredGrid2D(5, 4, 2.0, 3.0)
     operator = kinematics(grid)
@@ -47,7 +54,7 @@ def test_divergence_is_the_negative_adjoint_of_strain(kinematics) -> None:
     np.testing.assert_allclose(lhs + rhs, 0.0, rtol=0.0, atol=1.0e-12)
 
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_full_dirichlet_kinematics_has_no_nonzero_constant_kernel(kinematics) -> None:
     grid = StructuredGrid2D(4, 4, 1.0, 1.0)
     operator = kinematics(grid)
@@ -56,7 +63,7 @@ def test_full_dirichlet_kinematics_has_no_nonzero_constant_kernel(kinematics) ->
     assert np.linalg.norm(operator.strain(displacement)) > 0.0
 
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_reference_symbols_are_positive_and_consistent(kinematics) -> None:
     grid = StructuredGrid2D(5, 4, 2.0, 1.0)
     plan = FullDirichletDSTIPlan2D(grid)
@@ -67,7 +74,7 @@ def test_reference_symbols_are_positive_and_consistent(kinematics) -> None:
     assert np.all(symbols.laplacian > 0.0)
 
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 @pytest.mark.parametrize("nx,ny", [(4, 4), (5, 4), (4, 5), (7, 6)])
 def test_closed_form_symbols_match_modal_oracle(kinematics, nx, ny) -> None:
     grid = StructuredGrid2D(nx, ny, 2.0, 1.0)
@@ -78,7 +85,7 @@ def test_closed_form_symbols_match_modal_oracle(kinematics, nx, ny) -> None:
         np.testing.assert_allclose(actual, expected, rtol=0.0, atol=1.0e-12)
 
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 @pytest.mark.parametrize("nx,ny", [(4, 4), (5, 4), (4, 5), (7, 6)])
 def test_full_dirichlet_kinematic_matrix_has_full_column_rank(kinematics, nx, ny) -> None:
     grid = StructuredGrid2D(nx, ny, 2.0, 1.0)
@@ -96,7 +103,7 @@ def test_full_dirichlet_kinematic_matrix_has_full_column_rank(kinematics, nx, ny
     assert rank == matrix.shape[1]
 
 
-@pytest.mark.parametrize("kinematics", [CellCenteredOnePoint2D, TwoSubcellDiagnostic2D])
+@pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_reference_symbols_diagonalize_the_real_scalar_operator(kinematics) -> None:
     grid = StructuredGrid2D(5, 4, 2.0, 1.0)
     plan = FullDirichletDSTIPlan2D(grid)

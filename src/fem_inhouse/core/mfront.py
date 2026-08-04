@@ -1565,6 +1565,17 @@ class MFront3DCondensedPlaneStressBatch:
             )
         return first
 
+    def reference_full_tangent_kelvin_mpa(self) -> NDArray:
+        """Measure the unloaded elastic 3D tangent in the global frame."""
+
+        probe = self._bridge.evaluate(
+            np.zeros((self.point_count, 6)), time_increment=1.0
+        )
+        self._bridge.revert()
+        tangent = np.asarray(probe.consistent_tangent_kelvin_mpa, dtype=float).copy()
+        tangent.setflags(write=False)
+        return tangent
+
     def evaluate(
         self,
         in_plane_strain: ArrayLike,
