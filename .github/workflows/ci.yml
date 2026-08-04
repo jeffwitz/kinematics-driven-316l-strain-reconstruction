@@ -70,8 +70,19 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - name: Install Graphviz
-        run: sudo apt-get install -y --no-install-recommends graphviz
+      - name: Install documentation system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            graphviz \
+            latexmk \
+            lmodern \
+            poppler-utils \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-luatex \
+            texlive-fonts-recommended
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -103,9 +114,11 @@ jobs:
             sphinx-build -M latexpdf docs docs/_build -W --keep-going
           python scripts/check_documentation_pdf.py
       - name: Upload publication PDF
-        if: always()
+        if: ${{ success() && hashFiles('docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: spectral-documentation-pdf
-          path: docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf
+          path: |
+            docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf
+            docs/_build/latex/pdf_validation.json
           if-no-files-found: error
