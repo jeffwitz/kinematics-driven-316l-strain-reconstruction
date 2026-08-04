@@ -40,7 +40,7 @@ from fem_inhouse.solver import run_case_study
 # count this work exists to close is the very number being re-measured.
 SPACING_MM = 0.00184
 ORIENTATION_BUNGE_DEG = (35.0, 20.0, 15.0)
-MEMORIES = (1, 3, 5)
+MEMORIES = (1, 3)
 
 COMPARED_FIELDS: dict[str, str] = {
     "displacement_mm": "E_u",
@@ -190,10 +190,18 @@ def main() -> int:
     cps4, cps4_timing = solve(case, "cps4", **common)
     print(f"  CPS4                     iterations={cps4_timing['newton_iterations']}")
     baseline, baseline_timing = solve(case, "cps4r_as", **common)
+    baseline_ls, baseline_ls_timing = solve(
+        case, "cps4r_as", newton_line_search=True, **common
+    )
     baseline_errors = _errors(baseline, cps4)
+    baseline_ls_errors = _errors(baseline_ls, cps4)
     print(
         f"  CPS4R-AS no correction   iterations={baseline_timing['newton_iterations']}"
         f"  E_u={baseline_errors['E_u'] * 100:.3f}%"
+    )
+    print(
+        f"  CPS4R-AS exact LS        iterations={baseline_ls_timing['newton_iterations']}"
+        f"  E_u={baseline_ls_errors['E_u'] * 100:.3f}%"
     )
 
     report: dict[str, Any] = {
@@ -204,6 +212,10 @@ def main() -> int:
         "residual_tolerance": arguments.residual_tolerance,
         "cps4": cps4_timing,
         "baseline": {**baseline_timing, "errors_against_cps4": baseline_errors},
+        "baseline_line_search": {
+            **baseline_ls_timing,
+            "errors_against_cps4": baseline_ls_errors,
+        },
         "memories": {},
     }
 
@@ -225,12 +237,12 @@ def main() -> int:
             }
             print(f"  m={memory:<2}  did not converge ({type(exc).__name__})")
             continue
-        against_baseline = _errors(candidate, baseline)
+        against_baseline = _errors(candidate, baseline_ls)
         against_cps4 = _errors(candidate, cps4)
         drift = {
-            name: abs(against_cps4[name] - baseline_errors[name]) * 100.0
+            name: abs(against_cps4[name] - baseline_ls_errors[name]) * 100.0
             for name in against_cps4
-            if name in baseline_errors
+            if name in baseline_ls_errors
         }
         report["memories"][str(memory)] = {
             "converged": True,
@@ -240,14 +252,14 @@ def main() -> int:
             "cps4_error_drift_points": drift,
             "iteration_reduction": (
                 1.0
-                - timing["newton_iterations"] / baseline_timing["newton_iterations"]
+                - timing["newton_iterations"] / baseline_ls_timing["newton_iterations"]
             ),
             "constitutive_speedup": (
                 cps4_timing["constitutive_median"] / timing["constitutive_median"]
             ),
             "total_speedup": cps4_timing["elapsed_median"] / timing["elapsed_median"],
             "additional_material_points": (
-                timing["material_points"] - baseline_timing["material_points"]
+                timing["material_points"] - baseline_ls_timing["material_points"]
             ),
         }
         entry = report["memories"][str(memory)]

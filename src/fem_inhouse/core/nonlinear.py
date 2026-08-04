@@ -1067,6 +1067,8 @@ def run_fem(
             if trace_record is not None:
                 trace_record.update(_tangent_diagonal_statistics(KII))
 
+            residual_changes = None
+            broyden_direction_active = False
             if global_broyden is not None:
                 residual_changes = global_broyden.residual_change_matrix()
                 if residual_changes is not None:
@@ -1090,8 +1092,12 @@ def run_fem(
                     or predicted_descent >= -1.0e-3 * max(res * res, 1.0e-30)
                     or predicted_descent >= 0.1 * newton_predicted_descent
                 ):
-                    global_broyden.reject()
+                    if global_broyden.last_direction_proposed:
+                        global_broyden.reject_descent()
                     du = du_newton
+                elif global_broyden.last_direction_proposed:
+                    global_broyden.accept()
+                    broyden_direction_active = True
             else:
                 du_newton = timed_solve(KII, -R_I)
                 du = du_newton
@@ -1138,6 +1144,10 @@ def run_fem(
                 assumed_strain_contribution,
                 scatter_element_forces,
                 dof_I,
+                penalty_mode,
+                dof_B,
+                boundary_target_values,
+                penalty_stiffness,
                 line_search_maximum_trials,
                 line_search_minimum_factor,
                 line_search_reduction,
@@ -1191,7 +1201,11 @@ def run_fem(
                             candidate_internal = candidate_internal + scatter_element_forces(
                                 mesh, candidate_stab, ld
                             )
-                        candidate_residual = candidate_internal[dof_I]
+                        candidate_residual = candidate_internal[solve_dofs].copy()
+                        if penalty_mode:
+                            candidate_residual[dof_B] += penalty_stiffness * (
+                                u[dof_B] - boundary_target_values
+                            )
                         counters["internal_force_seconds"] += (
                             time.perf_counter() - candidate_force_started_at
                         )
@@ -1237,6 +1251,10 @@ def run_fem(
                 assumed_strain_contribution=assumed_strain_contribution,
                 scatter_element_forces=scatter_element_forces,
                 dof_I=dof_I,
+                penalty_mode=penalty_mode,
+                dof_B=dof_B,
+                boundary_target_values=boundary_target_values,
+                penalty_stiffness=penalty_stiffness,
                 line_search_maximum_trials=line_search_maximum_trials,
                 line_search_minimum_factor=line_search_minimum_factor,
                 line_search_reduction=line_search_reduction,
@@ -1246,13 +1264,12 @@ def run_fem(
                 counters=search_counters,
             )
             accepted_line_search, factor = try_line_search(du, **search_arguments)
-            if global_broyden is not None and (
-                not accepted_line_search
-                or (
-                    residual_changes is not None
-                    and factor < 1.0
-                )
+            if broyden_direction_active and (
+                not accepted_line_search or factor < 1.0
             ):
+                assert global_broyden is not None
+                global_broyden.reject_line_search()
+                global_broyden.fallback_to_newton()
                 global_broyden.discard()
                 u[solve_dofs] = search_base_u_I
                 accepted_line_search, factor = try_line_search(du_newton, **search_arguments)
@@ -1263,6 +1280,10 @@ def run_fem(
                         "newton_fallback",
                         line_search_factor=float(factor),
                     )
+                broyden_direction_active = False
+            elif broyden_direction_active and accepted_line_search:
+                assert global_broyden is not None
+                global_broyden.mark_full_step()
             if not accepted_line_search:
                 line_search_evaluations = int(search_counters["evaluations"])
                 line_search_reductions = int(search_counters["reductions"])

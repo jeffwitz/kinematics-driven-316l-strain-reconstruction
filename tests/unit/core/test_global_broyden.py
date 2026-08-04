@@ -16,9 +16,13 @@ def test_global_broyden_uses_a_secant_direction() -> None:
         [1.0, 0.0],
         lambda columns: columns,
     )
+    accelerator.accept()
+    accelerator.mark_full_step()
 
     assert np.allclose(direction, [1.0, 1.0])
-    assert accelerator.diagnostics["global_broyden_directions_used"] == 1.0
+    assert accelerator.diagnostics["global_broyden_directions_proposed"] == 1.0
+    assert accelerator.diagnostics["global_broyden_directions_accepted_by_safeguards"] == 1.0
+    assert accelerator.diagnostics["global_broyden_directions_used_at_full_step"] == 1.0
 
 
 def test_global_broyden_rejects_an_unbounded_direction() -> None:
@@ -29,7 +33,7 @@ def test_global_broyden_rejects_an_unbounded_direction() -> None:
     direction = accelerator.direction([1.0], [-100.0], lambda columns: columns)
 
     assert np.array_equal(direction, [1.0])
-    assert accelerator.diagnostics["global_broyden_directions_rejected"] == 1.0
+    assert accelerator.diagnostics["global_broyden_directions_rejected_by_norm"] == 1.0
 
 
 def test_global_broyden_requires_line_search() -> None:

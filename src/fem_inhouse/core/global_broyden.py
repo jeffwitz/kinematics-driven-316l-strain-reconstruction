@@ -27,14 +27,21 @@ class GlobalInverseBroyden:
         self._steps: list[FloatArray] = []
         self._residual_changes: list[FloatArray] = []
         self._accepted = 0
-        self._used = 0
-        self._rejected = 0
+        self._proposed = 0
+        self._accepted_by_safeguards = 0
+        self._used_at_full_step = 0
+        self._rejected_by_norm = 0
+        self._rejected_by_descent = 0
+        self._rejected_by_line_search = 0
+        self._newton_fallbacks = 0
+        self._last_direction_proposed = False
 
     def begin_increment(self) -> None:
         self._previous_state = None
         self._previous_residual = None
         self._steps.clear()
         self._residual_changes.clear()
+        self._last_direction_proposed = False
 
     def discard(self) -> None:
         self.begin_increment()
@@ -74,6 +81,7 @@ class GlobalInverseBroyden:
 
         base = np.asarray(base_direction, dtype=np.float64).reshape(-1)
         rhs = -np.asarray(residual, dtype=np.float64).reshape(-1)
+        self._last_direction_proposed = False
         if not self._steps or not np.isfinite(base).all() or not np.isfinite(rhs).all():
             return base.copy()
         steps = np.column_stack(self._steps)
@@ -94,9 +102,10 @@ class GlobalInverseBroyden:
             or base_norm == 0.0
             or candidate_norm > self.maximum_step_factor * base_norm
         ):
-            self._rejected += 1
+            self._rejected_by_norm += 1
             return base.copy()
-        self._used += 1
+        self._proposed += 1
+        self._last_direction_proposed = True
         return candidate
 
     def residual_change_matrix(self) -> FloatArray | None:
@@ -107,15 +116,55 @@ class GlobalInverseBroyden:
         return np.column_stack(self._residual_changes)
 
     def reject(self) -> None:
-        """Record rejection of a correction before falling back to Newton."""
+        """Record a descent rejection for compatibility with older callers."""
 
-        self._rejected += 1
+        self.reject_descent()
+
+    @property
+    def last_direction_proposed(self) -> bool:
+        return self._last_direction_proposed
+
+    def accept(self) -> None:
+        """Record a direction that passed the solver safeguards."""
+
+        self._accepted_by_safeguards += 1
+
+    def mark_full_step(self) -> None:
+        """Record a safeguarded correction accepted without damping."""
+
+        self._used_at_full_step += 1
+
+    def reject_descent(self) -> None:
+        """Record rejection by the predicted-descent safeguard."""
+
+        self._rejected_by_descent += 1
+
+    def reject_line_search(self) -> None:
+        """Record rejection by Armijo line search."""
+
+        self._rejected_by_line_search += 1
+
+    def fallback_to_newton(self) -> None:
+        """Record a Newton fallback after a proposed correction."""
+
+        self._newton_fallbacks += 1
 
     @property
     def diagnostics(self) -> dict[str, float]:
         return {
             "global_broyden_memory": float(self.memory),
             "global_broyden_pairs_accepted": float(self._accepted),
-            "global_broyden_directions_used": float(self._used),
-            "global_broyden_directions_rejected": float(self._rejected),
+            "global_broyden_directions_proposed": float(self._proposed),
+            "global_broyden_directions_accepted_by_safeguards": float(
+                self._accepted_by_safeguards
+            ),
+            "global_broyden_directions_used_at_full_step": float(self._used_at_full_step),
+            "global_broyden_directions_rejected_by_norm": float(self._rejected_by_norm),
+            "global_broyden_directions_rejected_by_descent": float(
+                self._rejected_by_descent
+            ),
+            "global_broyden_directions_rejected_by_line_search": float(
+                self._rejected_by_line_search
+            ),
+            "global_broyden_newton_fallbacks": float(self._newton_fallbacks),
         }
