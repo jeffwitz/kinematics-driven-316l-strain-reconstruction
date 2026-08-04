@@ -90,6 +90,12 @@ Recommended journeys
 
 .. toctree::
    :hidden:
+   :caption: Spectral architecture
+
+   ebi_tet_architecture
+
+.. toctree::
+   :hidden:
    :caption: How-to
 
    how-to/index
@@ -106,3 +112,4 @@ Recommended journeys
 
    tutorials/first_reconstruction
    tutorials/first_coupled_comparison
+   tutorials/first_full_dirichlet_spectral_reconstruction
