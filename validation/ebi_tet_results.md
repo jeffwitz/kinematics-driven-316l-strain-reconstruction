@@ -1,6 +1,6 @@
 # EBI-TET SRIX validation results
 
-Status: `experimental_negative`.
+Status: `experimental_falsified_for_SRIX`.
 
 The mandatory Hookean prerequisite passes for three orientations at initial,
 elastic, and plastified states. The maximum full-3D error is `6.70e-16`; the
@@ -45,6 +45,11 @@ The dominant error is therefore the shared SRIX state, not the two-triangle
 stencil. Side-resultant errors are smaller than nodal reaction errors; the
 24x24 TET2-vs-CPS4 side-resultant error is `0.11%`, while its nodal reaction
 error is `0.87%`.
+
+The independent TET2 verification residuals are `5.53e-12` at 12x12 and
+`9.74e-14` at 24x24. Moments now use broadcast nodal coordinates; the corrected
+24x24 normalized moment errors are `6.20e-13` for TET2-vs-CPS4 and
+`2.48e-11` for EBI-vs-TET2.
 
 Changing the actual B0 shape through `lambda_0/mu_0` ratios `{0.5, 1, 2}` gives
 946, 967, and 975 GMRES iterations at 12x12. The earlier common scalar scaling

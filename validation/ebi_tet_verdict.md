@@ -1,6 +1,6 @@
 # EBI-TET verdict
 
-`experimental_negative`
+`experimental_falsified_for_SRIX`
 
 EBI-TET solves the targeted numerical problem: one SRIX state per pixel, two
 kinematic samples, exact matrix-free tangent, no empirical stabilisation, and

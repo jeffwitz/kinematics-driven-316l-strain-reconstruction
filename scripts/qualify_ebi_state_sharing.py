@@ -71,8 +71,28 @@ def side_resultants(reaction: np.ndarray) -> np.ndarray:
 
 
 def moment(reaction: np.ndarray, grid: StructuredGrid2D) -> float:
-    x, y = grid.coordinates
+    x_coordinates, y_coordinates = grid.coordinates
+    x = x_coordinates[:, None]
+    y = y_coordinates[None, :]
     return float(np.sum(x * reaction[..., 1] - y * reaction[..., 0]))
+
+
+def moment_error(
+    candidate: np.ndarray, reference: np.ndarray, grid: StructuredGrid2D
+) -> dict[str, float]:
+    candidate_moment = moment(candidate, grid)
+    reference_moment = moment(reference, grid)
+    scale = max(
+        abs(reference_moment),
+        grid.length_x * float(np.linalg.norm(reference)),
+        1.0e-30,
+    )
+    return {
+        "M_z_candidate": candidate_moment,
+        "M_z_reference": reference_moment,
+        "E_Mz_absolute": abs(candidate_moment - reference_moment),
+        "E_Mz": abs(candidate_moment - reference_moment) / scale,
+    }
 
 
 def main() -> int:
@@ -112,8 +132,7 @@ def main() -> int:
                 "E_Gamma": relative_l2(tet_slip, cps4.cumulated_slip),
                 "E_R_nodal": relative_l2(tet.reaction_forces, cps4.reaction_force),
                 "E_R_sides": relative_l2(tet_sides, cps_sides),
-                "E_Mz": abs(moment(tet.reaction_forces, grid) - moment(cps4.reaction_force, grid))
-                / max(abs(moment(cps4.reaction_force, grid)), 1.0e-30),
+                **moment_error(tet.reaction_forces, cps4.reaction_force, grid),
             },
             "ebi_tet": {
                 "E_u": relative_l2(ebi.displacement, tet.displacement),
@@ -121,8 +140,7 @@ def main() -> int:
                 "E_Gamma": relative_l2(ebi_slip, tet_slip),
                 "E_R_nodal": relative_l2(ebi.reaction_forces, tet.reaction_forces),
                 "E_R_sides": relative_l2(ebi_sides, tet_sides),
-                "E_Mz": abs(moment(ebi.reaction_forces, grid) - moment(tet.reaction_forces, grid))
-                / max(abs(moment(tet.reaction_forces, grid)), 1.0e-30),
+                **moment_error(ebi.reaction_forces, tet.reaction_forces, grid),
             },
             "ebi_cps4": {
                 "E_u": relative_l2(ebi.displacement, cps4.displacement_mm),
@@ -130,8 +148,7 @@ def main() -> int:
                 "E_Gamma": relative_l2(ebi_slip, cps4.cumulated_slip),
                 "E_R_nodal": relative_l2(ebi.reaction_forces, cps4.reaction_force),
                 "E_R_sides": relative_l2(ebi_sides, cps_sides),
-                "E_Mz": abs(moment(ebi.reaction_forces, grid) - moment(cps4.reaction_force, grid))
-                / max(abs(moment(cps4.reaction_force, grid)), 1.0e-30),
+                **moment_error(ebi.reaction_forces, cps4.reaction_force, grid),
             },
         },
         "side_resultants": {
@@ -145,6 +162,10 @@ def main() -> int:
             "tet_newton": sum(tet.diagnostics.iterations_per_increment),
             "ebi_gmres": int(ebi.diagnostics.timings["gmres_iterations"]),
             "tet_gmres": int(tet.diagnostics.timings["gmres_iterations"]),
+        },
+        "verification_residual": {
+            "ebi": ebi.diagnostics.verification_residual,
+            "tet_two_state": tet.diagnostics.verification_residual,
         },
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)

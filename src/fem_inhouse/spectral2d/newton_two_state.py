@@ -133,11 +133,14 @@ def solve_two_state_dirichlet_plane_stress(
     fluctuation = np.zeros((*grid.node_shape, 2))
     residual_history: list[float] = []
     absolute_history: list[float] = []
+    verification_history: list[float] = []
+    verification_mismatch_history: list[float] = []
     iterations_per_increment: list[int] = []
     material_evaluations = 1
     gmres_iterations = 0
     final_trial = None
     final_sample_strain = None
+    verification_residual = 0.0
     final_applied = history[0].copy()
     time_increment = 1.0 / (history.shape[0] - 1)
 
@@ -153,13 +156,40 @@ def solve_two_state_dirichlet_plane_stress(
             residual_history.append(relative)
             absolute_history.append(absolute)
             if relative <= config.relative_equilibrium_tolerance:
-                final_trial = elements.complete_trial(trial)
-                elements.commit()
-                final_sample_strain = sample_strain.copy()
-                final_applied = applied.copy()
-                iterations_per_increment.append(iteration + 1)
-                converged = True
-                break
+                solver_residual = relative
+                elements.revert()
+                verification_trial = elements.evaluate_samples(
+                    sample_strain, time_increment=time_increment
+                )
+                material_evaluations += 1
+                verification_force = kinematics.divergence_from_sample_stress(
+                    verification_trial.sample_stress_mpa
+                )
+                verification_residual = _equilibrium_metrics(
+                    verification_trial.sample_stress_mpa,
+                    verification_force,
+                    grid,
+                    2,
+                )[0]
+                verification_mismatch = abs(verification_residual - solver_residual) / max(
+                    solver_residual, 1.0e-30
+                )
+                verification_history.append(verification_residual)
+                verification_mismatch_history.append(verification_mismatch)
+                if (
+                    verification_residual <= config.relative_equilibrium_tolerance
+                    and verification_mismatch <= 1.0e-3
+                ):
+                    final_trial = elements.complete_trial(verification_trial)
+                    elements.commit()
+                    final_sample_strain = sample_strain.copy()
+                    final_applied = applied.copy()
+                    iterations_per_increment.append(iteration + 1)
+                    converged = True
+                    break
+                trial = verification_trial
+                residual = verification_force
+                relative = verification_residual
 
             size = 2 * (grid.nx - 1) * (grid.ny - 1)
 
@@ -243,6 +273,9 @@ def solve_two_state_dirichlet_plane_stress(
         reference_lambda_0=lambda_0,
         reference_mu_0=mu_0,
         reference_projection_error=projection_error,
+        verification_residual=verification_residual,
+        verification_residual_history=tuple(verification_history),
+        verification_relative_mismatch_history=tuple(verification_mismatch_history),
         timings={
             "material_evaluations": float(material_evaluations),
             "gmres_iterations": float(gmres_iterations),
