@@ -122,13 +122,10 @@ class SolverConfig:
     #: Spectral floor of the energy variant, as a fraction of the largest
     #: eigenvalue. A conditioning rule, not a tuning knob.
     stabilisation_tangent_floor: float = 1.0e-6
-    #: Quasi-Newton correction of the element Jacobian, used only by `cps4r_as`.
-    #: `broyden` learns the missing `(df_stab/dC)(dC/du)` term from the secant
-    #: pairs the iteration already produces. It changes the MATRIX only: the
-    #: residual, the stresses and the converged solution are untouched, so the
-    #: sole observable is the iteration count. Not qualified; see
-    #: validation/cps4r_as_broyden_preregistration.md.
-    jacobian_correction: Literal["none", "broyden"] = "none"
+    #: Quasi-Newton acceleration, used only by `cps4r_as`. `broyden` is the
+    #: rejected local element-matrix experiment; `global_broyden` uses accepted
+    #: global residual/step pairs and requires line search for safeguarding.
+    jacobian_correction: Literal["none", "broyden", "global_broyden"] = "none"
     #: Secant pairs kept per element, `1 <= m <= 5`. Five is the dimension of
     #: the reduced space, so more pairs carry no independent information.
     jacobian_correction_memory: int = 5
@@ -196,11 +193,13 @@ class SolverConfig:
                 )
         elif not 0.0 < self.stabilisation_tangent_floor < 1.0:
             raise ValueError("stabilisation_tangent_floor must lie in (0, 1)")
-        if self.jacobian_correction not in ("none", "broyden"):
+        if self.jacobian_correction not in ("none", "broyden", "global_broyden"):
             raise ValueError(
                 f"unknown jacobian_correction {self.jacobian_correction!r}; "
-                "available: none, broyden"
+                "available: none, broyden, global_broyden"
             )
+        if self.jacobian_correction == "global_broyden" and not self.newton_line_search:
+            raise ValueError("global_broyden requires newton_line_search=True")
         if not 1 <= self.jacobian_correction_memory <= 5:
             raise ValueError(
                 "jacobian_correction_memory must lie in 1..5, got "

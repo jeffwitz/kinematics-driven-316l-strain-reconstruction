@@ -50,6 +50,7 @@ from fem_inhouse.core.element import (
     precompute_element,
     quadrature_for,
 )
+from fem_inhouse.core.global_broyden import GlobalInverseBroyden
 from fem_inhouse.core.jacobian_correction import (
     DEFAULT_BROYDEN_MEMORY,
     make_jacobian_correction,
@@ -222,6 +223,12 @@ def run_fem(
     constitutive_backend : 'python' uses the in-house return mapping; 'mfront'
                 delegates stress, state update and consistent tangent to MGIS.
     """
+    if jacobian_correction == "global_broyden" and not newton_line_search:
+        raise ValueError("global_broyden requires newton_line_search=True")
+    if jacobian_correction != "none" and element_formulation != "cps4r_as":
+        raise ValueError(
+            "jacobian_correction is only available for element_formulation='cps4r_as'"
+        )
     if element_formulation == "cps4r" and nonlocal_plasticity_enabled:
         # Refused rather than attempted. The reduced element and the staggered
         # micromorphic fixed point have not been validated together, and a
@@ -385,8 +392,13 @@ def run_fem(
         assumed_strain_elastic_baseline = baseline[0]
     # Section 18. `none` is an object rather than a `None` branch, so the Newton
     # loop has one code path and a manifest always says which correction ran.
+    global_broyden = (
+        GlobalInverseBroyden(memory=jacobian_correction_memory)
+        if jacobian_correction == "global_broyden"
+        else None
+    )
     jacobian_corrector = make_jacobian_correction(
-        jacobian_correction,
+        "none" if global_broyden is not None else jacobian_correction,
         operators=assumed_strain_operators,
         element_count=n_e,
         memory=jacobian_correction_memory,
@@ -667,6 +679,8 @@ def run_fem(
         # Section 17. Secant information of a previous increment describes a
         # tangent that has since moved, so it is not carried across.
         jacobian_corrector.begin_increment()
+        if global_broyden is not None:
+            global_broyden.begin_increment()
         global_secant_probe: tuple[np.ndarray, np.ndarray, Any, Any] | None = None
 
         for nrit in range(max_nr):
@@ -910,6 +924,8 @@ def run_fem(
                 R_I[dof_B] += penalty_stiffness * (u[dof_B] - boundary_target_values)
             else:
                 R_I = R[dof_I]
+            if global_broyden is not None:
+                global_broyden.observe(u[solve_dofs], R_I)
             res = float(np.linalg.norm(R_I))
             if not np.isfinite(res):
                 _record_newton_trace(newton_trace, trace_record, "nonfinite_residual")
@@ -1052,6 +1068,17 @@ def run_fem(
                 trace_record.update(_tangent_diagonal_statistics(KII))
 
             du = timed_solve(KII, -R_I)
+            if global_broyden is not None:
+                def solve_global_columns(columns, matrix=KII):
+                    return np.column_stack(
+                        [timed_solve(matrix, column) for column in columns.T]
+                    )
+
+                du = global_broyden.direction(
+                    du,
+                    R_I,
+                    solve_global_columns,
+                )
             if trace_record is not None:
                 finite_correction = np.isfinite(du).all()
                 correction_norm = float(np.linalg.norm(du)) if finite_correction else float("nan")
@@ -1109,11 +1136,17 @@ def run_fem(
                         # otherwise the function whose decrease is being measured
                         # changes with lambda and the search is not working on a
                         # consistent residual.
+                        candidate_tangent = candidate_trial.tangent_in_plane_mpa
+                        if candidate_tangent is None:
+                            # Line-search constitutive probes intentionally omit
+                            # the tangent. Global Broyden still needs the current
+                            # tangent to evaluate the stabilisation force.
+                            candidate_tangent = stabilisation_tangents
                         candidate_stab, _, _ = assumed_strain_contribution(
                             u,
                             stabilisation_tangents
                             if stabilisation_is_lagged
-                            else candidate_trial.tangent_in_plane_mpa,
+                            else candidate_tangent,
                         )
                         candidate_internal = candidate_internal + scatter_element_forces(
                             mesh, candidate_stab, ld
@@ -1149,6 +1182,8 @@ def run_fem(
             # being abandoned; keeping them would carry the divergence into the
             # retry.
             jacobian_corrector.discard()
+            if global_broyden is not None:
+                global_broyden.discard()
             material_batch.revert()
             np.copyto(chi_trial_guess, chi_committed)
             u = u_save
@@ -1476,8 +1511,14 @@ def run_fem(
             boundary_history_predictor=boundary_history_predictor,
             secant_predictor_uses=secant_predictor_uses,
             secant_predictor_fallbacks=secant_predictor_fallbacks,
-            jacobian_correction=jacobian_corrector.name,
-            jacobian_correction_diagnostics=jacobian_corrector.diagnostics,
+            jacobian_correction=(
+                global_broyden.name if global_broyden is not None else jacobian_corrector.name
+            ),
+            jacobian_correction_diagnostics=(
+                global_broyden.diagnostics
+                if global_broyden is not None
+                else jacobian_corrector.diagnostics
+            ),
             tensor_reconstruction_source=material_batch.completion_strategy,
             internal_work=internal_work,
             linear_system_matrix_type=linear_system_matrix_type,

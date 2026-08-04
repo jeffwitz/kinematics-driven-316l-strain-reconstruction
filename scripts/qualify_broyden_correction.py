@@ -11,7 +11,8 @@ the un-accelerated run with a `1e-6` bound, and the errors against CPS4 are
 measured again to show they have not drifted.
 
 The memory is swept over `1, 3, 5` and nothing else. A memory that only wins on
-one case does not become the default.
+one case does not become the default. Use `--correction global_broyden` to
+qualify the global direction accelerator.
 
 Usage:
     MFRONT_BEHAVIOUR_LIBRARY=$PWD/build/mfront/src/libBehaviour.so \\
@@ -155,6 +156,9 @@ def main() -> int:
     # solution, which does not.
     parser.add_argument("--residual-tolerance", type=float, default=1.0e-6)
     parser.add_argument(
+        "--correction", choices=("broyden", "global_broyden"), default="broyden"
+    )
+    parser.add_argument(
         "--output", type=Path, default=Path("validation/_generated/cps4r_as")
     )
     arguments = parser.parse_args()
@@ -196,8 +200,9 @@ def main() -> int:
             candidate, timing = solve(
                 case,
                 "cps4r_as",
-                jacobian_correction="broyden",
+                jacobian_correction=arguments.correction,
                 jacobian_correction_memory=memory,
+                newton_line_search=arguments.correction == "global_broyden",
                 **common,
             )
         except Exception as exc:  # a failure to converge IS a result here
@@ -247,7 +252,9 @@ def main() -> int:
         if arguments.residual_tolerance == 1.0e-6
         else f"_tol{arguments.residual_tolerance:g}"
     )
-    destination = arguments.output / f"broyden_correction_qualification{suffix}.json"
+    destination = arguments.output / (
+        f"{arguments.correction}_qualification{suffix}.json"
+    )
     destination.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(f"wrote {destination}")
     return 0
