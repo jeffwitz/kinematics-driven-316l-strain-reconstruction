@@ -61,7 +61,14 @@ def solve_cps4(case, library: str, increments: int, tolerance: float):
     )
 
 
-def solve_ebi(case, library: str, increments: int, tolerance: float, scale: float):
+def solve_ebi(
+    case,
+    library: str,
+    increments: int,
+    tolerance: float,
+    scale: float,
+    lambda_mu_ratio: float = 1.0,
+):
     mesh = case["mesh"]
     point_count = mesh.nx * mesh.ny
     raw = create_plane_stress_material_batch(
@@ -96,6 +103,7 @@ def solve_ebi(case, library: str, increments: int, tolerance: float, scale: floa
         config=EBISpectralSolverConfig(
             relative_equilibrium_tolerance=tolerance,
             reference_parameter_scale=scale,
+            reference_lambda_mu_ratio=lambda_mu_ratio,
         ),
     )
     return result, time.perf_counter() - started
@@ -114,6 +122,7 @@ def main() -> int:
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--tolerances", type=float, nargs="+", default=(1.0e-6, 1.0e-8))
     parser.add_argument("--reference-scales", type=float, nargs="+", default=(0.5, 1.0, 2.0))
+    parser.add_argument("--reference-ratios", type=float, nargs="+", default=(1.0,))
     parser.add_argument("--output", type=Path, default=Path("validation/_generated/ebi_tet"))
     arguments = parser.parse_args()
     arguments.output.mkdir(parents=True, exist_ok=True)
@@ -126,6 +135,7 @@ def main() -> int:
         "material_states_per_pixel": 1,
         "kinematic_samples_per_pixel": 2,
         "orientation_bunge_deg": ORIENTATION_BUNGE_DEG,
+        "reference_lambda_mu_ratios": arguments.reference_ratios,
         "runs": [],
     }
     for tolerance in arguments.tolerances:
@@ -133,56 +143,72 @@ def main() -> int:
         cps4 = solve_cps4(case, library, arguments.increments, tolerance)
         cps4_elapsed = time.perf_counter() - cps4_started
         for scale in arguments.reference_scales:
-            record = {"tolerance": tolerance, "reference_scale": scale}
-            try:
-                ebi, elapsed = solve_ebi(case, library, arguments.increments, tolerance, scale)
-                slip = ebi.observables["accumulated_slip"]
-                record.update(
-                    {
-                        "converged": True,
-                        "elapsed_seconds": elapsed,
-                        "cps4_elapsed_seconds": cps4_elapsed,
-                        "newton_iterations": sum(ebi.diagnostics.iterations_per_increment),
-                        "gmres_iterations": int(ebi.diagnostics.timings["gmres_iterations"]),
-                        "material_evaluations": int(
-                            ebi.diagnostics.timings["material_evaluations"]
+            for lambda_mu_ratio in arguments.reference_ratios:
+                record = {
+                    "tolerance": tolerance,
+                    "reference_scale": scale,
+                    "reference_lambda_mu_ratio": lambda_mu_ratio,
+                }
+                try:
+                    ebi, elapsed = solve_ebi(
+                        case,
+                        library,
+                        arguments.increments,
+                        tolerance,
+                        scale,
+                        lambda_mu_ratio,
+                    )
+                    slip = ebi.observables["accumulated_slip"]
+                    record.update(
+                        {
+                            "converged": True,
+                            "elapsed_seconds": elapsed,
+                            "cps4_elapsed_seconds": cps4_elapsed,
+                            "newton_iterations": sum(ebi.diagnostics.iterations_per_increment),
+                            "gmres_iterations": int(ebi.diagnostics.timings["gmres_iterations"]),
+                            "material_evaluations": int(
+                                ebi.diagnostics.timings["material_evaluations"]
+                            ),
+                            "final_residual": ebi.diagnostics.dimensionless_equilibrium_history[-1],
+                            "verification_residual": ebi.diagnostics.verification_residual,
+                            "E_u": relative_l2(ebi.displacement, cps4.displacement_mm),
+                            "E_sigma": relative_l2(
+                                ebi.stress_in_plane_mpa.mean(axis=2), cps4.stress_mpa
+                            ),
+                            "E_Gamma": relative_l2(slip, cps4.cumulated_slip),
+                            "E_R": relative_l2(ebi.reaction_forces, cps4.reaction_force),
+                            "high_frequency_fraction_max": max(
+                                ebi.diagnostics.high_frequency_energy_fraction_history,
+                                default=0.0,
+                            ),
+                            "field_sha256": digest_fields(
+                                ebi.displacement,
+                                ebi.stress_in_plane_mpa,
+                                slip,
+                                ebi.reaction_forces,
+                            ),
+                        }
+                    )
+                    np.savez_compressed(
+                        arguments.output
+                        / (
+                            f"ebi_m{arguments.mesh}_tol{tolerance:.0e}_s{scale:g}_"
+                            f"r{lambda_mu_ratio:g}.npz"
                         ),
-                        "final_residual": (ebi.diagnostics.dimensionless_equilibrium_history[-1]),
-                        "verification_residual": (ebi.diagnostics.verification_residual),
-                        "E_u": relative_l2(ebi.displacement, cps4.displacement_mm),
-                        "E_sigma": relative_l2(
-                            ebi.stress_in_plane_mpa.mean(axis=2), cps4.stress_mpa
-                        ),
-                        "E_Gamma": relative_l2(slip, cps4.cumulated_slip),
-                        "E_R": relative_l2(ebi.reaction_forces, cps4.reaction_force),
-                        "high_frequency_fraction_max": max(
-                            ebi.diagnostics.high_frequency_energy_fraction_history,
-                            default=0.0,
-                        ),
-                        "field_sha256": digest_fields(
-                            ebi.displacement,
-                            ebi.stress_in_plane_mpa,
-                            slip,
-                            ebi.reaction_forces,
-                        ),
-                    }
-                )
-                np.savez_compressed(
-                    arguments.output / f"ebi_m{arguments.mesh}_tol{tolerance:.0e}_s{scale:g}.npz",
-                    displacement=ebi.displacement,
-                    stress_in_plane_mpa=ebi.stress_in_plane_mpa,
-                    accumulated_slip=slip,
-                    reaction_forces=ebi.reaction_forces,
-                )
-            except Exception as error:
-                record.update(
-                    {
-                        "converged": False,
-                        "failure": type(error).__name__,
-                        "message": str(error)[:500],
-                    }
-                )
-            report["runs"].append(record)
+                        displacement=ebi.displacement,
+                        stress_in_plane_mpa=ebi.stress_in_plane_mpa,
+                        accumulated_slip=slip,
+                        reaction_forces=ebi.reaction_forces,
+                    )
+                except Exception as error:
+                    record.update(
+                        {
+                            "converged": False,
+                            "failure": type(error).__name__,
+                            "message": str(error)[:500],
+                        }
+                    )
+                report["runs"].append(record)
     destination = arguments.output / "ebi_tet_against_cps4.json"
     destination.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps(report, indent=2, sort_keys=True))

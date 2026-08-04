@@ -33,6 +33,7 @@ class EBISpectralSolverConfig:
     maximum_line_search_reductions: int = 8
     reference_parameter_mode: Literal["explicit", "projected"] = "projected"
     reference_parameter_scale: float = 1.0
+    reference_lambda_mu_ratio: float = 1.0
     reference_lambda_0: float | None = None
     reference_mu_0: float | None = None
     symbol_null_tolerance: float = 1.0e-12
@@ -44,6 +45,8 @@ class EBISpectralSolverConfig:
             raise ValueError("iteration limits must be positive")
         if self.reference_parameter_scale <= 0.0:
             raise ValueError("reference parameter scale must be positive")
+        if self.reference_lambda_mu_ratio <= 0.0:
+            raise ValueError("reference lambda/mu ratio must be positive")
         if self.reference_parameter_mode == "explicit":
             if self.reference_lambda_0 is None or self.reference_mu_0 is None:
                 raise ValueError("explicit B0 parameters require lambda_0 and mu_0")
@@ -111,7 +114,9 @@ def solve_ebi_dirichlet_plane_stress(
         lambda_0 = config.reference_lambda_0
         mu_0 = config.reference_mu_0
     else:
-        lambda_0 = projected_lambda * config.reference_parameter_scale
+        lambda_0 = (
+            projected_lambda * config.reference_parameter_scale * config.reference_lambda_mu_ratio
+        )
         mu_0 = projected_mu * config.reference_parameter_scale
     green = B0Green2D(
         symbols,

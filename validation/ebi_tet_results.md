@@ -29,6 +29,26 @@ comparison. The one-point witness failed to reach `1e-6` after 7,928 iterations;
 its final high-frequency fraction was `1.43e-4`, versus a maximum `1.04e-7` for
 EBI at 12x12.
 
+## State-sharing decomposition
+
+The direct two-state TRI2 Newton-GMRES oracle uses the same kinematics, DST-I,
+B0, line search, and global residual. At 8, 12, and 24 pixels per side, the
+plastic slip error is:
+
+| Grid | TET2 vs CPS4 | EBI vs TET2 | EBI vs CPS4 |
+|---:|---:|---:|---:|
+| 8 | 1.78% | 6.52% | 7.34% |
+| 12 | 1.42% | 6.62% | 7.36% |
+| 24 | 0.72% | 5.39% | 5.76% |
+
+The dominant error is therefore the shared SRIX state, not the two-triangle
+stencil. Side-resultant errors are smaller than nodal reaction errors; the
+24x24 TET2-vs-CPS4 side-resultant error is `0.11%`, while its nodal reaction
+error is `0.87%`.
+
+Changing the actual B0 shape through `lambda_0/mu_0` ratios `{0.5, 1, 2}` gives
+946, 967, and 975 GMRES iterations at 12x12. The earlier common scalar scaling
+test was correctly uninformative and is no longer used as the B0 conclusion.
+
 Raw JSON, NPZ fields, and SHA-256 field digests are under
 `validation/_generated/ebi_tet/`.
-
