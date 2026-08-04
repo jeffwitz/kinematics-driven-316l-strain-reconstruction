@@ -24,7 +24,11 @@ from fem_inhouse.spectral2d.green import (
     project_isotropic_plane_stress_tangent,
 )
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
-from fem_inhouse.spectral2d.kinematics import QUAD1_2D, TRI2_2D, DiscreteKinematics2D
+from fem_inhouse.spectral2d.kinematics import (
+    CellCenteredOnePoint2D,
+    DiscreteKinematics2D,
+    TwoSubcellDiagnostic2D,
+)
 from fem_inhouse.spectral2d.result import Spectral2DResult
 from fem_inhouse.spectral2d.transforms import FullDirichletDSTIPlan2D
 
@@ -113,7 +117,9 @@ def solve_dirichlet_plane_stress_spectral(
         raise ValueError("the first boundary displacement must be zero")
 
     operator: DiscreteKinematics2D = (
-        QUAD1_2D(grid) if config.spatial_scheme == "quad1" else TRI2_2D(grid)
+        CellCenteredOnePoint2D(grid)
+        if config.spatial_scheme == "one_point"
+        else TwoSubcellDiagnostic2D(grid)
     )
     if material.point_count != operator.material_point_count:
         raise ValueError("material point count does not match the selected spatial scheme")

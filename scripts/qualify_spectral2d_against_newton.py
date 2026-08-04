@@ -41,7 +41,7 @@ def relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
 
 def pixel_average_if_needed(values: np.ndarray, scheme: str) -> np.ndarray:
     values = np.asarray(values)
-    return values.mean(axis=2) if scheme == "tri2" else values
+    return values.mean(axis=2) if scheme == "two_subcell" else values
 
 
 def build_case(mesh_size: int) -> dict[str, Any]:
@@ -100,7 +100,7 @@ def solve_spectral(
     grid = StructuredGrid2D(mesh.nx, mesh.ny, *mesh.physical_size_mm)
     final = np.stack((case["displacement_x_mm"], case["displacement_y_mm"]), axis=-1)
     history = np.stack([fraction * final for fraction in np.linspace(0.0, 1.0, increments + 1)])
-    points = mesh.nx * mesh.ny * (2 if scheme == "tri2" else 1)
+    points = mesh.nx * mesh.ny * (2 if scheme == "two_subcell" else 1)
     material = create_plane_stress_material_batch(
         "mfront-3d-condensed-plane-stress",
         np.full(points, 250.0),
@@ -128,7 +128,7 @@ def solve_spectral(
         material=material,
         boundary_displacement_history=history,
         config=Spectral2DConfig(
-            spatial_scheme=cast(Literal["quad1", "tri2"], scheme),
+            spatial_scheme=cast(Literal["one_point", "two_subcell"], scheme),
             relative_equilibrium_tolerance=tolerance,
             anderson_target=cast(Literal["none", "displacement", "polarization"], anderson_target),
             anderson_enabled=anderson_target != "none",
@@ -177,7 +177,7 @@ def main() -> int:
         "variants": {},
     }
     reference = references["cps4"]
-    for scheme in ("quad1", "tri2"):
+    for scheme in ("one_point", "two_subcell"):
         timings: list[float] = []
         spectral_result = None
         failure: Exception | None = None

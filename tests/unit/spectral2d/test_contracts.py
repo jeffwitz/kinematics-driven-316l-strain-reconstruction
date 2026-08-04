@@ -16,7 +16,7 @@ def test_spectral_config_validates_registered_choices() -> None:
 
 def test_result_pixel_average_is_explicit_for_tri2() -> None:
     diagnostics = Spectral2DDiagnostics(
-        spatial_scheme="tri2",
+        spatial_scheme="two_subcell",
         green_operator="b0",
         pixels=(2, 3),
         material_points=12,

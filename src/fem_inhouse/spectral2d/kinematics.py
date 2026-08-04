@@ -48,7 +48,7 @@ class DiscreteKinematics2D(Protocol):
     ) -> ReferenceOperatorSymbols: ...
 
 
-class QUAD1_2D:  # noqa: N801
+class CellCenteredOnePoint2D:
     """One centre point per four-node quadrilateral pixel."""
 
     def __init__(self, grid: StructuredGrid2D) -> None:
@@ -108,7 +108,7 @@ class QUAD1_2D:  # noqa: N801
         return result
 
 
-class TRI2_2D:  # noqa: N801
+class TwoSubcellDiagnostic2D:
     """Two independent constant-strain triangles per pixel."""
 
     def __init__(self, grid: StructuredGrid2D) -> None:
@@ -196,7 +196,7 @@ def _closed_form_symbols(
 
 
 def _modal_symbols(
-    operator: QUAD1_2D | TRI2_2D, transform_plan: TransformPlan2D
+    operator: CellCenteredOnePoint2D | TwoSubcellDiagnostic2D, transform_plan: TransformPlan2D
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Probe normal and transverse scalar contributions in the DST basis."""
     shape = (len(transform_plan.frequencies_x), len(transform_plan.frequencies_y))

@@ -10,7 +10,7 @@ from typing import Literal
 class Spectral2DConfig:
     """Pre-registered numerical choices for the first spectral solver."""
 
-    spatial_scheme: Literal["quad1", "tri2"] = "quad1"
+    spatial_scheme: Literal["one_point", "two_subcell"] = "one_point"
     green_operator: Literal["b0", "two_mu", "c0"] = "b0"
     relative_equilibrium_tolerance: float = 1.0e-6
     maximum_fixed_point_iterations: int = 200
@@ -30,8 +30,8 @@ class Spectral2DConfig:
     reference_mu_0: float = 1.0
 
     def __post_init__(self) -> None:
-        if self.spatial_scheme not in {"quad1", "tri2"}:
-            raise ValueError("spatial_scheme must be 'quad1' or 'tri2'")
+        if self.spatial_scheme not in {"one_point", "two_subcell"}:
+            raise ValueError("spatial_scheme must be 'one_point' or 'two_subcell'")
         if self.green_operator not in {"b0", "two_mu", "c0"}:
             raise ValueError("green_operator must be 'b0', 'two_mu' or 'c0'")
         if self.relative_equilibrium_tolerance <= 0.0:

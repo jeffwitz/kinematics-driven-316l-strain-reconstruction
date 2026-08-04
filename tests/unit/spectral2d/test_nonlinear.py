@@ -3,7 +3,7 @@ import pytest
 
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d import (
-    QUAD1_2D,
+    CellCenteredOnePoint2D,
     Spectral2DConfig,
     StructuredGrid2D,
     solve_dirichlet_plane_stress_spectral,
@@ -50,7 +50,7 @@ def test_homogeneous_affine_elastic_field_converges_without_fluctuation() -> Non
     boundary[1, ..., 1] = -0.1 * x[:, None] + 0.3 * y[None, :]
     result = solve_dirichlet_plane_stress_spectral(
         grid=grid,
-        material=ElasticMaterial(QUAD1_2D(grid).material_point_count),
+        material=ElasticMaterial(CellCenteredOnePoint2D(grid).material_point_count),
         boundary_displacement_history=boundary,
         config=Spectral2DConfig(anderson_enabled=False),
     )
