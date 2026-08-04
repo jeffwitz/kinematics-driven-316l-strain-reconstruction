@@ -67,7 +67,7 @@ jobs:
 
   documentation:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - name: Install documentation system dependencies
@@ -122,3 +122,13 @@ jobs:
             docs/_build/latex/kinematics-driven-316l-strain-reconstruction.pdf
             docs/_build/latex/pdf_validation.json
           if-no-files-found: error
+      - name: Upload PDF diagnostics on failure
+        if: ${{ failure() && hashFiles('docs/_build/latex/kinematics-driven-316l-strain-reconstruction.log') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: spectral-documentation-pdf-diagnostics
+          path: |
+            docs/_build/latex/kinematics-driven-316l-strain-reconstruction.log
+            docs/_build/latex/kinematics-driven-316l-strain-reconstruction.tex
+            docs/_build/latex/pdf_validation.json
+          if-no-files-found: warn
