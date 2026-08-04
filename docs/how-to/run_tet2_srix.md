@@ -1,25 +1,28 @@
-# Run the TET2 SRIX comparison
+# Run the registered TET2/EBI SRIX comparison
 
-Use the repository qualification entry point for the registered comparison:
+Use the qualification entry point that actually runs CPS4, two-state TET2 and
+one-state EBI Newton-GMRES:
 
 ```bash
-python scripts/qualify_spectral2d_against_newton.py --help
+python scripts/qualify_ebi_state_sharing.py --help
 ```
 
 The complete 12x12 command is:
 
 ```bash
 MFRONT_BEHAVIOUR_LIBRARY=build/mfront/src/libBehaviour.so \
-python scripts/qualify_spectral2d_against_newton.py \
-  --mesh 12 --increments 8 --repeats 1 --tolerance 1e-8 \
-  --anderson-target polarization --update-safeguard published_none \
-  --reference-parameter-mode projected \
-  --output validation/_generated/spectral2d_registered
+python scripts/qualify_ebi_state_sharing.py \
+  --mesh 12 --increments 8 --tolerance 1e-8 \
+  --output validation/_generated/ebi_tet/state_sharing_m12_reproduced.json
 ```
 
-The summary and JSONL traces are written below the selected output directory.
-Archive them with the commit SHA and the MFront library SHA.
+The JSON summary contains the CPS4, TET2, EBI and independent verification
+results. Archive it with the commit SHA and the MFront library SHA.
 
 Record the commit, grid, tolerance, reference parameters, thread count and
-the JSON/NPZ output paths. The qualified comparison is TET2 against CPS4; EBI
-is a separate falsification experiment.
+the JSON/NPZ output paths. The TET2/CPS4 comparison and the EBI/TET2
+state-sharing comparison use the same registered kinematics.
+
+The older `qualify_spectral2d_against_newton.py` entry point is retained only as
+a **Historical fixed-point and Anderson diagnostic**. It does not reproduce
+the Newton-GMRES TET2/EBI evidence.

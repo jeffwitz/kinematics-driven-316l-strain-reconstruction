@@ -138,6 +138,8 @@ Tests marked `mfront` use the compiled library when it is available.
 ```bash
 .venv/bin/python -m pip install -r requirements-docs.txt
 PYTHONPATH=src .venv/bin/python scripts/build_documentation_figures.py
+PYTHONPATH=src .venv/bin/python scripts/measure_spectral_dtt_contract.py
+PYTHONPATH=src .venv/bin/python scripts/build_spectral_documentation_figures.py
 PATH="$PWD/.venv/bin:$PATH" make -C docs html
 PATH="$PWD/.venv/bin:$PATH" make -C docs latexpdf
 ```
@@ -161,4 +163,3 @@ PyPardiso missing
 Undefined TFEL shared-library symbol
 : Source `share/tfel/env/env.sh` in the shell that launches Python, not only in
   the shell that compiled the behaviour.
-

@@ -34,13 +34,19 @@ $B_0$ is a preconditioner, not the SRIX constitutive law. The projected
 reference parameters are recorded separately from the elastic and algorithmic
 plane-stress tangents.
 
-For a DST-I mode, applying the discrete gradient and its adjoint gives the
-diagonal reference factors
+The assembled reference stiffness is
 
 ```{math}
-\widehat{B_0^TB_0\phi}_x=d_x\widehat\phi_x,
+A_0=-\operatorname{div}_D\left(\mathbb R_0:\nabla_D^s\right)
+=\sum_{e,q}w_qA_e B_{eq}^{T}C_0B_{eq}.
+```
+
+For a DST-I mode, the assembled operator gives the diagonal reference factors
+
+```{math}
+\widehat{A_0u}_x=d_x\widehat u_x,
 \qquad
-\widehat{B_0^TB_0\phi}_y=d_y\widehat\phi_y.
+\widehat{A_0u}_y=d_y\widehat u_y.
 ```
 
 The Green action inverts these modal factors with the solver's residual sign.

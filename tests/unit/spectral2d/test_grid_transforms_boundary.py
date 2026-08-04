@@ -28,6 +28,24 @@ def test_dst_i_round_trip_and_zero_boundary_embedding(nx: int, ny: int) -> None:
     np.testing.assert_array_equal(embedded[:, -1], 0.0)
 
 
+def test_dst_i_measured_round_trip_and_inner_product_contract() -> None:
+    grid = StructuredGrid2D(7, 6, 2.0, 3.0)
+    plan = FullDirichletDSTIPlan2D(grid)
+    rng = np.random.default_rng(706)
+    u = rng.normal(size=(*grid.interior_shape, 2))
+    v = rng.normal(size=(*grid.interior_shape, 2))
+    u_hat = plan.forward_displacement(u)
+    v_hat = plan.forward_displacement(v)
+
+    round_trip_error = np.linalg.norm(plan.inverse_displacement(u_hat) - u) / np.linalg.norm(u)
+    inner_product_error = abs(np.vdot(u_hat, v_hat) - np.vdot(u, v)) / max(
+        abs(np.vdot(u, v)), np.linalg.norm(u) * np.linalg.norm(v), 1.0e-30
+    )
+
+    assert round_trip_error < 1.0e-13
+    assert inner_product_error < 1.0e-13
+
+
 def test_dst_i_frequencies_match_full_dirichlet_grid() -> None:
     plan = FullDirichletDSTIPlan2D(StructuredGrid2D(4, 5, 2.0, 3.0))
     np.testing.assert_allclose(plan.frequencies_x, np.pi * np.arange(1, 4) / 4)

@@ -379,17 +379,22 @@
       "conclusion": "The documented round-trip and inner-product contracts pass at the declared numerical precision.",
       "sources": [
         {
-          "path": "validation/reference_data/spectral_mechanics_evidence_v1/report.json",
+          "path": "validation/reference_data/spectral_mechanics_evidence_v1/dtt_contract.json",
           "role": "primary",
           "assertions": [
             {
-              "path": "/dtt/product_inner_product_preserved",
+              "path": "/passed",
               "operator": "equals",
               "expected": true
             },
             {
-              "path": "/dtt/round_trip_relative_error",
-              "operator": "less_than_or_equal",
+              "path": "/maximum_round_trip_error",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            },
+            {
+              "path": "/maximum_inner_product_error",
+              "operator": "less_than",
               "expected": 1.0e-13
             }
           ]

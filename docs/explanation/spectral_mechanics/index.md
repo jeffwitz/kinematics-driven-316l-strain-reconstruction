@@ -49,6 +49,7 @@ scientific_question
 full_dirichlet_formulation
 discrete_kinematics
 dtt_green_operator
+operator_derivation_appendix
 one_point_instability
 tet2_newton_gmres
 ebi_variational_formulation

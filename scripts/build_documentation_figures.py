@@ -15,6 +15,15 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
+try:
+    from scripts.build_spectral_documentation_figures import (
+        main as build_spectral_documentation_figures,
+    )
+except ModuleNotFoundError:  # direct execution: ``python scripts/...``
+    from build_spectral_documentation_figures import (
+        main as build_spectral_documentation_figures,
+    )
+
 OUTPUT_DIRECTORY = Path(__file__).resolve().parents[1] / "docs" / "_static"
 NAVY = "#17324d"
 BLUE = "#2980b9"
@@ -361,6 +370,7 @@ def main() -> None:
     workflow_figure()
     hardening_figure()
     partitioning_figure()
+    build_spectral_documentation_figures()
 
 
 if __name__ == "__main__":

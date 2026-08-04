@@ -33,22 +33,22 @@ sample stress       (nx, ny, 2, 3)
 
 ## 2. Registered SRIX run
 
-With the compiled behaviour library available, run:
+With the compiled behaviour library available, run the registered causal
+comparison. This command executes CPS4, two-state TET2, one-state EBI and the
+independent final verification:
 
 ```bash
 MFRONT_BEHAVIOUR_LIBRARY=build/mfront/src/libBehaviour.so \
-python scripts/qualify_spectral2d_against_newton.py \
-  --mesh 12 --increments 8 --repeats 1 --tolerance 1e-8 \
-  --anderson-target polarization --update-safeguard published_none \
-  --reference-parameter-mode projected \
-  --output validation/_generated/spectral2d_tutorial
+python scripts/qualify_ebi_state_sharing.py \
+  --mesh 12 --increments 8 --tolerance 1e-8 \
+  --output validation/_generated/ebi_tet/state_sharing_m12_reproduced.json
 ```
 
-The run writes JSONL iteration traces and a JSON summary under
-`validation/_generated/spectral2d_tutorial/`. The expected EBI verification
-residual at 12x12 is approximately $1.12\times10^{-12}$ for the archived
-case. The run is diagnostic, not a permission to generalize the registered
-negative EBI verdict.
+The run writes a JSON summary under
+`validation/_generated/ebi_tet/`. The expected EBI verification residual at
+12x12 is approximately $1.12\times10^{-12}$ for the archived case. The run
+is diagnostic, not a permission to generalize the registered negative EBI
+verdict.
 
 For a small deterministic visual check, inspect the saved displacement fields
 with the repository's standard NumPy/Matplotlib tooling after confirming the

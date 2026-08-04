@@ -88,6 +88,8 @@ jobs:
       - name: Regenerate documentation figures
         run: |
           python scripts/build_documentation_figures.py
+          python scripts/measure_spectral_dtt_contract.py
+          python scripts/build_spectral_documentation_figures.py
           python scripts/generate_documentation_evidence.py
       - name: Check generated figures are current
         run: git diff --exit-code -- docs/_static docs/_generated

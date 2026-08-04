@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "git_sha": "13ba8dc793767b013a04999ea847923022f1e53f",
+  "python_version": "3.12.3",
+  "numpy_version": "2.5.1",
+  "scipy_version": "1.18.0",
+  "grids": [
+    {
+      "nx": 4,
+      "ny": 4,
+      "seed": 404,
+      "round_trip_relative_error": 1.247798992658574e-16,
+      "inner_product_relative_error": 0.0
+    },
+    {
+      "nx": 5,
+      "ny": 4,
+      "seed": 504,
+      "round_trip_relative_error": 2.0835661781063044e-16,
+      "inner_product_relative_error": 8.951125575225406e-17
+    },
+    {
+      "nx": 4,
+      "ny": 5,
+      "seed": 405,
+      "round_trip_relative_error": 1.4169916789722834e-16,
+      "inner_product_relative_error": 2.229714186443737e-17
+    },
+    {
+      "nx": 7,
+      "ny": 6,
+      "seed": 706,
+      "round_trip_relative_error": 2.379133071233848e-16,
+      "inner_product_relative_error": 1.6596795284552114e-17
+    },
+    {
+      "nx": 12,
+      "ny": 12,
+      "seed": 1212,
+      "round_trip_relative_error": 5.000112442084305e-16,
+      "inner_product_relative_error": 1.579751394545534e-17
+    }
+  ],
+  "maximum_round_trip_error": 5.000112442084305e-16,
+  "maximum_inner_product_error": 8.951125575225406e-17,
+  "passed": true
+}

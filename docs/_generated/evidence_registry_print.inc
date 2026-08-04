@@ -34,7 +34,7 @@
 : Fidelity: full-Dirichlet DST-I unit tests. Parameters: rectangular and square unit-test grids.
 : Status: **verified**.
 : Conclusion: The documented round-trip and inner-product contracts pass at the declared numerical precision.
-: Sources: primary: `validation/reference_data/spectral_mechanics_evidence_v1/report.json`.
+: Sources: primary: `validation/reference_data/spectral_mechanics_evidence_v1/dtt_contract.json`.
 
 **E-MAP-001 — What do boundary kinematics and the spatial placement of the material maps contribute?**
 : Fidelity: full-resolution local FEM controls. Parameters: P43 mapped, homogeneous 124/380 MPa, joint map shift 600/500 pixels.
