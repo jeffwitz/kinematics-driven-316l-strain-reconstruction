@@ -13,7 +13,6 @@ class Spectral2DConfig:
     spatial_scheme: Literal["quad1", "tri2"] = "quad1"
     green_operator: Literal["b0", "two_mu", "c0"] = "b0"
     relative_equilibrium_tolerance: float = 1.0e-6
-    absolute_equilibrium_tolerance: float = 1.0e-8
     maximum_fixed_point_iterations: int = 200
     anderson_enabled: bool = True
     anderson_memory: int = 4
@@ -36,8 +35,6 @@ class Spectral2DConfig:
             raise ValueError("green_operator must be 'b0', 'two_mu' or 'c0'")
         if self.relative_equilibrium_tolerance <= 0.0:
             raise ValueError("relative_equilibrium_tolerance must be positive")
-        if self.absolute_equilibrium_tolerance <= 0.0:
-            raise ValueError("absolute_equilibrium_tolerance must be positive")
         if self.maximum_fixed_point_iterations < 1:
             raise ValueError("maximum_fixed_point_iterations must be positive")
         if self.anderson_memory < 1 or self.anderson_start_iteration < 1:

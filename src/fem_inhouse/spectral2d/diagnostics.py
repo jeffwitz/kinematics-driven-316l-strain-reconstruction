@@ -15,6 +15,7 @@ class Spectral2DDiagnostics:
     spacing_x: float
     spacing_y: float
     relative_residual_history: tuple[float, ...] = ()
+    dimensionless_equilibrium_history: tuple[float, ...] = ()
     absolute_residual_history: tuple[float, ...] = ()
     iterations_per_increment: tuple[int, ...] = ()
     cutbacks: int = 0

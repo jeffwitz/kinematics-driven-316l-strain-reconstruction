@@ -76,6 +76,24 @@ def _reshape_constitutive_trial(
     )
 
 
+def _equilibrium_metrics(stress, nodal_force, grid, points_per_pixel):
+    """Return dimensionless equilibrium and dimensional force norms."""
+    cell_area = grid.spacing_x * grid.spacing_y
+    point_area = cell_area / points_per_pixel
+    stress_norm = np.sqrt(point_area * float(np.sum(np.asarray(stress) ** 2)))
+    interior_force_norm = float(np.linalg.norm(nodal_force[1:-1, 1:-1]))
+    divergence_norm = interior_force_norm / np.sqrt(cell_area)
+    dimensionless = np.sqrt(cell_area) * divergence_norm / max(stress_norm, 1.0e-30)
+    return dimensionless, divergence_norm, interior_force_norm
+
+
+def _boundary_reactions(nodal_force):
+    """Return reactions ``B^T sigma`` and suppress interior entries."""
+    reactions = -np.asarray(nodal_force, dtype=np.float64).copy()
+    reactions[1:-1, 1:-1] = 0.0
+    return reactions
+
+
 def solve_dirichlet_plane_stress_spectral(
     *,
     grid: StructuredGrid2D,
@@ -136,6 +154,7 @@ def solve_dirichlet_plane_stress_spectral(
     final_strain = np.empty((0,))
     final_stress = np.empty((0,))
     relative_history: list[float] = []
+    dimensionless_history: list[float] = []
     absolute_history: list[float] = []
     iterations_per_increment: list[int] = []
     anderson = AndersonAccelerator(config.anderson_memory, config.anderson_regularization)
@@ -151,20 +170,13 @@ def solve_dirichlet_plane_stress_spectral(
             strain = operator.strain(total_u)
             trial, stress = _evaluate_material(material, strain, time_increment)
             residual = operator.divergence(stress)
-            interior_residual = residual[1:-1, 1:-1]
-            residual_norm = float(np.linalg.norm(interior_residual))
-            stress_norm = max(float(np.linalg.norm(stress)), 1.0)
-            relative = np.sqrt(grid.spacing_x * grid.spacing_y) * residual_norm / stress_norm
-            relative_history.append(relative)
-            absolute_history.append(residual_norm)
-            absolute_tolerance = max(
-                config.absolute_equilibrium_tolerance,
-                config.absolute_equilibrium_tolerance * stress_norm,
+            relative, divergence_norm, residual_norm = _equilibrium_metrics(
+                stress, residual, grid, operator.points_per_pixel
             )
-            if (
-                relative <= config.relative_equilibrium_tolerance
-                and residual_norm <= absolute_tolerance
-            ):
+            relative_history.append(relative)
+            dimensionless_history.append(relative)
+            absolute_history.append(divergence_norm)
+            if relative <= config.relative_equilibrium_tolerance:
                 final_trial = _reshape_constitutive_trial(
                     material.complete_trial(trial), strain.shape[:-1]
                 )
@@ -178,7 +190,7 @@ def solve_dirichlet_plane_stress_spectral(
 
             transformed_fluctuation = plan.forward_displacement(fluctuation[1:-1, 1:-1])
             reference_force = green.reference_force(transformed_fluctuation)
-            transformed_residual = plan.forward_displacement(interior_residual)
+            transformed_residual = plan.forward_displacement(residual[1:-1, 1:-1])
             polarization = reference_force - transformed_residual
             image_interior = plan.inverse_displacement(green.apply(polarization))
             image = plan.embed_interior(image_interior)
@@ -196,11 +208,16 @@ def solve_dirichlet_plane_stress_spectral(
                         material, candidate_strain, time_increment
                     )
                     candidate_residual = operator.divergence(candidate_stress)
-                    candidate_norm = float(np.linalg.norm(candidate_residual[1:-1, 1:-1]))
+                    candidate_norm = _equilibrium_metrics(
+                        candidate_stress,
+                        candidate_residual,
+                        grid,
+                        operator.points_per_pixel,
+                    )[0]
                 except ConstitutiveIntegrationError:
                     material.revert()
                     candidate_norm = np.inf
-                if candidate_norm < residual_norm:
+                if candidate_norm < relative:
                     break
                 relaxation *= config.relaxation_reduction
                 if relaxation >= config.minimum_relaxation:
@@ -234,6 +251,7 @@ def solve_dirichlet_plane_stress_spectral(
         spacing_x=grid.spacing_x,
         spacing_y=grid.spacing_y,
         relative_residual_history=tuple(relative_history),
+        dimensionless_equilibrium_history=tuple(dimensionless_history),
         absolute_residual_history=tuple(absolute_history),
         iterations_per_increment=tuple(iterations_per_increment),
         anderson_proposals=anderson_diagnostics.proposals,
@@ -256,6 +274,6 @@ def solve_dirichlet_plane_stress_spectral(
         elastic_strain_tensor=final_trial.elastic_strain_tensor,
         plastic_strain_tensor=final_trial.plastic_strain_tensor,
         observables=final_trial.observables,
-        reaction_forces=operator.divergence(final_stress),
+        reaction_forces=_boundary_reactions(operator.divergence(final_stress)),
         diagnostics=diagnostics,
     )

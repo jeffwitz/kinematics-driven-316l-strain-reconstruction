@@ -70,4 +70,35 @@ def test_non_affine_elastic_field_converges() -> None:
         boundary_displacement_history=boundary,
         config=Spectral2DConfig(anderson_enabled=False, maximum_fixed_point_iterations=100),
     )
-    assert result.diagnostics.absolute_residual_history[-1] < 1.0e-7
+    assert result.diagnostics.dimensionless_equilibrium_history[-1] < 1.0e-6
+
+
+def test_equilibrium_is_invariant_under_length_unit_scaling() -> None:
+    def solve(scale: float):
+        grid = StructuredGrid2D(4, 4, 2.0 * scale, 2.0 * scale)
+        x, y = grid.coordinates
+        boundary = np.zeros((2, *grid.node_shape, 2))
+        boundary[1, ..., 0] = 0.1 * x[:, None] + 0.01 * scale * np.sin(
+            np.pi * y[None, :] / (2.0 * scale)
+        )
+        boundary[1, ..., 1] = 0.1 * y[None, :] + 0.01 * scale * np.sin(
+            np.pi * x[:, None] / (2.0 * scale)
+        )
+        return solve_dirichlet_plane_stress_spectral(
+            grid=grid,
+            material=ElasticMaterial(16),
+            boundary_displacement_history=boundary,
+            config=Spectral2DConfig(anderson_enabled=False),
+        )
+
+    millimetres = solve(1.0)
+    micrometres = solve(1_000.0)
+    np.testing.assert_allclose(
+        millimetres.diagnostics.dimensionless_equilibrium_history,
+        micrometres.diagnostics.dimensionless_equilibrium_history,
+        rtol=0.0,
+        atol=1.0e-12,
+    )
+    assert millimetres.diagnostics.iterations_per_increment == (
+        micrometres.diagnostics.iterations_per_increment
+    )
