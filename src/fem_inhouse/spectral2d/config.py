@@ -31,8 +31,10 @@ class Spectral2DConfig:
     minimum_increment_fraction: float = 1.0 / 256.0
     reference_projection_tolerance: float = 1.0e-12
     symbol_null_tolerance: float = 1.0e-12
-    reference_lambda_0: float = 1.0
-    reference_mu_0: float = 1.0
+    reference_parameter_mode: Literal["explicit", "projected"] = "projected"
+    reference_parameter_scale: float = 1.0
+    reference_lambda_0: float | None = None
+    reference_mu_0: float | None = None
 
     def __post_init__(self) -> None:
         if self.spatial_scheme not in {"one_point", "two_subcell"}:
@@ -61,5 +63,14 @@ class Spectral2DConfig:
             raise ValueError("maximum_cutbacks_per_increment cannot be negative")
         if not 0.0 < self.minimum_increment_fraction <= 1.0:
             raise ValueError("minimum_increment_fraction must lie in (0, 1]")
-        if self.reference_mu_0 <= 0.0 or self.reference_lambda_0 + self.reference_mu_0 <= 0.0:
-            raise ValueError("reference parameters must satisfy mu>0 and lambda+mu>0")
+        if self.reference_parameter_mode not in {"explicit", "projected"}:
+            raise ValueError("unsupported reference parameter mode")
+        if self.reference_parameter_scale <= 0.0:
+            raise ValueError("reference parameter scale must be positive")
+        if self.reference_parameter_mode == "explicit":
+            if self.reference_lambda_0 is None or self.reference_mu_0 is None:
+                raise ValueError("explicit reference parameters require lambda_0 and mu_0")
+            if self.reference_mu_0 <= 0.0 or self.reference_lambda_0 + self.reference_mu_0 <= 0.0:
+                raise ValueError("reference parameters must satisfy mu>0 and lambda+mu>0")
+        elif self.reference_lambda_0 is not None or self.reference_mu_0 is not None:
+            raise ValueError("projected reference parameters reject explicit values")

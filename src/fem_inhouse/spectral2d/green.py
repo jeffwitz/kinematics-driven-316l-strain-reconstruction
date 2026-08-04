@@ -175,9 +175,11 @@ def project_isotropic_plane_stress_tangent(
         raise ValueError("reference tangent must have shape (3, 3)")
     if not np.isfinite(matrix).all():
         raise ValueError("reference tangent must be finite")
-    symmetric = 0.5 * (matrix + matrix.T)
-    basis_lambda = isotropic_plane_stress_matrix(1.0, 0.0)
-    basis_mu = isotropic_plane_stress_matrix(0.0, 1.0)
+    kelvin_scale = np.diag([1.0, 1.0, np.sqrt(2.0)])
+    kelvin = kelvin_scale @ matrix @ kelvin_scale
+    symmetric = 0.5 * (kelvin + kelvin.T)
+    basis_lambda = kelvin_scale @ isotropic_plane_stress_matrix(1.0, 0.0) @ kelvin_scale
+    basis_mu = kelvin_scale @ isotropic_plane_stress_matrix(0.0, 1.0) @ kelvin_scale
     coefficients, *_ = np.linalg.lstsq(
         np.column_stack((basis_lambda.reshape(-1), basis_mu.reshape(-1))),
         symmetric.reshape(-1),
@@ -187,6 +189,6 @@ def project_isotropic_plane_stress_tangent(
     scale = max(1.0, float(np.linalg.norm(symmetric)))
     mu_0 = max(mu_0, tolerance * scale)
     lambda_0 = max(lambda_0, tolerance * scale - mu_0)
-    projected = isotropic_plane_stress_matrix(lambda_0, mu_0)
+    projected = kelvin_scale @ isotropic_plane_stress_matrix(lambda_0, mu_0) @ kelvin_scale
     error = float(np.linalg.norm(symmetric - projected) / scale)
     return lambda_0, mu_0, error

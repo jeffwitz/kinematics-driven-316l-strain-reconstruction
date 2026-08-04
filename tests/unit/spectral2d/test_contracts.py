@@ -12,6 +12,14 @@ def test_spectral_config_validates_registered_choices() -> None:
     assert Spectral2DConfig().green_operator == "b0"
     with pytest.raises(ValueError, match="spatial_scheme"):
         Spectral2DConfig(spatial_scheme="bad")  # type: ignore[arg-type]
+    explicit = Spectral2DConfig(
+        reference_parameter_mode="explicit",
+        reference_lambda_0=2.0,
+        reference_mu_0=3.0,
+    )
+    assert explicit.reference_mu_0 == 3.0
+    with pytest.raises(ValueError, match="require"):
+        Spectral2DConfig(reference_parameter_mode="explicit")
 
 
 def test_result_pixel_average_is_explicit_for_tri2() -> None:

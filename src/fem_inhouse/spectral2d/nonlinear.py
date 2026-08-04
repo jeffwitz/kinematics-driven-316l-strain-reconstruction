@@ -126,19 +126,28 @@ def solve_dirichlet_plane_stress_spectral(
 
     plan = FullDirichletDSTIPlan2D(grid)
     symbols = operator.reference_operator_symbols(plan)
-    reference_trial = material.evaluate_in_plane(
-        np.zeros((material.point_count, 3), dtype=np.float64),
-        time_increment=1.0,
-        consistent_tangent=True,
-    )
-    material.revert()
-    if reference_trial.tangent_in_plane_mpa is None:
-        raise ValueError("the material must provide an elastic tangent for the Green operator")
-    tangent = np.asarray(reference_trial.tangent_in_plane_mpa, dtype=np.float64)
-    tangent = 0.5 * (tangent + np.swapaxes(tangent, -1, -2))
-    lambda_0, mu_0, _ = project_isotropic_plane_stress_tangent(
-        tangent.mean(axis=0), tolerance=config.reference_projection_tolerance
-    )
+    projection_error = 0.0
+    if config.reference_parameter_mode == "explicit":
+        assert config.reference_lambda_0 is not None
+        assert config.reference_mu_0 is not None
+        lambda_0 = config.reference_lambda_0
+        mu_0 = config.reference_mu_0
+    else:
+        reference_trial = material.evaluate_in_plane(
+            np.zeros((material.point_count, 3), dtype=np.float64),
+            time_increment=1.0,
+            consistent_tangent=True,
+        )
+        material.revert()
+        if reference_trial.tangent_in_plane_mpa is None:
+            raise ValueError("the material must provide an elastic tangent for the Green operator")
+        tangent = np.asarray(reference_trial.tangent_in_plane_mpa, dtype=np.float64)
+        tangent = 0.5 * (tangent + np.swapaxes(tangent, -1, -2))
+        lambda_0, mu_0, projection_error = project_isotropic_plane_stress_tangent(
+            tangent.mean(axis=0), tolerance=config.reference_projection_tolerance
+        )
+        lambda_0 *= config.reference_parameter_scale
+        mu_0 *= config.reference_parameter_scale
     green: B0Green2D | TwoMuGreen2D
     if config.green_operator == "two_mu":
         green = TwoMuGreen2D(
@@ -428,6 +437,9 @@ def solve_dirichlet_plane_stress_spectral(
         verification_residual=verification_residual,
         verification_residual_history=tuple(verification_residual_history),
         verification_relative_mismatch_history=tuple(verification_mismatch_history),
+        reference_lambda_0=lambda_0,
+        reference_mu_0=mu_0,
+        reference_projection_error=projection_error,
         total_seconds=perf_counter() - started,
     )
     return Spectral2DResult(

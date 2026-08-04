@@ -96,6 +96,8 @@ def solve_spectral(
     case: dict[str, Any], scheme: str, library: str, increments: int, tolerance: float,
     trace_callback=None, anderson_target: str = "polarization", anderson_memory: int = 4,
     update_safeguard: str = "published_none",
+    reference_parameter_mode: str = "projected", reference_parameter_scale: float = 1.0,
+    reference_lambda_0: float | None = None, reference_mu_0: float | None = None,
 ) -> tuple[Any, float]:
     mesh = case["mesh"]
     grid = StructuredGrid2D(mesh.nx, mesh.ny, *mesh.physical_size_mm)
@@ -138,8 +140,12 @@ def solve_spectral(
                 Literal["published_none", "monotone_armijo", "nonmonotone"],
                 update_safeguard,
             ),
-            reference_lambda_0=69_230.76923076923,
-            reference_mu_0=78_846.15384615384,
+            reference_parameter_mode=cast(
+                Literal["explicit", "projected"], reference_parameter_mode
+            ),
+            reference_parameter_scale=reference_parameter_scale,
+            reference_lambda_0=reference_lambda_0,
+            reference_mu_0=reference_mu_0,
         ),
         trace_callback=trace_callback,
     )
@@ -162,6 +168,19 @@ def main() -> int:
         choices=("published_none", "monotone_armijo", "nonmonotone"),
         default="published_none",
     )
+    parser.add_argument(
+        "--reference-parameter-mode",
+        choices=("explicit", "projected"),
+        default="projected",
+    )
+    parser.add_argument(
+        "--reference-parameter-scale",
+        type=float,
+        choices=(0.5, 1.0, 2.0),
+        default=1.0,
+    )
+    parser.add_argument("--reference-lambda-0", type=float)
+    parser.add_argument("--reference-mu-0", type=float)
     parser.add_argument("--output", type=Path, default=Path("validation/_generated/spectral2d"))
     arguments = parser.parse_args()
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", "build/mfront/src/libBehaviour.so")
@@ -184,6 +203,8 @@ def main() -> int:
         "anderson_target": arguments.anderson_target,
         "anderson_memory": arguments.anderson_memory,
         "update_safeguard": arguments.update_safeguard,
+        "reference_parameter_mode": arguments.reference_parameter_mode,
+        "reference_parameter_scale": arguments.reference_parameter_scale,
         "orientation_bunge_deg": list(ORIENTATION_BUNGE_DEG),
         "variants": {},
     }
@@ -208,6 +229,10 @@ def main() -> int:
                     case, scheme, library, arguments.increments, arguments.tolerance,
                     write_trace, arguments.anderson_target, arguments.anderson_memory,
                     arguments.update_safeguard,
+                    arguments.reference_parameter_mode,
+                    arguments.reference_parameter_scale,
+                    arguments.reference_lambda_0,
+                    arguments.reference_mu_0,
                 )
                 trace_file.close()
                 timings.append(elapsed)

@@ -47,6 +47,13 @@ def test_isotropic_projection_recovers_plane_stress_parameters() -> None:
     assert error == pytest.approx(0.0)
 
 
+def test_anisotropic_projection_uses_kelvin_energy_metric() -> None:
+    tangent = np.diag([10.0, 10.0, 1.0])
+    lambda_0, mu_0, _ = project_isotropic_plane_stress_tangent(tangent)
+    assert lambda_0 == pytest.approx(2.0)
+    assert mu_0 == pytest.approx(3.0)
+
+
 def test_green_rejects_invalid_reference_parameters() -> None:
     symbols = ReferenceOperatorSymbols(
         laplacian=np.ones((2, 2)),
