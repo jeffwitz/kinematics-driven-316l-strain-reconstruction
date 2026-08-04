@@ -31,6 +31,7 @@ class Spectral2DConfig:
     minimum_increment_fraction: float = 1.0 / 256.0
     reference_projection_tolerance: float = 1.0e-12
     symbol_null_tolerance: float = 1.0e-12
+    record_high_frequency_diagnostics: bool = True
     reference_parameter_mode: Literal["explicit", "projected"] = "projected"
     reference_parameter_scale: float = 1.0
     reference_lambda_0: float | None = None

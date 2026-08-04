@@ -282,6 +282,19 @@ def main() -> int:
             ),
             "equilibrium_residual_dimensional": spectral_diagnostics.absolute_residual_history[-1],
             "verification_residual": spectral_diagnostics.verification_residual,
+            "highest_mode_energy_max": max(
+                spectral_diagnostics.highest_mode_energy_history, default=0.0
+            ),
+            "high_frequency_energy_fraction_max": max(
+                spectral_diagnostics.high_frequency_energy_fraction_history,
+                default=0.0,
+            ),
+            "highest_mode_residual_final": (
+                spectral_diagnostics.highest_mode_residual_history[-1]
+            ),
+            "active_slip_systems_max": max(
+                spectral_diagnostics.active_slip_systems_history, default=0
+            ),
             "material_points": spectral_diagnostics.material_points,
         }
     report["fem_baselines"] = {

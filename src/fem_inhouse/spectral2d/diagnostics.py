@@ -34,3 +34,8 @@ class Spectral2DDiagnostics:
     verification_residual: float = 0.0
     verification_residual_history: tuple[float, ...] = ()
     verification_relative_mismatch_history: tuple[float, ...] = ()
+    highest_mode_energy_history: tuple[float, ...] = ()
+    high_frequency_energy_fraction_history: tuple[float, ...] = ()
+    fluctuation_norm_history: tuple[float, ...] = ()
+    highest_mode_residual_history: tuple[float, ...] = ()
+    active_slip_systems_history: tuple[int, ...] = ()

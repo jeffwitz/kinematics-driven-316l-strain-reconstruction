@@ -179,6 +179,11 @@ def solve_dirichlet_plane_stress_spectral(
     verification_residual = 0.0
     verification_residual_history: list[float] = []
     verification_mismatch_history: list[float] = []
+    highest_mode_energy_history: list[float] = []
+    high_frequency_fraction_history: list[float] = []
+    fluctuation_norm_history: list[float] = []
+    highest_mode_residual_history: list[float] = []
+    active_slip_systems_history: list[int] = []
     iterations_per_increment: list[int] = []
     anderson = DisplacementAndersonAccelerator(
         config.anderson_memory, config.anderson_regularization
@@ -186,17 +191,28 @@ def solve_dirichlet_plane_stress_spectral(
     minimum_relaxation = 1.0
     initial_increment = 1.0 / (history.shape[0] - 1)
     load_points = [
-        (history[index].copy(), initial_increment)
+        (history[index].copy(), initial_increment, index / (history.shape[0] - 1))
         for index in range(1, history.shape[0])
     ]
     cutbacks = 0
     increment_cutbacks = 0
     load_index = 0
     previous_boundary = history[0].copy()
+    previous_load_fraction = 0.0
     attempt_id = 0
+    mode_x, mode_y = np.meshgrid(
+        np.arange(symbols.laplacian.shape[0]),
+        np.arange(symbols.laplacian.shape[1]),
+        indexing="ij",
+    )
+    normalized_radius = np.sqrt(
+        (mode_x / max(symbols.laplacian.shape[0] - 1, 1)) ** 2
+        + (mode_y / max(symbols.laplacian.shape[1] - 1, 1)) ** 2
+    )
+    high_frequency_mask = normalized_radius >= np.quantile(normalized_radius, 0.9)
 
     while load_index < len(load_points):
-        boundary_target, time_increment = load_points[load_index]
+        boundary_target, time_increment, load_fraction = load_points[load_index]
         increment = load_index + 1
         applied = extension.extend(boundary_target, grid)
         fluctuation_start = fluctuation.copy()
@@ -212,6 +228,27 @@ def solve_dirichlet_plane_stress_spectral(
             _trial, stress = _evaluate_material(material, strain, time_increment)
             constitutive_evaluations += 1
             residual = operator.divergence(stress)
+            transformed_fluctuation = plan.forward_displacement(fluctuation[1:-1, 1:-1])
+            transformed_residual = plan.forward_displacement(residual[1:-1, 1:-1])
+            spectral_energy = np.sum(np.abs(transformed_fluctuation) ** 2, axis=-1)
+            total_spectral_energy = float(np.sum(spectral_energy))
+            highest_mode_energy = float(spectral_energy[-1, -1])
+            high_frequency_fraction = float(
+                np.sum(spectral_energy[high_frequency_mask])
+                / max(total_spectral_energy, 1.0e-30)
+            )
+            highest_mode_residual = float(np.linalg.norm(transformed_residual[-1, -1]))
+            active_slip_systems = 0
+            if config.record_high_frequency_diagnostics:
+                iteration_trial = material.complete_trial(_trial)
+                slip = iteration_trial.observables.get("plastic_slip")
+                if slip is not None:
+                    active_slip_systems = int(np.count_nonzero(np.abs(slip) > 1.0e-12))
+            highest_mode_energy_history.append(highest_mode_energy)
+            high_frequency_fraction_history.append(high_frequency_fraction)
+            fluctuation_norm_history.append(float(np.linalg.norm(fluctuation)))
+            highest_mode_residual_history.append(highest_mode_residual)
+            active_slip_systems_history.append(active_slip_systems)
             relative, divergence_norm, _residual_norm = _equilibrium_metrics(
                 stress, residual, grid, operator.points_per_pixel
             )
@@ -237,7 +274,7 @@ def solve_dirichlet_plane_stress_spectral(
                         "attempt_id": attempt_id,
                         "requested_increment": increment,
                         "subincrement_depth": increment_cutbacks,
-                        "load_fraction": float(load_index + 1) / max(history.shape[0] - 1, 1),
+                        "load_fraction": load_fraction,
                         "time_increment": time_increment,
                         "iteration_in_attempt": iteration + 1,
                         "global_iteration": len(relative_history),
@@ -251,6 +288,11 @@ def solve_dirichlet_plane_stress_spectral(
                         "relaxation_factor": None,
                         "total_constitutive_evaluations": constitutive_evaluations,
                         "maximum_plane_stress_residual": 0.0,
+                        "highest_mode_energy": highest_mode_energy,
+                        "high_frequency_energy_fraction": high_frequency_fraction,
+                        "fluctuation_norm": fluctuation_norm_history[-1],
+                        "highest_mode_residual": highest_mode_residual,
+                        "active_slip_systems": active_slip_systems,
                         "elapsed_seconds": perf_counter() - started,
                     }
                 )
@@ -301,9 +343,7 @@ def solve_dirichlet_plane_stress_spectral(
                 iterations_per_increment.append(iteration + 1)
                 break
 
-            transformed_fluctuation = plan.forward_displacement(fluctuation[1:-1, 1:-1])
             reference_force = green.reference_force(transformed_fluctuation)
-            transformed_residual = plan.forward_displacement(residual[1:-1, 1:-1])
             polarization = reference_force - transformed_residual
             image_interior = plan.inverse_displacement(green.apply(polarization))
             raw_image = plan.embed_interior(image_interior)
@@ -400,13 +440,18 @@ def solve_dirichlet_plane_stress_spectral(
                     f"increment {increment} did not converge after {cutbacks} cutbacks"
                 )
             midpoint = 0.5 * (previous_boundary + boundary_target)
-            load_points[load_index] = (midpoint, 0.5 * time_increment)
-            load_points.insert(load_index + 1, (boundary_target, 0.5 * time_increment))
+            midpoint_fraction = 0.5 * (previous_load_fraction + load_fraction)
+            load_points[load_index] = (midpoint, 0.5 * time_increment, midpoint_fraction)
+            load_points.insert(
+                load_index + 1,
+                (boundary_target, 0.5 * time_increment, load_fraction),
+            )
             cutbacks += 1
             increment_cutbacks += 1
             continue
         load_index += 1
         previous_boundary = boundary_target.copy()
+        previous_load_fraction = load_fraction
         increment_cutbacks = 0
 
     if final_trial is None:
@@ -437,6 +482,11 @@ def solve_dirichlet_plane_stress_spectral(
         verification_residual=verification_residual,
         verification_residual_history=tuple(verification_residual_history),
         verification_relative_mismatch_history=tuple(verification_mismatch_history),
+        highest_mode_energy_history=tuple(highest_mode_energy_history),
+        high_frequency_energy_fraction_history=tuple(high_frequency_fraction_history),
+        fluctuation_norm_history=tuple(fluctuation_norm_history),
+        highest_mode_residual_history=tuple(highest_mode_residual_history),
+        active_slip_systems_history=tuple(active_slip_systems_history),
         reference_lambda_0=lambda_0,
         reference_mu_0=mu_0,
         reference_projection_error=projection_error,

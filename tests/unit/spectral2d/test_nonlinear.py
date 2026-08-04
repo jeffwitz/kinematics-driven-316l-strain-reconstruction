@@ -72,6 +72,13 @@ def test_non_affine_elastic_field_converges() -> None:
         config=Spectral2DConfig(anderson_enabled=False, maximum_fixed_point_iterations=100),
     )
     assert result.diagnostics.dimensionless_equilibrium_history[-1] < 1.0e-6
+    assert len(result.diagnostics.highest_mode_energy_history) == len(
+        result.diagnostics.dimensionless_equilibrium_history
+    )
+    assert all(
+        0.0 <= value <= 1.0
+        for value in result.diagnostics.high_frequency_energy_fraction_history
+    )
 
 
 def test_equilibrium_is_invariant_under_length_unit_scaling() -> None:

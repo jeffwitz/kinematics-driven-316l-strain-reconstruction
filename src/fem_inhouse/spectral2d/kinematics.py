@@ -49,7 +49,11 @@ class DiscreteKinematics2D(Protocol):
 
 
 class CellCenteredOnePoint2D:
-    """One centre point per four-node quadrilateral pixel."""
+    """2D HEX1 analogue: four nodal values and one material state per pixel.
+
+    The neutral name describes data placement, not improved stability.  This
+    stencil retains the near-hourglass risk of the published HEX1 scheme.
+    """
 
     def __init__(self, grid: StructuredGrid2D) -> None:
         self.grid = grid
