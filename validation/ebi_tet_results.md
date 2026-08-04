@@ -42,9 +42,9 @@ plastic slip error is:
 | 24 | 0.72% | 5.39% | 5.76% |
 
 The dominant error is therefore the shared SRIX state, not the two-triangle
-stencil. Side-resultant errors are smaller than nodal reaction errors; the
-24x24 TET2-vs-CPS4 side-resultant error is `0.11%`, while its nodal reaction
-error is `0.87%`.
+stencil. Boundary-node sums (with corners included in both adjacent sums) are
+smaller than nodal reaction errors; the 24x24 TET2-vs-CPS4 boundary-sum error is
+`0.11%`, while its nodal reaction error is `0.87%`.
 
 The independent TET2 verification residuals are `5.53e-12` at 12x12 and
 `9.74e-14` at 24x24. Moments now use broadcast nodal coordinates; the corrected

@@ -59,6 +59,8 @@ def solve_two_state(case, library: str, increments: int, tolerance: float, scale
 
 
 def side_resultants(reaction: np.ndarray) -> np.ndarray:
+    """Sum boundary node rows/columns; corner nodes belong to both sums."""
+
     values = np.asarray(reaction)
     return np.array(
         (

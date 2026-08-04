@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d import EBITwoTriangleKinematics2D, StructuredGrid2D
@@ -12,6 +13,8 @@ class NonlinearStateBatch:
         self.calls = 0
         self.commits = 0
         self.reverts = 0
+        self._has_trial = False
+        self.committed_stress = None
         self._stiffness = np.broadcast_to(
             np.array([[4.0, 0.5, 0.0], [0.5, 3.0, 0.0], [0.0, 0.0, 1.5]]),
             (point_count, 3, 3),
@@ -19,8 +22,10 @@ class NonlinearStateBatch:
 
     def evaluate_in_plane(self, strain, *, time_increment, consistent_tangent=True):
         self.calls += 1
+        self._has_trial = True
         values = np.asarray(strain, dtype=float).reshape(-1, 3)
         stress = np.einsum("pij,pj->pi", self._stiffness, values) + 0.2 * values**2
+        self._last_stress = stress.copy()
         tangent = self._stiffness + np.einsum("pi,ij->pij", 0.4 * values, np.eye(3))
         return InPlaneConstitutiveTrial(stress_in_plane_mpa=stress, tangent_in_plane_mpa=tangent)
 
@@ -43,13 +48,18 @@ class NonlinearStateBatch:
         )
 
     def commit(self):
+        if not self._has_trial:
+            raise RuntimeError("commit requires an active trial")
         self.commits += 1
+        self.committed_stress = self._last_stress.copy()
+        self._has_trial = False
 
     def revert(self):
         self.reverts += 1
+        self._has_trial = False
 
 
-def test_two_state_plastic_nonlinear_directional_tangent() -> None:
+def test_two_state_nonlinear_directional_tangent() -> None:
     grid = StructuredGrid2D(2, 2, 1.0, 1.0)
     material = NonlinearStateBatch(8)
     elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
@@ -77,12 +87,19 @@ def test_two_state_trial_revert_commit_is_transactional() -> None:
     grid = StructuredGrid2D(2, 2, 1.0, 1.0)
     material = NonlinearStateBatch(8)
     elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
-    trial = elements.evaluate_samples(np.zeros((2, 2, 2, 3)), time_increment=0.1)
-    elements.complete_trial(trial)
+    trial_a = elements.evaluate_samples(np.zeros((2, 2, 2, 3)), time_increment=0.1)
+    elements.complete_trial(trial_a)
     elements.revert()
+    with pytest.raises(RuntimeError):
+        elements.commit()
+    trial_b = elements.evaluate_samples(np.full((2, 2, 2, 3), 0.1), time_increment=0.1)
+    elements.complete_trial(trial_b)
     elements.commit()
     assert material.reverts == 1
     assert material.commits == 1
+    np.testing.assert_allclose(
+        material.committed_stress, trial_b.material_trial.stress_in_plane_mpa
+    )
 
 
 def test_side_resultants_and_moment_use_nodal_coordinates() -> None:
