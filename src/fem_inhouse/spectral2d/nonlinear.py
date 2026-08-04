@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from time import perf_counter
 
@@ -100,6 +101,7 @@ def solve_dirichlet_plane_stress_spectral(
     material: PlaneStressMaterialBatch,
     boundary_displacement_history: ArrayLike,
     config: Spectral2DConfig,
+    trace_callback: Callable[[Mapping[str, object]], None] | None = None,
 ) -> Spectral2DResult:
     """Solve a sequence of full-Dirichlet displacement increments."""
     started = perf_counter()
@@ -174,6 +176,7 @@ def solve_dirichlet_plane_stress_spectral(
     increment_cutbacks = 0
     load_index = 0
     previous_boundary = history[0].copy()
+    attempt_id = 0
 
     while load_index < len(load_points):
         boundary_target, time_increment = load_points[load_index]
@@ -181,6 +184,8 @@ def solve_dirichlet_plane_stress_spectral(
         applied = extension.extend(boundary_target, grid)
         fluctuation_start = fluctuation.copy()
         anderson.reset()
+        attempt_id += 1
+        attempt_residuals: list[float] = []
         accepted = False
         failed = False
         for iteration in range(config.maximum_fixed_point_iterations):
@@ -196,8 +201,32 @@ def solve_dirichlet_plane_stress_spectral(
             dimensionless_history.append(relative)
             absolute_history.append(divergence_norm)
             residual_ratios.append(
-                relative / relative_history[-2] if len(relative_history) > 1 else 0.0
+                relative / attempt_residuals[-1] if attempt_residuals else 0.0
             )
+            attempt_residuals.append(relative)
+            if trace_callback is not None:
+                trace_callback(
+                    {
+                        "attempt_id": attempt_id,
+                        "requested_increment": increment,
+                        "subincrement_depth": increment_cutbacks,
+                        "load_fraction": float(load_index + 1) / max(history.shape[0] - 1, 1),
+                        "time_increment": time_increment,
+                        "iteration_in_attempt": iteration + 1,
+                        "global_iteration": len(relative_history),
+                        "equilibrium_residual": relative,
+                        "residual_ratio": residual_ratios[-1],
+                        "fixed_point_residual": None,
+                        "anderson_target": config.anderson_target,
+                        "anderson_proposed": None,
+                        "anderson_accepted": None,
+                        "raw_fixed_point_fallback": None,
+                        "relaxation_factor": None,
+                        "total_constitutive_evaluations": constitutive_evaluations,
+                        "maximum_plane_stress_residual": 0.0,
+                        "elapsed_seconds": perf_counter() - started,
+                    }
+                )
             iteration_diagnostics.append(
                 {
                     "iteration": len(relative_history),

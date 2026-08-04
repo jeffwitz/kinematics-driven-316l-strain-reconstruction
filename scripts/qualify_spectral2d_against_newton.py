@@ -93,7 +93,8 @@ def solve_fem(case: dict[str, Any], formulation: str, library: str, increments: 
 
 
 def solve_spectral(
-    case: dict[str, Any], scheme: str, library: str, increments: int, tolerance: float
+    case: dict[str, Any], scheme: str, library: str, increments: int, tolerance: float,
+    trace_callback=None,
 ) -> tuple[Any, float]:
     mesh = case["mesh"]
     grid = StructuredGrid2D(mesh.nx, mesh.ny, *mesh.physical_size_mm)
@@ -132,6 +133,7 @@ def solve_spectral(
             reference_lambda_0=69_230.76923076923,
             reference_mu_0=78_846.15384615384,
         ),
+        trace_callback=trace_callback,
     )
     return result, time.perf_counter() - started
 
@@ -170,12 +172,26 @@ def main() -> int:
         spectral_result = None
         failure: Exception | None = None
         for _ in range(arguments.repeats):
+            trace_file = None
             try:
-                spectral_result, elapsed = solve_spectral(
-                    case, scheme, library, arguments.increments, arguments.tolerance
+                trace_path = arguments.output / (
+                    f"spectral2d_{scheme}_tol_{arguments.tolerance:.0e}_trace.jsonl"
                 )
+                trace_file = trace_path.open("w", encoding="utf-8")
+
+                def write_trace(event: dict[str, object], stream=trace_file) -> None:
+                    stream.write(json.dumps(event) + "\n")
+                    stream.flush()
+
+                spectral_result, elapsed = solve_spectral(
+                    case, scheme, library, arguments.increments, arguments.tolerance,
+                    write_trace,
+                )
+                trace_file.close()
                 timings.append(elapsed)
             except Exception as exception:
+                if trace_file is not None:
+                    trace_file.close()
                 failure = exception
                 break
         if spectral_result is None:
