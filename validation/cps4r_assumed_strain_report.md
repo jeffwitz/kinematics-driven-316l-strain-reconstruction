@@ -33,7 +33,47 @@ fails, `E_R < 1 %` fails, `S_total > 1.8` fails. The direction is right — ever
 error is roughly halved against the elastic-difference form, and the reaction
 error falls by 3.5× — but the bounds are not met.
 
-## What the numbers say
+## SRIX, the measurement the targets were set for
+
+Homogeneous crystal, Bunge `(35, 20, 15)`, 12×12, **non-affine** boundary — a
+sinusoidal perturbation at 5 % of the axial displacement, because an affine field
+on a homogeneous material is an exact equilibrium solution for every formulation
+and measures nothing. Eight increments, medians of five runs.
+
+CPS4 reference: 576 material points, 6.28 s total, 5.75 s constitutive, 37 Newton
+iterations, no cutback.
+
+| formulation | `E_Gamma` | `E_sigma` | `E_R` | `E_u` | total | constitutive | Newton |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `CPS4R-elastic` | 5.89 % | 1.31 % | 5.19 % | 1.25 % | 3.58× | 4.53× | 32 |
+| **`CPS4R-AS`, ASMD, energy** | **1.17 %** | **0.25 %** | **0.69 %** | 0.20 % | **2.18×** | 2.72× | 47 |
+| `CPS4R-AS`, ASMD, current | did not converge | | | | | | |
+
+Against the preregistered bounds: `E_sigma` **passes**, `E_R` **passes**,
+`S_total > 1.8` **passes** at 2.18. `E_Gamma` **misses at 1.17 % against 1 %** —
+by 17 %. `S_const > 3.5` **misses at 2.72**.
+
+Four things in that table matter more than the pass/fail.
+
+**The assumed-strain element cuts the cumulated-slip error by five** against the
+elastic-difference form, 5.89 % to 1.17 %, and the reaction error by seven and a
+half, 5.19 % to 0.69 %. With the same single constitutive point.
+
+**The constitutive miss is an iteration count, not a per-call cost.** The point
+count falls exactly 4× — 576 to 144 — and every call is one call. What dilutes
+the ratio is that Newton takes 47 iterations against 37, 27 % more, so the
+constitutive *time* ratio is roughly `4 / 1.27`. The premise of section 2 holds
+exactly; the section 17 target, which is stated on total constitutive time,
+does not.
+
+**The energy projection earns its place here.** `assumed_strain_current` fails to
+converge on SRIX where the projected variant does not — the opposite of the J2
+case, where the two were identical to every digit because the tangent never lost
+definiteness. A crystal tangent does, and section 6.2 exists for exactly that.
+
+**No cutback is introduced**, so falsifier F2 does not fire.
+
+## What the J2 numbers say
 
 **The current tangent is worth about a factor two.** That is the whole thesis of
 this work and it is supported: replacing a frozen elastic stabilisation by one
@@ -50,7 +90,7 @@ meaningful.
 frame-dependence measured at the element level: it is not a tensor operation, and
 the resulting stabilisation is not a consistent derivative of anything.
 
-**The speed-up figure here is not the one that matters.** The Python J2 return
+**The J2 speed-up figure is not the one that matters, and SRIX confirms it.** The Python J2 return
 mapping is cheap, so the constitutive share of the total is small and dividing it
 by four barely moves the total; the per-iteration cost of rebuilding the
 stabilisation from the current tangent then eats most of the gain. R3.06.10 makes
@@ -92,8 +132,21 @@ not have hit every projection and both strategies equally.
 
 ## Provisional reading
 
-If the SRIX measurement confirms the speed-up and the accuracy stays near 4 %,
-this is **case B**: the cost target met, the constitutive accuracy not, usable
-for exploration and not for scientific conclusions. Nothing seen so far suggests
-case A. The formulation is not authorised for any campaign, and CPS4 remains the
-reference.
+**Case B, and a near miss rather than a failure.** Fourteen of the sixteen
+acceptance criteria of section 25 are met or not yet contradicted; two are
+missed, both narrowly and both on SRIX: the cumulated-slip error at 1.17 %
+against 1 %, and the constitutive speed-up at 2.72 against 3.5 — the latter
+because Newton needs 27 % more iterations, not because any element calls the
+material more than once.
+
+That is a materially better position than the formulation it replaces, which
+misses the same bounds by five to seven times. But the preregistration does not
+grade on improvement, and the bounds were frozen before the numbers existed.
+
+**The formulation is not authorised for any campaign and CPS4 remains the
+reference.** The two remaining questions are whether the extra Newton iterations
+can be removed — the stabilisation force is differentiated holding `C` fixed,
+which is exact in the elastic range and an approximation once the tangent moves —
+and whether the slip error falls below 1 % on a finer mesh, which would make the
+miss a resolution matter rather than a formulation one. Neither is settled, and
+neither may be settled by moving a threshold.

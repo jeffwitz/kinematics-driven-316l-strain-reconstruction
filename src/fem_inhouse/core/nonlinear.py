@@ -325,7 +325,7 @@ def run_fem(
     C_ps = plane_stress_elasticity(E_mod, nu)
     element_matrix_started_at = time.perf_counter()
     reference_tangent = None
-    if element_formulation == "cps4r":
+    if element_formulation in ("cps4r", "cps4r_as"):
         # The stabilisation must be built on the material the element is made
         # of. Falling back to the isotropic matrix when a backend does not say
         # is the one thing that must not happen silently: for a crystal at 30
@@ -341,8 +341,9 @@ def run_fem(
         else:
             raise ValueError(
                 f"constitutive backend {constitutive_backend!r} does not expose "
-                "reference_in_plane_tangent_mpa, so the hourglass stabilisation of "
-                "element_formulation='cps4r' cannot be built on the right elasticity"
+                "reference_in_plane_tangent_mpa, so the stabilisation of "
+                f"element_formulation={element_formulation!r} cannot be built on the "
+                "right elasticity"
             )
     operators = precompute_element(
         mesh,
