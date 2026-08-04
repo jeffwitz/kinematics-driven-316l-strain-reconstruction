@@ -21,6 +21,9 @@ commands, tensor layouts and solver implementation details live elsewhere.
 The operational entry points are {doc}`../how-to/index`; stable contracts are
 in {doc}`../reference/index`.
 
+The spectral mechanics argument is collected in
+{doc}`spectral_mechanics/index`.
+
 ```{toctree}
 :hidden:
 
@@ -35,4 +38,5 @@ current_evidence
 scope_and_prediction
 forest_rubin_srix
 reduced_integration_hourglass
+spectral_mechanics/index
 ```

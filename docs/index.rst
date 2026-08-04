@@ -64,6 +64,12 @@ Recommended journeys
    :doc:`explanation/current_evidence` →
    :doc:`explanation/scope_and_prediction`
 
+**Understand the spectral mechanics evidence**
+   :doc:`explanation/spectral_mechanics/index` →
+   :doc:`explanation/spectral_mechanics/one_point_instability` →
+   :doc:`explanation/spectral_mechanics/tet2_newton_gmres` →
+   :doc:`explanation/spectral_mechanics/ebi_srix_falsification`
+
 **Reproduce the results**
    :doc:`how-to/install` → :doc:`how-to/prepare_case` →
    :doc:`how-to/run_local_reconstruction` →

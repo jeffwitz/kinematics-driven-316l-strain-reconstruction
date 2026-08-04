@@ -2,6 +2,9 @@
 
 This branch evaluates an original SRIX adaptation of the Hookean EBI idea in
 [Gehrig and Schneider (2025)](https://onlinelibrary.wiley.com/doi/10.1002/nme.70170).
+
+The full scientific account, including the bounded SRIX falsification result,
+is in {doc}`explanation/spectral_mechanics/index`.
 The article does not qualify crystal plasticity; this implementation is therefore
 experimental.
 
@@ -22,4 +25,3 @@ second material state is introduced.
 `CellCenteredOnePoint2D` is unchanged and remains the near-hourglass witness.
 `TwoSubcellDiagnostic2D` remains the two-state diagnostic. The EBI path is isolated
 in `ebi.py` and `newton_ebi.py`.
-

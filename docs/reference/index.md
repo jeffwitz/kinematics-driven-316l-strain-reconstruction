@@ -37,6 +37,13 @@ argue for the scientific model.
 - {doc}`numerics/three_dimensional_condensation`
 - {doc}`numerics/nonlocal_fixed_point`
 - {doc}`numerics/sparse_solver`
+- {doc}`numerics/spectral_notation`
+- {doc}`numerics/full_dirichlet_dst1`
+- {doc}`numerics/tet2_operators`
+- {doc}`numerics/reference_green_b0`
+- {doc}`numerics/ebi_tet_contract`
+- {doc}`numerics/newton_gmres_contract`
+- {doc}`numerics/spectral_result_contract`
 
 ## Evidence and decisions
 
@@ -72,6 +79,13 @@ numerics/mfront_transaction
 numerics/three_dimensional_condensation
 numerics/nonlocal_fixed_point
 numerics/sparse_solver
+numerics/spectral_notation
+numerics/full_dirichlet_dst1
+numerics/tet2_operators
+numerics/reference_green_b0
+numerics/ebi_tet_contract
+numerics/newton_gmres_contract
+numerics/spectral_result_contract
 evidence_registry
 claims_matrix
 architecture_decisions

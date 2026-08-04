@@ -25,6 +25,9 @@
 - {doc}`use_srix_crystal_law`
 - {doc}`use_reduced_integration`
 - {doc}`add_nonlocal_criterion`
+- {doc}`run_tet2_srix`
+- {doc}`inspect_spectral_convergence`
+- {doc}`reproduce_ebi_falsification`
 
 The scientific reasons are in {doc}`../explanation/index`; authoritative
 parameters and field contracts are in {doc}`../reference/index`.
@@ -47,4 +50,7 @@ add_mfront_behaviour
 use_srix_crystal_law
 use_reduced_integration
 add_nonlocal_criterion
+run_tet2_srix
+inspect_spectral_convergence
+reproduce_ebi_falsification
 ```
