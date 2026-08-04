@@ -1,9 +1,13 @@
 {
   "schema_version": 1,
-  "git_sha": "13ba8dc793767b013a04999ea847923022f1e53f",
   "python_version": "3.12.3",
   "numpy_version": "2.5.1",
   "scipy_version": "1.18.0",
+  "source_sha256": {
+    "grid.py": "c3b26e5b85a9bc40a6c881737f693abda1ca29312f568be7806c28d3b1713694",
+    "transforms.py": "eb184b31c56e915505d7c6ff1a89d8c387a31d91d331d9d6b3c45332dcc9bffe",
+    "measure_spectral_dtt_contract.py": "e2db6b0c262a28de564ecb8cb0873864dcc5e98ede9eb01e25b5e96df9daa10d"
+  },
   "grids": [
     {
       "nx": 4,

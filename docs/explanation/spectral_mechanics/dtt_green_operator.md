@@ -34,19 +34,30 @@ $B_0$ is a preconditioner, not the SRIX constitutive law. The projected
 reference parameters are recorded separately from the elastic and algorithmic
 plane-stress tangents.
 
-The assembled reference stiffness is
+The production reference is the diagonal Gélébart-type `B_0` operator, not
+the symmetric elastic stiffness assembled from the plane-stress tangent:
 
 ```{math}
-A_0=-\operatorname{div}_D\left(\mathbb R_0:\nabla_D^s\right)
-=\sum_{e,q}w_qA_e B_{eq}^{T}C_0B_{eq}.
+A_0^{B_0}u=-\operatorname{div}_D\left[
+2\mu_0\nabla_Du+\lambda_0(\nabla_Du\odot I)
+\right].
 ```
+
+For comparison, the physical isotropic elastic stiffness would be
+
+```{math}
+K_{\mathrm{iso}}=\sum_{e,q}w_qA_eB_{eq}^{T}C_{\mathrm{iso}}^{ps}B_{eq},
+```
+
+and is generally coupled in the two displacement components. It is not the
+operator inverted by the production Green function.
 
 For a DST-I mode, the assembled operator gives the diagonal reference factors
 
 ```{math}
-\widehat{A_0u}_x=d_x\widehat u_x,
+\widehat{A_0^{B_0}u}_x=d_x\widehat u_x,
 \qquad
-\widehat{A_0u}_y=d_y\widehat u_y.
+\widehat{A_0^{B_0}u}_y=d_y\widehat u_y.
 ```
 
 The Green action inverts these modal factors with the solver's residual sign.

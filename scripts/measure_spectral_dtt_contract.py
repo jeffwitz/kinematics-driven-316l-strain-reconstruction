@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import platform
-import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -17,13 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "validation" / "reference_data" / "spectral_mechanics_evidence_v1" / "dtt_contract.json"
 
 
-def git_sha() -> str:
-    try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-        ).strip()
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def measure(nx: int, ny: int) -> dict[str, object]:
@@ -59,10 +54,14 @@ def main() -> None:
     maximum_inner_product_error = max(item["inner_product_relative_error"] for item in grids)
     report = {
         "schema_version": 1,
-        "git_sha": git_sha(),
         "python_version": platform.python_version(),
         "numpy_version": np.__version__,
         "scipy_version": scipy.__version__,
+        "source_sha256": {
+            "grid.py": file_sha256(ROOT / "src/fem_inhouse/spectral2d/grid.py"),
+            "transforms.py": file_sha256(ROOT / "src/fem_inhouse/spectral2d/transforms.py"),
+            "measure_spectral_dtt_contract.py": file_sha256(Path(__file__)),
+        },
         "grids": grids,
         "maximum_round_trip_error": maximum_round_trip_error,
         "maximum_inner_product_error": maximum_inner_product_error,

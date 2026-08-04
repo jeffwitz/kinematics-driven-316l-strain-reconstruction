@@ -44,12 +44,17 @@ python scripts/qualify_ebi_state_sharing.py \
   --output validation/_generated/ebi_tet/state_sharing_m12_reproduced.json
 ```
 
-The run writes a JSON summary under
-`validation/_generated/ebi_tet/`. The expected EBI verification residual at
-12x12 is approximately $1.12\times10^{-12}$ for the archived case. The run
-is diagnostic, not a permission to generalize the registered negative EBI
-verdict.
+The run writes the JSON summary under
+`validation/_generated/ebi_tet/`. Inspect the exact result with:
 
-For a small deterministic visual check, inspect the saved displacement fields
-with the repository's standard NumPy/Matplotlib tooling after confirming the
-summary and residual trace.
+```bash
+jq '{errors, verification_residual, iterations, timings}' \
+  validation/_generated/ebi_tet/state_sharing_m12_reproduced.json
+```
+
+The expected EBI verification residual at 12x12 is approximately
+$1.12\times10^{-12}$ for the archived case. This qualification entry point
+does not write field NPZ files or Newton/GMRES JSONL traces; use the archived
+JSON reports under `validation/_generated/ebi_tet/` for the reproducible
+comparison. The run is diagnostic, not a permission to generalize the
+registered negative EBI verdict.

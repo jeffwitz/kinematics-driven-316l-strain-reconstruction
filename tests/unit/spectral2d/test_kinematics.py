@@ -35,6 +35,32 @@ def test_affine_displacement_has_exact_constant_strain(kinematics) -> None:
     )
 
 
+def test_two_triangle_local_B_matrices_match_sample_strains() -> None:
+    grid = StructuredGrid2D(2, 2, 2.0, 3.0)
+    operator = TwoSubcellDiagnostic2D(grid)
+    rng = np.random.default_rng(2026)
+    displacement = rng.normal(size=(*grid.node_shape, 2))
+    samples = operator.strain_samples(displacement)[0, 0]
+    hx, hy = grid.spacing_x, grid.spacing_y
+    bl, br = displacement[0, 0], displacement[1, 0]
+    tl, tr = displacement[0, 1], displacement[1, 1]
+    expected = np.array(
+        [
+            [
+                (br[0] - bl[0]) / hx,
+                (tl[1] - bl[1]) / hy,
+                (tl[0] - bl[0]) / hy + (br[1] - bl[1]) / hx,
+            ],
+            [
+                (tr[0] - tl[0]) / hx,
+                (tr[1] - br[1]) / hy,
+                (tr[0] - br[0]) / hy + (tr[1] - tl[1]) / hx,
+            ],
+        ]
+    )
+    np.testing.assert_allclose(samples, expected, rtol=0.0, atol=1.0e-14)
+
+
 @pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_divergence_is_the_negative_adjoint_of_strain(kinematics) -> None:
     grid = StructuredGrid2D(5, 4, 2.0, 3.0)

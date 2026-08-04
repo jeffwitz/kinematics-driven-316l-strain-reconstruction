@@ -92,6 +92,8 @@ jobs:
           python scripts/build_spectral_documentation_figures.py
           python scripts/generate_documentation_evidence.py
       - name: Check generated figures are current
-        run: git diff --exit-code -- docs/_static docs/_generated
+        run: git diff --exit-code -- \
+          validation/reference_data/spectral_mechanics_evidence_v1/dtt_contract.json \
+          docs/_static docs/_generated
       - name: Build strict HTML documentation
         run: sphinx-build -M html docs docs/_build -W --keep-going

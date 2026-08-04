@@ -35,9 +35,9 @@ For the upper-right triangle,
 
 ```{math}
 B_2=\begin{bmatrix}
-0&0&-1/h_x&0&0&0&1/h_x&0\\
+0&0&0&0&-1/h_x&0&1/h_x&0\\
 0&0&0&-1/h_y&0&0&0&1/h_y\\
-0&0&-1/h_y&-1/h_x&0&0&1/h_y&1/h_x
+0&0&-1/h_y&0&0&-1/h_x&1/h_y&1/h_x
 \end{bmatrix}.
 ```
 
@@ -45,19 +45,28 @@ These matrices reproduce the finite-difference expressions in the main
 text. They also show that an affine displacement has identical strains in
 both samples.
 
-## Adjoint residual and reference stiffness
+## Adjoint residual and two reference operators
 
-With `A_e=h_x h_y` and `w_1=w_2=1/2`, the element reference stiffness is
+With `A_e=h_x h_y` and `w_1=w_2=1/2`, a symmetric isotropic elastic stiffness
+would be
 
 ```{math}
-K_e^0=\sum_{q=1}^{2}w_qA_eB_q^TC_0B_q.
+K_{e,\mathrm{iso}}=\sum_{q=1}^{2}w_qA_eB_q^TC_{\mathrm{iso}}^{ps}B_q.
 ```
 
-Assembly gives
+This is not the diagonal Green operator used by the production solver. The
+production reference is the Gélébart-type `B_0` operator
 
 ```{math}
-K_0=\sum_eK_e^0,
-\qquad
+A_0^{B_0}u=-\operatorname{div}_D\left[
+2\mu_0\nabla_Du+\lambda_0(\nabla_Du\odot I)
+\right].
+```
+
+Its two scalar modal factors are the `d_x` and `d_y` factors given below.
+The assembled physical residual is
+
+```{math}
 R(u)=-\sum_{e,q}w_qA_eB_{eq}^T\sigma_{eq}.
 ```
 

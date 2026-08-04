@@ -9,6 +9,21 @@ from fem_inhouse.spectral2d import (
 )
 
 
+def test_b0_modal_factors_match_the_diagonal_reference_operator() -> None:
+    symbols = ReferenceOperatorSymbols(
+        laplacian=np.array([[2.0, 5.0], [7.0, 11.0]]),
+        directional_x=np.array([[0.5, 1.0], [1.5, 2.0]]),
+        directional_y=np.array([[1.5, 1.0], [0.5, 2.0]]),
+    )
+    green = B0Green2D(symbols, lambda_0=4.0, mu_0=3.0)
+    displacement = np.ones((2, 2, 2))
+    reference_force = green.reference_force(displacement)
+    expected_x = -(6.0 * symbols.laplacian + 4.0 * symbols.directional_x)
+    expected_y = -(6.0 * symbols.laplacian + 4.0 * symbols.directional_y)
+    np.testing.assert_allclose(reference_force[..., 0], expected_x)
+    np.testing.assert_allclose(reference_force[..., 1], expected_y)
+
+
 def test_b0_green_matches_modal_inverse_and_nulls_zero_mode() -> None:
     symbols = ReferenceOperatorSymbols(
         laplacian=np.array([[0.0, 5.0], [7.0, 12.0]]),
