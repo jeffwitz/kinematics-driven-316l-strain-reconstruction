@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
 
-from fem_inhouse.spectral2d import AndersonAccelerator
+from fem_inhouse.spectral2d import DisplacementAndersonAccelerator
 
 
 def test_anderson_starts_with_fixed_point_and_then_accelerates() -> None:
-    accelerator = AndersonAccelerator(memory=4)
+    accelerator = DisplacementAndersonAccelerator(memory=4)
     state = np.array([0.0, 0.0])
     image = np.array([1.0, 2.0])
     first = accelerator.propose(state, image, image - state)
@@ -20,7 +20,7 @@ def test_anderson_starts_with_fixed_point_and_then_accelerates() -> None:
 
 
 def test_anderson_reset_discards_history() -> None:
-    accelerator = AndersonAccelerator()
+    accelerator = DisplacementAndersonAccelerator()
     accelerator.propose([0.0], [1.0], [1.0])
     accelerator.reset()
     proposal = accelerator.propose([1.0], [2.0], [1.0])
@@ -29,7 +29,7 @@ def test_anderson_reset_discards_history() -> None:
 
 
 def test_anderson_rejects_inconsistent_or_nonfinite_inputs() -> None:
-    accelerator = AndersonAccelerator()
+    accelerator = DisplacementAndersonAccelerator()
     with pytest.raises(ValueError, match="sizes"):
         accelerator.propose([0.0], [1.0, 2.0], [1.0])
     with pytest.raises(ValueError, match="finite"):

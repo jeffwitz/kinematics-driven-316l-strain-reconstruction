@@ -5,7 +5,10 @@ the constitutive backend, while the material protocol is imported from the
 solver-neutral core contract.
 """
 
-from fem_inhouse.spectral2d.anderson import AndersonAccelerator, AndersonDiagnostics
+from fem_inhouse.spectral2d.anderson import (
+    AndersonDiagnostics,
+    DisplacementAndersonAccelerator,
+)
 from fem_inhouse.spectral2d.boundary import (
     AppliedDisplacementExtension2D,
     HarmonicDirichletExtension2D,
@@ -32,11 +35,11 @@ from fem_inhouse.spectral2d.transforms import FullDirichletDSTIPlan2D, Transform
 __all__ = [
     "QUAD1_2D",
     "TRI2_2D",
-    "AndersonAccelerator",
     "AndersonDiagnostics",
     "AppliedDisplacementExtension2D",
     "B0Green2D",
     "DiscreteKinematics2D",
+    "DisplacementAndersonAccelerator",
     "FullDirichletDSTIPlan2D",
     "GreenDiagnostics",
     "HarmonicDirichletExtension2D",

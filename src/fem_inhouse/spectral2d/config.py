@@ -15,6 +15,7 @@ class Spectral2DConfig:
     relative_equilibrium_tolerance: float = 1.0e-6
     maximum_fixed_point_iterations: int = 200
     anderson_enabled: bool = True
+    anderson_target: Literal["none", "displacement", "polarization"] = "displacement"
     anderson_memory: int = 4
     anderson_start_iteration: int = 2
     anderson_regularization: float = 1.0e-12
@@ -39,6 +40,8 @@ class Spectral2DConfig:
             raise ValueError("maximum_fixed_point_iterations must be positive")
         if self.anderson_memory < 1 or self.anderson_start_iteration < 1:
             raise ValueError("Anderson memory and start iteration must be positive")
+        if self.anderson_target not in {"none", "displacement", "polarization"}:
+            raise ValueError("unsupported Anderson target")
         if not 0.0 < self.relaxation_reduction < 1.0:
             raise ValueError("relaxation_reduction must lie in (0, 1)")
         if not 0.0 < self.minimum_relaxation <= 1.0:

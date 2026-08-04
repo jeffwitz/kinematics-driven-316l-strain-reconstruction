@@ -13,7 +13,7 @@ from fem_inhouse.core.plane_stress_material import (
     ConstitutiveTrial,
     PlaneStressMaterialBatch,
 )
-from fem_inhouse.spectral2d.anderson import AndersonAccelerator
+from fem_inhouse.spectral2d.anderson import DisplacementAndersonAccelerator
 from fem_inhouse.spectral2d.boundary import HarmonicDirichletExtension2D
 from fem_inhouse.spectral2d.config import Spectral2DConfig
 from fem_inhouse.spectral2d.diagnostics import Spectral2DDiagnostics
@@ -157,20 +157,34 @@ def solve_dirichlet_plane_stress_spectral(
     dimensionless_history: list[float] = []
     absolute_history: list[float] = []
     iterations_per_increment: list[int] = []
-    anderson = AndersonAccelerator(config.anderson_memory, config.anderson_regularization)
+    anderson = DisplacementAndersonAccelerator(
+        config.anderson_memory, config.anderson_regularization
+    )
     minimum_relaxation = 1.0
-    time_increment = 1.0 / (history.shape[0] - 1)
+    initial_increment = 1.0 / (history.shape[0] - 1)
+    load_points = [
+        (history[index].copy(), initial_increment)
+        for index in range(1, history.shape[0])
+    ]
+    cutbacks = 0
+    increment_cutbacks = 0
+    load_index = 0
+    previous_boundary = history[0].copy()
 
-    for increment in range(1, history.shape[0]):
-        applied = extension.extend(history[increment], grid)
+    while load_index < len(load_points):
+        boundary_target, time_increment = load_points[load_index]
+        increment = load_index + 1
+        applied = extension.extend(boundary_target, grid)
+        fluctuation_start = fluctuation.copy()
         anderson.reset()
         accepted = False
+        failed = False
         for iteration in range(config.maximum_fixed_point_iterations):
             total_u = applied + fluctuation
             strain = operator.strain(total_u)
             trial, stress = _evaluate_material(material, strain, time_increment)
             residual = operator.divergence(stress)
-            relative, divergence_norm, residual_norm = _equilibrium_metrics(
+            relative, divergence_norm, _residual_norm = _equilibrium_metrics(
                 stress, residual, grid, operator.points_per_pixel
             )
             relative_history.append(relative)
@@ -196,7 +210,35 @@ def solve_dirichlet_plane_stress_spectral(
             image = plan.embed_interior(image_interior)
             fixed_residual = image - fluctuation
             candidate = image
-            if config.anderson_enabled and iteration + 1 >= config.anderson_start_iteration:
+            if (
+                config.anderson_enabled
+                and iteration + 1 >= config.anderson_start_iteration
+                and config.anderson_target == "polarization"
+            ):
+                probe_strain = operator.strain(applied + image)
+                try:
+                    _, probe_stress = _evaluate_material(material, probe_strain, time_increment)
+                    probe_residual = operator.divergence(probe_stress)
+                    probe_polarization = green.reference_force(
+                        plan.forward_displacement(image[1:-1, 1:-1])
+                    ) - plan.forward_displacement(probe_residual[1:-1, 1:-1])
+                    accelerated_polarization = anderson.propose(
+                        polarization,
+                        probe_polarization,
+                        probe_polarization - polarization,
+                    )
+                    image = plan.embed_interior(
+                        plan.inverse_displacement(green.apply(accelerated_polarization))
+                    )
+                    fixed_residual = image - fluctuation
+                    candidate = image
+                except ConstitutiveIntegrationError:
+                    material.revert()
+            elif (
+                config.anderson_enabled
+                and config.anderson_target == "displacement"
+                and iteration + 1 >= config.anderson_start_iteration
+            ):
                 candidate = anderson.propose(fluctuation, image, fixed_residual)
             relaxation = 1.0
             target = candidate
@@ -217,7 +259,7 @@ def solve_dirichlet_plane_stress_spectral(
                 except ConstitutiveIntegrationError:
                     material.revert()
                     candidate_norm = np.inf
-                if candidate_norm < relative:
+                if candidate_norm <= (1.0 - config.armijo_coefficient * relaxation) * relative:
                     break
                 relaxation *= config.relaxation_reduction
                 if relaxation >= config.minimum_relaxation:
@@ -228,16 +270,32 @@ def solve_dirichlet_plane_stress_spectral(
                     relaxation = 1.0
                     continue
                 material.revert()
-                raise SpectralIncrementConvergenceError(
-                    "fixed-point residual increased at "
-                    f"increment {increment}, iteration {iteration + 1} "
-                    f"(current={residual_norm:.6e}, relaxation={relaxation:.6e})"
-                )
+                failed = True
+                break
+            if failed:
+                break
             minimum_relaxation = min(minimum_relaxation, relaxation)
             fluctuation = candidate_fluctuation
         if not accepted:
             material.revert()
-            raise SpectralIncrementConvergenceError(f"increment {increment} did not converge")
+            fluctuation = fluctuation_start
+            if (
+                increment_cutbacks >= config.maximum_cutbacks_per_increment
+                or time_increment * 0.5
+                < initial_increment * config.minimum_increment_fraction
+            ):
+                raise SpectralIncrementConvergenceError(
+                    f"increment {increment} did not converge after {cutbacks} cutbacks"
+                )
+            midpoint = 0.5 * (previous_boundary + boundary_target)
+            load_points[load_index] = (midpoint, 0.5 * time_increment)
+            load_points.insert(load_index + 1, (boundary_target, 0.5 * time_increment))
+            cutbacks += 1
+            increment_cutbacks += 1
+            continue
+        load_index += 1
+        previous_boundary = boundary_target.copy()
+        increment_cutbacks = 0
 
     if final_trial is None:
         raise SpectralIncrementConvergenceError("no increment was solved")
@@ -254,6 +312,7 @@ def solve_dirichlet_plane_stress_spectral(
         dimensionless_equilibrium_history=tuple(dimensionless_history),
         absolute_residual_history=tuple(absolute_history),
         iterations_per_increment=tuple(iterations_per_increment),
+        cutbacks=cutbacks,
         anderson_proposals=anderson_diagnostics.proposals,
         anderson_accelerated_proposals=anderson_diagnostics.accelerated_proposals,
         anderson_resets=anderson_diagnostics.resets,

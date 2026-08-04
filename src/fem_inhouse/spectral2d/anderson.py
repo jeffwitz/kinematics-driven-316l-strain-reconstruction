@@ -17,7 +17,7 @@ class AndersonDiagnostics:
     resets: int
 
 
-class AndersonAccelerator:
+class DisplacementAndersonAccelerator:
     """Limited-memory Anderson proposal generator.
 
     The accelerator stores only accepted fixed-point iterates supplied through
@@ -83,10 +83,17 @@ class AndersonAccelerator:
                     for index in range(first_pair, len(image_history) - 1)
                 ]
             )
-            gram = delta_residuals.T @ delta_residuals
-            if self.regularization:
-                gram = gram + self.regularization * np.eye(gram.shape[0])
-            coefficients = np.linalg.solve(gram, delta_residuals.T @ current_residual)
+            left, singular_values, right_transpose = np.linalg.svd(
+                delta_residuals, full_matrices=False
+            )
+            threshold = self.regularization * max(float(singular_values[0]), 1.0)
+            active = singular_values > threshold
+            if not np.any(active):
+                coefficients = np.zeros(delta_residuals.shape[1])
+            else:
+                coefficients = right_transpose[active].T @ (
+                    (left[:, active].T @ current_residual) / singular_values[active]
+                )
             candidate = image - delta_images @ coefficients
             self._accelerated_proposals += 1
 
