@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import platform
 from pathlib import Path
 
@@ -14,7 +14,13 @@ import scipy
 from fem_inhouse.spectral2d import FullDirichletDSTIPlan2D, StructuredGrid2D
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "validation" / "reference_data" / "spectral_mechanics_evidence_v1" / "dtt_contract.json"
+OUTPUT = (
+    ROOT
+    / "validation"
+    / "reference_data"
+    / "spectral_mechanics_evidence_v1"
+    / "dtt_contract.json"
+)
 
 
 def file_sha256(path: Path) -> str:

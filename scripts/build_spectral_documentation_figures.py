@@ -30,11 +30,15 @@ def save(fig: plt.Figure, name: str) -> None:
 
 
 def main() -> None:
-    m8, m12, m24 = (load(mesh) for mesh in (8, 12, 24))
+    m24 = load(24)
 
     errors = m24["errors"]
     labels = ["TET2 / CPS4", "EBI / TET2", "EBI / CPS4"]
-    values = [errors["tet_cps4"]["E_Gamma"], errors["ebi_tet"]["E_Gamma"], errors["ebi_cps4"]["E_Gamma"]]
+    values = [
+        errors["tet_cps4"]["E_Gamma"],
+        errors["ebi_tet"]["E_Gamma"],
+        errors["ebi_cps4"]["E_Gamma"],
+    ]
     fig, ax = plt.subplots(figsize=(6.2, 3.4))
     ax.bar(labels, np.asarray(values) * 100.0, color=["#2b6cb0", "#dd6b20", "#805ad5"])
     ax.set_ylabel("Accumulated-slip error (%)")
@@ -57,7 +61,11 @@ def main() -> None:
     save(fig, "refinement_accumulated_slip.png")
 
     fig, ax = plt.subplots(figsize=(5.2, 3.4))
-    ax.bar(["EBI-TET", "TET2"], [m24["timings"]["ebi_seconds"], m24["timings"]["tet_two_state_seconds"]], color=["#805ad5", "#2b6cb0"])
+    timings = [
+        m24["timings"]["ebi_seconds"],
+        m24["timings"]["tet_two_state_seconds"],
+    ]
+    ax.bar(["EBI-TET", "TET2"], timings, color=["#805ad5", "#2b6cb0"])
     ax.set_ylabel("Single-run time (s)")
     ax.set_title("Indicative 24x24 runtime")
     ax.grid(axis="y", alpha=0.25)

@@ -57,10 +57,14 @@ jobs:
       - name: Test image observation chain without skips
         shell: bash
         run: |
-          set -o pipefail
-          output="$(pytest -m measurement -q -rs)"
-          printf '%s\n' "$output"
-          if grep -Eiq '(^|[[:space:]])[0-9]+ skipped' <<<"$output"; then
+          set +e
+          pytest -m measurement -q -rs 2>&1 | tee /tmp/measurement-tests.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if (( status != 0 )); then
+            exit "$status"
+          fi
+          if grep -Eiq '(^|[[:space:]])[0-9]+ skipped' /tmp/measurement-tests.log; then
             echo "Measurement tests were skipped despite the OpenCV environment."
             exit 1
           fi

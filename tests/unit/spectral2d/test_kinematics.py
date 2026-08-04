@@ -35,7 +35,7 @@ def test_affine_displacement_has_exact_constant_strain(kinematics) -> None:
     )
 
 
-def test_two_triangle_local_B_matrices_match_sample_strains() -> None:
+def test_two_triangle_local_b_matrices_match_sample_strains() -> None:
     grid = StructuredGrid2D(2, 2, 2.0, 3.0)
     operator = TwoSubcellDiagnostic2D(grid)
     rng = np.random.default_rng(2026)
