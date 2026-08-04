@@ -14,3 +14,10 @@ slip differs materially from TET2 at identical kinematics.
 The next one-state method must change the constitutive representation or the
 spatial sampling strategy. More Anderson tuning, FFT optimization or tighter
 Newton tolerances cannot recover information removed by state sharing.
+
+```{figure} ../../_static/spectral_mechanics/runtime_comparison.png
+:alt: Indicative 24 by 24 runtime comparison.
+:name: spectral-runtime-comparison
+
+The timings are single-run evidence, not a repeat-qualified performance claim.
+```

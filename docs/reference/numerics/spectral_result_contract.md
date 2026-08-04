@@ -3,7 +3,7 @@
 Every reported run must identify:
 
 * grid, stencil and material-state count;
-* DST plan and reference \(\lambda_0,\mu_0\);
+* DST plan and reference $\lambda_0,\mu_0$;
 * equilibrium residual and post-revert verification residual;
 * Newton/GMRES iterations and constitutive calls;
 * displacement, stress, accumulated-slip and reaction errors against the

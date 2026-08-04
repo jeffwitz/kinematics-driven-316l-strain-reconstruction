@@ -1,5 +1,41 @@
 <!-- Generated from validation/documentation_evidence_registry.json. -->
 
+**E-SPECTRAL-001 — Does the one-point spectral stencil develop a high-frequency near-null mode?**
+: Fidelity: registered spectral witness. Parameters: one-point stencil, recorded non-affine load.
+: Status: **verified**.
+: Conclusion: The witness stalled after 7928 iterations and retained a high-frequency displacement fraction of about 1.43e-4.
+: Sources: primary: `validation/reference_data/spectral_mechanics_evidence_v1/report.json`.
+
+**E-SPECTRAL-002 — Does TET2 approach CPS4 under refinement?**
+: Fidelity: two-state TET2 versus CPS4. Parameters: registered SRIX case, 24x24.
+: Status: **supported**.
+: Conclusion: At 24x24, TET2 is within 0.72% in accumulated slip and 0.19% in stress of CPS4.
+: Sources: primary: `validation/reference_data/spectral_mechanics_evidence_v1/report.json`.
+
+**E-SPECTRAL-003 — Does Newton-GMRES reach and verify the spectral equilibrium solution?**
+: Fidelity: transactional matrix-free Newton-GMRES. Parameters: 12x12 and 24x24, tolerance 1e-8.
+: Status: **verified**.
+: Conclusion: The TET2 verification residuals are below 1e-11 and 1e-13 at 12x12 and 24x24 respectively.
+: Sources: primary: `validation/_generated/ebi_tet/state_sharing_m12.json`<br>primary: `validation/_generated/ebi_tet/state_sharing_m24.json`.
+
+**E-EBI-001 — Does the SRIX Hookean prerequisite and directional EBI tangent pass?**
+: Fidelity: plane-stress SRIX Hookean reconstruction. Parameters: three orientations, plastified states, one state per pixel.
+: Status: **verified**.
+: Conclusion: The Hookean prerequisite passes and the directional tangent reaches 8.58e-7 minimum relative error.
+: Sources: primary: `validation/_generated/ebi_tet/srix_hookean.json`<br>primary: `validation/_generated/ebi_tet/srix_tangent.json`.
+
+**E-EBI-002 — Is the dominant registered EBI error caused by state sharing?**
+: Fidelity: same TET2 kinematics, TET2 versus EBI. Parameters: registered SRIX case, 24x24.
+: Status: **supported**.
+: Conclusion: EBI versus TET2 accumulated-slip error is 5.39%, while TET2 versus CPS4 is 0.72%.
+: Sources: primary: `validation/_generated/ebi_tet/state_sharing_m24.json`.
+
+**E-DTT-001 — Do the DST-I transform and discrete inner product contracts hold?**
+: Fidelity: full-Dirichlet DST-I unit tests. Parameters: rectangular and square unit-test grids.
+: Status: **verified**.
+: Conclusion: The documented round-trip and inner-product contracts pass at the declared numerical precision.
+: Sources: primary: `validation/reference_data/spectral_mechanics_evidence_v1/report.json`.
+
 **E-MAP-001 — What do boundary kinematics and the spatial placement of the material maps contribute?**
 : Fidelity: full-resolution local FEM controls. Parameters: P43 mapped, homogeneous 124/380 MPa, joint map shift 600/500 pixels.
 : Status: **supported**.

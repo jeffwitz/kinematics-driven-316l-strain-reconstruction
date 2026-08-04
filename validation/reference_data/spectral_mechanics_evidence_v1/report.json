@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "scope": "registered homogeneous SRIX orientation, recorded non-affine load",
+  "one_point": {
+    "iterations": 7928,
+    "converged": false,
+    "high_frequency_fraction": 0.000143
+  },
+  "tet2_vs_cps4_m24": {
+    "E_Gamma": 0.007216238085528649,
+    "E_sigma": 0.0019297381202495426,
+    "E_u": 0.0010632895508231371,
+    "E_R_nodal": 0.00870097653442639,
+    "verification_residual": 9.735274911549379e-14
+  },
+  "ebi_vs_tet2_m24": {
+    "E_Gamma": 0.05393054551885064,
+    "E_sigma": 0.011097291384844984,
+    "E_u": 0.010607952878358544,
+    "E_R_nodal": 0.054502663267518424
+  },
+  "ebi_hookean": {
+    "maximum_relative_error": 3.7900747184203053e-14,
+    "directional_tangent_minimum_error": 8.584891560204236e-07
+  },
+  "dtt": {
+    "round_trip_relative_error": 1.0e-13,
+    "product_inner_product_preserved": true
+  }
+}

@@ -90,12 +90,6 @@ Recommended journeys
 
 .. toctree::
    :hidden:
-   :caption: Spectral architecture
-
-   ebi_tet_architecture
-
-.. toctree::
-   :hidden:
    :caption: How-to
 
    how-to/index

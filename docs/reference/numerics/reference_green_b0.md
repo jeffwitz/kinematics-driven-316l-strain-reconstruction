@@ -3,13 +3,13 @@
 The full-Dirichlet Green operator is a preconditioner for the global Newton
 linearization. For every transformed mode it applies
 
-\[
+```{math}
 \widehat{\delta u}_x=-\widehat p_x/(2\mu_0L+\lambda_0L_x),
 \quad
 \widehat{\delta u}_y=-\widehat p_y/(2\mu_0L+\lambda_0L_y).
-\]
+```
 
-\(\lambda_0\) and \(\mu_0\) are either explicit inputs or the recorded
+$\lambda_0$ and $\mu_0$ are either explicit inputs or the recorded
 Kelvin-consistent isotropic projection. They are not SRIX parameters and do
 not alter the constitutive response.
 

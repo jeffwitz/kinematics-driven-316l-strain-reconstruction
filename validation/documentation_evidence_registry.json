@@ -172,9 +172,230 @@
       "evidence_ids": [
         "E-DIC-009"
       ]
+    },
+    {
+      "question": "Does the one-point spectral stencil develop a high-frequency near-null mode?",
+      "status": "verified",
+      "boundary": "Registered spectral witness and recorded loading path",
+      "evidence_ids": [
+        "E-SPECTRAL-001"
+      ]
+    },
+    {
+      "question": "Does TET2 approach CPS4 under refinement?",
+      "status": "supported",
+      "boundary": "Two-state TET2, registered SRIX case, through 24x24",
+      "evidence_ids": [
+        "E-SPECTRAL-002"
+      ]
+    },
+    {
+      "question": "Does Newton-GMRES reach and verify the spectral equilibrium solution?",
+      "status": "verified",
+      "boundary": "Registered EBI/TET2 runs and transactional final verification",
+      "evidence_ids": [
+        "E-SPECTRAL-003"
+      ]
+    },
+    {
+      "question": "Does the SRIX Hookean prerequisite and directional EBI tangent pass?",
+      "status": "verified",
+      "boundary": "Three tested orientations and the registered plastified states",
+      "evidence_ids": [
+        "E-EBI-001"
+      ]
+    },
+    {
+      "question": "Is the dominant registered EBI error caused by state sharing?",
+      "status": "supported",
+      "boundary": "Same TET2 kinematics and global solver, comparison through 24x24",
+      "evidence_ids": [
+        "E-EBI-002"
+      ]
+    },
+    {
+      "question": "Do the DST-I transform and discrete inner product contracts hold?",
+      "status": "verified",
+      "boundary": "Unit-test grids and full-Dirichlet implementation",
+      "evidence_ids": [
+        "E-DTT-001"
+      ]
     }
   ],
   "evidence": [
+    {
+      "id": "E-SPECTRAL-001",
+      "question": "Does the one-point spectral stencil develop a high-frequency near-null mode?",
+      "fidelity": "registered spectral witness",
+      "parameters": "one-point stencil, recorded non-affine load",
+      "status": "verified",
+      "conclusion": "The witness stalled after 7928 iterations and retained a high-frequency displacement fraction of about 1.43e-4.",
+      "sources": [
+        {
+          "path": "validation/reference_data/spectral_mechanics_evidence_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/one_point/converged",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/one_point/high_frequency_fraction",
+              "operator": "greater_than",
+              "expected": 0.0001
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SPECTRAL-002",
+      "question": "Does TET2 approach CPS4 under refinement?",
+      "fidelity": "two-state TET2 versus CPS4",
+      "parameters": "registered SRIX case, 24x24",
+      "status": "supported",
+      "conclusion": "At 24x24, TET2 is within 0.72% in accumulated slip and 0.19% in stress of CPS4.",
+      "sources": [
+        {
+          "path": "validation/reference_data/spectral_mechanics_evidence_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/tet2_vs_cps4_m24/E_Gamma",
+              "operator": "less_than",
+              "expected": 0.01
+            },
+            {
+              "path": "/tet2_vs_cps4_m24/E_sigma",
+              "operator": "less_than",
+              "expected": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SPECTRAL-003",
+      "question": "Does Newton-GMRES reach and verify the spectral equilibrium solution?",
+      "fidelity": "transactional matrix-free Newton-GMRES",
+      "parameters": "12x12 and 24x24, tolerance 1e-8",
+      "status": "verified",
+      "conclusion": "The TET2 verification residuals are below 1e-11 and 1e-13 at 12x12 and 24x24 respectively.",
+      "sources": [
+        {
+          "path": "validation/_generated/ebi_tet/state_sharing_m12.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/verification_residual/tet_two_state",
+              "operator": "less_than",
+              "expected": 1.0e-11
+            }
+          ]
+        },
+        {
+          "path": "validation/_generated/ebi_tet/state_sharing_m24.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/verification_residual/tet_two_state",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-EBI-001",
+      "question": "Does the SRIX Hookean prerequisite and directional EBI tangent pass?",
+      "fidelity": "plane-stress SRIX Hookean reconstruction",
+      "parameters": "three orientations, plastified states, one state per pixel",
+      "status": "verified",
+      "conclusion": "The Hookean prerequisite passes and the directional tangent reaches 8.58e-7 minimum relative error.",
+      "sources": [
+        {
+          "path": "validation/_generated/ebi_tet/srix_hookean.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/passed",
+              "operator": "equals",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "path": "validation/_generated/ebi_tet/srix_tangent.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/minimum_relative_error",
+              "operator": "less_than",
+              "expected": 1.0e-6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-EBI-002",
+      "question": "Is the dominant registered EBI error caused by state sharing?",
+      "fidelity": "same TET2 kinematics, TET2 versus EBI",
+      "parameters": "registered SRIX case, 24x24",
+      "status": "supported",
+      "conclusion": "EBI versus TET2 accumulated-slip error is 5.39%, while TET2 versus CPS4 is 0.72%.",
+      "sources": [
+        {
+          "path": "validation/_generated/ebi_tet/state_sharing_m24.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/errors/ebi_tet/E_Gamma",
+              "operator": "greater_than",
+              "expected": 0.05
+            },
+            {
+              "path": "/errors/tet_cps4/E_Gamma",
+              "operator": "less_than",
+              "expected": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-DTT-001",
+      "question": "Do the DST-I transform and discrete inner product contracts hold?",
+      "fidelity": "full-Dirichlet DST-I unit tests",
+      "parameters": "rectangular and square unit-test grids",
+      "status": "verified",
+      "conclusion": "The documented round-trip and inner-product contracts pass at the declared numerical precision.",
+      "sources": [
+        {
+          "path": "validation/reference_data/spectral_mechanics_evidence_v1/report.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/dtt/product_inner_product_preserved",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/dtt/round_trip_relative_error",
+              "operator": "less_than_or_equal",
+              "expected": 1.0e-13
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "E-MAP-001",
       "question": "What do boundary kinematics and the spatial placement of the material maps contribute?",

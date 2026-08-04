@@ -9,20 +9,47 @@ only the number of constitutive histories. At 24x24:
 | EBI vs TET2 | 1.06% | 1.11% | 5.39% | 5.45% |
 | EBI vs CPS4 | 1.11% | 1.23% | 5.76% | 6.01% |
 
+```{figure} ../../_static/spectral_mechanics/error_decomposition.png
+:alt: Accumulated-slip error decomposition at 24 by 24 pixels.
+:name: spectral-error-decomposition
+
+The same-kinematics comparison isolates the state-sharing contribution.
+```
+
+```{figure} ../../_static/spectral_mechanics/refinement_accumulated_slip.png
+:alt: Accumulated-slip error under spatial refinement.
+:name: spectral-refinement-slip
+
+TET2 approaches CPS4, while the EBI/TET2 gap remains several percent.
+```
+
 The EBI Newton-GMRES solve itself is accurate: at 12x12 it reached a verified
-residual of \(1.12\times10^{-12}\), with a maximum Hookean prerequisite error
-of about \(3.8\times10^{-14}\). The mismatch is therefore not a convergence
+residual of $1.12\times10^{-12}$, with a maximum Hookean prerequisite error
+of about $3.8\times10^{-14}$. The mismatch is therefore not a convergence
 failure or a high-frequency artifact.
 
-The causal mechanism is non-commutation of nonlinear history evolution:
+The demonstrated result is that state sharing dominates the registered error:
+the spatial stencil, global solver and convergence tolerance are held fixed,
+while only the number of constitutive histories changes. A compatible local
+interpretation is non-commutation of nonlinear history evolution:
 
-\[
+```{math}
 \mathcal U(z,\tfrac12(\varepsilon_1+\varepsilon_2))
 \ne \tfrac12[\mathcal U(z,\varepsilon_1)+\mathcal U(z,\varepsilon_2)].
-\]
+```
 
-Two local histories can also activate different slip systems. A single state
-driven by the mean strain cannot retain that intra-pixel history split.
+The two-state and one-state updates are more precisely
+
+```{math}
+z_e^{n+1}=\mathcal U(z_e^n,\bar\varepsilon_e^{n+1}),
+\qquad
+z_{eq}^{n+1}=\mathcal U(z_{eq}^n,\varepsilon_{eq}^{n+1}).
+```
+
+The archive does not contain a system-by-system active-set comparison.
+Different active slip sets are therefore an interpretation, not a separately
+demonstrated claim. What is demonstrated is that one state cannot recover the
+two local histories with the observed accuracy.
 
 :::{admonition} Project numerical result
 The status is `experimental_falsified_for_registered_SRIX_case`: the result is

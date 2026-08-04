@@ -23,3 +23,9 @@
 | Measured temporal boundary history can be replayed end to end | **demonstrated** | Convergence only; says nothing about physical correctness of the intermediate states | `E-DIC-007` |
 | Loading path changes reconstructed plasticity at a shared endpoint | **supported** | 15.8 % on core PEEQ under one constitutive model, invisible to the DIC observable; the DIC noise contribution is not subtracted | `E-DIC-008`, `E-DIC-010` |
 | Measured path is closer to DIC than a proportional ramp | **not supported** | Indistinguishable at the registered margins; the observable is insensitive at this scale | `E-DIC-009` |
+| Does the one-point spectral stencil develop a high-frequency near-null mode? | **verified** | Registered spectral witness and recorded loading path | `E-SPECTRAL-001` |
+| Does TET2 approach CPS4 under refinement? | **supported** | Two-state TET2, registered SRIX case, through 24x24 | `E-SPECTRAL-002` |
+| Does Newton-GMRES reach and verify the spectral equilibrium solution? | **verified** | Registered EBI/TET2 runs and transactional final verification | `E-SPECTRAL-003` |
+| Does the SRIX Hookean prerequisite and directional EBI tangent pass? | **verified** | Three tested orientations and the registered plastified states | `E-EBI-001` |
+| Is the dominant registered EBI error caused by state sharing? | **supported** | Same TET2 kinematics and global solver, comparison through 24x24 | `E-EBI-002` |
+| Do the DST-I transform and discrete inner product contracts hold? | **verified** | Unit-test grids and full-Dirichlet implementation | `E-DTT-001` |
