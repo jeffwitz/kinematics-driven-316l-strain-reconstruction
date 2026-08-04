@@ -94,7 +94,7 @@ def solve_fem(case: dict[str, Any], formulation: str, library: str, increments: 
 
 def solve_spectral(
     case: dict[str, Any], scheme: str, library: str, increments: int, tolerance: float,
-    trace_callback=None,
+    trace_callback=None, anderson_target: str = "displacement", anderson_memory: int = 4,
 ) -> tuple[Any, float]:
     mesh = case["mesh"]
     grid = StructuredGrid2D(mesh.nx, mesh.ny, *mesh.physical_size_mm)
@@ -130,6 +130,9 @@ def solve_spectral(
         config=Spectral2DConfig(
             spatial_scheme=cast(Literal["quad1", "tri2"], scheme),
             relative_equilibrium_tolerance=tolerance,
+            anderson_target=cast(Literal["none", "displacement", "polarization"], anderson_target),
+            anderson_enabled=anderson_target != "none",
+            anderson_memory=anderson_memory,
             reference_lambda_0=69_230.76923076923,
             reference_mu_0=78_846.15384615384,
         ),
@@ -144,6 +147,11 @@ def main() -> int:
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--tolerance", type=float, default=1.0e-6)
+    parser.add_argument(
+        "--anderson-target", choices=("none", "displacement", "polarization"),
+        default="displacement",
+    )
+    parser.add_argument("--anderson-memory", type=int, default=4)
     parser.add_argument("--output", type=Path, default=Path("validation/_generated/spectral2d"))
     arguments = parser.parse_args()
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", "build/mfront/src/libBehaviour.so")
@@ -163,6 +171,8 @@ def main() -> int:
         "mesh": arguments.mesh,
         "increments": arguments.increments,
         "spectral_tolerance": arguments.tolerance,
+        "anderson_target": arguments.anderson_target,
+        "anderson_memory": arguments.anderson_memory,
         "orientation_bunge_deg": list(ORIENTATION_BUNGE_DEG),
         "variants": {},
     }
@@ -185,7 +195,7 @@ def main() -> int:
 
                 spectral_result, elapsed = solve_spectral(
                     case, scheme, library, arguments.increments, arguments.tolerance,
-                    write_trace,
+                    write_trace, arguments.anderson_target, arguments.anderson_memory,
                 )
                 trace_file.close()
                 timings.append(elapsed)

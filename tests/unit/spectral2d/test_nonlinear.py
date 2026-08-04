@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d import (
@@ -102,3 +103,23 @@ def test_equilibrium_is_invariant_under_length_unit_scaling() -> None:
     assert millimetres.diagnostics.iterations_per_increment == (
         micrometres.diagnostics.iterations_per_increment
     )
+
+
+@pytest.mark.parametrize("target", ["none", "displacement", "polarization"])
+def test_anderson_targets_are_explicit_and_convergent(target: str) -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((2, *grid.node_shape, 2))
+    boundary[1, ..., 0] = 0.1 * x[:, None] + 0.01 * np.sin(np.pi * y[None, :] / 2.0)
+    boundary[1, ..., 1] = 0.1 * y[None, :] + 0.01 * np.sin(np.pi * x[:, None] / 2.0)
+    result = solve_dirichlet_plane_stress_spectral(
+        grid=grid,
+        material=ElasticMaterial(16),
+        boundary_displacement_history=boundary,
+        config=Spectral2DConfig(
+            anderson_enabled=target != "none",
+            anderson_target=target,  # type: ignore[arg-type]
+            maximum_fixed_point_iterations=100,
+        ),
+    )
+    assert result.diagnostics.dimensionless_equilibrium_history[-1] < 1.0e-6

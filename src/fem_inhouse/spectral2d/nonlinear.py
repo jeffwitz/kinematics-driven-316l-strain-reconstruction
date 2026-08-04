@@ -281,7 +281,8 @@ def solve_dirichlet_plane_stress_spectral(
             transformed_residual = plan.forward_displacement(residual[1:-1, 1:-1])
             polarization = reference_force - transformed_residual
             image_interior = plan.inverse_displacement(green.apply(polarization))
-            image = plan.embed_interior(image_interior)
+            raw_image = plan.embed_interior(image_interior)
+            image = raw_image
             fixed_residual = image - fluctuation
             candidate = image
             if (
@@ -301,11 +302,11 @@ def solve_dirichlet_plane_stress_spectral(
                         probe_polarization,
                         probe_polarization - polarization,
                     )
-                    image = plan.embed_interior(
+                    accelerated_image = plan.embed_interior(
                         plan.inverse_displacement(green.apply(accelerated_polarization))
                     )
-                    fixed_residual = image - fluctuation
-                    candidate = image
+                    candidate = accelerated_image
+                    fixed_residual = candidate - fluctuation
                 except ConstitutiveIntegrationError:
                     material.revert()
             elif (
@@ -338,9 +339,9 @@ def solve_dirichlet_plane_stress_spectral(
                 relaxation *= config.relaxation_reduction
                 if relaxation >= config.minimum_relaxation:
                     continue
-                if target is not image:
+                if target is not raw_image:
                     anderson.reset()
-                    target = image
+                    target = raw_image
                     relaxation = 1.0
                     continue
                 material.revert()
