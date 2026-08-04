@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-02
+Dernière mise à jour : 2026-08-04
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## Frontières d'extension — fusionné le 2026-08-02
@@ -3131,6 +3131,82 @@ RMSE peut accompagner une carte visuellement plus bruitée aux interfaces.
 | 2026-07-31 | Excès de PEEQ moyen après filtrage | Déciles et aire active, données archivées | Redistribution ; confondant à `5,8 %` seulement | Expliqué |
 
 ## 14. Journal des mises à jour
+
+### 2026-08-04 — Correction Broyden de la jacobienne hourglass : rejetée, et on sait pourquoi
+
+Cahier des charges §15 à §35, câblage solveur inclus. **Verdict : rejetée.**
+Trois falsificateurs se déclenchent. `jacobian_correction` reste à `none`, et
+CPS4R-AS conserve les 47 itérations que ce travail visait à réduire.
+
+Les entrées CPS4R-AS qui précèdent ce travail — dérivation QUAS4, qualification
+élémentaire, campagne SRIX, variante décalée non convergente — ne sont pas dans
+ce journal ; elles sont dans `validation/cps4r_assumed_strain_report.md` et
+`validation/cps4r_assumed_strain_campaign2_preregistration.md`.
+
+- **§15-18 câblés** : protocole `NonlinearJacobianCorrection`, registre,
+  `NoJacobianCorrection` comme objet plutôt que branche `None`, mémoire par
+  élément. Les trois règles de transaction du §17 sont tenues : purge en début
+  d'incrément, purge au cutback, et paires construites **uniquement** en tête
+  d'itération — là où `u` est l'état que l'itération précédente a accepté. Un
+  essai de recherche linéaire est une sonde, pas un itéré, et n'atteint jamais
+  `observe`.
+- **La correction ne touche que la matrice.** `R_I` est formé avant, et n'est
+  jamais reconstruit à partir d'elle. C'est ce qui rend le nombre d'itérations
+  le seul observable prévu.
+- **Le cas préinscrit se reproduit exactement** : CPS4 à 37 itérations,
+  CPS4R-AS à 47, sur SRIX Bunge (35, 20, 15), 12×12, huit incréments.
+- **F3 se déclenche sur les trois mémoires** : 50, 57, 64 pour `m = 1, 3, 5`.
+  Plus de paires sécantes, plus d'itérations, et de façon monotone. Même ordre
+  à une tolérance de `1e-8` (56 sans correction, puis 59, 60, 71) et sur un
+  maillage 6×6 à quatre incréments.
+- **F1 se déclenche sur `m = 3` et `m = 5`**, et il a fallu le mesurer pour le
+  savoir. `m = 1` donne `6,6e-10` à une tolérance de `1e-6` et `7,8e-12` à
+  `1e-8` : l'écart suit la tolérance, c'est une différence de trajet dans la
+  boule de convergence. `m = 3` et `m = 5` donnent `2,26e-5` **aux deux
+  tolérances**, inchangé après un resserrement d'un facteur cent. Les deux
+  calculs accélérés convergent donc vers un équilibre réellement différent du
+  même problème discret. L'explication que suggèrent les indices — la loi
+  cristalline indépendante du temps admet des équilibres voisins d'ensemble de
+  systèmes actifs différent — n'est **pas démontrée**, et reste consignée comme
+  point ouvert.
+- **Le §23 explique l'échec.** Sur un élément, loi réintégrée à chaque
+  évaluation : la correction annule son défaut sécant à `1,6e-15` le long des
+  directions sur lesquelles elle a été ajustée, et **dégrade** la prédiction le
+  long d'une direction fraîche — `0,99` devient `1,52`, et elle n'améliore que
+  41 % des directions d'essai. Robuste sur contractions `0,3 / 0,6 / 0,8` et
+  mémoires `1 / 3 / 5` : `m = 1` est neutre hors échantillon et quasi neutre
+  dans le solveur, `m = 5` dégrade jusqu'à trente fois et est le pire des trois.
+  Le diagnostic élémentaire et la campagne solveur concordent en ordre et en
+  amplitude.
+- **La raison est dans la nature du terme.** `(df_stab/dC)(dC/du)` n'est pas un
+  opérateur linéaire fixe que cinq paires sécantes identifient : `C` est la
+  tangente algorithmique d'une loi **indépendante du temps** et saute avec
+  l'ensemble des systèmes actifs. Ajuster un `2×5` sur une suite contractante
+  où `C` a changé de façon discontinue produit une matrice qui satisfait toutes
+  les conditions stockées et ne décrit rien. La résolution de norme de
+  Frobenius minimale fait correctement son travail ; c'est la prémisse qu'un
+  ajustement sécant puisse capter ce terme qui est fausse.
+- **Ce qui n'est pas réfuté** : la tangente assumed-strain *est* inconsistante,
+  de 370 % sur la stabilisation, et c'est bien ce qui coûte les dix itérations.
+  Le diagnostic directionnel le confirme indépendamment — la jacobienne réduite
+  de base se trompe de `0,85` à `1,2` en erreur relative de prédiction sur la
+  vraie loi cristalline.
+- **Vitesses mesurées, mais non décisives.** CPS4R-AS sans correction est à
+  `2,44` sur le constitutif et `2,10` sur le total ; la borne constitutive de
+  `3,5` n'était donc jamais à portée, et c'est précisément le manque que ce
+  travail devait combler. `m = 1` affiche un gain constitutif *supérieur* à la
+  référence tout en faisant trois itérations de plus, ce qui est impossible si
+  les temps étaient exacts : la répétabilité de cette machine est donc de
+  l'ordre de 15 à 20 % même sur des médianes de cinq. Le verdict repose sur les
+  critères déterministes.
+- **Le code est conservé, éteint par défaut** : c'est ce qui rend le résultat
+  négatif vérifiable, et `scripts/diagnose_broyden_directional_prediction.py`
+  est réutilisable contre tout candidat futur.
+
+Route restante pour les dix itérations : fournir le terme manquant plutôt que
+l'ajuster — un vrai `dC/du`, ou une formulation décalée dont la matrice est la
+dérivée exacte de la force qu'elle emploie. La variante décalée est implémentée
+et **ne converge pas** (`f95d351`) ; elle reste ouverte pour une autre raison.
 
 ### 2026-08-03 (9) — Qualification SRIX : le modèle est prêt à calibrer, les paramètres ne le sont pas
 

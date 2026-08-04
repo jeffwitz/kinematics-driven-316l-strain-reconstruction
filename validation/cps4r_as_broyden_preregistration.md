@@ -76,5 +76,11 @@ Secant conditions are satisfied to `1e-12` for one to five directions, colinear
 directions reduce the rank to one without producing a large correction, and the
 returned solution is verified to be the minimum-norm one.
 
-**Not implemented: the solver wiring.** No Newton iteration uses this yet, so no
-criterion above has been evaluated and no verdict of section 35 is available.
+**Not implemented at the time of writing: the solver wiring.** No Newton
+iteration used this yet, so no criterion above had been evaluated.
+
+## Outcome
+
+The wiring was completed and the campaign run without any threshold above being
+touched. **Rejected**: falsifiers F3 and F1 both fire. See
+`cps4r_as_broyden_results.md`.

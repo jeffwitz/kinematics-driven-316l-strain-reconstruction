@@ -332,3 +332,49 @@ reference**. Three differences, all consequential:
   law is precisely such a case, which is what makes the specification's target of
   1.8 on total time plausible; but it is a target to measure, not a result to
   expect.
+
+## The Broyden correction of the hourglass Jacobian, and why it is off
+
+CPS4R-AS integrates one material point per element instead of four, yet on the
+registered SRIX case it needs **47 Newton iterations against CPS4's 37**. The
+cause was measured rather than guessed: the physical element tangent is
+consistent to $1.9\times10^{-6}$, and the stabilisation tangent is wrong by
+$370\,\%$, because $f_{stab}(u, C(u))$ is differentiated holding $C$ fixed. The
+matrix is missing exactly
+
+$$\frac{\partial f_{stab}}{\partial C}\,\frac{\partial C}{\partial u}.$$
+
+`jacobian_correction="broyden"` attempts to learn that term from the secant
+pairs the iteration already produces, so it costs no constitutive call. It acts
+on the **matrix only** — the residual, the stresses, the slips and the converged
+solution are untouched, which is what makes the iteration count the sole
+intended observable.
+
+The mechanics, in five reduced coordinates rather than eight. With $B_c$ the
+central gradient operator and $H$ the two hourglass amplitude rows built on
+$\gamma$,
+
+$$T=\begin{bmatrix}B_c\\ H\end{bmatrix},\qquad
+G_0 = L\,K_{stab}\,T^{+},\qquad
+K_B = H^{\mathsf T}\,\delta G\,T,$$
+
+with $L$ projecting a nodal force onto its two hourglass modes. The correction
+solves $\min\lVert\delta G\rVert_F$ subject to $\delta G\,S = Z$, giving
+$\delta G = Z S^{+}$ through an SVD with rank detection. The three rigid modes
+lie in $\ker T$, so $K_B$ cannot put force on them — a property of the form, not
+a constraint imposed afterwards.
+
+**It does not work, and the default stays `none`.** Newton needs *more*
+iterations, monotonically in the memory: 50, 57, 64 against 47 for $m = 1, 3, 5$.
+The reason is measurable at element level: the correction drives its secant
+defect to $10^{-15}$ along the directions it was fitted on and degrades
+prediction along fresh ones, improving barely 41 % of them. The term to be
+learned is not a fixed linear operator — $C$ is the algorithmic tangent of a
+rate-independent crystal law and jumps with the active slip set — so a
+multisecant fit satisfies every stored condition and describes nothing.
+
+Full account, thresholds and raw data in
+`validation/cps4r_as_broyden_results.md`. The mechanism is kept, off by default,
+because it is what makes the negative result checkable and because
+`scripts/diagnose_broyden_directional_prediction.py` is reusable against any
+future candidate.

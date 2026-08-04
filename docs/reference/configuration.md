@@ -40,7 +40,12 @@ fields. They are element-wise input maps.
 | `max_newton_iterations` | `15` | iteration limit per attempted increment |
 | `residual_tolerance` | `1e-6` | relative residual convergence threshold |
 | `minimum_step_divisor` | `1024` | smallest accepted fraction of nominal step |
-| `element_formulation` | `"cps4"` | `cps4` reference or one-point `cps4r` |
+| `element_formulation` | `"cps4"` | `cps4` reference, one-point `cps4r`, or assumed-strain `cps4r_as` |
+| `stabilisation_strategy` | `"assumed_strain_energy"` | `cps4r_as` only; see {doc}`quas4_assumed_strain_derivation` |
+| `stabilisation_projection` | `"asmd"` | `cps4r_as` only; `(e1, e2, e3)` of R3.06.10 |
+| `stabilisation_tangent_floor` | `1e-6` | `cps4r_as` only; spectral floor of the energy variant |
+| `jacobian_correction` | `"none"` | `cps4r_as` only; `broyden` is implemented and **rejected** |
+| `jacobian_correction_memory` | `5` | secant pairs kept per element, `1..5` |
 | `hourglass_scale` | `1.0` | CPS4R stiffness scale, with `0 < beta <= 1` |
 | `hourglass_energy_warning_ratio` | `0.01` | warn above this energy ratio; `None` disables |
 | `hourglass_energy_failure_ratio` | `None` | optional hard failure threshold |

@@ -54,6 +54,12 @@ class SolverDiagnostics:
     boundary_history_predictor: str = "elastic"
     secant_predictor_uses: int = 0
     secant_predictor_fallbacks: int = 0
+    #: Quasi-Newton correction of the element Jacobian. `none` is the default
+    #: and means the consistent tangent was used untouched. Whatever it says,
+    #: the residual and the converged solution are unaffected: a correction
+    #: changes only the matrix Newton is given.
+    jacobian_correction: str = "none"
+    jacobian_correction_diagnostics: dict[str, float] = field(default_factory=dict)
     tensor_reconstruction_source: str = "unspecified"
     #: Element formulation actually used, and what it cost in material points.
     element_formulation: str = "cps4"

@@ -1,0 +1,199 @@
+{
+  "baseline": {
+    "broyden": {},
+    "constitutive_median": 2.4601923008449376,
+    "cutbacks": 0,
+    "elapsed_median": 3.2539892960339785,
+    "elapsed_seconds": [
+      3.2539892960339785
+    ],
+    "errors_against_cps4": {
+      "E_Gamma": 0.011663374257342509,
+      "E_R": 0.00688807553359093,
+      "E_sigma": 0.0025194790166431164,
+      "E_u": 0.0020261656459210245
+    },
+    "jacobian_correction": "none",
+    "material_points": 144,
+    "newton_iterations": 56
+  },
+  "cps4": {
+    "broyden": {},
+    "constitutive_median": 6.251034147571772,
+    "cutbacks": 0,
+    "elapsed_median": 7.189537902129814,
+    "elapsed_seconds": [
+      7.189537902129814
+    ],
+    "jacobian_correction": "none",
+    "material_points": 576,
+    "newton_iterations": 39
+  },
+  "increments": 8,
+  "memories": {
+    "1": {
+      "additional_material_points": 0,
+      "broyden": {
+        "broyden_corrected_iterations": 43.0,
+        "broyden_correction_norm": 22.229655084463186,
+        "broyden_elements_excluded": 0.0,
+        "broyden_elements_without_correction": 0.0,
+        "broyden_maximum_projection_defect": 3.684654423931999e-12,
+        "broyden_memory": 1.0,
+        "broyden_memory_purges": 0.0,
+        "broyden_pairs_accepted": 6539.0,
+        "broyden_pairs_mean": 1.0,
+        "broyden_pairs_offered": 7344.0,
+        "broyden_pairs_rejected": 697.0,
+        "broyden_pairs_total": 144.0,
+        "broyden_rank_max": 1.0,
+        "broyden_rank_mean": 1.0,
+        "broyden_secant_defect_after": 9.35316360795705e-17,
+        "broyden_secant_defect_before": 0.1830681540198749
+      },
+      "constitutive_median": 3.275280124275014,
+      "constitutive_speedup": 1.9085494706976993,
+      "converged": true,
+      "cps4_error_drift_points": {
+        "E_Gamma": 2.4958961980514616e-09,
+        "E_R": 1.2988383805978554e-09,
+        "E_sigma": 1.2057640042667517e-09,
+        "E_u": 2.543856184727966e-10
+      },
+      "cutbacks": 0,
+      "elapsed_median": 5.274548158049583,
+      "elapsed_seconds": [
+        5.274548158049583
+      ],
+      "errors_against_baseline": {
+        "E_Gamma": 6.970648925351786e-11,
+        "E_R": 3.5061980524221705e-11,
+        "E_sigma": 3.290879676388625e-11,
+        "E_u": 7.78190777671306e-12
+      },
+      "errors_against_cps4": {
+        "E_Gamma": 0.011663374232383547,
+        "E_R": 0.006888075520602546,
+        "E_sigma": 0.0025194790045854763,
+        "E_u": 0.0020261656433771683
+      },
+      "iteration_reduction": -0.0535714285714286,
+      "jacobian_correction": "broyden",
+      "material_points": 144,
+      "newton_iterations": 59,
+      "total_speedup": 1.363062330023043
+    },
+    "3": {
+      "additional_material_points": 0,
+      "broyden": {
+        "broyden_corrected_iterations": 44.0,
+        "broyden_correction_norm": 59.50001304416288,
+        "broyden_elements_excluded": 0.0,
+        "broyden_elements_without_correction": 0.0,
+        "broyden_maximum_projection_defect": 3.684654423931999e-12,
+        "broyden_memory": 3.0,
+        "broyden_memory_purges": 0.0,
+        "broyden_pairs_accepted": 7052.0,
+        "broyden_pairs_mean": 3.0,
+        "broyden_pairs_offered": 7488.0,
+        "broyden_pairs_rejected": 436.0,
+        "broyden_pairs_total": 432.0,
+        "broyden_rank_max": 3.0,
+        "broyden_rank_mean": 2.9722222222222223,
+        "broyden_secant_defect_after": 9.638089483127553e-07,
+        "broyden_secant_defect_before": 0.2781307503166238
+      },
+      "constitutive_median": 2.879953116644174,
+      "constitutive_speedup": 2.170533301894756,
+      "converged": true,
+      "cps4_error_drift_points": {
+        "E_Gamma": 0.00113001633695025,
+        "E_R": 0.0018578136568111851,
+        "E_sigma": 0.008175690369299424,
+        "E_u": 0.00025199154367367034
+      },
+      "cutbacks": 0,
+      "elapsed_median": 4.665043110027909,
+      "elapsed_seconds": [
+        4.665043110027909
+      ],
+      "errors_against_baseline": {
+        "E_Gamma": 0.00014142605095849423,
+        "E_R": 0.00032787527342849647,
+        "E_sigma": 0.0001933547647974975,
+        "E_u": 2.2600515157866924e-05
+      },
+      "errors_against_cps4": {
+        "E_Gamma": 0.011652074093973007,
+        "E_R": 0.006869497397022818,
+        "E_sigma": 0.0026012359203361106,
+        "E_u": 0.0020236457304842878
+      },
+      "iteration_reduction": -0.0714285714285714,
+      "jacobian_correction": "broyden",
+      "material_points": 144,
+      "newton_iterations": 60,
+      "total_speedup": 1.5411514390242798
+    },
+    "5": {
+      "additional_material_points": 0,
+      "broyden": {
+        "broyden_corrected_iterations": 55.0,
+        "broyden_correction_norm": 2537.9483584741147,
+        "broyden_elements_excluded": 0.0,
+        "broyden_elements_without_correction": 0.0,
+        "broyden_maximum_projection_defect": 3.684654423931999e-12,
+        "broyden_memory": 5.0,
+        "broyden_memory_purges": 0.0,
+        "broyden_pairs_accepted": 8356.0,
+        "broyden_pairs_mean": 5.0,
+        "broyden_pairs_offered": 9072.0,
+        "broyden_pairs_rejected": 677.0,
+        "broyden_pairs_total": 720.0,
+        "broyden_rank_max": 5.0,
+        "broyden_rank_mean": 4.659722222222222,
+        "broyden_secant_defect_after": 2.354226272692361e-06,
+        "broyden_secant_defect_before": 0.3345026838293033
+      },
+      "constitutive_median": 3.478167127817869,
+      "constitutive_speedup": 1.7972207538783633,
+      "converged": true,
+      "cps4_error_drift_points": {
+        "E_Gamma": 0.0011300168354431636,
+        "E_R": 0.0018578138922614729,
+        "E_sigma": 0.008175690050831299,
+        "E_u": 0.00025199151811603274
+      },
+      "cutbacks": 0,
+      "elapsed_median": 5.9443528519477695,
+      "elapsed_seconds": [
+        5.9443528519477695
+      ],
+      "errors_against_baseline": {
+        "E_Gamma": 0.00014142605394592742,
+        "E_R": 0.0003278752794926162,
+        "E_sigma": 0.00019335476801617788,
+        "E_u": 2.2600515493611773e-05
+      },
+      "errors_against_cps4": {
+        "E_Gamma": 0.011652074088988077,
+        "E_R": 0.006869497394668315,
+        "E_sigma": 0.0026012359171514294,
+        "E_u": 0.002023645730739864
+      },
+      "iteration_reduction": -0.2678571428571428,
+      "jacobian_correction": "broyden",
+      "material_points": 144,
+      "newton_iterations": 71,
+      "total_speedup": 1.209473609860498
+    }
+  },
+  "mesh": 12,
+  "orientation_bunge_deg": [
+    35.0,
+    20.0,
+    15.0
+  ],
+  "repeats": 1,
+  "residual_tolerance": 1e-08
+}

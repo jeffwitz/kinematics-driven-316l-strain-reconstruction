@@ -222,14 +222,33 @@ class ElementBroydenMemories:
         steps: ArrayLike,
         force_increments: ArrayLike,
         scales: ArrayLike,
+        *,
+        mask: ArrayLike | None = None,
     ) -> int:
-        """Offer one pair per element; return how many were accepted."""
+        """Offer one pair per element; return how many were accepted.
+
+        A `False` in `mask` means the pair is not offered at all, which is not
+        the same as being refused: the caller has established that this
+        element's pair would not be meaningful, so it must not be counted
+        against the step-length filter of `BroydenMemory.add`.
+        """
 
         reduced = np.asarray(steps, dtype=float)
         modal = np.asarray(force_increments, dtype=float)
         magnitudes = np.asarray(scales, dtype=float)
+        offered = (
+            np.ones(len(self._memories), dtype=bool)
+            if mask is None
+            else np.asarray(mask, dtype=bool)
+        )
+        if offered.shape != (len(self._memories),):
+            raise ValueError(
+                f"mask must have shape {(len(self._memories),)}, got {offered.shape}"
+            )
         accepted = 0
         for index, item in enumerate(self._memories):
+            if not offered[index]:
+                continue
             if item.add(reduced[index], modal[index], scale=float(magnitudes[index])):
                 accepted += 1
         return accepted

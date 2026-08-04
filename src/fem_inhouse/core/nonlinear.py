@@ -50,6 +50,10 @@ from fem_inhouse.core.element import (
     precompute_element,
     quadrature_for,
 )
+from fem_inhouse.core.jacobian_correction import (
+    DEFAULT_BROYDEN_MEMORY,
+    make_jacobian_correction,
+)
 from fem_inhouse.core.linear_solver import (
     LinearSystemMatrixType,
     create_linear_solver,
@@ -158,6 +162,8 @@ def run_fem(
     stabilisation_strategy="assumed_strain_energy",
     stabilisation_projection="asmd",
     stabilisation_tangent_floor=1.0e-6,
+    jacobian_correction="none",
+    jacobian_correction_memory=DEFAULT_BROYDEN_MEMORY,
     hourglass_energy_warning_ratio=0.01,
     hourglass_energy_failure_ratio=None,
     constitutive_backend="mfront",
@@ -377,6 +383,14 @@ def run_fem(
             projection=stabilisation_projection,
         )
         assumed_strain_elastic_baseline = baseline[0]
+    # Section 18. `none` is an object rather than a `None` branch, so the Newton
+    # loop has one code path and a manifest always says which correction ran.
+    jacobian_corrector = make_jacobian_correction(
+        jacobian_correction,
+        operators=assumed_strain_operators,
+        element_count=n_e,
+        memory=jacobian_correction_memory,
+    )
     # `assumed_strain_energy_lagged` uses the projected tangent of the PREVIOUS
     # Newton iteration for both the stabilisation force and its matrix. Because
     # that tangent is frozen through the linearisation, dC/du is exactly zero and
@@ -650,6 +664,9 @@ def run_fem(
         converged = False
         increment_failure_reason = "newton_iterations_exhausted"
         failed_newton_iteration = 0
+        # Section 17. Secant information of a previous increment describes a
+        # tangent that has since moved, so it is not carried across.
+        jacobian_corrector.begin_increment()
 
         for nrit in range(max_nr):
             failed_newton_iteration = nrit + 1
@@ -880,6 +897,12 @@ def run_fem(
                 R = R + scatter_element_forces(mesh, stab_force, ld)
                 if stabilisation_is_lagged:
                     lagged_tangents = np.array(material_tangents, copy=True)
+                # Section 16. The top of an iteration is the only place a pair
+                # is offered: `u` here is the state the previous iteration
+                # ACCEPTED, and `stab_force` is the force at that state. A
+                # line-search trial is a probe, not an iterate, and never
+                # reaches this call.
+                jacobian_corrector.observe(u[ld], stab_force)
             internal_force_seconds += time.perf_counter() - internal_force_started_at
             if penalty_mode:
                 R_I = R[solve_dofs].copy()
@@ -966,6 +989,12 @@ def run_fem(
             )
             if assumed_strain_stiffness is not None:
                 Ke_ep = Ke_ep - assumed_strain_elastic_baseline + assumed_strain_stiffness
+                # Section 15. The correction is applied to the MATRIX only, and
+                # only here: `R_I` above is already formed and is never rebuilt
+                # from it, so the equilibrium being solved is unchanged.
+                broyden_matrix = jacobian_corrector.matrix(assumed_strain_stiffness)
+                if broyden_matrix is not None:
+                    Ke_ep = Ke_ep + broyden_matrix
             element_matrix_seconds += time.perf_counter() - element_matrix_started_at
             sparse_assembly_started_at = time.perf_counter()
             K_tang = fixed_free_assembler.assemble(Ke_ep)
@@ -1072,6 +1101,10 @@ def run_fem(
 
         if not converged:
             lagged_tangents = None
+            # Section 17. The pairs of a failed attempt describe a path that is
+            # being abandoned; keeping them would carry the divergence into the
+            # retry.
+            jacobian_corrector.discard()
             material_batch.revert()
             np.copyto(chi_trial_guess, chi_committed)
             u = u_save
@@ -1399,6 +1432,8 @@ def run_fem(
             boundary_history_predictor=boundary_history_predictor,
             secant_predictor_uses=secant_predictor_uses,
             secant_predictor_fallbacks=secant_predictor_fallbacks,
+            jacobian_correction=jacobian_corrector.name,
+            jacobian_correction_diagnostics=jacobian_corrector.diagnostics,
             tensor_reconstruction_source=material_batch.completion_strategy,
             internal_work=internal_work,
             linear_system_matrix_type=linear_system_matrix_type,

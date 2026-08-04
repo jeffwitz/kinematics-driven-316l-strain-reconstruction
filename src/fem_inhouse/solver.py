@@ -315,6 +315,8 @@ def run_case_study(
         stabilisation_strategy=config.solver.stabilisation_strategy,
         stabilisation_projection=config.solver.stabilisation_projection,
         stabilisation_tangent_floor=config.solver.stabilisation_tangent_floor,
+        jacobian_correction=config.solver.jacobian_correction,
+        jacobian_correction_memory=config.solver.jacobian_correction_memory,
         hourglass_energy_warning_ratio=config.solver.hourglass_energy_warning_ratio,
         hourglass_energy_failure_ratio=config.solver.hourglass_energy_failure_ratio,
         constitutive_backend=config.solver.constitutive_backend,

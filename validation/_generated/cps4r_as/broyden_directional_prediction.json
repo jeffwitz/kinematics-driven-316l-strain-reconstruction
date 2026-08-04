@@ -1,0 +1,28 @@
+{
+  "correction_relative_norm": 1.6494416556672302,
+  "in_sample": {
+    "base_max": 1.20115423793766,
+    "base_mean": 0.9042313869491698,
+    "corrected_max": 3.770878816519827e-15,
+    "corrected_mean": 1.5936297189031669e-15,
+    "directions": 5
+  },
+  "memory": 5,
+  "out_of_sample": {
+    "base_max": 3.254622565731483,
+    "base_mean": 0.9925174095467773,
+    "base_median": 0.8723622520426814,
+    "corrected_max": 5.446244968009421,
+    "corrected_mean": 1.521680861164611,
+    "corrected_median": 1.0419279840243232,
+    "directions": 32,
+    "fraction_improved": 0.40625,
+    "step_length": 1.4148926607138328e-08
+  },
+  "pairs_stored": 5,
+  "projection": "asmd",
+  "rank": 5,
+  "relative_floor": 1e-06,
+  "secant_defect_after": 3.591313158590312e-15,
+  "secant_defect_before": 1.20115423793766
+}

@@ -122,6 +122,16 @@ class SolverConfig:
     #: Spectral floor of the energy variant, as a fraction of the largest
     #: eigenvalue. A conditioning rule, not a tuning knob.
     stabilisation_tangent_floor: float = 1.0e-6
+    #: Quasi-Newton correction of the element Jacobian, used only by `cps4r_as`.
+    #: `broyden` learns the missing `(df_stab/dC)(dC/du)` term from the secant
+    #: pairs the iteration already produces. It changes the MATRIX only: the
+    #: residual, the stresses and the converged solution are untouched, so the
+    #: sole observable is the iteration count. Not qualified; see
+    #: validation/cps4r_as_broyden_preregistration.md.
+    jacobian_correction: Literal["none", "broyden"] = "none"
+    #: Secant pairs kept per element, `1 <= m <= 5`. Five is the dimension of
+    #: the reduced space, so more pairs carry no independent information.
+    jacobian_correction_memory: int = 5
     #: Hourglass stiffness scale, `0 < beta <= 1`. At one, the reduced element
     #: reproduces the fully integrated one exactly in the elastic range.
     hourglass_scale: float = 1.0
@@ -178,8 +188,24 @@ class SolverConfig:
                     "stabilisation_projection only applies to the cps4r_as "
                     f"formulation, not to {self.element_formulation!r}"
                 )
+            if self.jacobian_correction != "none":
+                raise ValueError(
+                    "jacobian_correction repairs the assumed-strain hourglass "
+                    "tangent and only applies to the cps4r_as formulation, not "
+                    f"to {self.element_formulation!r}"
+                )
         elif not 0.0 < self.stabilisation_tangent_floor < 1.0:
             raise ValueError("stabilisation_tangent_floor must lie in (0, 1)")
+        if self.jacobian_correction not in ("none", "broyden"):
+            raise ValueError(
+                f"unknown jacobian_correction {self.jacobian_correction!r}; "
+                "available: none, broyden"
+            )
+        if not 1 <= self.jacobian_correction_memory <= 5:
+            raise ValueError(
+                "jacobian_correction_memory must lie in 1..5, got "
+                f"{self.jacobian_correction_memory}"
+            )
         if self.element_formulation == "cps4":
             # Accepting a hourglass setting that does nothing would let a reader
             # believe the fully integrated element was being stabilised.
