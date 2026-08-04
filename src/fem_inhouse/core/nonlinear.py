@@ -377,11 +377,18 @@ def run_fem(
             projection=stabilisation_projection,
         )
         assumed_strain_elastic_baseline = baseline[0]
+    # `assumed_strain_energy_lagged` uses the projected tangent of the PREVIOUS
+    # Newton iteration for both the stabilisation force and its matrix. Because
+    # that tangent is frozen through the linearisation, dC/du is exactly zero and
+    # the matrix is the exact derivative of the force actually used -- which the
+    # measured 370 percent inconsistency of the non-lagged variant is not.
+    stabilisation_is_lagged = stabilisation_strategy == "assumed_strain_energy_lagged"
     stabilisation_floor = (
         stabilisation_tangent_floor
-        if stabilisation_strategy == "assumed_strain_energy"
+        if stabilisation_strategy in ("assumed_strain_energy", "assumed_strain_energy_lagged")
         else None
     )
+    lagged_tangents: np.ndarray | None = None
     Ke = operators.elastic_stiffness
     Bs = operators.strain_displacement
     dJs = operators.jacobian_determinants
@@ -863,11 +870,16 @@ def run_fem(
             if hourglass is not None:
                 R = R + hourglass_force(mesh, hourglass, u, ld)
             assumed_strain_stiffness = None
+            stabilisation_tangents = material_tangents
             if assumed_strain_operators is not None:
+                if stabilisation_is_lagged and lagged_tangents is not None:
+                    stabilisation_tangents = lagged_tangents
                 stab_force, assumed_strain_stiffness, _ = assumed_strain_contribution(
-                    u, material_tangents
+                    u, stabilisation_tangents
                 )
                 R = R + scatter_element_forces(mesh, stab_force, ld)
+                if stabilisation_is_lagged:
+                    lagged_tangents = np.array(material_tangents, copy=True)
             internal_force_seconds += time.perf_counter() - internal_force_started_at
             if penalty_mode:
                 R_I = R[solve_dofs].copy()
@@ -902,7 +914,33 @@ def run_fem(
                 )
 
             # Converge on absolute OR relative residual
-            if res < 1e-10 or rel < nr_tol:
+            accepted = res < 1e-10 or rel < nr_tol
+            if accepted and stabilisation_is_lagged and assumed_strain_operators is not None:
+                # The lagged variant must converge to the SAME fixed point as the
+                # consistent one. Re-form the residual with the CURRENT projected
+                # tangent and require it to satisfy the tolerance too; otherwise
+                # iterations would have been bought by solving a different
+                # problem.
+                verification_force, _, _ = assumed_strain_contribution(
+                    u, material_tangents
+                )
+                verification = internal_force(mesh, sf, Bs, dJs, ld, GP_W)
+                verification = verification + scatter_element_forces(
+                    mesh, verification_force, ld
+                )
+                if penalty_mode:
+                    verification_free = verification[solve_dofs].copy()
+                    verification_free[dof_B] += penalty_stiffness * (
+                        u[dof_B] - boundary_target_values
+                    )
+                else:
+                    verification_free = verification[dof_I]
+                verification_norm = float(np.linalg.norm(verification_free))
+                accepted = verification_norm < 1e-10 or verification_norm / res0 < nr_tol
+                if accepted:
+                    res = verification_norm
+                    rel = verification_norm / res0
+            if accepted:
                 converged = True
                 final_residual_norm = float(res)
                 final_relative_residual = float(rel)
@@ -994,8 +1032,15 @@ def run_fem(
                             mesh, hourglass, u, ld
                         )
                     if assumed_strain_operators is not None:
+                        # The same stabilisation tangent for every trial factor:
+                        # otherwise the function whose decrease is being measured
+                        # changes with lambda and the search is not working on a
+                        # consistent residual.
                         candidate_stab, _, _ = assumed_strain_contribution(
-                            u, candidate_trial.tangent_in_plane_mpa
+                            u,
+                            stabilisation_tangents
+                            if stabilisation_is_lagged
+                            else candidate_trial.tangent_in_plane_mpa,
                         )
                         candidate_internal = candidate_internal + scatter_element_forces(
                             mesh, candidate_stab, ld
@@ -1026,6 +1071,7 @@ def run_fem(
             )
 
         if not converged:
+            lagged_tangents = None
             material_batch.revert()
             np.copyto(chi_trial_guess, chi_committed)
             u = u_save

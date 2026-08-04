@@ -114,7 +114,9 @@ class SolverConfig:
     element_formulation: Literal["cps4", "cps4r", "cps4r_as"] = "cps4"
     #: Assumed-strain strategy and projection, used only by `cps4r_as`.
     stabilisation_strategy: Literal[
-        "assumed_strain_current", "assumed_strain_energy"
+        "assumed_strain_current",
+        "assumed_strain_energy",
+        "assumed_strain_energy_lagged",
     ] = "assumed_strain_energy"
     stabilisation_projection: Literal["quad4", "asmd", "asoi", "asoi_half"] = "asmd"
     #: Spectral floor of the energy variant, as a fraction of the largest

@@ -172,6 +172,38 @@ response. Committing all but the last step fixed both, and the physical part the
 agreed to 1.9e-6 — which is what makes the 370 % on the stabilisation
 believable.
 
+## The lagged variant: implemented, and it does not converge
+
+`assumed_strain_energy_lagged`, built exactly as specified: the projected tangent
+of the **previous Newton iteration** used for both the stabilisation force and
+its matrix, so that `dC/du = 0` through the linearisation and the matrix is the
+exact derivative of the force actually used. The same lagged tangent is held for
+every line-search factor, so the function whose decrease is measured does not
+move with lambda. The lag is discarded on a cutback. And a **fixed-point
+verification** re-forms the residual with the *current* projected tangent before
+convergence is declared, so iterations cannot be bought by solving a different
+problem.
+
+On the SRIX case it **does not converge**: cutbacks below the minimum step.
+
+The verification is not what blocks it. Disabling that check and re-running gives
+the same failure, which isolates the cause to the lag itself rather than to the
+extra acceptance condition — so the verification stays.
+
+The reason is visible once stated. Making the matrix the exact derivative of the
+lagged residual does not make that residual the gradient of anything: the
+stabilisation force is built on `C^{k-1}` while the physical force uses
+`sigma(u^k)`, so the target moves as the lag updates. The consistent variant has
+an inconsistent matrix for a fixed residual; the lagged variant has a consistent
+matrix for a moving residual. On this case the second is worse.
+
+That is a **negative result on a directed fix**, and it is kept: the 36 % tangent
+inconsistency of the consistent variant is real and measured, but freezing the
+tangent by one iteration is not the way to remove it. What remains untried is a
+tangent frozen for a whole increment rather than one iteration — a larger lag,
+which converges to a genuinely different problem and would need the verification
+to say whether the difference matters.
+
 ## A defect found in the wiring, and what it teaches
 
 The first wiring **double-counted the stabilisation**. `precompute_element` folds
