@@ -1,0 +1,34 @@
+{
+  "best_relative_error": {
+    "physical": 1.8568982324073228e-06,
+    "stabilisation": 3.6994465690633254,
+    "total": 0.36028073834167956
+  },
+  "finite_difference": {
+    "1e-08": {
+      "physical": 0.001856620402318401,
+      "stabilisation": 3.71531671970025,
+      "total": 0.36328025696841765
+    },
+    "1e-09": {
+      "physical": 0.00018557855630500067,
+      "stabilisation": 3.701027168914394,
+      "total": 0.36057845743502204
+    },
+    "1e-10": {
+      "physical": 1.855700776187037e-05,
+      "stabilisation": 3.6995903321497057,
+      "total": 0.3603078076952243
+    },
+    "1e-11": {
+      "physical": 1.8568982324073228e-06,
+      "stabilisation": 3.6994465690633254,
+      "total": 0.36028073834167956
+    }
+  },
+  "hourglass_amplitude": 3.3120000000000015e-06,
+  "projection": "asmd",
+  "relative_floor": 1e-06,
+  "stabilisation_share_of_force": 0.14726493419121042,
+  "stabilisation_share_of_tangent": 0.09738734675874719
+}

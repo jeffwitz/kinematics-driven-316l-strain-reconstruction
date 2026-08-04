@@ -129,6 +129,49 @@ plus importants sont attendus pour des lois plus difficiles à intégrer"*. The
 target of 1.8 was set with SRIX in mind, where a material point costs roughly
 sixteen times a J2 point, and it must be measured there.
 
+## Why Newton takes 47 iterations: measured, not hypothesised
+
+`scripts/diagnose_assumed_strain_tangent.py`, archived in
+`validation/_generated/cps4r_as/assumed_strain_tangent_consistency.json`.
+
+At a plasticised SRIX state with a non-zero hourglass amplitude, the derivative
+of the **complete** element internal force is compared against the matrix
+actually assembled, **with the constitutive law re-integrated at every
+perturbation** so that `C` moves as it does in a real Newton step. The existing
+element tests hold `C` fixed and cannot see this.
+
+| part of the element force | relative error of the assembled tangent |
+|---|---:|
+| physical, `A Bc^T sigma_c` | **1.9e-6** |
+| stabilisation | **3.70**, i.e. 370 % |
+| total | **0.36**, i.e. 36 % |
+
+The physical part is consistent to the finite-difference floor. **The
+stabilisation is not**, and the missing term is exactly the one suspected:
+`f_stab` depends on the projected current tangent, `f_stab(u, C(u))`, while the
+matrix differentiates it holding `C` fixed and drops `(df_stab/dC)(dC/du)`.
+
+A 36 % error on the element tangent is a quasi-Newton matrix, not a wrong
+solution: it converges, and it converges more slowly. That is the whole of the
+27 % iteration overhead, and therefore the whole of the constitutive speed-up
+shortfall — the per-element call count is exactly one throughout.
+
+It also makes `assumed_strain_energy_lagged` a directed fix rather than a guess.
+Freezing the projected tangent through Newton makes `dC/du = 0` by construction,
+so the stabilisation force acquires an exactly consistent derivative.
+
+**Two probe defects were found on the way, both of which first looked like the
+element failing.** A central difference reported 16 % of error on the *physical*
+part alone — not credible for `A Bc^T C Bc`, and the signal that the probe was
+wrong: at a converged plastic state the algorithmic tangent is one-sided, and a
+central difference averages the elastic unloading branch with the plastic loading
+one. Switching to a forward difference made it worse, 95 %, because the reference
+was still being taken at a **zero** strain increment, where SRIX takes its
+guarded elastic branch: an elastic tangent was being compared against a plastic
+response. Committing all but the last step fixed both, and the physical part then
+agreed to 1.9e-6 — which is what makes the 370 % on the stabilisation
+believable.
+
 ## A defect found in the wiring, and what it teaches
 
 The first wiring **double-counted the stabilisation**. `precompute_element` folds
