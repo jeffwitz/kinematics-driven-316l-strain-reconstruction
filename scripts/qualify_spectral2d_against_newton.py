@@ -94,7 +94,8 @@ def solve_fem(case: dict[str, Any], formulation: str, library: str, increments: 
 
 def solve_spectral(
     case: dict[str, Any], scheme: str, library: str, increments: int, tolerance: float,
-    trace_callback=None, anderson_target: str = "displacement", anderson_memory: int = 4,
+    trace_callback=None, anderson_target: str = "polarization", anderson_memory: int = 4,
+    update_safeguard: str = "published_none",
 ) -> tuple[Any, float]:
     mesh = case["mesh"]
     grid = StructuredGrid2D(mesh.nx, mesh.ny, *mesh.physical_size_mm)
@@ -133,6 +134,10 @@ def solve_spectral(
             anderson_target=cast(Literal["none", "displacement", "polarization"], anderson_target),
             anderson_enabled=anderson_target != "none",
             anderson_memory=anderson_memory,
+            update_safeguard=cast(
+                Literal["published_none", "monotone_armijo", "nonmonotone"],
+                update_safeguard,
+            ),
             reference_lambda_0=69_230.76923076923,
             reference_mu_0=78_846.15384615384,
         ),
@@ -149,9 +154,14 @@ def main() -> int:
     parser.add_argument("--tolerance", type=float, default=1.0e-6)
     parser.add_argument(
         "--anderson-target", choices=("none", "displacement", "polarization"),
-        default="displacement",
+        default="polarization",
     )
     parser.add_argument("--anderson-memory", type=int, default=4)
+    parser.add_argument(
+        "--update-safeguard",
+        choices=("published_none", "monotone_armijo", "nonmonotone"),
+        default="published_none",
+    )
     parser.add_argument("--output", type=Path, default=Path("validation/_generated/spectral2d"))
     arguments = parser.parse_args()
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", "build/mfront/src/libBehaviour.so")
@@ -173,6 +183,7 @@ def main() -> int:
         "spectral_tolerance": arguments.tolerance,
         "anderson_target": arguments.anderson_target,
         "anderson_memory": arguments.anderson_memory,
+        "update_safeguard": arguments.update_safeguard,
         "orientation_bunge_deg": list(ORIENTATION_BUNGE_DEG),
         "variants": {},
     }
@@ -196,6 +207,7 @@ def main() -> int:
                 spectral_result, elapsed = solve_spectral(
                     case, scheme, library, arguments.increments, arguments.tolerance,
                     write_trace, arguments.anderson_target, arguments.anderson_memory,
+                    arguments.update_safeguard,
                 )
                 trace_file.close()
                 timings.append(elapsed)

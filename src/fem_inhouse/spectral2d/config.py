@@ -20,6 +20,10 @@ class Spectral2DConfig:
     anderson_start_iteration: int = 4
     anderson_period: int = 2
     anderson_regularization: float = 1.0e-12
+    update_safeguard: Literal["published_none", "monotone_armijo", "nonmonotone"] = (
+        "published_none"
+    )
+    catastrophic_residual_growth_factor: float = 1.0e3
     relaxation_reduction: float = 0.5
     minimum_relaxation: float = 1.0 / 16.0
     armijo_coefficient: float = 1.0e-4
@@ -45,6 +49,10 @@ class Spectral2DConfig:
             raise ValueError("Anderson period must be positive")
         if self.anderson_target not in {"none", "displacement", "polarization"}:
             raise ValueError("unsupported Anderson target")
+        if self.update_safeguard not in {"published_none", "monotone_armijo", "nonmonotone"}:
+            raise ValueError("unsupported update safeguard")
+        if self.catastrophic_residual_growth_factor <= 1.0:
+            raise ValueError("catastrophic residual growth factor must exceed one")
         if not 0.0 < self.relaxation_reduction < 1.0:
             raise ValueError("relaxation_reduction must lie in (0, 1)")
         if not 0.0 < self.minimum_relaxation <= 1.0:

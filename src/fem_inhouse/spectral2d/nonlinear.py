@@ -213,6 +213,15 @@ def solve_dirichlet_plane_stress_spectral(
                 relative / attempt_residuals[-1] if attempt_residuals else 0.0
             )
             attempt_residuals.append(relative)
+            if (
+                config.update_safeguard == "published_none"
+                and len(attempt_residuals) > 1
+                and relative
+                > config.catastrophic_residual_growth_factor * attempt_residuals[-2]
+            ):
+                material.revert()
+                failed = True
+                break
             if trace_callback is not None:
                 trace_callback(
                     {
@@ -319,6 +328,13 @@ def solve_dirichlet_plane_stress_spectral(
                 and iteration + 1 >= config.anderson_start_iteration
             ):
                 candidate = anderson.propose(fluctuation, image, fixed_residual)
+            if config.update_safeguard == "published_none":
+                if not np.isfinite(candidate).all():
+                    material.revert()
+                    failed = True
+                    break
+                fluctuation = candidate
+                continue
             relaxation = 1.0
             target = candidate
             while True:
@@ -338,7 +354,15 @@ def solve_dirichlet_plane_stress_spectral(
                 except ConstitutiveIntegrationError:
                     material.revert()
                     candidate_norm = np.inf
-                if candidate_norm <= (1.0 - config.armijo_coefficient * relaxation) * relative:
+                monotone_bound = (1.0 - config.armijo_coefficient * relaxation) * relative
+                nonmonotone_bound = max(attempt_residuals[-5:])
+                if (
+                    config.update_safeguard == "monotone_armijo"
+                    and candidate_norm <= monotone_bound
+                ) or (
+                    config.update_safeguard == "nonmonotone"
+                    and candidate_norm <= nonmonotone_bound
+                ):
                     break
                 relaxation *= config.relaxation_reduction
                 if relaxation >= config.minimum_relaxation:
