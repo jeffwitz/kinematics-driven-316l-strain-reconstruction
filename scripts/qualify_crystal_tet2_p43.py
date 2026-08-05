@@ -26,7 +26,10 @@ from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 try:
     from scripts.benchmark_tri2_j2_krylov import DEFAULT_CROP, _load_case
 except ModuleNotFoundError:  # Direct script execution.
-    from benchmark_tri2_j2_krylov import DEFAULT_CROP, _load_case  # type: ignore[no-redef]
+    from benchmark_tri2_j2_krylov import (  # type: ignore[import-not-found,no-redef]
+        DEFAULT_CROP,
+        _load_case,
+    )
 
 
 def _hash(values: np.ndarray) -> str:
@@ -113,7 +116,9 @@ def main() -> int:
     )
     source_fingerprint = read_crystal_structure_fingerprint(source_path)
     backbone_record = cast(dict[str, object], crystal_manifest["backbone"])
-    if source_fingerprint.interaction_matrix != tuple(backbone_record["interaction_matrix"]):
+    if source_fingerprint.interaction_matrix != tuple(
+        cast(list[float], backbone_record["interaction_matrix"])
+    ):
         raise SystemExit("compiled MFront interaction structure does not match the paired backbone")
     history = np.stack(
         [fraction * boundary for fraction in np.linspace(0.0, 1.0, arguments.increments + 1)]
@@ -170,6 +175,10 @@ def main() -> int:
         "reaction_forces": result.reaction_forces,
         "accumulated_slip": result.observables["accumulated_slip"],
     }
+    for name in ("plastic_slip", "equivalent_plastic_slip"):
+        values = result.observables.get(name)
+        if values is not None:
+            fields[name] = values
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     field_path = arguments.output.with_suffix(".fields.npz")
     np.savez_compressed(field_path, **fields)  # type: ignore[arg-type]
@@ -203,6 +212,20 @@ def main() -> int:
         "archive_commit": os.environ.get("ARCHIVE_COMMIT", _git_head()),
         "field_file": str(field_path),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
+        "slip_observables": {
+            name: {
+                "shape": list(values.shape),
+                "meaning": (
+                    "signed plastic slip per FCC system"
+                    if name == "plastic_slip"
+                    else "accumulated equivalent slip per FCC system"
+                ),
+                "system_axis": -1,
+                "triangle_axis": 2,
+            }
+            for name, values in fields.items()
+            if name in {"plastic_slip", "equivalent_plastic_slip"}
+        },
         "boundary_sha256": _hash(boundary),
         "units": "mm, MPa",
         "orientation": {
