@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
+
+from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +38,7 @@ class Spectral2DConfig:
     reference_parameter_scale: float = 1.0
     reference_lambda_0: float | None = None
     reference_mu_0: float | None = None
+    transform: SpectralTransformConfig = field(default_factory=SpectralTransformConfig)
 
     def __post_init__(self) -> None:
         if self.spatial_scheme not in {"one_point", "two_subcell"}:

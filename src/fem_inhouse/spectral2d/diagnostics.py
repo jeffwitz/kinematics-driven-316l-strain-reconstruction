@@ -39,3 +39,12 @@ class Spectral2DDiagnostics:
     fluctuation_norm_history: tuple[float, ...] = ()
     highest_mode_residual_history: tuple[float, ...] = ()
     active_slip_systems_history: tuple[int, ...] = ()
+    transform_backend: str = "scipy"
+    transform_implementation: str = "scipy.fft.dstn"
+    transform_interior_shape: tuple[int, int] = (0, 0)
+    transform_batch_components: int = 2
+    transform_dtype: str = "float64"
+    transform_workers: int = 1
+    transform_planner_effort: str | None = None
+    transform_wisdom_loaded: bool = False
+    transform_planning_seconds: float = 0.0

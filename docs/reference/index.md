@@ -44,6 +44,7 @@ argue for the scientific model.
 - {doc}`numerics/ebi_tet_contract`
 - {doc}`numerics/newton_gmres_contract`
 - {doc}`numerics/spectral_result_contract`
+- {doc}`numerics/transform_backends`
 
 ## Evidence and decisions
 
@@ -86,6 +87,7 @@ numerics/reference_green_b0
 numerics/ebi_tet_contract
 numerics/newton_gmres_contract
 numerics/spectral_result_contract
+numerics/transform_backends
 evidence_registry
 claims_matrix
 architecture_decisions

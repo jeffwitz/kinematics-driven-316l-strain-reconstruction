@@ -28,6 +28,7 @@
 - {doc}`run_tet2_srix`
 - {doc}`inspect_spectral_convergence`
 - {doc}`reproduce_ebi_falsification`
+- {doc}`qualify_fftw_backend`
 
 The scientific reasons are in {doc}`../explanation/index`; authoritative
 parameters and field contracts are in {doc}`../reference/index`.
@@ -53,4 +54,5 @@ add_nonlocal_criterion
 run_tet2_srix
 inspect_spectral_convergence
 reproduce_ebi_falsification
+qualify_fftw_backend
 ```

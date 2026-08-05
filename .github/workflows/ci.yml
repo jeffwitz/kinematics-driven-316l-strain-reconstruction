@@ -69,6 +69,28 @@ jobs:
             exit 1
           fi
 
+  fftw:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install optional FFTW environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-fftw-lock.txt
+          python -m pip install -e . --no-deps
+      - name: Run FFTW numerical contracts
+        run: |
+          pytest -q \
+            tests/unit/spectral2d/test_fftw_transforms.py \
+            tests/unit/spectral2d/test_fftw_wisdom.py \
+            tests/unit/spectral2d/test_preconditioner_backends.py
+
   documentation:
     runs-on: ubuntu-latest
     timeout-minutes: 35

@@ -87,18 +87,29 @@ class _DiagonalGreen2D:
             raise ValueError("polarization leading shape must match reference operator symbols")
         if polarization.shape[-1] != 2:
             raise ValueError("polarization must have two displacement components")
-        result = np.zeros_like(polarization)
+        result = np.empty_like(polarization)
+        self.apply_into(polarization, result)
+        return result
+
+    def apply_into(self, transformed_polarization: ArrayLike, destination: FloatArray) -> None:
+        polarization = np.asarray(transformed_polarization, dtype=np.float64)
+        if polarization.shape[: self._denominator_x.ndim] != self._denominator_x.shape:
+            raise ValueError("polarization leading shape must match reference operator symbols")
+        if polarization.shape[-1] != 2:
+            raise ValueError("polarization must have two displacement components")
         scale_x = max(1.0, float(np.max(np.abs(self._denominator_x))))
         scale_y = max(1.0, float(np.max(np.abs(self._denominator_y))))
         safe_x = np.abs(self._denominator_x) > self.symbol_null_tolerance * scale_x
         safe_y = np.abs(self._denominator_y) > self.symbol_null_tolerance * scale_y
-        result[..., 0] = np.divide(
-            -polarization[..., 0], self._denominator_x, out=result[..., 0], where=safe_x
+        if destination.shape != polarization.shape:
+            raise ValueError("destination shape must match polarization shape")
+        destination[...] = 0.0
+        np.divide(
+            -polarization[..., 0], self._denominator_x, out=destination[..., 0], where=safe_x
         )
-        result[..., 1] = np.divide(
-            -polarization[..., 1], self._denominator_y, out=result[..., 1], where=safe_y
+        np.divide(
+            -polarization[..., 1], self._denominator_y, out=destination[..., 1], where=safe_y
         )
-        return result
 
     def reference_force(self, transformed_displacement: ArrayLike) -> FloatArray:
         """Apply the exact negative reference operator in transform space."""

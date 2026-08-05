@@ -47,12 +47,22 @@ from fem_inhouse.spectral2d.nonlinear import (
     solve_dirichlet_plane_stress_spectral,
 )
 from fem_inhouse.spectral2d.result import Spectral2DResult
-from fem_inhouse.spectral2d.transforms import FullDirichletDSTIPlan2D, TransformPlan2D
+from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
+from fem_inhouse.spectral2d.transforms import (
+    BufferedTransformPlan2D,
+    FFTWPlannerEffort,
+    FullDirichletDSTIPlan2D,
+    SpectralTransformConfig,
+    TransformBackend,
+    TransformDiagnostics,
+    TransformPlan2D,
+)
 
 __all__ = [
     "AndersonDiagnostics",
     "AppliedDisplacementExtension2D",
     "B0Green2D",
+    "BufferedTransformPlan2D",
     "CellCenteredOnePoint2D",
     "DiscreteKinematics2D",
     "DisplacementAndersonAccelerator",
@@ -60,6 +70,7 @@ __all__ = [
     "EBIPlaneStressTrial",
     "EBISpectralSolverConfig",
     "EBITwoTriangleKinematics2D",
+    "FFTWPlannerEffort",
     "FullDirichletDSTIPlan2D",
     "GreenDiagnostics",
     "HarmonicDirichletExtension2D",
@@ -68,11 +79,15 @@ __all__ = [
     "Spectral2DDiagnostics",
     "Spectral2DResult",
     "SpectralIncrementConvergenceError",
+    "SpectralTransformConfig",
     "StructuredGrid2D",
     "TransfiniteBoundaryInterpolation2D",
+    "TransformBackend",
+    "TransformDiagnostics",
     "TransformPlan2D",
     "TwoMuGreen2D",
     "TwoSubcellDiagnostic2D",
+    "create_full_dirichlet_dsti_plan",
     "hookean_plane_stress_relative_error",
     "pack_interior",
     "project_isotropic_plane_stress_tangent",

@@ -22,6 +22,7 @@ from fem_inhouse.spectral2d import (
     StructuredGrid2D,
     solve_ebi_dirichlet_plane_stress,
 )
+from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 try:
     from scripts.qualify_spectral2d_against_newton import (
@@ -68,6 +69,7 @@ def solve_ebi(
     tolerance: float,
     scale: float,
     lambda_mu_ratio: float = 1.0,
+    transform: SpectralTransformConfig | None = None,
 ):
     mesh = case["mesh"]
     point_count = mesh.nx * mesh.ny
@@ -104,6 +106,7 @@ def solve_ebi(
             relative_equilibrium_tolerance=tolerance,
             reference_parameter_scale=scale,
             reference_lambda_mu_ratio=lambda_mu_ratio,
+            transform=transform or SpectralTransformConfig(),
         ),
     )
     return result, time.perf_counter() - started

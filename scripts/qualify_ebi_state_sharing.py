@@ -13,6 +13,7 @@ import numpy as np
 from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
 from fem_inhouse.spectral2d import EBISpectralSolverConfig, StructuredGrid2D
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
+from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 try:
     from scripts.qualify_ebi_tet_against_cps4 import solve_cps4, solve_ebi
@@ -22,7 +23,14 @@ except ModuleNotFoundError:  # Direct script execution.
     from qualify_spectral2d_against_newton import build_case, relative_l2  # type: ignore[no-redef]
 
 
-def solve_two_state(case, library: str, increments: int, tolerance: float, scale: float):
+def solve_two_state(
+    case,
+    library: str,
+    increments: int,
+    tolerance: float,
+    scale: float,
+    transform: SpectralTransformConfig | None = None,
+):
     mesh = case["mesh"]
     points = 2 * mesh.nx * mesh.ny
     material = create_plane_stress_material_batch(
@@ -53,6 +61,7 @@ def solve_two_state(case, library: str, increments: int, tolerance: float, scale
         config=EBISpectralSolverConfig(
             relative_equilibrium_tolerance=tolerance,
             reference_parameter_scale=scale,
+            transform=transform or SpectralTransformConfig(),
         ),
     )
     return result, time.perf_counter() - started
@@ -102,10 +111,26 @@ def main() -> int:
     parser.add_argument("--mesh", type=int, default=12)
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--tolerance", type=float, default=1.0e-8)
+    parser.add_argument("--transform-backend", choices=("scipy", "fftw"), default="scipy")
+    parser.add_argument("--transform-workers", type=int, default=1)
+    parser.add_argument(
+        "--fftw-planner", choices=("estimate", "measure", "patient"), default="measure"
+    )
+    parser.add_argument("--fftw-planning-time-limit", type=float, default=2.0)
+    parser.add_argument("--fftw-wisdom-directory", type=Path)
+    parser.add_argument("--no-fftw-wisdom", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", "build/mfront/src/libBehaviour.so")
     case = build_case(arguments.mesh)
+    transform = SpectralTransformConfig(
+        backend=arguments.transform_backend,
+        workers=arguments.transform_workers,
+        fftw_planner_effort=arguments.fftw_planner,
+        fftw_planning_time_limit_s=arguments.fftw_planning_time_limit,
+        fftw_wisdom_directory=arguments.fftw_wisdom_directory,
+        fftw_use_wisdom=not arguments.no_fftw_wisdom,
+    )
     cps4 = solve_cps4(case, library, arguments.increments, arguments.tolerance)
     ebi, ebi_time = solve_ebi(
         case,
@@ -113,8 +138,11 @@ def main() -> int:
         arguments.increments,
         arguments.tolerance,
         1.0,
+        transform=transform,
     )
-    tet, tet_time = solve_two_state(case, library, arguments.increments, arguments.tolerance, 1.0)
+    tet, tet_time = solve_two_state(
+        case, library, arguments.increments, arguments.tolerance, 1.0, transform=transform
+    )
     grid = StructuredGrid2D(arguments.mesh, arguments.mesh, *case["mesh"].physical_size_mm)
     ebi_slip = ebi.observables["accumulated_slip"]
     tet_slip = tet.observables["accumulated_slip"].mean(axis=2)
@@ -126,6 +154,20 @@ def main() -> int:
     report = {
         "mesh": arguments.mesh,
         "tolerance": arguments.tolerance,
+        "transform": {
+            key: getattr(ebi.diagnostics, key)
+            for key in (
+                "transform_backend",
+                "transform_implementation",
+                "transform_interior_shape",
+                "transform_batch_components",
+                "transform_dtype",
+                "transform_workers",
+                "transform_planner_effort",
+                "transform_wisdom_loaded",
+                "transform_planning_seconds",
+            )
+        },
         "material_states_per_pixel": {"ebi": 1, "tet_two_state": 2},
         "errors": {
             "tet_cps4": {

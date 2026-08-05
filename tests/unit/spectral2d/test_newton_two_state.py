@@ -2,8 +2,16 @@ import numpy as np
 import pytest
 
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
-from fem_inhouse.spectral2d import EBITwoTriangleKinematics2D, StructuredGrid2D
-from fem_inhouse.spectral2d.newton_two_state import TraditionalTwoStateTriangleBatch
+from fem_inhouse.spectral2d import (
+    EBISpectralSolverConfig,
+    EBITwoTriangleKinematics2D,
+    StructuredGrid2D,
+)
+from fem_inhouse.spectral2d.newton_two_state import (
+    TraditionalTwoStateTriangleBatch,
+    solve_two_state_dirichlet_plane_stress,
+)
+from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 from scripts.qualify_ebi_state_sharing import moment, side_resultants
 
 
@@ -111,3 +119,35 @@ def test_side_resultants_and_moment_use_nodal_coordinates() -> None:
     np.testing.assert_allclose(sides[1], (1.0, 6.0))
     np.testing.assert_allclose(sides[2], (3.0, 2.0))
     assert moment(reaction, grid) == 12.0
+
+
+def test_two_state_solver_backend_equivalence() -> None:
+    pytest.importorskip("pyfftw")
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1:, ..., 0] = 0.04 * x[:, None]
+    boundary[1:, ..., 1] = 0.03 * y[None, :]
+    results = {}
+    for backend in ("scipy", "fftw"):
+        results[backend] = solve_two_state_dirichlet_plane_stress(
+            grid=grid,
+            material=NonlinearStateBatch(32),
+            boundary_displacement_history=boundary,
+            config=EBISpectralSolverConfig(
+                relative_equilibrium_tolerance=1.0e-10,
+                transform=SpectralTransformConfig(
+                    backend=backend, fftw_planner_effort="estimate", fftw_use_wisdom=False
+                ),
+            ),
+        )
+        assert results[backend].diagnostics.dimensionless_equilibrium_history[-1] < 1.0e-10
+    np.testing.assert_allclose(
+        results["fftw"].displacement, results["scipy"].displacement, rtol=1.0e-11, atol=1.0e-12
+    )
+    np.testing.assert_allclose(
+        results["fftw"].stress_in_plane_mpa,
+        results["scipy"].stress_in_plane_mpa,
+        rtol=1.0e-11,
+        atol=1.0e-12,
+    )

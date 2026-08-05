@@ -220,9 +220,142 @@
       "evidence_ids": [
         "E-DTT-001"
       ]
+    },
+    {
+      "question": "Do the SciPy and FFTW DST-I implementations agree?",
+      "status": "verified",
+      "boundary": "float64, full-Dirichlet grids from 4x4 through 48x48, one thread",
+      "evidence_ids": [
+        "E-FFT-001",
+        "E-FFT-002"
+      ]
+    },
+    {
+      "question": "Does the FFTW B0 preconditioner agree with the SciPy reference?",
+      "status": "verified",
+      "boundary": "Registered deterministic transform contract, not a performance claim",
+      "evidence_ids": [
+        "E-FFT-004"
+      ]
+    },
+    {
+      "question": "Does the optional FFTW backend preserve complete elastic solver results?",
+      "status": "verified",
+      "boundary": "Deterministic Hookean EBI and two-state TRI2 unit cases",
+      "evidence_ids": [
+        "E-FFT-005"
+      ]
+    },
+    {
+      "question": "Has FFTW performance been qualified for the complete spectral solver?",
+      "status": "pending benchmark",
+      "boundary": "No speedup is claimed before the registered machine benchmark",
+      "evidence_ids": [
+        "E-FFT-006"
+      ]
     }
   ],
   "evidence": [
+    {
+      "id": "E-FFT-001",
+      "question": "Do the SciPy and FFTW DST-I implementations agree?",
+      "fidelity": "deterministic float64 transform contract",
+      "parameters": "full-Dirichlet grids 4x4, 8x8, 12x12, 24x24 and 48x48; one thread; estimate planning",
+      "status": "verified",
+      "conclusion": "Forward and inverse backend differences remain at machine precision.",
+      "sources": [
+        {
+          "path": "validation/reference_data/fftw_backend_contract_v1/contract.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/records/4/forward_backend",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            },
+            {
+              "path": "/records/4/inverse_backend",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-FFT-002",
+      "question": "Do the FFTW round-trip and inner-product contracts hold?",
+      "fidelity": "deterministic float64 transform contract",
+      "parameters": "same registered grids and random seeds",
+      "status": "verified",
+      "conclusion": "Both implementations preserve the orthonormal DST-I to machine precision.",
+      "sources": [
+        {
+          "path": "validation/reference_data/fftw_backend_contract_v1/contract.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/records/4/roundtrip_fftw",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            },
+            {
+              "path": "/records/4/inner_product_backend",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-FFT-003",
+      "question": "Is FFTW wisdom machine-local and non-blocking when incompatible?",
+      "fidelity": "optional plan persistence contract",
+      "parameters": "metadata-keyed wisdom, compatible and corrupt files",
+      "status": "verified by unit contract",
+      "conclusion": "Compatible wisdom is loaded and corrupt or incompatible files are ignored.",
+      "sources": []
+    },
+    {
+      "id": "E-FFT-004",
+      "question": "Does the FFTW B0 preconditioner agree with the SciPy reference?",
+      "fidelity": "deterministic float64 preconditioner contract",
+      "parameters": "B0, one thread, full-Dirichlet grids through 48x48",
+      "status": "verified",
+      "conclusion": "The complete forward-Green-inverse action agrees to machine precision.",
+      "sources": [
+        {
+          "path": "validation/reference_data/fftw_backend_contract_v1/contract.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/records/4/preconditioner_backend",
+              "operator": "less_than",
+              "expected": 1.0e-13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-FFT-005",
+      "question": "Does the optional FFTW backend preserve complete elastic solver results?",
+      "fidelity": "deterministic Hookean EBI and two-state TRI2 unit cases",
+      "parameters": "same boundary data, tolerance and constitutive tangent",
+      "status": "verified by unit contract",
+      "conclusion": "EBI and two-state solver tests compare SciPy and FFTW results without changing the mechanics.",
+      "sources": []
+    },
+    {
+      "id": "E-FFT-006",
+      "question": "Has FFTW performance been qualified for the complete spectral solver?",
+      "fidelity": "machine-specific benchmark",
+      "parameters": "planned meshes 12 through 192, planning and steady-state statistics",
+      "status": "pending benchmark",
+      "conclusion": "The benchmark script is available; no FFTW speedup is claimed yet.",
+      "sources": []
+    },
     {
       "id": "E-SPECTRAL-001",
       "question": "Does the one-point spectral stencil develop a high-frequency near-null mode?",

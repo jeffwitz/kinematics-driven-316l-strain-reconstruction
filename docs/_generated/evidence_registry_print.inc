@@ -1,5 +1,41 @@
 <!-- Generated from validation/documentation_evidence_registry.json. -->
 
+**E-FFT-001 — Do the SciPy and FFTW DST-I implementations agree?**
+: Fidelity: deterministic float64 transform contract. Parameters: full-Dirichlet grids 4x4, 8x8, 12x12, 24x24 and 48x48; one thread; estimate planning.
+: Status: **verified**.
+: Conclusion: Forward and inverse backend differences remain at machine precision.
+: Sources: primary: `validation/reference_data/fftw_backend_contract_v1/contract.json`.
+
+**E-FFT-002 — Do the FFTW round-trip and inner-product contracts hold?**
+: Fidelity: deterministic float64 transform contract. Parameters: same registered grids and random seeds.
+: Status: **verified**.
+: Conclusion: Both implementations preserve the orthonormal DST-I to machine precision.
+: Sources: primary: `validation/reference_data/fftw_backend_contract_v1/contract.json`.
+
+**E-FFT-003 — Is FFTW wisdom machine-local and non-blocking when incompatible?**
+: Fidelity: optional plan persistence contract. Parameters: metadata-keyed wisdom, compatible and corrupt files.
+: Status: **verified by unit contract**.
+: Conclusion: Compatible wisdom is loaded and corrupt or incompatible files are ignored.
+: Sources: .
+
+**E-FFT-004 — Does the FFTW B0 preconditioner agree with the SciPy reference?**
+: Fidelity: deterministic float64 preconditioner contract. Parameters: B0, one thread, full-Dirichlet grids through 48x48.
+: Status: **verified**.
+: Conclusion: The complete forward-Green-inverse action agrees to machine precision.
+: Sources: primary: `validation/reference_data/fftw_backend_contract_v1/contract.json`.
+
+**E-FFT-005 — Does the optional FFTW backend preserve complete elastic solver results?**
+: Fidelity: deterministic Hookean EBI and two-state TRI2 unit cases. Parameters: same boundary data, tolerance and constitutive tangent.
+: Status: **verified by unit contract**.
+: Conclusion: EBI and two-state solver tests compare SciPy and FFTW results without changing the mechanics.
+: Sources: .
+
+**E-FFT-006 — Has FFTW performance been qualified for the complete spectral solver?**
+: Fidelity: machine-specific benchmark. Parameters: planned meshes 12 through 192, planning and steady-state statistics.
+: Status: **pending benchmark**.
+: Conclusion: The benchmark script is available; no FFTW speedup is claimed yet.
+: Sources: .
+
 **E-SPECTRAL-001 — Does the one-point spectral stencil develop a high-frequency near-null mode?**
 : Fidelity: registered spectral witness. Parameters: one-point stencil, recorded non-affine load.
 : Status: **verified**.

@@ -1,0 +1,3 @@
+# Optional FFTW environment layered on the reproducible development lock.
+-r requirements-lock.txt
+pyfftw==0.15.1

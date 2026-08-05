@@ -29,3 +29,7 @@
 | Does the SRIX Hookean prerequisite and directional EBI tangent pass? | **verified** | Three tested orientations and the registered plastified states | `E-EBI-001` |
 | Is the dominant registered EBI error caused by state sharing? | **supported** | Same TET2 kinematics and global solver, comparison through 24x24 | `E-EBI-002` |
 | Do the DST-I transform and discrete inner product contracts hold? | **verified** | Unit-test grids and full-Dirichlet implementation | `E-DTT-001` |
+| Do the SciPy and FFTW DST-I implementations agree? | **verified** | float64, full-Dirichlet grids from 4x4 through 48x48, one thread | `E-FFT-001`, `E-FFT-002` |
+| Does the FFTW B0 preconditioner agree with the SciPy reference? | **verified** | Registered deterministic transform contract, not a performance claim | `E-FFT-004` |
+| Does the optional FFTW backend preserve complete elastic solver results? | **verified** | Deterministic Hookean EBI and two-state TRI2 unit cases | `E-FFT-005` |
+| Has FFTW performance been qualified for the complete spectral solver? | **pending benchmark** | No speedup is claimed before the registered machine benchmark | `E-FFT-006` |

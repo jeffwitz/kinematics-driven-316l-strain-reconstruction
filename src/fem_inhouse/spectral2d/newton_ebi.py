@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal
+from dataclasses import dataclass, field
+from typing import Literal, cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -18,7 +18,12 @@ from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import EBITwoTriangleKinematics2D
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
-from fem_inhouse.spectral2d.transforms import FullDirichletDSTIPlan2D
+from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
+from fem_inhouse.spectral2d.transforms import (
+    BufferedTransformPlan2D,
+    SpectralTransformConfig,
+    TransformPlan2D,
+)
 
 FloatArray = NDArray[np.float64]
 
@@ -37,6 +42,7 @@ class EBISpectralSolverConfig:
     reference_lambda_0: float | None = None
     reference_mu_0: float | None = None
     symbol_null_tolerance: float = 1.0e-12
+    transform: SpectralTransformConfig = field(default_factory=SpectralTransformConfig)
 
     def __post_init__(self) -> None:
         if self.relative_equilibrium_tolerance <= 0.0:
@@ -89,6 +95,7 @@ def solve_ebi_dirichlet_plane_stress(
     material: HookeanPlaneStressMaterialBatch,
     boundary_displacement_history: ArrayLike,
     config: EBISpectralSolverConfig,
+    transform_plan: TransformPlan2D | None = None,
 ) -> Spectral2DResult:
     """Solve full-Dirichlet EBI equilibrium with matrix-free Newton-GMRES."""
 
@@ -103,7 +110,7 @@ def solve_ebi_dirichlet_plane_stress(
         raise ValueError("EBI requires exactly one material state per pixel")
     elements = EBIPlaneStressElementBatch(material, grid.pixel_shape)
     extension = HarmonicDirichletExtension2D()
-    plan = FullDirichletDSTIPlan2D(grid)
+    plan = transform_plan or create_full_dirichlet_dsti_plan(grid, config.transform)
     symbols = kinematics.reference_operator_symbols(plan)
     projected_lambda, projected_mu, projection_error = project_isotropic_plane_stress_tangent(
         np.asarray(material.elastic_tangent_in_plane_mpa).mean(axis=0)
@@ -124,6 +131,10 @@ def solve_ebi_dirichlet_plane_stress(
         mu_0=mu_0,
         symbol_null_tolerance=config.symbol_null_tolerance,
     )
+    interior_shape = (*grid.interior_shape, 2)
+    spectral_buffer = np.empty(interior_shape, dtype=np.float64)
+    green_buffer = np.empty_like(spectral_buffer)
+    physical_buffer = np.empty_like(spectral_buffer)
     fluctuation = np.zeros((*grid.node_shape, 2), dtype=np.float64)
     residual_history: list[float] = []
     absolute_residual_history: list[float] = []
@@ -238,10 +249,17 @@ def solve_ebi_dirichlet_plane_stress(
                 )
 
             def preconditioner_action(vector: FloatArray) -> FloatArray:
-                nodal = unpack_interior(vector, grid)
-                transformed = plan.forward_displacement(nodal[1:-1, 1:-1])
-                corrected = plan.embed_interior(plan.inverse_displacement(green.apply(transformed)))
-                return pack_interior(corrected)
+                interior = np.asarray(vector, dtype=np.float64).reshape(interior_shape)
+                if hasattr(plan, "forward_into"):
+                    buffered_plan = cast(BufferedTransformPlan2D, plan)
+                    buffered_plan.forward_into(interior, spectral_buffer)
+                    green.apply_into(spectral_buffer, green_buffer)
+                    buffered_plan.inverse_into(green_buffer, physical_buffer)
+                else:
+                    spectral_buffer[...] = plan.forward_displacement(interior)
+                    green.apply_into(spectral_buffer, green_buffer)
+                    physical_buffer[...] = plan.inverse_displacement(green_buffer)
+                return physical_buffer.reshape(-1).copy()
 
             jacobian = LinearOperator((size, size), matvec=jacobian_action, dtype=np.float64)
             preconditioner = LinearOperator(
@@ -299,6 +317,7 @@ def solve_ebi_dirichlet_plane_stress(
 
     if final_trial is None or final_ebi_trial is None:
         raise RuntimeError("no EBI increment converged")
+    transform_diagnostics = plan.diagnostics
     observables = {
         name: _reshape_mean_field(values, grid) for name, values in final_trial.observables.items()
     }
@@ -324,6 +343,15 @@ def solve_ebi_dirichlet_plane_stress(
         reference_lambda_0=lambda_0,
         reference_mu_0=mu_0,
         reference_projection_error=projection_error,
+        transform_backend=transform_diagnostics.backend,
+        transform_implementation=transform_diagnostics.implementation,
+        transform_interior_shape=transform_diagnostics.interior_shape,
+        transform_batch_components=transform_diagnostics.batch_components,
+        transform_dtype=transform_diagnostics.dtype,
+        transform_workers=transform_diagnostics.workers,
+        transform_planner_effort=transform_diagnostics.planner_effort,
+        transform_wisdom_loaded=transform_diagnostics.wisdom_loaded,
+        transform_planning_seconds=transform_diagnostics.planning_seconds,
         timings={
             "material_evaluations": float(material_evaluations),
             "gmres_iterations": float(gmres_iterations),

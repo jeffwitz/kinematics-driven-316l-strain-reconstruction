@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -24,7 +25,8 @@ from fem_inhouse.spectral2d.newton_ebi import (
 )
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
-from fem_inhouse.spectral2d.transforms import FullDirichletDSTIPlan2D
+from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
+from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, TransformPlan2D
 
 FloatArray = NDArray[np.float64]
 
@@ -103,6 +105,7 @@ def solve_two_state_dirichlet_plane_stress(
     material: PlaneStressMaterialBatch,
     boundary_displacement_history: ArrayLike,
     config: EBISpectralSolverConfig,
+    transform_plan: TransformPlan2D | None = None,
 ) -> Spectral2DResult:
     """Solve the direct two-state TRI2 oracle with the EBI Newton machinery."""
 
@@ -113,7 +116,7 @@ def solve_two_state_dirichlet_plane_stress(
     kinematics = TwoSubcellDiagnostic2D(grid)
     elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
     extension = HarmonicDirichletExtension2D()
-    plan = FullDirichletDSTIPlan2D(grid)
+    plan = transform_plan or create_full_dirichlet_dsti_plan(grid, config.transform)
     zero_trial = material.evaluate_in_plane(
         np.zeros((material.point_count, 3)), time_increment=1.0, consistent_tangent=True
     )
@@ -130,6 +133,10 @@ def solve_two_state_dirichlet_plane_stress(
         mu_0=mu_0,
         symbol_null_tolerance=config.symbol_null_tolerance,
     )
+    interior_shape = (*grid.interior_shape, 2)
+    spectral_buffer = np.empty(interior_shape, dtype=np.float64)
+    green_buffer = np.empty_like(spectral_buffer)
+    physical_buffer = np.empty_like(spectral_buffer)
     fluctuation = np.zeros((*grid.node_shape, 2))
     residual_history: list[float] = []
     absolute_history: list[float] = []
@@ -200,10 +207,17 @@ def solve_two_state_dirichlet_plane_stress(
                 )
 
             def preconditioner_action(vector: FloatArray) -> FloatArray:
-                field = unpack_interior(vector, grid)
-                transformed = plan.forward_displacement(field[1:-1, 1:-1])
-                corrected = plan.embed_interior(plan.inverse_displacement(green.apply(transformed)))
-                return pack_interior(corrected)
+                interior = np.asarray(vector, dtype=np.float64).reshape(interior_shape)
+                if hasattr(plan, "forward_into"):
+                    buffered_plan = cast(BufferedTransformPlan2D, plan)
+                    buffered_plan.forward_into(interior, spectral_buffer)
+                    green.apply_into(spectral_buffer, green_buffer)
+                    buffered_plan.inverse_into(green_buffer, physical_buffer)
+                else:
+                    spectral_buffer[...] = plan.forward_displacement(interior)
+                    green.apply_into(spectral_buffer, green_buffer)
+                    physical_buffer[...] = plan.inverse_displacement(green_buffer)
+                return physical_buffer.reshape(-1).copy()
 
             gmres_matrix = LinearOperator((size, size), matvec=jacobian_action, dtype=float)
             preconditioner = LinearOperator((size, size), matvec=preconditioner_action, dtype=float)
@@ -255,6 +269,7 @@ def solve_two_state_dirichlet_plane_stress(
 
     if final_trial is None or final_sample_strain is None:
         raise RuntimeError("no two-state increment converged")
+    transform_diagnostics = plan.diagnostics
     observables = {
         name: _reshape_two_state(values, grid) for name, values in final_trial.observables.items()
     }
@@ -276,6 +291,15 @@ def solve_two_state_dirichlet_plane_stress(
         verification_residual=verification_residual,
         verification_residual_history=tuple(verification_history),
         verification_relative_mismatch_history=tuple(verification_mismatch_history),
+        transform_backend=transform_diagnostics.backend,
+        transform_implementation=transform_diagnostics.implementation,
+        transform_interior_shape=transform_diagnostics.interior_shape,
+        transform_batch_components=transform_diagnostics.batch_components,
+        transform_dtype=transform_diagnostics.dtype,
+        transform_workers=transform_diagnostics.workers,
+        transform_planner_effort=transform_diagnostics.planner_effort,
+        transform_wisdom_loaded=transform_diagnostics.wisdom_loaded,
+        transform_planning_seconds=transform_diagnostics.planning_seconds,
         timings={
             "material_evaluations": float(material_evaluations),
             "gmres_iterations": float(gmres_iterations),

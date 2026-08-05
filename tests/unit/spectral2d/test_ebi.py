@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveTrial,
@@ -14,6 +15,7 @@ from fem_inhouse.spectral2d import (
     solve_ebi_dirichlet_plane_stress,
     unpack_interior,
 )
+from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 
 class ElasticHookeanBatch:
@@ -115,7 +117,10 @@ def test_ebi_tangent_action_passes_directional_derivative() -> None:
     assert calls_after_tangent == 1
 
 
-def test_ebi_newton_gmres_converges_non_affine_elastic_case() -> None:
+@pytest.mark.parametrize("backend", ["scipy", "fftw"])
+def test_ebi_newton_gmres_converges_non_affine_elastic_case(backend: str) -> None:
+    if backend == "fftw":
+        pytest.importorskip("pyfftw")
     grid = StructuredGrid2D(4, 4, 2.0, 2.0)
     x, y = grid.coordinates
     boundary = np.zeros((2, *grid.node_shape, 2))
@@ -126,7 +131,12 @@ def test_ebi_newton_gmres_converges_non_affine_elastic_case() -> None:
         grid=grid,
         material=material,
         boundary_displacement_history=boundary,
-        config=EBISpectralSolverConfig(relative_equilibrium_tolerance=1.0e-10),
+        config=EBISpectralSolverConfig(
+            relative_equilibrium_tolerance=1.0e-10,
+            transform=SpectralTransformConfig(
+                backend=backend, fftw_planner_effort="estimate", fftw_use_wisdom=False
+            ),
+        ),
     )
     assert result.diagnostics.dimensionless_equilibrium_history[-1] < 1.0e-10
     assert result.diagnostics.material_points == 16

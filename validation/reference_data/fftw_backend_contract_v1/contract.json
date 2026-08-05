@@ -1,0 +1,204 @@
+{
+  "environment": {
+    "numpy": "2.5.1",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "pyfftw": "0.15.1",
+    "python": "3.12.3",
+    "scipy": "1.18.0"
+  },
+  "grids": [
+    4,
+    8,
+    12,
+    24,
+    48
+  ],
+  "records": [
+    {
+      "fftw_diagnostics": {
+        "backend": "fftw",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "pyfftw.FFTW",
+        "interior_shape": [
+          3,
+          3
+        ],
+        "planner_effort": "estimate",
+        "planning_seconds": 0.0009179589978884906,
+        "wisdom_loaded": false,
+        "workers": 1
+      },
+      "forward_backend": 1.5582108116459697e-16,
+      "inner_product_backend": 1.2300994126892767e-16,
+      "inverse_backend": 2.472667345506162e-16,
+      "mesh": 4,
+      "preconditioner_backend": 2.472667345506162e-16,
+      "roundtrip_fftw": 2.1424660380359393e-16,
+      "roundtrip_scipy": 1.5167479696373125e-16,
+      "scipy_diagnostics": {
+        "backend": "scipy",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "scipy.fft.dstn",
+        "interior_shape": [
+          3,
+          3
+        ],
+        "planner_effort": null,
+        "planning_seconds": 0.0,
+        "wisdom_loaded": false,
+        "workers": 1
+      }
+    },
+    {
+      "fftw_diagnostics": {
+        "backend": "fftw",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "pyfftw.FFTW",
+        "interior_shape": [
+          7,
+          7
+        ],
+        "planner_effort": "estimate",
+        "planning_seconds": 0.0008267410012194887,
+        "wisdom_loaded": false,
+        "workers": 1
+      },
+      "forward_backend": 1.7335851914839183e-16,
+      "inner_product_backend": 8.092988153053779e-18,
+      "inverse_backend": 2.973985499396459e-16,
+      "mesh": 8,
+      "preconditioner_backend": 2.973985499396459e-16,
+      "roundtrip_fftw": 1.7892942154609316e-16,
+      "roundtrip_scipy": 2.3399235545829284e-16,
+      "scipy_diagnostics": {
+        "backend": "scipy",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "scipy.fft.dstn",
+        "interior_shape": [
+          7,
+          7
+        ],
+        "planner_effort": null,
+        "planning_seconds": 0.0,
+        "wisdom_loaded": false,
+        "workers": 1
+      }
+    },
+    {
+      "fftw_diagnostics": {
+        "backend": "fftw",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "pyfftw.FFTW",
+        "interior_shape": [
+          11,
+          11
+        ],
+        "planner_effort": "estimate",
+        "planning_seconds": 0.0017511629994260147,
+        "wisdom_loaded": false,
+        "workers": 1
+      },
+      "forward_backend": 2.5001467171857336e-16,
+      "inner_product_backend": 0.0,
+      "inverse_backend": 4.115574204924394e-16,
+      "mesh": 12,
+      "preconditioner_backend": 4.115574204924394e-16,
+      "roundtrip_fftw": 2.9368563019430176e-16,
+      "roundtrip_scipy": 4.635616863481686e-16,
+      "scipy_diagnostics": {
+        "backend": "scipy",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "scipy.fft.dstn",
+        "interior_shape": [
+          11,
+          11
+        ],
+        "planner_effort": null,
+        "planning_seconds": 0.0,
+        "wisdom_loaded": false,
+        "workers": 1
+      }
+    },
+    {
+      "fftw_diagnostics": {
+        "backend": "fftw",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "pyfftw.FFTW",
+        "interior_shape": [
+          23,
+          23
+        ],
+        "planner_effort": "estimate",
+        "planning_seconds": 0.0019863639972754754,
+        "wisdom_loaded": false,
+        "workers": 1
+      },
+      "forward_backend": 3.105871747658482e-16,
+      "inner_product_backend": 0.0,
+      "inverse_backend": 4.615258995258489e-16,
+      "mesh": 24,
+      "preconditioner_backend": 4.615258995258489e-16,
+      "roundtrip_fftw": 3.3513881549951558e-16,
+      "roundtrip_scipy": 5.445920920345012e-16,
+      "scipy_diagnostics": {
+        "backend": "scipy",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "scipy.fft.dstn",
+        "interior_shape": [
+          23,
+          23
+        ],
+        "planner_effort": null,
+        "planning_seconds": 0.0,
+        "wisdom_loaded": false,
+        "workers": 1
+      }
+    },
+    {
+      "fftw_diagnostics": {
+        "backend": "fftw",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "pyfftw.FFTW",
+        "interior_shape": [
+          47,
+          47
+        ],
+        "planner_effort": "estimate",
+        "planning_seconds": 0.002486753000994213,
+        "wisdom_loaded": false,
+        "workers": 1
+      },
+      "forward_backend": 3.124806602709004e-16,
+      "inner_product_backend": 0.0,
+      "inverse_backend": 4.685739390787744e-16,
+      "mesh": 48,
+      "preconditioner_backend": 4.685739390787744e-16,
+      "roundtrip_fftw": 3.513931483288509e-16,
+      "roundtrip_scipy": 4.98394415712935e-16,
+      "scipy_diagnostics": {
+        "backend": "scipy",
+        "batch_components": 2,
+        "dtype": "float64",
+        "implementation": "scipy.fft.dstn",
+        "interior_shape": [
+          47,
+          47
+        ],
+        "planner_effort": null,
+        "planning_seconds": 0.0,
+        "wisdom_loaded": false,
+        "workers": 1
+      }
+    }
+  ],
+  "status": "completed_fftw_contract_measurement"
+}

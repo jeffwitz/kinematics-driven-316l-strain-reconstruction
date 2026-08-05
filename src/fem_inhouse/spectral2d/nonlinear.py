@@ -30,7 +30,7 @@ from fem_inhouse.spectral2d.kinematics import (
     TwoSubcellDiagnostic2D,
 )
 from fem_inhouse.spectral2d.result import Spectral2DResult
-from fem_inhouse.spectral2d.transforms import FullDirichletDSTIPlan2D
+from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 
 
 class SpectralIncrementConvergenceError(RuntimeError):
@@ -124,7 +124,7 @@ def solve_dirichlet_plane_stress_spectral(
     if material.point_count != operator.material_point_count:
         raise ValueError("material point count does not match the selected spatial scheme")
 
-    plan = FullDirichletDSTIPlan2D(grid)
+    plan = create_full_dirichlet_dsti_plan(grid, config.transform)
     symbols = operator.reference_operator_symbols(plan)
     projection_error = 0.0
     if config.reference_parameter_mode == "explicit":
@@ -457,6 +457,7 @@ def solve_dirichlet_plane_stress_spectral(
     if final_trial is None:
         raise SpectralIncrementConvergenceError("no increment was solved")
     anderson_diagnostics = anderson.diagnostics
+    transform_diagnostics = plan.diagnostics
     diagnostics = Spectral2DDiagnostics(
         spatial_scheme=config.spatial_scheme,
         green_operator=config.green_operator,
@@ -465,6 +466,15 @@ def solve_dirichlet_plane_stress_spectral(
         points_per_pixel=operator.points_per_pixel,
         spacing_x=grid.spacing_x,
         spacing_y=grid.spacing_y,
+        transform_backend=transform_diagnostics.backend,
+        transform_implementation=transform_diagnostics.implementation,
+        transform_interior_shape=transform_diagnostics.interior_shape,
+        transform_batch_components=transform_diagnostics.batch_components,
+        transform_dtype=transform_diagnostics.dtype,
+        transform_workers=transform_diagnostics.workers,
+        transform_planner_effort=transform_diagnostics.planner_effort,
+        transform_wisdom_loaded=transform_diagnostics.wisdom_loaded,
+        transform_planning_seconds=transform_diagnostics.planning_seconds,
         relative_residual_history=tuple(relative_history),
         dimensionless_equilibrium_history=tuple(dimensionless_history),
         absolute_residual_history=tuple(absolute_history),
