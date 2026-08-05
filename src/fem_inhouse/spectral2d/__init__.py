@@ -5,6 +5,17 @@ the constitutive backend, while the material protocol is imported from the
 solver-neutral core contract.
 """
 
+# pyFFTW bundles its own FFTW runtime.  Import it before SciPy/BLAS-backed
+# modules are loaded when it is available; otherwise its first plan can fail
+# with a planner-NULL error after another native numerical library has already
+# initialized the process.  The dependency remains optional.
+try:
+    import importlib
+
+    importlib.import_module("pyfftw")
+except ImportError:
+    pass
+
 from fem_inhouse.spectral2d.anderson import (
     AndersonDiagnostics,
     DisplacementAndersonAccelerator,
