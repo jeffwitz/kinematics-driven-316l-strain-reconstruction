@@ -1,0 +1,41 @@
+{
+  "candidate_execution_commit": "b468ad198f3562cfbbf5744b353ec90bc4b1ca8d",
+  "candidate_report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_adaptive.json",
+  "candidate_report_sha256": "baded8e54269590045f28e21a829b4052baea55f82e6d8e45e8a5bde3d041f49",
+  "metrics": {
+    "accumulated_slip": {
+      "maximum_absolute_difference": 0.00018789712378726106,
+      "relative_l2": 0.0032424858838469373,
+      "relative_linf": 0.007270532644322776
+    },
+    "displacement": {
+      "maximum_absolute_difference": 1.046297705122913e-06,
+      "relative_l2": 6.7089010867788495e-06,
+      "relative_linf": 1.5071242891885492e-05
+    },
+    "equivalent_plastic_slip": {
+      "maximum_absolute_difference": 0.0001904882990195391,
+      "relative_l2": 0.013386939775548862,
+      "relative_linf": 0.02062923619037839
+    },
+    "plastic_slip": {
+      "maximum_absolute_difference": 0.0001904882990195391,
+      "relative_l2": 0.013386939775548862,
+      "relative_linf": 0.02062923619037839
+    },
+    "reaction_forces": {
+      "maximum_absolute_difference": 0.0069365609124130145,
+      "relative_l2": 0.0135251434131585,
+      "relative_linf": 0.01868372674307877
+    },
+    "stress_in_plane_mpa": {
+      "maximum_absolute_difference": 4.054371919770517,
+      "relative_l2": 0.013156988988050275,
+      "relative_linf": 0.0202827151619025
+    }
+  },
+  "reference_execution_commit": "b0541cae22bb4a4dd95f4bcb4805d1a3c05b88ee",
+  "reference_report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_i16_no_final_verification.json",
+  "reference_report_sha256": "5ad623ce5eb60a0dca7ea1cc4a166f9767dc945ff1873d69b57695d1bcf3ecac",
+  "schema_version": 1
+}

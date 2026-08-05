@@ -78,6 +78,36 @@ proportional sweep, but that does not imply equality of stresses or local
 slip amplitudes. The comparison must retain both global field errors and
 system-level slip errors.
 
+## Adaptive SRIX stepping
+
+The solver now exposes an adaptive policy for the rate-independent SRIX law.
+It starts from a normalized load fraction, preserves mandatory path knots for
+non-proportional histories, grows easy accepted steps, and cuts back after a
+Newton, Krylov, or line-search failure. The fixed path remains the default,
+and the CLI rejects adaptive stepping for Méric--Cailletaud because its time
+increment is constitutive data.
+
+A P43 100x100 qualification run is archived in:
+
+```text
+validation/_generated/performance/
+  crystal_tet2_srix_p43_m100_adaptive.json
+  crystal_tet2_srix_p43_m100_adaptive.fields.npz
+```
+
+With an initial and maximum step of `0.25` and final-trial promotion enabled,
+the controller accepted four steps (`0.25, 0.25, 0.25, 0.25`) in 25.59 s,
+with 23 Newton iterations and a final equilibrium residual of `3.78e-9`.
+This is a valid equilibrium solution but not a qualified replacement for the
+16-step path: relative errors against the 16-step fields are `6.71e-6` for
+displacement, `1.32e-2` for stress, and `1.34e-2` for accumulated slip.
+
+This negative result is important. Newton convergence alone cannot select an
+adaptive step size for SRIX; the controller must also compare the resulting
+fields and system-resolved slips with the qualified path. The current adaptive
+implementation is therefore an experimental load-step policy, not the
+production default.
+
 ## Interpretation and next step
 
 SRIX is independent of physical loading rate, but its numerical response still
@@ -85,11 +115,11 @@ depends on how the imposed deformation path is subdivided. The sweep therefore
 tests path integration, not a physical time convergence study. It does not
 justify skipping increments solely because the residual converges.
 
-The next safe optimisation is promotion of the final tangent trial to a
-complete output without a second MGIS integration. That optimisation must have
-an independent qualification mode which keeps the revert-and-reintegrate
-verification. Adaptive stepping should only be implemented after this fixed
-sweep and the promotion contract are qualified.
+The accepted-trial promotion is qualified separately: it removes the final
+verification reintegration in production mode while retaining an independent
+qualification mode. Adaptive stepping is now implemented experimentally, but
+its field-accuracy gate remains open because the first four-step P43 run is
+too coarse.
 
 Méric--Cailletaud must not inherit the SRIX stepping policy: its increment
 duration is part of the constitutive law, whereas SRIX uses the increment
