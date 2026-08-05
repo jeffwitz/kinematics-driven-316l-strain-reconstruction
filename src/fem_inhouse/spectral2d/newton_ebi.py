@@ -35,6 +35,13 @@ class EBISpectralSolverConfig:
     gmres_relative_tolerance: float = 1.0e-8
     gmres_maximum_iterations: int = 200
     gmres_restart: int = 50
+    linear_tolerance_mode: Literal["fixed", "eisenstat_walker"] = "fixed"
+    forcing_initial: float = 1.0e-1
+    forcing_minimum: float = 1.0e-8
+    forcing_maximum: float = 1.0e-1
+    forcing_gamma: float = 0.9
+    forcing_alpha: float = 1.5
+    verify_linear_residual: bool = False
     maximum_line_search_reductions: int = 8
     reference_parameter_mode: Literal["explicit", "projected"] = "projected"
     reference_parameter_scale: float = 1.0
@@ -49,6 +56,16 @@ class EBISpectralSolverConfig:
             raise ValueError("equilibrium tolerance must be positive")
         if self.maximum_newton_iterations < 1 or self.gmres_maximum_iterations < 1:
             raise ValueError("iteration limits must be positive")
+        if self.linear_tolerance_mode not in {"fixed", "eisenstat_walker"}:
+            raise ValueError("unsupported linear tolerance mode")
+        if not 0.0 < self.forcing_minimum <= self.forcing_maximum < 1.0:
+            raise ValueError("forcing bounds must satisfy 0 < minimum <= maximum < 1")
+        if not 0.0 < self.forcing_initial <= self.forcing_maximum:
+            raise ValueError("forcing initial value must be within forcing bounds")
+        if not 0.0 < self.forcing_gamma <= 1.0:
+            raise ValueError("forcing gamma must be in (0, 1]")
+        if not 1.0 <= self.forcing_alpha <= 2.0:
+            raise ValueError("forcing alpha must be in [1, 2]")
         if self.reference_parameter_scale <= 0.0:
             raise ValueError("reference parameter scale must be positive")
         if self.reference_lambda_mu_ratio <= 0.0:

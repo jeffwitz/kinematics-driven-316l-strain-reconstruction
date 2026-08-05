@@ -118,6 +118,29 @@ def _accumulate_preconditioner(
     target.output_copy_seconds += source.output_copy_seconds
 
 
+def _linear_tolerance(
+    config: EBISpectralSolverConfig,
+    residual: float,
+    previous_residual: float | None,
+    *,
+    force_fixed: bool,
+) -> float:
+    if config.linear_tolerance_mode == "fixed" or force_fixed:
+        return config.gmres_relative_tolerance
+    if previous_residual is None:
+        eta = config.forcing_initial
+    else:
+        ratio = residual / max(previous_residual, 1.0e-30)
+        eta = config.forcing_gamma * ratio**config.forcing_alpha
+        eta = min(config.forcing_maximum, max(config.forcing_minimum, eta))
+    if residual <= 10.0 * config.relative_equilibrium_tolerance:
+        eta = min(
+            eta,
+            max(config.forcing_minimum, 0.1 * residual),
+        )
+    return max(config.forcing_minimum, min(config.forcing_maximum, eta))
+
+
 @dataclass(frozen=True, slots=True)
 class TraditionalTwoStateTrial:
     sample_strain: FloatArray
@@ -327,6 +350,8 @@ def solve_two_state_dirichlet_plane_stress(
     for increment in range(1, history.shape[0]):
         applied = extension.extend(history[increment], grid)
         converged = False
+        previous_nonlinear_residual: float | None = None
+        force_fixed_linear_tolerance = False
         for iteration in range(config.maximum_newton_iterations):
             sample_strain = strain_timed(applied + fluctuation)
             trial = evaluate_samples_timed(sample_strain, time_increment)
@@ -369,6 +394,13 @@ def solve_two_state_dirichlet_plane_stress(
             jacobian_local = JacobianActionDiagnostics()
             preconditioner_local = PreconditionerActionDiagnostics()
             gmres_iterations_before = gmres_iterations
+            requested_linear_tolerance = _linear_tolerance(
+                config,
+                relative,
+                previous_nonlinear_residual,
+                force_fixed=force_fixed_linear_tolerance,
+            )
+            force_fixed_linear_tolerance = False
 
             def jacobian_action(
                 vector: FloatArray,
@@ -433,17 +465,28 @@ def solve_two_state_dirichlet_plane_stress(
                 gmres_iterations += 1
 
             gmres_started = time.perf_counter()
+            rhs = -pack_interior(residual)
             correction, info = gmres(
                 gmres_matrix,
-                -pack_interior(residual),
+                rhs,
                 M=preconditioner,
-                rtol=config.gmres_relative_tolerance,
+                rtol=requested_linear_tolerance,
                 atol=0.0,
                 restart=config.gmres_restart,
                 maxiter=config.gmres_maximum_iterations,
                 callback=count_gmres,
                 callback_type="pr_norm",
             )
+            linear_residual_ratio: float | None = None
+            if config.verify_linear_residual and info == 0 and np.isfinite(correction).all():
+                linear_residual = jacobian_action(correction) - rhs
+                linear_residual_ratio = float(
+                    np.linalg.norm(linear_residual)
+                    / max(np.linalg.norm(rhs), 1.0e-30)
+                )
+                force_fixed_linear_tolerance = linear_residual_ratio > (
+                    1.5 * requested_linear_tolerance
+                )
             gmres_elapsed = time.perf_counter() - gmres_started
             gmres_seconds += gmres_elapsed
             if info != 0 or not np.isfinite(correction).all():
@@ -479,7 +522,7 @@ def solve_two_state_dirichlet_plane_stress(
                     increment=increment,
                     newton_iteration=iteration + 1,
                     nonlinear_residual_before=relative,
-                    requested_relative_tolerance=config.gmres_relative_tolerance,
+                    requested_relative_tolerance=requested_linear_tolerance,
                     gmres_info=int(info),
                     gmres_iterations=gmres_iterations - gmres_iterations_before,
                     jacobian_calls=jacobian_local.calls,
@@ -495,8 +538,12 @@ def solve_two_state_dirichlet_plane_stress(
                     ),
                     restart=config.gmres_restart,
                     line_search_factor=factor,
+                    linear_residual_ratio=linear_residual_ratio,
                 )
             )
+            previous_nonlinear_residual = relative
+            if factor < 1.0:
+                force_fixed_linear_tolerance = True
         if not converged:
             elements.revert()
             raise RuntimeError(f"two-state increment {increment} did not converge")
@@ -540,6 +587,12 @@ def solve_two_state_dirichlet_plane_stress(
             gmres_restart=config.gmres_restart,
             gmres_maximum_iterations=config.gmres_maximum_iterations,
             gmres_relative_tolerance=config.gmres_relative_tolerance,
+            linear_tolerance_mode=config.linear_tolerance_mode,
+            forcing_initial=config.forcing_initial,
+            forcing_minimum=config.forcing_minimum,
+            forcing_maximum=config.forcing_maximum,
+            forcing_gamma=config.forcing_gamma,
+            forcing_alpha=config.forcing_alpha,
         ),
         timings={
             "material_evaluations": float(material_evaluations),

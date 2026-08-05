@@ -57,6 +57,7 @@ class LinearSolveDiagnostics:
     krylov_overhead_seconds: float
     restart: int
     line_search_factor: float | None
+    linear_residual_ratio: float | None = None
 
 
 def collect_runtime_provenance(
@@ -65,6 +66,12 @@ def collect_runtime_provenance(
     gmres_restart: int,
     gmres_maximum_iterations: int,
     gmres_relative_tolerance: float,
+    linear_tolerance_mode: str = "fixed",
+    forcing_initial: float | None = None,
+    forcing_minimum: float | None = None,
+    forcing_maximum: float | None = None,
+    forcing_gamma: float | None = None,
+    forcing_alpha: float | None = None,
 ) -> dict[str, str | int | float | bool | None]:
     """Collect reproducibility metadata for a spectral solve."""
 
@@ -122,6 +129,12 @@ def collect_runtime_provenance(
         "gmres_restart": gmres_restart,
         "gmres_maximum_iterations": gmres_maximum_iterations,
         "gmres_relative_tolerance": gmres_relative_tolerance,
+        "linear_tolerance_mode": linear_tolerance_mode,
+        "forcing_initial": forcing_initial,
+        "forcing_minimum": forcing_minimum,
+        "forcing_maximum": forcing_maximum,
+        "forcing_gamma": forcing_gamma,
+        "forcing_alpha": forcing_alpha,
     }
 
 

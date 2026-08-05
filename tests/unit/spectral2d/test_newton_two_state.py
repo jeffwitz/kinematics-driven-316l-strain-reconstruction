@@ -237,3 +237,46 @@ def test_two_state_inplace_jacobian_matches_reference(mesh_size: int) -> None:
             rtol=1.0e-13,
             atol=1.0e-13 * max(float(np.linalg.norm(reference)), 1.0),
         )
+
+
+def test_two_state_inexact_newton_records_forcing_and_preserves_solution() -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1, ..., 0] = 0.02 * x[:, None] + 0.003 * y[None, :] ** 2
+    boundary[2, ..., 1] = 0.03 * y[None, :] + 0.002 * x[:, None] ** 2
+    common = dict(
+        relative_equilibrium_tolerance=1.0e-10,
+        transform=SpectralTransformConfig(backend="scipy"),
+    )
+    fixed = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common),
+    )
+    inexact = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(
+            **common,
+            linear_tolerance_mode="eisenstat_walker",
+            verify_linear_residual=True,
+        ),
+    )
+    assert inexact.diagnostics.verification_residual <= 1.0e-10
+    assert any(
+        entry.requested_relative_tolerance < 1.0e-3
+        for entry in inexact.diagnostics.linear_solves
+    )
+    assert all(
+        entry.linear_residual_ratio is not None
+        for entry in inexact.diagnostics.linear_solves
+    )
+    np.testing.assert_allclose(
+        inexact.displacement,
+        fixed.displacement,
+        rtol=1.0e-8,
+        atol=1.0e-10,
+    )
