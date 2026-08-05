@@ -1343,7 +1343,13 @@ class MFront3DMaterialPointBatch:
         for name, value in self._behaviour_parameters.items():
             self._mgis.setParameter(self._behaviour, name, value)
 
-    def evaluate(self, total_strain_kelvin: ArrayLike, *, time_increment: float) -> _MFront3DTrial:
+    def evaluate(
+        self,
+        total_strain_kelvin: ArrayLike,
+        *,
+        time_increment: float,
+        collect_observables: bool = True,
+    ) -> _MFront3DTrial:
         self._evaluate_calls += 1
         strain = np.asarray(total_strain_kelvin, dtype=float)
         if strain.shape != (self._point_count, 6):
@@ -1417,10 +1423,15 @@ class MFront3DMaterialPointBatch:
             tangent = flat_tangent.reshape(tangent.shape)
         self._rotation_to_global_seconds += time.perf_counter() - rotation_started
 
-        observables = {
-            name: state[:, position].copy() for name, position in self._observable_slices.items()
-        }
-        if "equivalent_plastic_slip" in observables:
+        observables = (
+            {
+                name: state[:, position].copy()
+                for name, position in self._observable_slices.items()
+            }
+            if collect_observables
+            else {}
+        )
+        if collect_observables and "equivalent_plastic_slip" in observables:
             # Not a J2 equivalent plastic strain and deliberately not named like
             # one: the sum of the twelve accumulated slips is a different scalar
             # with a different meaning.
@@ -1752,7 +1763,11 @@ class MFront3DCondensedPlaneStressBatch:
             and self._bridge.timing_statistics.evaluate_calls % 16 == 0
         )
         for iteration in range(1, self._maximum_iterations + 1):
-            final = self._bridge.evaluate(total_kelvin, time_increment=time_increment)
+            final = self._bridge.evaluate(
+                total_kelvin,
+                time_increment=time_increment,
+                collect_observables=response_level == "complete",
+            )
             stress_b = final.stress_kelvin_mpa[:, _TRANSVERSE_COMPONENTS_3D]
             if not np.isfinite(stress_b).all():
                 self._fail("local plane-stress residual is non-finite")

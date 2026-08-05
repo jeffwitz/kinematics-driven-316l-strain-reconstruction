@@ -187,6 +187,11 @@ def main() -> int:
     report = {
         "mesh": arguments.mesh,
         "tolerance": arguments.tolerance,
+        "behaviour": arguments.behaviour,
+        "mfront_threads": arguments.mfront_threads,
+        "krylov_method": arguments.krylov_method,
+        "krylov_recycling": arguments.krylov_recycling,
+        "local_condition_check_mode": arguments.local_condition_check,
         "transform": {
             key: getattr(ebi.diagnostics, key)
             for key in (
