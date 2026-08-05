@@ -1,0 +1,16 @@
+{
+  "status": "failed_local_plane_stress_convergence",
+  "behaviour": "fcc_meric_cailletaud",
+  "crop_nodes": [1570, 1670, 1035, 1135],
+  "mesh": [100, 100],
+  "increments": 8,
+  "tolerance": 1e-8,
+  "mfront_threads": 4,
+  "krylov_method": "lgmres",
+  "linear_mode": "eisenstat_walker",
+  "transform_backend": "fftw",
+  "execution_commit": "461f7f7406ec998570dfb6e1e4324d10e804a451",
+  "error_type": "LocalPlaneStressConvergenceError",
+  "error": "local plane-stress Newton did not converge in 15 iterations; residual=5.190e-05 MPa",
+  "interpretation": "The registered Meric-Cailletaud 100x100 case is not qualified. This failure is local constitutive condensation, not a spectral timing result."
+}

@@ -1,0 +1,48 @@
+{
+  "reference_build": {
+    "compiler": "GCC 13.3.0",
+    "tfel": "5.1.0",
+    "flags_source": "tfel-config --oflags",
+    "flags": [
+      "-fvisibility-inlines-hidden",
+      "-fvisibility=hidden",
+      "-fno-fast-math",
+      "-DTFEL_NO_RUNTIME_CHECK_BOUNDS",
+      "-O2",
+      "-DNDEBUG",
+      "-ftree-vectorize",
+      "-march=native",
+      "-fPIC"
+    ],
+    "fast_math": false
+  },
+  "variant_build": {
+    "flags": [
+      "-fvisibility-inlines-hidden",
+      "-fvisibility=hidden",
+      "-fno-fast-math",
+      "-DTFEL_NO_RUNTIME_CHECK_BOUNDS",
+      "-O3",
+      "-DNDEBUG",
+      "-ftree-vectorize",
+      "-march=native",
+      "-fPIC"
+    ],
+    "fast_math": false,
+    "library": "build/mfront-o3/src/libBehaviour.so"
+  },
+  "meric_p43_m20": {
+    "reference_elapsed_seconds": 3.774639606999699,
+    "variant_elapsed_seconds": 3.776636000009603,
+    "reference_final_residual": 8.694362923525386e-13,
+    "variant_final_residual": 8.681663664569337e-13,
+    "relative_field_errors": {
+      "displacement": 1.340624616877004e-18,
+      "stress_in_plane_mpa": 9.225555234940297e-15,
+      "reaction_forces": 5.774262985856084e-15,
+      "accumulated_slip": 2.165394235103627e-14
+    },
+    "conclusion": "O3 gives no measurable speedup on this pilot and changes only roundoff-level digits."
+  },
+  "policy": "Do not enable -ffast-math for constitutive qualification."
+}
