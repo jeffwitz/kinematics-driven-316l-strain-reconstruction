@@ -67,3 +67,34 @@ def test_fraction_vector_is_normalized() -> None:
     result = compare_slip_fields(meric, srix, config=SlipMetricConfig())
     assert sum(item["meric_fraction"] for item in result["systems"]) == pytest.approx(1.0)
     assert sum(item["srix_fraction"] for item in result["systems"]) == pytest.approx(1.0)
+
+
+def test_signed_metrics_are_reported_per_system_not_after_cross_system_sum() -> None:
+    meric, srix = _fields()
+    meric_signed = np.zeros_like(meric)
+    srix_signed = np.zeros_like(srix)
+    meric_signed[0, 1:3, 1:3] = 1.0
+    srix_signed[0, 1:3, 1:3] = 1.0
+    meric_signed[1, 1:3, 1:3] = 1.0
+    srix_signed[1, 1:3, 1:3] = -1.0
+    result = compare_slip_fields(
+        meric,
+        srix,
+        meric_signed=meric_signed,
+        srix_signed=srix_signed,
+    )
+    signed = result["signed_slip"]
+    assert signed["same_sign_fraction_by_system"][0] == pytest.approx(1.0)
+    assert signed["same_sign_fraction_by_system"][1] == pytest.approx(0.0)
+    assert signed["opposite_sign_fraction_by_system"][1] == pytest.approx(1.0)
+    assert "same_sign_fraction" not in signed
+
+
+def test_spearman_uses_average_ranks_for_numerical_zero_ties() -> None:
+    meric, srix = np.zeros((12, 2, 2)), np.zeros((12, 2, 2))
+    meric[:4, 0, 0] = [4.0, 3.0, 2.0, 1.0]
+    srix[:4, 0, 0] = [4.0, 3.0, 1.0, 2.0]
+    result = compare_slip_fields(meric, srix)
+    assert result["system_distribution"]["spearman_rank_correlation"] == pytest.approx(
+        0.9900990099009901
+    )

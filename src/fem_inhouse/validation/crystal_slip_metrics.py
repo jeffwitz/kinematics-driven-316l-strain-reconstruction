@@ -206,7 +206,7 @@ def _distribution_comparison(
     cosine_denominator = float(np.linalg.norm(mf) * np.linalg.norm(sf))
     cosine = _safe_ratio(float(np.dot(mf, sf)), cosine_denominator, config.numerical_zero_tolerance)
     rank_correlation = _correlation(
-        meric["ranks"].astype(float), srix["ranks"].astype(float), rank=False, tolerance=0.0
+        mf, sf, rank=True, tolerance=config.numerical_zero_tolerance
     )
     return {
         "meric": {
@@ -331,28 +331,92 @@ def _spatial_system(
     }
 
 
-def _signed_metrics(
-    meric: FloatArray | None, srix: FloatArray | None, config: SlipMetricConfig
-) -> dict[str, Any] | None:
-    if meric is None or srix is None:
-        return None
+def _signed_pair_metrics(
+    meric: FloatArray,
+    srix: FloatArray,
+    weights: FloatArray,
+    config: SlipMetricConfig,
+) -> dict[str, Any]:
     mask = (np.abs(meric) > config.numerical_zero_tolerance) | (
         np.abs(srix) > config.numerical_zero_tolerance
     )
     if not np.any(mask):
         return {
-            "available": True,
             "same_sign_fraction": None,
             "opposite_sign_fraction": None,
             "comparable_pixels": 0,
+            "weighted_same_sign_fraction": None,
+            "status": "not_significant",
         }
     same = np.sign(meric[mask]) == np.sign(srix[mask])
+    selected_weights = np.asarray(weights, dtype=np.float64)[mask]
+    weight_total = float(np.sum(selected_weights))
     return {
-        "available": True,
         "same_sign_fraction": float(np.mean(same)),
         "opposite_sign_fraction": float(np.mean(~same)),
         "comparable_pixels": int(np.count_nonzero(mask)),
+        "weighted_same_sign_fraction": (
+            float(np.sum(selected_weights[same]) / weight_total)
+            if weight_total > np.finfo(float).eps
+            else None
+        ),
+        "status": "significant",
+    }
+
+
+def _signed_metrics(
+    meric: FloatArray | None,
+    srix: FloatArray | None,
+    meric_magnitude: FloatArray | None,
+    srix_magnitude: FloatArray | None,
+    config: SlipMetricConfig,
+) -> dict[str, Any] | None:
+    if meric is None or srix is None or meric_magnitude is None or srix_magnitude is None:
+        return None
+    if (
+        meric.shape != srix.shape
+        or meric.shape != meric_magnitude.shape
+        or meric.shape != srix_magnitude.shape
+    ):
+        raise ValueError("signed and magnitude fields must have identical shapes")
+    per_system = [
+        {
+            "system": index,
+            **_signed_pair_metrics(
+                meric[index],
+                srix[index],
+                0.5 * (meric_magnitude[index] + srix_magnitude[index]),
+                config,
+            ),
+        }
+        for index in range(meric.shape[0])
+    ]
+    all_weights = 0.5 * (meric_magnitude + srix_magnitude)
+    all_mask = (np.abs(meric) > config.numerical_zero_tolerance) | (
+        np.abs(srix) > config.numerical_zero_tolerance
+    )
+    all_same = np.sign(meric[all_mask]) == np.sign(srix[all_mask])
+    selected_weights = all_weights[all_mask]
+    weight_total = float(np.sum(selected_weights))
+    return {
+        "available": True,
         "chronology_available": False,
+        "same_sign_fraction_by_system": [item["same_sign_fraction"] for item in per_system],
+        "opposite_sign_fraction_by_system": [
+            item["opposite_sign_fraction"] for item in per_system
+        ],
+        "comparable_pixels_by_system": [item["comparable_pixels"] for item in per_system],
+        "weighted_same_sign_fraction": (
+            float(np.sum(selected_weights[all_same]) / weight_total)
+            if weight_total > np.finfo(float).eps
+            else None
+        ),
+        "weighted_opposite_sign_fraction": (
+            float(np.sum(selected_weights[~all_same]) / weight_total)
+            if weight_total > np.finfo(float).eps
+            else None
+        ),
+        "per_system": per_system,
     }
 
 
@@ -422,15 +486,19 @@ def compare_slip_fields(
         ),
         "systems": systems,
         "spatial_similarity": {
-            "total_equivalent": _spatial_system(meric_total_field, srix_total_field, settings),
+            "total_accumulated_system_slip": _spatial_system(
+                meric_total_field, srix_total_field, settings
+            ),
             "per_system": [
                 {"system": item["system"], **cast(dict[str, Any], item["spatial"])}
                 for item in systems
             ],
         },
         "signed_slip": _signed_metrics(
-            None if meric_signed is None else np.sum(meric_signed, axis=0),
-            None if srix_signed is None else np.sum(srix_signed, axis=0),
+            meric_signed,
+            srix_signed,
+            meric,
+            srix,
             settings,
         ),
         "incremental_similarity": {

@@ -38,10 +38,13 @@ performance comparison, and it is not a material-identification result.
 
 ## Global amplitude
 
-![Absolute and normalized equivalent accumulated slip for Méric and SRIX.](../../_static/spectral_mechanics/srix_meric_p43/equivalent_slip_absolute_and_normalized.png)
+![Absolute and normalized total accumulated system slip for Méric and SRIX.](../../_static/spectral_mechanics/srix_meric_p43/total_accumulated_system_slip_absolute_and_normalized.png)
 
-The spatial integrals of the total accumulated per-system slip are `135.1952`
-for Méric and `139.6654` for SRIX, giving a Méric/SRIX ratio of `0.9680`.
+The plotted scalar field is
+`P_Sigma(x) = sum_s p_s(x)`, the sum of accumulated slip over the twelve
+systems. It is not PEEQ and is not a kinematic equivalent-strain norm. Its
+spatial integrals are `135.1952` for Méric and `139.6654` for SRIX, giving a
+Méric/SRIX ratio of `0.9680`.
 The median ratio is `0.9461` and the 95th-percentile ratio is `0.9370`.
 These values describe the global intensity. They do not establish that the
 same systems are active.
@@ -61,7 +64,7 @@ the same (01, 07 and 11). The 95-percent cumulative sets are:
 Their Jaccard indices are `0.800` for `S95` and `0.750` for `S5`; the top-3
 overlap is `3/3`. The total-variation distance between the twelve-component
 fraction vectors is `0.2565`, the cosine similarity is `0.9441`, and the
-Spearman rank correlation is `0.9231`.
+Spearman rank correlation, computed with numerical-zero ties, is `0.9385`.
 
 ![Cumulative contribution of the systems in each law.](../../_static/spectral_mechanics/srix_meric_p43/slip_system_cumulative_contributions.svg)
 
@@ -73,7 +76,7 @@ that the activity is not related by one global scale factor.
 
 ![Mechanism similarity versus amplitude ratio for each slip system.](../../_static/spectral_mechanics/srix_meric_p43/mechanism_amplitude_summary.svg)
 
-For the total accumulated slip field, the absolute relative L2 difference is
+For the total accumulated system-slip field, the absolute relative L2 difference is
 `0.1745`. After independent normalization by each field integral, the cosine
 similarity is `0.9862` and the L1 distance is `0.1435`. Thus the broad spatial
 shape is similar, although the overlap of the ten-percent highest-activity
@@ -118,7 +121,9 @@ orientation or loading path.
   map is used.
 * The source archives contain final per-system fields only. Incremental
   contributions, activation order and signed slip histories are unavailable,
-  so no chronology is inferred here.
+  so no chronology is inferred here. Final signed fields are compared per
+  system; no sum across crystallographically different systems is interpreted
+  as a signed mechanism.
 * Agreement in dominant systems does not validate the amplitudes of stress,
   strain or internal variables.
 

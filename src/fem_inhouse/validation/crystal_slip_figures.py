@@ -80,8 +80,8 @@ def generate_comparison_figures(
     )
     axes[1, 1].set_title("Difference after independent normalization")
     figure.colorbar(image, ax=axes[1, 1], label="normalized difference")
-    figure.suptitle("P43 100x100 - final equivalent slip")
-    path = output_dir / "equivalent_slip_absolute_and_normalized.png"
+    figure.suptitle("P43 100x100 - total accumulated system slip")
+    path = output_dir / "total_accumulated_system_slip_absolute_and_normalized.png"
     _save(figure, path)
     paths.append(path)
 
