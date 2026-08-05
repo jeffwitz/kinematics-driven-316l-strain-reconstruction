@@ -30,6 +30,11 @@ def solve_two_state(
     tolerance: float,
     scale: float,
     transform: SpectralTransformConfig | None = None,
+    behaviour_id: str = "fcc_forest_rubin_srix",
+    mfront_threads: int = 1,
+    krylov_method: str = "gmres",
+    krylov_recycling: bool = False,
+    local_condition_check_mode: str = "always",
 ):
     mesh = case["mesh"]
     points = 2 * mesh.nx * mesh.ny
@@ -45,8 +50,11 @@ def solve_two_state(
         plastic_table_points=1_000,
         first_positive_plastic_strain=1.0e-6,
         mfront_library=library,
-        mfront_threads=1,
-        mfront_behaviour_id="fcc_forest_rubin_srix",
+        mfront_threads=mfront_threads,
+        mfront_behaviour_id=behaviour_id,
+        local_plane_stress_options={
+            "local_condition_check_mode": local_condition_check_mode,
+        },
         constitutive_options={
             "crystal_orientation": {"mode": "homogeneous", "euler_bunge_deg": [35.0, 20.0, 15.0]}
         },
@@ -61,6 +69,8 @@ def solve_two_state(
         config=EBISpectralSolverConfig(
             relative_equilibrium_tolerance=tolerance,
             reference_parameter_scale=scale,
+            krylov_method=krylov_method,  # type: ignore[arg-type]
+            krylov_recycling=krylov_recycling,
             transform=transform or SpectralTransformConfig(),
         ),
     )
@@ -119,6 +129,19 @@ def main() -> int:
     parser.add_argument("--fftw-planning-time-limit", type=float, default=2.0)
     parser.add_argument("--fftw-wisdom-directory", type=Path)
     parser.add_argument("--no-fftw-wisdom", action="store_true")
+    parser.add_argument(
+        "--behaviour",
+        choices=("fcc_forest_rubin_srix", "fcc_meric_cailletaud"),
+        default="fcc_forest_rubin_srix",
+    )
+    parser.add_argument("--mfront-threads", type=int, default=1)
+    parser.add_argument("--krylov-method", choices=("gmres", "lgmres", "gcrotmk"), default="gmres")
+    parser.add_argument("--krylov-recycling", action="store_true")
+    parser.add_argument(
+        "--local-condition-check",
+        choices=("always", "on_failure", "diagnostic_sample"),
+        default="always",
+    )
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", "build/mfront/src/libBehaviour.so")
@@ -141,7 +164,17 @@ def main() -> int:
         transform=transform,
     )
     tet, tet_time = solve_two_state(
-        case, library, arguments.increments, arguments.tolerance, 1.0, transform=transform
+        case,
+        library,
+        arguments.increments,
+        arguments.tolerance,
+        1.0,
+        transform=transform,
+        behaviour_id=arguments.behaviour,
+        mfront_threads=arguments.mfront_threads,
+        krylov_method=arguments.krylov_method,
+        krylov_recycling=arguments.krylov_recycling,
+        local_condition_check_mode=arguments.local_condition_check,
     )
     grid = StructuredGrid2D(arguments.mesh, arguments.mesh, *case["mesh"].physical_size_mm)
     ebi_slip = ebi.observables["accumulated_slip"]
