@@ -69,6 +69,12 @@ from fem_inhouse.spectral2d.nonlinear import (
     solve_dirichlet_plane_stress_spectral,
 )
 from fem_inhouse.spectral2d.result import Spectral2DResult
+from fem_inhouse.spectral2d.step_control import (
+    AdaptiveLoadStepController,
+    AdaptiveStepConfig,
+    LoadStepDecision,
+    LoadStepObservation,
+)
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import (
     BufferedTransformPlan2D,
@@ -81,6 +87,8 @@ from fem_inhouse.spectral2d.transforms import (
 )
 
 __all__ = [
+    "AdaptiveLoadStepController",
+    "AdaptiveStepConfig",
     "AndersonDiagnostics",
     "AppliedDisplacementExtension2D",
     "B0Green2D",
@@ -98,6 +106,8 @@ __all__ = [
     "HarmonicDirichletExtension2D",
     "JacobianActionDiagnostics",
     "LinearSolveDiagnostics",
+    "LoadStepDecision",
+    "LoadStepObservation",
     "PreconditionerActionDiagnostics",
     "ReferenceOperatorSymbols",
     "Spectral2DConfig",

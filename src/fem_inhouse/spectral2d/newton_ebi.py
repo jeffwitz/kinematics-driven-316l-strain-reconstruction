@@ -23,6 +23,7 @@ from fem_inhouse.spectral2d.krylov import (
 )
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
+from fem_inhouse.spectral2d.step_control import AdaptiveStepConfig
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import (
     BufferedTransformPlan2D,
@@ -64,6 +65,8 @@ class EBISpectralSolverConfig:
     reference_lambda_0: float | None = None
     reference_mu_0: float | None = None
     symbol_null_tolerance: float = 1.0e-12
+    adaptive_stepping_enabled: bool = False
+    adaptive_step: AdaptiveStepConfig = field(default_factory=AdaptiveStepConfig)
     transform: SpectralTransformConfig = field(default_factory=SpectralTransformConfig)
 
     def __post_init__(self) -> None:
