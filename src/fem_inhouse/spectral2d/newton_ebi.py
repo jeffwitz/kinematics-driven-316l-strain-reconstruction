@@ -207,6 +207,12 @@ def solve_ebi_dirichlet_plane_stress(
     spectral_buffer = np.empty(interior_shape, dtype=np.float64)
     green_buffer = np.empty_like(spectral_buffer)
     physical_buffer = np.empty_like(spectral_buffer)
+    nonlinear_divergence_buffer = np.empty((*grid.node_shape, 2), dtype=np.float64)
+
+    def divergence_into(stress: FloatArray) -> FloatArray:
+        kinematics.divergence_from_sample_stress_into(stress, nonlinear_divergence_buffer)
+        return nonlinear_divergence_buffer
+
     fluctuation = np.zeros((*grid.node_shape, 2), dtype=np.float64)
     residual_history: list[float] = []
     absolute_residual_history: list[float] = []
@@ -249,7 +255,7 @@ def solve_ebi_dirichlet_plane_stress(
                 consistent_tangent=True,
             )
             material_evaluations += 1
-            residual = kinematics.divergence_from_sample_stress(trial.sample_stress_mpa)
+            residual = divergence_into(trial.sample_stress_mpa)
             relative, divergence_norm, _ = _equilibrium_metrics(
                 trial.sample_stress_mpa, residual, grid, 2
             )
@@ -279,9 +285,7 @@ def solve_ebi_dirichlet_plane_stress(
                     consistent_tangent=True,
                 )
                 material_evaluations += 1
-                verification_force = kinematics.divergence_from_sample_stress(
-                    verification_trial.sample_stress_mpa
-                )
+                verification_force = divergence_into(verification_trial.sample_stress_mpa)
                 verification_residual = _equilibrium_metrics(
                     verification_trial.sample_stress_mpa,
                     verification_force,
@@ -375,9 +379,7 @@ def solve_ebi_dirichlet_plane_stress(
                     consistent_tangent=True,
                 )
                 material_evaluations += 1
-                candidate_residual = kinematics.divergence_from_sample_stress(
-                    candidate_trial.sample_stress_mpa
-                )
+                candidate_residual = divergence_into(candidate_trial.sample_stress_mpa)
                 candidate_relative = _equilibrium_metrics(
                     candidate_trial.sample_stress_mpa, candidate_residual, grid, 2
                 )[0]

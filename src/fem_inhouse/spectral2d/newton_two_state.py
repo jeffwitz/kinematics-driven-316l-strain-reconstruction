@@ -335,9 +335,9 @@ def solve_two_state_dirichlet_plane_stress(
     def divergence_timed(stress: FloatArray) -> FloatArray:
         nonlocal divergence_seconds
         started = time.perf_counter()
-        result = kinematics.divergence_from_sample_stress(stress)
+        kinematics.divergence_from_sample_stress_into(stress, nonlinear_divergence_buffer)
         divergence_seconds += time.perf_counter() - started
-        return result
+        return nonlinear_divergence_buffer
 
     plan = transform_plan or create_full_dirichlet_dsti_plan(grid, config.transform)
     initial_material_started = time.perf_counter()
@@ -376,6 +376,7 @@ def solve_two_state_dirichlet_plane_stress(
     spectral_buffer = np.empty(interior_shape, dtype=np.float64)
     green_buffer = np.empty_like(spectral_buffer)
     physical_buffer = np.empty_like(spectral_buffer)
+    nonlinear_divergence_buffer = np.empty((*grid.node_shape, 2), dtype=np.float64)
     jacobian_workspace = TwoStateJacobianWorkspace.create(grid)
     fluctuation = np.zeros((*grid.node_shape, 2))
     residual_history: list[float] = []
@@ -401,11 +402,36 @@ def solve_two_state_dirichlet_plane_stress(
         converged = False
         previous_nonlinear_residual: float | None = None
         force_fixed_linear_tolerance = False
+        cached_trial: TraditionalTwoStateTrial | None = None
+        cached_sample_strain: FloatArray | None = None
+        cached_residual: FloatArray | None = None
+        cached_relative: float | None = None
+        cached_absolute: float | None = None
         for iteration in range(config.maximum_newton_iterations):
-            sample_strain = strain_timed(applied + fluctuation)
-            trial = evaluate_samples_timed(sample_strain, time_increment)
-            residual = divergence_timed(trial.sample_stress_mpa)
-            relative, absolute, _ = _equilibrium_metrics(trial.sample_stress_mpa, residual, grid, 2)
+            if cached_trial is None:
+                sample_strain = strain_timed(applied + fluctuation)
+                trial = evaluate_samples_timed(sample_strain, time_increment)
+                residual = divergence_timed(trial.sample_stress_mpa)
+                relative, absolute, _ = _equilibrium_metrics(
+                    trial.sample_stress_mpa, residual, grid, 2
+                )
+            else:
+                assert (
+                    cached_sample_strain is not None
+                    and cached_residual is not None
+                    and cached_relative is not None
+                    and cached_absolute is not None
+                )
+                sample_strain = cached_sample_strain
+                trial = cached_trial
+                residual = cached_residual
+                relative = cached_relative
+                absolute = cached_absolute
+                cached_trial = None
+                cached_sample_strain = None
+                cached_residual = None
+                cached_relative = None
+                cached_absolute = None
             residual_history.append(relative)
             absolute_history.append(absolute)
             if relative <= config.relative_equilibrium_tolerance:
@@ -619,14 +645,19 @@ def solve_two_state_dirichlet_plane_stress(
                 candidate_trial = evaluate_samples_timed(
                     candidate_strain,
                     time_increment,
-                    response_level="residual",
+                    response_level="tangent",
                 )
                 candidate_residual = divergence_timed(candidate_trial.sample_stress_mpa)
-                candidate_relative = _equilibrium_metrics(
+                candidate_relative, candidate_absolute, _ = _equilibrium_metrics(
                     candidate_trial.sample_stress_mpa, candidate_residual, grid, 2
-                )[0]
+                )
                 if candidate_relative < relative:
                     fluctuation = candidate
+                    cached_trial = candidate_trial
+                    cached_sample_strain = candidate_strain
+                    cached_residual = candidate_residual.copy()
+                    cached_relative = candidate_relative
+                    cached_absolute = candidate_absolute
                     accept_global_trial = getattr(elements, "accept_global_trial", None)
                     if callable(accept_global_trial):
                         accept_global_trial()

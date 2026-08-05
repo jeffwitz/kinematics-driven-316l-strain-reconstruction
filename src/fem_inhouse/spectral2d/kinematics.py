@@ -210,28 +210,8 @@ class TwoSubcellDiagnostic2D:
         ) / self.grid.spacing_x
 
     def divergence(self, stress: ArrayLike) -> FloatArray:
-        sigma = _stress(stress, (*self.grid.pixel_shape, 2, 3))
-        result = np.zeros((*self.grid.node_shape, 2), dtype=np.float64)
-        area = 0.5 * self.grid.spacing_x * self.grid.spacing_y
-        for i in range(self.grid.nx):
-            for j in range(self.grid.ny):
-                bl = (i, j)
-                br = (i + 1, j)
-                tl = (i, j + 1)
-                tr = (i + 1, j + 1)
-                s1, s2 = sigma[i, j]
-                result[bl][0] += area * (s1[0] / self.grid.spacing_x + s1[2] / self.grid.spacing_y)
-                result[br][0] += area * (-s1[0] / self.grid.spacing_x)
-                result[tl][0] += area * (-s1[2] / self.grid.spacing_y)
-                result[bl][1] += area * (s1[1] / self.grid.spacing_y + s1[2] / self.grid.spacing_x)
-                result[br][1] += area * (-s1[2] / self.grid.spacing_x)
-                result[tl][1] += area * (-s1[1] / self.grid.spacing_y)
-                result[tr][0] += area * (-s2[0] / self.grid.spacing_x - s2[2] / self.grid.spacing_y)
-                result[tl][0] += area * (s2[0] / self.grid.spacing_x)
-                result[br][0] += area * (s2[2] / self.grid.spacing_y)
-                result[tr][1] += area * (-s2[1] / self.grid.spacing_y - s2[2] / self.grid.spacing_x)
-                result[tl][1] += area * (s2[2] / self.grid.spacing_x)
-                result[br][1] += area * (s2[1] / self.grid.spacing_y)
+        result = np.empty((*self.grid.node_shape, 2), dtype=np.float64)
+        self.divergence_from_sample_stress_into(stress, result)
         return result
 
     def divergence_from_sample_stress(self, stress: ArrayLike) -> FloatArray:

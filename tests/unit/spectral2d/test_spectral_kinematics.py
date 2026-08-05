@@ -80,6 +80,32 @@ def test_divergence_is_the_negative_adjoint_of_strain(kinematics) -> None:
     np.testing.assert_allclose(lhs + rhs, 0.0, rtol=0.0, atol=1.0e-12)
 
 
+def test_two_triangle_vectorized_divergence_matches_scalar_reference() -> None:
+    grid = StructuredGrid2D(5, 4, 2.0, 3.0)
+    operator = TwoSubcellDiagnostic2D(grid)
+    rng = np.random.default_rng(2027)
+    stress = rng.normal(size=(*grid.pixel_shape, 2, 3))
+    expected = np.zeros((*grid.node_shape, 2))
+    area = 0.5 * grid.spacing_x * grid.spacing_y
+    hx, hy = grid.spacing_x, grid.spacing_y
+    for i in range(grid.nx):
+        for j in range(grid.ny):
+            s1, s2 = stress[i, j]
+            expected[i, j, 0] += area * (s1[0] / hx + s1[2] / hy)
+            expected[i + 1, j, 0] -= area * s1[0] / hx
+            expected[i, j + 1, 0] -= area * s1[2] / hy
+            expected[i, j, 1] += area * (s1[1] / hy + s1[2] / hx)
+            expected[i + 1, j, 1] -= area * s1[2] / hx
+            expected[i, j + 1, 1] -= area * s1[1] / hy
+            expected[i + 1, j + 1, 0] -= area * (s2[0] / hx + s2[2] / hy)
+            expected[i, j + 1, 0] += area * s2[0] / hx
+            expected[i + 1, j, 0] += area * s2[2] / hy
+            expected[i + 1, j + 1, 1] -= area * (s2[1] / hy + s2[2] / hx)
+            expected[i, j + 1, 1] += area * s2[2] / hx
+            expected[i + 1, j, 1] += area * s2[1] / hy
+    np.testing.assert_allclose(operator.divergence(stress), expected, rtol=0.0, atol=1.0e-14)
+
+
 @pytest.mark.parametrize("kinematics", KINEMATICS)
 def test_full_dirichlet_kinematics_has_no_nonzero_constant_kernel(kinematics) -> None:
     grid = StructuredGrid2D(4, 4, 1.0, 1.0)
