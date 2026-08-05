@@ -42,6 +42,7 @@ from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, Transform
 
 FloatArray = NDArray[np.float64]
 TangentKernel = Literal["einsum", "explicit"]
+EvaluationKind = Literal["newton_tangent", "line_search", "verification"]
 
 
 @dataclass(slots=True)
@@ -151,6 +152,66 @@ class TraditionalTwoStateTrial:
     algorithmic_tangent_in_plane_mpa: FloatArray | None
     mean_stress_mpa: FloatArray
     material_trial: InPlaneConstitutiveTrial
+
+
+@dataclass(slots=True)
+class AcceptedTwoStateTrialCache:
+    """Own the accepted line-search trial until the next Newton iteration."""
+
+    trial: TraditionalTwoStateTrial | None = None
+    sample_strain: FloatArray | None = None
+    residual: FloatArray | None = None
+    relative: float | None = None
+    absolute: float | None = None
+
+    @property
+    def populated(self) -> bool:
+        return self.trial is not None
+
+    def store(
+        self,
+        *,
+        trial: TraditionalTwoStateTrial,
+        sample_strain: FloatArray,
+        residual: FloatArray,
+        relative: float,
+        absolute: float,
+    ) -> None:
+        self.trial = trial
+        self.sample_strain = np.asarray(sample_strain, dtype=np.float64).copy()
+        # The nonlinear divergence uses a persistent mutable buffer. The cache
+        # must own its residual until the next Newton iteration consumes it.
+        self.residual = np.asarray(residual, dtype=np.float64).copy()
+        self.relative = float(relative)
+        self.absolute = float(absolute)
+
+    def take(
+        self,
+    ) -> tuple[TraditionalTwoStateTrial, FloatArray, FloatArray, float, float]:
+        if (
+            self.trial is None
+            or self.sample_strain is None
+            or self.residual is None
+            or self.relative is None
+            or self.absolute is None
+        ):
+            raise RuntimeError("accepted TRI2 trial cache is empty")
+        result = (
+            self.trial,
+            self.sample_strain,
+            self.residual,
+            self.relative,
+            self.absolute,
+        )
+        self.clear()
+        return result
+
+    def clear(self) -> None:
+        self.trial = None
+        self.sample_strain = None
+        self.residual = None
+        self.relative = None
+        self.absolute = None
 
 
 class TraditionalTwoStateTriangleBatch:
@@ -308,13 +369,27 @@ def solve_two_state_dirichlet_plane_stress(
     divergence_seconds = 0.0
     gmres_seconds = 0.0
     material_evaluations = 1
+    material_initial_probe_evaluations = 1
+    material_newton_tangent_evaluations = 0
+    material_line_search_evaluations = 0
+    material_rejected_line_search_evaluations = 0
+    material_accepted_line_search_evaluations = 0
+    material_verification_evaluations = 0
+    material_complete_promotion_evaluations = 0
+    line_search_full_step_acceptances = 0
+    line_search_reduced_step_acceptances = 0
+    line_search_rejections = 0
+    line_search_minimum_factor = 1.0
 
     def evaluate_samples_timed(
         strain: FloatArray,
         dt: float,
         response_level: ResponseLevel = "tangent",
+        evaluation_kind: EvaluationKind = "newton_tangent",
     ) -> TraditionalTwoStateTrial:
         nonlocal material_seconds, material_evaluations
+        nonlocal material_newton_tangent_evaluations
+        nonlocal material_line_search_evaluations, material_verification_evaluations
         started = time.perf_counter()
         result = elements.evaluate_samples(
             strain,
@@ -323,6 +398,12 @@ def solve_two_state_dirichlet_plane_stress(
         )
         material_seconds += time.perf_counter() - started
         material_evaluations += 1
+        if evaluation_kind == "newton_tangent":
+            material_newton_tangent_evaluations += 1
+        elif evaluation_kind == "line_search":
+            material_line_search_evaluations += 1
+        else:
+            material_verification_evaluations += 1
         return result
 
     def strain_timed(displacement: FloatArray) -> FloatArray:
@@ -402,45 +483,40 @@ def solve_two_state_dirichlet_plane_stress(
         converged = False
         previous_nonlinear_residual: float | None = None
         force_fixed_linear_tolerance = False
-        cached_trial: TraditionalTwoStateTrial | None = None
-        cached_sample_strain: FloatArray | None = None
-        cached_residual: FloatArray | None = None
-        cached_relative: float | None = None
-        cached_absolute: float | None = None
+        accepted_cache = AcceptedTwoStateTrialCache()
         for iteration in range(config.maximum_newton_iterations):
-            if cached_trial is None:
+            if not accepted_cache.populated:
                 sample_strain = strain_timed(applied + fluctuation)
-                trial = evaluate_samples_timed(sample_strain, time_increment)
+                trial = evaluate_samples_timed(
+                    sample_strain,
+                    time_increment,
+                    evaluation_kind="newton_tangent",
+                )
                 residual = divergence_timed(trial.sample_stress_mpa)
                 relative, absolute, _ = _equilibrium_metrics(
                     trial.sample_stress_mpa, residual, grid, 2
                 )
             else:
-                assert (
-                    cached_sample_strain is not None
-                    and cached_residual is not None
-                    and cached_relative is not None
-                    and cached_absolute is not None
-                )
-                sample_strain = cached_sample_strain
-                trial = cached_trial
-                residual = cached_residual
-                relative = cached_relative
-                absolute = cached_absolute
-                cached_trial = None
-                cached_sample_strain = None
-                cached_residual = None
-                cached_relative = None
-                cached_absolute = None
+                trial, sample_strain, residual, relative, absolute = accepted_cache.take()
             residual_history.append(relative)
             absolute_history.append(absolute)
             if relative <= config.relative_equilibrium_tolerance:
                 solver_residual = relative
+                if not config.verify_final_state:
+                    verification_residual = relative
+                    final_trial = elements.complete_trial(trial)
+                    elements.commit()
+                    final_sample_strain = sample_strain.copy()
+                    final_applied = applied.copy()
+                    iterations_per_increment.append(iteration + 1)
+                    converged = True
+                    break
                 elements.revert()
                 verification_trial = evaluate_samples_timed(
                     sample_strain,
                     time_increment,
                     response_level="complete",
+                    evaluation_kind="verification",
                 )
                 verification_force = divergence_timed(verification_trial.sample_stress_mpa)
                 verification_residual = _equilibrium_metrics(
@@ -645,24 +721,37 @@ def solve_two_state_dirichlet_plane_stress(
                 candidate_trial = evaluate_samples_timed(
                     candidate_strain,
                     time_increment,
-                    response_level="tangent",
+                    response_level=(
+                        "tangent" if config.verify_final_state else "complete"
+                    ),
+                    evaluation_kind="line_search",
                 )
                 candidate_residual = divergence_timed(candidate_trial.sample_stress_mpa)
                 candidate_relative, candidate_absolute, _ = _equilibrium_metrics(
                     candidate_trial.sample_stress_mpa, candidate_residual, grid, 2
                 )
                 if candidate_relative < relative:
+                    material_accepted_line_search_evaluations += 1
+                    if factor == 1.0:
+                        line_search_full_step_acceptances += 1
+                    else:
+                        line_search_reduced_step_acceptances += 1
+                    line_search_minimum_factor = min(line_search_minimum_factor, factor)
                     fluctuation = candidate
-                    cached_trial = candidate_trial
-                    cached_sample_strain = candidate_strain
-                    cached_residual = candidate_residual.copy()
-                    cached_relative = candidate_relative
-                    cached_absolute = candidate_absolute
+                    accepted_cache.store(
+                        trial=candidate_trial,
+                        sample_strain=candidate_strain,
+                        residual=candidate_residual,
+                        relative=candidate_relative,
+                        absolute=candidate_absolute,
+                    )
                     accept_global_trial = getattr(elements, "accept_global_trial", None)
                     if callable(accept_global_trial):
                         accept_global_trial()
                     accepted = True
                     break
+                material_rejected_line_search_evaluations += 1
+                line_search_rejections += 1
                 factor *= 0.5
             if not accepted:
                 _accumulate_jacobian(jacobian_totals, jacobian_local)
@@ -782,6 +871,32 @@ def solve_two_state_dirichlet_plane_stress(
         provenance=provenance,
         timings={
             "material_evaluations": float(material_evaluations),
+            "material_initial_probe_evaluations": float(
+                material_initial_probe_evaluations
+            ),
+            "material_newton_tangent_evaluations": float(
+                material_newton_tangent_evaluations
+            ),
+            "material_line_search_evaluations": float(material_line_search_evaluations),
+            "material_rejected_line_search_evaluations": float(
+                material_rejected_line_search_evaluations
+            ),
+            "material_accepted_line_search_evaluations": float(
+                material_accepted_line_search_evaluations
+            ),
+            "material_verification_evaluations": float(
+                material_verification_evaluations
+            ),
+            "material_complete_promotion_evaluations": float(
+                material_complete_promotion_evaluations
+            ),
+            "material_total_evaluations": float(material_evaluations),
+            "line_search_full_step_acceptances": float(line_search_full_step_acceptances),
+            "line_search_reduced_step_acceptances": float(
+                line_search_reduced_step_acceptances
+            ),
+            "line_search_rejections": float(line_search_rejections),
+            "line_search_minimum_factor": line_search_minimum_factor,
             "material_seconds": material_seconds,
             "gradient_seconds": gradient_seconds,
             "divergence_seconds": divergence_seconds,
@@ -823,6 +938,7 @@ def solve_two_state_dirichlet_plane_stress(
             "material_evaluate_calls": float(
                 getattr(material_timing, "evaluate_calls", 0)
             ),
+            "mgis_integrations": float(getattr(material_timing, "evaluate_calls", 0)),
             "material_warm_start_uses": float(
                 getattr(material, "warm_start_uses", 0)
             ),

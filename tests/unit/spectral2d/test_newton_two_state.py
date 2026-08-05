@@ -8,6 +8,7 @@ from fem_inhouse.spectral2d import (
     StructuredGrid2D,
 )
 from fem_inhouse.spectral2d.newton_two_state import (
+    AcceptedTwoStateTrialCache,
     TraditionalTwoStateTriangleBatch,
     TwoStateJacobianWorkspace,
     pack_interior,
@@ -112,6 +113,37 @@ def test_two_state_trial_revert_commit_is_transactional() -> None:
     )
 
 
+def test_accepted_trial_cache_owns_mutable_residual_and_is_single_use() -> None:
+    grid = StructuredGrid2D(2, 2, 1.0, 1.0)
+    material = NonlinearStateBatch(8)
+    elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
+    sample_strain = np.zeros((*grid.pixel_shape, 2, 3))
+    trial = elements.evaluate_samples(sample_strain, time_increment=0.1)
+    source_residual = np.ones((*grid.node_shape, 2))
+    cache = AcceptedTwoStateTrialCache()
+
+    cache.store(
+        trial=trial,
+        sample_strain=sample_strain,
+        residual=source_residual,
+        relative=0.25,
+        absolute=1.5,
+    )
+    source_residual[...] = 99.0
+    sample_strain[...] = 77.0
+
+    cached_trial, cached_strain, cached_residual, relative, absolute = cache.take()
+    assert cached_trial is trial
+    np.testing.assert_allclose(cached_strain, 0.0)
+    np.testing.assert_allclose(cached_residual, 1.0)
+    assert relative == 0.25
+    assert absolute == 1.5
+    assert not cache.populated
+    with pytest.raises(RuntimeError, match="cache is empty"):
+        cache.take()
+
+
+
 def test_side_resultants_and_moment_use_nodal_coordinates() -> None:
     grid = StructuredGrid2D(2, 2, 2.0, 3.0)
     reaction = np.zeros((*grid.node_shape, 2))
@@ -194,6 +226,37 @@ def test_two_state_solver_archives_linear_cost_breakdown() -> None:
     assert diagnostics.timings["preconditioner_calls"] == sum(
         entry.preconditioner_calls for entry in diagnostics.linear_solves
     )
+
+
+def test_two_state_complete_trial_promotion_preserves_solution() -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1:, ..., 0] = 0.02 * x[:, None]
+    boundary[1:, ..., 1] = 0.03 * y[None, :]
+    common = dict(
+        relative_equilibrium_tolerance=1.0e-10,
+        transform=SpectralTransformConfig(backend="scipy"),
+    )
+    qualification_material = NonlinearStateBatch(32)
+    production_material = NonlinearStateBatch(32)
+    qualification = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=qualification_material,
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common, verify_final_state=True),
+    )
+    production = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=production_material,
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common, verify_final_state=False),
+    )
+    np.testing.assert_allclose(production.displacement, qualification.displacement)
+    np.testing.assert_allclose(production.stress_in_plane_mpa, qualification.stress_in_plane_mpa)
+    np.testing.assert_allclose(production.reaction_forces, qualification.reaction_forces)
+    assert production_material.calls < qualification_material.calls
+    assert production.diagnostics.verification_residual <= 1.0e-10
 
 
 @pytest.mark.parametrize("mesh_size", (4, 12, 50, 100))

@@ -51,6 +51,30 @@ def _git_head() -> str | None:
         return None
 
 
+def _git_worktree_state() -> dict[str, object]:
+    try:
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        diff = subprocess.run(
+            ["git", "diff", "--binary"],
+            check=False,
+            capture_output=True,
+        )
+        return {
+            "working_tree_dirty_at_generation": bool(status.stdout.strip()),
+            "working_tree_diff_sha256": hashlib.sha256(diff.stdout).hexdigest(),
+        }
+    except OSError:
+        return {
+            "working_tree_dirty_at_generation": None,
+            "working_tree_diff_sha256": None,
+        }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--crop-nodes", nargs=4, type=int, default=DEFAULT_CROP)
@@ -78,6 +102,11 @@ def main() -> int:
         "--reference-update",
         choices=("initial", "per_increment", "per_newton"),
         default="initial",
+    )
+    parser.add_argument(
+        "--no-final-verification",
+        action="store_true",
+        help="promote the accepted complete trial without an independent re-integration",
     )
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
@@ -157,6 +186,7 @@ def main() -> int:
             relative_equilibrium_tolerance=arguments.tolerance,
             linear_tolerance_mode=arguments.linear_mode,
             reference_update_mode=arguments.reference_update,
+            verify_final_state=not arguments.no_final_verification,
             krylov_method=arguments.krylov_method,
             krylov_recycling=arguments.krylov_recycling,
             transform=SpectralTransformConfig(
@@ -194,6 +224,7 @@ def main() -> int:
         "krylov_method": arguments.krylov_method,
         "linear_mode": arguments.linear_mode,
         "reference_update": arguments.reference_update,
+        "verify_final_state": not arguments.no_final_verification,
         "elapsed_seconds": elapsed,
         "newton_iterations": sum(diagnostics.iterations_per_increment),
         "iterations_per_increment": list(diagnostics.iterations_per_increment),
@@ -210,6 +241,7 @@ def main() -> int:
         "provenance": diagnostics.provenance,
         "execution_commit": diagnostics.provenance.get("commit_sha"),
         "archive_commit": os.environ.get("ARCHIVE_COMMIT", _git_head()),
+        "git_worktree": _git_worktree_state(),
         "field_file": str(field_path),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
         "slip_observables": {

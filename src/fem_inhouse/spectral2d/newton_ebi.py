@@ -53,6 +53,7 @@ class EBISpectralSolverConfig:
     forcing_gamma: float = 0.9
     forcing_alpha: float = 1.5
     verify_linear_residual: bool = False
+    verify_final_state: bool = True
     reference_update_mode: Literal["initial", "per_increment", "per_newton"] = "initial"
     reference_update_relaxation: float = 1.0
     reference_minimum_relative_change: float = 1.0e-3
