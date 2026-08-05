@@ -64,9 +64,17 @@ def _load_fields(path: Path) -> tuple[np.ndarray, np.ndarray]:
 
 def _write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> None:
     with path.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fieldnames)
+        writer = csv.DictWriter(stream, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _strip_svg_trailing_whitespace(paths: list[Path]) -> None:
+    for path in paths:
+        if path.suffix != ".svg":
+            continue
+        cleaned = "\n".join(line.rstrip() for line in path.read_text(encoding="utf-8").splitlines())
+        path.write_text(cleaned + "\n", encoding="utf-8")
 
 
 def _source_summary(report_path: Path, report: dict[str, Any], field_path: Path) -> dict[str, Any]:
@@ -184,6 +192,7 @@ def main() -> int:
         labels=labels,
         output_dir=arguments.output_dir,
     )
+    _strip_svg_trailing_whitespace(figure_paths)
     if arguments.docs_assets_dir is not None:
         arguments.docs_assets_dir.mkdir(parents=True, exist_ok=True)
         for path in figure_paths:

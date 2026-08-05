@@ -1,6 +1,14 @@
 {
-  "backbone_sha256": "709312e15ff05df41ae4eb5021bad1db3f9bbbd43021726d0734ca84469eccc3",
-  "comparison": "Both laws use the same crop, orientation and paired 316L backbone. The pixel mean averages the two TRI2 states. Both laws use the same 16-increment proportional path.",
+  "comparison_summary": "comparison_summary.json",
+  "configuration": {
+    "cumulative_dominance_threshold": 0.95,
+    "dominant_fraction_threshold": 0.05,
+    "numerical_zero_tolerance": 1e-12,
+    "support_fractions": [
+      0.1,
+      0.25
+    ]
+  },
   "crop_nodes": [
     1570,
     1670,
@@ -8,19 +16,22 @@
     1135
   ],
   "field_comparison_authorized": true,
-  "field_hashes": {
-    "meric_equivalent_plastic_slip": "1510c037bc8108557797dc1035c29c3a0282f5a2674c28c0a9870debeefb08c6",
-    "meric_plastic_slip": "c29b48abfd936d7a26caa68fb27f570be3873d04d5f4b495ec398897e5bf7a3d",
-    "srix_equivalent_plastic_slip": "dd6dbd93937ae516f7ea83dc391238562a3cd05554d1b45a2c8be37929963324",
-    "srix_plastic_slip": "b47d221fc7b997cab55db5810cd099bf7c27173daefb2878a324dc642cf737a5"
-  },
+  "figure_files": [
+    "equivalent_slip_absolute_and_normalized.png",
+    "slip_system_global_fractions.svg",
+    "slip_system_cumulative_contributions.svg",
+    "slip_system_01_spatial_comparison.png",
+    "slip_system_02_spatial_comparison.png",
+    "slip_system_05_spatial_comparison.png",
+    "slip_system_07_spatial_comparison.png",
+    "slip_system_08_spatial_comparison.png",
+    "slip_system_11_spatial_comparison.png",
+    "mechanism_amplitude_summary.svg"
+  ],
+  "generated_at_utc": "2026-08-05T20:38:46.103121+00:00",
+  "git_sha": "c833504c65dfce4234b321074370126b9a627118",
+  "incremental_history_available": false,
   "increments": 16,
-  "max_pixel_mean_equivalent_slip": {
-    "meric": 0.019392914417017293,
-    "srix": 0.008584967144019375
-  },
-  "meric_increments": 16,
-  "meric_report": "validation/_generated/performance/crystal_tet2_meric_p43_m100_slip_maps.json",
   "mesh": [
     100,
     100
@@ -36,12 +47,7 @@
   },
   "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
   "performance_comparison_authorized": false,
-  "raw_shape": [
-    100,
-    100,
-    2,
-    12
-  ],
+  "schema_version": 1,
   "slip_system_order": [
     "01  b[0,1,-1] n[1,1,1]",
     "02  b[1,0,-1] n[1,1,1]",
@@ -56,7 +62,25 @@
     "11  b[1,0,-1] n[1,-1,1]",
     "12  b[1,1,0] n[1,-1,1]"
   ],
-  "srix_increments": 16,
-  "srix_report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_16_slip_maps.json",
-  "status": "srix_meric_p43_m100_slip_maps_compared"
+  "source_reports": {
+    "meric": {
+      "archive_commit": "b509ec228eb6c3f5eddce19652f439e450a93220",
+      "behaviour": "fcc_meric_cailletaud",
+      "execution_commit": "b509ec228eb6c3f5eddce19652f439e450a93220",
+      "field_file": "validation/_generated/performance/crystal_tet2_meric_p43_m100_slip_maps.fields.npz",
+      "field_sha256": "adc5f994b22ae9bea0a15c1fbd58f261db80c681352e5d90f325c0ec23b5cdaf",
+      "report": "validation/_generated/performance/crystal_tet2_meric_p43_m100_slip_maps.json",
+      "report_sha256": "c8c33fcf204221f8a88ed7dc42d7a5b799654ce63750804f4ca22e25e06793d7"
+    },
+    "srix": {
+      "archive_commit": "1a67cd78ad13be4e458857bdc000e0f8bde92480",
+      "behaviour": "fcc_forest_rubin_srix",
+      "execution_commit": "1a67cd78ad13be4e458857bdc000e0f8bde92480",
+      "field_file": "validation/_generated/performance/crystal_tet2_srix_p43_m100_16_slip_maps.fields.npz",
+      "field_sha256": "9ae37f6b79b736b6ade440c0d2352ef244ed9b28c8d5ba93aefe9d7be70987dc",
+      "report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_16_slip_maps.json",
+      "report_sha256": "b638411c31e8a467c4fd55c11662044c37affbe9faa468c0629bb1c64e227564"
+    }
+  },
+  "status": "complete_final_fields_history_unavailable"
 }

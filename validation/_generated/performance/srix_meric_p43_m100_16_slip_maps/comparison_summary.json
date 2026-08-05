@@ -1,0 +1,603 @@
+{
+  "configuration": {
+    "cumulative_dominance_threshold": 0.95,
+    "dominant_fraction_threshold": 0.05,
+    "numerical_zero_tolerance": 1e-12,
+    "support_fractions": [
+      0.1,
+      0.25
+    ]
+  },
+  "field_comparison_authorized": true,
+  "figure_files": [
+    "equivalent_slip_absolute_and_normalized.png",
+    "slip_system_global_fractions.svg",
+    "slip_system_cumulative_contributions.svg",
+    "slip_system_01_spatial_comparison.png",
+    "slip_system_02_spatial_comparison.png",
+    "slip_system_05_spatial_comparison.png",
+    "slip_system_07_spatial_comparison.png",
+    "slip_system_08_spatial_comparison.png",
+    "slip_system_11_spatial_comparison.png",
+    "mechanism_amplitude_summary.svg"
+  ],
+  "global_amplitude": {
+    "meric": {
+      "integral": 135.19520247564083,
+      "maximum": 0.023826279199061867,
+      "mean": 0.013519520247564082,
+      "median": 0.013141790078668203,
+      "minimum": 0.0058974312830387485,
+      "q05": 0.01086649960739023,
+      "q25": 0.012271140468451206,
+      "q75": 0.014867231433707499,
+      "q95": 0.01689287769159106,
+      "q99": 0.017991981875427665,
+      "std": 0.0019489780677646427
+    },
+    "ratios_meric_over_srix": {
+      "integral": 0.9679932383574892,
+      "maximum": 1.0005157097268118,
+      "mean": 0.9679932383574891,
+      "median": 0.946103654811318,
+      "q95": 0.9369775518233315
+    },
+    "srix": {
+      "integral": 139.66544095395008,
+      "maximum": 0.02381399808861329,
+      "mean": 0.013966544095395009,
+      "median": 0.013890433687510782,
+      "minimum": 0.005166297898470405,
+      "q05": 0.009440716662231187,
+      "q25": 0.011918616810905744,
+      "q75": 0.01626285697115173,
+      "q95": 0.018029116768825466,
+      "q99": 0.019271719921036882,
+      "std": 0.0027346692103166104
+    }
+  },
+  "incremental_similarity": {
+    "available": false,
+    "reason": "The archived P43 field files contain final fields only; no per-increment per-system slip history is available."
+  },
+  "limitations": [
+    "The comparison uses the pixel mean of the two TRI2 states.",
+    "The archived source contains final per-system fields but no incremental per-system history.",
+    "Signed-slip metrics compare final signed fields; sign changes through loading cannot be assessed.",
+    "R is an analytical transposition, not a direct identification on P43.",
+    "The M\u00e9ric 16-increment calculation is converged numerically but not temporally converged.",
+    "The orientation is homogeneous and is not an EBSD orientation map.",
+    "The two laws are compared on the same registered path; the output does not authorize a performance comparison."
+  ],
+  "performance_comparison_authorized": false,
+  "provenance": {
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "generated_at_utc": "2026-08-05T20:38:46.103121+00:00",
+    "git_sha": "c833504c65dfce4234b321074370126b9a627118",
+    "increments": 16,
+    "meric": {
+      "archive_commit": "b509ec228eb6c3f5eddce19652f439e450a93220",
+      "behaviour": "fcc_meric_cailletaud",
+      "execution_commit": "b509ec228eb6c3f5eddce19652f439e450a93220",
+      "field_file": "validation/_generated/performance/crystal_tet2_meric_p43_m100_slip_maps.fields.npz",
+      "field_sha256": "adc5f994b22ae9bea0a15c1fbd58f261db80c681352e5d90f325c0ec23b5cdaf",
+      "report": "validation/_generated/performance/crystal_tet2_meric_p43_m100_slip_maps.json",
+      "report_sha256": "c8c33fcf204221f8a88ed7dc42d7a5b799654ce63750804f4ca22e25e06793d7"
+    },
+    "mesh": [
+      100,
+      100
+    ],
+    "orientation": {
+      "euler_bunge_deg": [
+        35.0,
+        20.0,
+        15.0
+      ],
+      "mode": "homogeneous",
+      "sha256": "718dc64bb2d50bd13e2b3caa5f3e67613cb47be23223288957a59900b7beb2cb"
+    },
+    "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+    "pixel_mean_of_two_tri2_states": true,
+    "schema_version": 1,
+    "slip_system_order": [
+      "01  b[0,1,-1] n[1,1,1]",
+      "02  b[1,0,-1] n[1,1,1]",
+      "03  b[1,-1,0] n[1,1,1]",
+      "04  b[0,1,1] n[1,1,-1]",
+      "05  b[1,0,1] n[1,1,-1]",
+      "06  b[1,-1,0] n[1,1,-1]",
+      "07  b[0,1,-1] n[1,-1,-1]",
+      "08  b[1,0,1] n[1,-1,-1]",
+      "09  b[1,1,0] n[1,-1,-1]",
+      "10  b[0,1,1] n[1,-1,1]",
+      "11  b[1,0,-1] n[1,-1,1]",
+      "12  b[1,1,0] n[1,-1,1]"
+    ],
+    "srix": {
+      "archive_commit": "1a67cd78ad13be4e458857bdc000e0f8bde92480",
+      "behaviour": "fcc_forest_rubin_srix",
+      "execution_commit": "1a67cd78ad13be4e458857bdc000e0f8bde92480",
+      "field_file": "validation/_generated/performance/crystal_tet2_srix_p43_m100_16_slip_maps.fields.npz",
+      "field_sha256": "9ae37f6b79b736b6ade440c0d2352ef244ed9b28c8d5ba93aefe9d7be70987dc",
+      "report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_16_slip_maps.json",
+      "report_sha256": "b638411c31e8a467c4fd55c11662044c37affbe9faa468c0629bb1c64e227564"
+    }
+  },
+  "signed_slip": {
+    "available": true,
+    "chronology_available": false,
+    "comparable_pixels": 10000,
+    "opposite_sign_fraction": 0.0,
+    "same_sign_fraction": 1.0
+  },
+  "spatial_similarity": {
+    "per_system": [
+      {
+        "absolute": {
+          "integral_ratio_meric_over_srix": 1.434808017860764,
+          "l1": 20.839800833292955,
+          "l2": 0.2800031862611629,
+          "maximum_absolute_difference": 0.01120062702128193,
+          "pearson": 0.7423773796928768,
+          "relative_l2": 0.39249192687832013,
+          "spearman": 0.7603541389755414
+        },
+        "normalized": {
+          "barycentre_distance": 4.8801448346354,
+          "cosine": 0.9683844684453244,
+          "l1": 0.21339226458771132,
+          "l2": 0.002678242698657237,
+          "meric_barycentre_xy": [
+            57.019337734023566,
+            44.601775012640125
+          ],
+          "pearson": 0.7423773796928766,
+          "spearman": 0.7603541389755414,
+          "srix_barycentre_xy": [
+            52.42332354833264,
+            46.2426489297789
+          ]
+        },
+        "status": "significant",
+        "supports": [
+          {
+            "dice": 0.426,
+            "fraction": 0.1,
+            "iou": 0.27064803049555275,
+            "meric_recall": 0.426,
+            "srix_recall": 0.426
+          },
+          {
+            "dice": 0.5928,
+            "fraction": 0.25,
+            "iou": 0.4212620807276862,
+            "meric_recall": 0.5928,
+            "srix_recall": 0.5928
+          }
+        ],
+        "system": 0
+      },
+      {
+        "absolute": {
+          "integral_ratio_meric_over_srix": 0.2914573870505339,
+          "l1": 13.76288186425149,
+          "l2": 0.14202803243264517,
+          "maximum_absolute_difference": 0.002796079352691369,
+          "pearson": 0.5783411990805503,
+          "relative_l2": 2.4917724680006716,
+          "spearman": 0.6723286614872866
+        },
+        "normalized": {
+          "barycentre_distance": 2.8962696277390383,
+          "cosine": 0.9873485068029701,
+          "l1": 0.1279234017370679,
+          "l2": 0.0016164766554049058,
+          "meric_barycentre_xy": [
+            48.746776414300264,
+            48.39678439187671
+          ],
+          "pearson": 0.57834119908055,
+          "spearman": 0.6723286614872866,
+          "srix_barycentre_xy": [
+            49.88100411104173,
+            45.73184437594611
+          ]
+        },
+        "status": "significant",
+        "supports": [
+          {
+            "dice": 0.382,
+            "fraction": 0.1,
+            "iou": 0.2360939431396786,
+            "meric_recall": 0.382,
+            "srix_recall": 0.382
+          },
+          {
+            "dice": 0.5416,
+            "fraction": 0.25,
+            "iou": 0.3713658804168952,
+            "meric_recall": 0.5416,
+            "srix_recall": 0.5416
+          }
+        ],
+        "system": 1
+      },
+      {
+        "absolute": null,
+        "normalized": null,
+        "status": "not_significant",
+        "supports": null,
+        "system": 2
+      },
+      {
+        "absolute": null,
+        "normalized": null,
+        "status": "not_significant",
+        "supports": null,
+        "system": 3
+      },
+      {
+        "absolute": {
+          "integral_ratio_meric_over_srix": 0.08984671078748138,
+          "l1": 4.808064691288742,
+          "l2": 0.04978494034387389,
+          "maximum_absolute_difference": 0.0008576983176616295,
+          "pearson": 0.648130167331042,
+          "relative_l2": 9.315132159590952,
+          "spearman": 0.6993826701218268
+        },
+        "normalized": {
+          "barycentre_distance": 1.0093680893258912,
+          "cosine": 0.9351414217261017,
+          "l1": 0.25174008626840894,
+          "l2": 0.0039927250036292964,
+          "meric_barycentre_xy": [
+            43.93491779911006,
+            46.41829480786319
+          ],
+          "pearson": 0.6481301673310421,
+          "spearman": 0.6993826701218268,
+          "srix_barycentre_xy": [
+            44.655659407564414,
+            45.71164392263624
+          ]
+        },
+        "status": "significant",
+        "supports": [
+          {
+            "dice": 0.481,
+            "fraction": 0.1,
+            "iou": 0.3166556945358789,
+            "meric_recall": 0.481,
+            "srix_recall": 0.481
+          },
+          {
+            "dice": 0.4208,
+            "fraction": 0.25,
+            "iou": 0.26646403242147926,
+            "meric_recall": 0.4208,
+            "srix_recall": 0.4208
+          }
+        ],
+        "system": 4
+      },
+      {
+        "absolute": null,
+        "normalized": null,
+        "status": "not_significant",
+        "supports": null,
+        "system": 5
+      },
+      {
+        "absolute": {
+          "integral_ratio_meric_over_srix": 1.2977344462819282,
+          "l1": 13.908946503557779,
+          "l2": 0.18671655644723173,
+          "maximum_absolute_difference": 0.01272547960409394,
+          "pearson": 0.45415907781741366,
+          "relative_l2": 0.34923644569764567,
+          "spearman": 0.4891255802232558
+        },
+        "normalized": {
+          "barycentre_distance": 4.580355526423414,
+          "cosine": 0.9545076563230107,
+          "l1": 0.25619243051944396,
+          "l2": 0.003150582296781556,
+          "meric_barycentre_xy": [
+            45.03767745041772,
+            49.727742718051516
+          ],
+          "pearson": 0.4541590778174135,
+          "spearman": 0.4891255802232558,
+          "srix_barycentre_xy": [
+            45.42022571955631,
+            45.163390237116616
+          ]
+        },
+        "status": "significant",
+        "supports": [
+          {
+            "dice": 0.298,
+            "fraction": 0.1,
+            "iou": 0.17508813160987075,
+            "meric_recall": 0.298,
+            "srix_recall": 0.298
+          },
+          {
+            "dice": 0.3876,
+            "fraction": 0.25,
+            "iou": 0.2403870007442322,
+            "meric_recall": 0.3876,
+            "srix_recall": 0.3876
+          }
+        ],
+        "system": 6
+      },
+      {
+        "absolute": {
+          "integral_ratio_meric_over_srix": 0.31620209378905206,
+          "l1": 4.247863753011004,
+          "l2": 0.043863195352780986,
+          "maximum_absolute_difference": 0.0008356740323784362,
+          "pearson": 0.19755394221744102,
+          "relative_l2": 2.1857781096320545,
+          "spearman": 0.060729680803296805
+        },
+        "normalized": {
+          "barycentre_distance": 4.924489840297029,
+          "cosine": 0.9709446512103636,
+          "l1": 0.20764766857638617,
+          "l2": 0.002456091269856557,
+          "meric_barycentre_xy": [
+            52.164225931777324,
+            49.423483398353156
+          ],
+          "pearson": 0.19755394221744094,
+          "spearman": 0.060729680803296805,
+          "srix_barycentre_xy": [
+            47.444173337722575,
+            48.01930972798838
+          ]
+        },
+        "status": "significant",
+        "supports": [
+          {
+            "dice": 0.11,
+            "fraction": 0.1,
+            "iou": 0.0582010582010582,
+            "meric_recall": 0.11,
+            "srix_recall": 0.11
+          },
+          {
+            "dice": 0.1972,
+            "fraction": 0.25,
+            "iou": 0.10938540048812957,
+            "meric_recall": 0.1972,
+            "srix_recall": 0.1972
+          }
+        ],
+        "system": 7
+      },
+      {
+        "absolute": null,
+        "normalized": null,
+        "status": "not_significant",
+        "supports": null,
+        "system": 8
+      },
+      {
+        "absolute": null,
+        "normalized": null,
+        "status": "not_significant",
+        "supports": null,
+        "system": 9
+      },
+      {
+        "absolute": {
+          "integral_ratio_meric_over_srix": 0.4322175973630957,
+          "l1": 12.199307493622698,
+          "l2": 0.12630008352379196,
+          "maximum_absolute_difference": 0.0024987978023688364,
+          "pearson": 0.5438428818553106,
+          "relative_l2": 1.3474282113727933,
+          "spearman": 0.48902660689826605
+        },
+        "normalized": {
+          "barycentre_distance": 1.7021887784046061,
+          "cosine": 0.9885087216750342,
+          "l1": 0.12408214058806052,
+          "l2": 0.0015359674381429532,
+          "meric_barycentre_xy": [
+            51.207246502201826,
+            49.29229755941585
+          ],
+          "pearson": 0.5438428818553105,
+          "spearman": 0.48902660689826605,
+          "srix_barycentre_xy": [
+            51.66468685077115,
+            47.65272597975629
+          ]
+        },
+        "status": "significant",
+        "supports": [
+          {
+            "dice": 0.192,
+            "fraction": 0.1,
+            "iou": 0.10619469026548672,
+            "meric_recall": 0.192,
+            "srix_recall": 0.192
+          },
+          {
+            "dice": 0.3396,
+            "fraction": 0.25,
+            "iou": 0.2045290291496025,
+            "meric_recall": 0.3396,
+            "srix_recall": 0.3396
+          }
+        ],
+        "system": 10
+      },
+      {
+        "absolute": null,
+        "normalized": null,
+        "status": "not_significant",
+        "supports": null,
+        "system": 11
+      }
+    ],
+    "total_equivalent": {
+      "absolute": {
+        "integral_ratio_meric_over_srix": 0.9679932383574892,
+        "l1": 20.10097993561894,
+        "l2": 0.2384137812373548,
+        "maximum_absolute_difference": 0.007088182191201968,
+        "pearson": 0.5434197532275209,
+        "relative_l2": 0.17454344069250985,
+        "spearman": 0.5412437445124374
+      },
+      "normalized": {
+        "barycentre_distance": 2.295881131970722,
+        "cosine": 0.9862229593017219,
+        "l1": 0.14345906358517718,
+        "l2": 0.0016864873753705335,
+        "meric_barycentre_xy": [
+          51.61434744356541,
+          47.10283009742331
+        ],
+        "pearson": 0.5434197532275208,
+        "spearman": 0.5412437445124374,
+        "srix_barycentre_xy": [
+          49.51338931753039,
+          46.17706278066029
+        ]
+      },
+      "status": "significant",
+      "supports": [
+        {
+          "dice": 0.256,
+          "fraction": 0.1,
+          "iou": 0.14678899082568808,
+          "meric_recall": 0.256,
+          "srix_recall": 0.256
+        },
+        {
+          "dice": 0.3268,
+          "fraction": 0.25,
+          "iou": 0.1953143676786995,
+          "meric_recall": 0.3268,
+          "srix_recall": 0.3268
+        }
+      ]
+    }
+  },
+  "status": "complete_final_fields_history_unavailable",
+  "system_distribution": {
+    "cosine_similarity": 0.9440591807520627,
+    "fraction_difference_l1": 0.5129813306852886,
+    "meric": {
+      "s5": [
+        0,
+        6,
+        10
+      ],
+      "s95": [
+        0,
+        6,
+        10,
+        1
+      ],
+      "top3": [
+        0,
+        6,
+        10
+      ],
+      "top_system": 0
+    },
+    "s5_intersection": [
+      0,
+      6,
+      10
+    ],
+    "s5_jaccard": 0.75,
+    "s5_meric": [
+      0,
+      6,
+      10
+    ],
+    "s5_srix": [
+      0,
+      1,
+      6,
+      10
+    ],
+    "s5_union": [
+      0,
+      1,
+      6,
+      10
+    ],
+    "s95_intersection": [
+      0,
+      1,
+      6,
+      10
+    ],
+    "s95_jaccard": 0.8,
+    "s95_meric": [
+      0,
+      6,
+      10,
+      1
+    ],
+    "s95_reciprocal_recall": {
+      "meric_recalled_by_srix": 1.0,
+      "srix_recalled_by_meric": 0.8
+    },
+    "s95_srix": [
+      0,
+      6,
+      10,
+      1,
+      7
+    ],
+    "s95_union": [
+      0,
+      1,
+      6,
+      7,
+      10
+    ],
+    "spearman_rank_correlation": 0.9230769230769231,
+    "srix": {
+      "s5": [
+        0,
+        1,
+        6,
+        10
+      ],
+      "s95": [
+        0,
+        6,
+        10,
+        1,
+        7
+      ],
+      "top3": [
+        0,
+        6,
+        10
+      ],
+      "top_system": 0
+    },
+    "top3_overlap": 3,
+    "top_system_meric": 0,
+    "top_system_srix": 0,
+    "total_variation_distance": 0.2564906653426443
+  }
+}
