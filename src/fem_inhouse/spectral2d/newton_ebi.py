@@ -410,6 +410,18 @@ def solve_ebi_dirichlet_plane_stress(
         krylov_method=config.krylov_method,
         krylov_recycling=config.krylov_recycling,
     )
+    provenance.update(
+        {
+            "material_backend": getattr(material, "backend_name", type(material).__name__),
+            "material_matrix_type": getattr(
+                material, "linear_system_matrix_type", "unspecified"
+            ),
+            "mfront_threads": getattr(material, "thread_count", None),
+            "local_condition_check_mode": getattr(
+                material, "local_condition_check_mode", None
+            ),
+        }
+    )
     observables = {
         name: _reshape_mean_field(values, grid) for name, values in final_trial.observables.items()
     }

@@ -710,6 +710,7 @@ def solve_two_state_dirichlet_plane_stress(
             "material_matrix_type": getattr(
                 material, "linear_system_matrix_type", "unspecified"
             ),
+            "mfront_threads": getattr(material, "thread_count", None),
             "local_condition_check_mode": getattr(
                 material, "local_condition_check_mode", None
             ),

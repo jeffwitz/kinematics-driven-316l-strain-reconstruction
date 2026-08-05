@@ -1217,6 +1217,7 @@ class MFront3DMaterialPointBatch:
         self._radius_offset = radius_offset
         self._specification = behaviour_spec
         self._profile = profile
+        self._thread_count = thread_count
         self._observable_slices = observable_slices
         if rotation_global_to_material is None:
             self._rotations: NDArray | None = None
@@ -1246,6 +1247,10 @@ class MFront3DMaterialPointBatch:
         """Return the exact MFront behaviour selected by this bridge."""
 
         return self._behaviour_name
+
+    @property
+    def thread_count(self) -> int:
+        return self._thread_count
 
     @property
     def is_oriented(self) -> bool:
@@ -1557,6 +1562,10 @@ class MFront3DCondensedPlaneStressBatch:
         return "mfront-3d-condensed-plane-stress"
 
     @property
+    def thread_count(self) -> int:
+        return self._bridge.thread_count
+
+    @property
     def completion_strategy(self) -> str:
         return "mfront_3d_local_condensation"
 
@@ -1799,10 +1808,22 @@ class MFront3DCondensedPlaneStressBatch:
                 f"{self._maximum_iterations} iterations; residual={maximum_residual:.3e} MPa"
             )
         assert final is not None
-        tangent_engineering, _ = condense_kelvin_tangent_to_engineering(
-            final.consistent_tangent_kelvin_mpa,
-            check_condition=False,
+        self._maximum_residual = max(
+            self._maximum_residual,
+            float(np.max(np.abs(stress_b))),
         )
+        self._maximum_iterations_observed = max(
+            self._maximum_iterations_observed,
+            int(np.max(first_converged)),
+        )
+        self._iteration_sum += int(np.sum(first_converged))
+        self._iteration_count += self.point_count
+        tangent_engineering: NDArray | None = None
+        if response_level != "residual" and consistent_tangent:
+            tangent_engineering, _ = condense_kelvin_tangent_to_engineering(
+                final.consistent_tangent_kelvin_mpa,
+                check_condition=False,
+            )
         if response_level != "complete":
             self._condensation_seconds += time.perf_counter() - condensation_started
             self._latest_transverse = total_kelvin[:, _TRANSVERSE_COMPONENTS_3D].copy()
@@ -1830,16 +1851,6 @@ class MFront3DCondensedPlaneStressBatch:
             ),
             axis=-1,
         )
-        self._maximum_residual = max(
-            self._maximum_residual,
-            float(np.max(np.abs(residual))),
-        )
-        self._maximum_iterations_observed = max(
-            self._maximum_iterations_observed,
-            int(np.max(first_converged)),
-        )
-        self._iteration_sum += int(np.sum(first_converged))
-        self._iteration_count += self.point_count
         self._reconstruction_seconds += time.perf_counter() - reconstruction_started
         observable_started = time.perf_counter()
         observables = {
