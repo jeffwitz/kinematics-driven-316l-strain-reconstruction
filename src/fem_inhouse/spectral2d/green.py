@@ -56,19 +56,49 @@ class _DiagonalGreen2D:
         self.mu_0 = float(mu_0)
         self.symbol_null_tolerance = float(symbol_null_tolerance)
         self.mode = mode
-        if mode == "b0":
-            self._denominator_x = 2.0 * mu_0 * symbols.laplacian + lambda_0 * symbols.directional_x
-            self._denominator_y = 2.0 * mu_0 * symbols.laplacian + lambda_0 * symbols.directional_y
+        self._denominator_x = np.empty_like(symbols.laplacian)
+        self._denominator_y = np.empty_like(symbols.laplacian)
+        self._null_mask = np.empty(symbols.laplacian.shape, dtype=bool)
+        self.update_parameters(lambda_0=lambda_0, mu_0=mu_0)
+
+    @property
+    def diagnostics(self) -> GreenDiagnostics:
+        return self._diagnostics
+
+    def update_parameters(self, *, lambda_0: float, mu_0: float) -> None:
+        """Update denominators without recreating the transform plan."""
+
+        if not np.isfinite(lambda_0) or not np.isfinite(mu_0):
+            raise ValueError("reference Lamé parameters must be finite")
+        if mu_0 <= 0.0 or lambda_0 + mu_0 <= 0.0:
+            raise ValueError("reference Lamé parameters must satisfy mu>0 and lambda+mu>0")
+        self.lambda_0 = float(lambda_0)
+        self.mu_0 = float(mu_0)
+        np.multiply(2.0 * mu_0, self.symbols.laplacian, out=self._denominator_x)
+        if self.mode == "b0":
+            np.add(
+                self._denominator_x,
+                lambda_0 * self.symbols.directional_x,
+                out=self._denominator_x,
+            )
+            np.multiply(2.0 * mu_0, self.symbols.laplacian, out=self._denominator_y)
+            np.add(
+                self._denominator_y,
+                lambda_0 * self.symbols.directional_y,
+                out=self._denominator_y,
+            )
         else:
-            self._denominator_x = 2.0 * mu_0 * symbols.laplacian
-            self._denominator_y = self._denominator_x.copy()
+            self._denominator_y[...] = self._denominator_x
+        self._update_diagnostics()
+
+    def _update_diagnostics(self) -> None:
         scale = max(
             1.0,
             float(np.max(np.abs(self._denominator_x))),
             float(np.max(np.abs(self._denominator_y))),
         )
         null = self.symbol_null_tolerance * scale
-        self._null_mask = (np.abs(self._denominator_x) <= null) | (
+        self._null_mask[...] = (np.abs(self._denominator_x) <= null) | (
             np.abs(self._denominator_y) <= null
         )
         self._diagnostics = GreenDiagnostics(
@@ -76,10 +106,6 @@ class _DiagonalGreen2D:
             minimum_denominator_y=float(np.min(np.abs(self._denominator_y))),
             null_modes=int(np.count_nonzero(self._null_mask)),
         )
-
-    @property
-    def diagnostics(self) -> GreenDiagnostics:
-        return self._diagnostics
 
     def apply(self, transformed_polarization: ArrayLike) -> FloatArray:
         polarization = np.asarray(transformed_polarization, dtype=np.float64)

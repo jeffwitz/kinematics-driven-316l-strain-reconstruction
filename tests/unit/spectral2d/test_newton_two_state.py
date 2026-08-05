@@ -280,3 +280,26 @@ def test_two_state_inexact_newton_records_forcing_and_preserves_solution() -> No
         rtol=1.0e-8,
         atol=1.0e-10,
     )
+
+
+def test_two_state_reference_updates_reuse_green_plan_and_archive_changes() -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1, ..., 0] = 0.02 * x[:, None] + 0.003 * y[None, :] ** 2
+    boundary[2, ..., 1] = 0.03 * y[None, :] + 0.002 * x[:, None] ** 2
+    result = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(
+            relative_equilibrium_tolerance=1.0e-10,
+            reference_update_mode="per_newton",
+            reference_minimum_relative_change=0.0,
+            transform=SpectralTransformConfig(backend="scipy"),
+        ),
+    )
+    assert result.diagnostics.verification_residual <= 1.0e-10
+    assert result.diagnostics.reference_updates
+    assert any(update["accepted"] for update in result.diagnostics.reference_updates)
+    assert result.diagnostics.transform_planning_seconds >= 0.0

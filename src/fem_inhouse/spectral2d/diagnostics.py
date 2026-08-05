@@ -182,4 +182,5 @@ class Spectral2DDiagnostics:
     transform_wisdom_loaded: bool = False
     transform_planning_seconds: float = 0.0
     linear_solves: tuple[LinearSolveDiagnostics, ...] = ()
+    reference_updates: tuple[dict[str, str | int | float | bool], ...] = ()
     provenance: dict[str, str | int | float | bool | None] = field(default_factory=dict)

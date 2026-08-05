@@ -315,11 +315,21 @@ def solve_two_state_dirichlet_plane_stress(
     material_seconds += time.perf_counter() - initial_material_started
     material.revert()
     tangent = np.asarray(zero_trial.tangent_in_plane_mpa).reshape(*grid.pixel_shape, 2, 3, 3)
-    lambda_0, mu_0, projection_error = project_isotropic_plane_stress_tangent(
+    projected_lambda, projected_mu, projection_error = project_isotropic_plane_stress_tangent(
         tangent.mean(axis=(0, 1, 2))
     )
-    lambda_0 *= config.reference_parameter_scale * config.reference_lambda_mu_ratio
-    mu_0 *= config.reference_parameter_scale
+    if config.reference_parameter_mode == "explicit":
+        assert config.reference_lambda_0 is not None
+        assert config.reference_mu_0 is not None
+        lambda_0 = config.reference_lambda_0
+        mu_0 = config.reference_mu_0
+    else:
+        lambda_0 = (
+            projected_lambda
+            * config.reference_parameter_scale
+            * config.reference_lambda_mu_ratio
+        )
+        mu_0 = projected_mu * config.reference_parameter_scale
     green = B0Green2D(
         kinematics.reference_operator_symbols(plan),
         lambda_0=lambda_0,
@@ -337,6 +347,7 @@ def solve_two_state_dirichlet_plane_stress(
     verification_history: list[float] = []
     verification_mismatch_history: list[float] = []
     iterations_per_increment: list[int] = []
+    reference_updates: list[dict[str, str | int | float | bool]] = []
     gmres_iterations = 0
     linear_solves: list[LinearSolveDiagnostics] = []
     jacobian_totals = JacobianActionDiagnostics()
@@ -389,6 +400,63 @@ def solve_two_state_dirichlet_plane_stress(
                 trial = verification_trial
                 residual = verification_force
                 relative = verification_residual
+
+            if config.reference_update_mode != "initial":
+                if config.reference_parameter_mode == "explicit":
+                    reference_updates.append(
+                        {
+                            "increment": increment,
+                            "newton_iteration": iteration + 1,
+                            "accepted": False,
+                            "reason": "explicit_reference_parameters",
+                        }
+                    )
+                elif config.reference_update_mode == "per_newton" or iteration == 0:
+                    candidate_lambda, candidate_mu, _ = project_isotropic_plane_stress_tangent(
+                        trial.algorithmic_tangent_in_plane_mpa.mean(axis=(0, 1, 2))
+                    )
+                    candidate_lambda *= config.reference_parameter_scale
+                    candidate_mu *= config.reference_parameter_scale
+                    relaxation = config.reference_update_relaxation
+                    updated_lambda = (1.0 - relaxation) * lambda_0 + relaxation * candidate_lambda
+                    updated_mu = (1.0 - relaxation) * mu_0 + relaxation * candidate_mu
+                    mu_ratio = updated_mu / mu_0
+                    bulk_ratio = (updated_lambda + updated_mu) / (lambda_0 + mu_0)
+                    relative_change = max(
+                        abs(updated_mu - mu_0) / max(abs(mu_0), 1.0e-30),
+                        abs(updated_lambda - lambda_0) / max(abs(lambda_0), 1.0e-30),
+                    )
+                    accepted_update = (
+                        np.isfinite(updated_lambda)
+                        and np.isfinite(updated_mu)
+                        and 0.25 <= mu_ratio <= 4.0
+                        and 0.25 <= bulk_ratio <= 4.0
+                        and relative_change >= config.reference_minimum_relative_change
+                    )
+                    if accepted_update:
+                        green.update_parameters(
+                            lambda_0=updated_lambda,
+                            mu_0=updated_mu,
+                        )
+                        lambda_0 = updated_lambda
+                        mu_0 = updated_mu
+                        reason = "updated"
+                    elif relative_change < config.reference_minimum_relative_change:
+                        reason = "below_minimum_change"
+                    else:
+                        reason = "safeguard_rejected"
+                    reference_updates.append(
+                        {
+                            "increment": increment,
+                            "newton_iteration": iteration + 1,
+                            "accepted": accepted_update,
+                            "reason": reason,
+                            "lambda_0": lambda_0,
+                            "mu_0": mu_0,
+                            "candidate_lambda": candidate_lambda,
+                            "candidate_mu": candidate_mu,
+                        }
+                    )
 
             size = 2 * (grid.nx - 1) * (grid.ny - 1)
             jacobian_local = JacobianActionDiagnostics()
@@ -582,6 +650,7 @@ def solve_two_state_dirichlet_plane_stress(
         transform_wisdom_loaded=transform_diagnostics.wisdom_loaded,
         transform_planning_seconds=transform_diagnostics.planning_seconds,
         linear_solves=tuple(linear_solves),
+        reference_updates=tuple(reference_updates),
         provenance=collect_runtime_provenance(
             transform_diagnostics,
             gmres_restart=config.gmres_restart,
