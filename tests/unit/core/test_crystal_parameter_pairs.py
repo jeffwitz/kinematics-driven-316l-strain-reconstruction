@@ -67,4 +67,3 @@ def test_a_backbone_drift_is_refused() -> None:
     altered = replace(pair.backbone, elasticity=CubicElasticity(197000.0, 125000.0, 122001.0))
     with pytest.raises(ValueError, match="cubic elasticity"):
         replace(pair, backbone=altered).validate()
-
