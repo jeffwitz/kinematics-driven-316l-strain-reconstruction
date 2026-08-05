@@ -9,9 +9,15 @@ import os
 import subprocess
 import time
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 
+from fem_inhouse.core.crystal_parameter_pairs import (
+    CrystalLaw,
+    resolve_paired_crystal_parameters,
+)
+from fem_inhouse.core.mfront_crystal_structure import read_crystal_structure_fingerprint
 from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
 from fem_inhouse.spectral2d import EBISpectralSolverConfig
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
@@ -52,6 +58,7 @@ def main() -> int:
         choices=("fcc_forest_rubin_srix", "fcc_meric_cailletaud"),
         default="fcc_forest_rubin_srix",
     )
+    parser.add_argument("--paired-parameter-set", required=True)
     parser.add_argument("--mfront-threads", type=int, default=4)
     parser.add_argument(
         "--krylov-method",
@@ -76,6 +83,38 @@ def main() -> int:
     if mesh != crop[3] - crop[2]:
         raise SystemExit("P43 crop must be square")
     grid, _, yield_stress, coefficient, boundary = _load_case(mesh, crop)
+    law: CrystalLaw = (
+        "forest_rubin_srix"
+        if arguments.behaviour == "fcc_forest_rubin_srix"
+        else "meric_cailletaud"
+    )
+    _paired_overrides, crystal_manifest = resolve_paired_crystal_parameters(
+        paired_parameter_set=arguments.paired_parameter_set,
+        law=law,
+    )
+    repository_root = Path(__file__).resolve().parents[1]
+    meric_source_fingerprint = read_crystal_structure_fingerprint(
+        repository_root / "mfront/Fcc316LMericCailletaud.mfront"
+    )
+    srix_source_fingerprint = read_crystal_structure_fingerprint(
+        repository_root / "mfront/Fcc316LForestRubinSrix.mfront"
+    )
+    if (
+        meric_source_fingerprint.crystal_structure != srix_source_fingerprint.crystal_structure
+        or meric_source_fingerprint.sliding_system != srix_source_fingerprint.sliding_system
+        or meric_source_fingerprint.interaction_matrix
+        != srix_source_fingerprint.interaction_matrix
+    ):
+        raise SystemExit("the two MFront crystal sources do not share the same structure contract")
+    source_path = repository_root / "mfront" / (
+        "Fcc316LForestRubinSrix.mfront"
+        if law == "forest_rubin_srix"
+        else "Fcc316LMericCailletaud.mfront"
+    )
+    source_fingerprint = read_crystal_structure_fingerprint(source_path)
+    backbone_record = cast(dict[str, object], crystal_manifest["backbone"])
+    if source_fingerprint.interaction_matrix != tuple(backbone_record["interaction_matrix"]):
+        raise SystemExit("compiled MFront interaction structure does not match the paired backbone")
     history = np.stack(
         [fraction * boundary for fraction in np.linspace(0.0, 1.0, arguments.increments + 1)]
     )
@@ -100,7 +139,8 @@ def main() -> int:
             "crystal_orientation": {
                 "mode": "homogeneous",
                 "euler_bunge_deg": [35.0, 20.0, 15.0],
-            }
+            },
+            "paired_parameter_set": arguments.paired_parameter_set,
         },
     )
     started = time.perf_counter()
@@ -132,7 +172,7 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     field_path = arguments.output.with_suffix(".fields.npz")
-    np.savez_compressed(field_path, **fields)
+    np.savez_compressed(field_path, **fields)  # type: ignore[arg-type]
     diagnostics = result.diagnostics
     report = {
         "status": "completed_crystal_tet2_p43",
@@ -163,6 +203,25 @@ def main() -> int:
         "archive_commit": os.environ.get("ARCHIVE_COMMIT", _git_head()),
         "field_file": str(field_path),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
+        "boundary_sha256": _hash(boundary),
+        "units": "mm, MPa",
+        "orientation": {
+            "mode": "homogeneous",
+            "euler_bunge_deg": [35.0, 20.0, 15.0],
+            "sha256": _hash(np.asarray([35.0, 20.0, 15.0], dtype=np.float64)),
+        },
+        "crystal_material": {
+            **crystal_manifest,
+            "mfront_structure": {
+                "crystal_structure": source_fingerprint.crystal_structure,
+                "sliding_system": source_fingerprint.sliding_system,
+                "interaction_matrix": list(source_fingerprint.interaction_matrix),
+                "source_sha256": source_fingerprint.source_sha256,
+                "structure_contract_sha256": source_fingerprint.structure_contract_sha256(),
+                "meric_source_sha256": meric_source_fingerprint.source_sha256,
+                "srix_source_sha256": srix_source_fingerprint.source_sha256,
+            },
+        },
     }
     arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps(report, indent=2, sort_keys=True))

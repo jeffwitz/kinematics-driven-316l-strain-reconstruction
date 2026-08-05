@@ -482,8 +482,15 @@ def _create_fcc_single_crystal_batch(
 
     options = dict(constitutive_options or {})
     orientation_configuration = options.pop("crystal_orientation", None)
+    paired_parameter_set = options.pop("paired_parameter_set", None)
     parameter_set = options.pop("parameter_set", None)
     explicit_parameters = options.pop("parameters", None)
+    if paired_parameter_set is not None and (
+        parameter_set is not None or explicit_parameters is not None
+    ):
+        raise ValueError(
+            "paired_parameter_set cannot be combined with legacy parameter_set or parameters"
+        )
     provider = (
         HomogeneousOrientationProvider.identity()
         if orientation_configuration is None
@@ -499,12 +506,30 @@ def _create_fcc_single_crystal_batch(
     # is what the parameter guard in the batch caught the first time this was
     # wired, so the selection is gated on the registry the behaviour declares
     # rather than assumed.
-    if behaviour.parameter_registry == "srix":
+    if paired_parameter_set is not None:
+        if behaviour.crystal_flow_rule is None:
+            raise ValueError(
+                f"behaviour {behaviour.identifier!r} is not a registered crystal flow law"
+            )
+        from fem_inhouse.core.crystal_parameter_pairs import (
+            resolve_paired_crystal_parameters,
+        )
+
+        overrides, _ = resolve_paired_crystal_parameters(
+            paired_parameter_set=paired_parameter_set,
+            law=behaviour.crystal_flow_rule,
+        )
+    elif behaviour.parameter_registry == "srix":
         overrides, _ = resolve_srix_parameters(
             parameter_set=parameter_set,
             explicit=explicit_parameters,
         )
     elif parameter_set is not None or explicit_parameters is not None:
+        if behaviour.crystal_flow_rule == "meric_cailletaud" and parameter_set is not None:
+            raise ValueError(
+                "parameter_set is not supported for Méric-Cailletaud; use "
+                "paired_parameter_set"
+            )
         raise ValueError(
             f"MFront behaviour {behaviour.identifier!r} exposes no selectable "
             "parameter set; 'parameter_set' and 'parameters' are only accepted by "

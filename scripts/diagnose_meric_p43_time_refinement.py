@@ -10,6 +10,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from fem_inhouse.core.crystal_parameter_pairs import PAIRED_PARAMETER_SET
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -67,6 +69,8 @@ def main() -> int:
                 "1e-8",
                 "--behaviour",
                 "fcc_meric_cailletaud",
+                "--paired-parameter-set",
+                PAIRED_PARAMETER_SET,
                 "--mfront-threads",
                 str(arguments.mfront_threads),
                 "--krylov-method",

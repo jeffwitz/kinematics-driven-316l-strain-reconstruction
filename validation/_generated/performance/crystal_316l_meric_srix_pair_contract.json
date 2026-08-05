@@ -1,0 +1,35 @@
+{
+  "status": "paired_316l_backbone_verified",
+  "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+  "common_backbone_equal": true,
+  "backbone_sha256": "709312e15ff05df41ae4eb5021bad1db3f9bbbd43021726d0734ca84469eccc3",
+  "slip_system_contract_equal": true,
+  "interaction_matrix_equal": true,
+  "mfront_structure_contract_sha256": "c1b80c6651c9c3743ce570428c9fb7b29b86f181cfa1e0f36347ec6fd84bf437",
+  "meric_mfront_source_sha256": "f9e299e90aaf45ef73d48a5e1bbf6cc0dbd09cf2ea18e6fc7e67965672e47bfa",
+  "srix_mfront_source_sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f",
+  "elastic_branch_equal": true,
+  "elastic_branch_stress_relative_error": 0.0,
+  "elastic_branch_tangent_relative_error": 0.0,
+  "only_flow_rule_parameters_differ": true,
+  "meric": {
+    "K_mpa": 12.0,
+    "n": 11.0
+  },
+  "srix": {
+    "R_mpa": 18.781910070526294,
+    "reference_strain_rate_s_inv": 0.001,
+    "transposition_method": "forest_rubin_equation_16"
+  },
+  "comparison_claim": "paired constitutive-formulation comparison",
+  "material_identification_claim": false,
+  "pilot": {
+    "mesh": [20, 20],
+    "orientation_euler_bunge_deg": [35.0, 20.0, 15.0],
+    "srix_increments": 2,
+    "srix_final_residual": 8.102455776027236e-13,
+    "meric_increments": 16,
+    "meric_final_residual": 9.84942780047744e-9,
+    "note": "The two pilot reports use different increment counts; they verify configuration and execution only, not field equivalence."
+  }
+}

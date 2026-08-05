@@ -59,6 +59,7 @@ model_contract
 constitutive_models
 fcc_interaction_matrix_mapping
 srix_parameter_sets
+crystal_parameter_pairs
 ebsd_orientation_contract
 quas4_assumed_strain_derivation
 nonlocal_parameters

@@ -206,6 +206,11 @@ behaviours therefore declare `linear_system_matrix_type="nonsymmetric"` and
 force the linear solver out of its symmetric mode, at roughly twice the memory
 and under 10 % of added runtime.
 
+For a controlled comparison with the rate-dependent Méric--Cailletaud law, use
+the paired 316L backbone documented in the Reference page
+`crystal_parameter_pairs`. It locks the elastic, FCC and hardening data before
+the two flow rules are selected.
+
 ## References
 
 - Samuel Forest and M. B. Rubin, *A rate-independent crystal plasticity model

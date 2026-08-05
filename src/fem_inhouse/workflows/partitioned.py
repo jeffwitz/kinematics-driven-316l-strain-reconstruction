@@ -243,7 +243,7 @@ class PartitionWorkflow:
         if identifier is not None:
             from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
 
-            if MFRONT_BEHAVIOURS.get(identifier).parameter_registry == "srix":
+            if MFRONT_BEHAVIOURS.get(identifier).crystal_flow_rule is not None:
                 fields.update(CRYSTAL_RESULT_FIELDS)
         if self.config.nonlocal_plasticity.enabled:
             fields.update(NONLOCAL_RESULT_FIELDS)
@@ -264,9 +264,24 @@ class PartitionWorkflow:
         if identifier is None:
             return None
         behaviour = MFRONT_BEHAVIOURS.get(identifier)
+        options = self.config.solver.constitutive_options
+        paired_parameter_set = options.get("paired_parameter_set")
+        if paired_parameter_set is not None:
+            if behaviour.crystal_flow_rule is None:
+                raise ValueError(
+                    f"behaviour {identifier!r} cannot resolve a paired crystal set"
+                )
+            from fem_inhouse.core.crystal_parameter_pairs import (
+                resolve_paired_crystal_parameters,
+            )
+
+            _, paired_manifest = resolve_paired_crystal_parameters(
+                paired_parameter_set=paired_parameter_set,
+                law=behaviour.crystal_flow_rule,
+            )
+            return paired_manifest
         if behaviour.parameter_registry != "srix":
             return None
-        options = self.config.solver.constitutive_options
         return srix_provenance(
             parameter_set=options.get("parameter_set"),
             explicit=options.get("parameters"),

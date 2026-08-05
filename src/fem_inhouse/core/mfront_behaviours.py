@@ -53,6 +53,8 @@ class MFrontBehaviourSpec:
     #: flow parameters -- SRIX has `R`, Meric-Cailletaud has `(K, n)` -- so the
     #: bridge cannot assume that one law's parameter names exist on the other.
     parameter_registry: str | None = None
+    paired_material_family: str | None = None
+    crystal_flow_rule: Literal["meric_cailletaud", "forest_rubin_srix"] | None = None
 
     def __post_init__(self) -> None:
         if not self.identifier:
@@ -206,6 +208,8 @@ MFRONT_BEHAVIOURS.register(
         linear_system_matrix_type="nonsymmetric",
         requires_rotation_matrix=True,
         bridge_profile="fcc_single_crystal_v1",
+        paired_material_family="fcc_316l_guilhem_nasri_v1",
+        crystal_flow_rule="meric_cailletaud",
     )
 )
 MFRONT_BEHAVIOURS.register(
@@ -218,6 +222,8 @@ MFRONT_BEHAVIOURS.register(
         linear_system_matrix_type="nonsymmetric",
         requires_rotation_matrix=True,
         bridge_profile="fcc_single_crystal_v1",
+        paired_material_family="fcc_316l_guilhem_nasri_v1",
+        crystal_flow_rule="forest_rubin_srix",
         parameter_registry="srix",
     )
 )

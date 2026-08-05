@@ -11,6 +11,8 @@ import tempfile
 from pathlib import Path
 from statistics import mean, median
 
+from fem_inhouse.core.crystal_parameter_pairs import PAIRED_PARAMETER_SET
+
 
 def _git_head() -> str | None:
     try:
@@ -80,6 +82,8 @@ def main() -> int:
                 str(arguments.tolerance),
                 "--behaviour",
                 arguments.behaviour,
+                "--paired-parameter-set",
+                PAIRED_PARAMETER_SET,
                 "--mfront-threads",
                 str(arguments.mfront_threads),
                 "--krylov-method",
