@@ -25,8 +25,11 @@ def run_case(
     threads: int,
     increments: int,
     tolerance: float,
+    load_scale: float,
 ) -> dict[str, object]:
     case = build_case(mesh)
+    case["displacement_x_mm"] = load_scale * case["displacement_x_mm"]
+    case["displacement_y_mm"] = load_scale * case["displacement_y_mm"]
     started = time.perf_counter()
     try:
         result, elapsed = solve_two_state(
@@ -92,10 +95,19 @@ def main() -> int:
     parser.add_argument("--mfront-threads", nargs="+", type=int, default=[1])
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--tolerance", type=float, default=1.0e-8)
+    parser.add_argument("--load-scale", type=float, default=1.0)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     records = [
-        run_case(mesh, behaviour, method, threads, arguments.increments, arguments.tolerance)
+        run_case(
+            mesh,
+            behaviour,
+            method,
+            threads,
+            arguments.increments,
+            arguments.tolerance,
+            arguments.load_scale,
+        )
         for mesh in arguments.meshes
         for behaviour in arguments.behaviours
         for method in arguments.methods
@@ -106,6 +118,7 @@ def main() -> int:
         "meshes": arguments.meshes,
         "behaviours": arguments.behaviours,
         "records": records,
+        "load_scale": arguments.load_scale,
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
