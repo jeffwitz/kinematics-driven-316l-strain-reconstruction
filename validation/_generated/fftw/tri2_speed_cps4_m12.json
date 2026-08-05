@@ -1,0 +1,338 @@
+{
+  "increments": 8,
+  "mesh": 12,
+  "repeats": 5,
+  "status": "completed_newton_spectral_tri2_timing",
+  "tolerance": 1e-08,
+  "variants": [
+    {
+      "elapsed_seconds": {
+        "maximum": 7.464550702999986,
+        "mean": 6.922302948200377,
+        "median": 6.93683029699605,
+        "minimum": 6.5742830600065645
+      },
+      "iterations": {
+        "maximum": 39.0,
+        "mean": 39.0,
+        "median": 39.0,
+        "minimum": 39.0
+      },
+      "linear_factorizations": {
+        "maximum": 32.0,
+        "mean": 32.0,
+        "median": 32.0,
+        "minimum": 32.0
+      },
+      "material_evaluations": null,
+      "name": "cps4_newton",
+      "repeats": [
+        {
+          "elapsed_seconds": 7.043506696994882,
+          "iterations": 39,
+          "linear_factorizations": 32,
+          "material_evaluations": null,
+          "repeat": 0,
+          "solver_timings": {
+            "constitutive_seconds": 6.070584978973784,
+            "elapsed_seconds": 6.679993849997118,
+            "elastic_assembly_seconds": 0.00376535900431918,
+            "element_matrix_seconds": 0.04417805199045688,
+            "free_system_extraction_seconds": 0.00046936199942138046,
+            "helmholtz_seconds": 0.0,
+            "initialization_seconds": 0.4098917059964151,
+            "internal_force_seconds": 0.010733202019764576,
+            "kelvin_conversion_seconds": 0.0,
+            "linear_solve_seconds": 0.12963622000825126,
+            "mfront_integration_with_tangent_seconds": 0.0,
+            "mfront_integration_without_tangent_seconds": 0.0,
+            "nonlocal_mfront_seconds": 0.0,
+            "nonlocal_mfront_with_tangent_seconds": 0.0,
+            "nonlocal_mfront_without_tangent_seconds": 0.0,
+            "output_seconds": 0.0007165330025600269,
+            "pardiso_analysis_seconds": 0.017462623000028543,
+            "pardiso_factorization_seconds": 0.02739926100912271,
+            "pardiso_seconds": 0.12963622000825126,
+            "pardiso_solve_seconds": 0.0847743359991,
+            "sparse_assembly_seconds": 0.003411470948776696,
+            "tangent_assembly_seconds": 0.04618916900653858,
+            "tensor_reconstruction_seconds": 0.0
+          },
+          "spectral_timings": {}
+        },
+        {
+          "elapsed_seconds": 6.93683029699605,
+          "iterations": 39,
+          "linear_factorizations": 32,
+          "material_evaluations": null,
+          "repeat": 1,
+          "solver_timings": {
+            "constitutive_seconds": 6.346383713964315,
+            "elapsed_seconds": 6.93573373399704,
+            "elastic_assembly_seconds": 0.003929949001758359,
+            "element_matrix_seconds": 0.04591506900760578,
+            "free_system_extraction_seconds": 0.00038895299803698435,
+            "helmholtz_seconds": 0.0,
+            "initialization_seconds": 0.3450843340033316,
+            "internal_force_seconds": 0.01165180397219956,
+            "kelvin_conversion_seconds": 0.0,
+            "linear_solve_seconds": 0.16630295995128108,
+            "mfront_integration_with_tangent_seconds": 0.0,
+            "mfront_integration_without_tangent_seconds": 0.0,
+            "nonlocal_mfront_seconds": 0.0,
+            "nonlocal_mfront_with_tangent_seconds": 0.0,
+            "nonlocal_mfront_without_tangent_seconds": 0.0,
+            "output_seconds": 0.0006680509977741167,
+            "pardiso_analysis_seconds": 0.005816037999466062,
+            "pardiso_factorization_seconds": 0.020824310966418125,
+            "pardiso_seconds": 0.16630295995128108,
+            "pardiso_solve_seconds": 0.1396626109853969,
+            "sparse_assembly_seconds": 0.003440924010646995,
+            "tangent_assembly_seconds": 0.048017810986493714,
+            "tensor_reconstruction_seconds": 0.0
+          },
+          "spectral_timings": {}
+        },
+        {
+          "elapsed_seconds": 6.592343984004401,
+          "iterations": 39,
+          "linear_factorizations": 32,
+          "material_evaluations": null,
+          "repeat": 2,
+          "solver_timings": {
+            "constitutive_seconds": 6.08452935598325,
+            "elapsed_seconds": 6.591506318996835,
+            "elastic_assembly_seconds": 0.002979845005029347,
+            "element_matrix_seconds": 0.04658593099884456,
+            "free_system_extraction_seconds": 0.00030857000092510134,
+            "helmholtz_seconds": 0.0,
+            "initialization_seconds": 0.2757531419993029,
+            "internal_force_seconds": 0.010499255986360367,
+            "kelvin_conversion_seconds": 0.0,
+            "linear_solve_seconds": 0.1601637980347732,
+            "mfront_integration_with_tangent_seconds": 0.0,
+            "mfront_integration_without_tangent_seconds": 0.0,
+            "nonlocal_mfront_seconds": 0.0,
+            "nonlocal_mfront_with_tangent_seconds": 0.0,
+            "nonlocal_mfront_without_tangent_seconds": 0.0,
+            "output_seconds": 0.0006513789994642138,
+            "pardiso_analysis_seconds": 0.0017173700034618378,
+            "pardiso_factorization_seconds": 0.019895584031473845,
+            "pardiso_seconds": 0.1601637980347732,
+            "pardiso_solve_seconds": 0.13855084399983753,
+            "sparse_assembly_seconds": 0.003233840994653292,
+            "tangent_assembly_seconds": 0.04881031299737515,
+            "tensor_reconstruction_seconds": 0.0
+          },
+          "spectral_timings": {}
+        },
+        {
+          "elapsed_seconds": 7.464550702999986,
+          "iterations": 39,
+          "linear_factorizations": 32,
+          "material_evaluations": null,
+          "repeat": 3,
+          "solver_timings": {
+            "constitutive_seconds": 6.80335240498971,
+            "elapsed_seconds": 7.463514803996077,
+            "elastic_assembly_seconds": 0.0029922790054115467,
+            "element_matrix_seconds": 0.04680787499091821,
+            "free_system_extraction_seconds": 0.0002746300015132874,
+            "helmholtz_seconds": 0.0,
+            "initialization_seconds": 0.3288119739954709,
+            "internal_force_seconds": 0.012828860992158297,
+            "kelvin_conversion_seconds": 0.0,
+            "linear_solve_seconds": 0.257160084998759,
+            "mfront_integration_with_tangent_seconds": 0.0,
+            "mfront_integration_without_tangent_seconds": 0.0,
+            "nonlocal_mfront_seconds": 0.0,
+            "nonlocal_mfront_with_tangent_seconds": 0.0,
+            "nonlocal_mfront_without_tangent_seconds": 0.0,
+            "output_seconds": 0.000682414996845182,
+            "pardiso_analysis_seconds": 0.001471322997531388,
+            "pardiso_factorization_seconds": 0.019905109009414446,
+            "pardiso_seconds": 0.257160084998759,
+            "pardiso_solve_seconds": 0.23578365299181314,
+            "sparse_assembly_seconds": 0.003318626004329417,
+            "tangent_assembly_seconds": 0.04920043700985843,
+            "tensor_reconstruction_seconds": 0.0
+          },
+          "spectral_timings": {}
+        },
+        {
+          "elapsed_seconds": 6.5742830600065645,
+          "iterations": 39,
+          "linear_factorizations": 32,
+          "material_evaluations": null,
+          "repeat": 4,
+          "solver_timings": {
+            "constitutive_seconds": 6.03361677697103,
+            "elapsed_seconds": 6.57323916599853,
+            "elastic_assembly_seconds": 0.0031218880030792207,
+            "element_matrix_seconds": 0.045259483020345215,
+            "free_system_extraction_seconds": 0.00029969999741297215,
+            "helmholtz_seconds": 0.0,
+            "initialization_seconds": 0.34117743500246434,
+            "internal_force_seconds": 0.010708868008805439,
+            "kelvin_conversion_seconds": 0.0,
+            "linear_solve_seconds": 0.12846841299324296,
+            "mfront_integration_with_tangent_seconds": 0.0,
+            "mfront_integration_without_tangent_seconds": 0.0,
+            "nonlocal_mfront_seconds": 0.0,
+            "nonlocal_mfront_with_tangent_seconds": 0.0,
+            "nonlocal_mfront_without_tangent_seconds": 0.0,
+            "output_seconds": 0.0006690549998893403,
+            "pardiso_analysis_seconds": 0.0015129460007301532,
+            "pardiso_factorization_seconds": 0.02099513398570707,
+            "pardiso_seconds": 0.12846841299324296,
+            "pardiso_solve_seconds": 0.10596033300680574,
+            "sparse_assembly_seconds": 0.0031888249941403046,
+            "tangent_assembly_seconds": 0.04742446702584857,
+            "tensor_reconstruction_seconds": 0.0
+          },
+          "spectral_timings": {}
+        }
+      ],
+      "solver_timings": {
+        "constitutive_seconds": {
+          "maximum": 6.80335240498971,
+          "mean": 6.267693446176418,
+          "median": 6.08452935598325,
+          "minimum": 6.03361677697103
+        },
+        "elapsed_seconds": {
+          "maximum": 7.463514803996077,
+          "mean": 6.8487975745971195,
+          "median": 6.679993849997118,
+          "minimum": 6.57323916599853
+        },
+        "elastic_assembly_seconds": {
+          "maximum": 0.003929949001758359,
+          "mean": 0.003357864003919531,
+          "median": 0.0031218880030792207,
+          "minimum": 0.002979845005029347
+        },
+        "element_matrix_seconds": {
+          "maximum": 0.04680787499091821,
+          "mean": 0.045749282001634126,
+          "median": 0.04591506900760578,
+          "minimum": 0.04417805199045688
+        },
+        "free_system_extraction_seconds": {
+          "maximum": 0.00046936199942138046,
+          "mean": 0.00034824299946194514,
+          "median": 0.00030857000092510134,
+          "minimum": 0.0002746300015132874
+        },
+        "helmholtz_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "initialization_seconds": {
+          "maximum": 0.4098917059964151,
+          "mean": 0.340143718199397,
+          "median": 0.34117743500246434,
+          "minimum": 0.2757531419993029
+        },
+        "internal_force_seconds": {
+          "maximum": 0.012828860992158297,
+          "mean": 0.011284398195857647,
+          "median": 0.010733202019764576,
+          "minimum": 0.010499255986360367
+        },
+        "kelvin_conversion_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "linear_solve_seconds": {
+          "maximum": 0.257160084998759,
+          "mean": 0.1683462951972615,
+          "median": 0.1601637980347732,
+          "minimum": 0.12846841299324296
+        },
+        "mfront_integration_with_tangent_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "mfront_integration_without_tangent_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "nonlocal_mfront_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "nonlocal_mfront_with_tangent_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "nonlocal_mfront_without_tangent_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        },
+        "output_seconds": {
+          "maximum": 0.0007165330025600269,
+          "mean": 0.000677486599306576,
+          "median": 0.0006690549998893403,
+          "minimum": 0.0006513789994642138
+        },
+        "pardiso_analysis_seconds": {
+          "maximum": 0.017462623000028543,
+          "mean": 0.005596060000243597,
+          "median": 0.0017173700034618378,
+          "minimum": 0.001471322997531388
+        },
+        "pardiso_factorization_seconds": {
+          "maximum": 0.02739926100912271,
+          "mean": 0.02180387980042724,
+          "median": 0.020824310966418125,
+          "minimum": 0.019895584031473845
+        },
+        "pardiso_seconds": {
+          "maximum": 0.257160084998759,
+          "mean": 0.1683462951972615,
+          "median": 0.1601637980347732,
+          "minimum": 0.12846841299324296
+        },
+        "pardiso_solve_seconds": {
+          "maximum": 0.23578365299181314,
+          "mean": 0.14094635539659067,
+          "median": 0.13855084399983753,
+          "minimum": 0.0847743359991
+        },
+        "sparse_assembly_seconds": {
+          "maximum": 0.003440924010646995,
+          "mean": 0.003318737390509341,
+          "median": 0.003318626004329417,
+          "minimum": 0.0031888249941403046
+        },
+        "tangent_assembly_seconds": {
+          "maximum": 0.04920043700985843,
+          "mean": 0.047928439405222886,
+          "median": 0.048017810986493714,
+          "minimum": 0.04618916900653858
+        },
+        "tensor_reconstruction_seconds": {
+          "maximum": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "minimum": 0.0
+        }
+      }
+    }
+  ]
+}

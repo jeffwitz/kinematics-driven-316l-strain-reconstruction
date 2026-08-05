@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import cast
 
@@ -116,10 +117,42 @@ def solve_two_state_dirichlet_plane_stress(
     kinematics = TwoSubcellDiagnostic2D(grid)
     elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
     extension = HarmonicDirichletExtension2D()
+    material_seconds = 0.0
+    gradient_seconds = 0.0
+    divergence_seconds = 0.0
+    jacobian_seconds = 0.0
+    preconditioner_seconds = 0.0
+    gmres_seconds = 0.0
+    material_evaluations = 1
+
+    def evaluate_samples_timed(strain: FloatArray, dt: float) -> TraditionalTwoStateTrial:
+        nonlocal material_seconds, material_evaluations
+        started = time.perf_counter()
+        result = elements.evaluate_samples(strain, time_increment=dt)
+        material_seconds += time.perf_counter() - started
+        material_evaluations += 1
+        return result
+
+    def strain_timed(displacement: FloatArray) -> FloatArray:
+        nonlocal gradient_seconds
+        started = time.perf_counter()
+        result = kinematics.strain_samples(displacement)
+        gradient_seconds += time.perf_counter() - started
+        return result
+
+    def divergence_timed(stress: FloatArray) -> FloatArray:
+        nonlocal divergence_seconds
+        started = time.perf_counter()
+        result = kinematics.divergence_from_sample_stress(stress)
+        divergence_seconds += time.perf_counter() - started
+        return result
+
     plan = transform_plan or create_full_dirichlet_dsti_plan(grid, config.transform)
+    initial_material_started = time.perf_counter()
     zero_trial = material.evaluate_in_plane(
         np.zeros((material.point_count, 3)), time_increment=1.0, consistent_tangent=True
     )
+    material_seconds += time.perf_counter() - initial_material_started
     material.revert()
     tangent = np.asarray(zero_trial.tangent_in_plane_mpa).reshape(*grid.pixel_shape, 2, 3, 3)
     lambda_0, mu_0, projection_error = project_isotropic_plane_stress_tangent(
@@ -143,7 +176,6 @@ def solve_two_state_dirichlet_plane_stress(
     verification_history: list[float] = []
     verification_mismatch_history: list[float] = []
     iterations_per_increment: list[int] = []
-    material_evaluations = 1
     gmres_iterations = 0
     final_trial = None
     final_sample_strain = None
@@ -155,23 +187,17 @@ def solve_two_state_dirichlet_plane_stress(
         applied = extension.extend(history[increment], grid)
         converged = False
         for iteration in range(config.maximum_newton_iterations):
-            sample_strain = kinematics.strain_samples(applied + fluctuation)
-            trial = elements.evaluate_samples(sample_strain, time_increment=time_increment)
-            material_evaluations += 1
-            residual = kinematics.divergence_from_sample_stress(trial.sample_stress_mpa)
+            sample_strain = strain_timed(applied + fluctuation)
+            trial = evaluate_samples_timed(sample_strain, time_increment)
+            residual = divergence_timed(trial.sample_stress_mpa)
             relative, absolute, _ = _equilibrium_metrics(trial.sample_stress_mpa, residual, grid, 2)
             residual_history.append(relative)
             absolute_history.append(absolute)
             if relative <= config.relative_equilibrium_tolerance:
                 solver_residual = relative
                 elements.revert()
-                verification_trial = elements.evaluate_samples(
-                    sample_strain, time_increment=time_increment
-                )
-                material_evaluations += 1
-                verification_force = kinematics.divergence_from_sample_stress(
-                    verification_trial.sample_stress_mpa
-                )
+                verification_trial = evaluate_samples_timed(sample_strain, time_increment)
+                verification_force = divergence_timed(verification_trial.sample_stress_mpa)
                 verification_residual = _equilibrium_metrics(
                     verification_trial.sample_stress_mpa,
                     verification_force,
@@ -201,12 +227,18 @@ def solve_two_state_dirichlet_plane_stress(
             size = 2 * (grid.nx - 1) * (grid.ny - 1)
 
             def jacobian_action(vector: FloatArray, active_trial=trial) -> FloatArray:
+                nonlocal jacobian_seconds
+                started = time.perf_counter()
                 field = unpack_interior(vector, grid)
-                return pack_interior(
+                result = pack_interior(
                     elements.tangent_action(field, kinematics=kinematics, trial=active_trial)
                 )
+                jacobian_seconds += time.perf_counter() - started
+                return result
 
             def preconditioner_action(vector: FloatArray) -> FloatArray:
+                nonlocal preconditioner_seconds
+                started = time.perf_counter()
                 interior = np.asarray(vector, dtype=np.float64).reshape(interior_shape)
                 if hasattr(plan, "forward_into"):
                     buffered_plan = cast(BufferedTransformPlan2D, plan)
@@ -217,7 +249,9 @@ def solve_two_state_dirichlet_plane_stress(
                     spectral_buffer[...] = plan.forward_displacement(interior)
                     green.apply_into(spectral_buffer, green_buffer)
                     physical_buffer[...] = plan.inverse_displacement(green_buffer)
-                return physical_buffer.reshape(-1).copy()
+                result = physical_buffer.reshape(-1).copy()
+                preconditioner_seconds += time.perf_counter() - started
+                return result
 
             gmres_matrix = LinearOperator((size, size), matvec=jacobian_action, dtype=float)
             preconditioner = LinearOperator((size, size), matvec=preconditioner_action, dtype=float)
@@ -226,6 +260,7 @@ def solve_two_state_dirichlet_plane_stress(
                 nonlocal gmres_iterations
                 gmres_iterations += 1
 
+            gmres_started = time.perf_counter()
             correction, info = gmres(
                 gmres_matrix,
                 -pack_interior(residual),
@@ -237,6 +272,7 @@ def solve_two_state_dirichlet_plane_stress(
                 callback=count_gmres,
                 callback_type="pr_norm",
             )
+            gmres_seconds += time.perf_counter() - gmres_started
             if info != 0 or not np.isfinite(correction).all():
                 elements.revert()
                 raise RuntimeError(f"two-state GMRES failed with info={info}")
@@ -245,13 +281,9 @@ def solve_two_state_dirichlet_plane_stress(
             factor = 1.0
             for _ in range(config.maximum_line_search_reductions + 1):
                 candidate = fluctuation + factor * direction
-                candidate_trial = elements.evaluate_samples(
-                    kinematics.strain_samples(applied + candidate), time_increment=time_increment
-                )
-                material_evaluations += 1
-                candidate_residual = kinematics.divergence_from_sample_stress(
-                    candidate_trial.sample_stress_mpa
-                )
+                candidate_strain = strain_timed(applied + candidate)
+                candidate_trial = evaluate_samples_timed(candidate_strain, time_increment)
+                candidate_residual = divergence_timed(candidate_trial.sample_stress_mpa)
                 candidate_relative = _equilibrium_metrics(
                     candidate_trial.sample_stress_mpa, candidate_residual, grid, 2
                 )[0]
@@ -302,7 +334,13 @@ def solve_two_state_dirichlet_plane_stress(
         transform_planning_seconds=transform_diagnostics.planning_seconds,
         timings={
             "material_evaluations": float(material_evaluations),
+            "material_seconds": material_seconds,
+            "gradient_seconds": gradient_seconds,
+            "divergence_seconds": divergence_seconds,
+            "jacobian_seconds": jacobian_seconds,
+            "preconditioner_seconds": preconditioner_seconds,
             "gmres_iterations": float(gmres_iterations),
+            "gmres_seconds": gmres_seconds,
         },
     )
     sample_stress = _reshape_two_state(final_trial.stress_in_plane_mpa, grid)

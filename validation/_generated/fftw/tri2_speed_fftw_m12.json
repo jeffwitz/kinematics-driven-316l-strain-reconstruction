@@ -1,0 +1,150 @@
+{
+  "increments": 8,
+  "mesh": 12,
+  "repeats": 5,
+  "status": "completed_newton_spectral_tri2_timing",
+  "tolerance": 1e-08,
+  "variants": [
+    {
+      "elapsed_seconds": {
+        "maximum": 9.74843651500123,
+        "mean": 9.165340537199517,
+        "median": 9.21490262899897,
+        "minimum": 8.270031280000694
+      },
+      "iterations": {
+        "maximum": 36.0,
+        "mean": 36.0,
+        "median": 36.0,
+        "minimum": 36.0
+      },
+      "material_evaluations": {
+        "maximum": 73.0,
+        "mean": 73.0,
+        "median": 73.0,
+        "minimum": 73.0
+      },
+      "name": "tri2_fftw",
+      "repeats": [
+        {
+          "elapsed_seconds": 9.656905151998217,
+          "iterations": 36,
+          "linear_factorizations": null,
+          "material_evaluations": 73,
+          "repeat": 0,
+          "solver_timings": {},
+          "spectral_timings": {
+            "divergence_seconds": 0.14198699204280274,
+            "gmres_seconds": 3.2152915690094233,
+            "gradient_seconds": 0.003998503983893897,
+            "jacobian_seconds": 2.701438152784249,
+            "material_seconds": 6.192961196968099,
+            "preconditioner_seconds": 0.10040466098871548
+          }
+        },
+        {
+          "elapsed_seconds": 9.74843651500123,
+          "iterations": 36,
+          "linear_factorizations": null,
+          "material_evaluations": 73,
+          "repeat": 1,
+          "solver_timings": {},
+          "spectral_timings": {
+            "divergence_seconds": 0.14733485400938662,
+            "gmres_seconds": 3.201207322978007,
+            "gradient_seconds": 0.00419169199449243,
+            "jacobian_seconds": 2.693441762996372,
+            "material_seconds": 6.361440885018965,
+            "preconditioner_seconds": 0.10074920800252585
+          }
+        },
+        {
+          "elapsed_seconds": 8.270031280000694,
+          "iterations": 36,
+          "linear_factorizations": null,
+          "material_evaluations": 73,
+          "repeat": 2,
+          "solver_timings": {},
+          "spectral_timings": {
+            "divergence_seconds": 0.12348047498380765,
+            "gmres_seconds": 2.7719565850056824,
+            "gradient_seconds": 0.0034807109987013973,
+            "jacobian_seconds": 2.3249840908829356,
+            "material_seconds": 5.342061508992629,
+            "preconditioner_seconds": 0.08687418494810117
+          }
+        },
+        {
+          "elapsed_seconds": 8.936427109998476,
+          "iterations": 36,
+          "linear_factorizations": null,
+          "material_evaluations": 73,
+          "repeat": 3,
+          "solver_timings": {},
+          "spectral_timings": {
+            "divergence_seconds": 0.13142726595833665,
+            "gmres_seconds": 2.994767739000963,
+            "gradient_seconds": 0.0036568110299413092,
+            "jacobian_seconds": 2.5124523158883676,
+            "material_seconds": 5.777847276011016,
+            "preconditioner_seconds": 0.09357292808272177
+          }
+        },
+        {
+          "elapsed_seconds": 9.21490262899897,
+          "iterations": 36,
+          "linear_factorizations": null,
+          "material_evaluations": 73,
+          "repeat": 4,
+          "solver_timings": {},
+          "spectral_timings": {
+            "divergence_seconds": 0.13460961193050025,
+            "gmres_seconds": 3.114971755014267,
+            "gradient_seconds": 0.003684841976792086,
+            "jacobian_seconds": 2.6107192189228954,
+            "material_seconds": 5.9312657569826115,
+            "preconditioner_seconds": 0.09930578601779416
+          }
+        }
+      ],
+      "spectral_timings": {
+        "divergence_seconds": {
+          "maximum": 0.14733485400938662,
+          "mean": 0.1357678397849668,
+          "median": 0.13460961193050025,
+          "minimum": 0.12348047498380765
+        },
+        "gmres_seconds": {
+          "maximum": 3.2152915690094233,
+          "mean": 3.0596389942016686,
+          "median": 3.114971755014267,
+          "minimum": 2.7719565850056824
+        },
+        "gradient_seconds": {
+          "maximum": 0.00419169199449243,
+          "mean": 0.003802511996764224,
+          "median": 0.003684841976792086,
+          "minimum": 0.0034807109987013973
+        },
+        "jacobian_seconds": {
+          "maximum": 2.701438152784249,
+          "mean": 2.5686071082949637,
+          "median": 2.6107192189228954,
+          "minimum": 2.3249840908829356
+        },
+        "material_seconds": {
+          "maximum": 6.361440885018965,
+          "mean": 5.921115324794664,
+          "median": 5.9312657569826115,
+          "minimum": 5.342061508992629
+        },
+        "preconditioner_seconds": {
+          "maximum": 0.10074920800252585,
+          "mean": 0.09618135360797168,
+          "median": 0.09930578601779416,
+          "minimum": 0.08687418494810117
+        }
+      }
+    }
+  ]
+}
