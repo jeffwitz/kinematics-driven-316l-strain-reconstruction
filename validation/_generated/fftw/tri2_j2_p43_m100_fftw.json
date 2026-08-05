@@ -1,0 +1,26 @@
+{
+  "backend": "fftw",
+  "boundary_source": "data/processed/case_study/displacement_{x,y}_mm.npy",
+  "crop_nodes": [1570, 1670, 1035, 1135],
+  "final_residual": 6.431849320206941e-09,
+  "increments": 8,
+  "iterations": 83,
+  "iterations_per_increment": [9, 7, 7, 7, 8, 8, 28, 9],
+  "material": "python-j2",
+  "mesh": [100, 100],
+  "p43_pixel_bounds": [1570, 1670, 1035, 1135],
+  "planning_seconds": 0.1383116200013319,
+  "status": "completed",
+  "timings": {
+    "divergence_seconds": 21.506733462978445,
+    "gmres_iterations": 10677,
+    "gmres_seconds": 2013.3200157969914,
+    "gradient_seconds": 0.10958102000586223,
+    "jacobian_seconds": 1393.9540186992745,
+    "material_evaluations": 181,
+    "material_seconds": 47.141096124003525,
+    "preconditioner_seconds": 11.804409037817095
+  },
+  "total_seconds": 2084.386002072002,
+  "tolerance": 1e-08
+}
