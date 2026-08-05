@@ -211,6 +211,11 @@ the paired 316L backbone documented in the Reference page
 `crystal_parameter_pairs`. It locks the elastic, FCC and hardening data before
 the two flow rules are selected.
 
+The [registered P43 slip-system comparison](spectral_mechanics/srix_meric_p43_slip_system_comparison)
+tests the resulting distributions directly. Agreement in a `[001]` reference
+transposition does not guarantee the same dominant systems, redistribution or
+slip amplitude in a multiaxial field.
+
 ## References
 
 - Samuel Forest and M. B. Rubin, *A rate-independent crystal plasticity model

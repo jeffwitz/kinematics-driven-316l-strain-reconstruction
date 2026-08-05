@@ -136,6 +136,18 @@ The material identification question remains separate: the SRIX parameter
 a chosen reference rate, not a direct 316L identification. The production-law
 decision does not change that status.
 
+## Comparison of slip mechanisms
+
+The archived 16-increment P43 fields show that the two laws share the same
+principal system and the same top three systems, but not the same complete
+distribution. The `S95` Jaccard index is `0.800`, the fraction-vector
+variation distance is `0.2565`, and the normalized total-field cosine is
+`0.9862`. The difference is therefore not adequately described as a single
+global amplitude factor.
+
+See the [complete system-level comparison](srix_meric_p43_slip_system_comparison)
+for the spatial metrics, figures, scope and limitations.
+
 ## Evidence
 
 * {doc}`../forest_rubin_srix` — rate independence, transposition limits and

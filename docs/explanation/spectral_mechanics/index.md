@@ -54,6 +54,7 @@ operator_derivation_appendix
 one_point_instability
 tet2_newton_gmres
 srix_production_choice
+srix_meric_p43_slip_system_comparison
 ebi_variational_formulation
 ebi_srix_falsification
 constrained_dic_extension

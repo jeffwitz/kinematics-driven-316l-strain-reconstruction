@@ -4268,3 +4268,24 @@ intégration sont qualifiées ; aucun paramètre 316L n'est identifié.
   contrats, erreurs, phases PARDISO et diagnostics
 - Tests documentaires étendus pour vérifier l'échec sur assertion sémantique,
   en plus de la génération déterministe
+
+## Registered SRIX/Méric slip-system comparison
+
+The final-state post-processing comparison is implemented in
+`src/fem_inhouse/validation/crystal_slip_metrics.py` and regenerated with
+`scripts/compare_srix_meric_slip_maps_p43.py`. It uses the registered P43
+100x100, 16-increment archives, averages the two TRI2 states per pixel, and
+writes JSON, CSV and documentation figures under
+`validation/_generated/performance/srix_meric_p43_m100_16_slip_maps/`.
+
+The archived comparison finds the same principal system and top three systems,
+with `S95` Jaccard `0.800`, fraction-vector variation distance `0.2565`, and
+normalized total-field cosine `0.9862`. This supports shared dominant
+mechanisms with redistribution, not a pure global amplitude rescaling.
+
+The source archives contain final per-system fields only; no incremental
+activation history or signed-slip history is inferred. The comparison remains
+field-authorized but not performance-authorized, and retains the limitations
+of the analytically transposed SRIX `R`, homogeneous orientation, undocumented
+physical DIC time, and the unqualified temporal accuracy of the Méric
+16-increment path.

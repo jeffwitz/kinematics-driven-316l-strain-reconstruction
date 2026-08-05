@@ -56,3 +56,6 @@ increment counts are explicitly not field- or performance-comparable.
 
 The locked contract is archived in
 `validation/_generated/performance/crystal_316l_meric_srix_pair_contract.json`.
+
+The controlled field-level result is documented in the
+[P43 slip-system comparison](../explanation/spectral_mechanics/srix_meric_p43_slip_system_comparison).

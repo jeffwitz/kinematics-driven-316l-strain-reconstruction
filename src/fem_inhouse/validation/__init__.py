@@ -38,6 +38,11 @@ from fem_inhouse.validation.band_profiles import (
     sample_normal_profile,
     summarise,
 )
+from fem_inhouse.validation.crystal_slip_metrics import (
+    SlipMetricConfig,
+    compare_slip_fields,
+    validate_slip_system_order,
+)
 from fem_inhouse.validation.falsification_cases import (
     PerturbedField,
     add_spurious_band,
@@ -107,6 +112,7 @@ __all__ = [
     "PerturbedField",
     "Sense",
     "SkillCurve",
+    "SlipMetricConfig",
     "WidthMeasurement",
     "WidthStatus",
     "active_fraction_field",
@@ -120,6 +126,7 @@ __all__ = [
     "classify_residual",
     "compare_pair",
     "compare_profiles",
+    "compare_slip_fields",
     "continuity_metrics",
     "count_enclosed_holes",
     "decide",
@@ -158,6 +165,7 @@ __all__ = [
     "summarise",
     "tangents_and_normals",
     "translate_field",
+    "validate_slip_system_order",
     "worst_band_vector",
     "zhang_suen_thinning",
 ]
