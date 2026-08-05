@@ -110,6 +110,7 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
+    git_worktree = _git_worktree_state()
     crop = tuple(arguments.crop_nodes)
     mesh = crop[1] - crop[0]
     if mesh != crop[3] - crop[2]:
@@ -241,7 +242,7 @@ def main() -> int:
         "provenance": diagnostics.provenance,
         "execution_commit": diagnostics.provenance.get("commit_sha"),
         "archive_commit": os.environ.get("ARCHIVE_COMMIT", _git_head()),
-        "git_worktree": _git_worktree_state(),
+        "git_worktree": git_worktree,
         "field_file": str(field_path),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
         "slip_observables": {
