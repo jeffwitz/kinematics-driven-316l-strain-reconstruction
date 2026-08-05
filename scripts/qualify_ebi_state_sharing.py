@@ -35,6 +35,8 @@ def solve_two_state(
     krylov_method: str = "gmres",
     krylov_recycling: bool = False,
     local_condition_check_mode: str = "always",
+    linear_mode: str = "fixed",
+    reference_update_mode: str = "initial",
 ):
     mesh = case["mesh"]
     points = 2 * mesh.nx * mesh.ny
@@ -71,6 +73,8 @@ def solve_two_state(
             reference_parameter_scale=scale,
             krylov_method=krylov_method,  # type: ignore[arg-type]
             krylov_recycling=krylov_recycling,
+            linear_tolerance_mode=linear_mode,  # type: ignore[arg-type]
+            reference_update_mode=reference_update_mode,  # type: ignore[arg-type]
             transform=transform or SpectralTransformConfig(),
         ),
     )

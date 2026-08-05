@@ -26,6 +26,8 @@ def run_case(
     increments: int,
     tolerance: float,
     load_scale: float,
+    linear_mode: str,
+    reference_update_mode: str,
 ) -> dict[str, object]:
     case = build_case(mesh)
     case["displacement_x_mm"] = load_scale * case["displacement_x_mm"]
@@ -49,6 +51,8 @@ def run_case(
             krylov_method=method,
             krylov_recycling=method != "gmres",
             local_condition_check_mode="on_failure",
+            linear_mode=linear_mode,
+            reference_update_mode=reference_update_mode,
         )
     except Exception as error:
         return {
@@ -96,6 +100,12 @@ def main() -> int:
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--tolerance", type=float, default=1.0e-8)
     parser.add_argument("--load-scale", type=float, default=1.0)
+    parser.add_argument("--linear-mode", choices=("fixed", "eisenstat_walker"), default="fixed")
+    parser.add_argument(
+        "--reference-update",
+        choices=("initial", "per_increment", "per_newton"),
+        default="initial",
+    )
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     records = [
@@ -107,6 +117,8 @@ def main() -> int:
             arguments.increments,
             arguments.tolerance,
             arguments.load_scale,
+            arguments.linear_mode,
+            arguments.reference_update,
         )
         for mesh in arguments.meshes
         for behaviour in arguments.behaviours
@@ -119,6 +131,8 @@ def main() -> int:
         "behaviours": arguments.behaviours,
         "records": records,
         "load_scale": arguments.load_scale,
+        "linear_mode": arguments.linear_mode,
+        "reference_update": arguments.reference_update,
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")

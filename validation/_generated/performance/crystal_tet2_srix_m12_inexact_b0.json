@@ -1,0 +1,23 @@
+{
+  "behaviours": [
+    "fcc_forest_rubin_srix"
+  ],
+  "linear_mode": "eisenstat_walker",
+  "load_scale": 1.0,
+  "meshes": [
+    12
+  ],
+  "records": [
+    {
+      "behaviour": "fcc_forest_rubin_srix",
+      "elapsed_seconds": 2.22463727700233,
+      "error": "RuntimeError: two-state Newton line search failed",
+      "krylov_method": "lgmres",
+      "mesh": 12,
+      "mfront_threads": 4,
+      "status": "failed"
+    }
+  ],
+  "reference_update": "per_newton",
+  "status": "completed_crystal_tet2_sweep"
+}
