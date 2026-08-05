@@ -11,6 +11,8 @@ from fem_inhouse.core.plane_stress_material import (
     ConstitutiveTrial,
     HookeanPlaneStressMaterialBatch,
     InPlaneConstitutiveTrial,
+    ResponseLevel,
+    evaluate_in_plane_response,
 )
 from fem_inhouse.spectral2d.kinematics import EBITwoTriangleKinematics2D
 
@@ -25,7 +27,7 @@ class EBIPlaneStressTrial:
     sample_stress_mpa: FloatArray
     mean_stress_mpa: FloatArray
     elastic_tangent_in_plane_mpa: FloatArray
-    algorithmic_tangent_in_plane_mpa: FloatArray
+    algorithmic_tangent_in_plane_mpa: FloatArray | None
 
 
 class EBIPlaneStressElementBatch:
@@ -46,6 +48,7 @@ class EBIPlaneStressElementBatch:
         sample_strain: ArrayLike,
         *,
         time_increment: float,
+        response_level: ResponseLevel = "tangent",
         consistent_tangent: bool,
     ) -> EBIPlaneStressTrial:
         values = np.asarray(sample_strain, dtype=np.float64)
@@ -53,19 +56,25 @@ class EBIPlaneStressElementBatch:
         if values.shape != expected:
             raise ValueError(f"expected EBI sample strain shape {expected}, got {values.shape}")
         mean_strain = 0.5 * (values[..., 0, :] + values[..., 1, :])
-        mean_trial = self.material.evaluate_in_plane(
+        mean_trial = evaluate_in_plane_response(
+            self.material,
             mean_strain.reshape(-1, 3),
             time_increment=time_increment,
+            response_level=response_level,
             consistent_tangent=consistent_tangent,
         )
-        if mean_trial.tangent_in_plane_mpa is None:
+        if response_level == "tangent" and mean_trial.tangent_in_plane_mpa is None:
             raise ValueError("EBI tangent action requires the algorithmic tangent")
         mean_stress = np.asarray(mean_trial.stress_in_plane_mpa).reshape(*self.pixel_shape, 3)
         elastic_tangent = np.asarray(
             self.material.elastic_tangent_in_plane_mpa, dtype=np.float64
         ).reshape(*self.pixel_shape, 3, 3)
-        algorithmic_tangent = np.asarray(mean_trial.tangent_in_plane_mpa, dtype=np.float64).reshape(
-            *self.pixel_shape, 3, 3
+        algorithmic_tangent = (
+            None
+            if mean_trial.tangent_in_plane_mpa is None
+            else np.asarray(mean_trial.tangent_in_plane_mpa, dtype=np.float64).reshape(
+                *self.pixel_shape, 3, 3
+            )
         )
         fluctuation = values - mean_strain[..., None, :]
         sample_stress = mean_stress[..., None, :] + np.einsum(
@@ -90,6 +99,8 @@ class EBIPlaneStressElementBatch:
     ) -> FloatArray:
         delta_sample = kinematics.strain_samples(displacement_increment)
         delta_mean = kinematics.mean_strain(delta_sample)
+        if trial.algorithmic_tangent_in_plane_mpa is None:
+            raise ValueError("EBI tangent action requires the algorithmic tangent")
         delta_mean_stress = np.einsum(
             "xyij,xyj->xyi", trial.algorithmic_tangent_in_plane_mpa, delta_mean
         )

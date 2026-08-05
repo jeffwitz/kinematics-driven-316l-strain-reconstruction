@@ -371,6 +371,7 @@ def solve_ebi_dirichlet_plane_stress(
                 candidate_trial = elements.evaluate_samples(
                     candidate_strain,
                     time_increment=time_increment,
+                    response_level="residual",
                     consistent_tangent=True,
                 )
                 material_evaluations += 1
