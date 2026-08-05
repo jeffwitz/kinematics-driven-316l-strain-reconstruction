@@ -7,15 +7,20 @@ from typing import Literal, cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.sparse.linalg import LinearOperator, gmres
+from scipy.sparse.linalg import LinearOperator
 
 from fem_inhouse.core.plane_stress_material import HookeanPlaneStressMaterialBatch
 from fem_inhouse.spectral2d.boundary import HarmonicDirichletExtension2D
-from fem_inhouse.spectral2d.diagnostics import Spectral2DDiagnostics
+from fem_inhouse.spectral2d.diagnostics import Spectral2DDiagnostics, collect_runtime_provenance
 from fem_inhouse.spectral2d.ebi import EBIPlaneStressElementBatch, EBIPlaneStressTrial
 from fem_inhouse.spectral2d.green import B0Green2D, project_isotropic_plane_stress_tangent
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import EBITwoTriangleKinematics2D
+from fem_inhouse.spectral2d.krylov import (
+    KrylovMethod,
+    KrylovRecycleState,
+    solve_nonsymmetric_krylov,
+)
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
@@ -35,6 +40,12 @@ class EBISpectralSolverConfig:
     gmres_relative_tolerance: float = 1.0e-8
     gmres_maximum_iterations: int = 200
     gmres_restart: int = 50
+    krylov_method: KrylovMethod = "gmres"
+    krylov_recycling: bool = False
+    lgmres_inner_m: int = 30
+    lgmres_outer_k: int = 3
+    gcrotmk_m: int = 20
+    gcrotmk_k: int = 10
     linear_tolerance_mode: Literal["fixed", "eisenstat_walker"] = "fixed"
     forcing_initial: float = 1.0e-1
     forcing_minimum: float = 1.0e-8
@@ -59,6 +70,12 @@ class EBISpectralSolverConfig:
             raise ValueError("equilibrium tolerance must be positive")
         if self.maximum_newton_iterations < 1 or self.gmres_maximum_iterations < 1:
             raise ValueError("iteration limits must be positive")
+        if self.krylov_method not in {"gmres", "lgmres", "gcrotmk"}:
+            raise ValueError("unsupported Krylov method")
+        if self.gmres_restart < 1 or self.lgmres_inner_m < 1:
+            raise ValueError("Krylov dimensions must be positive")
+        if self.lgmres_outer_k < 0 or self.gcrotmk_m < 1 or self.gcrotmk_k < 0:
+            raise ValueError("Krylov recycling dimensions are invalid")
         if self.linear_tolerance_mode not in {"fixed", "eisenstat_walker"}:
             raise ValueError("unsupported linear tolerance mode")
         if not 0.0 < self.forcing_minimum <= self.forcing_maximum < 1.0:
@@ -208,6 +225,7 @@ def solve_ebi_dirichlet_plane_stress(
     gmres_iterations = 0
     verification_residual = 0.0
     time_increment = 1.0 / (history.shape[0] - 1)
+    krylov_recycle = KrylovRecycleState()
     mode_x, mode_y = np.meshgrid(
         np.arange(symbols.laplacian.shape[0]),
         np.arange(symbols.laplacian.shape[1]),
@@ -220,6 +238,7 @@ def solve_ebi_dirichlet_plane_stress(
     high_frequency_mask = normalized_radius >= np.quantile(normalized_radius, 0.9)
 
     for increment in range(1, history.shape[0]):
+        krylov_recycle.reset()
         applied = extension.extend(history[increment], grid)
         converged = False
         for newton_iteration in range(config.maximum_newton_iterations):
@@ -325,16 +344,20 @@ def solve_ebi_dirichlet_plane_stress(
                 nonlocal gmres_iterations
                 gmres_iterations += 1
 
-            correction, info = gmres(
+            correction, info, _krylov_calls = solve_nonsymmetric_krylov(
                 jacobian,
                 -pack_interior(residual),
-                M=preconditioner,
+                preconditioner=preconditioner,
+                method=config.krylov_method,
                 rtol=config.gmres_relative_tolerance,
-                atol=0.0,
+                maximum_iterations=config.gmres_maximum_iterations,
                 restart=config.gmres_restart,
-                maxiter=config.gmres_maximum_iterations,
+                recycle=krylov_recycle if config.krylov_recycling else None,
+                lgmres_inner_m=config.lgmres_inner_m,
+                lgmres_outer_k=config.lgmres_outer_k,
+                gcrotmk_m=config.gcrotmk_m,
+                gcrotmk_k=config.gcrotmk_k,
                 callback=count_gmres,
-                callback_type="pr_norm",
             )
             if info != 0 or not np.isfinite(correction).all():
                 elements.revert()
@@ -373,6 +396,20 @@ def solve_ebi_dirichlet_plane_stress(
     if final_trial is None or final_ebi_trial is None:
         raise RuntimeError("no EBI increment converged")
     transform_diagnostics = plan.diagnostics
+    provenance = collect_runtime_provenance(
+        transform_diagnostics,
+        gmres_restart=config.gmres_restart,
+        gmres_maximum_iterations=config.gmres_maximum_iterations,
+        gmres_relative_tolerance=config.gmres_relative_tolerance,
+        linear_tolerance_mode=config.linear_tolerance_mode,
+        forcing_initial=config.forcing_initial,
+        forcing_minimum=config.forcing_minimum,
+        forcing_maximum=config.forcing_maximum,
+        forcing_gamma=config.forcing_gamma,
+        forcing_alpha=config.forcing_alpha,
+        krylov_method=config.krylov_method,
+        krylov_recycling=config.krylov_recycling,
+    )
     observables = {
         name: _reshape_mean_field(values, grid) for name, values in final_trial.observables.items()
     }
@@ -412,6 +449,7 @@ def solve_ebi_dirichlet_plane_stress(
             "gmres_iterations": float(gmres_iterations),
             "minimum_line_search_factor": min(line_search_factors, default=1.0),
         },
+        provenance=provenance,
     )
     return Spectral2DResult(
         displacement=final_applied + fluctuation,

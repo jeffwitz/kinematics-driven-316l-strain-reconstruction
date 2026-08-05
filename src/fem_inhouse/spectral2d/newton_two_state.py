@@ -8,7 +8,7 @@ from typing import Literal, cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.sparse.linalg import LinearOperator, gmres
+from scipy.sparse.linalg import LinearOperator
 
 from fem_inhouse.core.plane_stress_material import (
     InPlaneConstitutiveTrial,
@@ -27,6 +27,7 @@ from fem_inhouse.spectral2d.diagnostics import (
 from fem_inhouse.spectral2d.green import B0Green2D, project_isotropic_plane_stress_tangent
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
+from fem_inhouse.spectral2d.krylov import KrylovRecycleState, solve_nonsymmetric_krylov
 from fem_inhouse.spectral2d.newton_ebi import (
     EBISpectralSolverConfig,
     pack_interior,
@@ -392,8 +393,10 @@ def solve_two_state_dirichlet_plane_stress(
     verification_residual = 0.0
     final_applied = history[0].copy()
     time_increment = 1.0 / (history.shape[0] - 1)
+    krylov_recycle = KrylovRecycleState()
 
     for increment in range(1, history.shape[0]):
+        krylov_recycle.reset()
         applied = extension.extend(history[increment], grid)
         converged = False
         previous_nonlinear_residual: float | None = None
@@ -575,16 +578,20 @@ def solve_two_state_dirichlet_plane_stress(
 
             gmres_started = time.perf_counter()
             rhs = -pack_interior(residual)
-            correction, info = gmres(
+            correction, info, _krylov_calls = solve_nonsymmetric_krylov(
                 gmres_matrix,
                 rhs,
-                M=preconditioner,
+                preconditioner=preconditioner,
+                method=config.krylov_method,
                 rtol=requested_linear_tolerance,
-                atol=0.0,
+                maximum_iterations=config.gmres_maximum_iterations,
                 restart=config.gmres_restart,
-                maxiter=config.gmres_maximum_iterations,
+                recycle=krylov_recycle if config.krylov_recycling else None,
+                lgmres_inner_m=config.lgmres_inner_m,
+                lgmres_outer_k=config.lgmres_outer_k,
+                gcrotmk_m=config.gcrotmk_m,
+                gcrotmk_k=config.gcrotmk_k,
                 callback=count_gmres,
-                callback_type="pr_norm",
             )
             linear_residual_ratio: float | None = None
             if config.verify_linear_residual and info == 0 and np.isfinite(correction).all():
@@ -655,6 +662,8 @@ def solve_two_state_dirichlet_plane_stress(
                     restart=config.gmres_restart,
                     line_search_factor=factor,
                     linear_residual_ratio=linear_residual_ratio,
+                    krylov_method=config.krylov_method,
+                    krylov_recycling=config.krylov_recycling,
                 )
             )
             previous_nonlinear_residual = relative
@@ -692,6 +701,8 @@ def solve_two_state_dirichlet_plane_stress(
         forcing_maximum=config.forcing_maximum,
         forcing_gamma=config.forcing_gamma,
         forcing_alpha=config.forcing_alpha,
+        krylov_method=config.krylov_method,
+        krylov_recycling=config.krylov_recycling,
     )
     provenance.update(
         {
