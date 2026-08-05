@@ -75,7 +75,10 @@ def main() -> int:
     mesh = crop[1] - crop[0]
     if mesh != crop[3] - crop[2]:
         raise SystemExit("P43 crop must be square")
-    grid, history, yield_stress, coefficient, _ = _load_case(mesh, crop)
+    grid, _, yield_stress, coefficient, boundary = _load_case(mesh, crop)
+    history = np.stack(
+        [fraction * boundary for fraction in np.linspace(0.0, 1.0, arguments.increments + 1)]
+    )
     material = create_plane_stress_material_batch(
         "mfront-3d-condensed-plane-stress",
         np.repeat(yield_stress, 2),

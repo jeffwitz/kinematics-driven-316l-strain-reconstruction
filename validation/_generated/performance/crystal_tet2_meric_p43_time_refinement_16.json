@@ -1,0 +1,32 @@
+{
+  "status": "completed_meric_p43_time_refinement_diagnostic",
+  "execution_commit": "3f0941ca27ab82fafb561f255e28116fa17be2a6",
+  "mesh": [100, 100],
+  "base_path_increments": 8,
+  "tested_increments": 16,
+  "duration_normalization": "total pseudo-time is one; dt=1/increments",
+  "mfront_threads": 4,
+  "environment": {
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "FFTW_NUM_THREADS": "1"
+  },
+  "elapsed_seconds": 304.47872248599015,
+  "final_residual": 8.592041092723325e-10,
+  "newton_iterations": 94,
+  "iterations_per_increment": [4, 6, 6, 4, 4, 4, 6, 6, 6, 6, 6, 5, 8, 8, 8, 7],
+  "krylov_outer_callbacks": 253,
+  "jacobian_matvec_calls": 1846,
+  "preconditioner_calls": 1768,
+  "material_seconds": 269.7274692880601,
+  "material_condensation_seconds": 269.2361505850713,
+  "field_sha256": {
+    "accumulated_slip": "734a4a7a062b739a9b9cdd0dea10af96522beed7b827339fd3ec99e100430cb7",
+    "displacement": "3b8fc741c90788f78105b48845e06d52aa16a235793d5d9b11398c0e9b48e4fd",
+    "reaction_forces": "ca857025d066b880cfc9358e7e92ae47213029560b2688577264184d5f0ace4f",
+    "stress_in_plane_mpa": "6aa888e419bcca44ae291a6f44bd3df8714653754681c075844107cc78fda981"
+  },
+  "not_completed": [32, 64],
+  "interpretation": "A bounded diagnostic only. Sixteen increments converged but cost substantially more than the registered eight-increment run; no further refinement was retained."
+}
