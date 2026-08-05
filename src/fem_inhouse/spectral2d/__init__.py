@@ -43,10 +43,16 @@ from fem_inhouse.spectral2d.kinematics import (
 from fem_inhouse.spectral2d.newton_ebi import (
     EBISpectralSolverConfig,
     pack_interior,
+    pack_interior_into,
     solve_ebi_dirichlet_plane_stress,
     unpack_interior,
+    unpack_interior_into,
 )
-from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
+from fem_inhouse.spectral2d.newton_two_state import (
+    TwoStateJacobianWorkspace,
+    apply_tangent_into,
+    solve_two_state_dirichlet_plane_stress,
+)
 from fem_inhouse.spectral2d.nonlinear import (
     SpectralIncrementConvergenceError,
     solve_dirichlet_plane_stress_spectral,
@@ -94,13 +100,17 @@ __all__ = [
     "TransformDiagnostics",
     "TransformPlan2D",
     "TwoMuGreen2D",
+    "TwoStateJacobianWorkspace",
     "TwoSubcellDiagnostic2D",
+    "apply_tangent_into",
     "create_full_dirichlet_dsti_plan",
     "hookean_plane_stress_relative_error",
     "pack_interior",
+    "pack_interior_into",
     "project_isotropic_plane_stress_tangent",
     "solve_dirichlet_plane_stress_spectral",
     "solve_ebi_dirichlet_plane_stress",
     "solve_two_state_dirichlet_plane_stress",
     "unpack_interior",
+    "unpack_interior_into",
 ]

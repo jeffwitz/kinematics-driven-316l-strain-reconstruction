@@ -74,6 +74,35 @@ def pack_interior(field: ArrayLike) -> FloatArray:
     return values[1:-1, 1:-1, :].reshape(-1).copy()
 
 
+def unpack_interior_into(
+    vector: ArrayLike,
+    grid: StructuredGrid2D,
+    destination: FloatArray,
+) -> None:
+    """Copy an interior vector into a reusable zero-boundary nodal field."""
+
+    values = np.asarray(vector, dtype=np.float64)
+    expected = 2 * (grid.nx - 1) * (grid.ny - 1)
+    if values.shape != (expected,):
+        raise ValueError(f"expected interior vector length {expected}, got {values.shape}")
+    if destination.shape != (*grid.node_shape, 2):
+        raise ValueError("destination must have nodal displacement shape")
+    destination[...] = 0.0
+    destination[1:-1, 1:-1, :] = values.reshape(grid.nx - 1, grid.ny - 1, 2)
+
+
+def pack_interior_into(nodal_field: ArrayLike, destination: FloatArray) -> None:
+    """Copy interior nodal values into a reusable flat vector."""
+
+    values = np.asarray(nodal_field, dtype=np.float64)
+    if values.ndim != 3 or values.shape[-1] != 2:
+        raise ValueError("nodal field must have shape (nx+1, ny+1, 2)")
+    expected = 2 * (values.shape[0] - 2) * (values.shape[1] - 2)
+    if destination.shape != (expected,):
+        raise ValueError(f"destination must have shape ({expected},)")
+    destination[...] = values[1:-1, 1:-1, :].reshape(-1)
+
+
 def unpack_interior(vector: ArrayLike, grid: StructuredGrid2D) -> FloatArray:
     values = np.asarray(vector, dtype=np.float64)
     expected = 2 * (grid.nx - 1) * (grid.ny - 1)

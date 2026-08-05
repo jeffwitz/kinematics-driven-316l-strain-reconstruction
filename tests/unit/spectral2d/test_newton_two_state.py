@@ -9,6 +9,8 @@ from fem_inhouse.spectral2d import (
 )
 from fem_inhouse.spectral2d.newton_two_state import (
     TraditionalTwoStateTriangleBatch,
+    TwoStateJacobianWorkspace,
+    pack_interior,
     solve_two_state_dirichlet_plane_stress,
 )
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
@@ -192,3 +194,46 @@ def test_two_state_solver_archives_linear_cost_breakdown() -> None:
     assert diagnostics.timings["preconditioner_calls"] == sum(
         entry.preconditioner_calls for entry in diagnostics.linear_solves
     )
+
+
+@pytest.mark.parametrize("mesh_size", (4, 12, 50, 100))
+def test_two_state_inplace_jacobian_matches_reference(mesh_size: int) -> None:
+    grid = StructuredGrid2D(mesh_size, mesh_size, 2.0, 2.0)
+    elements = TraditionalTwoStateTriangleBatch(
+        NonlinearStateBatch(2 * mesh_size * mesh_size), grid.pixel_shape
+    )
+    kinematics = EBITwoTriangleKinematics2D(grid)
+    rng = np.random.default_rng(mesh_size)
+    displacement = rng.normal(size=(*grid.node_shape, 2))
+    trial = elements.evaluate_samples(kinematics.strain_samples(displacement), time_increment=0.1)
+    workspace = TwoStateJacobianWorkspace.create(grid)
+    for _ in range(20):
+        vector = rng.normal(size=2 * (mesh_size - 1) ** 2)
+        field = np.zeros((*grid.node_shape, 2))
+        field[1:-1, 1:-1, :] = vector.reshape(mesh_size - 1, mesh_size - 1, 2)
+        reference = elements.tangent_action(field, kinematics=kinematics, trial=trial)
+        workspace.nodal_increment[...] = field
+        inplace = elements.tangent_action_into(
+            kinematics=kinematics,
+            trial=trial,
+            workspace=workspace,
+            kernel="einsum",
+        )
+        np.testing.assert_allclose(
+            inplace,
+            pack_interior(reference),
+            rtol=1.0e-13,
+            atol=1.0e-13 * max(float(np.linalg.norm(reference)), 1.0),
+        )
+        explicit = elements.tangent_action_into(
+            kinematics=kinematics,
+            trial=trial,
+            workspace=workspace,
+            kernel="explicit",
+        )
+        np.testing.assert_allclose(
+            explicit,
+            pack_interior(reference),
+            rtol=1.0e-13,
+            atol=1.0e-13 * max(float(np.linalg.norm(reference)), 1.0),
+        )

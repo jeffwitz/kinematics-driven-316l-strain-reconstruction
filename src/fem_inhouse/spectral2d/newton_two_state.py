@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import cast
+from typing import Literal, cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -28,7 +28,9 @@ from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
 from fem_inhouse.spectral2d.newton_ebi import (
     EBISpectralSolverConfig,
     pack_interior,
+    pack_interior_into,
     unpack_interior,
+    unpack_interior_into,
 )
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
@@ -36,6 +38,58 @@ from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_
 from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, TransformPlan2D
 
 FloatArray = NDArray[np.float64]
+TangentKernel = Literal["einsum", "explicit"]
+
+
+@dataclass(slots=True)
+class TwoStateJacobianWorkspace:
+    """Persistent buffers for one two-state TRI2 Newton resolution."""
+
+    nodal_increment: FloatArray
+    sample_strain_increment: FloatArray
+    sample_stress_increment: FloatArray
+    nodal_force: FloatArray
+    interior_force: FloatArray
+
+    @classmethod
+    def create(cls, grid: StructuredGrid2D) -> TwoStateJacobianWorkspace:
+        return cls(
+            nodal_increment=np.zeros((*grid.node_shape, 2), dtype=np.float64),
+            sample_strain_increment=np.empty((*grid.pixel_shape, 2, 3), dtype=np.float64),
+            sample_stress_increment=np.empty((*grid.pixel_shape, 2, 3), dtype=np.float64),
+            nodal_force=np.empty((*grid.node_shape, 2), dtype=np.float64),
+            interior_force=np.empty(2 * (grid.nx - 1) * (grid.ny - 1), dtype=np.float64),
+        )
+
+
+def apply_tangent_into(
+    tangent: ArrayLike,
+    strain: ArrayLike,
+    destination: FloatArray,
+    *,
+    kernel: TangentKernel = "einsum",
+) -> None:
+    """Apply all 3x3 sample tangents into a reusable stress buffer."""
+
+    values = np.asarray(tangent, dtype=np.float64)
+    delta = np.asarray(strain, dtype=np.float64)
+    if destination.shape != delta.shape or values.shape != (*delta.shape[:-1], 3, 3):
+        raise ValueError("incompatible tangent action shapes")
+    if kernel == "einsum":
+        np.einsum("xyqij,xyqj->xyqi", values, delta, out=destination)
+    elif kernel == "explicit":
+        e0, e1, e2 = delta[..., 0], delta[..., 1], delta[..., 2]
+        destination[..., 0] = (
+            values[..., 0, 0] * e0 + values[..., 0, 1] * e1 + values[..., 0, 2] * e2
+        )
+        destination[..., 1] = (
+            values[..., 1, 0] * e0 + values[..., 1, 1] * e1 + values[..., 1, 2] * e2
+        )
+        destination[..., 2] = (
+            values[..., 2, 0] * e0 + values[..., 2, 1] * e1 + values[..., 2, 2] * e2
+        )
+    else:
+        raise ValueError(f"unsupported tangent kernel: {kernel}")
 
 
 def _accumulate_jacobian(
@@ -129,6 +183,47 @@ class TraditionalTwoStateTriangleBatch:
             action_diagnostics.divergence_seconds += divergence_seconds
         return result
 
+    def tangent_action_into(
+        self,
+        *,
+        kinematics: TwoSubcellDiagnostic2D,
+        trial: TraditionalTwoStateTrial,
+        workspace: TwoStateJacobianWorkspace,
+        action_diagnostics: JacobianActionDiagnostics | None = None,
+        kernel: TangentKernel = "einsum",
+    ) -> FloatArray:
+        """Apply the tangent using persistent TRI2 work arrays."""
+
+        gradient_started = time.perf_counter()
+        kinematics.strain_samples_into(
+            workspace.nodal_increment,
+            workspace.sample_strain_increment,
+        )
+        gradient_seconds = time.perf_counter() - gradient_started
+        tangent_started = time.perf_counter()
+        apply_tangent_into(
+            trial.algorithmic_tangent_in_plane_mpa,
+            workspace.sample_strain_increment,
+            workspace.sample_stress_increment,
+            kernel=kernel,
+        )
+        tangent_seconds = time.perf_counter() - tangent_started
+        divergence_started = time.perf_counter()
+        kinematics.divergence_from_sample_stress_into(
+            workspace.sample_stress_increment,
+            workspace.nodal_force,
+        )
+        divergence_seconds = time.perf_counter() - divergence_started
+        pack_started = time.perf_counter()
+        pack_interior_into(workspace.nodal_force, workspace.interior_force)
+        pack_seconds = time.perf_counter() - pack_started
+        if action_diagnostics is not None:
+            action_diagnostics.gradient_seconds += gradient_seconds
+            action_diagnostics.tangent_seconds += tangent_seconds
+            action_diagnostics.divergence_seconds += divergence_seconds
+            action_diagnostics.pack_seconds += pack_seconds
+        return workspace.interior_force.copy()
+
     def complete_trial(self, trial: TraditionalTwoStateTrial):
         return self.material.complete_trial(trial.material_trial)
 
@@ -212,6 +307,7 @@ def solve_two_state_dirichlet_plane_stress(
     spectral_buffer = np.empty(interior_shape, dtype=np.float64)
     green_buffer = np.empty_like(spectral_buffer)
     physical_buffer = np.empty_like(spectral_buffer)
+    jacobian_workspace = TwoStateJacobianWorkspace.create(grid)
     fluctuation = np.zeros((*grid.node_shape, 2))
     residual_history: list[float] = []
     absolute_history: list[float] = []
@@ -282,18 +378,14 @@ def solve_two_state_dirichlet_plane_stress(
                 started = time.perf_counter()
                 action_counters.calls += 1
                 unpack_started = time.perf_counter()
-                field = unpack_interior(vector, grid)
+                unpack_interior_into(vector, grid, jacobian_workspace.nodal_increment)
                 action_counters.unpack_seconds += time.perf_counter() - unpack_started
-                pack_started = time.perf_counter()
-                result = pack_interior(
-                    elements.tangent_action(
-                        field,
-                        kinematics=kinematics,
-                        trial=active_trial,
-                        action_diagnostics=action_counters,
-                    )
+                result = elements.tangent_action_into(
+                    kinematics=kinematics,
+                    trial=active_trial,
+                    workspace=jacobian_workspace,
+                    action_diagnostics=action_counters,
                 )
-                action_counters.pack_seconds += time.perf_counter() - pack_started
                 action_counters.total_seconds += time.perf_counter() - started
                 return result
 

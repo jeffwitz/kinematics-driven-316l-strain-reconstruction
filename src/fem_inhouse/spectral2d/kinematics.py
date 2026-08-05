@@ -185,6 +185,30 @@ class TwoSubcellDiagnostic2D:
     def strain_samples(self, nodal_displacement: ArrayLike) -> FloatArray:
         return self.strain(nodal_displacement)
 
+    def strain_samples_into(
+        self,
+        nodal_displacement: ArrayLike,
+        destination: FloatArray,
+    ) -> None:
+        """Write both constant-triangle strains into a reusable buffer."""
+
+        u = _nodal_displacement(nodal_displacement, self.grid)
+        expected = (*self.grid.pixel_shape, 2, 3)
+        if destination.shape != expected:
+            raise ValueError(f"expected destination shape {expected}, got {destination.shape}")
+        bl, br = u[:-1, :-1], u[1:, :-1]
+        tl, tr = u[:-1, 1:], u[1:, 1:]
+        destination[..., 0, 0] = (br[..., 0] - bl[..., 0]) / self.grid.spacing_x
+        destination[..., 0, 1] = (tl[..., 1] - bl[..., 1]) / self.grid.spacing_y
+        destination[..., 0, 2] = (tl[..., 0] - bl[..., 0]) / self.grid.spacing_y + (
+            br[..., 1] - bl[..., 1]
+        ) / self.grid.spacing_x
+        destination[..., 1, 0] = (tr[..., 0] - tl[..., 0]) / self.grid.spacing_x
+        destination[..., 1, 1] = (tr[..., 1] - br[..., 1]) / self.grid.spacing_y
+        destination[..., 1, 2] = (tr[..., 0] - br[..., 0]) / self.grid.spacing_y + (
+            tr[..., 1] - tl[..., 1]
+        ) / self.grid.spacing_x
+
     def divergence(self, stress: ArrayLike) -> FloatArray:
         sigma = _stress(stress, (*self.grid.pixel_shape, 2, 3))
         result = np.zeros((*self.grid.node_shape, 2), dtype=np.float64)
@@ -212,6 +236,36 @@ class TwoSubcellDiagnostic2D:
 
     def divergence_from_sample_stress(self, stress: ArrayLike) -> FloatArray:
         return self.divergence(stress)
+
+    def divergence_from_sample_stress_into(
+        self,
+        stress: ArrayLike,
+        destination: FloatArray,
+    ) -> None:
+        """Assemble the exact TRI2 adjoint into a reusable nodal buffer."""
+
+        sigma = _stress(stress, (*self.grid.pixel_shape, 2, 3))
+        expected = (*self.grid.node_shape, 2)
+        if destination.shape != expected:
+            raise ValueError(f"expected destination shape {expected}, got {destination.shape}")
+        destination[...] = 0.0
+        s1 = sigma[..., 0, :]
+        s2 = sigma[..., 1, :]
+        area = 0.5 * self.grid.spacing_x * self.grid.spacing_y
+        hx = self.grid.spacing_x
+        hy = self.grid.spacing_y
+        destination[:-1, :-1, 0] += area * (s1[..., 0] / hx + s1[..., 2] / hy)
+        destination[1:, :-1, 0] -= area * s1[..., 0] / hx
+        destination[:-1, 1:, 0] -= area * s1[..., 2] / hy
+        destination[:-1, :-1, 1] += area * (s1[..., 1] / hy + s1[..., 2] / hx)
+        destination[1:, :-1, 1] -= area * s1[..., 2] / hx
+        destination[:-1, 1:, 1] -= area * s1[..., 1] / hy
+        destination[1:, 1:, 0] -= area * (s2[..., 0] / hx + s2[..., 2] / hy)
+        destination[:-1, 1:, 0] += area * s2[..., 0] / hx
+        destination[1:, :-1, 0] += area * s2[..., 2] / hy
+        destination[1:, 1:, 1] -= area * (s2[..., 1] / hy + s2[..., 2] / hx)
+        destination[:-1, 1:, 1] += area * s2[..., 2] / hx
+        destination[1:, :-1, 1] += area * s2[..., 1] / hy
 
 
 class EBITwoTriangleKinematics2D(TwoSubcellDiagnostic2D):
