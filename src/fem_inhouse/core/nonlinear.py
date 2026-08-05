@@ -178,6 +178,7 @@ def run_fem(
     local_plane_stress_relative_tolerance=1e-10,
     maximum_local_plane_stress_iterations=15,
     maximum_cbb_condition_number=1e12,
+    local_condition_check_mode="always",
     newton_line_search=False,
     line_search_reduction=0.5,
     line_search_armijo_coefficient=1e-4,
@@ -290,6 +291,7 @@ def run_fem(
             "local_relative_tolerance": local_plane_stress_relative_tolerance,
             "maximum_local_iterations": maximum_local_plane_stress_iterations,
             "maximum_cbb_condition_number": maximum_cbb_condition_number,
+            "local_condition_check_mode": local_condition_check_mode,
         },
         nonlocal_coupling_modulus_mpa=(
             nonlocal_coupling_modulus_mpa if nonlocal_plasticity_enabled else None
@@ -1484,6 +1486,30 @@ def run_fem(
     mfront_integration_with_tangent_seconds = float(
         getattr(material_timing, "integration_with_tangent_seconds", 0.0)
     )
+    mfront_rotation_to_material_seconds = float(
+        getattr(material_timing, "rotation_to_material_seconds", 0.0)
+    )
+    mfront_integration_seconds = float(
+        getattr(material_timing, "integration_seconds", 0.0)
+    )
+    mfront_rotation_to_global_seconds = float(
+        getattr(material_timing, "rotation_to_global_seconds", 0.0)
+    )
+    local_condensation_seconds = float(
+        getattr(material_timing, "condensation_seconds", 0.0)
+    )
+    local_condition_check_seconds = float(
+        getattr(material_timing, "condition_check_seconds", 0.0)
+    )
+    local_solve_seconds = float(getattr(material_timing, "local_solve_seconds", 0.0))
+    local_reconstruction_seconds = float(
+        getattr(material_timing, "reconstruction_seconds", 0.0)
+    )
+    local_observable_seconds = float(
+        getattr(material_timing, "observable_seconds", 0.0)
+    )
+    local_condition_checks = int(getattr(material_timing, "condition_checks", 0))
+    mfront_evaluate_calls = int(getattr(material_timing, "evaluate_calls", 0))
     kelvin_conversion_seconds = float(getattr(material_timing, "kelvin_conversion_seconds", 0.0))
     tensor_reconstruction_seconds = float(
         getattr(material_timing, "tensor_reconstruction_seconds", 0.0)
@@ -1663,6 +1689,7 @@ def run_fem(
             ),
             local_plane_stress_failures=local_statistics.local_plane_stress_failures,
             maximum_cbb_condition_number=local_statistics.maximum_cbb_condition_number,
+            local_condition_check_mode=local_condition_check_mode,
             nonlocal_plasticity_enabled=nonlocal_plasticity_enabled,
             nonlocal_convergence_norm=(
                 "mixed_relative_linf" if nonlocal_plasticity_enabled else "not_applicable"
@@ -1692,6 +1719,16 @@ def run_fem(
             nonlocal_coupling_failures=nonlocal_coupling_failures,
             mfront_integration_without_tangent_seconds=(mfront_integration_without_tangent_seconds),
             mfront_integration_with_tangent_seconds=(mfront_integration_with_tangent_seconds),
+            mfront_rotation_to_material_seconds=mfront_rotation_to_material_seconds,
+            mfront_integration_seconds=mfront_integration_seconds,
+            mfront_rotation_to_global_seconds=mfront_rotation_to_global_seconds,
+            local_condensation_seconds=local_condensation_seconds,
+            local_condition_check_seconds=local_condition_check_seconds,
+            local_solve_seconds=local_solve_seconds,
+            local_reconstruction_seconds=local_reconstruction_seconds,
+            local_observable_seconds=local_observable_seconds,
+            local_condition_checks=local_condition_checks,
+            mfront_evaluate_calls=mfront_evaluate_calls,
             kelvin_conversion_seconds=kelvin_conversion_seconds,
             tensor_reconstruction_seconds=tensor_reconstruction_seconds,
             internal_force_seconds=internal_force_seconds,

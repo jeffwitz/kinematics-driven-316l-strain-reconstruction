@@ -85,6 +85,7 @@ class SolverDiagnostics:
     mean_local_plane_stress_iterations: float = 0.0
     local_plane_stress_failures: int = 0
     maximum_cbb_condition_number: float = 0.0
+    local_condition_check_mode: str = "always"
     nonlocal_plasticity_enabled: bool = False
     nonlocal_convergence_norm: str = "not_applicable"
     nonlocal_length_scale_mm: float = 0.0
@@ -108,6 +109,16 @@ class SolverDiagnostics:
     nonlocal_coupling_failures: int = 0
     mfront_integration_without_tangent_seconds: float = 0.0
     mfront_integration_with_tangent_seconds: float = 0.0
+    mfront_rotation_to_material_seconds: float = 0.0
+    mfront_integration_seconds: float = 0.0
+    mfront_rotation_to_global_seconds: float = 0.0
+    local_condensation_seconds: float = 0.0
+    local_condition_check_seconds: float = 0.0
+    local_solve_seconds: float = 0.0
+    local_reconstruction_seconds: float = 0.0
+    local_observable_seconds: float = 0.0
+    local_condition_checks: int = 0
+    mfront_evaluate_calls: int = 0
     kelvin_conversion_seconds: float = 0.0
     tensor_reconstruction_seconds: float = 0.0
     internal_force_seconds: float = 0.0

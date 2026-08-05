@@ -330,6 +330,7 @@ def run_case_study(
         local_plane_stress_relative_tolerance=(config.solver.local_plane_stress_relative_tolerance),
         maximum_local_plane_stress_iterations=(config.solver.maximum_local_plane_stress_iterations),
         maximum_cbb_condition_number=config.solver.maximum_cbb_condition_number,
+        local_condition_check_mode=config.solver.local_condition_check_mode,
         newton_line_search=config.solver.newton_line_search,
         line_search_reduction=config.solver.line_search_reduction,
         line_search_armijo_coefficient=(config.solver.line_search_armijo_coefficient),

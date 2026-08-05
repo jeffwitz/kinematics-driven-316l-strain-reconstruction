@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -22,6 +22,7 @@ from fem_inhouse.core.linear_solver import LinearSystemMatrixType
 from fem_inhouse.core.tensor_reconstruction import reconstruct_python_plane_stress_state
 
 FloatArray = NDArray[np.float64]
+ResponseLevel = Literal["residual", "tangent", "complete"]
 SYMMETRIC_TANGENT_RELATIVE_TOLERANCE = 1e-12
 
 
@@ -59,6 +60,31 @@ class InPlaneConstitutiveTrial:
     observables: dict[str, FloatArray] = field(default_factory=dict)
     local_plane_stress_iterations: FloatArray | None = None
     cbb_condition_number: FloatArray | None = None
+
+
+def evaluate_in_plane_response(
+    material: PlaneStressMaterialBatch,
+    in_plane_strain: ArrayLike,
+    *,
+    time_increment: float,
+    response_level: ResponseLevel,
+    consistent_tangent: bool = True,
+) -> InPlaneConstitutiveTrial:
+    """Evaluate the lightest response supported by a material backend."""
+
+    evaluator = getattr(material, "evaluate_in_plane_response", None)
+    if callable(evaluator):
+        return evaluator(
+            in_plane_strain,
+            time_increment=time_increment,
+            response_level=response_level,
+            consistent_tangent=consistent_tangent,
+        )
+    return material.evaluate_in_plane(
+        in_plane_strain,
+        time_increment=time_increment,
+        consistent_tangent=consistent_tangent,
+    )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

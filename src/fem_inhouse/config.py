@@ -151,6 +151,7 @@ class SolverConfig:
     local_plane_stress_relative_tolerance: float = 1e-10
     maximum_local_plane_stress_iterations: int = 15
     maximum_cbb_condition_number: float = 1e12
+    local_condition_check_mode: Literal["always", "on_failure", "diagnostic_sample"] = "always"
     newton_line_search: bool = False
     line_search_reduction: float = 0.5
     line_search_armijo_coefficient: float = 1e-4
@@ -263,6 +264,11 @@ class SolverConfig:
             raise ValueError("maximum_local_plane_stress_iterations must be positive")
         if self.maximum_cbb_condition_number <= 1:
             raise ValueError("maximum_cbb_condition_number must be greater than one")
+        if self.local_condition_check_mode not in {"always", "on_failure", "diagnostic_sample"}:
+            raise ValueError(
+                "local_condition_check_mode must be 'always', 'on_failure', "
+                "or 'diagnostic_sample'"
+            )
 
 
 @dataclass(frozen=True, slots=True)
