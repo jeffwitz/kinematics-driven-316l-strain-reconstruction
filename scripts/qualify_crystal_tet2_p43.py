@@ -19,7 +19,7 @@ from fem_inhouse.core.crystal_parameter_pairs import (
 )
 from fem_inhouse.core.mfront_crystal_structure import read_crystal_structure_fingerprint
 from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
-from fem_inhouse.spectral2d import EBISpectralSolverConfig
+from fem_inhouse.spectral2d import AdaptiveStepConfig, EBISpectralSolverConfig
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
@@ -108,8 +108,16 @@ def main() -> int:
         action="store_true",
         help="promote the accepted complete trial without an independent re-integration",
     )
+    parser.add_argument("--adaptive-stepping", action="store_true")
+    parser.add_argument("--adaptive-initial-step", type=float, default=0.25)
+    parser.add_argument("--adaptive-min-step", type=float, default=1.0 / 256.0)
+    parser.add_argument("--adaptive-max-step", type=float, default=0.5)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
+    if arguments.adaptive_stepping and arguments.behaviour != "fcc_forest_rubin_srix":
+        raise SystemExit(
+            "adaptive stepping is currently restricted to the rate-independent SRIX law"
+        )
     git_worktree = _git_worktree_state()
     crop = tuple(arguments.crop_nodes)
     mesh = crop[1] - crop[0]
@@ -188,6 +196,12 @@ def main() -> int:
             linear_tolerance_mode=arguments.linear_mode,
             reference_update_mode=arguments.reference_update,
             verify_final_state=not arguments.no_final_verification,
+            adaptive_stepping_enabled=arguments.adaptive_stepping,
+            adaptive_step=AdaptiveStepConfig(
+                initial_increment_fraction=arguments.adaptive_initial_step,
+                minimum_increment_fraction=arguments.adaptive_min_step,
+                maximum_increment_fraction=arguments.adaptive_max_step,
+            ),
             krylov_method=arguments.krylov_method,
             krylov_recycling=arguments.krylov_recycling,
             transform=SpectralTransformConfig(
@@ -219,6 +233,8 @@ def main() -> int:
         "crop_nodes": list(crop),
         "mesh": [mesh, mesh],
         "increments": arguments.increments,
+        "requested_increments": arguments.increments,
+        "accepted_increments": len(diagnostics.iterations_per_increment),
         "tolerance": arguments.tolerance,
         "behaviour": arguments.behaviour,
         "mfront_threads": arguments.mfront_threads,
@@ -226,6 +242,8 @@ def main() -> int:
         "linear_mode": arguments.linear_mode,
         "reference_update": arguments.reference_update,
         "verify_final_state": not arguments.no_final_verification,
+        "adaptive_stepping_enabled": arguments.adaptive_stepping,
+        "adaptive_step_history": list(diagnostics.adaptive_step_history),
         "elapsed_seconds": elapsed,
         "newton_iterations": sum(diagnostics.iterations_per_increment),
         "iterations_per_increment": list(diagnostics.iterations_per_increment),

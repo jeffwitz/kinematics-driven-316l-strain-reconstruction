@@ -37,6 +37,11 @@ from fem_inhouse.spectral2d.newton_ebi import (
 )
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
+from fem_inhouse.spectral2d.step_control import (
+    AdaptiveLoadPath,
+    LoadPathStep,
+    LoadStepObservation,
+)
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, TransformPlan2D
 
@@ -476,11 +481,38 @@ def solve_two_state_dirichlet_plane_stress(
     final_applied = history[0].copy()
     time_increment = 1.0 / (history.shape[0] - 1)
     krylov_recycle = KrylovRecycleState()
+    adaptive_step_history: list[dict[str, str | int | float | bool]] = []
 
-    for increment in range(1, history.shape[0]):
+    def fixed_load_path() -> list[LoadPathStep]:
+        return [
+            LoadPathStep(
+                index=index,
+                start_fraction=(index - 1) * time_increment,
+                end_fraction=index * time_increment,
+                boundary=history[index].copy(),
+                time_increment=time_increment,
+            )
+            for index in range(1, history.shape[0])
+        ]
+
+    adaptive_path = (
+        AdaptiveLoadPath(history, config.adaptive_step)
+        if config.adaptive_stepping_enabled
+        else None
+    )
+    load_path: AdaptiveLoadPath | list[LoadPathStep] = (
+        adaptive_path if adaptive_path is not None else fixed_load_path()
+    )
+    for path_item in load_path:
+        increment = path_item.index
+        boundary_state = path_item.boundary
+        time_increment = path_item.time_increment
         krylov_recycle.reset()
-        applied = extension.extend(history[increment], grid)
+        applied = extension.extend(boundary_state, grid)
+        increment_start_fluctuation = fluctuation.copy()
         converged = False
+        increment_failure_reason = ""
+        increment_min_line_search_factor = 1.0
         previous_nonlinear_residual: float | None = None
         force_fixed_linear_tolerance = False
         accepted_cache = AcceptedTwoStateTrialCache()
@@ -711,7 +743,8 @@ def solve_two_state_dirichlet_plane_stress(
                 _accumulate_jacobian(jacobian_totals, jacobian_local)
                 _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
                 elements.revert()
-                raise RuntimeError(f"two-state GMRES failed with info={info}")
+                increment_failure_reason = f"gmres_failure:{info}"
+                break
             direction = unpack_interior(correction, grid)
             accepted = False
             factor = 1.0
@@ -737,6 +770,9 @@ def solve_two_state_dirichlet_plane_stress(
                     else:
                         line_search_reduced_step_acceptances += 1
                     line_search_minimum_factor = min(line_search_minimum_factor, factor)
+                    increment_min_line_search_factor = min(
+                        increment_min_line_search_factor, factor
+                    )
                     fluctuation = candidate
                     accepted_cache.store(
                         trial=candidate_trial,
@@ -757,7 +793,8 @@ def solve_two_state_dirichlet_plane_stress(
                 _accumulate_jacobian(jacobian_totals, jacobian_local)
                 _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
                 elements.revert()
-                raise RuntimeError("two-state Newton line search failed")
+                increment_failure_reason = "line_search_failure"
+                break
             _accumulate_jacobian(jacobian_totals, jacobian_local)
             _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
             linear_solves.append(
@@ -791,7 +828,58 @@ def solve_two_state_dirichlet_plane_stress(
                 force_fixed_linear_tolerance = True
         if not converged:
             elements.revert()
+            if adaptive_path is not None:
+                fluctuation[...] = increment_start_fluctuation
+                adaptive_step_history.append(
+                    {
+                        "attempted_step": increment,
+                        "accepted": False,
+                        "load_fraction_start": adaptive_path.current_fraction,
+                        "load_fraction_end": (
+                            adaptive_path.pending.end_fraction
+                            if adaptive_path.pending is not None
+                            else adaptive_path.current_fraction
+                        ),
+                        "step_size": time_increment,
+                        "newton_iterations": len(
+                            [
+                                item
+                                for item in linear_solves
+                                if item.increment == increment
+                            ]
+                        ),
+                        "minimum_line_search_factor": increment_min_line_search_factor,
+                        "next_step_reason": increment_failure_reason
+                        or "newton_iteration_limit",
+                    }
+                )
+                adaptive_path.reject(
+                    increment_failure_reason or "newton_iteration_limit"
+                )
+                continue
             raise RuntimeError(f"two-state increment {increment} did not converge")
+        if adaptive_path is not None:
+            decision = adaptive_path.accept(
+                LoadStepObservation(
+                    converged=True,
+                    newton_iterations=iterations_per_increment[-1],
+                    minimum_line_search_factor=increment_min_line_search_factor,
+                )
+            )
+            adaptive_step_history.append(
+                {
+                    "attempted_step": increment,
+                    "accepted": True,
+                    "load_fraction_start": adaptive_path.current_fraction
+                    - time_increment,
+                    "load_fraction_end": adaptive_path.current_fraction,
+                    "step_size": time_increment,
+                    "newton_iterations": iterations_per_increment[-1],
+                    "minimum_line_search_factor": increment_min_line_search_factor,
+                    "next_step_size": decision.next_increment_fraction,
+                    "next_step_reason": decision.reason,
+                }
+            )
 
     if final_trial is None or final_sample_strain is None:
         raise RuntimeError("no two-state increment converged")
@@ -868,6 +956,8 @@ def solve_two_state_dirichlet_plane_stress(
         transform_planning_seconds=transform_diagnostics.planning_seconds,
         linear_solves=tuple(linear_solves),
         reference_updates=tuple(reference_updates),
+        adaptive_stepping_enabled=adaptive_path is not None,
+        adaptive_step_history=tuple(adaptive_step_history),
         provenance=provenance,
         timings={
             "material_evaluations": float(material_evaluations),

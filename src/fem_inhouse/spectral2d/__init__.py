@@ -70,8 +70,10 @@ from fem_inhouse.spectral2d.nonlinear import (
 )
 from fem_inhouse.spectral2d.result import Spectral2DResult
 from fem_inhouse.spectral2d.step_control import (
+    AdaptiveLoadPath,
     AdaptiveLoadStepController,
     AdaptiveStepConfig,
+    LoadPathStep,
     LoadStepDecision,
     LoadStepObservation,
 )
@@ -87,6 +89,7 @@ from fem_inhouse.spectral2d.transforms import (
 )
 
 __all__ = [
+    "AdaptiveLoadPath",
     "AdaptiveLoadStepController",
     "AdaptiveStepConfig",
     "AndersonDiagnostics",
@@ -106,6 +109,7 @@ __all__ = [
     "HarmonicDirichletExtension2D",
     "JacobianActionDiagnostics",
     "LinearSolveDiagnostics",
+    "LoadPathStep",
     "LoadStepDecision",
     "LoadStepObservation",
     "PreconditionerActionDiagnostics",

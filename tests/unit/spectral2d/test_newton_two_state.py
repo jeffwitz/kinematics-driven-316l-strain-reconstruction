@@ -3,6 +3,7 @@ import pytest
 
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d import (
+    AdaptiveStepConfig,
     EBISpectralSolverConfig,
     EBITwoTriangleKinematics2D,
     StructuredGrid2D,
@@ -257,6 +258,48 @@ def test_two_state_complete_trial_promotion_preserves_solution() -> None:
     np.testing.assert_allclose(production.reaction_forces, qualification.reaction_forces)
     assert production_material.calls < qualification_material.calls
     assert production.diagnostics.verification_residual <= 1.0e-10
+
+
+def test_two_state_adaptive_path_reaches_same_proportional_solution() -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1:, ..., 0] = 0.02 * x[:, None]
+    boundary[1:, ..., 1] = 0.03 * y[None, :]
+    common = dict(
+        relative_equilibrium_tolerance=1.0e-10,
+        transform=SpectralTransformConfig(backend="scipy"),
+        verify_final_state=False,
+    )
+    fixed = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common),
+    )
+    adaptive = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(
+            **common,
+            adaptive_stepping_enabled=True,
+            adaptive_step=AdaptiveStepConfig(
+                initial_increment_fraction=0.5,
+                minimum_increment_fraction=0.125,
+                maximum_increment_fraction=0.5,
+            ),
+        ),
+    )
+    np.testing.assert_allclose(adaptive.displacement, fixed.displacement, rtol=1.0e-8)
+    np.testing.assert_allclose(
+        adaptive.stress_in_plane_mpa,
+        fixed.stress_in_plane_mpa,
+        rtol=1.0e-8,
+    )
+    assert adaptive.diagnostics.adaptive_stepping_enabled
+    assert len(adaptive.diagnostics.adaptive_step_history) == 2
+    assert all(item["accepted"] for item in adaptive.diagnostics.adaptive_step_history)
 
 
 @pytest.mark.parametrize("mesh_size", (4, 12, 50, 100))
