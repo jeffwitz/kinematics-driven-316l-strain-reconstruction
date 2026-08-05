@@ -151,3 +151,44 @@ def test_two_state_solver_backend_equivalence() -> None:
         rtol=1.0e-11,
         atol=1.0e-12,
     )
+
+
+def test_two_state_solver_archives_linear_cost_breakdown() -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1, ..., 0] = 0.02 * x[:, None] + 0.003 * y[None, :] ** 2
+    boundary[2, ..., 1] = 0.03 * y[None, :] + 0.002 * x[:, None] ** 2
+    result = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(
+            relative_equilibrium_tolerance=1.0e-10,
+            transform=SpectralTransformConfig(
+                backend="scipy", fftw_planner_effort="estimate"
+            ),
+        ),
+    )
+    diagnostics = result.diagnostics
+    assert diagnostics.linear_solves
+    assert diagnostics.provenance["gmres_restart"] == 50
+    assert all(entry.gmres_info == 0 for entry in diagnostics.linear_solves)
+    assert all(entry.gmres_iterations > 0 for entry in diagnostics.linear_solves)
+    assert all(entry.jacobian_calls > 0 for entry in diagnostics.linear_solves)
+    assert all(entry.preconditioner_calls > 0 for entry in diagnostics.linear_solves)
+    assert all(entry.krylov_overhead_seconds >= 0.0 for entry in diagnostics.linear_solves)
+    gmres_total = sum(entry.gmres_seconds for entry in diagnostics.linear_solves)
+    jacobian_total = sum(entry.jacobian_seconds for entry in diagnostics.linear_solves)
+    preconditioner_total = sum(
+        entry.preconditioner_seconds for entry in diagnostics.linear_solves
+    )
+    assert diagnostics.timings["gmres_seconds"] == pytest.approx(gmres_total)
+    assert diagnostics.timings["jacobian_seconds"] == pytest.approx(jacobian_total)
+    assert diagnostics.timings["preconditioner_seconds"] == pytest.approx(preconditioner_total)
+    assert diagnostics.timings["jacobian_calls"] == sum(
+        entry.jacobian_calls for entry in diagnostics.linear_solves
+    )
+    assert diagnostics.timings["preconditioner_calls"] == sum(
+        entry.preconditioner_calls for entry in diagnostics.linear_solves
+    )

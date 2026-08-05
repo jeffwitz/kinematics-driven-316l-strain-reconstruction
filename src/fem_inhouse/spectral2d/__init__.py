@@ -15,7 +15,12 @@ from fem_inhouse.spectral2d.boundary import (
     TransfiniteBoundaryInterpolation2D,
 )
 from fem_inhouse.spectral2d.config import Spectral2DConfig
-from fem_inhouse.spectral2d.diagnostics import Spectral2DDiagnostics
+from fem_inhouse.spectral2d.diagnostics import (
+    JacobianActionDiagnostics,
+    LinearSolveDiagnostics,
+    PreconditionerActionDiagnostics,
+    Spectral2DDiagnostics,
+)
 from fem_inhouse.spectral2d.ebi import (
     EBIPlaneStressElementBatch,
     EBIPlaneStressTrial,
@@ -74,6 +79,9 @@ __all__ = [
     "FullDirichletDSTIPlan2D",
     "GreenDiagnostics",
     "HarmonicDirichletExtension2D",
+    "JacobianActionDiagnostics",
+    "LinearSolveDiagnostics",
+    "PreconditionerActionDiagnostics",
     "ReferenceOperatorSymbols",
     "Spectral2DConfig",
     "Spectral2DDiagnostics",

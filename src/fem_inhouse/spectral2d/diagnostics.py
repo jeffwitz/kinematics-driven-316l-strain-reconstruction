@@ -2,7 +2,127 @@
 
 from __future__ import annotations
 
+import datetime
+import importlib.metadata
+import os
+import platform
+import subprocess
+import sys
 from dataclasses import dataclass, field
+
+from fem_inhouse.spectral2d.transforms import TransformDiagnostics
+
+
+@dataclass(slots=True)
+class JacobianActionDiagnostics:
+    """Detailed timing counters for one matrix-free Jacobian action."""
+
+    calls: int = 0
+    total_seconds: float = 0.0
+    unpack_seconds: float = 0.0
+    gradient_seconds: float = 0.0
+    tangent_seconds: float = 0.0
+    divergence_seconds: float = 0.0
+    pack_seconds: float = 0.0
+
+
+@dataclass(slots=True)
+class PreconditionerActionDiagnostics:
+    """Detailed timing counters for one preconditioner action family."""
+
+    calls: int = 0
+    total_seconds: float = 0.0
+    reshape_seconds: float = 0.0
+    forward_transform_seconds: float = 0.0
+    green_seconds: float = 0.0
+    inverse_transform_seconds: float = 0.0
+    output_copy_seconds: float = 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class LinearSolveDiagnostics:
+    """Cost and call counts for one Newton linear solve."""
+
+    increment: int
+    newton_iteration: int
+    nonlinear_residual_before: float
+    requested_relative_tolerance: float
+    gmres_info: int
+    gmres_iterations: int
+    jacobian_calls: int
+    preconditioner_calls: int
+    gmres_seconds: float
+    jacobian_seconds: float
+    preconditioner_seconds: float
+    krylov_overhead_seconds: float
+    restart: int
+    line_search_factor: float | None
+
+
+def collect_runtime_provenance(
+    transform: TransformDiagnostics,
+    *,
+    gmres_restart: int,
+    gmres_maximum_iterations: int,
+    gmres_relative_tolerance: float,
+) -> dict[str, str | int | float | bool | None]:
+    """Collect reproducibility metadata for a spectral solve."""
+
+    try:
+        import pyfftw  # type: ignore[import-untyped]
+    except ImportError:
+        pyfftw_version: str | None = None
+        fftw_version: str | None = None
+    else:
+        pyfftw_version = str(getattr(pyfftw, "__version__", "unknown"))
+        fftw_version = str(getattr(pyfftw, "fftw_version", "unknown"))
+
+    try:
+        import psutil  # type: ignore[import-untyped]
+    except ImportError:
+        cpu_physical = None
+    else:
+        cpu_physical = psutil.cpu_count(logical=False)
+
+    try:
+        commit_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+        ).stdout.strip() or None
+    except OSError:
+        commit_sha = None
+
+    def package_version(name: str) -> str | None:
+        try:
+            return importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            return None
+
+    return {
+        "commit_sha": commit_sha,
+        "date_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+        "platform": platform.platform(),
+        "processor": platform.processor() or None,
+        "python": sys.version.split()[0],
+        "numpy": package_version("numpy"),
+        "scipy": package_version("scipy"),
+        "pyfftw": pyfftw_version,
+        "fftw": fftw_version,
+        "cpu_logical": os.cpu_count(),
+        "cpu_physical": cpu_physical,
+        "fftw_threads": transform.workers if transform.backend == "fftw" else None,
+        "fftw_planner": transform.planner_effort,
+        "fftw_wisdom_loaded": transform.wisdom_loaded,
+        "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
+        "mkl_num_threads": os.environ.get("MKL_NUM_THREADS"),
+        "openblas_num_threads": os.environ.get("OPENBLAS_NUM_THREADS"),
+        "transform_backend": transform.backend,
+        "gmres_restart": gmres_restart,
+        "gmres_maximum_iterations": gmres_maximum_iterations,
+        "gmres_relative_tolerance": gmres_relative_tolerance,
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,3 +168,5 @@ class Spectral2DDiagnostics:
     transform_planner_effort: str | None = None
     transform_wisdom_loaded: bool = False
     transform_planning_seconds: float = 0.0
+    linear_solves: tuple[LinearSolveDiagnostics, ...] = ()
+    provenance: dict[str, str | int | float | bool | None] = field(default_factory=dict)

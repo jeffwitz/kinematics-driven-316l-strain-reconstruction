@@ -15,7 +15,13 @@ from fem_inhouse.core.plane_stress_material import (
     PlaneStressMaterialBatch,
 )
 from fem_inhouse.spectral2d.boundary import HarmonicDirichletExtension2D
-from fem_inhouse.spectral2d.diagnostics import Spectral2DDiagnostics
+from fem_inhouse.spectral2d.diagnostics import (
+    JacobianActionDiagnostics,
+    LinearSolveDiagnostics,
+    PreconditionerActionDiagnostics,
+    Spectral2DDiagnostics,
+    collect_runtime_provenance,
+)
 from fem_inhouse.spectral2d.green import B0Green2D, project_isotropic_plane_stress_tangent
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
@@ -30,6 +36,32 @@ from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_
 from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, TransformPlan2D
 
 FloatArray = NDArray[np.float64]
+
+
+def _accumulate_jacobian(
+    target: JacobianActionDiagnostics,
+    source: JacobianActionDiagnostics,
+) -> None:
+    target.calls += source.calls
+    target.total_seconds += source.total_seconds
+    target.unpack_seconds += source.unpack_seconds
+    target.gradient_seconds += source.gradient_seconds
+    target.tangent_seconds += source.tangent_seconds
+    target.divergence_seconds += source.divergence_seconds
+    target.pack_seconds += source.pack_seconds
+
+
+def _accumulate_preconditioner(
+    target: PreconditionerActionDiagnostics,
+    source: PreconditionerActionDiagnostics,
+) -> None:
+    target.calls += source.calls
+    target.total_seconds += source.total_seconds
+    target.reshape_seconds += source.reshape_seconds
+    target.forward_transform_seconds += source.forward_transform_seconds
+    target.green_seconds += source.green_seconds
+    target.inverse_transform_seconds += source.inverse_transform_seconds
+    target.output_copy_seconds += source.output_copy_seconds
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,12 +110,24 @@ class TraditionalTwoStateTriangleBatch:
         *,
         kinematics: TwoSubcellDiagnostic2D,
         trial: TraditionalTwoStateTrial,
+        action_diagnostics: JacobianActionDiagnostics | None = None,
     ) -> FloatArray:
+        gradient_started = time.perf_counter()
         delta_sample = kinematics.strain_samples(displacement_increment)
+        gradient_seconds = time.perf_counter() - gradient_started
+        tangent_started = time.perf_counter()
         delta_stress = np.einsum(
             "xyqij,xyqj->xyqi", trial.algorithmic_tangent_in_plane_mpa, delta_sample
         )
-        return kinematics.divergence_from_sample_stress(delta_stress)
+        tangent_seconds = time.perf_counter() - tangent_started
+        divergence_started = time.perf_counter()
+        result = kinematics.divergence_from_sample_stress(delta_stress)
+        divergence_seconds = time.perf_counter() - divergence_started
+        if action_diagnostics is not None:
+            action_diagnostics.gradient_seconds += gradient_seconds
+            action_diagnostics.tangent_seconds += tangent_seconds
+            action_diagnostics.divergence_seconds += divergence_seconds
+        return result
 
     def complete_trial(self, trial: TraditionalTwoStateTrial):
         return self.material.complete_trial(trial.material_trial)
@@ -120,8 +164,6 @@ def solve_two_state_dirichlet_plane_stress(
     material_seconds = 0.0
     gradient_seconds = 0.0
     divergence_seconds = 0.0
-    jacobian_seconds = 0.0
-    preconditioner_seconds = 0.0
     gmres_seconds = 0.0
     material_evaluations = 1
 
@@ -177,6 +219,9 @@ def solve_two_state_dirichlet_plane_stress(
     verification_mismatch_history: list[float] = []
     iterations_per_increment: list[int] = []
     gmres_iterations = 0
+    linear_solves: list[LinearSolveDiagnostics] = []
+    jacobian_totals = JacobianActionDiagnostics()
+    preconditioner_totals = PreconditionerActionDiagnostics()
     final_trial = None
     final_sample_strain = None
     verification_residual = 0.0
@@ -225,32 +270,67 @@ def solve_two_state_dirichlet_plane_stress(
                 relative = verification_residual
 
             size = 2 * (grid.nx - 1) * (grid.ny - 1)
+            jacobian_local = JacobianActionDiagnostics()
+            preconditioner_local = PreconditionerActionDiagnostics()
+            gmres_iterations_before = gmres_iterations
 
-            def jacobian_action(vector: FloatArray, active_trial=trial) -> FloatArray:
-                nonlocal jacobian_seconds
+            def jacobian_action(
+                vector: FloatArray,
+                active_trial=trial,
+                action_counters=jacobian_local,
+            ) -> FloatArray:
                 started = time.perf_counter()
+                action_counters.calls += 1
+                unpack_started = time.perf_counter()
                 field = unpack_interior(vector, grid)
+                action_counters.unpack_seconds += time.perf_counter() - unpack_started
+                pack_started = time.perf_counter()
                 result = pack_interior(
-                    elements.tangent_action(field, kinematics=kinematics, trial=active_trial)
+                    elements.tangent_action(
+                        field,
+                        kinematics=kinematics,
+                        trial=active_trial,
+                        action_diagnostics=action_counters,
+                    )
                 )
-                jacobian_seconds += time.perf_counter() - started
+                action_counters.pack_seconds += time.perf_counter() - pack_started
+                action_counters.total_seconds += time.perf_counter() - started
                 return result
 
-            def preconditioner_action(vector: FloatArray) -> FloatArray:
-                nonlocal preconditioner_seconds
+            def preconditioner_action(
+                vector: FloatArray,
+                action_counters=preconditioner_local,
+            ) -> FloatArray:
                 started = time.perf_counter()
+                action_counters.calls += 1
+                reshape_started = time.perf_counter()
                 interior = np.asarray(vector, dtype=np.float64).reshape(interior_shape)
+                action_counters.reshape_seconds += time.perf_counter() - reshape_started
+                forward_started = time.perf_counter()
                 if hasattr(plan, "forward_into"):
                     buffered_plan = cast(BufferedTransformPlan2D, plan)
                     buffered_plan.forward_into(interior, spectral_buffer)
-                    green.apply_into(spectral_buffer, green_buffer)
-                    buffered_plan.inverse_into(green_buffer, physical_buffer)
                 else:
                     spectral_buffer[...] = plan.forward_displacement(interior)
-                    green.apply_into(spectral_buffer, green_buffer)
+                action_counters.forward_transform_seconds += (
+                    time.perf_counter() - forward_started
+                )
+                green_started = time.perf_counter()
+                green.apply_into(spectral_buffer, green_buffer)
+                action_counters.green_seconds += time.perf_counter() - green_started
+                inverse_started = time.perf_counter()
+                if hasattr(plan, "forward_into"):
+                    buffered_plan = cast(BufferedTransformPlan2D, plan)
+                    buffered_plan.inverse_into(green_buffer, physical_buffer)
+                else:
                     physical_buffer[...] = plan.inverse_displacement(green_buffer)
+                action_counters.inverse_transform_seconds += (
+                    time.perf_counter() - inverse_started
+                )
+                copy_started = time.perf_counter()
                 result = physical_buffer.reshape(-1).copy()
-                preconditioner_seconds += time.perf_counter() - started
+                action_counters.output_copy_seconds += time.perf_counter() - copy_started
+                action_counters.total_seconds += time.perf_counter() - started
                 return result
 
             gmres_matrix = LinearOperator((size, size), matvec=jacobian_action, dtype=float)
@@ -272,8 +352,11 @@ def solve_two_state_dirichlet_plane_stress(
                 callback=count_gmres,
                 callback_type="pr_norm",
             )
-            gmres_seconds += time.perf_counter() - gmres_started
+            gmres_elapsed = time.perf_counter() - gmres_started
+            gmres_seconds += gmres_elapsed
             if info != 0 or not np.isfinite(correction).all():
+                _accumulate_jacobian(jacobian_totals, jacobian_local)
+                _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
                 elements.revert()
                 raise RuntimeError(f"two-state GMRES failed with info={info}")
             direction = unpack_interior(correction, grid)
@@ -293,8 +376,35 @@ def solve_two_state_dirichlet_plane_stress(
                     break
                 factor *= 0.5
             if not accepted:
+                _accumulate_jacobian(jacobian_totals, jacobian_local)
+                _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
                 elements.revert()
                 raise RuntimeError("two-state Newton line search failed")
+            _accumulate_jacobian(jacobian_totals, jacobian_local)
+            _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
+            linear_solves.append(
+                LinearSolveDiagnostics(
+                    increment=increment,
+                    newton_iteration=iteration + 1,
+                    nonlinear_residual_before=relative,
+                    requested_relative_tolerance=config.gmres_relative_tolerance,
+                    gmres_info=int(info),
+                    gmres_iterations=gmres_iterations - gmres_iterations_before,
+                    jacobian_calls=jacobian_local.calls,
+                    preconditioner_calls=preconditioner_local.calls,
+                    gmres_seconds=gmres_elapsed,
+                    jacobian_seconds=jacobian_local.total_seconds,
+                    preconditioner_seconds=preconditioner_local.total_seconds,
+                    krylov_overhead_seconds=max(
+                        0.0,
+                        gmres_elapsed
+                        - jacobian_local.total_seconds
+                        - preconditioner_local.total_seconds,
+                    ),
+                    restart=config.gmres_restart,
+                    line_search_factor=factor,
+                )
+            )
         if not converged:
             elements.revert()
             raise RuntimeError(f"two-state increment {increment} did not converge")
@@ -332,15 +442,44 @@ def solve_two_state_dirichlet_plane_stress(
         transform_planner_effort=transform_diagnostics.planner_effort,
         transform_wisdom_loaded=transform_diagnostics.wisdom_loaded,
         transform_planning_seconds=transform_diagnostics.planning_seconds,
+        linear_solves=tuple(linear_solves),
+        provenance=collect_runtime_provenance(
+            transform_diagnostics,
+            gmres_restart=config.gmres_restart,
+            gmres_maximum_iterations=config.gmres_maximum_iterations,
+            gmres_relative_tolerance=config.gmres_relative_tolerance,
+        ),
         timings={
             "material_evaluations": float(material_evaluations),
             "material_seconds": material_seconds,
             "gradient_seconds": gradient_seconds,
             "divergence_seconds": divergence_seconds,
-            "jacobian_seconds": jacobian_seconds,
-            "preconditioner_seconds": preconditioner_seconds,
+            "jacobian_seconds": jacobian_totals.total_seconds,
+            "preconditioner_seconds": preconditioner_totals.total_seconds,
             "gmres_iterations": float(gmres_iterations),
             "gmres_seconds": gmres_seconds,
+            "jacobian_calls": float(jacobian_totals.calls),
+            "jacobian_unpack_seconds": jacobian_totals.unpack_seconds,
+            "jacobian_gradient_seconds": jacobian_totals.gradient_seconds,
+            "jacobian_tangent_seconds": jacobian_totals.tangent_seconds,
+            "jacobian_divergence_seconds": jacobian_totals.divergence_seconds,
+            "jacobian_pack_seconds": jacobian_totals.pack_seconds,
+            "preconditioner_calls": float(preconditioner_totals.calls),
+            "preconditioner_reshape_seconds": preconditioner_totals.reshape_seconds,
+            "preconditioner_forward_transform_seconds": (
+                preconditioner_totals.forward_transform_seconds
+            ),
+            "preconditioner_green_seconds": preconditioner_totals.green_seconds,
+            "preconditioner_inverse_transform_seconds": (
+                preconditioner_totals.inverse_transform_seconds
+            ),
+            "preconditioner_output_copy_seconds": preconditioner_totals.output_copy_seconds,
+            "krylov_overhead_seconds": max(
+                0.0,
+                gmres_seconds
+                - jacobian_totals.total_seconds
+                - preconditioner_totals.total_seconds,
+            ),
         },
     )
     sample_stress = _reshape_two_state(final_trial.stress_in_plane_mpa, grid)
