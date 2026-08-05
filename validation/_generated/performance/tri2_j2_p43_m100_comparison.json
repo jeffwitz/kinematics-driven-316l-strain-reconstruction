@@ -1,0 +1,22 @@
+{
+  "candidate": "optimized",
+  "correctness_vs_current_baseline": {
+    "displacement": 1.1169787526696774e-12,
+    "equivalent_plastic_strain": 6.814517601693435e-09,
+    "plastic_strain_tensor": 7.2976759496785125e-09,
+    "reaction_forces": 3.3289232655130945e-10,
+    "stress_in_plane_mpa": 6.631561361842893e-09
+  },
+  "final_residual": 2.970647668113683e-09,
+  "performance": {
+    "gmres_iteration_reduction": 0.5239299428678468,
+    "jacobian_speedup": 2.203095472386992,
+    "optimized_vs_registered_reference": {
+      "gmres_iteration_reduction": 0.5239299428678468,
+      "newton_iteration_change": -11,
+      "total_speedup": 13.511663593479836
+    },
+    "total_speedup": 2.4648778589431144
+  },
+  "reference": "4c14f744caf8f673024e293afd2e521dea12e371"
+}
