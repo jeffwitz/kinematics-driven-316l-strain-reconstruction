@@ -99,6 +99,15 @@ def _run(
         "newton_iterations": int(sum(diagnostics.iterations_per_increment)),
         "iterations_per_increment": list(diagnostics.iterations_per_increment),
         "gmres_iterations": int(diagnostics.timings["gmres_iterations"]),
+        "krylov_outer_callbacks": int(
+            diagnostics.timings["krylov_outer_callbacks"]
+        ),
+        "jacobian_matvec_calls": int(
+            diagnostics.timings["jacobian_matvec_calls"]
+        ),
+        "preconditioner_calls_total": int(
+            diagnostics.timings["preconditioner_calls"]
+        ),
         "final_residual": diagnostics.verification_residual,
         "timings": diagnostics.timings,
         "linear_solves": [

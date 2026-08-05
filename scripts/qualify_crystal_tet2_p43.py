@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -24,6 +25,21 @@ except ModuleNotFoundError:  # Direct script execution.
 
 def _hash(values: np.ndarray) -> str:
     return hashlib.sha256(np.ascontiguousarray(values).tobytes()).hexdigest()
+
+
+def _git_head() -> str | None:
+    try:
+        return (
+            subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                check=False,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            or None
+        )
+    except OSError:
+        return None
 
 
 def main() -> int:
@@ -130,9 +146,18 @@ def main() -> int:
         "newton_iterations": sum(diagnostics.iterations_per_increment),
         "iterations_per_increment": list(diagnostics.iterations_per_increment),
         "krylov_iterations": int(diagnostics.timings["gmres_iterations"]),
+        "krylov_outer_callbacks": int(
+            diagnostics.timings["krylov_outer_callbacks"]
+        ),
+        "jacobian_matvec_calls": int(
+            diagnostics.timings["jacobian_matvec_calls"]
+        ),
+        "preconditioner_calls": int(diagnostics.timings["preconditioner_calls"]),
         "final_residual": diagnostics.verification_residual,
         "timings": diagnostics.timings,
         "provenance": diagnostics.provenance,
+        "execution_commit": diagnostics.provenance.get("commit_sha"),
+        "archive_commit": os.environ.get("ARCHIVE_COMMIT", _git_head()),
         "field_file": str(field_path),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
     }

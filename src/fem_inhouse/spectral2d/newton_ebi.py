@@ -460,6 +460,7 @@ def solve_ebi_dirichlet_plane_stress(
         timings={
             "material_evaluations": float(material_evaluations),
             "gmres_iterations": float(gmres_iterations),
+            "krylov_outer_callbacks": float(gmres_iterations),
             "minimum_line_search_factor": min(line_search_factors, default=1.0),
         },
         provenance=provenance,
