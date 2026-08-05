@@ -129,9 +129,12 @@ def main() -> int:
 
     srix_report = json.loads(arguments.srix_report.read_text())
     meric_report = json.loads(arguments.meric_report.read_text())
-    for key in ("crop_nodes", "mesh", "orientation", "increments"):
+    for key in ("crop_nodes", "mesh", "orientation"):
         if srix_report.get(key) != meric_report.get(key):
             raise SystemExit(f"reports do not match for {key}")
+    same_temporal_discretization = srix_report.get("increments") == meric_report.get(
+        "increments"
+    )
     srix_backbone = srix_report["crystal_material"]["backbone"]["sha256"]
     meric_backbone = meric_report["crystal_material"]["backbone"]["sha256"]
     if srix_backbone != meric_backbone:
@@ -148,11 +151,15 @@ def main() -> int:
 
     arguments.output_dir.mkdir(parents=True, exist_ok=True)
     labels = [_label(index) for index in range(12)]
+    increment_title = (
+        f"P43 100x100: SRIX {srix_report['increments']} / "
+        f"Méric {meric_report['increments']} increments"
+    )
     _plot_pair(
         srix_equiv,
         meric_equiv,
         labels=labels,
-        title="P43 100x100, 16 increments: accumulated equivalent slip",
+        title=f"{increment_title}: accumulated equivalent slip",
         output=arguments.output_dir / "equivalent_plastic_slip_srix_vs_meric.png",
         cmap="magma",
         symmetric=False,
@@ -161,7 +168,7 @@ def main() -> int:
         srix_signed,
         meric_signed,
         labels=labels,
-        title="P43 100x100, 16 increments: signed plastic slip",
+        title=f"{increment_title}: signed plastic slip",
         output=arguments.output_dir / "plastic_slip_srix_vs_meric.png",
         cmap="coolwarm",
         symmetric=True,
@@ -203,14 +210,19 @@ def main() -> int:
         "mesh": srix_report["mesh"],
         "crop_nodes": srix_report["crop_nodes"],
         "increments": srix_report["increments"],
+        "srix_increments": srix_report["increments"],
+        "meric_increments": meric_report["increments"],
+        "field_comparison_authorized": same_temporal_discretization,
+        "performance_comparison_authorized": False,
         "orientation": srix_report["orientation"],
         "paired_parameter_set": srix_report["crystal_material"]["paired_parameter_set"],
         "backbone_sha256": srix_backbone,
         "slip_system_order": labels,
         "raw_shape": [100, 100, 2, 12],
         "comparison": (
-            "Both laws use the same crop, orientation, paired 316L backbone, "
-            "and 16 proportional increments. The pixel mean averages the two TRI2 states."
+            "Both laws use the same crop, orientation and paired 316L backbone. "
+            "The pixel mean averages the two TRI2 states. Different increment counts "
+            "are reported explicitly and do not authorize a temporal-accuracy comparison."
         ),
         "field_hashes": {
             "srix_equivalent_plastic_slip": _hash(srix_equiv_tri),
