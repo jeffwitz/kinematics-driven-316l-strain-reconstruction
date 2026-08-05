@@ -253,6 +253,30 @@
       "evidence_ids": [
         "E-FFT-006"
       ]
+    },
+    {
+      "question": "Is SRIX qualified as the production law for the registered quasi-static P43 spectral reconstruction?",
+      "status": "qualified for the registered case",
+      "boundary": "TRI2 two-state plane-stress condensation, P43 100x100, eight proportional pseudo-time increments, fixed environment; material identification is not established by this result",
+      "evidence_ids": [
+        "E-SRIX-P43-001"
+      ]
+    },
+    {
+      "question": "Is Méric-Cailletaud qualified for the registered P43 eight-increment production reconstruction?",
+      "status": "not qualified",
+      "boundary": "The eight-increment run fails local plane-stress condensation; a 16-increment monotone pseudo-time diagnostic converges, but temporal field accuracy is not demonstrated",
+      "evidence_ids": [
+        "E-MERIC-P43-001"
+      ]
+    },
+    {
+      "question": "Does the Méric-Cailletaud P43 diagnostic demonstrate temporal convergence?",
+      "status": "not demonstrated",
+      "boundary": "Only the 16-increment point was retained; 32 and 64 were not completed, and the path is proportional rather than measured DIC chronology",
+      "evidence_ids": [
+        "E-MERIC-P43-001"
+      ]
     }
   ],
   "evidence": [
@@ -355,6 +379,88 @@
       "status": "pending benchmark",
       "conclusion": "The benchmark script is available; no FFTW speedup is claimed yet.",
       "sources": []
+    },
+    {
+      "id": "E-SRIX-P43-001",
+      "question": "Is SRIX qualified as the production law for the registered quasi-static P43 spectral reconstruction?",
+      "fidelity": "two-state TRI2, 3D-condensed plane stress, nonsymmetric LGMRES Newton solve",
+      "parameters": "P43 100x100, eight proportional increments, tolerance 1e-8, MFront threads 4, FFTW threads 1",
+      "status": "qualified for the registered case",
+      "conclusion": "SRIX converges reproducibly with 46 Newton iterations, 637 Jacobian matvecs and a median wall time of 78.12 s (MAD 0.74 s); all three repeated field hashes are identical and the final residual is 6.13e-9.",
+      "sources": [
+        {
+          "path": "validation/_generated/performance/crystal_tet2_srix_p43_m100_repeated.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/fields_identical",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/timing_statistics/elapsed_seconds/median",
+              "operator": "less_than",
+              "expected": 80.0
+            },
+            {
+              "path": "/runs/0/final_residual",
+              "operator": "less_than",
+              "expected": 1.0e-8
+            },
+            {
+              "path": "/runs/0/jacobian_matvec_calls",
+              "operator": "equals",
+              "expected": 637
+            }
+          ]
+        },
+        {
+          "path": "validation/_generated/performance/crystal_tet2_srix_p43_m100_repeated_manifest.json",
+          "role": "provenance"
+        }
+      ]
+    },
+    {
+      "id": "E-MERIC-P43-001",
+      "question": "Is Méric-Cailletaud qualified for the registered P43 eight-increment production reconstruction?",
+      "fidelity": "two-state TRI2, 3D-condensed plane stress, same P43 crop and constitutive bridge",
+      "parameters": "100x100 P43, total pseudo-time one, proportional path, eight-increment failure and retained 16-increment diagnostic",
+      "status": "not qualified",
+      "conclusion": "The eight-increment run fails local plane-stress Newton at 15 iterations with a 5.19e-5 MPa transverse-stress residual. With 16 increments the same monotone proportional path converges to 8.59e-10, but costs 304.5 s and does not establish temporal convergence of the fields.",
+      "sources": [
+        {
+          "path": "validation/_generated/performance/crystal_tet2_meric_p43_m100_failure.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/status",
+              "operator": "equals",
+              "expected": "failed_local_plane_stress_convergence"
+            },
+            {
+              "path": "/error_type",
+              "operator": "equals",
+              "expected": "LocalPlaneStressConvergenceError"
+            }
+          ]
+        },
+        {
+          "path": "validation/_generated/performance/crystal_tet2_meric_p43_time_refinement_16.json",
+          "role": "primary",
+          "assertions": [
+            {
+              "path": "/tested_increments",
+              "operator": "equals",
+              "expected": 16
+            },
+            {
+              "path": "/final_residual",
+              "operator": "less_than",
+              "expected": 1.0e-8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "E-SPECTRAL-001",

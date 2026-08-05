@@ -36,6 +36,18 @@
 : Conclusion: The benchmark script is available; no FFTW speedup is claimed yet.
 : Sources: .
 
+**E-SRIX-P43-001 — Is SRIX qualified as the production law for the registered quasi-static P43 spectral reconstruction?**
+: Fidelity: two-state TRI2, 3D-condensed plane stress, nonsymmetric LGMRES Newton solve. Parameters: P43 100x100, eight proportional increments, tolerance 1e-8, MFront threads 4, FFTW threads 1.
+: Status: **qualified for the registered case**.
+: Conclusion: SRIX converges reproducibly with 46 Newton iterations, 637 Jacobian matvecs and a median wall time of 78.12 s (MAD 0.74 s); all three repeated field hashes are identical and the final residual is 6.13e-9.
+: Sources: primary: `validation/_generated/performance/crystal_tet2_srix_p43_m100_repeated.json`<br>provenance: `validation/_generated/performance/crystal_tet2_srix_p43_m100_repeated_manifest.json`.
+
+**E-MERIC-P43-001 — Is Méric-Cailletaud qualified for the registered P43 eight-increment production reconstruction?**
+: Fidelity: two-state TRI2, 3D-condensed plane stress, same P43 crop and constitutive bridge. Parameters: 100x100 P43, total pseudo-time one, proportional path, eight-increment failure and retained 16-increment diagnostic.
+: Status: **not qualified**.
+: Conclusion: The eight-increment run fails local plane-stress Newton at 15 iterations with a 5.19e-5 MPa transverse-stress residual. With 16 increments the same monotone proportional path converges to 8.59e-10, but costs 304.5 s and does not establish temporal convergence of the fields.
+: Sources: primary: `validation/_generated/performance/crystal_tet2_meric_p43_m100_failure.json`<br>primary: `validation/_generated/performance/crystal_tet2_meric_p43_time_refinement_16.json`.
+
 **E-SPECTRAL-001 — Does the one-point spectral stencil develop a high-frequency near-null mode?**
 : Fidelity: registered spectral witness. Parameters: one-point stencil, recorded non-affine load.
 : Status: **verified**.

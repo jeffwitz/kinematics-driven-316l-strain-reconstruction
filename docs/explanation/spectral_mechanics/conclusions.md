@@ -15,6 +15,14 @@ The next one-state method must change the constitutive representation or the
 spatial sampling strategy. More Anderson tuning, FFT optimization or tighter
 Newton tolerances cannot recover information removed by state sharing.
 
+The production-law decision is separate from the EBI falsification. SRIX is
+the qualified law for the registered P43 quasi-static reconstruction because
+its response does not depend on an undocumented elapsed time. Méric-Cailletaud
+is retained as a viscoplastic comparison law: eight increments fail local
+plane-stress condensation, while 16 increments converge numerically at a much
+higher cost, without establishing temporal convergence of the fields. See
+{doc}`srix_production_choice` for the complete evidence and scope boundary.
+
 ```{figure} ../../_static/spectral_mechanics/runtime_comparison.png
 :alt: Indicative 24 by 24 runtime comparison.
 :name: spectral-runtime-comparison
