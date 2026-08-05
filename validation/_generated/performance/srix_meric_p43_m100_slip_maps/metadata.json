@@ -1,0 +1,62 @@
+{
+  "backbone_sha256": "709312e15ff05df41ae4eb5021bad1db3f9bbbd43021726d0734ca84469eccc3",
+  "comparison": "Both laws use the same crop, orientation and paired 316L backbone. The pixel mean averages the two TRI2 states. Different increment counts are reported explicitly and do not authorize a temporal-accuracy comparison.",
+  "crop_nodes": [
+    1570,
+    1670,
+    1035,
+    1135
+  ],
+  "field_comparison_authorized": false,
+  "field_hashes": {
+    "meric_equivalent_plastic_slip": "1510c037bc8108557797dc1035c29c3a0282f5a2674c28c0a9870debeefb08c6",
+    "meric_plastic_slip": "c29b48abfd936d7a26caa68fb27f570be3873d04d5f4b495ec398897e5bf7a3d",
+    "srix_equivalent_plastic_slip": "a870d20cf7fb13e1e38f0a7a5a77144edfb7d30c3b9cb0349c396bc95210042b",
+    "srix_plastic_slip": "af5e9f5a3dedb4484accd92e776f4c2bd8454fe0bd505abae5b5257fc5939dbd"
+  },
+  "increments": 8,
+  "max_pixel_mean_equivalent_slip": {
+    "meric": 0.019392914417017293,
+    "srix": 0.008560423380983607
+  },
+  "meric_increments": 16,
+  "meric_report": "validation/_generated/performance/crystal_tet2_meric_p43_m100_slip_maps.json",
+  "mesh": [
+    100,
+    100
+  ],
+  "orientation": {
+    "euler_bunge_deg": [
+      35.0,
+      20.0,
+      15.0
+    ],
+    "mode": "homogeneous",
+    "sha256": "718dc64bb2d50bd13e2b3caa5f3e67613cb47be23223288957a59900b7beb2cb"
+  },
+  "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+  "performance_comparison_authorized": false,
+  "raw_shape": [
+    100,
+    100,
+    2,
+    12
+  ],
+  "slip_system_order": [
+    "01  b[0,1,-1] n[1,1,1]",
+    "02  b[1,0,-1] n[1,1,1]",
+    "03  b[1,-1,0] n[1,1,1]",
+    "04  b[0,1,1] n[1,1,-1]",
+    "05  b[1,0,1] n[1,1,-1]",
+    "06  b[1,-1,0] n[1,1,-1]",
+    "07  b[0,1,-1] n[1,-1,-1]",
+    "08  b[1,0,1] n[1,-1,-1]",
+    "09  b[1,1,0] n[1,-1,-1]",
+    "10  b[0,1,1] n[1,-1,1]",
+    "11  b[1,0,-1] n[1,-1,1]",
+    "12  b[1,1,0] n[1,-1,1]"
+  ],
+  "srix_increments": 8,
+  "srix_report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_slip_maps.json",
+  "status": "srix_meric_p43_m100_slip_maps_compared"
+}
