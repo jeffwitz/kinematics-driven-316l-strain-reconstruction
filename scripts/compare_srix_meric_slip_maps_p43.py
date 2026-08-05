@@ -151,6 +151,14 @@ def main() -> int:
 
     arguments.output_dir.mkdir(parents=True, exist_ok=True)
     labels = [_label(index) for index in range(12)]
+    temporal_note = (
+        "Both laws use the same 16-increment proportional path."
+        if same_temporal_discretization
+        else (
+            "Different increment counts are reported explicitly and do not authorize "
+            "a temporal-accuracy comparison."
+        )
+    )
     increment_title = (
         f"P43 100x100: SRIX {srix_report['increments']} / "
         f"Méric {meric_report['increments']} increments"
@@ -221,8 +229,8 @@ def main() -> int:
         "raw_shape": [100, 100, 2, 12],
         "comparison": (
             "Both laws use the same crop, orientation and paired 316L backbone. "
-            "The pixel mean averages the two TRI2 states. Different increment counts "
-            "are reported explicitly and do not authorize a temporal-accuracy comparison."
+            "The pixel mean averages the two TRI2 states. "
+            + temporal_note
         ),
         "field_hashes": {
             "srix_equivalent_plastic_slip": _hash(srix_equiv_tri),
