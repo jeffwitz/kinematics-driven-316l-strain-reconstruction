@@ -121,6 +121,40 @@ qualification mode. Adaptive stepping is now implemented experimentally, but
 its field-accuracy gate remains open because the first four-step P43 run is
 too coarse.
 
+## Error-controlled adaptive stepping by step doubling
+
+The solver also exposes a separate, disabled-by-default controller that
+controls path-integration error rather than Newton difficulty alone. For a
+candidate interval of size `h`, it solves one coarse interval and then two
+intervals of size `h/2` from the same committed MGIS snapshot. The fine branch
+is the only branch that can be committed. A failed branch or an error ratio
+above one restores the original snapshot and cuts back the interval.
+
+The error estimate compares in-plane stress, reactions, and both signed and
+accumulated slip for each of the twelve FCC systems. Displacement is retained
+as a secondary indicator. This distinction matters: four large steps can
+reach an equilibrium residual below `1e-8` while still producing percent-level
+differences in stress and slip fields.
+
+The experimental CLI is:
+
+```bash
+python scripts/qualify_crystal_tet2_p43.py \
+  --paired-parameter-set 316l_guilhem2013_nasri2018_meric_srix_rate_1e-3 \
+  --adaptive-error-control step-doubling \
+  --adaptive-error-stress-rtol 1e-3 \
+  --adaptive-error-slip-rtol 1e-3 \
+  --adaptive-error-reaction-rtol 1e-3 \
+  --output validation/_generated/performance/srix_p43_step_doubling.json
+```
+
+This path is restricted to SRIX. It uses explicit MGIS snapshots, preserves
+mandatory load-path knots, and passes `h`, `h/2`, `h/2` as the constitutive
+increments. The implementation is not yet a P43 qualification result: the
+step-doubling overhead and the tolerance-to-field-error relationship must be
+measured against the 16, 24, and 32-increment references before it can replace
+the fixed path.
+
 Méric--Cailletaud must not inherit the SRIX stepping policy: its increment
 duration is part of the constitutive law, whereas SRIX uses the increment
 primarily as a subdivision of the deformation path.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, cast
 
 import numpy as np
@@ -41,6 +41,11 @@ from fem_inhouse.spectral2d.step_control import (
     AdaptiveLoadPath,
     LoadPathStep,
     LoadStepObservation,
+)
+from fem_inhouse.spectral2d.step_doubling import (
+    LoadStepAttempt,
+    StepObservables,
+    estimate_step_error_by_doubling,
 )
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, TransformPlan2D
@@ -346,10 +351,234 @@ class TraditionalTwoStateTriangleBatch:
         if callable(accept):
             accept()
 
+    def snapshot_state(self) -> object:
+        snapshot = getattr(self.material, "snapshot_state", None)
+        if not callable(snapshot):
+            raise RuntimeError(
+                "step-doubling requires a material backend with snapshot_state()"
+            )
+        return snapshot()
+
+    def restore_state(self, snapshot: object) -> None:
+        restore = getattr(self.material, "restore_state", None)
+        if not callable(restore):
+            raise RuntimeError(
+                "step-doubling requires a material backend with restore_state()"
+            )
+        restore(snapshot)
+
 
 def _reshape_two_state(values: ArrayLike, grid: StructuredGrid2D) -> FloatArray:
     array = np.asarray(values)
     return array.reshape(*grid.pixel_shape, 2, *array.shape[1:])
+
+
+def _step_doubling_observables(result: Spectral2DResult) -> StepObservables:
+    """Extract the constitutive fields controlled by SRIX step doubling."""
+
+    required = ("plastic_slip", "equivalent_plastic_slip", "accumulated_slip")
+    missing = [name for name in required if name not in result.observables]
+    if missing:
+        raise RuntimeError(
+            "SRIX step-doubling requires per-system observables: "
+            + ", ".join(missing)
+        )
+    return StepObservables(
+        displacement=np.asarray(result.displacement, dtype=np.float64),
+        stress_in_plane_mpa=np.asarray(result.stress_in_plane_mpa, dtype=np.float64),
+        reaction_forces=np.asarray(result.reaction_forces, dtype=np.float64),
+        plastic_slip=np.asarray(result.observables["plastic_slip"], dtype=np.float64),
+        equivalent_plastic_slip=np.asarray(
+            result.observables["equivalent_plastic_slip"], dtype=np.float64
+        ),
+        accumulated_slip=np.asarray(result.observables["accumulated_slip"], dtype=np.float64),
+    )
+
+
+def _solve_two_state_step_doubling(
+    *,
+    grid: StructuredGrid2D,
+    material: PlaneStressMaterialBatch,
+    history: FloatArray,
+    config: EBISpectralSolverConfig,
+    transform_plan: TransformPlan2D | None,
+) -> Spectral2DResult:
+    """Run SRIX step doubling with isolated recursive TRI2 attempts.
+
+    The branch solver is deliberately the existing Newton-GMRES implementation
+    with step doubling disabled.  Each branch receives a fresh material
+    snapshot and returns a committed candidate snapshot; the controller only
+    leaves the fine branch committed after an accepted comparison.  This first
+    implementation favours transaction correctness over reuse of FFT plans or
+    Newton workspaces between branches.
+    """
+
+    elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
+    initial_snapshot = elements.snapshot_state()
+    branch_config = replace(
+        config,
+        adaptive_stepping_enabled=False,
+        step_doubling=replace(config.step_doubling, enabled=False),
+        verify_final_state=False,
+    )
+    branch_plan = transform_plan or create_full_dirichlet_dsti_plan(grid, config.transform)
+    reference_parameters: tuple[float, float] | None = None
+    zero_boundary = np.zeros_like(history[0])
+    proportional = bool(
+        np.allclose(
+            history,
+            np.linspace(0.0, 1.0, history.shape[0])[:, None, None, None] * history[-1],
+            rtol=1.0e-12,
+            atol=1.0e-15,
+        )
+    )
+
+    def boundary_at(fraction: float) -> FloatArray:
+        if proportional:
+            return (fraction * history[-1]).copy()
+        position = fraction * (history.shape[0] - 1)
+        lower = min(int(np.floor(position)), history.shape[0] - 2)
+        weight = position - lower
+        return ((1.0 - weight) * history[lower] + weight * history[lower + 1]).copy()
+
+    def next_mandatory_knot(fraction: float) -> float:
+        if proportional:
+            return 1.0
+        count = history.shape[0] - 1
+        next_index = int(np.floor(fraction * count + 1.0e-12)) + 1
+        return min(1.0, next_index / count)
+
+    def attempt(start: float, end: float, snapshot: object) -> LoadStepAttempt:
+        nonlocal reference_parameters, branch_config
+        elements.restore_state(snapshot)
+        endpoint_history = np.stack((zero_boundary, boundary_at(end)))
+        try:
+            attempt_config = branch_config
+            if reference_parameters is not None:
+                attempt_config = replace(
+                    branch_config,
+                    reference_parameter_mode="explicit",
+                    reference_lambda_0=reference_parameters[0],
+                    reference_mu_0=reference_parameters[1],
+                )
+            result = solve_two_state_dirichlet_plane_stress(
+                grid=grid,
+                material=material,
+                boundary_displacement_history=endpoint_history,
+                config=attempt_config,
+                transform_plan=branch_plan,
+                time_increment_override=end - start,
+            )
+            if reference_parameters is None:
+                reference_parameters = (
+                    result.diagnostics.reference_lambda_0,
+                    result.diagnostics.reference_mu_0,
+                )
+            state = elements.snapshot_state()
+            return LoadStepAttempt(
+                succeeded=True,
+                start_fraction=start,
+                end_fraction=end,
+                state=state,
+                observables=_step_doubling_observables(result),
+                diagnostics=result,
+            )
+        except Exception as error:
+            elements.restore_state(snapshot)
+            return LoadStepAttempt(
+                succeeded=False,
+                start_fraction=start,
+                end_fraction=end,
+                state=None,
+                observables=None,
+                diagnostics=None,
+                failure_reason=f"{type(error).__name__}: {error}",
+            )
+
+    current = 0.0
+    step_size = config.adaptive_step.initial_increment_fraction
+    final_result: Spectral2DResult | None = None
+    history_entries: list[dict[str, str | int | float | bool]] = []
+    attempt_index = 0
+    while current < 1.0 - 1.0e-14:
+        segment_end = next_mandatory_knot(current)
+        end = min(segment_end, current + step_size)
+        if end <= current:
+            raise RuntimeError("step-doubling controller made no progress")
+        start_snapshot = initial_snapshot if current == 0.0 else elements.snapshot_state()
+        attempt_index += 1
+        doubling = estimate_step_error_by_doubling(
+            current,
+            end,
+            start_snapshot,
+            attempt_solver=attempt,
+            config=config.step_doubling,
+        )
+        accepted = doubling.accepted
+        error = doubling.error
+        history_entries.append(
+            {
+                "attempt_index": attempt_index,
+                "start_fraction": current,
+                "end_fraction": end,
+                "proposed_step_size": step_size,
+                "effective_step_size": end - current,
+                "mandatory_knot_limited": bool(end == segment_end and not proportional),
+                "accepted": accepted,
+                "decision_reason": doubling.decision_reason,
+                "next_step_size": (end - current) * doubling.next_step_factor,
+                "maximum_error_ratio": -1.0 if error is None else error.maximum_ratio,
+                "controlling_quantity": "" if error is None else error.controlling_quantity,
+                "controlling_system": (
+                    -1
+                    if error is None or error.controlling_system is None
+                    else error.controlling_system
+                ),
+                "coarse_succeeded": doubling.coarse.succeeded,
+                "first_half_succeeded": (
+                    False if doubling.first_half is None else doubling.first_half.succeeded
+                ),
+                "second_half_succeeded": (
+                    False if doubling.second_half is None else doubling.second_half.succeeded
+                ),
+            }
+        )
+        if not accepted:
+            elements.restore_state(start_snapshot)
+            step_size = max(
+                config.adaptive_step.minimum_increment_fraction,
+                (end - current) * doubling.next_step_factor,
+            )
+            if end - current <= config.adaptive_step.minimum_increment_fraction * (1.0 + 1.0e-14):
+                raise RuntimeError(
+                    "step_error_tolerance_unreachable_at_minimum_step: "
+                    f"{doubling.decision_reason}"
+                )
+            continue
+        if doubling.second_half is None or doubling.second_half.observables is None:
+            raise RuntimeError("accepted step-doubling result has no fine branch")
+        if not isinstance(doubling.second_half.diagnostics, Spectral2DResult):
+            raise RuntimeError("step-doubling attempt did not retain its fine result")
+        final_result = doubling.second_half.diagnostics
+        effective_step = end - current
+        current = end
+        step_size = min(
+            config.adaptive_step.maximum_increment_fraction,
+            max(
+                config.adaptive_step.minimum_increment_fraction,
+                effective_step * doubling.next_step_factor,
+            ),
+        )
+    if final_result is None:
+        raise RuntimeError("step-doubling controller accepted no load step")
+    return replace(
+        final_result,
+        diagnostics=replace(
+            final_result.diagnostics,
+            adaptive_stepping_enabled=True,
+            adaptive_step_history=tuple(history_entries),
+        ),
+    )
 
 
 def solve_two_state_dirichlet_plane_stress(
@@ -359,6 +588,7 @@ def solve_two_state_dirichlet_plane_stress(
     boundary_displacement_history: ArrayLike,
     config: EBISpectralSolverConfig,
     transform_plan: TransformPlan2D | None = None,
+    time_increment_override: float | None = None,
 ) -> Spectral2DResult:
     """Solve the direct two-state TRI2 oracle with the EBI Newton machinery."""
 
@@ -366,6 +596,16 @@ def solve_two_state_dirichlet_plane_stress(
     expected = (history.shape[0], *grid.node_shape, 2)
     if history.ndim != 4 or history.shape != expected or not np.allclose(history[0], 0.0):
         raise ValueError(f"invalid boundary history shape {history.shape}")
+    if config.step_doubling.enabled:
+        if not config.adaptive_stepping_enabled:
+            raise ValueError("step-doubling requires adaptive stepping")
+        return _solve_two_state_step_doubling(
+            grid=grid,
+            material=material,
+            history=history,
+            config=config,
+            transform_plan=transform_plan,
+        )
     kinematics = TwoSubcellDiagnostic2D(grid)
     elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
     extension = HarmonicDirichletExtension2D()
@@ -426,26 +666,31 @@ def solve_two_state_dirichlet_plane_stress(
         return nonlinear_divergence_buffer
 
     plan = transform_plan or create_full_dirichlet_dsti_plan(grid, config.transform)
-    initial_material_started = time.perf_counter()
-    zero_trial = evaluate_in_plane_response(
-        material,
-        np.zeros((material.point_count, 3)),
-        time_increment=1.0,
-        response_level="tangent",
-        consistent_tangent=True,
-    )
-    material_seconds += time.perf_counter() - initial_material_started
-    material.revert()
-    tangent = np.asarray(zero_trial.tangent_in_plane_mpa).reshape(*grid.pixel_shape, 2, 3, 3)
-    projected_lambda, projected_mu, projection_error = project_isotropic_plane_stress_tangent(
-        tangent.mean(axis=(0, 1, 2))
-    )
     if config.reference_parameter_mode == "explicit":
         assert config.reference_lambda_0 is not None
         assert config.reference_mu_0 is not None
         lambda_0 = config.reference_lambda_0
         mu_0 = config.reference_mu_0
+        projected_lambda = lambda_0
+        projected_mu = mu_0
+        projection_error = 0.0
     else:
+        initial_material_started = time.perf_counter()
+        zero_trial = evaluate_in_plane_response(
+            material,
+            np.zeros((material.point_count, 3)),
+            time_increment=1.0,
+            response_level="tangent",
+            consistent_tangent=True,
+        )
+        material_seconds += time.perf_counter() - initial_material_started
+        material.revert()
+        tangent = np.asarray(zero_trial.tangent_in_plane_mpa).reshape(
+            *grid.pixel_shape, 2, 3, 3
+        )
+        projected_lambda, projected_mu, projection_error = project_isotropic_plane_stress_tangent(
+            tangent.mean(axis=(0, 1, 2))
+        )
         lambda_0 = (
             projected_lambda
             * config.reference_parameter_scale
@@ -479,7 +724,13 @@ def solve_two_state_dirichlet_plane_stress(
     final_sample_strain = None
     verification_residual = 0.0
     final_applied = history[0].copy()
-    time_increment = 1.0 / (history.shape[0] - 1)
+    time_increment = (
+        1.0 / (history.shape[0] - 1)
+        if time_increment_override is None
+        else float(time_increment_override)
+    )
+    if not np.isfinite(time_increment) or time_increment <= 0.0:
+        raise ValueError("time increment must be finite and positive")
     krylov_recycle = KrylovRecycleState()
     adaptive_step_history: list[dict[str, str | int | float | bool]] = []
 

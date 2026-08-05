@@ -19,7 +19,11 @@ from fem_inhouse.core.crystal_parameter_pairs import (
 )
 from fem_inhouse.core.mfront_crystal_structure import read_crystal_structure_fingerprint
 from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
-from fem_inhouse.spectral2d import AdaptiveStepConfig, EBISpectralSolverConfig
+from fem_inhouse.spectral2d import (
+    AdaptiveStepConfig,
+    EBISpectralSolverConfig,
+    StepDoublingErrorConfig,
+)
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
@@ -112,9 +116,21 @@ def main() -> int:
     parser.add_argument("--adaptive-initial-step", type=float, default=0.25)
     parser.add_argument("--adaptive-min-step", type=float, default=1.0 / 256.0)
     parser.add_argument("--adaptive-max-step", type=float, default=0.5)
+    parser.add_argument(
+        "--adaptive-error-control",
+        choices=("none", "step-doubling"),
+        default="none",
+    )
+    parser.add_argument("--adaptive-error-stress-rtol", type=float, default=1.0e-3)
+    parser.add_argument("--adaptive-error-slip-rtol", type=float, default=1.0e-3)
+    parser.add_argument("--adaptive-error-reaction-rtol", type=float, default=1.0e-3)
+    parser.add_argument("--adaptive-error-displacement-rtol", type=float, default=1.0e-5)
+    parser.add_argument("--adaptive-error-safety-factor", type=float, default=0.8)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
-    if arguments.adaptive_stepping and arguments.behaviour != "fcc_forest_rubin_srix":
+    step_doubling_enabled = arguments.adaptive_error_control == "step-doubling"
+    adaptive_enabled = arguments.adaptive_stepping or step_doubling_enabled
+    if adaptive_enabled and arguments.behaviour != "fcc_forest_rubin_srix":
         raise SystemExit(
             "adaptive stepping is currently restricted to the rate-independent SRIX law"
         )
@@ -196,11 +212,20 @@ def main() -> int:
             linear_tolerance_mode=arguments.linear_mode,
             reference_update_mode=arguments.reference_update,
             verify_final_state=not arguments.no_final_verification,
-            adaptive_stepping_enabled=arguments.adaptive_stepping,
+            adaptive_stepping_enabled=adaptive_enabled,
             adaptive_step=AdaptiveStepConfig(
                 initial_increment_fraction=arguments.adaptive_initial_step,
                 minimum_increment_fraction=arguments.adaptive_min_step,
                 maximum_increment_fraction=arguments.adaptive_max_step,
+            ),
+            step_doubling=StepDoublingErrorConfig(
+                enabled=step_doubling_enabled,
+                stress_relative_tolerance=arguments.adaptive_error_stress_rtol,
+                reaction_relative_tolerance=arguments.adaptive_error_reaction_rtol,
+                signed_slip_relative_tolerance=arguments.adaptive_error_slip_rtol,
+                accumulated_slip_relative_tolerance=arguments.adaptive_error_slip_rtol,
+                displacement_relative_tolerance=arguments.adaptive_error_displacement_rtol,
+                safety_factor=arguments.adaptive_error_safety_factor,
             ),
             krylov_method=arguments.krylov_method,
             krylov_recycling=arguments.krylov_recycling,
@@ -228,13 +253,21 @@ def main() -> int:
     field_path = arguments.output.with_suffix(".fields.npz")
     np.savez_compressed(field_path, **fields)  # type: ignore[arg-type]
     diagnostics = result.diagnostics
+    accepted_increment_count = (
+        sum(
+            bool(item.get("accepted", False))
+            for item in diagnostics.adaptive_step_history
+        )
+        if step_doubling_enabled
+        else len(diagnostics.iterations_per_increment)
+    )
     report = {
         "status": "completed_crystal_tet2_p43",
         "crop_nodes": list(crop),
         "mesh": [mesh, mesh],
         "increments": arguments.increments,
         "requested_increments": arguments.increments,
-        "accepted_increments": len(diagnostics.iterations_per_increment),
+        "accepted_increments": accepted_increment_count,
         "tolerance": arguments.tolerance,
         "behaviour": arguments.behaviour,
         "mfront_threads": arguments.mfront_threads,
@@ -242,7 +275,16 @@ def main() -> int:
         "linear_mode": arguments.linear_mode,
         "reference_update": arguments.reference_update,
         "verify_final_state": not arguments.no_final_verification,
-        "adaptive_stepping_enabled": arguments.adaptive_stepping,
+        "adaptive_stepping_enabled": adaptive_enabled,
+        "adaptive_error_control": arguments.adaptive_error_control,
+        "adaptive_error_configuration": {
+            "stress_relative_tolerance": arguments.adaptive_error_stress_rtol,
+            "reaction_relative_tolerance": arguments.adaptive_error_reaction_rtol,
+            "signed_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
+            "accumulated_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
+            "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
+            "safety_factor": arguments.adaptive_error_safety_factor,
+        },
         "adaptive_step_history": list(diagnostics.adaptive_step_history),
         "elapsed_seconds": elapsed,
         "newton_iterations": sum(diagnostics.iterations_per_increment),

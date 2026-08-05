@@ -24,6 +24,7 @@ from fem_inhouse.spectral2d.krylov import (
 from fem_inhouse.spectral2d.nonlinear import _boundary_reactions, _equilibrium_metrics
 from fem_inhouse.spectral2d.result import Spectral2DResult
 from fem_inhouse.spectral2d.step_control import AdaptiveStepConfig
+from fem_inhouse.spectral2d.step_doubling import StepDoublingErrorConfig
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import (
     BufferedTransformPlan2D,
@@ -67,6 +68,7 @@ class EBISpectralSolverConfig:
     symbol_null_tolerance: float = 1.0e-12
     adaptive_stepping_enabled: bool = False
     adaptive_step: AdaptiveStepConfig = field(default_factory=AdaptiveStepConfig)
+    step_doubling: StepDoublingErrorConfig = field(default_factory=StepDoublingErrorConfig)
     transform: SpectralTransformConfig = field(default_factory=SpectralTransformConfig)
 
     def __post_init__(self) -> None:
@@ -112,6 +114,8 @@ class EBISpectralSolverConfig:
                 raise ValueError("projected B0 parameters reject explicit values")
         else:
             raise ValueError("unsupported reference parameter mode")
+        if self.step_doubling.enabled and not self.adaptive_stepping_enabled:
+            raise ValueError("step-doubling requires adaptive stepping")
 
 
 def pack_interior(field: ArrayLike) -> FloatArray:

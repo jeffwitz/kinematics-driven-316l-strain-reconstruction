@@ -69,6 +69,29 @@ class MFrontIntegrationResult:
 
 
 @dataclass(frozen=True, slots=True)
+class MFrontMaterialStateSnapshot:
+    """Committed MGIS state captured for an isolated adaptive branch."""
+
+    gradients_s0: NDArray
+    internal_state_variables_s0: NDArray
+    thermodynamic_forces_s0: NDArray
+    committed_global_strain: NDArray
+    committed_nonlocal_values: NDArray | None
+
+
+@dataclass(frozen=True, slots=True)
+class MFrontCondensedStateSnapshot:
+    """Committed state of the 3-D bridge and plane-stress predictor."""
+
+    bridge: MFrontMaterialStateSnapshot
+    accepted_transverse: NDArray
+    latest_transverse: NDArray | None
+    has_accepted_global_trial: bool
+    last_in_plane: NDArray | None
+    last_time_increment: float | None
+
+
+@dataclass(frozen=True, slots=True)
 class MFrontTimingStatistics:
     """Accumulated wall times for the native MGIS constitutive bridge."""
 
@@ -1463,6 +1486,53 @@ class MFront3DMaterialPointBatch:
             self._apply_trial_nonlocal_values()
         self._has_trial_state = False
 
+    def snapshot_state(self) -> MFrontMaterialStateSnapshot:
+        """Capture the committed state without changing MGIS ownership."""
+
+        if self._has_trial_state:
+            raise RuntimeError("snapshot_state requires a committed MGIS state")
+        return MFrontMaterialStateSnapshot(
+            gradients_s0=np.asarray(self._manager.s0.gradients, dtype=float).copy(),
+            internal_state_variables_s0=np.asarray(
+                self._manager.s0.internal_state_variables, dtype=float
+            ).copy(),
+            thermodynamic_forces_s0=np.asarray(
+                self._manager.s0.thermodynamic_forces, dtype=float
+            ).copy(),
+            committed_global_strain=self._committed_global_strain.copy(),
+            committed_nonlocal_values=(
+                None
+                if self._committed_nonlocal_values is None
+                else self._committed_nonlocal_values.copy()
+            ),
+        )
+
+    def restore_state(self, snapshot: MFrontMaterialStateSnapshot) -> None:
+        """Restore a committed state and clear any active MGIS trial."""
+
+        if self._has_trial_state:
+            self._mgis.revert(self._manager)
+            self._has_trial_state = False
+        if snapshot.gradients_s0.shape != self._manager.s0.gradients.shape:
+            raise ValueError("incompatible MGIS snapshot gradient shape")
+        if snapshot.internal_state_variables_s0.shape != (
+            self._manager.s0.internal_state_variables.shape
+        ):
+            raise ValueError("incompatible MGIS snapshot state-variable shape")
+        for state in (self._manager.s0, self._manager.s1):
+            state.gradients[:, :] = snapshot.gradients_s0
+            state.internal_state_variables[:, :] = snapshot.internal_state_variables_s0
+            state.thermodynamic_forces[:, :] = snapshot.thermodynamic_forces_s0
+        self._committed_global_strain[:, :] = snapshot.committed_global_strain
+        if self._committed_nonlocal_values is not None:
+            if snapshot.committed_nonlocal_values is None:
+                raise ValueError("snapshot is missing committed nonlocal state")
+            self._committed_nonlocal_values[:] = snapshot.committed_nonlocal_values
+            assert self._trial_nonlocal_values is not None
+            self._trial_nonlocal_values[:] = snapshot.committed_nonlocal_values
+            self._apply_trial_nonlocal_values()
+        self._trial_global_strain[:, :] = self._committed_global_strain
+
     def revert(self) -> None:
         self._mgis.revert(self._manager)
         if self._committed_nonlocal_values is not None:
@@ -1978,6 +2048,34 @@ class MFront3DCondensedPlaneStressBatch:
         self.accept_global_trial()
         self._latest_transverse = None
         self._has_accepted_global_trial = False
+
+    def snapshot_state(self) -> MFrontCondensedStateSnapshot:
+        """Capture committed MGIS and plane-stress predictor state."""
+
+        if self._has_accepted_global_trial or self._latest_transverse is not None:
+            raise RuntimeError("snapshot_state requires no active condensed trial")
+        return MFrontCondensedStateSnapshot(
+            bridge=self._bridge.snapshot_state(),
+            accepted_transverse=self._accepted_transverse.copy(),
+            latest_transverse=None,
+            has_accepted_global_trial=False,
+            last_in_plane=None if self._last_in_plane is None else self._last_in_plane.copy(),
+            last_time_increment=self._last_time_increment,
+        )
+
+    def restore_state(self, snapshot: MFrontCondensedStateSnapshot) -> None:
+        """Restore committed MGIS and plane-stress predictor state."""
+
+        self._bridge.restore_state(snapshot.bridge)
+        self._accepted_transverse = snapshot.accepted_transverse.copy()
+        self._latest_transverse = (
+            None if snapshot.latest_transverse is None else snapshot.latest_transverse.copy()
+        )
+        self._has_accepted_global_trial = snapshot.has_accepted_global_trial
+        self._last_in_plane = (
+            None if snapshot.last_in_plane is None else snapshot.last_in_plane.copy()
+        )
+        self._last_time_increment = snapshot.last_time_increment
 
     def revert(self) -> None:
         self._bridge.revert()
