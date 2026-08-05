@@ -1,4 +1,5 @@
 {
+  "base_git_sha_at_generation": "ab6f9ad536d2b66f390387b37f03ada1b4e9a023",
   "comparison_summary": "comparison_summary.json",
   "configuration": {
     "cumulative_dominance_threshold": 0.95,
@@ -28,8 +29,8 @@
     "slip_system_11_spatial_comparison.png",
     "mechanism_amplitude_summary.svg"
   ],
-  "generated_at_utc": "2026-08-05T21:13:29.765117+00:00",
-  "git_sha": "f3b259951dfee3fecafa2f313a0345fe19e16508",
+  "generated_at_utc": "2026-08-05T21:23:44.430385+00:00",
+  "generator_file_sha256": "c0fd957f2fc47c2058892cd26926d8e5722328bf330a0ed559b79b58089ee34f",
   "incremental_history_available": false,
   "increments": 16,
   "mesh": [
@@ -82,5 +83,6 @@
       "report_sha256": "b638411c31e8a467c4fd55c11662044c37affbe9faa468c0629bb1c64e227564"
     }
   },
-  "status": "complete_final_fields_history_unavailable"
+  "status": "complete_final_fields_history_unavailable",
+  "working_tree_dirty_at_generation": true
 }

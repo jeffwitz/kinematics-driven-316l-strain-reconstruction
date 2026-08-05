@@ -97,6 +97,11 @@ are much lower (system 01: `0.2706`; system 07: `0.1751`; system 11:
 `0.1062`). Correlation of broad maps therefore does not imply identical
 high-activity zones.
 
+Signed fields are classified per system. Pixels active in only one law are
+reported as `meric_only` or `srix_only`; they are not counted as opposite
+signs. A genuine sign inversion is counted only when both laws are active for
+the same system and pixel.
+
 ## Interpretation
 
 The archived result is closest to the following classification:

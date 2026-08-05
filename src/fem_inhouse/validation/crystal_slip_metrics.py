@@ -337,29 +337,68 @@ def _signed_pair_metrics(
     weights: FloatArray,
     config: SlipMetricConfig,
 ) -> dict[str, Any]:
-    mask = (np.abs(meric) > config.numerical_zero_tolerance) | (
-        np.abs(srix) > config.numerical_zero_tolerance
-    )
-    if not np.any(mask):
+    meric_active = np.abs(meric) > config.numerical_zero_tolerance
+    srix_active = np.abs(srix) > config.numerical_zero_tolerance
+    union_active = meric_active | srix_active
+    both_active = meric_active & srix_active
+    meric_only = meric_active & ~srix_active
+    srix_only = srix_active & ~meric_active
+    same_sign = both_active & (np.sign(meric) == np.sign(srix))
+    opposite_sign = both_active & (np.sign(meric) != np.sign(srix))
+    if not np.any(union_active):
         return {
-            "same_sign_fraction": None,
-            "opposite_sign_fraction": None,
+            "both_active_fraction": None,
+            "same_sign_fraction_among_both_active": None,
+            "opposite_sign_fraction_among_both_active": None,
+            "meric_only_fraction": None,
+            "srix_only_fraction": None,
+            "weighted_both_active_fraction": None,
+            "weighted_same_sign_fraction_among_both_active": None,
+            "weighted_opposite_sign_fraction_among_both_active": None,
+            "weighted_meric_only_fraction": None,
+            "weighted_srix_only_fraction": None,
             "comparable_pixels": 0,
-            "weighted_same_sign_fraction": None,
             "status": "not_significant",
         }
-    same = np.sign(meric[mask]) == np.sign(srix[mask])
-    selected_weights = np.asarray(weights, dtype=np.float64)[mask]
+    selected_weights = np.asarray(weights, dtype=np.float64)[union_active]
     weight_total = float(np.sum(selected_weights))
+    both_weights = float(np.sum(np.asarray(weights, dtype=np.float64)[both_active]))
+    union_count = float(np.count_nonzero(union_active))
+    both_count = float(np.count_nonzero(both_active))
     return {
-        "same_sign_fraction": float(np.mean(same)),
-        "opposite_sign_fraction": float(np.mean(~same)),
-        "comparable_pixels": int(np.count_nonzero(mask)),
-        "weighted_same_sign_fraction": (
-            float(np.sum(selected_weights[same]) / weight_total)
+        "both_active_fraction": both_count / union_count,
+        "same_sign_fraction_among_both_active": (
+            float(np.count_nonzero(same_sign) / both_count) if both_count else None
+        ),
+        "opposite_sign_fraction_among_both_active": (
+            float(np.count_nonzero(opposite_sign) / both_count) if both_count else None
+        ),
+        "meric_only_fraction": float(np.count_nonzero(meric_only) / union_count),
+        "srix_only_fraction": float(np.count_nonzero(srix_only) / union_count),
+        "weighted_both_active_fraction": (
+            both_weights / weight_total if weight_total > np.finfo(float).eps else None
+        ),
+        "weighted_same_sign_fraction_among_both_active": (
+            float(np.sum(np.asarray(weights, dtype=np.float64)[same_sign]) / both_weights)
+            if both_weights > np.finfo(float).eps
+            else None
+        ),
+        "weighted_opposite_sign_fraction_among_both_active": (
+            float(np.sum(np.asarray(weights, dtype=np.float64)[opposite_sign]) / both_weights)
+            if both_weights > np.finfo(float).eps
+            else None
+        ),
+        "weighted_meric_only_fraction": (
+            float(np.sum(np.asarray(weights, dtype=np.float64)[meric_only]) / weight_total)
             if weight_total > np.finfo(float).eps
             else None
         ),
+        "weighted_srix_only_fraction": (
+            float(np.sum(np.asarray(weights, dtype=np.float64)[srix_only]) / weight_total)
+            if weight_total > np.finfo(float).eps
+            else None
+        ),
+        "comparable_pixels": int(np.count_nonzero(union_active)),
         "status": "significant",
     }
 
@@ -392,27 +431,50 @@ def _signed_metrics(
         for index in range(meric.shape[0])
     ]
     all_weights = 0.5 * (meric_magnitude + srix_magnitude)
-    all_mask = (np.abs(meric) > config.numerical_zero_tolerance) | (
-        np.abs(srix) > config.numerical_zero_tolerance
-    )
-    all_same = np.sign(meric[all_mask]) == np.sign(srix[all_mask])
-    selected_weights = all_weights[all_mask]
+    meric_active = np.abs(meric) > config.numerical_zero_tolerance
+    srix_active = np.abs(srix) > config.numerical_zero_tolerance
+    union_active = meric_active | srix_active
+    both_active = meric_active & srix_active
+    meric_only = meric_active & ~srix_active
+    srix_only = srix_active & ~meric_active
+    same_sign = both_active & (np.sign(meric) == np.sign(srix))
+    opposite_sign = both_active & (np.sign(meric) != np.sign(srix))
+    selected_weights = all_weights[union_active]
+    both_weights = float(np.sum(all_weights[both_active]))
     weight_total = float(np.sum(selected_weights))
     return {
         "available": True,
         "chronology_available": False,
-        "same_sign_fraction_by_system": [item["same_sign_fraction"] for item in per_system],
-        "opposite_sign_fraction_by_system": [
-            item["opposite_sign_fraction"] for item in per_system
+        "both_active_fraction_by_system": [item["both_active_fraction"] for item in per_system],
+        "same_sign_fraction_among_both_active_by_system": [
+            item["same_sign_fraction_among_both_active"] for item in per_system
         ],
+        "opposite_sign_fraction_among_both_active_by_system": [
+            item["opposite_sign_fraction_among_both_active"] for item in per_system
+        ],
+        "meric_only_fraction_by_system": [item["meric_only_fraction"] for item in per_system],
+        "srix_only_fraction_by_system": [item["srix_only_fraction"] for item in per_system],
         "comparable_pixels_by_system": [item["comparable_pixels"] for item in per_system],
-        "weighted_same_sign_fraction": (
-            float(np.sum(selected_weights[all_same]) / weight_total)
+        "weighted_both_active_fraction": (
+            both_weights / weight_total if weight_total > np.finfo(float).eps else None
+        ),
+        "weighted_same_sign_fraction_among_both_active": (
+            float(np.sum(all_weights[same_sign]) / both_weights)
+            if both_weights > np.finfo(float).eps
+            else None
+        ),
+        "weighted_opposite_sign_fraction_among_both_active": (
+            float(np.sum(all_weights[opposite_sign]) / both_weights)
+            if both_weights > np.finfo(float).eps
+            else None
+        ),
+        "weighted_meric_only_fraction": (
+            float(np.sum(all_weights[meric_only]) / weight_total)
             if weight_total > np.finfo(float).eps
             else None
         ),
-        "weighted_opposite_sign_fraction": (
-            float(np.sum(selected_weights[~all_same]) / weight_total)
+        "weighted_srix_only_fraction": (
+            float(np.sum(all_weights[srix_only]) / weight_total)
             if weight_total > np.finfo(float).eps
             else None
         ),

@@ -37,6 +37,25 @@ def _git_sha() -> str | None:
         return None
 
 
+def _working_tree_dirty() -> bool | None:
+    try:
+        tracked = subprocess.run(
+            ["git", "diff", "--quiet", "--ignore-submodules", "--"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--ignore-submodules", "--"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return tracked.returncode != 0 or staged.returncode != 0
+    except OSError:
+        return None
+
+
 def _resolve_field_file(report_path: Path, report: dict[str, Any]) -> Path:
     raw = Path(str(report["field_file"]))
     candidates = (raw, report_path.parent / raw, Path.cwd() / raw)
@@ -200,7 +219,9 @@ def main() -> int:
     systems = summary.pop("systems")
     summary["provenance"] = {
         "generated_at_utc": datetime.now(UTC).isoformat(),
-        "git_sha": _git_sha(),
+        "base_git_sha_at_generation": _git_sha(),
+        "working_tree_dirty_at_generation": _working_tree_dirty(),
+        "generator_file_sha256": _hash_file(Path(__file__).resolve()),
         "schema_version": 1,
         "srix": _source_summary(arguments.srix_report, srix_report, srix_fields),
         "meric": _source_summary(arguments.meric_report, meric_report, meric_fields),
@@ -250,7 +271,11 @@ def main() -> int:
         "status": summary["status"],
         "comparison_summary": "comparison_summary.json",
         "generated_at_utc": summary["provenance"]["generated_at_utc"],
-        "git_sha": summary["provenance"]["git_sha"],
+        "base_git_sha_at_generation": summary["provenance"]["base_git_sha_at_generation"],
+        "working_tree_dirty_at_generation": summary["provenance"][
+            "working_tree_dirty_at_generation"
+        ],
+        "generator_file_sha256": summary["provenance"]["generator_file_sha256"],
         "source_reports": {
             "meric": summary["provenance"]["meric"],
             "srix": summary["provenance"]["srix"],

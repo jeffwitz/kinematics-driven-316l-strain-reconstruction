@@ -71,14 +71,15 @@
   ],
   "performance_comparison_authorized": false,
   "provenance": {
+    "base_git_sha_at_generation": "ab6f9ad536d2b66f390387b37f03ada1b4e9a023",
     "crop_nodes": [
       1570,
       1670,
       1035,
       1135
     ],
-    "generated_at_utc": "2026-08-05T21:13:29.765117+00:00",
-    "git_sha": "f3b259951dfee3fecafa2f313a0345fe19e16508",
+    "generated_at_utc": "2026-08-05T21:23:44.430385+00:00",
+    "generator_file_sha256": "c0fd957f2fc47c2058892cd26926d8e5722328bf330a0ed559b79b58089ee34f",
     "increments": 16,
     "meric": {
       "archive_commit": "b509ec228eb6c3f5eddce19652f439e450a93220",
@@ -127,10 +128,25 @@
       "field_sha256": "9ae37f6b79b736b6ade440c0d2352ef244ed9b28c8d5ba93aefe9d7be70987dc",
       "report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_16_slip_maps.json",
       "report_sha256": "b638411c31e8a467c4fd55c11662044c37affbe9faa468c0629bb1c64e227564"
-    }
+    },
+    "working_tree_dirty_at_generation": true
   },
   "signed_slip": {
     "available": true,
+    "both_active_fraction_by_system": [
+      1.0,
+      1.0,
+      null,
+      0.0,
+      1.0,
+      null,
+      1.0,
+      0.9999,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
     "chronology_available": false,
     "comparable_pixels_by_system": [
       10000,
@@ -146,134 +162,249 @@
       10000,
       1912
     ],
-    "opposite_sign_fraction_by_system": [
+    "meric_only_fraction_by_system": [
       0.0,
       0.0,
       null,
-      0.9998958875585633,
+      0.0,
       0.0,
       null,
       0.0,
       0.0,
-      1.0,
-      0.9998314796090327,
       0.0,
-      1.0
+      0.0,
+      0.0,
+      0.0
+    ],
+    "opposite_sign_fraction_among_both_active_by_system": [
+      0.0,
+      0.0,
+      null,
+      null,
+      0.0,
+      null,
+      0.0,
+      0.0,
+      null,
+      null,
+      0.0,
+      null
     ],
     "per_system": [
       {
+        "both_active_fraction": 1.0,
         "comparable_pixels": 10000,
-        "opposite_sign_fraction": 0.0,
-        "same_sign_fraction": 1.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": 0.0,
+        "same_sign_fraction_among_both_active": 1.0,
+        "srix_only_fraction": 0.0,
         "status": "significant",
         "system": 0,
-        "weighted_same_sign_fraction": 1.0
+        "weighted_both_active_fraction": 1.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": 0.0,
+        "weighted_same_sign_fraction_among_both_active": 1.0,
+        "weighted_srix_only_fraction": 0.0
       },
       {
+        "both_active_fraction": 1.0,
         "comparable_pixels": 10000,
-        "opposite_sign_fraction": 0.0,
-        "same_sign_fraction": 1.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": 0.0,
+        "same_sign_fraction_among_both_active": 1.0,
+        "srix_only_fraction": 0.0,
         "status": "significant",
         "system": 1,
-        "weighted_same_sign_fraction": 1.0
+        "weighted_both_active_fraction": 1.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": 0.0,
+        "weighted_same_sign_fraction_among_both_active": 1.0,
+        "weighted_srix_only_fraction": 0.0
       },
       {
+        "both_active_fraction": null,
         "comparable_pixels": 0,
-        "opposite_sign_fraction": null,
-        "same_sign_fraction": null,
+        "meric_only_fraction": null,
+        "opposite_sign_fraction_among_both_active": null,
+        "same_sign_fraction_among_both_active": null,
+        "srix_only_fraction": null,
         "status": "not_significant",
         "system": 2,
-        "weighted_same_sign_fraction": null
+        "weighted_both_active_fraction": null,
+        "weighted_meric_only_fraction": null,
+        "weighted_opposite_sign_fraction_among_both_active": null,
+        "weighted_same_sign_fraction_among_both_active": null,
+        "weighted_srix_only_fraction": null
       },
       {
+        "both_active_fraction": 0.0,
         "comparable_pixels": 9605,
-        "opposite_sign_fraction": 0.9998958875585633,
-        "same_sign_fraction": 0.00010411244143675169,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": null,
+        "same_sign_fraction_among_both_active": null,
+        "srix_only_fraction": 1.0,
         "status": "significant",
         "system": 3,
-        "weighted_same_sign_fraction": 0.00017099511199097814
+        "weighted_both_active_fraction": 0.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": null,
+        "weighted_same_sign_fraction_among_both_active": null,
+        "weighted_srix_only_fraction": 1.0
       },
       {
+        "both_active_fraction": 1.0,
         "comparable_pixels": 10000,
-        "opposite_sign_fraction": 0.0,
-        "same_sign_fraction": 1.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": 0.0,
+        "same_sign_fraction_among_both_active": 1.0,
+        "srix_only_fraction": 0.0,
         "status": "significant",
         "system": 4,
-        "weighted_same_sign_fraction": 1.0
+        "weighted_both_active_fraction": 1.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": 0.0,
+        "weighted_same_sign_fraction_among_both_active": 1.0,
+        "weighted_srix_only_fraction": 0.0
       },
       {
+        "both_active_fraction": null,
         "comparable_pixels": 0,
-        "opposite_sign_fraction": null,
-        "same_sign_fraction": null,
+        "meric_only_fraction": null,
+        "opposite_sign_fraction_among_both_active": null,
+        "same_sign_fraction_among_both_active": null,
+        "srix_only_fraction": null,
         "status": "not_significant",
         "system": 5,
-        "weighted_same_sign_fraction": null
+        "weighted_both_active_fraction": null,
+        "weighted_meric_only_fraction": null,
+        "weighted_opposite_sign_fraction_among_both_active": null,
+        "weighted_same_sign_fraction_among_both_active": null,
+        "weighted_srix_only_fraction": null
       },
       {
+        "both_active_fraction": 1.0,
         "comparable_pixels": 10000,
-        "opposite_sign_fraction": 0.0,
-        "same_sign_fraction": 1.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": 0.0,
+        "same_sign_fraction_among_both_active": 1.0,
+        "srix_only_fraction": 0.0,
         "status": "significant",
         "system": 6,
-        "weighted_same_sign_fraction": 1.0
+        "weighted_both_active_fraction": 1.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": 0.0,
+        "weighted_same_sign_fraction_among_both_active": 1.0,
+        "weighted_srix_only_fraction": 0.0
       },
       {
+        "both_active_fraction": 0.9999,
         "comparable_pixels": 10000,
-        "opposite_sign_fraction": 0.0,
-        "same_sign_fraction": 1.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": 0.0,
+        "same_sign_fraction_among_both_active": 1.0,
+        "srix_only_fraction": 0.0001,
         "status": "significant",
         "system": 7,
-        "weighted_same_sign_fraction": 1.0
+        "weighted_both_active_fraction": 0.9999778452220119,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": 0.0,
+        "weighted_same_sign_fraction_among_both_active": 1.0,
+        "weighted_srix_only_fraction": 2.215477798792978e-05
       },
       {
+        "both_active_fraction": 0.0,
         "comparable_pixels": 3,
-        "opposite_sign_fraction": 1.0,
-        "same_sign_fraction": 0.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": null,
+        "same_sign_fraction_among_both_active": null,
+        "srix_only_fraction": 1.0,
         "status": "significant",
         "system": 8,
-        "weighted_same_sign_fraction": 0.0
+        "weighted_both_active_fraction": 0.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": null,
+        "weighted_same_sign_fraction_among_both_active": null,
+        "weighted_srix_only_fraction": 1.0
       },
       {
+        "both_active_fraction": 0.0,
         "comparable_pixels": 5934,
-        "opposite_sign_fraction": 0.9998314796090327,
-        "same_sign_fraction": 0.00016852039096730705,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": null,
+        "same_sign_fraction_among_both_active": null,
+        "srix_only_fraction": 1.0,
         "status": "significant",
         "system": 9,
-        "weighted_same_sign_fraction": 0.0006313192491141475
+        "weighted_both_active_fraction": 0.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": null,
+        "weighted_same_sign_fraction_among_both_active": null,
+        "weighted_srix_only_fraction": 1.0
       },
       {
+        "both_active_fraction": 1.0,
         "comparable_pixels": 10000,
-        "opposite_sign_fraction": 0.0,
-        "same_sign_fraction": 1.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": 0.0,
+        "same_sign_fraction_among_both_active": 1.0,
+        "srix_only_fraction": 0.0,
         "status": "significant",
         "system": 10,
-        "weighted_same_sign_fraction": 1.0
+        "weighted_both_active_fraction": 1.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": 0.0,
+        "weighted_same_sign_fraction_among_both_active": 1.0,
+        "weighted_srix_only_fraction": 0.0
       },
       {
+        "both_active_fraction": 0.0,
         "comparable_pixels": 1912,
-        "opposite_sign_fraction": 1.0,
-        "same_sign_fraction": 0.0,
+        "meric_only_fraction": 0.0,
+        "opposite_sign_fraction_among_both_active": null,
+        "same_sign_fraction_among_both_active": null,
+        "srix_only_fraction": 1.0,
         "status": "significant",
         "system": 11,
-        "weighted_same_sign_fraction": 0.0
+        "weighted_both_active_fraction": 0.0,
+        "weighted_meric_only_fraction": 0.0,
+        "weighted_opposite_sign_fraction_among_both_active": null,
+        "weighted_same_sign_fraction_among_both_active": null,
+        "weighted_srix_only_fraction": 1.0
       }
     ],
-    "same_sign_fraction_by_system": [
+    "same_sign_fraction_among_both_active_by_system": [
       1.0,
       1.0,
       null,
-      0.00010411244143675169,
+      null,
       1.0,
       null,
+      1.0,
+      1.0,
+      null,
+      null,
+      1.0,
+      null
+    ],
+    "srix_only_fraction_by_system": [
+      0.0,
+      0.0,
+      null,
+      1.0,
+      0.0,
+      null,
+      0.0,
+      0.0001,
       1.0,
       1.0,
       0.0,
-      0.00016852039096730705,
-      1.0,
-      0.0
+      1.0
     ],
-    "weighted_opposite_sign_fraction": 0.0050198300029165735,
-    "weighted_same_sign_fraction": 0.9949801699970833
+    "weighted_both_active_fraction": 0.9949780613762804,
+    "weighted_meric_only_fraction": 0.0,
+    "weighted_opposite_sign_fraction_among_both_active": 0.0,
+    "weighted_same_sign_fraction_among_both_active": 1.0,
+    "weighted_srix_only_fraction": 0.005021938623719382
   },
   "spatial_similarity": {
     "per_system": [

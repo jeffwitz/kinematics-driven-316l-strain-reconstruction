@@ -77,6 +77,8 @@ def test_signed_metrics_are_reported_per_system_not_after_cross_system_sum() -> 
     srix_signed[0, 1:3, 1:3] = 1.0
     meric_signed[1, 1:3, 1:3] = 1.0
     srix_signed[1, 1:3, 1:3] = -1.0
+    srix[2, 1:3, 1:3] = 1.0
+    srix_signed[2, 1:3, 1:3] = 1.0
     result = compare_slip_fields(
         meric,
         srix,
@@ -84,9 +86,10 @@ def test_signed_metrics_are_reported_per_system_not_after_cross_system_sum() -> 
         srix_signed=srix_signed,
     )
     signed = result["signed_slip"]
-    assert signed["same_sign_fraction_by_system"][0] == pytest.approx(1.0)
-    assert signed["same_sign_fraction_by_system"][1] == pytest.approx(0.0)
-    assert signed["opposite_sign_fraction_by_system"][1] == pytest.approx(1.0)
+    assert signed["same_sign_fraction_among_both_active_by_system"][0] == pytest.approx(1.0)
+    assert signed["opposite_sign_fraction_among_both_active_by_system"][1] == pytest.approx(1.0)
+    assert signed["srix_only_fraction_by_system"][2] == pytest.approx(1.0)
+    assert signed["opposite_sign_fraction_among_both_active_by_system"][2] is None
     assert "same_sign_fraction" not in signed
 
 
