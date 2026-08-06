@@ -12,7 +12,7 @@ from fem_inhouse.spectral2d import (
 
 
 def _observables(scale: float) -> StepObservables:
-    base = np.arange(24, dtype=np.float64).reshape(2, 3, 4)
+    base = np.arange(72, dtype=np.float64).reshape(2, 3, 12)
     return StepObservables(
         displacement=scale * base[..., :2],
         stress_in_plane_mpa=scale * base[..., :3],
@@ -51,16 +51,65 @@ def test_step_factor_shrinks_and_grows_with_error() -> None:
 
 def test_step_doubling_rejects_invalid_shapes() -> None:
     state = _observables(1.0)
-    broken = StepObservables(
-        displacement=state.displacement,
-        stress_in_plane_mpa=state.stress_in_plane_mpa,
-        reaction_forces=state.reaction_forces,
-        plastic_slip=state.plastic_slip[..., :2],
-        equivalent_plastic_slip=state.equivalent_plastic_slip,
-        accumulated_slip=state.accumulated_slip,
-    )
     with pytest.raises(ValueError, match="matching"):
+        broken = StepObservables(
+            displacement=state.displacement,
+            stress_in_plane_mpa=state.stress_in_plane_mpa,
+            reaction_forces=state.reaction_forces,
+            plastic_slip=state.plastic_slip[..., :2],
+            equivalent_plastic_slip=state.equivalent_plastic_slip,
+            accumulated_slip=state.accumulated_slip,
+        )
         estimate_step_error(state, broken, StepDoublingErrorConfig())
+
+
+def test_step_doubling_uses_equivalent_slip_per_system() -> None:
+    fine = _observables(1.0)
+    coarse = _observables(1.0)
+    coarse.equivalent_plastic_slip[..., 9] += 0.1
+    estimate = estimate_step_error(fine, coarse, StepDoublingErrorConfig())
+    assert estimate.accumulated_slip_ratio_per_system[9] > 0.0
+    assert estimate.controlling_quantity == "equivalent_plastic_slip"
+
+
+def test_step_doubling_reports_unilateral_activity_separately() -> None:
+    fine = _observables(1.0)
+    coarse = _observables(1.0)
+    fine.plastic_slip[..., 11] = 2.0e-7
+    coarse.plastic_slip[..., 11] = 0.0
+    fine.plastic_slip[..., 10] = 0.0
+    coarse.plastic_slip[..., 10] = 0.0
+    estimate = estimate_step_error(
+        fine,
+        coarse,
+        StepDoublingErrorConfig(activity_threshold=1.0e-8),
+    )
+    details = estimate.signed_slip_details
+    assert details.active_set_mismatch[11]
+    assert not details.active_fine[10]
+    assert not details.active_coarse[10]
+
+
+def test_weighted_rms_is_component_scaled() -> None:
+    fine = _observables(1.0)
+    coarse = _observables(1.0)
+    coarse = StepObservables(
+        displacement=coarse.displacement,
+        stress_in_plane_mpa=coarse.stress_in_plane_mpa + 1.0e-3,
+        reaction_forces=coarse.reaction_forces,
+        plastic_slip=coarse.plastic_slip,
+        equivalent_plastic_slip=coarse.equivalent_plastic_slip,
+        accumulated_slip=coarse.accumulated_slip,
+    )
+    estimate = estimate_step_error(
+        fine,
+        coarse,
+        StepDoublingErrorConfig(
+            stress_relative_tolerance=0.0,
+            stress_absolute_tolerance_mpa=1.0e-3,
+        ),
+    )
+    assert estimate.stress.weighted_rms_ratio == pytest.approx(1.0)
 
 
 def test_step_doubling_runs_branches_from_one_snapshot_and_returns_fine_state() -> None:

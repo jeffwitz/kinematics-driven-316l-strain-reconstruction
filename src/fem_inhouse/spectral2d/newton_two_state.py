@@ -44,8 +44,10 @@ from fem_inhouse.spectral2d.step_control import (
 )
 from fem_inhouse.spectral2d.step_doubling import (
     LoadStepAttempt,
+    StepDoublingFailureError,
     StepObservables,
     estimate_step_error_by_doubling,
+    step_error_to_record,
 )
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, TransformPlan2D
@@ -498,7 +500,7 @@ def _solve_two_state_step_doubling(
     current = 0.0
     step_size = config.adaptive_step.initial_increment_fraction
     final_result: Spectral2DResult | None = None
-    history_entries: list[dict[str, str | int | float | bool]] = []
+    history_entries: list[dict[str, object]] = []
     attempt_index = 0
     while current < 1.0 - 1.0e-14:
         segment_end = next_mandatory_knot(current)
@@ -541,6 +543,7 @@ def _solve_two_state_step_doubling(
                 "second_half_succeeded": (
                     False if doubling.second_half is None else doubling.second_half.succeeded
                 ),
+                "error_details": None if error is None else step_error_to_record(error),
             }
         )
         if not accepted:
@@ -550,9 +553,10 @@ def _solve_two_state_step_doubling(
                 (end - current) * doubling.next_step_factor,
             )
             if end - current <= config.adaptive_step.minimum_increment_fraction * (1.0 + 1.0e-14):
-                raise RuntimeError(
+                raise StepDoublingFailureError(
                     "step_error_tolerance_unreachable_at_minimum_step: "
-                    f"{doubling.decision_reason}"
+                    f"{doubling.decision_reason}",
+                    history_entries,
                 )
             continue
         if doubling.second_half is None or doubling.second_half.observables is None:
@@ -732,7 +736,7 @@ def solve_two_state_dirichlet_plane_stress(
     if not np.isfinite(time_increment) or time_increment <= 0.0:
         raise ValueError("time increment must be finite and positive")
     krylov_recycle = KrylovRecycleState()
-    adaptive_step_history: list[dict[str, str | int | float | bool]] = []
+    adaptive_step_history: list[dict[str, object]] = []
 
     def fixed_load_path() -> list[LoadPathStep]:
         return [

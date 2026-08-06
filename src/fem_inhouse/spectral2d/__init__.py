@@ -81,12 +81,14 @@ from fem_inhouse.spectral2d.step_doubling import (
     LoadStepAttempt,
     ObservableError,
     StepDoublingErrorConfig,
+    StepDoublingFailureError,
     StepDoublingResult,
     StepErrorEstimate,
     StepObservables,
     estimate_step_error,
     estimate_step_error_by_doubling,
     next_step_factor,
+    step_error_to_record,
 )
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import (
@@ -133,6 +135,7 @@ __all__ = [
     "SpectralIncrementConvergenceError",
     "SpectralTransformConfig",
     "StepDoublingErrorConfig",
+    "StepDoublingFailureError",
     "StepDoublingResult",
     "StepErrorEstimate",
     "StepObservables",
@@ -156,6 +159,7 @@ __all__ = [
     "solve_dirichlet_plane_stress_spectral",
     "solve_ebi_dirichlet_plane_stress",
     "solve_two_state_dirichlet_plane_stress",
+    "step_error_to_record",
     "unpack_interior",
     "unpack_interior_into",
 ]

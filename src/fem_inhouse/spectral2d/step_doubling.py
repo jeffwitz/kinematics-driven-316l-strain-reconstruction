@@ -29,6 +29,7 @@ class StepDoublingErrorConfig:
     displacement_relative_tolerance: float = 1.0e-5
     displacement_absolute_tolerance: float = 1.0e-12
     activity_threshold: float = 1.0e-8
+    linf_relative_tolerance_factor: float = 5.0
     safety_factor: float = 0.8
     minimum_shrink_factor: float = 0.25
     maximum_shrink_factor: float = 0.8
@@ -49,6 +50,7 @@ class StepDoublingErrorConfig:
             self.displacement_relative_tolerance,
             self.displacement_absolute_tolerance,
             self.activity_threshold,
+            self.linf_relative_tolerance_factor,
         )
         if not all(np.isfinite(value) and value >= 0.0 for value in tolerances):
             raise ValueError("step-doubling tolerances must be finite and non-negative")
@@ -60,6 +62,8 @@ class StepDoublingErrorConfig:
             raise ValueError("invalid step-doubling growth bounds")
         if self.assumed_method_order < 0.0:
             raise ValueError("assumed method order must be non-negative")
+        if self.linf_relative_tolerance_factor < 1.0:
+            raise ValueError("L-infinity tolerance factor must be at least one")
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +88,14 @@ class StepObservables:
             if not np.isfinite(value).all():
                 raise ValueError(f"{name} contains non-finite values")
             object.__setattr__(self, name, value.copy())
+        if self.plastic_slip.shape != self.equivalent_plastic_slip.shape:
+            raise ValueError(
+                "plastic_slip and equivalent_plastic_slip must have matching shapes"
+            )
+        if self.plastic_slip.ndim < 1 or self.plastic_slip.shape[-1] != 12:
+            raise ValueError(
+                "per-system slip observables must have exactly 12 systems on the last axis"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,12 +133,45 @@ class StepDoublingResult:
 AttemptSolver = Callable[[float, float, object], LoadStepAttempt]
 
 
+class StepDoublingFailureError(RuntimeError):
+    """Unrecoverable step-doubling failure with its partial history."""
+
+    def __init__(self, message: str, history: list[dict[str, object]]) -> None:
+        super().__init__(message)
+        self.history = tuple(history)
+
+
 @dataclass(frozen=True, slots=True)
 class ObservableError:
     relative_l2: float
     relative_linf: float
     maximum_absolute: float
     ratio: float
+    weighted_rms_ratio: float
+    weighted_linf_ratio: float
+    absolute_l2: float
+    absolute_linf: float
+    fine_l2_norm: float
+    coarse_l2_norm: float
+    maximum_fine_amplitude: float
+    maximum_coarse_amplitude: float
+
+
+@dataclass(frozen=True, slots=True)
+class PerSystemError:
+    """Per-system error metrics and activity classification."""
+
+    ratios: FloatArray
+    weighted_rms_ratios: FloatArray
+    weighted_linf_ratios: FloatArray
+    fine_l2_norms: FloatArray
+    coarse_l2_norms: FloatArray
+    difference_l2_norms: FloatArray
+    fine_linf_amplitudes: FloatArray
+    coarse_linf_amplitudes: FloatArray
+    active_fine: NDArray[np.bool_]
+    active_coarse: NDArray[np.bool_]
+    active_set_mismatch: NDArray[np.bool_]
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,9 +183,68 @@ class StepErrorEstimate:
     accumulated_slip: ObservableError
     signed_slip_ratio_per_system: FloatArray
     accumulated_slip_ratio_per_system: FloatArray
+    signed_slip_details: PerSystemError
+    accumulated_slip_details: PerSystemError
+    equivalent_plastic_slip: ObservableError
+    equivalent_plastic_slip_ratio_per_system: FloatArray
+    equivalent_plastic_slip_details: PerSystemError
     maximum_ratio: float
     controlling_quantity: str
     controlling_system: int | None
+
+
+def _observable_error_record(metric: ObservableError) -> dict[str, float]:
+    return {
+        "relative_l2": metric.relative_l2,
+        "relative_linf": metric.relative_linf,
+        "maximum_absolute": metric.maximum_absolute,
+        "weighted_rms_ratio": metric.weighted_rms_ratio,
+        "weighted_linf_ratio": metric.weighted_linf_ratio,
+        "ratio": metric.ratio,
+        "absolute_l2": metric.absolute_l2,
+        "absolute_linf": metric.absolute_linf,
+        "fine_l2_norm": metric.fine_l2_norm,
+        "coarse_l2_norm": metric.coarse_l2_norm,
+        "maximum_fine_amplitude": metric.maximum_fine_amplitude,
+        "maximum_coarse_amplitude": metric.maximum_coarse_amplitude,
+    }
+
+
+def _per_system_error_record(details: PerSystemError) -> dict[str, object]:
+    return {
+        "ratio_per_system": details.ratios.tolist(),
+        "weighted_rms_ratio_per_system": details.weighted_rms_ratios.tolist(),
+        "weighted_linf_ratio_per_system": details.weighted_linf_ratios.tolist(),
+        "fine_norm_per_system": details.fine_l2_norms.tolist(),
+        "coarse_norm_per_system": details.coarse_l2_norms.tolist(),
+        "difference_norm_per_system": details.difference_l2_norms.tolist(),
+        "maximum_fine_amplitude_per_system": details.fine_linf_amplitudes.tolist(),
+        "maximum_coarse_amplitude_per_system": details.coarse_linf_amplitudes.tolist(),
+        "active_fine_per_system": details.active_fine.tolist(),
+        "active_coarse_per_system": details.active_coarse.tolist(),
+        "active_set_mismatch_per_system": details.active_set_mismatch.tolist(),
+    }
+
+
+def step_error_to_record(error: StepErrorEstimate) -> dict[str, object]:
+    """Return a JSON-compatible diagnostic record for one comparison."""
+
+    return {
+        "maximum_error_ratio": error.maximum_ratio,
+        "controlling_quantity": error.controlling_quantity,
+        "controlling_system": error.controlling_system,
+        "stress": _observable_error_record(error.stress),
+        "reactions": _observable_error_record(error.reactions),
+        "displacement": _observable_error_record(error.displacement),
+        "signed_slip": {
+            **_observable_error_record(error.signed_slip),
+            **_per_system_error_record(error.signed_slip_details),
+        },
+        "equivalent_plastic_slip": {
+            **_observable_error_record(error.equivalent_plastic_slip),
+            **_per_system_error_record(error.equivalent_plastic_slip_details),
+        },
+    }
 
 
 def _error(
@@ -149,22 +253,44 @@ def _error(
     *,
     relative_tolerance: float,
     absolute_tolerance: float,
+    linf_relative_tolerance: float | None = None,
 ) -> ObservableError:
     difference = np.asarray(fine, dtype=np.float64) - np.asarray(coarse, dtype=np.float64)
     fine_values = np.asarray(fine, dtype=np.float64)
     l2_error = float(np.linalg.norm(difference))
-    l2_scale = absolute_tolerance + relative_tolerance * float(np.linalg.norm(fine_values))
-    linf_error = float(np.max(np.abs(difference), initial=0.0))
-    linf_scale = absolute_tolerance + relative_tolerance * float(
-        np.max(np.abs(fine_values), initial=0.0)
+    if linf_relative_tolerance is None:
+        linf_relative_tolerance = relative_tolerance
+    scale = absolute_tolerance + relative_tolerance * np.maximum(
+        np.abs(fine_values), np.abs(np.asarray(coarse, dtype=np.float64))
     )
-    relative_l2 = l2_error / max(float(np.linalg.norm(fine_values)), 1.0e-30)
-    relative_linf = linf_error / max(float(np.max(np.abs(fine_values), initial=0.0)), 1.0e-30)
+    weighted = np.abs(difference) / np.maximum(scale, 1.0e-30)
+    weighted_rms = float(np.sqrt(np.mean(weighted**2)))
+    linf_scale = absolute_tolerance + linf_relative_tolerance * np.maximum(
+        np.abs(fine_values), np.abs(np.asarray(coarse, dtype=np.float64))
+    )
+    weighted_linf = float(
+        np.max(np.abs(difference) / np.maximum(linf_scale, 1.0e-30), initial=0.0)
+    )
+    linf_error = float(np.max(np.abs(difference), initial=0.0))
+    fine_l2_norm = float(np.linalg.norm(fine_values))
+    coarse_l2_norm = float(np.linalg.norm(coarse))
+    fine_linf = float(np.max(np.abs(fine_values), initial=0.0))
+    coarse_linf = float(np.max(np.abs(coarse), initial=0.0))
+    relative_l2 = l2_error / max(fine_l2_norm, 1.0e-30)
+    relative_linf = linf_error / max(fine_linf, 1.0e-30)
     return ObservableError(
         relative_l2=relative_l2,
         relative_linf=relative_linf,
         maximum_absolute=linf_error,
-        ratio=max(l2_error / max(l2_scale, 1.0e-30), linf_error / max(linf_scale, 1.0e-30)),
+        ratio=max(weighted_rms, weighted_linf),
+        weighted_rms_ratio=weighted_rms,
+        weighted_linf_ratio=weighted_linf,
+        absolute_l2=l2_error,
+        absolute_linf=linf_error,
+        fine_l2_norm=fine_l2_norm,
+        coarse_l2_norm=coarse_l2_norm,
+        maximum_fine_amplitude=fine_linf,
+        maximum_coarse_amplitude=coarse_linf,
     )
 
 
@@ -174,32 +300,92 @@ def _per_system_error(
     *,
     relative_tolerance: float,
     absolute_tolerance: float,
-) -> tuple[ObservableError, FloatArray]:
-    if fine.shape != coarse.shape or fine.ndim < 1 or fine.shape[-1] == 0:
-        raise ValueError("per-system observables must have matching non-empty system axes")
-    ratios = np.empty(fine.shape[-1], dtype=np.float64)
-    l2_values: list[float] = []
-    linf_values: list[float] = []
-    maximum_absolute = 0.0
-    for system in range(fine.shape[-1]):
-        metric = _error(
-            fine[..., system],
-            coarse[..., system],
-            relative_tolerance=relative_tolerance,
-            absolute_tolerance=absolute_tolerance,
+    linf_relative_tolerance: float,
+    activity_threshold: float,
+) -> tuple[ObservableError, PerSystemError]:
+    if (
+        fine.shape != coarse.shape
+        or fine.ndim < 1
+        or fine.shape[-1] != 12
+    ):
+        raise ValueError("per-system observables must have matching 12-system axes")
+    system_count = fine.shape[-1]
+    ratios = np.empty(system_count, dtype=np.float64)
+    weighted_rms = np.empty(system_count, dtype=np.float64)
+    weighted_linf = np.empty(system_count, dtype=np.float64)
+    fine_l2 = np.empty(system_count, dtype=np.float64)
+    coarse_l2 = np.empty(system_count, dtype=np.float64)
+    difference_l2 = np.empty(system_count, dtype=np.float64)
+    fine_linf = np.empty(system_count, dtype=np.float64)
+    coarse_linf = np.empty(system_count, dtype=np.float64)
+    active_fine = np.empty(system_count, dtype=bool)
+    active_coarse = np.empty(system_count, dtype=bool)
+    active_mismatch = np.empty(system_count, dtype=bool)
+    metrics: list[ObservableError] = []
+    for system in range(system_count):
+        fine_system = fine[..., system]
+        coarse_system = coarse[..., system]
+        active_fine[system] = bool(
+            np.max(np.abs(fine_system), initial=0.0) > activity_threshold
         )
+        active_coarse[system] = bool(
+            np.max(np.abs(coarse_system), initial=0.0) > activity_threshold
+        )
+        active_mismatch[system] = active_fine[system] != active_coarse[system]
+        effective_relative_tolerance = (
+            relative_tolerance
+            if active_fine[system] or active_coarse[system]
+            else 0.0
+        )
+        metric = _error(
+            fine_system,
+            coarse_system,
+            relative_tolerance=effective_relative_tolerance,
+            absolute_tolerance=absolute_tolerance,
+            linf_relative_tolerance=(
+                linf_relative_tolerance
+                if active_fine[system] or active_coarse[system]
+                else 0.0
+            ),
+        )
+        metrics.append(metric)
         ratios[system] = metric.ratio
-        l2_values.append(metric.relative_l2)
-        linf_values.append(metric.relative_linf)
-        maximum_absolute = max(maximum_absolute, metric.maximum_absolute)
+        weighted_rms[system] = metric.weighted_rms_ratio
+        weighted_linf[system] = metric.weighted_linf_ratio
+        fine_l2[system] = metric.fine_l2_norm
+        coarse_l2[system] = metric.coarse_l2_norm
+        difference_l2[system] = metric.absolute_l2
+        fine_linf[system] = metric.maximum_fine_amplitude
+        coarse_linf[system] = metric.maximum_coarse_amplitude
+    maximum_absolute = max(metric.maximum_absolute for metric in metrics)
     return (
         ObservableError(
-            relative_l2=max(l2_values),
-            relative_linf=max(linf_values),
+            relative_l2=max(metric.relative_l2 for metric in metrics),
+            relative_linf=max(metric.relative_linf for metric in metrics),
             maximum_absolute=maximum_absolute,
             ratio=float(np.max(ratios)),
+            weighted_rms_ratio=float(np.max(weighted_rms)),
+            weighted_linf_ratio=float(np.max(weighted_linf)),
+            absolute_l2=float(np.max(difference_l2)),
+            absolute_linf=maximum_absolute,
+            fine_l2_norm=float(np.max(fine_l2)),
+            coarse_l2_norm=float(np.max(coarse_l2)),
+            maximum_fine_amplitude=float(np.max(fine_linf)),
+            maximum_coarse_amplitude=float(np.max(coarse_linf)),
         ),
-        ratios,
+        PerSystemError(
+            ratios=ratios,
+            weighted_rms_ratios=weighted_rms,
+            weighted_linf_ratios=weighted_linf,
+            fine_l2_norms=fine_l2,
+            coarse_l2_norms=coarse_l2,
+            difference_l2_norms=difference_l2,
+            fine_linf_amplitudes=fine_linf,
+            coarse_linf_amplitudes=coarse_linf,
+            active_fine=active_fine,
+            active_coarse=active_coarse,
+            active_set_mismatch=active_mismatch,
+        ),
     )
 
 
@@ -215,37 +401,60 @@ def estimate_step_error(
         coarse.stress_in_plane_mpa,
         relative_tolerance=config.stress_relative_tolerance,
         absolute_tolerance=config.stress_absolute_tolerance_mpa,
+        linf_relative_tolerance=(
+            config.linf_relative_tolerance_factor * config.stress_relative_tolerance
+        ),
     )
     reactions = _error(
         fine.reaction_forces,
         coarse.reaction_forces,
         relative_tolerance=config.reaction_relative_tolerance,
         absolute_tolerance=config.reaction_absolute_tolerance,
+        linf_relative_tolerance=(
+            config.linf_relative_tolerance_factor * config.reaction_relative_tolerance
+        ),
     )
     displacement = _error(
         fine.displacement,
         coarse.displacement,
         relative_tolerance=config.displacement_relative_tolerance,
         absolute_tolerance=config.displacement_absolute_tolerance,
+        linf_relative_tolerance=(
+            config.linf_relative_tolerance_factor
+            * config.displacement_relative_tolerance
+        ),
     )
-    signed_slip, signed_ratios = _per_system_error(
+    signed_slip, signed_details = _per_system_error(
         fine.plastic_slip,
         coarse.plastic_slip,
         relative_tolerance=config.signed_slip_relative_tolerance,
         absolute_tolerance=config.signed_slip_absolute_tolerance,
+        linf_relative_tolerance=(
+            config.linf_relative_tolerance_factor * config.signed_slip_relative_tolerance
+        ),
+        activity_threshold=config.activity_threshold,
     )
-    accumulated_slip, accumulated_ratios = _per_system_error(
-        fine.accumulated_slip,
-        coarse.accumulated_slip,
+    equivalent_plastic_slip, equivalent_details = _per_system_error(
+        fine.equivalent_plastic_slip,
+        coarse.equivalent_plastic_slip,
         relative_tolerance=config.accumulated_slip_relative_tolerance,
         absolute_tolerance=config.accumulated_slip_absolute_tolerance,
+        linf_relative_tolerance=(
+            config.linf_relative_tolerance_factor
+            * config.accumulated_slip_relative_tolerance
+        ),
+        activity_threshold=config.activity_threshold,
     )
     candidates: list[tuple[str, float, int | None]] = [
         ("stress", stress.ratio, None),
         ("reactions", reactions.ratio, None),
         ("displacement", displacement.ratio, None),
-        ("signed_slip", signed_slip.ratio, int(np.argmax(signed_ratios))),
-        ("accumulated_slip", accumulated_slip.ratio, int(np.argmax(accumulated_ratios))),
+        ("signed_slip", signed_slip.ratio, int(np.argmax(signed_details.ratios))),
+        (
+            "equivalent_plastic_slip",
+            equivalent_plastic_slip.ratio,
+            int(np.argmax(equivalent_details.ratios)),
+        ),
     ]
     controlling_quantity, maximum_ratio, controlling_system = max(
         candidates, key=lambda item: item[1]
@@ -255,9 +464,14 @@ def estimate_step_error(
         reactions=reactions,
         displacement=displacement,
         signed_slip=signed_slip,
-        accumulated_slip=accumulated_slip,
-        signed_slip_ratio_per_system=signed_ratios,
-        accumulated_slip_ratio_per_system=accumulated_ratios,
+        accumulated_slip=equivalent_plastic_slip,
+        signed_slip_ratio_per_system=signed_details.ratios,
+        accumulated_slip_ratio_per_system=equivalent_details.ratios,
+        signed_slip_details=signed_details,
+        accumulated_slip_details=equivalent_details,
+        equivalent_plastic_slip=equivalent_plastic_slip,
+        equivalent_plastic_slip_ratio_per_system=equivalent_details.ratios,
+        equivalent_plastic_slip_details=equivalent_details,
         maximum_ratio=maximum_ratio,
         controlling_quantity=controlling_quantity,
         controlling_system=controlling_system,

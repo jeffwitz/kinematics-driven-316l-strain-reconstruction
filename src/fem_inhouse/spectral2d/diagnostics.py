@@ -179,7 +179,7 @@ class Spectral2DDiagnostics:
     highest_mode_residual_history: tuple[float, ...] = ()
     active_slip_systems_history: tuple[int, ...] = ()
     adaptive_stepping_enabled: bool = False
-    adaptive_step_history: tuple[dict[str, str | int | float | bool], ...] = ()
+    adaptive_step_history: tuple[dict[str, object], ...] = ()
     transform_backend: str = "scipy"
     transform_implementation: str = "scipy.fft.dstn"
     transform_interior_shape: tuple[int, int] = (0, 0)

@@ -25,6 +25,7 @@ from fem_inhouse.spectral2d import (
     StepDoublingErrorConfig,
 )
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
+from fem_inhouse.spectral2d.step_doubling import StepDoublingFailureError
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 try:
@@ -125,6 +126,7 @@ def main() -> int:
     parser.add_argument("--adaptive-error-slip-rtol", type=float, default=1.0e-3)
     parser.add_argument("--adaptive-error-reaction-rtol", type=float, default=1.0e-3)
     parser.add_argument("--adaptive-error-displacement-rtol", type=float, default=1.0e-5)
+    parser.add_argument("--adaptive-error-linf-factor", type=float, default=5.0)
     parser.add_argument("--adaptive-error-safety-factor", type=float, default=0.8)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
@@ -203,11 +205,7 @@ def main() -> int:
         },
     )
     started = time.perf_counter()
-    result = solve_two_state_dirichlet_plane_stress(
-        grid=grid,
-        material=material,
-        boundary_displacement_history=history[: arguments.increments + 1],
-        config=EBISpectralSolverConfig(
+    solve_config = EBISpectralSolverConfig(
             relative_equilibrium_tolerance=arguments.tolerance,
             linear_tolerance_mode=arguments.linear_mode,
             reference_update_mode=arguments.reference_update,
@@ -225,6 +223,7 @@ def main() -> int:
                 signed_slip_relative_tolerance=arguments.adaptive_error_slip_rtol,
                 accumulated_slip_relative_tolerance=arguments.adaptive_error_slip_rtol,
                 displacement_relative_tolerance=arguments.adaptive_error_displacement_rtol,
+                linf_relative_tolerance_factor=arguments.adaptive_error_linf_factor,
                 safety_factor=arguments.adaptive_error_safety_factor,
             ),
             krylov_method=arguments.krylov_method,
@@ -236,8 +235,49 @@ def main() -> int:
                 fftw_planning_time_limit_s=2.0,
                 fftw_use_wisdom=False,
             ),
-        ),
-    )
+        )
+    try:
+        result = solve_two_state_dirichlet_plane_stress(
+            grid=grid,
+            material=material,
+            boundary_displacement_history=history[: arguments.increments + 1],
+            config=solve_config,
+        )
+    except StepDoublingFailureError as error:
+        elapsed = time.perf_counter() - started
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
+        partial_report = {
+            "status": "failed_step_doubling",
+            "failure_reason": str(error),
+            "crop_nodes": list(crop),
+            "mesh": [mesh, mesh],
+            "increments": arguments.increments,
+            "behaviour": arguments.behaviour,
+            "mfront_threads": arguments.mfront_threads,
+            "adaptive_stepping_enabled": adaptive_enabled,
+            "adaptive_error_control": arguments.adaptive_error_control,
+            "adaptive_error_configuration": {
+                "stress_relative_tolerance": arguments.adaptive_error_stress_rtol,
+                "reaction_relative_tolerance": arguments.adaptive_error_reaction_rtol,
+                "signed_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
+                "accumulated_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
+                "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
+                "linf_relative_tolerance_factor": arguments.adaptive_error_linf_factor,
+                "activity_threshold": 1.0e-8,
+                "signed_slip_absolute_tolerance": 1.0e-8,
+                "accumulated_slip_absolute_tolerance": 1.0e-8,
+                "safety_factor": arguments.adaptive_error_safety_factor,
+            },
+            "adaptive_step_history": list(error.history),
+            "elapsed_seconds": elapsed,
+            "execution_commit": _git_head(),
+            "paired_parameter_set": arguments.paired_parameter_set,
+            "boundary_sha256": _hash(boundary),
+            "provenance": _git_worktree_state(),
+        }
+        arguments.output.write_text(json.dumps(partial_report, indent=2, sort_keys=True) + "\n")
+        print(json.dumps(partial_report, indent=2, sort_keys=True))
+        return 2
     elapsed = time.perf_counter() - started
     fields = {
         "displacement": result.displacement,
@@ -283,6 +323,10 @@ def main() -> int:
             "signed_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
             "accumulated_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
             "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
+            "linf_relative_tolerance_factor": arguments.adaptive_error_linf_factor,
+            "activity_threshold": 1.0e-8,
+            "signed_slip_absolute_tolerance": 1.0e-8,
+            "accumulated_slip_absolute_tolerance": 1.0e-8,
             "safety_factor": arguments.adaptive_error_safety_factor,
         },
         "adaptive_step_history": list(diagnostics.adaptive_step_history),
