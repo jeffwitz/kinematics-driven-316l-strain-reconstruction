@@ -1,0 +1,93 @@
+{
+  "configuration": {
+    "behaviour": "fcc_forest_rubin_srix",
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "fftw_threads": 1,
+    "final_verification": false,
+    "mesh": [
+      100,
+      100
+    ],
+    "mfront_threads": 4
+  },
+  "execution_commit": "bbdb18d3822fb379456f5ca435d6753e92b1fcfc",
+  "generated_at_utc": "2026-08-05T23:59:52.167711+00:00",
+  "interpretation": [
+    "The 24- and 32-increment fixed references converged.",
+    "The three initial step-doubling tolerances were not reachable at the configured minimum step.",
+    "No adaptive result is accepted or presented as qualified."
+  ],
+  "reference": {
+    "fields": "validation/_generated/performance/crystal_tet2_srix_p43_m100_i16_post_22143ec.fields.npz",
+    "increments": 16,
+    "name": "crystal_tet2_srix_p43_m100_i16_post_22143ec",
+    "report": "validation/_generated/performance/crystal_tet2_srix_p43_m100_i16_post_22143ec.json"
+  },
+  "results": [
+    {
+      "elapsed_seconds": 150.6534607210051,
+      "errors_vs_16_increment_reference_relative_l2": {
+        "accumulated_slip": 0.00041352691446686687,
+        "displacement": 8.110469361799219e-07,
+        "equivalent_plastic_slip": 0.0013550124838332992,
+        "plastic_slip": 0.0013550124838332992,
+        "reaction_forces": 0.0015529192111377896,
+        "stress_in_plane_mpa": 0.001477603337233751
+      },
+      "fields": "validation/_generated/performance/srix_p43_m100_i24.fields.npz",
+      "final_residual": 5.5029905004142e-10,
+      "increments": 24,
+      "material_evaluations": 129.0,
+      "mgis_integrations": 513.0,
+      "name": "srix_p43_m100_i24",
+      "newton_iterations": 128,
+      "report": "validation/_generated/performance/srix_p43_m100_i24.json",
+      "status": "completed_crystal_tet2_p43"
+    },
+    {
+      "elapsed_seconds": 216.8907760400034,
+      "errors_vs_16_increment_reference_relative_l2": {
+        "accumulated_slip": 0.0006399197808616019,
+        "displacement": 1.2914676649881652e-06,
+        "equivalent_plastic_slip": 0.0020117473904630065,
+        "plastic_slip": 0.0020117473904630065,
+        "reaction_forces": 0.0023292787068985945,
+        "stress_in_plane_mpa": 0.0022127464444760105
+      },
+      "fields": "validation/_generated/performance/srix_p43_m100_i32.fields.npz",
+      "final_residual": 9.499457502611331e-09,
+      "increments": 32,
+      "material_evaluations": 174.0,
+      "mgis_integrations": 675.0,
+      "name": "srix_p43_m100_i32",
+      "newton_iterations": 173,
+      "report": "validation/_generated/performance/srix_p43_m100_i32.json",
+      "status": "completed_crystal_tet2_p43"
+    },
+    {
+      "failure_reason": "step_error_tolerance_unreachable_at_minimum_step: rejected_error_controlled_step",
+      "log": "/tmp/srix_p43_m100_step_doubling_loose.log",
+      "name": "srix_p43_m100_step_doubling_loose",
+      "status": "failed"
+    },
+    {
+      "failure_reason": "step_error_tolerance_unreachable_at_minimum_step: rejected_error_controlled_step",
+      "log": "/tmp/srix_p43_m100_step_doubling_medium.log",
+      "name": "srix_p43_m100_step_doubling_medium",
+      "status": "failed"
+    },
+    {
+      "failure_reason": "step_error_tolerance_unreachable_at_minimum_step: rejected_error_controlled_step",
+      "log": "/tmp/srix_p43_m100_step_doubling_strict.log",
+      "name": "srix_p43_m100_step_doubling_strict",
+      "status": "failed"
+    }
+  ],
+  "schema_version": 1,
+  "status": "campaign_complete_with_fixed_references_and_adaptive_failures"
+}

@@ -1,0 +1,338 @@
+{
+  "accepted_increments": 24,
+  "adaptive_error_configuration": {
+    "accumulated_slip_relative_tolerance": 0.001,
+    "displacement_relative_tolerance": 1e-05,
+    "reaction_relative_tolerance": 0.001,
+    "safety_factor": 0.8,
+    "signed_slip_relative_tolerance": 0.001,
+    "stress_relative_tolerance": 0.001
+  },
+  "adaptive_error_control": "none",
+  "adaptive_step_history": [],
+  "adaptive_stepping_enabled": false,
+  "archive_commit": "bbdb18d3822fb379456f5ca435d6753e92b1fcfc",
+  "behaviour": "fcc_forest_rubin_srix",
+  "boundary_sha256": "638728100916aea3adf617387c0c15d0b8a8da09c2c4fa323d8f998609b80930",
+  "crop_nodes": [
+    1570,
+    1670,
+    1035,
+    1135
+  ],
+  "crystal_material": {
+    "backbone": {
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "b": 3.0,
+      "d": 1500.0,
+      "elasticity": {
+        "C11_mpa": 197000.0,
+        "C12_mpa": 125000.0,
+        "C44_mpa": 122000.0
+      },
+      "hardening": {
+        "C_mpa": 40000.0,
+        "Q_mpa": 10.0,
+        "b": 3.0,
+        "d": 1500.0,
+        "tau0_mpa": 40.0
+      },
+      "identifier": "316l_guilhem2013_nasri2018",
+      "interaction_convention": "mfront_fcc_7",
+      "interaction_matrix": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "material": "316L austenitic stainless steel",
+      "provenance": {
+        "backbone": {
+          "note": "Shared historical 316L backbone; not identified on P43.",
+          "reference": "Guilhem 2013 and Nasri 2018, as supplied 2026-08-03",
+          "status": "literature_prior"
+        }
+      },
+      "sha256": "709312e15ff05df41ae4eb5021bad1db3f9bbbd43021726d0734ca84469eccc3",
+      "slip_system_count": 12,
+      "slip_system_family": "<0,1,-1>{1,1,1}",
+      "slip_systems": {
+        "count": 12,
+        "crystal_structure": "FCC",
+        "family": "<0,1,-1>{1,1,1}"
+      },
+      "tau0_mpa": 40.0,
+      "temperature_k": 293.15
+    },
+    "comparison_authorized": true,
+    "comparison_limits": [
+      "The common 316L backbone is a literature prior, not an identification on P43.",
+      "SRIX R is analytically transposed from Meric K and n at 1e-3 s^-1.",
+      "The transposition matches a reference [001] loading condition and does not make the laws globally equivalent.",
+      "The physical strain rate of the P43 DIC experiment is not documented."
+    ],
+    "flow_rule": {
+      "R_mpa": 18.781910070526294,
+      "name": "forest_rubin_srix",
+      "reference_strain_rate_s_inv": 0.001,
+      "status": "analytical_transposition",
+      "transposition_method": "forest_rubin_equation_16"
+    },
+    "flow_rules": {
+      "forest_rubin_srix": {
+        "R_mpa": 18.781910070526294,
+        "name": "forest_rubin_srix",
+        "reference_strain_rate_s_inv": 0.001,
+        "status": "analytical_transposition",
+        "transposition_method": "forest_rubin_equation_16"
+      },
+      "meric_cailletaud": {
+        "K_mpa": 12.0,
+        "duration_normalization": "total pseudo-time is one",
+        "n": 11.0,
+        "name": "meric_cailletaud",
+        "time_dependent": true
+      }
+    },
+    "law": "forest_rubin_srix",
+    "material_backbone": {
+      "C_mpa": 40000.0,
+      "Q_mpa": 10.0,
+      "b": 3.0,
+      "d": 1500.0,
+      "elasticity": {
+        "C11_mpa": 197000.0,
+        "C12_mpa": 125000.0,
+        "C44_mpa": 122000.0
+      },
+      "identifier": "316l_guilhem2013_nasri2018",
+      "interaction_convention": "mfront_fcc_7",
+      "interaction_matrix": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "material": "316L austenitic stainless steel",
+      "provenance": {
+        "backbone": {
+          "note": "Shared historical 316L backbone; not identified on P43.",
+          "reference": "Guilhem 2013 and Nasri 2018, as supplied 2026-08-03",
+          "status": "literature_prior"
+        }
+      },
+      "slip_system_count": 12,
+      "slip_system_family": "<0,1,-1>{1,1,1}",
+      "tau0_mpa": 40.0,
+      "temperature_k": 293.15
+    },
+    "mfront_structure": {
+      "crystal_structure": "FCC",
+      "interaction_matrix": [
+        1.0,
+        1.0,
+        0.6,
+        1.8,
+        1.6,
+        12.3,
+        1.6
+      ],
+      "meric_source_sha256": "f9e299e90aaf45ef73d48a5e1bbf6cc0dbd09cf2ea18e6fc7e67965672e47bfa",
+      "sliding_system": "<0,1,-1>{1,1,1}",
+      "source_sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f",
+      "srix_source_sha256": "7dc36ae319d76b4482b9d46aaa2780f6c1292a3d1af5ebcc9d951dd58a805a1f",
+      "structure_contract_sha256": "c1b80c6651c9c3743ce570428c9fb7b29b86f181cfa1e0f36347ec6fd84bf437"
+    },
+    "notes": "The flow rule is the only constitutive difference intended by this pair.",
+    "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+    "paired_set_selected_explicitly": true,
+    "pairing_scope": "same_316l_backbone_matched_at_001_reference_rate",
+    "pairing_status": "analytical_transposition"
+  },
+  "elapsed_seconds": 150.6534607210051,
+  "execution_commit": "bbdb18d3822fb379456f5ca435d6753e92b1fcfc",
+  "field_file": "validation/_generated/performance/srix_p43_m100_i24.fields.npz",
+  "field_sha256": {
+    "accumulated_slip": "791b6ba5ac8e00f7ee606ce06714018be302130a65d39de7487834e787c18793",
+    "displacement": "64ac42a27e676d218058717680bdec2685558a718de09e1e61d47e424d4b2959",
+    "equivalent_plastic_slip": "36a8dca010dfd4fcb8a42f823566aea7b675c8a359c97b5b54ecbf2a02d2af6a",
+    "plastic_slip": "108dd3b5f0cbdd5d7ca24a7ad11a46294438a91f7f351d8435c237f09612fc7c",
+    "reaction_forces": "8e492b7cebeb33213df2a5cd42e38758cce5aff0377f4715334c3c51cca21884",
+    "stress_in_plane_mpa": "3d13c03bd8b7c37b1897979ae9f38e0bd069d23cac2ceac0cd8ffd51611733dd"
+  },
+  "final_residual": 5.5029905004142e-10,
+  "git_worktree": {
+    "working_tree_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "working_tree_dirty_at_generation": false
+  },
+  "increments": 24,
+  "iterations_per_increment": [
+    4,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6
+  ],
+  "jacobian_matvec_calls": 1837,
+  "krylov_iterations": 320,
+  "krylov_method": "lgmres",
+  "krylov_outer_callbacks": 320,
+  "linear_mode": "eisenstat_walker",
+  "mesh": [
+    100,
+    100
+  ],
+  "mfront_threads": 4,
+  "newton_iterations": 128,
+  "orientation": {
+    "euler_bunge_deg": [
+      35.0,
+      20.0,
+      15.0
+    ],
+    "mode": "homogeneous",
+    "sha256": "718dc64bb2d50bd13e2b3caa5f3e67613cb47be23223288957a59900b7beb2cb"
+  },
+  "preconditioner_calls": 1733,
+  "provenance": {
+    "commit_sha": "bbdb18d3822fb379456f5ca435d6753e92b1fcfc",
+    "cpu_logical": 8,
+    "cpu_physical": null,
+    "date_utc": "2026-08-05T23:51:18.732827+00:00",
+    "fftw": "3.3.5",
+    "fftw_planner": "measure",
+    "fftw_threads": 1,
+    "fftw_wisdom_loaded": false,
+    "forcing_alpha": 1.5,
+    "forcing_gamma": 0.9,
+    "forcing_initial": 0.1,
+    "forcing_maximum": 0.1,
+    "forcing_minimum": 1e-08,
+    "gmres_maximum_iterations": 200,
+    "gmres_relative_tolerance": 1e-08,
+    "gmres_restart": 50,
+    "krylov_method": "lgmres",
+    "krylov_recycling": true,
+    "linear_tolerance_mode": "eisenstat_walker",
+    "local_condition_check_mode": "on_failure",
+    "material_backend": "mfront-3d-condensed-plane-stress",
+    "material_matrix_type": "nonsymmetric",
+    "mfront_threads": 4,
+    "mkl_num_threads": null,
+    "numpy": "2.4.4",
+    "omp_num_threads": null,
+    "openblas_num_threads": null,
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "pyfftw": "0.15.1",
+    "python": "3.12.3",
+    "scipy": "1.17.1",
+    "transform_backend": "fftw"
+  },
+  "reference_update": "initial",
+  "requested_increments": 24,
+  "slip_observables": {
+    "equivalent_plastic_slip": {
+      "meaning": "accumulated equivalent slip per FCC system",
+      "shape": [
+        100,
+        100,
+        2,
+        12
+      ],
+      "system_axis": -1,
+      "triangle_axis": 2
+    },
+    "plastic_slip": {
+      "meaning": "signed plastic slip per FCC system",
+      "shape": [
+        100,
+        100,
+        2,
+        12
+      ],
+      "system_axis": -1,
+      "triangle_axis": 2
+    }
+  },
+  "status": "completed_crystal_tet2_p43",
+  "timings": {
+    "divergence_seconds": 0.1273059739760356,
+    "gmres_iterations": 320.0,
+    "gmres_seconds": 39.26979909604415,
+    "gradient_seconds": 0.08826655012671836,
+    "jacobian_calls": 1837.0,
+    "jacobian_divergence_seconds": 2.4724105453060474,
+    "jacobian_gradient_seconds": 1.3731384468846954,
+    "jacobian_matvec_calls": 1837.0,
+    "jacobian_pack_seconds": 0.16511565624387003,
+    "jacobian_seconds": 5.864261448834441,
+    "jacobian_tangent_seconds": 1.6962638369877823,
+    "jacobian_unpack_seconds": 0.11547019894351251,
+    "krylov_outer_callbacks": 320.0,
+    "krylov_overhead_seconds": 30.13042181219498,
+    "line_search_full_step_acceptances": 104.0,
+    "line_search_minimum_factor": 1.0,
+    "line_search_reduced_step_acceptances": 0.0,
+    "line_search_rejections": 0.0,
+    "material_accepted_line_search_evaluations": 104.0,
+    "material_complete_promotion_evaluations": 0.0,
+    "material_condensation_seconds": 105.59870035397762,
+    "material_condition_check_seconds": 0.0,
+    "material_condition_checks": 0.0,
+    "material_evaluate_calls": 513.0,
+    "material_evaluations": 129.0,
+    "material_initial_probe_evaluations": 1.0,
+    "material_integration_seconds": 87.87458661507117,
+    "material_line_search_evaluations": 104.0,
+    "material_local_solve_seconds": 2.5758728369692108,
+    "material_newton_tangent_evaluations": 24.0,
+    "material_observable_seconds": 0.38210516204708256,
+    "material_reconstruction_seconds": 0.4042850190453464,
+    "material_rejected_line_search_evaluations": 0.0,
+    "material_rotation_to_global_seconds": 4.647821147344075,
+    "material_rotation_to_material_seconds": 0.782996666021063,
+    "material_seconds": 106.21498545807844,
+    "material_total_evaluations": 129.0,
+    "material_verification_evaluations": 0.0,
+    "material_warm_start_resets": 1.0,
+    "material_warm_start_uses": 80.0,
+    "mgis_integrations": 513.0,
+    "preconditioner_calls": 1733.0,
+    "preconditioner_forward_transform_seconds": 1.2990529901289847,
+    "preconditioner_green_seconds": 0.6962404792575398,
+    "preconditioner_inverse_transform_seconds": 1.1947731148684397,
+    "preconditioner_output_copy_seconds": 0.061162753467215225,
+    "preconditioner_reshape_seconds": 0.019942080733017065,
+    "preconditioner_seconds": 3.2751158350147307
+  },
+  "tolerance": 1e-08,
+  "units": "mm, MPa",
+  "verify_final_state": false
+}
