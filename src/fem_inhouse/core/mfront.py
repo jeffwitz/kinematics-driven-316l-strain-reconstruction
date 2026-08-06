@@ -125,6 +125,11 @@ class MFrontTimingStatistics:
     local_condensation_evaluations: int = 0
     full_batch_integration_calls: int = 0
     equivalent_active_point_integrations: int = 0
+    material_point_integrations: int = 0
+    material_point_integrations_with_tangent: int = 0
+    material_point_integrations_without_tangent: int = 0
+    material_block_integration_calls: int = 0
+    material_block_count: int = 1
     local_iteration_histogram: tuple[int, ...] = ()
 
 
@@ -180,20 +185,30 @@ def _load_mgis() -> Any:
     try:
         return import_module("mgis.behaviour")
     except (ImportError, OSError) as error:
-        raise MFrontUnavailableError(
-            "MGIS Python bindings are unavailable; source the TFEL environment "
-            "before starting Python"
-        ) from error
+        # The experimental generalized-plane-stress binding is intentionally
+        # shipped as a standalone extension while it is being qualified.  It
+        # exposes the same behaviour API and is accepted only as an explicit
+        # opt-in backend below.
+        try:
+            return import_module("behaviour")
+        except (ImportError, OSError):
+            raise MFrontUnavailableError(
+                "MGIS Python bindings are unavailable; source the TFEL environment "
+                "before starting Python"
+            ) from error
 
 
 def _load_mgis_root() -> Any:
     try:
         return import_module("mgis")
     except (ImportError, OSError) as error:
-        raise MFrontUnavailableError(
-            "MGIS Python bindings are unavailable; source the TFEL environment "
-            "before starting Python"
-        ) from error
+        try:
+            return import_module("behaviour")
+        except (ImportError, OSError):
+            raise MFrontUnavailableError(
+                "MGIS Python bindings are unavailable; source the TFEL environment "
+                "before starting Python"
+            ) from error
 
 
 def _broadcast_material_properties(
@@ -601,6 +616,20 @@ class MFrontMaterialPointBatch:
             ),
             integration_with_tangent_calls=self._integration_with_tangent_calls,
             tensor_reconstruction_calls=self._tensor_reconstruction_calls,
+            material_point_integrations=(
+                self._point_count
+                * (self._integration_with_tangent_calls + self._integration_without_tangent_calls)
+            ),
+            material_point_integrations_with_tangent=(
+                self._point_count * self._integration_with_tangent_calls
+            ),
+            material_point_integrations_without_tangent=(
+                self._point_count * self._integration_without_tangent_calls
+            ),
+            material_block_integration_calls=(
+                self._integration_with_tangent_calls + self._integration_without_tangent_calls
+            ),
+            material_block_count=1,
         )
 
     @property
@@ -1330,6 +1359,13 @@ class MFront3DMaterialPointBatch:
             integration_seconds=self._integration_seconds,
             rotation_to_global_seconds=self._rotation_to_global_seconds,
             evaluate_calls=self._evaluate_calls,
+            material_point_integrations=self._point_count * self._evaluate_calls,
+            material_point_integrations_with_tangent=(
+                self._point_count * self._evaluate_calls
+            ),
+            material_point_integrations_without_tangent=0,
+            material_block_integration_calls=self._evaluate_calls,
+            material_block_count=1,
         )
 
     @property
@@ -1706,6 +1742,17 @@ class MFront3DCondensedPlaneStressBatch:
             local_solve_seconds=self._local_solve_seconds,
             reconstruction_seconds=self._reconstruction_seconds,
             observable_seconds=self._observable_seconds,
+            material_point_integrations=bridge_timing.material_point_integrations,
+            material_point_integrations_with_tangent=(
+                bridge_timing.material_point_integrations_with_tangent
+            ),
+            material_point_integrations_without_tangent=(
+                bridge_timing.material_point_integrations_without_tangent
+            ),
+            material_block_integration_calls=(
+                bridge_timing.material_block_integration_calls
+            ),
+            material_block_count=1,
             evaluate_calls=bridge_timing.evaluate_calls,
             condition_checks=self._condition_checks,
             local_condensation_evaluations=self._local_condensation_evaluations,
@@ -2194,6 +2241,337 @@ class MFront3DCondensedPlaneStressBatch:
         return self._bridge.committed_nonlocal_equivalent_plastic_strain
 
 
+class MFrontNativeGeneralisedPlaneStressBatch:
+    """Experimental native generalized-plane-stress crystal adapter.
+
+    This is deliberately separate from :class:`MFront3DCondensedPlaneStressBatch`.
+    The latter remains the production/reference path.  The adapter consumes the
+    optional MGIS generalized-plane-stress binding one material point at a time,
+    which keeps the transaction semantics explicit while the native behaviour is
+    being qualified.
+    """
+
+    def __init__(
+        self,
+        library_path: str | Path,
+        *,
+        behaviour_spec: MFrontBehaviourSpec,
+        point_count: int,
+        rotation_global_to_material: ArrayLike | None = None,
+        thread_count: int = 1,
+        behaviour_name: str,
+        behaviour_parameters: Mapping[str, float] | None = None,
+        temperature_k: float = 293.15,
+        maximum_local_iterations: int = 25,
+        local_relative_tolerance: float = 1.0e-10,
+        local_tolerance_mpa: float = 1.0e-8,
+        local_transverse_predictor: str = "committed",
+        local_condition_check_mode: str = "on_failure",
+    ) -> None:
+        if point_count < 1:
+            raise ValueError("point_count must be positive")
+        if thread_count != 1:
+            raise ValueError(
+                "native generalized plane stress currently requires thread_count=1"
+            )
+        self._mgis = _load_mgis()
+        if not hasattr(self._mgis, "solve_generalised_plane_stress"):
+            raise MFrontUnavailableError(
+                "the optional MGIS generalized-plane-stress binding is unavailable"
+            )
+        self._behaviour = self._mgis.load(
+            str(Path(library_path).resolve()),
+            behaviour_name,
+            self._mgis.Hypothesis.Tridimensional,
+        )
+        _apply_behaviour_parameters(
+            self._mgis, self._behaviour, behaviour_parameters, behaviour_name
+        )
+        self._specification = behaviour_spec
+        self._behaviour_name = behaviour_name
+        self._point_count = point_count
+        self._parameters = dict(behaviour_parameters or {})
+        self._temperature = float(temperature_k)
+        self._maximum_iterations = int(maximum_local_iterations)
+        self._relative_tolerance = float(local_relative_tolerance)
+        self._absolute_tolerance = float(local_tolerance_mpa)
+        self._rotations = (
+            None
+            if rotation_global_to_material is None
+            else validate_rotations(rotation_global_to_material, point_count=point_count)
+        )
+        self._rotation_arguments = (
+            None if self._rotations is None else mgis_rotation_argument(self._rotations)
+        )
+        self._inverse_rotation_arguments = (
+            None
+            if self._rotations is None
+            else mgis_rotation_argument(np.swapaxes(self._rotations, 1, 2))
+        )
+        self._data = [self._mgis.BehaviourData(self._behaviour) for _ in range(point_count)]
+        for data in self._data:
+            self._mgis.setExternalStateVariable(
+                data.s0, "Temperature", np.array([self._temperature])
+            )
+            self._mgis.setExternalStateVariable(
+                data.s1, "Temperature", np.array([self._temperature])
+            )
+        self._observable_slices = _declared_internal_slices(
+            self._mgis,
+            self._behaviour,
+            self._mgis.Hypothesis.Tridimensional,
+            behaviour_spec,
+        )
+        elastic_offset = _variable_offset(
+            self._mgis,
+            self._behaviour.isvs,
+            "ElasticStrain",
+            self._mgis.Hypothesis.Tridimensional,
+            expected_size=6,
+        )
+        assert elastic_offset is not None
+        self._elastic_offset = elastic_offset
+        self._committed_strain = np.zeros((point_count, 6), dtype=float)
+        self._latest_trial: ConstitutiveTrial | None = None
+        self._latest_total_kelvin: NDArray | None = None
+        self._latest_in_plane: NDArray | None = None
+        self._latest_dt: float | None = None
+        self._evaluate_calls = 0
+        self._integration_seconds = 0.0
+        self._local_iterations = np.zeros(point_count, dtype=np.int64)
+
+    @property
+    def point_count(self) -> int:
+        return self._point_count
+
+    @property
+    def backend_name(self) -> str:
+        return "mfront-native-generalised-plane-stress"
+
+    @property
+    def completion_strategy(self) -> str:
+        return "mfront_native_generalised_plane_stress"
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        return self._specification.linear_system_matrix_type
+
+    @property
+    def thread_count(self) -> int:
+        return 1
+
+    @property
+    def statistics(self) -> PlaneStressBatchStatistics:
+        return PlaneStressBatchStatistics(
+            maximum_local_plane_stress_iterations=int(self._local_iterations.max()),
+            mean_local_plane_stress_iterations=float(self._local_iterations.mean()),
+        )
+
+    @property
+    def timing_statistics(self) -> MFrontTimingStatistics:
+        return MFrontTimingStatistics(
+            integration_seconds=self._integration_seconds,
+            evaluate_calls=self._evaluate_calls,
+            material_point_integrations=self._evaluate_calls * self._point_count,
+            material_point_integrations_with_tangent=self._evaluate_calls
+            * self._point_count,
+            material_block_integration_calls=self._evaluate_calls,
+            material_block_count=self._point_count,
+        )
+
+    @property
+    def committed_transverse_strain_kelvin(self) -> NDArray:
+        return self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
+
+    def _set_parameters(self) -> None:
+        _apply_behaviour_parameters(
+            self._mgis, self._behaviour, self._parameters, self._behaviour_name
+        )
+
+    def _global_stress_and_tangent(
+        self, data: Any, index: int
+    ) -> tuple[NDArray, NDArray]:
+        del index
+        # The rotated MGIS native solver leaves the final thermodynamic forces
+        # and tangent in the global frame.  Rotating them again here would
+        # apply the EBSD orientation twice.
+        stress = np.asarray(data.s1.thermodynamic_forces, dtype=float).copy()
+        tangent = np.asarray(data.K, dtype=float).copy()
+        return stress, tangent
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        full = self.evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+        return InPlaneConstitutiveTrial(
+            stress_in_plane_mpa=full.stress_in_plane_mpa,
+            tangent_in_plane_mpa=full.tangent_in_plane_mpa,
+            observables=full.observables,
+            local_plane_stress_iterations=full.local_plane_stress_iterations,
+        )
+
+    def evaluate(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> ConstitutiveTrial:
+        in_plane = np.asarray(in_plane_strain, dtype=float)
+        if in_plane.shape != (self._point_count, 3):
+            raise ValueError(f"in_plane_strain must have shape {(self._point_count, 3)}")
+        total = np.zeros((self._point_count, 6), dtype=float)
+        total[:, _PLANE_STRESS_COMPONENTS] = (
+            in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+        )
+        stress = np.empty_like(total)
+        tangent = np.empty((self._point_count, 6, 6), dtype=float)
+        condensed_tangent = np.empty((self._point_count, 3, 3), dtype=float)
+        transverse = np.empty((self._point_count, 3), dtype=float)
+        iterations = np.empty(self._point_count, dtype=np.int64)
+        observables: dict[str, NDArray] = {
+            name: np.empty((self._point_count, item.stop - item.start), dtype=float)
+            for name, item in self._observable_slices.items()
+        }
+        started = time.perf_counter()
+        self._set_parameters()
+        try:
+            for index, data in enumerate(self._data):
+                data.revert()
+                rotation = None if self._rotations is None else self._rotations[index]
+                initial = self._committed_strain[index, _TRANSVERSE_COMPONENTS_3D]
+                result = self._mgis.solve_generalised_plane_stress(
+                    data,
+                    self._behaviour,
+                    np.eye(3)[0] if rotation is None else rotation[0],
+                    np.eye(3)[1] if rotation is None else rotation[1],
+                    in_plane[index],
+                    float(time_increment),
+                    initial,
+                    self._maximum_iterations,
+                    self._relative_tolerance,
+                    self._absolute_tolerance,
+                )
+                # The first binding revision did not reliably marshal the
+                # returned std::array transverse field on all pybind builds.
+                # The committed native trial is authoritative; rotate its
+                # final material-frame gradient back to the global frame.
+                final_gradient = np.asarray(data.s1.gradients, dtype=float).copy()
+                if self._inverse_rotation_arguments is not None:
+                    self._mgis.rotateGradients(
+                        final_gradient,
+                        self._behaviour,
+                        self._inverse_rotation_arguments[index * 9 : (index + 1) * 9],
+                    )
+                transverse[index] = final_gradient[_TRANSVERSE_COMPONENTS_3D]
+                iterations[index] = int(result["iterations"])
+                stress[index], tangent[index] = self._global_stress_and_tangent(data, index)
+                condensed_tangent[index] = np.asarray(
+                    result["condensed_tangent"], dtype=float
+                )
+                for name, item in self._observable_slices.items():
+                    observables[name][index] = data.s1.internal_state_variables[item]
+        except Exception:
+            self.revert()
+            raise
+        self._integration_seconds += time.perf_counter() - started
+        total[:, _TRANSVERSE_COMPONENTS_3D] = transverse
+        elastic = np.empty_like(total)
+        for index, data in enumerate(self._data):
+            elastic_material = np.asarray(
+                data.s1.internal_state_variables[
+                    self._elastic_offset : self._elastic_offset + 6
+                ],
+                dtype=float,
+            ).copy()
+            if self._inverse_rotation_arguments is not None:
+                self._mgis.rotateGradients(
+                    elastic_material,
+                    self._behaviour,
+                    self._inverse_rotation_arguments[index * 9 : (index + 1) * 9],
+                )
+            elastic[index] = elastic_material
+        total_tensor = kelvin_3d_to_tensor(total, quantity="strain")
+        elastic_tensor = kelvin_3d_to_tensor(elastic, quantity="strain")
+        stress_tensor = kelvin_3d_to_tensor(stress, quantity="stress")
+        plastic_tensor = total_tensor - elastic_tensor
+        if "equivalent_plastic_slip" in observables:
+            observables["accumulated_slip"] = observables["equivalent_plastic_slip"].sum(axis=1)
+        in_tangent = condensed_tangent.copy()
+        in_tangent = in_tangent * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
+        in_tangent = in_tangent * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+        in_stress = stress[:, _PLANE_STRESS_COMPONENTS] * _KELVIN_TO_ENGINEERING_STRESS_SCALE
+        self._latest_in_plane = in_plane.copy()
+        self._latest_dt = float(time_increment)
+        self._latest_total_kelvin = total.copy()
+        self._local_iterations[:] = iterations
+        self._latest_trial = ConstitutiveTrial(
+            stress_in_plane_mpa=in_stress,
+            tangent_in_plane_mpa=in_tangent if consistent_tangent else None,
+            full_stress_tensor_mpa=stress_tensor,
+            full_strain_tensor=total_tensor,
+            elastic_strain_tensor=elastic_tensor,
+            plastic_strain_tensor=plastic_tensor,
+            plane_stress_residual_mpa=np.stack(
+                (stress_tensor[:, 2, 2], stress_tensor[:, 0, 2], stress_tensor[:, 1, 2]), axis=-1
+            ),
+            observables=observables,
+            local_plane_stress_iterations=iterations.copy(),
+        )
+        return self._latest_trial
+
+    def commit(self) -> None:
+        for data in self._data:
+            data.update()
+        if self._latest_total_kelvin is not None:
+            self._committed_strain[:, :] = self._latest_total_kelvin
+        self._latest_trial = None
+        self._latest_total_kelvin = None
+
+    def revert(self) -> None:
+        for data in self._data:
+            data.revert()
+        self._latest_trial = None
+        self._latest_total_kelvin = None
+
+    def snapshot_state(self) -> tuple[NDArray, tuple[tuple[NDArray, NDArray, NDArray], ...]]:
+        return (
+            self._committed_strain.copy(),
+            tuple(
+                (
+                    np.asarray(data.s0.gradients).copy(),
+                    np.asarray(data.s0.internal_state_variables).copy(),
+                    np.asarray(data.s0.thermodynamic_forces).copy(),
+                )
+                for data in self._data
+            ),
+        )
+
+    def restore_state(self, snapshot: Any) -> None:
+        self.revert()
+        self._committed_strain[:, :] = snapshot[0]
+        for data, state in zip(self._data, snapshot[1], strict=True):
+            data.s0.gradients[:] = state[0]
+            data.s1.gradients[:] = state[0]
+            data.s0.internal_state_variables[:] = state[1]
+            data.s1.internal_state_variables[:] = state[1]
+            data.s0.thermodynamic_forces[:] = state[2]
+            data.s1.thermodynamic_forces[:] = state[2]
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
+        if self._latest_trial is None:
+            raise RuntimeError("no native generalized plane-stress trial is available")
+        return self._latest_trial
+
+
 class MFront3DCondensedPlaneStressBlockBatch:
     """Partition a condensed MFront batch into independently converged blocks.
 
@@ -2367,6 +2745,19 @@ class MFront3DCondensedPlaneStressBlockBatch:
             local_solve_seconds=sum(t.local_solve_seconds for t in timings),
             reconstruction_seconds=sum(t.reconstruction_seconds for t in timings),
             observable_seconds=sum(t.observable_seconds for t in timings),
+            material_point_integrations=sum(
+                t.material_point_integrations for t in timings
+            ),
+            material_point_integrations_with_tangent=sum(
+                t.material_point_integrations_with_tangent for t in timings
+            ),
+            material_point_integrations_without_tangent=sum(
+                t.material_point_integrations_without_tangent for t in timings
+            ),
+            material_block_integration_calls=sum(
+                t.material_block_integration_calls for t in timings
+            ),
+            material_block_count=sum(t.material_block_count for t in timings),
             evaluate_calls=sum(t.evaluate_calls for t in timings),
             condition_checks=sum(t.condition_checks for t in timings),
             local_condensation_evaluations=sum(

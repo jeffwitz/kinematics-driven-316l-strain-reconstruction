@@ -138,6 +138,15 @@ def main() -> int:
         choices=("fcc_forest_rubin_srix", "fcc_meric_cailletaud"),
         default="fcc_forest_rubin_srix",
     )
+    parser.add_argument(
+        "--material-backend",
+        choices=(
+            "mfront-3d-condensed-plane-stress",
+            "mfront-native-generalised-plane-stress",
+        ),
+        default="mfront-3d-condensed-plane-stress",
+        help="reference Python condensation or experimental native MGIS closure",
+    )
     parser.add_argument("--paired-parameter-set", required=True)
     parser.add_argument(
         "--ebsd-orientation-h5",
@@ -297,7 +306,7 @@ def main() -> int:
         [fraction * boundary for fraction in np.linspace(0.0, 1.0, arguments.increments + 1)]
     )
     material = create_plane_stress_material_batch(
-        "mfront-3d-condensed-plane-stress",
+        arguments.material_backend,
         np.repeat(yield_stress, 2),
         np.repeat(coefficient, 2),
         0.245,
