@@ -124,6 +124,9 @@ def main() -> int:
     )
     parser.add_argument("--adaptive-error-stress-rtol", type=float, default=1.0e-3)
     parser.add_argument("--adaptive-error-slip-rtol", type=float, default=1.0e-3)
+    parser.add_argument("--adaptive-error-slip-atol", type=float, default=1.0e-6)
+    parser.add_argument("--adaptive-error-slip-linf-cap", type=float, default=1.0e-6)
+    parser.add_argument("--adaptive-error-activity-threshold", type=float, default=1.0e-6)
     parser.add_argument("--adaptive-error-reaction-rtol", type=float, default=1.0e-3)
     parser.add_argument("--adaptive-error-displacement-rtol", type=float, default=1.0e-5)
     parser.add_argument("--adaptive-error-linf-factor", type=float, default=5.0)
@@ -221,7 +224,12 @@ def main() -> int:
                 stress_relative_tolerance=arguments.adaptive_error_stress_rtol,
                 reaction_relative_tolerance=arguments.adaptive_error_reaction_rtol,
                 signed_slip_relative_tolerance=arguments.adaptive_error_slip_rtol,
+                signed_slip_absolute_tolerance=arguments.adaptive_error_slip_atol,
+                signed_slip_linf_absolute_cap=arguments.adaptive_error_slip_linf_cap,
                 accumulated_slip_relative_tolerance=arguments.adaptive_error_slip_rtol,
+                accumulated_slip_absolute_tolerance=arguments.adaptive_error_slip_atol,
+                accumulated_slip_linf_absolute_cap=arguments.adaptive_error_slip_linf_cap,
+                activity_threshold=arguments.adaptive_error_activity_threshold,
                 displacement_relative_tolerance=arguments.adaptive_error_displacement_rtol,
                 linf_relative_tolerance_factor=arguments.adaptive_error_linf_factor,
                 safety_factor=arguments.adaptive_error_safety_factor,
@@ -263,9 +271,11 @@ def main() -> int:
                 "accumulated_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
                 "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
                 "linf_relative_tolerance_factor": arguments.adaptive_error_linf_factor,
-                "activity_threshold": 1.0e-8,
-                "signed_slip_absolute_tolerance": 1.0e-8,
-                "accumulated_slip_absolute_tolerance": 1.0e-8,
+                "activity_threshold": arguments.adaptive_error_activity_threshold,
+                "signed_slip_absolute_tolerance": arguments.adaptive_error_slip_atol,
+                "signed_slip_linf_absolute_cap": arguments.adaptive_error_slip_linf_cap,
+                "accumulated_slip_absolute_tolerance": arguments.adaptive_error_slip_atol,
+                "accumulated_slip_linf_absolute_cap": arguments.adaptive_error_slip_linf_cap,
                 "safety_factor": arguments.adaptive_error_safety_factor,
             },
             "adaptive_step_history": list(error.history),
@@ -321,12 +331,14 @@ def main() -> int:
             "stress_relative_tolerance": arguments.adaptive_error_stress_rtol,
             "reaction_relative_tolerance": arguments.adaptive_error_reaction_rtol,
             "signed_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
+            "signed_slip_absolute_tolerance": arguments.adaptive_error_slip_atol,
+            "signed_slip_linf_absolute_cap": arguments.adaptive_error_slip_linf_cap,
             "accumulated_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
+            "accumulated_slip_absolute_tolerance": arguments.adaptive_error_slip_atol,
+            "accumulated_slip_linf_absolute_cap": arguments.adaptive_error_slip_linf_cap,
+            "activity_threshold": arguments.adaptive_error_activity_threshold,
             "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
             "linf_relative_tolerance_factor": arguments.adaptive_error_linf_factor,
-            "activity_threshold": 1.0e-8,
-            "signed_slip_absolute_tolerance": 1.0e-8,
-            "accumulated_slip_absolute_tolerance": 1.0e-8,
             "safety_factor": arguments.adaptive_error_safety_factor,
         },
         "adaptive_step_history": list(diagnostics.adaptive_step_history),

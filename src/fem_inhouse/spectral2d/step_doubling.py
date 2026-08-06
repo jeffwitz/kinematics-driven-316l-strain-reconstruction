@@ -23,12 +23,14 @@ class StepDoublingErrorConfig:
     reaction_relative_tolerance: float = 1.0e-3
     reaction_absolute_tolerance: float = 1.0e-10
     signed_slip_relative_tolerance: float = 1.0e-3
-    signed_slip_absolute_tolerance: float = 1.0e-8
+    signed_slip_absolute_tolerance: float = 1.0e-6
     accumulated_slip_relative_tolerance: float = 1.0e-3
-    accumulated_slip_absolute_tolerance: float = 1.0e-8
+    accumulated_slip_absolute_tolerance: float = 1.0e-6
     displacement_relative_tolerance: float = 1.0e-5
     displacement_absolute_tolerance: float = 1.0e-12
-    activity_threshold: float = 1.0e-8
+    activity_threshold: float = 1.0e-6
+    signed_slip_linf_absolute_cap: float = 1.0e-6
+    accumulated_slip_linf_absolute_cap: float = 1.0e-6
     linf_relative_tolerance_factor: float = 5.0
     safety_factor: float = 0.8
     minimum_shrink_factor: float = 0.25
@@ -50,6 +52,8 @@ class StepDoublingErrorConfig:
             self.displacement_relative_tolerance,
             self.displacement_absolute_tolerance,
             self.activity_threshold,
+            self.signed_slip_linf_absolute_cap,
+            self.accumulated_slip_linf_absolute_cap,
             self.linf_relative_tolerance_factor,
         )
         if not all(np.isfinite(value) and value >= 0.0 for value in tolerances):
@@ -169,6 +173,8 @@ class PerSystemError:
     difference_l2_norms: FloatArray
     fine_linf_amplitudes: FloatArray
     coarse_linf_amplitudes: FloatArray
+    absolute_linf_values: FloatArray
+    absolute_linf_cap_exceeded: NDArray[np.bool_]
     active_fine: NDArray[np.bool_]
     active_coarse: NDArray[np.bool_]
     active_set_mismatch: NDArray[np.bool_]
@@ -220,6 +226,8 @@ def _per_system_error_record(details: PerSystemError) -> dict[str, object]:
         "difference_norm_per_system": details.difference_l2_norms.tolist(),
         "maximum_fine_amplitude_per_system": details.fine_linf_amplitudes.tolist(),
         "maximum_coarse_amplitude_per_system": details.coarse_linf_amplitudes.tolist(),
+        "absolute_linf_per_system": details.absolute_linf_values.tolist(),
+        "absolute_linf_cap_exceeded_per_system": details.absolute_linf_cap_exceeded.tolist(),
         "active_fine_per_system": details.active_fine.tolist(),
         "active_coarse_per_system": details.active_coarse.tolist(),
         "active_set_mismatch_per_system": details.active_set_mismatch.tolist(),
@@ -302,6 +310,7 @@ def _per_system_error(
     absolute_tolerance: float,
     linf_relative_tolerance: float,
     activity_threshold: float,
+    linf_absolute_cap: float,
 ) -> tuple[ObservableError, PerSystemError]:
     if (
         fine.shape != coarse.shape
@@ -318,6 +327,8 @@ def _per_system_error(
     difference_l2 = np.empty(system_count, dtype=np.float64)
     fine_linf = np.empty(system_count, dtype=np.float64)
     coarse_linf = np.empty(system_count, dtype=np.float64)
+    absolute_linf = np.empty(system_count, dtype=np.float64)
+    cap_exceeded = np.empty(system_count, dtype=bool)
     active_fine = np.empty(system_count, dtype=bool)
     active_coarse = np.empty(system_count, dtype=bool)
     active_mismatch = np.empty(system_count, dtype=bool)
@@ -357,6 +368,12 @@ def _per_system_error(
         difference_l2[system] = metric.absolute_l2
         fine_linf[system] = metric.maximum_fine_amplitude
         coarse_linf[system] = metric.maximum_coarse_amplitude
+        absolute_linf[system] = metric.absolute_linf
+        cap_exceeded[system] = metric.absolute_linf > linf_absolute_cap
+        ratios[system] = max(
+            metric.weighted_rms_ratio,
+            metric.absolute_linf / max(linf_absolute_cap, 1.0e-30),
+        )
     maximum_absolute = max(metric.maximum_absolute for metric in metrics)
     return (
         ObservableError(
@@ -382,6 +399,8 @@ def _per_system_error(
             difference_l2_norms=difference_l2,
             fine_linf_amplitudes=fine_linf,
             coarse_linf_amplitudes=coarse_linf,
+            absolute_linf_values=absolute_linf,
+            absolute_linf_cap_exceeded=cap_exceeded,
             active_fine=active_fine,
             active_coarse=active_coarse,
             active_set_mismatch=active_mismatch,
@@ -433,6 +452,7 @@ def estimate_step_error(
             config.linf_relative_tolerance_factor * config.signed_slip_relative_tolerance
         ),
         activity_threshold=config.activity_threshold,
+        linf_absolute_cap=config.signed_slip_linf_absolute_cap,
     )
     equivalent_plastic_slip, equivalent_details = _per_system_error(
         fine.equivalent_plastic_slip,
@@ -444,6 +464,7 @@ def estimate_step_error(
             * config.accumulated_slip_relative_tolerance
         ),
         activity_threshold=config.activity_threshold,
+        linf_absolute_cap=config.accumulated_slip_linf_absolute_cap,
     )
     candidates: list[tuple[str, float, int | None]] = [
         ("stress", stress.ratio, None),
