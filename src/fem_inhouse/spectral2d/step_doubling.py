@@ -31,6 +31,8 @@ class StepDoublingErrorConfig:
     activity_threshold: float = 1.0e-6
     signed_slip_linf_absolute_cap: float = 1.0e-6
     accumulated_slip_linf_absolute_cap: float = 1.0e-6
+    reaction_linf_relative_tolerance_factor: float = 10.0
+    reaction_linf_absolute_cap: float = 5.0e-5
     linf_relative_tolerance_factor: float = 5.0
     safety_factor: float = 0.8
     minimum_shrink_factor: float = 0.25
@@ -54,6 +56,8 @@ class StepDoublingErrorConfig:
             self.activity_threshold,
             self.signed_slip_linf_absolute_cap,
             self.accumulated_slip_linf_absolute_cap,
+            self.reaction_linf_relative_tolerance_factor,
+            self.reaction_linf_absolute_cap,
             self.linf_relative_tolerance_factor,
         )
         if not all(np.isfinite(value) and value >= 0.0 for value in tolerances):
@@ -68,6 +72,8 @@ class StepDoublingErrorConfig:
             raise ValueError("assumed method order must be non-negative")
         if self.linf_relative_tolerance_factor < 1.0:
             raise ValueError("L-infinity tolerance factor must be at least one")
+        if self.reaction_linf_relative_tolerance_factor < 1.0:
+            raise ValueError("reaction L-infinity tolerance factor must be at least one")
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +268,7 @@ def _error(
     relative_tolerance: float,
     absolute_tolerance: float,
     linf_relative_tolerance: float | None = None,
+    linf_absolute_cap: float | None = None,
 ) -> ObservableError:
     difference = np.asarray(fine, dtype=np.float64) - np.asarray(coarse, dtype=np.float64)
     fine_values = np.asarray(fine, dtype=np.float64)
@@ -290,7 +297,12 @@ def _error(
         relative_l2=relative_l2,
         relative_linf=relative_linf,
         maximum_absolute=linf_error,
-        ratio=max(weighted_rms, weighted_linf),
+        ratio=max(
+            weighted_rms,
+            weighted_linf
+            if linf_absolute_cap is None
+            else linf_error / max(linf_absolute_cap, 1.0e-30),
+        ),
         weighted_rms_ratio=weighted_rms,
         weighted_linf_ratio=weighted_linf,
         absolute_l2=l2_error,
@@ -430,8 +442,10 @@ def estimate_step_error(
         relative_tolerance=config.reaction_relative_tolerance,
         absolute_tolerance=config.reaction_absolute_tolerance,
         linf_relative_tolerance=(
-            config.linf_relative_tolerance_factor * config.reaction_relative_tolerance
+            config.reaction_linf_relative_tolerance_factor
+            * config.reaction_relative_tolerance
         ),
+        linf_absolute_cap=config.reaction_linf_absolute_cap,
     )
     displacement = _error(
         fine.displacement,

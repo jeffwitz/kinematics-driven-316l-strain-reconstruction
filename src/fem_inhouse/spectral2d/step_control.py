@@ -9,6 +9,7 @@ material rollback.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -26,6 +27,11 @@ class AdaptiveStepConfig:
     target_newton_iterations_min: int = 4
     target_newton_iterations_max: int = 7
     maximum_cutbacks_per_step: int = 8
+    slip_error_control: Literal["disabled", "predictive"] = "disabled"
+    slip_error_relative_tolerance: float = 5.0e-3
+    slip_error_absolute_tolerance: float = 1.0e-6
+    slip_error_growth_threshold: float = 0.25
+    slip_error_cutback_threshold: float = 1.0
 
     def __post_init__(self) -> None:
         if self.initial_increment_fraction <= 0.0:
@@ -46,6 +52,22 @@ class AdaptiveStepConfig:
             raise ValueError("maximum target Newton iterations must not be below minimum")
         if self.maximum_cutbacks_per_step < 0:
             raise ValueError("maximum cutbacks per step must be non-negative")
+        if self.slip_error_control not in {"disabled", "predictive"}:
+            raise ValueError("unsupported slip error control mode")
+        if (
+            not np.isfinite(self.slip_error_relative_tolerance)
+            or self.slip_error_relative_tolerance < 0.0
+        ):
+            raise ValueError("slip relative tolerance must be finite and non-negative")
+        if (
+            not np.isfinite(self.slip_error_absolute_tolerance)
+            or self.slip_error_absolute_tolerance < 0.0
+        ):
+            raise ValueError("slip absolute tolerance must be finite and non-negative")
+        if self.slip_error_growth_threshold < 0.0:
+            raise ValueError("slip growth threshold must be non-negative")
+        if self.slip_error_cutback_threshold < self.slip_error_growth_threshold:
+            raise ValueError("slip cutback threshold must not be below growth threshold")
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +78,44 @@ class LoadStepObservation:
     newton_iterations: int
     minimum_line_search_factor: float = 1.0
     maximum_local_iterations: int = 0
+    slip_error_ratio: float | None = None
+
+
+def predictive_slip_error_ratio(
+    current_accumulated_slip: NDArray[np.float64],
+    previous_accumulated_slip: NDArray[np.float64],
+    previous_increment: NDArray[np.float64],
+    *,
+    current_step_size: float,
+    previous_step_size: float,
+    relative_tolerance: float,
+    absolute_tolerance: float,
+) -> float:
+    """Estimate slip-path curvature without a second constitutive solve.
+
+    The current accumulated-slip increment is compared with a secant
+    prediction from the previous accepted increment.  This is a cheap
+    indicator of integration difficulty, not a replacement for an exact
+    step-doubling error estimate.
+    """
+
+    current = np.asarray(current_accumulated_slip, dtype=np.float64)
+    previous = np.asarray(previous_accumulated_slip, dtype=np.float64)
+    increment = np.asarray(previous_increment, dtype=np.float64)
+    if current.shape != previous.shape or current.shape != increment.shape:
+        raise ValueError("slip predictor arrays must have identical shapes")
+    if current.ndim < 1 or current.shape[-1] != 12:
+        raise ValueError("slip predictor arrays must have 12 systems on the last axis")
+    if current_step_size <= 0.0 or previous_step_size <= 0.0:
+        raise ValueError("step sizes must be positive")
+    predicted = increment * (current_step_size / previous_step_size)
+    actual = current - previous
+    scale = absolute_tolerance + relative_tolerance * np.maximum(
+        np.abs(actual), np.abs(predicted)
+    )
+    normalized = np.abs(actual - predicted) / np.maximum(scale, 1.0e-30)
+    per_system = np.sqrt(np.mean(normalized * normalized, axis=tuple(range(normalized.ndim - 1))))
+    return float(np.max(per_system))
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,11 +163,20 @@ class AdaptiveLoadStepController:
             observation.newton_iterations > self.config.target_newton_iterations_max
             or observation.minimum_line_search_factor < 1.0
             or observation.maximum_local_iterations > 0
+            or (
+                observation.slip_error_ratio is not None
+                and observation.slip_error_ratio
+                > self.config.slip_error_cutback_threshold
+            )
         )
         easy = (
             observation.newton_iterations <= self.config.target_newton_iterations_min
             and observation.minimum_line_search_factor >= 1.0
             and observation.maximum_local_iterations == 0
+            and (
+                observation.slip_error_ratio is None
+                or observation.slip_error_ratio <= self.config.slip_error_growth_threshold
+            )
         )
         if difficult:
             self.increment_fraction = max(

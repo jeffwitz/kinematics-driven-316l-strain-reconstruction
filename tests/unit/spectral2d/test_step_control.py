@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from fem_inhouse.spectral2d import (
@@ -5,6 +6,7 @@ from fem_inhouse.spectral2d import (
     AdaptiveStepConfig,
     LoadStepObservation,
 )
+from fem_inhouse.spectral2d.step_control import predictive_slip_error_ratio
 
 
 def test_controller_grows_easy_steps_without_crossing_path_end() -> None:
@@ -52,3 +54,38 @@ def test_controller_rejects_invalid_policy_and_observation() -> None:
         controller.accept(LoadStepObservation(converged=False, newton_iterations=1))
     with pytest.raises(ValueError, match="path fractions"):
         controller.propose(0.8, segment_end=0.2)
+
+
+def test_predictive_slip_error_is_zero_for_constant_increment_rate() -> None:
+    previous = np.zeros((2, 12))
+    previous_increment = np.zeros((2, 12))
+    previous_increment[:, 0] = 2.0e-4
+    current = previous + previous_increment * 2.0
+    assert predictive_slip_error_ratio(
+        current,
+        previous,
+        previous_increment,
+        current_step_size=0.2,
+        previous_step_size=0.1,
+        relative_tolerance=5.0e-3,
+        absolute_tolerance=1.0e-6,
+    ) == pytest.approx(0.0)
+
+
+def test_predictive_slip_error_can_cut_back_without_step_doubling() -> None:
+    controller = AdaptiveLoadStepController(
+        AdaptiveStepConfig(
+            slip_error_control="predictive",
+            initial_increment_fraction=0.25,
+            increment_cutback_factor=0.5,
+        )
+    )
+    decision = controller.accept(
+        LoadStepObservation(
+            converged=True,
+            newton_iterations=5,
+            slip_error_ratio=1.2,
+        )
+    )
+    assert decision.reason == "accepted_difficult_step"
+    assert decision.next_increment_fraction == pytest.approx(0.125)

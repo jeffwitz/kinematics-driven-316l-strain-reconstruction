@@ -114,6 +114,12 @@ def main() -> int:
         help="promote the accepted complete trial without an independent re-integration",
     )
     parser.add_argument("--adaptive-stepping", action="store_true")
+    parser.add_argument(
+        "--adaptive-step-control",
+        choices=("none", "newton", "predictive"),
+        default="none",
+        help="fast adaptive controller: Newton budget or predictive slip indicator",
+    )
     parser.add_argument("--adaptive-initial-step", type=float, default=0.25)
     parser.add_argument("--adaptive-min-step", type=float, default=1.0 / 256.0)
     parser.add_argument("--adaptive-max-step", type=float, default=0.5)
@@ -130,11 +136,21 @@ def main() -> int:
     parser.add_argument("--adaptive-error-reaction-rtol", type=float, default=1.0e-3)
     parser.add_argument("--adaptive-error-displacement-rtol", type=float, default=1.0e-5)
     parser.add_argument("--adaptive-error-linf-factor", type=float, default=5.0)
+    parser.add_argument("--adaptive-error-reaction-linf-factor", type=float, default=10.0)
+    parser.add_argument("--adaptive-error-reaction-linf-cap", type=float, default=5.0e-5)
     parser.add_argument("--adaptive-error-safety-factor", type=float, default=0.8)
+    parser.add_argument("--adaptive-slip-rtol", type=float, default=5.0e-3)
+    parser.add_argument("--adaptive-slip-atol", type=float, default=1.0e-6)
+    parser.add_argument("--adaptive-slip-growth-threshold", type=float, default=0.25)
+    parser.add_argument("--adaptive-slip-cutback-threshold", type=float, default=1.0)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     step_doubling_enabled = arguments.adaptive_error_control == "step-doubling"
-    adaptive_enabled = arguments.adaptive_stepping or step_doubling_enabled
+    adaptive_enabled = (
+        arguments.adaptive_stepping
+        or arguments.adaptive_step_control != "none"
+        or step_doubling_enabled
+    )
     if adaptive_enabled and arguments.behaviour != "fcc_forest_rubin_srix":
         raise SystemExit(
             "adaptive stepping is currently restricted to the rate-independent SRIX law"
@@ -218,6 +234,15 @@ def main() -> int:
                 initial_increment_fraction=arguments.adaptive_initial_step,
                 minimum_increment_fraction=arguments.adaptive_min_step,
                 maximum_increment_fraction=arguments.adaptive_max_step,
+                slip_error_control=(
+                    "predictive"
+                    if arguments.adaptive_step_control == "predictive"
+                    else "disabled"
+                ),
+                slip_error_relative_tolerance=arguments.adaptive_slip_rtol,
+                slip_error_absolute_tolerance=arguments.adaptive_slip_atol,
+                slip_error_growth_threshold=arguments.adaptive_slip_growth_threshold,
+                slip_error_cutback_threshold=arguments.adaptive_slip_cutback_threshold,
             ),
             step_doubling=StepDoublingErrorConfig(
                 enabled=step_doubling_enabled,
@@ -232,6 +257,10 @@ def main() -> int:
                 activity_threshold=arguments.adaptive_error_activity_threshold,
                 displacement_relative_tolerance=arguments.adaptive_error_displacement_rtol,
                 linf_relative_tolerance_factor=arguments.adaptive_error_linf_factor,
+                reaction_linf_relative_tolerance_factor=(
+                    arguments.adaptive_error_reaction_linf_factor
+                ),
+                reaction_linf_absolute_cap=arguments.adaptive_error_reaction_linf_cap,
                 safety_factor=arguments.adaptive_error_safety_factor,
             ),
             krylov_method=arguments.krylov_method,
@@ -263,7 +292,19 @@ def main() -> int:
             "behaviour": arguments.behaviour,
             "mfront_threads": arguments.mfront_threads,
             "adaptive_stepping_enabled": adaptive_enabled,
+            "adaptive_step_control": arguments.adaptive_step_control,
             "adaptive_error_control": arguments.adaptive_error_control,
+            "adaptive_step_configuration": {
+                "slip_error_control": (
+                    "predictive"
+                    if arguments.adaptive_step_control == "predictive"
+                    else "disabled"
+                ),
+                "slip_error_relative_tolerance": arguments.adaptive_slip_rtol,
+                "slip_error_absolute_tolerance": arguments.adaptive_slip_atol,
+                "slip_error_growth_threshold": arguments.adaptive_slip_growth_threshold,
+                "slip_error_cutback_threshold": arguments.adaptive_slip_cutback_threshold,
+            },
             "adaptive_error_configuration": {
                 "stress_relative_tolerance": arguments.adaptive_error_stress_rtol,
                 "reaction_relative_tolerance": arguments.adaptive_error_reaction_rtol,
@@ -271,6 +312,10 @@ def main() -> int:
                 "accumulated_slip_relative_tolerance": arguments.adaptive_error_slip_rtol,
                 "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
                 "linf_relative_tolerance_factor": arguments.adaptive_error_linf_factor,
+                "reaction_linf_relative_tolerance_factor": (
+                    arguments.adaptive_error_reaction_linf_factor
+                ),
+                "reaction_linf_absolute_cap": arguments.adaptive_error_reaction_linf_cap,
                 "activity_threshold": arguments.adaptive_error_activity_threshold,
                 "signed_slip_absolute_tolerance": arguments.adaptive_error_slip_atol,
                 "signed_slip_linf_absolute_cap": arguments.adaptive_error_slip_linf_cap,
@@ -326,7 +371,19 @@ def main() -> int:
         "reference_update": arguments.reference_update,
         "verify_final_state": not arguments.no_final_verification,
         "adaptive_stepping_enabled": adaptive_enabled,
+        "adaptive_step_control": arguments.adaptive_step_control,
         "adaptive_error_control": arguments.adaptive_error_control,
+        "adaptive_step_configuration": {
+            "slip_error_control": (
+                "predictive"
+                if arguments.adaptive_step_control == "predictive"
+                else "disabled"
+            ),
+            "slip_error_relative_tolerance": arguments.adaptive_slip_rtol,
+            "slip_error_absolute_tolerance": arguments.adaptive_slip_atol,
+            "slip_error_growth_threshold": arguments.adaptive_slip_growth_threshold,
+            "slip_error_cutback_threshold": arguments.adaptive_slip_cutback_threshold,
+        },
         "adaptive_error_configuration": {
             "stress_relative_tolerance": arguments.adaptive_error_stress_rtol,
             "reaction_relative_tolerance": arguments.adaptive_error_reaction_rtol,
@@ -339,6 +396,10 @@ def main() -> int:
             "activity_threshold": arguments.adaptive_error_activity_threshold,
             "displacement_relative_tolerance": arguments.adaptive_error_displacement_rtol,
             "linf_relative_tolerance_factor": arguments.adaptive_error_linf_factor,
+            "reaction_linf_relative_tolerance_factor": (
+                arguments.adaptive_error_reaction_linf_factor
+            ),
+            "reaction_linf_absolute_cap": arguments.adaptive_error_reaction_linf_cap,
             "safety_factor": arguments.adaptive_error_safety_factor,
         },
         "adaptive_step_history": list(diagnostics.adaptive_step_history),

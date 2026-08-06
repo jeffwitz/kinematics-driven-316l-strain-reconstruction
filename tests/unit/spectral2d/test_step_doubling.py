@@ -133,9 +133,10 @@ def test_step_doubling_runs_branches_from_one_snapshot_and_returns_fine_state() 
         1.0,
         attempt_solver=attempt,
         config=StepDoublingErrorConfig(
-            stress_relative_tolerance=1.0,
-            reaction_relative_tolerance=1.0,
-            displacement_relative_tolerance=1.0,
+                stress_relative_tolerance=1.0,
+                reaction_relative_tolerance=1.0,
+                reaction_linf_absolute_cap=1.0,
+                displacement_relative_tolerance=1.0,
             signed_slip_relative_tolerance=1.0,
             signed_slip_linf_absolute_cap=1.0,
             accumulated_slip_relative_tolerance=1.0,

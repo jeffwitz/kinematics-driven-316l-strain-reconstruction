@@ -41,6 +41,7 @@ from fem_inhouse.spectral2d.step_control import (
     AdaptiveLoadPath,
     LoadPathStep,
     LoadStepObservation,
+    predictive_slip_error_ratio,
 )
 from fem_inhouse.spectral2d.step_doubling import (
     LoadStepAttempt,
@@ -737,6 +738,9 @@ def solve_two_state_dirichlet_plane_stress(
         raise ValueError("time increment must be finite and positive")
     krylov_recycle = KrylovRecycleState()
     adaptive_step_history: list[dict[str, object]] = []
+    previous_adaptive_slip: FloatArray | None = None
+    previous_adaptive_slip_increment: FloatArray | None = None
+    previous_adaptive_step_size: float | None = None
 
     def fixed_load_path() -> list[LoadPathStep]:
         return [
@@ -1114,11 +1118,46 @@ def solve_two_state_dirichlet_plane_stress(
                 continue
             raise RuntimeError(f"two-state increment {increment} did not converge")
         if adaptive_path is not None:
+            slip_error_ratio: float | None = None
+            if (
+                config.adaptive_step.slip_error_control == "predictive"
+                and final_trial is not None
+                and "equivalent_plastic_slip" in final_trial.observables
+            ):
+                current_slip = np.asarray(
+                    final_trial.observables["equivalent_plastic_slip"],
+                    dtype=np.float64,
+                ).copy()
+                if (
+                    previous_adaptive_slip is not None
+                    and previous_adaptive_slip_increment is not None
+                    and previous_adaptive_step_size is not None
+                ):
+                    slip_error_ratio = predictive_slip_error_ratio(
+                        current_slip,
+                        previous_adaptive_slip,
+                        previous_adaptive_slip_increment,
+                        current_step_size=time_increment,
+                        previous_step_size=previous_adaptive_step_size,
+                        relative_tolerance=(
+                            config.adaptive_step.slip_error_relative_tolerance
+                        ),
+                        absolute_tolerance=(
+                            config.adaptive_step.slip_error_absolute_tolerance
+                        ),
+                    )
+                if previous_adaptive_slip is not None:
+                    previous_adaptive_slip_increment = (
+                        current_slip - previous_adaptive_slip
+                    )
+                previous_adaptive_slip = current_slip
+                previous_adaptive_step_size = time_increment
             decision = adaptive_path.accept(
                 LoadStepObservation(
                     converged=True,
                     newton_iterations=iterations_per_increment[-1],
                     minimum_line_search_factor=increment_min_line_search_factor,
+                    slip_error_ratio=slip_error_ratio,
                 )
             )
             adaptive_step_history.append(
@@ -1131,6 +1170,7 @@ def solve_two_state_dirichlet_plane_stress(
                     "step_size": time_increment,
                     "newton_iterations": iterations_per_increment[-1],
                     "minimum_line_search_factor": increment_min_line_search_factor,
+                    "slip_error_ratio": slip_error_ratio,
                     "next_step_size": decision.next_increment_fraction,
                     "next_step_reason": decision.reason,
                 }
