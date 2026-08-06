@@ -2295,6 +2295,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._maximum_iterations = int(maximum_local_iterations)
         self._relative_tolerance = float(local_relative_tolerance)
         self._absolute_tolerance = float(local_tolerance_mpa)
+        if local_transverse_predictor not in {"committed", "tangent"}:
+            raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
+        self._local_transverse_predictor = local_transverse_predictor
         self._rotations = (
             None
             if rotation_global_to_material is None
@@ -2339,6 +2342,16 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._evaluate_calls = 0
         self._integration_seconds = 0.0
         self._local_iterations = np.zeros(point_count, dtype=np.int64)
+        self._accepted_transverse = self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
+        self._accepted_in_plane: NDArray | None = None
+        self._accepted_cbb: NDArray | None = None
+        self._accepted_cba: NDArray | None = None
+        self._latest_transverse: NDArray | None = None
+        self._latest_cbb: NDArray | None = None
+        self._latest_cba: NDArray | None = None
+        self._warm_start_uses = 0
+        self._warm_start_resets = 0
+        self._last_local_failure: dict[str, object] | None = None
 
     @property
     def point_count(self) -> int:
@@ -2382,6 +2395,22 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     @property
     def committed_transverse_strain_kelvin(self) -> NDArray:
         return self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
+
+    @property
+    def local_transverse_predictor(self) -> str:
+        return self._local_transverse_predictor
+
+    @property
+    def warm_start_uses(self) -> int:
+        return self._warm_start_uses
+
+    @property
+    def warm_start_resets(self) -> int:
+        return self._warm_start_resets
+
+    @property
+    def last_local_failure(self) -> dict[str, object] | None:
+        return None if self._last_local_failure is None else dict(self._last_local_failure)
 
     def _set_parameters(self) -> None:
         _apply_behaviour_parameters(
@@ -2449,11 +2478,35 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         }
         started = time.perf_counter()
         self._set_parameters()
+        active_index = -1
+        initial_transverse = self._accepted_transverse
+        if (
+            self._local_transverse_predictor == "tangent"
+            and self._accepted_in_plane is not None
+            and self._accepted_cbb is not None
+            and self._accepted_cba is not None
+        ):
+            delta_in_plane = (
+                in_plane - self._accepted_in_plane
+            ) * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+            try:
+                correction = np.linalg.solve(
+                    self._accepted_cbb,
+                    -np.einsum(
+                        "nij,nj->ni", self._accepted_cba, delta_in_plane
+                    )[..., None],
+                )[..., 0]
+                if np.isfinite(correction).all():
+                    initial_transverse = self._accepted_transverse + correction
+            except np.linalg.LinAlgError:
+                initial_transverse = self._accepted_transverse
+        self._last_local_failure = None
         try:
             for index, data in enumerate(self._data):
+                active_index = index
                 data.revert()
                 rotation = None if self._rotations is None else self._rotations[index]
-                initial = self._committed_strain[index, _TRANSVERSE_COMPONENTS_3D]
+                initial = initial_transverse[index]
                 result = self._mgis.solve_generalised_plane_stress(
                     data,
                     self._behaviour,
@@ -2480,14 +2533,32 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 transverse[index] = final_gradient[_TRANSVERSE_COMPONENTS_3D]
                 iterations[index] = int(result["iterations"])
                 stress[index], tangent[index] = self._global_stress_and_tangent(data, index)
+                if self._local_transverse_predictor == "tangent":
+                    self._warm_start_uses += 1
                 condensed_tangent[index] = np.asarray(
                     result["condensed_tangent"], dtype=float
                 )
                 for name, item in self._observable_slices.items():
                     observables[name][index] = data.s1.internal_state_variables[item]
-        except Exception:
+        except Exception as error:
+            failure_index = max(active_index, 0)
+            rotation_record = (
+                None
+                if self._rotations is None
+                else np.asarray(self._rotations[failure_index]).tolist()
+            )
+            self._last_local_failure = {
+                "point_index": failure_index,
+                "in_plane_strain": in_plane[failure_index].tolist(),
+                "initial_transverse_strain": initial_transverse[failure_index].tolist(),
+                "rotation_global_to_material": rotation_record,
+                "message": str(error),
+            }
             self.revert()
-            raise
+            raise RuntimeError(
+                "native generalized plane-stress failure at point "
+                f"{failure_index}: {error}"
+            ) from error
         self._integration_seconds += time.perf_counter() - started
         total[:, _TRANSVERSE_COMPONENTS_3D] = transverse
         elastic = np.empty_like(total)
@@ -2518,6 +2589,13 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._latest_in_plane = in_plane.copy()
         self._latest_dt = float(time_increment)
         self._latest_total_kelvin = total.copy()
+        self._latest_transverse = transverse.copy()
+        self._latest_cbb = tangent[:, _TRANSVERSE_COMPONENTS_3D][
+            :, :, _TRANSVERSE_COMPONENTS_3D
+        ].copy()
+        self._latest_cba = tangent[:, _TRANSVERSE_COMPONENTS_3D][
+            :, :, _PLANE_STRESS_COMPONENTS
+        ].copy()
         self._local_iterations[:] = iterations
         self._latest_trial = ConstitutiveTrial(
             stress_in_plane_mpa=in_stress,
@@ -2535,18 +2613,39 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         return self._latest_trial
 
     def commit(self) -> None:
+        self.accept_global_trial()
         for data in self._data:
             data.update()
         if self._latest_total_kelvin is not None:
             self._committed_strain[:, :] = self._latest_total_kelvin
         self._latest_trial = None
         self._latest_total_kelvin = None
+        self._latest_transverse = None
+        self._latest_cbb = None
+        self._latest_cba = None
 
     def revert(self) -> None:
         for data in self._data:
             data.revert()
         self._latest_trial = None
         self._latest_total_kelvin = None
+        self._latest_transverse = None
+        self._latest_cbb = None
+        self._latest_cba = None
+        self._accepted_transverse = self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
+        self._accepted_in_plane = None
+        self._accepted_cbb = None
+        self._accepted_cba = None
+        self._warm_start_resets += 1
+
+    def accept_global_trial(self) -> None:
+        if self._latest_transverse is not None:
+            self._accepted_transverse = self._latest_transverse.copy()
+            self._accepted_in_plane = (
+                None if self._latest_in_plane is None else self._latest_in_plane.copy()
+            )
+            self._accepted_cbb = None if self._latest_cbb is None else self._latest_cbb.copy()
+            self._accepted_cba = None if self._latest_cba is None else self._latest_cba.copy()
 
     def snapshot_state(self) -> tuple[NDArray, tuple[tuple[NDArray, NDArray, NDArray], ...]]:
         return (
@@ -2559,6 +2658,10 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 )
                 for data in self._data
             ),
+            self._accepted_transverse.copy(),
+            None if self._accepted_in_plane is None else self._accepted_in_plane.copy(),
+            None if self._accepted_cbb is None else self._accepted_cbb.copy(),
+            None if self._accepted_cba is None else self._accepted_cba.copy(),
         )
 
     def restore_state(self, snapshot: Any) -> None:
@@ -2571,6 +2674,15 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             data.s1.internal_state_variables[:] = state[1]
             data.s0.thermodynamic_forces[:] = state[2]
             data.s1.thermodynamic_forces[:] = state[2]
+        self._accepted_transverse = np.asarray(snapshot[2]).copy()
+        self._accepted_in_plane = (
+            None if snapshot[3] is None else np.asarray(snapshot[3]).copy()
+        )
+        self._accepted_cbb = None if snapshot[4] is None else np.asarray(snapshot[4]).copy()
+        self._accepted_cba = None if snapshot[5] is None else np.asarray(snapshot[5]).copy()
+        self._latest_transverse = None
+        self._latest_cbb = None
+        self._latest_cba = None
 
     def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
         if self._latest_trial is None:
