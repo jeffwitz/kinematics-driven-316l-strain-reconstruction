@@ -207,6 +207,8 @@ def test_two_state_solver_archives_linear_cost_breakdown() -> None:
     )
     diagnostics = result.diagnostics
     assert diagnostics.linear_solves
+    assert len(diagnostics.load_step_attempts) == 2
+    assert all(entry.accepted for entry in diagnostics.load_step_attempts)
     assert diagnostics.provenance["gmres_restart"] == 50
     assert all(entry.gmres_info == 0 for entry in diagnostics.linear_solves)
     assert all(entry.gmres_iterations > 0 for entry in diagnostics.linear_solves)
@@ -226,6 +228,12 @@ def test_two_state_solver_archives_linear_cost_breakdown() -> None:
     )
     assert diagnostics.timings["preconditioner_calls"] == sum(
         entry.preconditioner_calls for entry in diagnostics.linear_solves
+    )
+    assert diagnostics.timings["attempts_total_linear_solves"] == len(
+        diagnostics.linear_solves
+    )
+    assert diagnostics.timings["attempts_total_jacobian_matvec_calls"] == sum(
+        entry.jacobian_calls for entry in diagnostics.linear_solves
     )
 
 

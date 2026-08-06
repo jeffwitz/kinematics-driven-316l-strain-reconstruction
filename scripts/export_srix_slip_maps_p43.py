@@ -121,7 +121,17 @@ def main() -> int:
         plastic_slip = np.asarray(archive["plastic_slip"], dtype=np.float64)
         equivalent_slip = np.asarray(archive["equivalent_plastic_slip"], dtype=np.float64)
 
-    expected = (100, 100, 2, 12)
+    if plastic_slip.ndim != 4 or plastic_slip.shape[2:] != (2, 12):
+        raise SystemExit(
+            "per-system slip fields must have shape (nx, ny, 2, 12); "
+            f"got {plastic_slip.shape}"
+        )
+    expected = plastic_slip.shape
+    if equivalent_slip.shape != expected:
+        raise SystemExit(
+            "plastic_slip and equivalent_plastic_slip must have identical shapes; "
+            f"got {plastic_slip.shape} and {equivalent_slip.shape}"
+        )
     for name, values in {
         "plastic_slip": plastic_slip,
         "equivalent_plastic_slip": equivalent_slip,
@@ -135,7 +145,8 @@ def main() -> int:
     equivalent_by_system = np.moveaxis(equivalent_slip, -1, 0)
     plastic_mean = plastic_by_system.mean(axis=3)
     equivalent_mean = equivalent_by_system.mean(axis=3)
-    output_npz = arguments.output_dir / "srix_p43_m100_slip_maps.npz"
+    mesh_label = f"m{expected[0]}" if expected[0] == expected[1] else "rectangular"
+    output_npz = arguments.output_dir / f"srix_p43_{mesh_label}_slip_maps.npz"
     np.savez_compressed(
         output_npz,
         plastic_slip_triangles=plastic_by_system,
@@ -147,7 +158,7 @@ def main() -> int:
     _plot_maps(
         plastic_mean,
         labels=labels,
-        title="P43 100x100 SRIX: signed plastic slip, pixel mean",
+        title=f"P43 {expected[0]}x{expected[1]} SRIX: signed plastic slip, pixel mean",
         output=arguments.output_dir / "plastic_slip_pixel_mean_contact_sheet.png",
         cmap="coolwarm",
         symmetric=True,
@@ -155,7 +166,10 @@ def main() -> int:
     _plot_maps(
         equivalent_mean,
         labels=labels,
-        title="P43 100x100 SRIX: accumulated equivalent slip, pixel mean",
+        title=(
+            f"P43 {expected[0]}x{expected[1]} SRIX: accumulated equivalent slip, "
+            "pixel mean"
+        ),
         output=arguments.output_dir / "equivalent_plastic_slip_pixel_mean_contact_sheet.png",
         cmap="magma",
         symmetric=False,
@@ -178,7 +192,7 @@ def main() -> int:
     )
 
     metadata = {
-        "status": "srix_p43_m100_slip_maps_exported",
+        "status": f"srix_p43_{mesh_label}_slip_maps_exported",
         "source_report": str(arguments.report),
         "source_fields": str(arguments.fields),
         "source_field_hashes": {
@@ -198,8 +212,8 @@ def main() -> int:
         },
         "raw_shape": list(expected),
         "exported_npz_shapes": {
-            "*_triangles": [12, 100, 100, 2],
-            "*_pixel_mean": [12, 100, 100],
+            "*_triangles": [12, expected[0], expected[1], 2],
+            "*_pixel_mean": [12, expected[0], expected[1]],
         },
         "slip_system_order": labels,
         "note": (

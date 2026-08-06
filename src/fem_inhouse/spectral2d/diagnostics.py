@@ -62,6 +62,81 @@ class LinearSolveDiagnostics:
     krylov_recycling: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class LoadStepAttemptDiagnostics:
+    """Exclusive cost attribution for one accepted or rejected load-step attempt."""
+
+    attempt_index: int
+    load_fraction_start: float
+    load_fraction_end: float
+    accepted: bool
+    failure_reason: str | None
+    newton_iterations: int
+    linear_solves: int
+    krylov_outer_callbacks: int
+    jacobian_matvec_calls: int
+    preconditioner_calls: int
+    krylov_seconds: float
+    jacobian_seconds: float
+    preconditioner_seconds: float
+    krylov_overhead_seconds: float
+    material_seconds: float
+    material_evaluations: int
+    material_integration_seconds: float
+    material_condensation_seconds: float
+    mgis_integrations: int
+    line_search_rejections: int
+    minimum_line_search_factor: float
+
+
+def summarize_load_step_attempts(
+    attempts: tuple[LoadStepAttemptDiagnostics, ...] | list[LoadStepAttemptDiagnostics],
+) -> dict[str, dict[str, int | float]]:
+    """Aggregate mutually exclusive attempt costs for reporting."""
+
+    result: dict[str, dict[str, int | float]] = {}
+    for label, selected in (
+        ("accepted", [item for item in attempts if item.accepted]),
+        ("rejected", [item for item in attempts if not item.accepted]),
+        ("total", list(attempts)),
+    ):
+        result[label] = {
+            "attempts": len(selected),
+            "newton_iterations": sum(item.newton_iterations for item in selected),
+            "linear_solves": sum(item.linear_solves for item in selected),
+            "krylov_outer_callbacks": sum(
+                item.krylov_outer_callbacks for item in selected
+            ),
+            "jacobian_matvec_calls": sum(
+                item.jacobian_matvec_calls for item in selected
+            ),
+            "preconditioner_calls": sum(item.preconditioner_calls for item in selected),
+            "krylov_seconds": sum(item.krylov_seconds for item in selected),
+            "jacobian_seconds": sum(item.jacobian_seconds for item in selected),
+            "preconditioner_seconds": sum(
+                item.preconditioner_seconds for item in selected
+            ),
+            "krylov_overhead_seconds": sum(
+                item.krylov_overhead_seconds for item in selected
+            ),
+            "material_seconds": sum(item.material_seconds for item in selected),
+            "material_evaluations": sum(
+                item.material_evaluations for item in selected
+            ),
+            "material_integration_seconds": sum(
+                item.material_integration_seconds for item in selected
+            ),
+            "material_condensation_seconds": sum(
+                item.material_condensation_seconds for item in selected
+            ),
+            "mgis_integrations": sum(item.mgis_integrations for item in selected),
+            "line_search_rejections": sum(
+                item.line_search_rejections for item in selected
+            ),
+        }
+    return result
+
+
 def collect_runtime_provenance(
     transform: TransformDiagnostics,
     *,
@@ -76,6 +151,11 @@ def collect_runtime_provenance(
     forcing_alpha: float | None = None,
     krylov_method: str = "gmres",
     krylov_recycling: bool = False,
+    lgmres_inner_m: int | None = None,
+    lgmres_outer_k: int | None = None,
+    gcrotmk_m: int | None = None,
+    gcrotmk_k: int | None = None,
+    reference_update_mode: str | None = None,
 ) -> dict[str, str | int | float | bool | None]:
     """Collect reproducibility metadata for a spectral solve."""
 
@@ -141,6 +221,11 @@ def collect_runtime_provenance(
         "forcing_alpha": forcing_alpha,
         "krylov_method": krylov_method,
         "krylov_recycling": krylov_recycling,
+        "lgmres_inner_m": lgmres_inner_m,
+        "lgmres_outer_k": lgmres_outer_k,
+        "gcrotmk_m": gcrotmk_m,
+        "gcrotmk_k": gcrotmk_k,
+        "reference_update_mode": reference_update_mode,
     }
 
 
@@ -165,6 +250,7 @@ class Spectral2DDiagnostics:
     maximum_plane_stress_residual_mpa: float = 0.0
     total_seconds: float = 0.0
     timings: dict[str, float] = field(default_factory=dict)
+    material_local_iteration_histogram: tuple[int, ...] = ()
     reference_lambda_0: float = 0.0
     reference_mu_0: float = 0.0
     reference_projection_error: float = 0.0
@@ -190,5 +276,6 @@ class Spectral2DDiagnostics:
     transform_wisdom_loaded: bool = False
     transform_planning_seconds: float = 0.0
     linear_solves: tuple[LinearSolveDiagnostics, ...] = ()
+    load_step_attempts: tuple[LoadStepAttemptDiagnostics, ...] = ()
     reference_updates: tuple[dict[str, str | int | float | bool], ...] = ()
     provenance: dict[str, str | int | float | bool | None] = field(default_factory=dict)

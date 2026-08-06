@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import time
+from dataclasses import asdict
 from pathlib import Path
 from typing import cast
 
@@ -24,6 +25,7 @@ from fem_inhouse.spectral2d import (
     EBISpectralSolverConfig,
     StepDoublingErrorConfig,
 )
+from fem_inhouse.spectral2d.diagnostics import summarize_load_step_attempts
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
 from fem_inhouse.spectral2d.step_doubling import StepDoublingFailureError
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
@@ -39,6 +41,52 @@ except ModuleNotFoundError:  # Direct script execution.
 
 def _hash(values: np.ndarray) -> str:
     return hashlib.sha256(np.ascontiguousarray(values).tobytes()).hexdigest()
+
+
+def _hash_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _load_ebsd_orientation_crop(
+    path: Path,
+    crop: tuple[int, int, int, int],
+) -> tuple[np.ndarray, dict[str, object]]:
+    """Load co-registered Bunge angles from the CP HDF5 dataset."""
+
+    import h5py
+
+    x0, x1, y0, y1 = crop
+    with h5py.File(path, "r") as handle:
+        datasets = {
+            name: np.asarray(handle[f"orientation/{name}"][x0:x1, y0:y1], dtype=np.float64)
+            for name in ("phi1", "Phi", "phi2")
+        }
+        source_shape = tuple(handle["orientation/phi1"].shape)
+        descriptions = {
+            name: str(handle[f"orientation/{name}"].attrs.get("description", ""))
+            for name in datasets
+        }
+    angles = np.stack((datasets["phi1"], datasets["Phi"], datasets["phi2"]), axis=-1)
+    if angles.shape != (x1 - x0, y1 - y0, 3):
+        raise ValueError(f"unexpected EBSD crop shape {angles.shape}")
+    return angles, {
+        "mode": "ebsd",
+        "source_file": str(path),
+        "source_sha256": _hash_file(path),
+        "dataset_paths": ["orientation/phi1", "orientation/Phi", "orientation/phi2"],
+        "source_shape": list(source_shape),
+        "crop_nodes": list(crop),
+        "angles_shape": list(angles.shape),
+        "angles_sha256": _hash(angles),
+        "descriptions": descriptions,
+        "co_registration": (
+            "CP_dataset orientation fields are co-registered with DIC displacement fields"
+        ),
+    }
 
 
 def _git_head() -> str | None:
@@ -91,13 +139,44 @@ def main() -> int:
         default="fcc_forest_rubin_srix",
     )
     parser.add_argument("--paired-parameter-set", required=True)
+    parser.add_argument(
+        "--ebsd-orientation-h5",
+        type=Path,
+        help="co-registered CP_dataset.h5 containing orientation/phi1, Phi, phi2",
+    )
     parser.add_argument("--mfront-threads", type=int, default=4)
+    parser.add_argument("--maximum-newton-iterations", type=int, default=40)
+    parser.add_argument(
+        "--local-transverse-predictor",
+        choices=("committed", "tangent"),
+        default="committed",
+    )
+    parser.add_argument(
+        "--condensation-block-size",
+        type=int,
+        help="partition the MFront plane-stress condensation into independent blocks",
+    )
+    parser.add_argument(
+        "--progress-output",
+        type=Path,
+        help="JSONL file written after each increment/Newton event",
+    )
     parser.add_argument(
         "--krylov-method",
         choices=("gmres", "lgmres", "gcrotmk"),
         default="lgmres",
     )
-    parser.add_argument("--krylov-recycling", action="store_true", default=True)
+    parser.add_argument(
+        "--krylov-recycling",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument("--gmres-rtol", type=float, default=1.0e-8)
+    parser.add_argument("--gmres-restart", type=int, default=50)
+    parser.add_argument("--lgmres-inner-m", type=int, default=30)
+    parser.add_argument("--lgmres-outer-k", type=int, default=3)
+    parser.add_argument("--gcrotmk-m", type=int, default=20)
+    parser.add_argument("--gcrotmk-k", type=int, default=10)
     parser.add_argument(
         "--linear-mode",
         choices=("fixed", "eisenstat_walker"),
@@ -161,6 +240,25 @@ def main() -> int:
     if mesh != crop[3] - crop[2]:
         raise SystemExit("P43 crop must be square")
     grid, _, yield_stress, coefficient, boundary = _load_case(mesh, crop)
+    if arguments.ebsd_orientation_h5 is None:
+        orientation_configuration: dict[str, object] = {
+            "mode": "homogeneous",
+            "euler_bunge_deg": [35.0, 20.0, 15.0],
+        }
+        orientation_manifest: dict[str, object] = {
+            "mode": "homogeneous",
+            "euler_bunge_deg": [35.0, 20.0, 15.0],
+            "sha256": _hash(np.asarray([35.0, 20.0, 15.0], dtype=np.float64)),
+        }
+    else:
+        orientation_angles, orientation_manifest = _load_ebsd_orientation_crop(
+            arguments.ebsd_orientation_h5,
+            crop,
+        )
+        orientation_configuration = {
+            "mode": "ebsd",
+            "euler_bunge_deg": orientation_angles,
+        }
     law: CrystalLaw = (
         "forest_rubin_srix"
         if arguments.behaviour == "fcc_forest_rubin_srix"
@@ -214,18 +312,37 @@ def main() -> int:
         ),
         mfront_threads=arguments.mfront_threads,
         mfront_behaviour_id=arguments.behaviour,
-        local_plane_stress_options={"local_condition_check_mode": "on_failure"},
+        local_plane_stress_options={
+            "local_condition_check_mode": "on_failure",
+            "local_transverse_predictor": arguments.local_transverse_predictor,
+            **(
+                {"condensation_block_size": arguments.condensation_block_size}
+                if arguments.condensation_block_size is not None
+                else {}
+            ),
+        },
         constitutive_options={
             "crystal_orientation": {
-                "mode": "homogeneous",
-                "euler_bunge_deg": [35.0, 20.0, 15.0],
+                **orientation_configuration,
             },
             "paired_parameter_set": arguments.paired_parameter_set,
         },
     )
     started = time.perf_counter()
+    progress_path = arguments.progress_output or arguments.output.with_suffix(".progress.jsonl")
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    progress_path.write_text("", encoding="utf-8")
+
+    def progress_callback(event: dict[str, object]) -> None:
+        record = {"elapsed_seconds": time.perf_counter() - started, **event}
+        with progress_path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(record, sort_keys=True) + "\n")
+            stream.flush()
+
     solve_config = EBISpectralSolverConfig(
             relative_equilibrium_tolerance=arguments.tolerance,
+            maximum_newton_iterations=arguments.maximum_newton_iterations,
+            progress_callback=progress_callback,
             linear_tolerance_mode=arguments.linear_mode,
             reference_update_mode=arguments.reference_update,
             verify_final_state=not arguments.no_final_verification,
@@ -265,6 +382,12 @@ def main() -> int:
             ),
             krylov_method=arguments.krylov_method,
             krylov_recycling=arguments.krylov_recycling,
+            gmres_relative_tolerance=arguments.gmres_rtol,
+            gmres_restart=arguments.gmres_restart,
+            lgmres_inner_m=arguments.lgmres_inner_m,
+            lgmres_outer_k=arguments.lgmres_outer_k,
+            gcrotmk_m=arguments.gcrotmk_m,
+            gcrotmk_k=arguments.gcrotmk_k,
             transform=SpectralTransformConfig(
                 backend="fftw",
                 workers=1,
@@ -291,6 +414,9 @@ def main() -> int:
             "increments": arguments.increments,
             "behaviour": arguments.behaviour,
             "mfront_threads": arguments.mfront_threads,
+            "maximum_newton_iterations": arguments.maximum_newton_iterations,
+            "local_transverse_predictor": arguments.local_transverse_predictor,
+            "progress_file": str(progress_path),
             "adaptive_stepping_enabled": adaptive_enabled,
             "adaptive_step_control": arguments.adaptive_step_control,
             "adaptive_error_control": arguments.adaptive_error_control,
@@ -333,6 +459,15 @@ def main() -> int:
         arguments.output.write_text(json.dumps(partial_report, indent=2, sort_keys=True) + "\n")
         print(json.dumps(partial_report, indent=2, sort_keys=True))
         return 2
+    except Exception as error:
+        progress_callback(
+            {
+                "event": "solver_exception",
+                "exception_type": type(error).__name__,
+                "message": str(error),
+            }
+        )
+        raise
     elapsed = time.perf_counter() - started
     fields = {
         "displacement": result.displacement,
@@ -366,7 +501,17 @@ def main() -> int:
         "tolerance": arguments.tolerance,
         "behaviour": arguments.behaviour,
         "mfront_threads": arguments.mfront_threads,
+        "maximum_newton_iterations": arguments.maximum_newton_iterations,
+        "local_transverse_predictor": arguments.local_transverse_predictor,
+        "condensation_block_size": arguments.condensation_block_size,
         "krylov_method": arguments.krylov_method,
+        "krylov_recycling": arguments.krylov_recycling,
+        "gmres_relative_tolerance": arguments.gmres_rtol,
+        "gmres_restart": arguments.gmres_restart,
+        "lgmres_inner_m": arguments.lgmres_inner_m,
+        "lgmres_outer_k": arguments.lgmres_outer_k,
+        "gcrotmk_m": arguments.gcrotmk_m,
+        "gcrotmk_k": arguments.gcrotmk_k,
         "linear_mode": arguments.linear_mode,
         "reference_update": arguments.reference_update,
         "verify_final_state": not arguments.no_final_verification,
@@ -403,6 +548,13 @@ def main() -> int:
             "safety_factor": arguments.adaptive_error_safety_factor,
         },
         "adaptive_step_history": list(diagnostics.adaptive_step_history),
+        "linear_solves": [asdict(item) for item in diagnostics.linear_solves],
+        "load_step_attempts": [
+            asdict(item) for item in diagnostics.load_step_attempts
+        ],
+        "attempt_cost_summary": summarize_load_step_attempts(
+            diagnostics.load_step_attempts
+        ),
         "elapsed_seconds": elapsed,
         "newton_iterations": sum(diagnostics.iterations_per_increment),
         "iterations_per_increment": list(diagnostics.iterations_per_increment),
@@ -416,9 +568,13 @@ def main() -> int:
         "preconditioner_calls": int(diagnostics.timings["preconditioner_calls"]),
         "final_residual": diagnostics.verification_residual,
         "timings": diagnostics.timings,
+        "material_local_iteration_histogram": list(
+            diagnostics.material_local_iteration_histogram
+        ),
         "provenance": diagnostics.provenance,
         "execution_commit": diagnostics.provenance.get("commit_sha"),
         "archive_commit": os.environ.get("ARCHIVE_COMMIT", _git_head()),
+        "progress_file": str(progress_path),
         "git_worktree": git_worktree,
         "field_file": str(field_path),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
@@ -438,11 +594,7 @@ def main() -> int:
         },
         "boundary_sha256": _hash(boundary),
         "units": "mm, MPa",
-        "orientation": {
-            "mode": "homogeneous",
-            "euler_bunge_deg": [35.0, 20.0, 15.0],
-            "sha256": _hash(np.asarray([35.0, 20.0, 15.0], dtype=np.float64)),
-        },
+        "orientation": orientation_manifest,
         "crystal_material": {
             **crystal_manifest,
             "mfront_structure": {

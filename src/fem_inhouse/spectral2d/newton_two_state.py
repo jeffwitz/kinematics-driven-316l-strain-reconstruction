@@ -20,9 +20,11 @@ from fem_inhouse.spectral2d.boundary import HarmonicDirichletExtension2D
 from fem_inhouse.spectral2d.diagnostics import (
     JacobianActionDiagnostics,
     LinearSolveDiagnostics,
+    LoadStepAttemptDiagnostics,
     PreconditionerActionDiagnostics,
     Spectral2DDiagnostics,
     collect_runtime_provenance,
+    summarize_load_step_attempts,
 )
 from fem_inhouse.spectral2d.green import B0Green2D, project_isotropic_plane_stress_tangent
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
@@ -56,6 +58,12 @@ from fem_inhouse.spectral2d.transforms import BufferedTransformPlan2D, Transform
 FloatArray = NDArray[np.float64]
 TangentKernel = Literal["einsum", "explicit"]
 EvaluationKind = Literal["newton_tangent", "line_search", "verification"]
+
+
+def _emit_progress_raw(config: EBISpectralSolverConfig, event: dict[str, object]) -> None:
+    callback = config.progress_callback
+    if callback is not None:
+        callback(event)
 
 
 @dataclass(slots=True)
@@ -626,6 +634,8 @@ def solve_two_state_dirichlet_plane_stress(
     material_accepted_line_search_evaluations = 0
     material_verification_evaluations = 0
     material_complete_promotion_evaluations = 0
+    material_seconds_accepted_attempts = 0.0
+    material_seconds_rejected_attempts = 0.0
     line_search_full_step_acceptances = 0
     line_search_reduced_step_acceptances = 0
     line_search_rejections = 0
@@ -723,6 +733,7 @@ def solve_two_state_dirichlet_plane_stress(
     reference_updates: list[dict[str, str | int | float | bool]] = []
     gmres_iterations = 0
     linear_solves: list[LinearSolveDiagnostics] = []
+    load_step_attempts: list[LoadStepAttemptDiagnostics] = []
     jacobian_totals = JacobianActionDiagnostics()
     preconditioner_totals = PreconditionerActionDiagnostics()
     final_trial = None
@@ -741,6 +752,56 @@ def solve_two_state_dirichlet_plane_stress(
     previous_adaptive_slip: FloatArray | None = None
     previous_adaptive_slip_increment: FloatArray | None = None
     previous_adaptive_step_size: float | None = None
+
+    def _emit_progress(config_for_event: EBISpectralSolverConfig, event: dict[str, object]) -> None:
+        native_timing = getattr(material, "timing_statistics", None)
+        payload = {
+            **event,
+            "material_seconds": material_seconds,
+            "material_seconds_accepted_attempts": material_seconds_accepted_attempts,
+            "material_seconds_rejected_attempts": material_seconds_rejected_attempts,
+            "gradient_seconds": gradient_seconds,
+            "divergence_seconds": divergence_seconds,
+            "gmres_seconds": gmres_seconds,
+            "jacobian_seconds": jacobian_totals.total_seconds,
+            "preconditioner_seconds": preconditioner_totals.total_seconds,
+            "jacobian_calls": jacobian_totals.calls,
+            "preconditioner_calls": preconditioner_totals.calls,
+            "material_evaluations": material_evaluations,
+            "gmres_iterations": gmres_iterations,
+            "material_local_condensation_evaluations": int(
+                getattr(native_timing, "local_condensation_evaluations", 0)
+            ),
+            "material_full_batch_integration_calls": int(
+                getattr(native_timing, "full_batch_integration_calls", 0)
+            ),
+            "material_equivalent_active_point_integrations": int(
+                getattr(native_timing, "equivalent_active_point_integrations", 0)
+            ),
+            "material_local_iteration_histogram": list(
+                getattr(native_timing, "local_iteration_histogram", ())
+            ),
+            "krylov_overhead_seconds": max(
+                0.0,
+                gmres_seconds
+                - jacobian_totals.total_seconds
+                - preconditioner_totals.total_seconds,
+            ),
+        }
+        for name in (
+            "rotation_to_material_seconds",
+            "integration_seconds",
+            "rotation_to_global_seconds",
+            "condensation_seconds",
+            "condition_check_seconds",
+            "local_solve_seconds",
+            "reconstruction_seconds",
+            "observable_seconds",
+        ):
+            payload[f"material_{name}"] = float(
+                getattr(native_timing, name, 0.0)
+            )
+        _emit_progress_raw(config_for_event, payload)
 
     def fixed_load_path() -> list[LoadPathStep]:
         return [
@@ -766,16 +827,49 @@ def solve_two_state_dirichlet_plane_stress(
         increment = path_item.index
         boundary_state = path_item.boundary
         time_increment = path_item.time_increment
+        material_seconds_at_attempt_start = material_seconds
+        material_evaluations_at_attempt_start = material_evaluations
+        gmres_seconds_at_attempt_start = gmres_seconds
+        gmres_iterations_at_attempt_start = gmres_iterations
+        jacobian_calls_at_attempt_start = jacobian_totals.calls
+        jacobian_seconds_at_attempt_start = jacobian_totals.total_seconds
+        preconditioner_calls_at_attempt_start = preconditioner_totals.calls
+        preconditioner_seconds_at_attempt_start = preconditioner_totals.total_seconds
+        line_search_rejections_at_attempt_start = line_search_rejections
+        linear_solves_at_attempt_start = len(linear_solves)
+        native_timing_at_attempt_start = getattr(material, "timing_statistics", None)
+        native_integration_seconds_at_attempt_start = float(
+            getattr(native_timing_at_attempt_start, "integration_seconds", 0.0)
+        )
+        native_condensation_seconds_at_attempt_start = float(
+            getattr(native_timing_at_attempt_start, "condensation_seconds", 0.0)
+        )
+        native_mgis_integrations_at_attempt_start = int(
+            getattr(native_timing_at_attempt_start, "full_batch_integration_calls", 0)
+        )
+        _emit_progress(
+            config,
+            {
+                "event": "increment_started",
+                "increment": increment,
+                "load_fraction_start": path_item.start_fraction,
+                "load_fraction_end": path_item.end_fraction,
+                "time_increment": time_increment,
+            },
+        )
         krylov_recycle.reset()
         applied = extension.extend(boundary_state, grid)
         increment_start_fluctuation = fluctuation.copy()
         converged = False
         increment_failure_reason = ""
         increment_min_line_search_factor = 1.0
+        attempt_newton_iterations = 0
         previous_nonlinear_residual: float | None = None
         force_fixed_linear_tolerance = False
         accepted_cache = AcceptedTwoStateTrialCache()
         for iteration in range(config.maximum_newton_iterations):
+            attempt_newton_iterations = iteration + 1
+            used_cached_trial = accepted_cache.populated
             if not accepted_cache.populated:
                 sample_strain = strain_timed(applied + fluctuation)
                 trial = evaluate_samples_timed(
@@ -791,6 +885,17 @@ def solve_two_state_dirichlet_plane_stress(
                 trial, sample_strain, residual, relative, absolute = accepted_cache.take()
             residual_history.append(relative)
             absolute_history.append(absolute)
+            _emit_progress(
+                config,
+                {
+                    "event": "newton_residual",
+                    "increment": increment,
+                    "newton_iteration": iteration + 1,
+                    "relative_residual": relative,
+                    "absolute_residual": absolute,
+                    "used_cached_trial": used_cached_trial,
+                },
+            )
             if relative <= config.relative_equilibrium_tolerance:
                 solver_residual = relative
                 if not config.verify_final_state:
@@ -801,6 +906,15 @@ def solve_two_state_dirichlet_plane_stress(
                     final_applied = applied.copy()
                     iterations_per_increment.append(iteration + 1)
                     converged = True
+                    _emit_progress(
+                        config,
+                        {
+                            "event": "increment_converged",
+                            "increment": increment,
+                            "newton_iterations": iteration + 1,
+                            "relative_residual": relative,
+                        },
+                    )
                     break
                 elements.revert()
                 verification_trial = evaluate_samples_timed(
@@ -831,6 +945,15 @@ def solve_two_state_dirichlet_plane_stress(
                     final_applied = applied.copy()
                     iterations_per_increment.append(iteration + 1)
                     converged = True
+                    _emit_progress(
+                        config,
+                        {
+                            "event": "increment_converged",
+                            "increment": increment,
+                            "newton_iterations": iteration + 1,
+                            "relative_residual": verification_residual,
+                        },
+                    )
                     break
                 trial = verification_trial
                 residual = verification_force
@@ -998,9 +1121,35 @@ def solve_two_state_dirichlet_plane_stress(
                 )
             gmres_elapsed = time.perf_counter() - gmres_started
             gmres_seconds += gmres_elapsed
+            linear_solve = LinearSolveDiagnostics(
+                increment=increment,
+                newton_iteration=iteration + 1,
+                nonlinear_residual_before=relative,
+                requested_relative_tolerance=requested_linear_tolerance,
+                gmres_info=int(info),
+                gmres_iterations=gmres_iterations - gmres_iterations_before,
+                jacobian_calls=jacobian_local.calls,
+                preconditioner_calls=preconditioner_local.calls,
+                gmres_seconds=gmres_elapsed,
+                jacobian_seconds=jacobian_local.total_seconds,
+                preconditioner_seconds=preconditioner_local.total_seconds,
+                krylov_overhead_seconds=max(
+                    0.0,
+                    gmres_elapsed
+                    - jacobian_local.total_seconds
+                    - preconditioner_local.total_seconds,
+                ),
+                restart=config.gmres_restart,
+                line_search_factor=None,
+                linear_residual_ratio=linear_residual_ratio,
+                krylov_method=config.krylov_method,
+                krylov_recycling=config.krylov_recycling,
+            )
+
             if info != 0 or not np.isfinite(correction).all():
                 _accumulate_jacobian(jacobian_totals, jacobian_local)
                 _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
+                linear_solves.append(linear_solve)
                 elements.revert()
                 increment_failure_reason = f"gmres_failure:{info}"
                 break
@@ -1051,42 +1200,108 @@ def solve_two_state_dirichlet_plane_stress(
             if not accepted:
                 _accumulate_jacobian(jacobian_totals, jacobian_local)
                 _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
+                linear_solves.append(linear_solve)
                 elements.revert()
                 increment_failure_reason = "line_search_failure"
+                _emit_progress(
+                    config,
+                    {
+                        "event": "increment_failed",
+                        "increment": increment,
+                        "newton_iteration": iteration + 1,
+                        "reason": increment_failure_reason,
+                    },
+                )
                 break
             _accumulate_jacobian(jacobian_totals, jacobian_local)
             _accumulate_preconditioner(preconditioner_totals, preconditioner_local)
-            linear_solves.append(
-                LinearSolveDiagnostics(
-                    increment=increment,
-                    newton_iteration=iteration + 1,
-                    nonlinear_residual_before=relative,
-                    requested_relative_tolerance=requested_linear_tolerance,
-                    gmres_info=int(info),
-                    gmres_iterations=gmres_iterations - gmres_iterations_before,
-                    jacobian_calls=jacobian_local.calls,
-                    preconditioner_calls=preconditioner_local.calls,
-                    gmres_seconds=gmres_elapsed,
-                    jacobian_seconds=jacobian_local.total_seconds,
-                    preconditioner_seconds=preconditioner_local.total_seconds,
-                    krylov_overhead_seconds=max(
-                        0.0,
-                        gmres_elapsed
-                        - jacobian_local.total_seconds
-                        - preconditioner_local.total_seconds,
-                    ),
-                    restart=config.gmres_restart,
-                    line_search_factor=factor,
-                    linear_residual_ratio=linear_residual_ratio,
-                    krylov_method=config.krylov_method,
-                    krylov_recycling=config.krylov_recycling,
-                )
-            )
+            linear_solves.append(replace(linear_solve, line_search_factor=factor))
             previous_nonlinear_residual = relative
+            _emit_progress(
+                config,
+                {
+                    "event": "newton_step_accepted",
+                    "increment": increment,
+                    "newton_iteration": iteration + 1,
+                    "relative_residual": relative,
+                    "line_search_factor": factor,
+                    "krylov_outer_callbacks": (
+                        gmres_iterations - gmres_iterations_before
+                    ),
+                    "krylov_seconds": gmres_elapsed,
+                    "jacobian_seconds": jacobian_local.total_seconds,
+                    "preconditioner_seconds": preconditioner_local.total_seconds,
+                    "krylov_overhead_seconds": linear_solve.krylov_overhead_seconds,
+                    "jacobian_calls": jacobian_local.calls,
+                    "preconditioner_calls": preconditioner_local.calls,
+                },
+            )
             if factor < 1.0:
                 force_fixed_linear_tolerance = True
         if not converged:
             elements.revert()
+            native_timing = getattr(material, "timing_statistics", None)
+            attempt_krylov_seconds = gmres_seconds - gmres_seconds_at_attempt_start
+            attempt_jacobian_seconds = (
+                jacobian_totals.total_seconds - jacobian_seconds_at_attempt_start
+            )
+            attempt_preconditioner_seconds = (
+                preconditioner_totals.total_seconds
+                - preconditioner_seconds_at_attempt_start
+            )
+            load_step_attempts.append(
+                LoadStepAttemptDiagnostics(
+                    attempt_index=increment,
+                    load_fraction_start=path_item.start_fraction,
+                    load_fraction_end=path_item.end_fraction,
+                    accepted=False,
+                    failure_reason=increment_failure_reason or "newton_iteration_limit",
+                    newton_iterations=attempt_newton_iterations,
+                    linear_solves=len(linear_solves) - linear_solves_at_attempt_start,
+                    krylov_outer_callbacks=(
+                        gmres_iterations - gmres_iterations_at_attempt_start
+                    ),
+                    jacobian_matvec_calls=(
+                        jacobian_totals.calls - jacobian_calls_at_attempt_start
+                    ),
+                    preconditioner_calls=(
+                        preconditioner_totals.calls
+                        - preconditioner_calls_at_attempt_start
+                    ),
+                    krylov_seconds=attempt_krylov_seconds,
+                    jacobian_seconds=attempt_jacobian_seconds,
+                    preconditioner_seconds=attempt_preconditioner_seconds,
+                    krylov_overhead_seconds=max(
+                        0.0,
+                        attempt_krylov_seconds
+                        - attempt_jacobian_seconds
+                        - attempt_preconditioner_seconds,
+                    ),
+                    material_seconds=(
+                        material_seconds - material_seconds_at_attempt_start
+                    ),
+                    material_evaluations=(
+                        material_evaluations - material_evaluations_at_attempt_start
+                    ),
+                    material_integration_seconds=float(
+                        getattr(native_timing, "integration_seconds", 0.0)
+                    )
+                    - native_integration_seconds_at_attempt_start,
+                    material_condensation_seconds=float(
+                        getattr(native_timing, "condensation_seconds", 0.0)
+                    )
+                    - native_condensation_seconds_at_attempt_start,
+                    mgis_integrations=int(
+                        getattr(native_timing, "full_batch_integration_calls", 0)
+                    )
+                    - native_mgis_integrations_at_attempt_start,
+                    line_search_rejections=(
+                        line_search_rejections
+                        - line_search_rejections_at_attempt_start
+                    ),
+                    minimum_line_search_factor=increment_min_line_search_factor,
+                )
+            )
             if adaptive_path is not None:
                 fluctuation[...] = increment_start_fluctuation
                 adaptive_step_history.append(
@@ -1100,13 +1315,7 @@ def solve_two_state_dirichlet_plane_stress(
                             else adaptive_path.current_fraction
                         ),
                         "step_size": time_increment,
-                        "newton_iterations": len(
-                            [
-                                item
-                                for item in linear_solves
-                                if item.increment == increment
-                            ]
-                        ),
+                        "newton_iterations": attempt_newton_iterations,
                         "minimum_line_search_factor": increment_min_line_search_factor,
                         "next_step_reason": increment_failure_reason
                         or "newton_iteration_limit",
@@ -1115,8 +1324,118 @@ def solve_two_state_dirichlet_plane_stress(
                 adaptive_path.reject(
                     increment_failure_reason or "newton_iteration_limit"
                 )
+                _emit_progress(
+                    config,
+                    {
+                        "event": "increment_rejected",
+                        "increment": increment,
+                        "reason": increment_failure_reason or "newton_iteration_limit",
+                        "newton_iterations": attempt_newton_iterations,
+                        "attempt_cost": {
+                            "krylov_outer_callbacks": (
+                                load_step_attempts[-1].krylov_outer_callbacks
+                            ),
+                            "jacobian_matvec_calls": (
+                                load_step_attempts[-1].jacobian_matvec_calls
+                            ),
+                            "preconditioner_calls": (
+                                load_step_attempts[-1].preconditioner_calls
+                            ),
+                            "krylov_seconds": load_step_attempts[-1].krylov_seconds,
+                            "jacobian_seconds": load_step_attempts[-1].jacobian_seconds,
+                            "preconditioner_seconds": (
+                                load_step_attempts[-1].preconditioner_seconds
+                            ),
+                            "krylov_overhead_seconds": (
+                                load_step_attempts[-1].krylov_overhead_seconds
+                            ),
+                            "material_seconds": load_step_attempts[-1].material_seconds,
+                        },
+                    },
+                )
+                material_seconds_rejected_attempts += (
+                    material_seconds - material_seconds_at_attempt_start
+                )
                 continue
             raise RuntimeError(f"two-state increment {increment} did not converge")
+        material_seconds_accepted_attempts += (
+            material_seconds - material_seconds_at_attempt_start
+        )
+        native_timing = getattr(material, "timing_statistics", None)
+        attempt_krylov_seconds = gmres_seconds - gmres_seconds_at_attempt_start
+        attempt_jacobian_seconds = (
+            jacobian_totals.total_seconds - jacobian_seconds_at_attempt_start
+        )
+        attempt_preconditioner_seconds = (
+            preconditioner_totals.total_seconds - preconditioner_seconds_at_attempt_start
+        )
+        load_step_attempts.append(
+            LoadStepAttemptDiagnostics(
+                attempt_index=increment,
+                load_fraction_start=path_item.start_fraction,
+                load_fraction_end=path_item.end_fraction,
+                accepted=True,
+                failure_reason=None,
+                newton_iterations=attempt_newton_iterations,
+                linear_solves=len(linear_solves) - linear_solves_at_attempt_start,
+                krylov_outer_callbacks=gmres_iterations - gmres_iterations_at_attempt_start,
+                jacobian_matvec_calls=(
+                    jacobian_totals.calls - jacobian_calls_at_attempt_start
+                ),
+                preconditioner_calls=(
+                    preconditioner_totals.calls - preconditioner_calls_at_attempt_start
+                ),
+                krylov_seconds=attempt_krylov_seconds,
+                jacobian_seconds=attempt_jacobian_seconds,
+                preconditioner_seconds=attempt_preconditioner_seconds,
+                krylov_overhead_seconds=max(
+                    0.0,
+                    attempt_krylov_seconds
+                    - attempt_jacobian_seconds
+                    - attempt_preconditioner_seconds,
+                ),
+                material_seconds=material_seconds - material_seconds_at_attempt_start,
+                material_evaluations=(
+                    material_evaluations - material_evaluations_at_attempt_start
+                ),
+                material_integration_seconds=float(
+                    getattr(native_timing, "integration_seconds", 0.0)
+                )
+                - native_integration_seconds_at_attempt_start,
+                material_condensation_seconds=float(
+                    getattr(native_timing, "condensation_seconds", 0.0)
+                )
+                - native_condensation_seconds_at_attempt_start,
+                mgis_integrations=int(
+                    getattr(native_timing, "full_batch_integration_calls", 0)
+                )
+                - native_mgis_integrations_at_attempt_start,
+                line_search_rejections=(
+                    line_search_rejections - line_search_rejections_at_attempt_start
+                ),
+                minimum_line_search_factor=increment_min_line_search_factor,
+            )
+        )
+        _emit_progress(
+            config,
+            {
+                "event": "attempt_cost_completed",
+                "increment": increment,
+                "accepted": True,
+                "krylov_outer_callbacks": load_step_attempts[-1].krylov_outer_callbacks,
+                "jacobian_matvec_calls": load_step_attempts[-1].jacobian_matvec_calls,
+                "preconditioner_calls": load_step_attempts[-1].preconditioner_calls,
+                "krylov_seconds": load_step_attempts[-1].krylov_seconds,
+                "jacobian_seconds": load_step_attempts[-1].jacobian_seconds,
+                "preconditioner_seconds": (
+                    load_step_attempts[-1].preconditioner_seconds
+                ),
+                "krylov_overhead_seconds": (
+                    load_step_attempts[-1].krylov_overhead_seconds
+                ),
+                "material_seconds": load_step_attempts[-1].material_seconds,
+            },
+        )
         if adaptive_path is not None:
             slip_error_ratio: float | None = None
             if (
@@ -1175,6 +1494,38 @@ def solve_two_state_dirichlet_plane_stress(
                     "next_step_reason": decision.reason,
                 }
             )
+            _emit_progress(
+                config,
+                {
+                    "event": "increment_accepted",
+                    "increment": increment,
+                    "load_fraction_start": adaptive_path.current_fraction - time_increment,
+                    "load_fraction_end": adaptive_path.current_fraction,
+                    "newton_iterations": iterations_per_increment[-1],
+                    "next_step_size": decision.next_increment_fraction,
+                    "next_step_reason": decision.reason,
+                    "attempt_cost": {
+                        "krylov_outer_callbacks": (
+                            load_step_attempts[-1].krylov_outer_callbacks
+                        ),
+                        "jacobian_matvec_calls": (
+                            load_step_attempts[-1].jacobian_matvec_calls
+                        ),
+                        "preconditioner_calls": (
+                            load_step_attempts[-1].preconditioner_calls
+                        ),
+                        "krylov_seconds": load_step_attempts[-1].krylov_seconds,
+                        "jacobian_seconds": load_step_attempts[-1].jacobian_seconds,
+                        "preconditioner_seconds": (
+                            load_step_attempts[-1].preconditioner_seconds
+                        ),
+                        "krylov_overhead_seconds": (
+                            load_step_attempts[-1].krylov_overhead_seconds
+                        ),
+                        "material_seconds": load_step_attempts[-1].material_seconds,
+                    },
+                },
+            )
 
     if final_trial is None or final_sample_strain is None:
         raise RuntimeError("no two-state increment converged")
@@ -1191,6 +1542,9 @@ def solve_two_state_dirichlet_plane_stress(
             "local_solve_seconds",
             "reconstruction_seconds",
             "observable_seconds",
+            "local_condensation_evaluations",
+            "full_batch_integration_calls",
+            "equivalent_active_point_integrations",
         )
     }
     provenance = collect_runtime_provenance(
@@ -1206,6 +1560,11 @@ def solve_two_state_dirichlet_plane_stress(
         forcing_alpha=config.forcing_alpha,
         krylov_method=config.krylov_method,
         krylov_recycling=config.krylov_recycling,
+        lgmres_inner_m=config.lgmres_inner_m,
+        lgmres_outer_k=config.lgmres_outer_k,
+        gcrotmk_m=config.gcrotmk_m,
+        gcrotmk_k=config.gcrotmk_k,
+        reference_update_mode=config.reference_update_mode,
     )
     provenance.update(
         {
@@ -1250,6 +1609,7 @@ def solve_two_state_dirichlet_plane_stress(
         transform_wisdom_loaded=transform_diagnostics.wisdom_loaded,
         transform_planning_seconds=transform_diagnostics.planning_seconds,
         linear_solves=tuple(linear_solves),
+        load_step_attempts=tuple(load_step_attempts),
         reference_updates=tuple(reference_updates),
         adaptive_stepping_enabled=adaptive_path is not None,
         adaptive_step_history=tuple(adaptive_step_history),
@@ -1283,6 +1643,8 @@ def solve_two_state_dirichlet_plane_stress(
             "line_search_rejections": float(line_search_rejections),
             "line_search_minimum_factor": line_search_minimum_factor,
             "material_seconds": material_seconds,
+            "material_seconds_accepted_attempts": material_seconds_accepted_attempts,
+            "material_seconds_rejected_attempts": material_seconds_rejected_attempts,
             "gradient_seconds": gradient_seconds,
             "divergence_seconds": divergence_seconds,
             "jacobian_seconds": jacobian_totals.total_seconds,
@@ -1314,6 +1676,13 @@ def solve_two_state_dirichlet_plane_stress(
                 - preconditioner_totals.total_seconds,
             ),
             **{
+                f"attempts_{status}_{name}": float(value)
+                for status, values in summarize_load_step_attempts(
+                    load_step_attempts
+                ).items()
+                for name, value in values.items()
+            },
+            **{
                 f"material_{name}": value
                 for name, value in material_timing_values.items()
             },
@@ -1323,7 +1692,9 @@ def solve_two_state_dirichlet_plane_stress(
             "material_evaluate_calls": float(
                 getattr(material_timing, "evaluate_calls", 0)
             ),
-            "mgis_integrations": float(getattr(material_timing, "evaluate_calls", 0)),
+            "mgis_integrations": float(
+                getattr(material_timing, "full_batch_integration_calls", 0)
+            ),
             "material_warm_start_uses": float(
                 getattr(material, "warm_start_uses", 0)
             ),
@@ -1331,6 +1702,9 @@ def solve_two_state_dirichlet_plane_stress(
                 getattr(material, "warm_start_resets", 0)
             ),
         },
+        material_local_iteration_histogram=tuple(
+            getattr(material_timing, "local_iteration_histogram", ())
+        ),
     )
     sample_stress = _reshape_two_state(final_trial.stress_in_plane_mpa, grid)
     return Spectral2DResult(

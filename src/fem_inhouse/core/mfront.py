@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from importlib import import_module
 from pathlib import Path
@@ -89,6 +89,16 @@ class MFrontCondensedStateSnapshot:
     has_accepted_global_trial: bool
     last_in_plane: NDArray | None
     last_time_increment: float | None
+    accepted_in_plane: NDArray | None = None
+    accepted_cbb: NDArray | None = None
+    accepted_cba: NDArray | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class MFrontCondensedBlocksStateSnapshot:
+    """Committed state of a block-partitioned condensed material."""
+
+    blocks: tuple[MFrontCondensedStateSnapshot, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +122,10 @@ class MFrontTimingStatistics:
     observable_seconds: float = 0.0
     evaluate_calls: int = 0
     condition_checks: int = 0
+    local_condensation_evaluations: int = 0
+    full_batch_integration_calls: int = 0
+    equivalent_active_point_integrations: int = 0
+    local_iteration_histogram: tuple[int, ...] = ()
 
 
 def engineering_strain_to_kelvin(
@@ -1591,6 +1605,7 @@ class MFront3DCondensedPlaneStressBatch:
         maximum_local_iterations: int = 15,
         maximum_cbb_condition_number: float = 1e12,
         local_condition_check_mode: LocalConditionCheckMode = "always",
+        local_transverse_predictor: Literal["committed", "tangent"] = "committed",
         **kwargs: Any,
     ) -> None:
         if not np.isfinite(local_tolerance_mpa) or local_tolerance_mpa <= 0:
@@ -1606,12 +1621,15 @@ class MFront3DCondensedPlaneStressBatch:
                 "local_condition_check_mode must be 'always', 'on_failure', "
                 "or 'diagnostic_sample'"
             )
+        if local_transverse_predictor not in {"committed", "tangent"}:
+            raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
         self._bridge = MFront3DMaterialPointBatch(*args, **kwargs)
         self._absolute_tolerance = float(local_tolerance_mpa)
         self._relative_tolerance = float(local_relative_tolerance)
         self._maximum_iterations = maximum_local_iterations
         self._maximum_condition = float(maximum_cbb_condition_number)
         self._condition_check_mode = local_condition_check_mode
+        self._local_transverse_predictor = local_transverse_predictor
         self._maximum_residual = 0.0
         self._maximum_iterations_observed = 0
         self._iteration_sum = 0
@@ -1624,6 +1642,10 @@ class MFront3DCondensedPlaneStressBatch:
         self._reconstruction_seconds = 0.0
         self._observable_seconds = 0.0
         self._condition_checks = 0
+        self._local_condensation_evaluations = 0
+        self._full_batch_integration_calls = 0
+        self._equivalent_active_point_integrations = 0
+        self._local_iteration_histogram = np.zeros(maximum_local_iterations + 1, dtype=np.int64)
         self._accepted_transverse = self._bridge.committed_transverse_strain_kelvin.copy()
         self._latest_transverse: NDArray | None = None
         self._has_accepted_global_trial = False
@@ -1631,6 +1653,11 @@ class MFront3DCondensedPlaneStressBatch:
         self._warm_start_resets = 0
         self._last_in_plane: NDArray | None = None
         self._last_time_increment: float | None = None
+        self._accepted_in_plane: NDArray | None = None
+        self._accepted_cbb: NDArray | None = None
+        self._accepted_cba: NDArray | None = None
+        self._latest_cbb: NDArray | None = None
+        self._latest_cba: NDArray | None = None
 
     @property
     def point_count(self) -> int:
@@ -1681,11 +1708,21 @@ class MFront3DCondensedPlaneStressBatch:
             observable_seconds=self._observable_seconds,
             evaluate_calls=bridge_timing.evaluate_calls,
             condition_checks=self._condition_checks,
+            local_condensation_evaluations=self._local_condensation_evaluations,
+            full_batch_integration_calls=self._full_batch_integration_calls,
+            equivalent_active_point_integrations=self._equivalent_active_point_integrations,
+            local_iteration_histogram=tuple(
+                int(value) for value in self._local_iteration_histogram
+            ),
         )
 
     @property
     def local_condition_check_mode(self) -> LocalConditionCheckMode:
         return self._condition_check_mode
+
+    @property
+    def local_transverse_predictor(self) -> str:
+        return self._local_transverse_predictor
 
     @property
     def warm_start_uses(self) -> int:
@@ -1700,12 +1737,23 @@ class MFront3DCondensedPlaneStressBatch:
 
         if self._latest_transverse is not None:
             self._accepted_transverse = self._latest_transverse.copy()
+            if self._last_in_plane is not None:
+                self._accepted_in_plane = self._last_in_plane.copy()
+            if self._latest_cbb is not None:
+                self._accepted_cbb = self._latest_cbb.copy()
+            if self._latest_cba is not None:
+                self._accepted_cba = self._latest_cba.copy()
             self._has_accepted_global_trial = True
 
     def _reset_global_trial_predictor(self) -> None:
         self._accepted_transverse = self._bridge.committed_transverse_strain_kelvin.copy()
         self._latest_transverse = None
         self._has_accepted_global_trial = False
+        self._accepted_in_plane = None
+        self._accepted_cbb = None
+        self._accepted_cba = None
+        self._latest_cbb = None
+        self._latest_cba = None
         self._warm_start_resets += 1
 
     def _fail(self, message: str) -> None:
@@ -1821,9 +1869,28 @@ class MFront3DCondensedPlaneStressBatch:
         condensation_started = time.perf_counter()
         total_kelvin = np.zeros((self.point_count, 6), dtype=float)
         total_kelvin[:, _PLANE_STRESS_COMPONENTS] = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+        transverse_initial = self._accepted_transverse
+        if (
+            self._local_transverse_predictor == "tangent"
+            and self._accepted_in_plane is not None
+            and self._accepted_cbb is not None
+            and self._accepted_cba is not None
+        ):
+            delta_in_plane = (
+                in_plane - self._accepted_in_plane
+            ) * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+            try:
+                transverse_correction = np.linalg.solve(
+                    self._accepted_cbb,
+                    -np.einsum("nij,nj->ni", self._accepted_cba, delta_in_plane)[..., None],
+                )[..., 0]
+                if np.isfinite(transverse_correction).all():
+                    transverse_initial = self._accepted_transverse + transverse_correction
+            except np.linalg.LinAlgError:
+                transverse_initial = self._accepted_transverse
         if self._has_accepted_global_trial:
             self._warm_start_uses += 1
-        total_kelvin[:, _TRANSVERSE_COMPONENTS_3D] = self._accepted_transverse
+        total_kelvin[:, _TRANSVERSE_COMPONENTS_3D] = transverse_initial
         first_converged = np.zeros(self.point_count, dtype=int)
         final: _MFront3DTrial | None = None
         final_condition: NDArray | None = None
@@ -1833,6 +1900,8 @@ class MFront3DCondensedPlaneStressBatch:
             and self._bridge.timing_statistics.evaluate_calls % 16 == 0
         )
         for iteration in range(1, self._maximum_iterations + 1):
+            self._local_condensation_evaluations += 1
+            self._full_batch_integration_calls += 1
             final = self._bridge.evaluate(
                 total_kelvin,
                 time_increment=time_increment,
@@ -1854,6 +1923,9 @@ class MFront3DCondensedPlaneStressBatch:
             residual_norm = np.max(np.abs(stress_b), axis=1)
             converged = residual_norm <= (
                 self._absolute_tolerance + self._relative_tolerance * stress_scale
+            )
+            self._equivalent_active_point_integrations += int(
+                np.count_nonzero(~converged)
             )
             condition: NDArray | None = None
             if (
@@ -1893,6 +1965,27 @@ class MFront3DCondensedPlaneStressBatch:
                 f"{self._maximum_iterations} iterations; residual={maximum_residual:.3e} MPa"
             )
         assert final is not None
+        self._latest_cbb = np.take(
+            np.take(final.consistent_tangent_kelvin_mpa, _TRANSVERSE_COMPONENTS_3D, axis=-2),
+            _TRANSVERSE_COMPONENTS_3D,
+            axis=-1,
+        ).copy()
+        self._latest_cba = np.take(
+            np.take(final.consistent_tangent_kelvin_mpa, _TRANSVERSE_COMPONENTS_3D, axis=-2),
+            _PLANE_STRESS_COMPONENTS,
+            axis=-1,
+        ).copy()
+        first_iteration_values, first_iteration_counts = np.unique(
+            first_converged,
+            return_counts=True,
+        )
+        for iteration_value, count in zip(
+            first_iteration_values,
+            first_iteration_counts,
+            strict=True,
+        ):
+            if 0 <= iteration_value < self._local_iteration_histogram.size:
+                self._local_iteration_histogram[int(iteration_value)] += int(count)
         self._maximum_residual = max(
             self._maximum_residual,
             float(np.max(np.abs(stress_b))),
@@ -2061,6 +2154,11 @@ class MFront3DCondensedPlaneStressBatch:
             has_accepted_global_trial=False,
             last_in_plane=None if self._last_in_plane is None else self._last_in_plane.copy(),
             last_time_increment=self._last_time_increment,
+            accepted_in_plane=(
+                None if self._accepted_in_plane is None else self._accepted_in_plane.copy()
+            ),
+            accepted_cbb=None if self._accepted_cbb is None else self._accepted_cbb.copy(),
+            accepted_cba=None if self._accepted_cba is None else self._accepted_cba.copy(),
         )
 
     def restore_state(self, snapshot: MFrontCondensedStateSnapshot) -> None:
@@ -2076,6 +2174,13 @@ class MFront3DCondensedPlaneStressBatch:
             None if snapshot.last_in_plane is None else snapshot.last_in_plane.copy()
         )
         self._last_time_increment = snapshot.last_time_increment
+        self._accepted_in_plane = (
+            None if snapshot.accepted_in_plane is None else snapshot.accepted_in_plane.copy()
+        )
+        self._accepted_cbb = None if snapshot.accepted_cbb is None else snapshot.accepted_cbb.copy()
+        self._accepted_cba = None if snapshot.accepted_cba is None else snapshot.accepted_cba.copy()
+        self._latest_cbb = None
+        self._latest_cba = None
 
     def revert(self) -> None:
         self._bridge.revert()
@@ -2087,3 +2192,384 @@ class MFront3DCondensedPlaneStressBatch:
     @property
     def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
         return self._bridge.committed_nonlocal_equivalent_plastic_strain
+
+
+class MFront3DCondensedPlaneStressBlockBatch:
+    """Partition a condensed MFront batch into independently converged blocks.
+
+    The constitutive law is unchanged.  Each block owns its MGIS manager, so a
+    difficult grain only keeps the points in its own block active during later
+    local plane-stress iterations.  Blocks are evaluated sequentially; this
+    first implementation therefore prioritizes transaction safety and a
+    measurable active-block baseline over parallel scheduling.
+    """
+
+    def __init__(
+        self,
+        *args: Any,
+        condensation_block_size: int = 2500,
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(condensation_block_size, bool) or condensation_block_size < 1:
+            raise ValueError("condensation_block_size must be a positive integer")
+        point_count = kwargs.get("point_count")
+        if point_count is None:
+            for name in (
+                "initial_yield_stress_mpa",
+                "hardening_coefficient_mpa",
+                "hardening_exponent",
+            ):
+                value = kwargs.get(name)
+                if value is not None and np.asarray(value).ndim > 0:
+                    point_count = int(np.asarray(value).size)
+                    break
+        if point_count is None:
+            for value in args[1:4]:
+                if np.asarray(value).ndim > 0:
+                    point_count = int(np.asarray(value).size)
+                    break
+        if point_count is None:
+            raise ValueError("block condensation requires an explicit point_count")
+        self._point_count = int(point_count)
+        if self._point_count < 1:
+            raise ValueError("point_count must be positive")
+        self._block_size = int(condensation_block_size)
+        self._slices = tuple(
+            slice(start, min(start + self._block_size, self._point_count))
+            for start in range(0, self._point_count, self._block_size)
+        )
+        self._blocks: list[MFront3DCondensedPlaneStressBatch] = []
+        self._last_light_trials: list[InPlaneConstitutiveTrial] | None = None
+        self._last_light_trial: InPlaneConstitutiveTrial | None = None
+
+        rotation = kwargs.get("rotation_global_to_material")
+        material_properties = kwargs.get("material_property_values")
+        coupling = kwargs.get("micromorphic_coupling_modulus_mpa")
+        for block_slice in self._slices:
+            block_args = list(args)
+            for index in range(1, min(4, len(block_args))):
+                block_args[index] = self._slice_point_value(block_args[index], block_slice)
+            block_kwargs = dict(kwargs)
+            block_kwargs["point_count"] = block_slice.stop - block_slice.start
+            for name in (
+                "initial_yield_stress_mpa",
+                "hardening_coefficient_mpa",
+                "hardening_exponent",
+            ):
+                if name in block_kwargs:
+                    block_kwargs[name] = self._slice_point_value(
+                        block_kwargs[name], block_slice
+                    )
+            if rotation is not None:
+                block_kwargs["rotation_global_to_material"] = np.asarray(rotation)[block_slice]
+            if material_properties is not None:
+                block_kwargs["material_property_values"] = {
+                    name: self._slice_point_value(value, block_slice)
+                    for name, value in material_properties.items()
+                }
+            if coupling is not None:
+                block_kwargs["micromorphic_coupling_modulus_mpa"] = self._slice_point_value(
+                    coupling, block_slice
+                )
+            self._blocks.append(
+                MFront3DCondensedPlaneStressBatch(*block_args, **block_kwargs)
+            )
+
+    @staticmethod
+    def _slice_point_value(value: Any, block_slice: slice) -> Any:
+        values = np.asarray(value)
+        if values.ndim == 0:
+            return value
+        return values[block_slice]
+
+    @property
+    def point_count(self) -> int:
+        return self._point_count
+
+    @property
+    def backend_name(self) -> str:
+        return f"{self._blocks[0].backend_name}-blocks"
+
+    @property
+    def thread_count(self) -> int:
+        return self._blocks[0].thread_count
+
+    @property
+    def block_size(self) -> int:
+        return self._block_size
+
+    @property
+    def block_count(self) -> int:
+        return len(self._blocks)
+
+    @property
+    def completion_strategy(self) -> str:
+        return "mfront_3d_local_condensation_blocks"
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        return self._blocks[0].linear_system_matrix_type
+
+    @property
+    def local_condition_check_mode(self) -> LocalConditionCheckMode:
+        return self._blocks[0].local_condition_check_mode
+
+    @property
+    def local_transverse_predictor(self) -> str:
+        return self._blocks[0].local_transverse_predictor
+
+    @property
+    def warm_start_uses(self) -> int:
+        return sum(block.warm_start_uses for block in self._blocks)
+
+    @property
+    def warm_start_resets(self) -> int:
+        return sum(block.warm_start_resets for block in self._blocks)
+
+    @property
+    def statistics(self) -> PlaneStressBatchStatistics:
+        statistics = [block.statistics for block in self._blocks]
+        total_points = float(self._point_count)
+        weighted_mean = sum(
+            stat.mean_local_plane_stress_iterations * block.point_count
+            for block, stat in zip(self._blocks, statistics, strict=True)
+        ) / total_points
+        return PlaneStressBatchStatistics(
+            maximum_gauss_point_plane_stress_residual_mpa=max(
+                stat.maximum_gauss_point_plane_stress_residual_mpa for stat in statistics
+            ),
+            maximum_local_plane_stress_iterations=max(
+                stat.maximum_local_plane_stress_iterations for stat in statistics
+            ),
+            mean_local_plane_stress_iterations=weighted_mean,
+            local_plane_stress_failures=sum(
+                stat.local_plane_stress_failures for stat in statistics
+            ),
+            maximum_cbb_condition_number=max(
+                stat.maximum_cbb_condition_number for stat in statistics
+            ),
+        )
+
+    @property
+    def timing_statistics(self) -> MFrontTimingStatistics:
+        timings = [block.timing_statistics for block in self._blocks]
+        histogram_size = max((len(t.local_iteration_histogram) for t in timings), default=0)
+        histogram = [0] * histogram_size
+        for timing in timings:
+            for index, count in enumerate(timing.local_iteration_histogram):
+                histogram[index] += count
+        return MFrontTimingStatistics(
+            rotation_to_material_seconds=sum(t.rotation_to_material_seconds for t in timings),
+            integration_seconds=sum(t.integration_seconds for t in timings),
+            rotation_to_global_seconds=sum(t.rotation_to_global_seconds for t in timings),
+            condensation_seconds=sum(t.condensation_seconds for t in timings),
+            condition_check_seconds=sum(t.condition_check_seconds for t in timings),
+            local_solve_seconds=sum(t.local_solve_seconds for t in timings),
+            reconstruction_seconds=sum(t.reconstruction_seconds for t in timings),
+            observable_seconds=sum(t.observable_seconds for t in timings),
+            evaluate_calls=sum(t.evaluate_calls for t in timings),
+            condition_checks=sum(t.condition_checks for t in timings),
+            local_condensation_evaluations=sum(
+                t.local_condensation_evaluations for t in timings
+            ),
+            full_batch_integration_calls=sum(t.full_batch_integration_calls for t in timings),
+            equivalent_active_point_integrations=sum(
+                t.equivalent_active_point_integrations for t in timings
+            ),
+            local_iteration_histogram=tuple(histogram),
+        )
+
+    @staticmethod
+    def _concat_optional(
+        values: list[NDArray | None],
+    ) -> NDArray | None:
+        if all(value is None for value in values):
+            return None
+        if any(value is None for value in values):
+            raise RuntimeError("inconsistent optional constitutive block response")
+        return np.concatenate([value for value in values if value is not None], axis=0)
+
+    @staticmethod
+    def _concat_trials(
+        trials: Sequence[InPlaneConstitutiveTrial],
+    ) -> InPlaneConstitutiveTrial:
+        observable_names = set().union(*(trial.observables for trial in trials))
+        observables = {
+            name: np.concatenate([trial.observables[name] for trial in trials], axis=0)
+            for name in observable_names
+        }
+        return InPlaneConstitutiveTrial(
+            stress_in_plane_mpa=np.concatenate(
+                [trial.stress_in_plane_mpa for trial in trials], axis=0
+            ),
+            tangent_in_plane_mpa=MFront3DCondensedPlaneStressBlockBatch._concat_optional(
+                [trial.tangent_in_plane_mpa for trial in trials]
+            ),
+            observables=observables,
+            local_plane_stress_iterations=MFront3DCondensedPlaneStressBlockBatch._concat_optional(
+                [trial.local_plane_stress_iterations for trial in trials]
+            ),
+            cbb_condition_number=MFront3DCondensedPlaneStressBlockBatch._concat_optional(
+                [trial.cbb_condition_number for trial in trials]
+            ),
+        )
+
+    @staticmethod
+    def _concat_complete_trials(
+        trials: Sequence[ConstitutiveTrial],
+    ) -> ConstitutiveTrial:
+        light = MFront3DCondensedPlaneStressBlockBatch._concat_trials(trials)
+        return ConstitutiveTrial(
+            stress_in_plane_mpa=light.stress_in_plane_mpa,
+            tangent_in_plane_mpa=light.tangent_in_plane_mpa,
+            observables=light.observables,
+            local_plane_stress_iterations=light.local_plane_stress_iterations,
+            cbb_condition_number=light.cbb_condition_number,
+            full_stress_tensor_mpa=np.concatenate(
+                [trial.full_stress_tensor_mpa for trial in trials], axis=0
+            ),
+            full_strain_tensor=np.concatenate(
+                [trial.full_strain_tensor for trial in trials], axis=0
+            ),
+            elastic_strain_tensor=np.concatenate(
+                [trial.elastic_strain_tensor for trial in trials], axis=0
+            ),
+            plastic_strain_tensor=np.concatenate(
+                [trial.plastic_strain_tensor for trial in trials], axis=0
+            ),
+            plane_stress_residual_mpa=np.concatenate(
+                [trial.plane_stress_residual_mpa for trial in trials], axis=0
+            ),
+        )
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        values = np.asarray(in_plane_strain, dtype=float)
+        if values.shape != (self._point_count, 3):
+            raise ValueError(f"in_plane_strain must have shape {(self._point_count, 3)}")
+        self._last_light_trials = None
+        self._last_light_trial = None
+        try:
+            trials = [
+                block.evaluate_in_plane(
+                    values[block_slice],
+                    time_increment=time_increment,
+                    consistent_tangent=consistent_tangent,
+                )
+                for block, block_slice in zip(self._blocks, self._slices, strict=True)
+            ]
+        except Exception:
+            self.revert()
+            raise
+        self._last_light_trials = trials
+        self._last_light_trial = self._concat_trials(trials)
+        return self._last_light_trial
+
+    def evaluate_in_plane_response(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        response_level: ResponseLevel,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        if response_level == "complete":
+            return self.evaluate(
+                in_plane_strain,
+                time_increment=time_increment,
+                consistent_tangent=consistent_tangent,
+            )
+        return self.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent,
+        )
+
+    def evaluate(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> ConstitutiveTrial:
+        values = np.asarray(in_plane_strain, dtype=float)
+        if values.shape != (self._point_count, 3):
+            raise ValueError(f"in_plane_strain must have shape {(self._point_count, 3)}")
+        try:
+            trials = [
+                block.evaluate(
+                    values[block_slice],
+                    time_increment=time_increment,
+                    consistent_tangent=consistent_tangent,
+                )
+                for block, block_slice in zip(self._blocks, self._slices, strict=True)
+            ]
+        except Exception:
+            self.revert()
+            raise
+        self._last_light_trials = None
+        self._last_light_trial = None
+        return self._concat_complete_trials(trials)
+
+    def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:
+        if isinstance(trial, ConstitutiveTrial):
+            return trial
+        if trial is not self._last_light_trial or self._last_light_trials is None:
+            raise TypeError("block condensed trial is not the latest light trial")
+        try:
+            complete = [
+                block.complete_trial(block_trial)
+                for block, block_trial in zip(
+                    self._blocks, self._last_light_trials, strict=True
+                )
+            ]
+        except Exception:
+            self.revert()
+            raise
+        return self._concat_complete_trials(complete)
+
+    def commit(self) -> None:
+        for block in self._blocks:
+            block.commit()
+        self._last_light_trials = None
+        self._last_light_trial = None
+
+    def revert(self) -> None:
+        for block in self._blocks:
+            block.revert()
+        self._last_light_trials = None
+        self._last_light_trial = None
+
+    def snapshot_state(self) -> MFrontCondensedBlocksStateSnapshot:
+        return MFrontCondensedBlocksStateSnapshot(
+            blocks=tuple(block.snapshot_state() for block in self._blocks)
+        )
+
+    def restore_state(self, snapshot: MFrontCondensedBlocksStateSnapshot) -> None:
+        if len(snapshot.blocks) != len(self._blocks):
+            raise ValueError("incompatible block-condensed snapshot")
+        for block, block_snapshot in zip(self._blocks, snapshot.blocks, strict=True):
+            block.restore_state(block_snapshot)
+        self._last_light_trials = None
+        self._last_light_trial = None
+
+    def set_nonlocal_equivalent_plastic_strain(self, values: ArrayLike) -> None:
+        values_array = np.asarray(values, dtype=float)
+        if values_array.shape != (self._point_count,):
+            raise ValueError(
+                f"values must have shape {(self._point_count,)}"
+            )
+        for block, block_slice in zip(self._blocks, self._slices, strict=True):
+            block.set_nonlocal_equivalent_plastic_strain(values_array[block_slice])
+
+    @property
+    def committed_nonlocal_equivalent_plastic_strain(self) -> NDArray:
+        return np.concatenate(
+            [block.committed_nonlocal_equivalent_plastic_strain for block in self._blocks],
+            axis=0,
+        )

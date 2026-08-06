@@ -23,7 +23,7 @@ cubic stiffness rather than against MGIS itself.
 from __future__ import annotations
 
 import math
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -120,6 +120,31 @@ def rotation_from_euler_bunge_deg(phi1: float, capital_phi: float, phi2: float) 
     )
 
 
+def rotations_from_euler_bunge_deg(angles: ArrayLike) -> NDArray:
+    """Convert an array of Bunge angles with final axis ``(phi1, Phi, phi2)``."""
+
+    values = np.asarray(angles, dtype=float)
+    if values.ndim < 1 or values.shape[-1] != 3:
+        raise ValueError("Bunge angle maps must have final shape (3)")
+    if not np.isfinite(values).all():
+        raise ValueError("Bunge angle maps must be finite")
+    phi1, capital_phi, phi2 = np.deg2rad(np.moveaxis(values, -1, 0))
+    c1, s1 = np.cos(phi1), np.sin(phi1)
+    c2, s2 = np.cos(capital_phi), np.sin(capital_phi)
+    c3, s3 = np.cos(phi2), np.sin(phi2)
+    rotations = np.empty((*values.shape[:-1], 3, 3), dtype=float)
+    rotations[..., 0, 0] = c1 * c3 - s1 * s3 * c2
+    rotations[..., 0, 1] = s1 * c3 + c1 * s3 * c2
+    rotations[..., 0, 2] = s3 * s2
+    rotations[..., 1, 0] = -c1 * s3 - s1 * c3 * c2
+    rotations[..., 1, 1] = -s1 * s3 + c1 * c3 * c2
+    rotations[..., 1, 2] = c3 * s2
+    rotations[..., 2, 0] = s1 * s2
+    rotations[..., 2, 1] = -c1 * s2
+    rotations[..., 2, 2] = c2
+    return rotations
+
+
 class HomogeneousOrientationProvider:
     """One orientation shared by every material point.
 
@@ -161,6 +186,42 @@ class HomogeneousOrientationProvider:
         return np.broadcast_to(self._rotation, (point_count, 3, 3)).copy()
 
 
+class PixelOrientationProvider:
+    """Per-pixel orientation map replicated over the material states."""
+
+    def __init__(self, rotations_global_to_material: ArrayLike) -> None:
+        rotations = np.asarray(rotations_global_to_material, dtype=float)
+        if rotations.ndim != 4 or rotations.shape[-2:] != (3, 3):
+            raise ValueError(
+                "pixel orientations must have shape (nx, ny, 3, 3), "
+                f"got {rotations.shape}"
+            )
+        self._pixel_shape = (int(rotations.shape[0]), int(rotations.shape[1]))
+        self._rotations = validate_rotations(rotations.reshape(-1, 3, 3)).reshape(
+            rotations.shape
+        )
+
+    @classmethod
+    def from_euler_bunge_deg(cls, angles: ArrayLike) -> PixelOrientationProvider:
+        return cls(rotations_from_euler_bunge_deg(angles))
+
+    @property
+    def pixel_shape(self) -> tuple[int, int]:
+        return self._pixel_shape
+
+    def rotations_global_to_material(self, point_count: int) -> NDArray:
+        nx, ny = self.pixel_shape
+        pixel_count = nx * ny
+        if point_count < 1 or point_count % pixel_count != 0:
+            raise ValueError(
+                f"point count {point_count} is not an integer multiple of "
+                f"pixel count {pixel_count}"
+            )
+        states_per_pixel = point_count // pixel_count
+        flattened = self._rotations.reshape(pixel_count, 3, 3)
+        return np.repeat(flattened, states_per_pixel, axis=0)
+
+
 def orientation_provider_from_mapping(configuration: dict[str, object]) -> OrientationProvider:
     """Build a provider from the `crystal_orientation` block of a configuration.
 
@@ -170,9 +231,14 @@ def orientation_provider_from_mapping(configuration: dict[str, object]) -> Orien
     """
 
     mode = configuration.get("mode", "homogeneous")
+    if mode == "ebsd":
+        angles = configuration.get("euler_bunge_deg")
+        if angles is None:
+            raise ValueError("ebsd orientation needs 'euler_bunge_deg'")
+        return PixelOrientationProvider.from_euler_bunge_deg(cast(ArrayLike, angles))
     if mode != "homogeneous":
         raise ValueError(
-            f"unsupported crystal_orientation mode {mode!r}; available: homogeneous"
+            f"unsupported crystal_orientation mode {mode!r}; available: homogeneous, ebsd"
         )
     matrix = configuration.get("matrix")
     angles = configuration.get("euler_bunge_deg")

@@ -464,7 +464,10 @@ def _create_fcc_single_crystal_batch(
         HomogeneousOrientationProvider,
         orientation_provider_from_mapping,
     )
-    from fem_inhouse.core.mfront import MFront3DCondensedPlaneStressBatch
+    from fem_inhouse.core.mfront import (
+        MFront3DCondensedPlaneStressBatch,
+        MFront3DCondensedPlaneStressBlockBatch,
+    )
     from fem_inhouse.core.srix_parameters import resolve_srix_parameters
 
     if backend == "mfront-native-plane-stress":
@@ -538,7 +541,16 @@ def _create_fcc_single_crystal_batch(
     else:
         overrides = None
 
-    return MFront3DCondensedPlaneStressBatch(
+    local_options = dict(local_plane_stress_options or {})
+    block_size = local_options.pop("condensation_block_size", None)
+    condensed_factory = (
+        MFront3DCondensedPlaneStressBlockBatch
+        if block_size is not None
+        else MFront3DCondensedPlaneStressBatch
+    )
+    if block_size is not None:
+        local_options["condensation_block_size"] = int(block_size)
+    return condensed_factory(
         mfront_library,
         behaviour_spec=behaviour,
         point_count=point_count,
@@ -546,7 +558,7 @@ def _create_fcc_single_crystal_batch(
         thread_count=mfront_threads,
         behaviour_name=behaviour.behaviour_name("condensed_3d"),
         behaviour_parameters=overrides,
-        **(local_plane_stress_options or {}),
+        **local_options,
     )
 
 

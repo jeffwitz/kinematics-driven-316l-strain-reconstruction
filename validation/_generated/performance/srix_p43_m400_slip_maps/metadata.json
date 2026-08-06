@@ -1,0 +1,68 @@
+{
+  "behaviour": "fcc_forest_rubin_srix",
+  "crop_nodes": [
+    1420,
+    1820,
+    935,
+    1335
+  ],
+  "exported_npz_shapes": {
+    "*_pixel_mean": [
+      12,
+      400,
+      400
+    ],
+    "*_triangles": [
+      12,
+      400,
+      400,
+      2
+    ]
+  },
+  "mesh": [
+    400,
+    400
+  ],
+  "note": "TRI2 retains two independent material states per pixel; pixel_mean is the arithmetic mean of the two triangle fields.",
+  "orientation": {
+    "euler_bunge_deg": [
+      35.0,
+      20.0,
+      15.0
+    ],
+    "mode": "homogeneous",
+    "sha256": "718dc64bb2d50bd13e2b3caa5f3e67613cb47be23223288957a59900b7beb2cb"
+  },
+  "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+  "raw_shape": [
+    400,
+    400,
+    2,
+    12
+  ],
+  "slip_system_order": [
+    "01_b[0,1,-1]_n[1,1,1]",
+    "02_b[1,0,-1]_n[1,1,1]",
+    "03_b[1,-1,0]_n[1,1,1]",
+    "04_b[0,1,1]_n[1,1,-1]",
+    "05_b[1,0,1]_n[1,1,-1]",
+    "06_b[1,-1,0]_n[1,1,-1]",
+    "07_b[0,1,-1]_n[1,-1,-1]",
+    "08_b[1,0,1]_n[1,-1,-1]",
+    "09_b[1,1,0]_n[1,-1,-1]",
+    "10_b[0,1,1]_n[1,-1,1]",
+    "11_b[1,0,-1]_n[1,-1,1]",
+    "12_b[1,1,0]_n[1,-1,1]"
+  ],
+  "source_field_hashes": {
+    "equivalent_plastic_slip": "1030d4754528ef452c09057aa22e0d43fbcdd6ed73a07ccd05187e9afc8866ac",
+    "plastic_slip": "e9c24fb9e7e69aec0ac9a5c4d57537faa45476ecb436f71b834e2e7b149de806"
+  },
+  "source_fields": "validation/_generated/performance/srix_p43_m400_predictive_permissive.fields.npz",
+  "source_report": "validation/_generated/performance/srix_p43_m400_predictive_permissive.json",
+  "status": "srix_p43_m400_slip_maps_exported",
+  "units": {
+    "equivalent_plastic_slip": "dimensionless accumulated slip amplitude",
+    "plastic_slip": "dimensionless signed slip amplitude"
+  }
+}

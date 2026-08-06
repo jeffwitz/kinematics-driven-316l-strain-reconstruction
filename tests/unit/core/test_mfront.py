@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
 
 from fem_inhouse.core.mfront import (
     MFront3DCondensedPlaneStressBatch,
+    MFront3DCondensedPlaneStressBlockBatch,
     MFrontMaterialPointBatch,
     MFrontNativePlaneStressBatch,
     condense_kelvin_tangent_to_engineering,
@@ -125,6 +127,54 @@ def test_mfront_batch_rejects_invalid_thread_count(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.mfront
+def test_block_condensation_matches_single_batch_and_rolls_back() -> None:
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    common: dict[str, Any] = dict(
+        library_path=library,
+        initial_yield_stress_mpa=np.array([250.0, 260.0, 270.0, 280.0]),
+        hardening_coefficient_mpa=np.array([380.0, 390.0, 400.0, 410.0]),
+        hardening_exponent=np.full(4, 0.245),
+        maximum_local_iterations=15,
+        local_condition_check_mode="on_failure",
+    )
+    single = MFront3DCondensedPlaneStressBatch(**common)
+    blocked = MFront3DCondensedPlaneStressBlockBatch(**common, condensation_block_size=2)
+    strain = np.array(
+        [[0.001, -0.0002, 0.0004], [0.0012, -0.0001, 0.0003],
+         [0.0008, 0.0001, -0.0002], [0.0011, 0.0002, 0.0001]]
+    )
+
+    single_trial = single.evaluate_in_plane(strain, time_increment=0.1)
+    block_trial = blocked.evaluate_in_plane(strain, time_increment=0.1)
+    np.testing.assert_allclose(
+        block_trial.stress_in_plane_mpa,
+        single_trial.stress_in_plane_mpa,
+        rtol=0.0,
+        atol=1e-12,
+    )
+    assert block_trial.tangent_in_plane_mpa is not None
+    assert single_trial.tangent_in_plane_mpa is not None
+    np.testing.assert_allclose(
+        block_trial.tangent_in_plane_mpa,
+        single_trial.tangent_in_plane_mpa,
+        rtol=0.0,
+        atol=1e-9,
+    )
+    single.commit()
+    blocked.commit()
+    snapshot = blocked.snapshot_state()
+    blocked.evaluate_in_plane(strain * 1.1, time_increment=0.1)
+    blocked.restore_state(snapshot)
+    restored = blocked.evaluate_in_plane(strain, time_increment=0.1)
+    np.testing.assert_allclose(
+        restored.stress_in_plane_mpa,
+        single.evaluate_in_plane(strain, time_increment=0.1).stress_in_plane_mpa,
+        rtol=0.0,
+        atol=1e-12,
+    )
 @pytest.mark.mfront
 def test_compiled_mfront_behaviour_matches_elastic_plane_stress() -> None:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")

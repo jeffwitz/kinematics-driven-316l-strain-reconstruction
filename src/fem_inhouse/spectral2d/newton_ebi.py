@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal, cast
 
@@ -70,6 +71,9 @@ class EBISpectralSolverConfig:
     adaptive_step: AdaptiveStepConfig = field(default_factory=AdaptiveStepConfig)
     step_doubling: StepDoublingErrorConfig = field(default_factory=StepDoublingErrorConfig)
     transform: SpectralTransformConfig = field(default_factory=SpectralTransformConfig)
+    progress_callback: Callable[[dict[str, object]], None] | None = field(
+        default=None, compare=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         if self.relative_equilibrium_tolerance <= 0.0:
@@ -420,6 +424,11 @@ def solve_ebi_dirichlet_plane_stress(
         forcing_alpha=config.forcing_alpha,
         krylov_method=config.krylov_method,
         krylov_recycling=config.krylov_recycling,
+        lgmres_inner_m=config.lgmres_inner_m,
+        lgmres_outer_k=config.lgmres_outer_k,
+        gcrotmk_m=config.gcrotmk_m,
+        gcrotmk_k=config.gcrotmk_k,
+        reference_update_mode=config.reference_update_mode,
     )
     provenance.update(
         {

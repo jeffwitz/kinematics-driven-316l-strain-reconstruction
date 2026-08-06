@@ -41,6 +41,56 @@ The conclusion is operational rather than speculative: replacing LGMRES is
 not the next priority. The material and external plane-stress condensation
 still dominate the calculation.
 
+## Krylov attribution for EBSD calculations
+
+The homogeneous profile above must not be extrapolated to an EBSD map. Spatial
+orientation jumps make the tangent heterogeneous and can increase both the
+matrix-vector count and GMRES orthogonalisation cost. The solver therefore
+records every load-step attempt, including rejected attempts, with mutually
+exclusive counters for material work, Jacobian actions, preconditioning, and
+Krylov overhead. The exclusive overhead is
+
+```text
+krylov_seconds - jacobian_seconds - preconditioner_seconds
+```
+
+Failed Krylov solves and linear solves followed by a failed line search are
+included. Reports expose `load_step_attempts` and an `attempt_cost_summary`
+split into `accepted`, `rejected`, and `total`; this prevents cutback work from
+disappearing from the performance analysis.
+
+A single-run M20 EBSD diagnostic, intended to select candidates rather than
+claim production performance, is archived in:
+
+```text
+validation/_generated/performance/
+  srix_p43_m20_ebsd_krylov_sweep.json
+  srix_p43_m20_ebsd_krylov_sweep.csv
+  srix_p43_m20_ebsd_b0_recycling_sweep.json
+  srix_p43_m20_ebsd_b0_recycling_sweep.csv
+```
+
+On this two-increment case, fixed-tolerance GMRES required 959 Jacobian
+actions. Eisenstat--Walker GMRES required 263, with a maximum relative field
+difference of about `2.0e-9`. LGMRES with the same forcing required 268
+actions and slightly reduced exclusive Krylov overhead. GCROT(MK), with the
+current `(m, k)` settings, required 16,027 actions and is rejected as a
+candidate. Disabling LGMRES recycling or updating the isotropic B0 reference
+per increment or per Newton left the count at 267--268 actions. These are
+screening results: they support Eisenstat--Walker for the larger EBSD campaign,
+but they do not establish an M200 speedup.
+
+The screening command is reproducible with:
+
+```bash
+python scripts/benchmark_srix_ebsd_krylov.py \
+  --crop-nodes 1570 1590 1035 1055 \
+  --increments 2 \
+  --ebsd-orientation-h5 /path/to/CP_dataset.h5 \
+  --mfront-threads 4 \
+  --output validation/_generated/performance/srix_p43_m20_ebsd_krylov_sweep.json
+```
+
 ## Fixed increment sweep
 
 The current P43 path is proportional, so the same final boundary field can be

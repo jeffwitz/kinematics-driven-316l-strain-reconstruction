@@ -254,6 +254,20 @@ def test_a_configuration_may_use_euler_angles_instead() -> None:
     )
 
 
+def test_ebsd_configuration_expands_one_orientation_per_pixel_to_material_states() -> None:
+    angles = np.zeros((2, 3, 3), dtype=float)
+    angles[1, 2] = (90.0, 0.0, 0.0)
+    provider = orientation_provider_from_mapping(
+        {"mode": "ebsd", "euler_bunge_deg": angles}
+    )
+    rotations = provider.rotations_global_to_material(12)
+    target = 2 * (1 * 3 + 2)
+    assert rotations.shape == (12, 3, 3)
+    np.testing.assert_allclose(rotations[0], np.eye(3))
+    np.testing.assert_allclose(rotations[target], rotation_from_euler_bunge_deg(90, 0, 0))
+    np.testing.assert_allclose(rotations[target + 1], rotations[target])
+
+
 def test_a_configuration_must_choose_one_form() -> None:
     with pytest.raises(ValueError, match="exactly one"):
         orientation_provider_from_mapping(
@@ -264,8 +278,8 @@ def test_a_configuration_must_choose_one_form() -> None:
 
 
 def test_an_unknown_mode_names_the_supported_ones() -> None:
-    with pytest.raises(ValueError, match="homogeneous"):
-        orientation_provider_from_mapping({"mode": "ebsd"})
+    with pytest.raises(ValueError, match="homogeneous, ebsd"):
+        orientation_provider_from_mapping({"mode": "unsupported"})
 
 
 # --------------------------------------------------------------------------
