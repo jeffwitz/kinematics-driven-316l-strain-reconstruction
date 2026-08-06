@@ -2391,12 +2391,18 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     def _global_stress_and_tangent(
         self, data: Any, index: int
     ) -> tuple[NDArray, NDArray]:
-        del index
-        # The rotated MGIS native solver leaves the final thermodynamic forces
-        # and tangent in the global frame.  Rotating them again here would
-        # apply the EBSD orientation twice.
+        # The native solver evaluates the behaviour in the material frame and
+        # leaves the final MGIS state there.  Its C++ evaluator rotates a
+        # temporary copy only to assemble the local Schur complement; rotate
+        # the stored state once when exporting it to the global solver.
         stress = np.asarray(data.s1.thermodynamic_forces, dtype=float).copy()
         tangent = np.asarray(data.K, dtype=float).copy()
+        if self._rotation_arguments is not None:
+            rotation = self._rotation_arguments[index * 9 : (index + 1) * 9]
+            self._mgis.rotateThermodynamicForces(stress, self._behaviour, rotation)
+            self._mgis.rotateTangentOperatorBlocks(
+                tangent.reshape(-1), self._behaviour, rotation
+            )
         return stress, tangent
 
     def evaluate_in_plane(
@@ -2453,7 +2459,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                     self._behaviour,
                     np.eye(3)[0] if rotation is None else rotation[0],
                     np.eye(3)[1] if rotation is None else rotation[1],
-                    in_plane[index],
+                    in_plane[index] * _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
                     float(time_increment),
                     initial,
                     self._maximum_iterations,
