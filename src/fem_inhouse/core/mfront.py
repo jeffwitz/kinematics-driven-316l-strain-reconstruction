@@ -2247,13 +2247,30 @@ class MFront3DCondensedPlaneStressBatch:
 
 
 class MFrontNativeGeneralisedPlaneStressBatch:
-    """Experimental native generalized-plane-stress crystal adapter.
+    """Passive-bridge generalized-plane-stress crystal adapter (UMAT closure).
 
     This is deliberately separate from :class:`MFront3DCondensedPlaneStressBatch`.
-    The latter remains the production/reference path.  The adapter consumes the
-    optional MGIS generalized-plane-stress binding one material point at a time,
-    which keeps the transaction semantics explicit while the native behaviour is
-    being qualified.
+    The latter remains the production/reference path.  The adapter runs
+    :class:`Fcc316LForestRubinSrixGps`, whose local Newton carries the three
+    plane-stress closure unknowns in the GLOBAL frame:
+
+    - the nine components of ``Q_global_to_material`` are passed as per-point
+      material properties, so the law can rotate the imposed gradient itself
+      and enforce ``(Q^T sigma Q)_zz = (Q^T sigma Q)_xz = (Q^T sigma Q)_yz =
+      0``;
+    - the bridge applies NO gradient rotation (the law owns the rotation) and
+      NO Python closure Newton;
+    - the bridge rotates the returned stress, elastic strain and tangent back
+      to the global frame, post-multiplies the tangent by the in-plane
+      rotation operator (the DSL's automatic tangent differentiates the
+      system as if every imposed gradient component entered the elastic
+      residual, which only holds for the in-plane ones here), and discards
+      the out-of-plane block.
+
+    Transaction semantics (commit, revert, snapshot) are those of the other
+    MGIS batches. The local transverse predictor options are accepted for
+    interface compatibility but inert: the law's own Newton warm-starts from
+    its committed closure state.
     """
 
     def __init__(
@@ -2278,10 +2295,6 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         if thread_count < 1:
             raise ValueError("thread_count must be positive")
         self._mgis = _load_mgis()
-        if not hasattr(self._mgis, "solve_generalised_plane_stress"):
-            raise MFrontUnavailableError(
-                "the optional MGIS generalized-plane-stress binding is unavailable"
-            )
         self._behaviour = self._mgis.load(
             str(Path(library_path).resolve()),
             behaviour_name,
@@ -2307,22 +2320,32 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             if rotation_global_to_material is None
             else validate_rotations(rotation_global_to_material, point_count=point_count)
         )
-        self._rotation_arguments = (
+        self._mgis_rotations = (
             None if self._rotations is None else mgis_rotation_argument(self._rotations)
         )
-        self._inverse_rotation_arguments = (
-            None
+        self._manager = self._mgis.MaterialDataManager(self._behaviour, point_count)
+        # The nine global-to-material rotation components are per-point
+        # material properties: the law owns the strain rotation and needs Q to
+        # assemble the closure residuals in the global frame.
+        rotations = (
+            np.broadcast_to(np.eye(3), (point_count, 3, 3)).copy()
             if self._rotations is None
-            else mgis_rotation_argument(np.swapaxes(self._rotations, 1, 2))
+            else self._rotations
         )
-        self._data = [self._mgis.BehaviourData(self._behaviour) for _ in range(point_count)]
-        for data in self._data:
-            self._mgis.setExternalStateVariable(
-                data.s0, "Temperature", np.array([self._temperature])
-            )
-            self._mgis.setExternalStateVariable(
-                data.s1, "Temperature", np.array([self._temperature])
-            )
+        storage_mode = self._mgis.MaterialStateManagerStorageMode.ExternalStorage
+        for row in range(3):
+            for column in range(3):
+                name = f"Q{row + 1}{column + 1}"
+                values = np.asarray(rotations[:, row, column], dtype=float)
+                self._mgis.setMaterialProperty(self._manager.s0, name, values, storage_mode)
+                self._mgis.setMaterialProperty(self._manager.s1, name, values, storage_mode)
+        temperature_values = np.full(point_count, self._temperature)
+        self._mgis.setExternalStateVariable(
+            self._manager.s0, "Temperature", temperature_values, storage_mode
+        )
+        self._mgis.setExternalStateVariable(
+            self._manager.s1, "Temperature", temperature_values, storage_mode
+        )
         self._observable_slices = _declared_internal_slices(
             self._mgis,
             self._behaviour,
@@ -2338,6 +2361,22 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         )
         assert elastic_offset is not None
         self._elastic_offset = elastic_offset
+        # Closure state variables: the global transverse strains solved by the
+        # law's own Newton, read back to assemble the global total strain.
+        closure_offsets = {
+            name: _variable_offset(
+                self._mgis,
+                self._behaviour.isvs,
+                name,
+                self._mgis.Hypothesis.Tridimensional,
+                expected_size=1,
+            )
+            for name in ("ezz", "eyz", "exz")
+        }
+        assert all(offset is not None for offset in closure_offsets.values())
+        self._ezz_offset = closure_offsets["ezz"]
+        self._eyz_offset = closure_offsets["eyz"]
+        self._exz_offset = closure_offsets["exz"]
         self._committed_strain = np.zeros((point_count, 6), dtype=float)
         self._latest_trial: ConstitutiveTrial | None = None
         self._latest_total_kelvin: NDArray | None = None
@@ -2347,7 +2386,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._internal_integrations = 0
         self._integration_seconds = 0.0
         self._local_iterations = np.zeros(point_count, dtype=np.int64)
-        self._accepted_transverse = self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
+        self._accepted_transverse = np.zeros((point_count, 3), dtype=float)
         self._accepted_in_plane: NDArray | None = None
         self._accepted_cbb: NDArray | None = None
         self._accepted_cba: NDArray | None = None
@@ -2356,6 +2395,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._latest_cba: NDArray | None = None
         self._warm_start_uses = 0
         self._warm_start_resets = 0
+        self._maximum_residual = 0.0
         self._last_local_failure: dict[str, object] | None = None
 
     @property
@@ -2381,6 +2421,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     @property
     def statistics(self) -> PlaneStressBatchStatistics:
         return PlaneStressBatchStatistics(
+            maximum_gauss_point_plane_stress_residual_mpa=self._maximum_residual,
             maximum_local_plane_stress_iterations=int(self._local_iterations.max()),
             mean_local_plane_stress_iterations=float(self._local_iterations.mean()),
         )
@@ -2426,23 +2467,6 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._mgis, self._behaviour, self._parameters, self._behaviour_name
         )
 
-    def _global_stress_and_tangent(
-        self, data: Any, index: int
-    ) -> tuple[NDArray, NDArray]:
-        # The native solver evaluates the behaviour in the material frame and
-        # leaves the final MGIS state there.  Its C++ evaluator rotates a
-        # temporary copy only to assemble the local Schur complement; rotate
-        # the stored state once when exporting it to the global solver.
-        stress = np.asarray(data.s1.thermodynamic_forces, dtype=float).copy()
-        tangent = np.asarray(data.K, dtype=float).copy()
-        if self._rotation_arguments is not None:
-            rotation = self._rotation_arguments[index * 9 : (index + 1) * 9]
-            self._mgis.rotateThermodynamicForces(stress, self._behaviour, rotation)
-            self._mgis.rotateTangentOperatorBlocks(
-                tangent.reshape(-1), self._behaviour, rotation
-            )
-        return stress, tangent
-
     def evaluate_in_plane(
         self,
         in_plane_strain: ArrayLike,
@@ -2472,99 +2496,118 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         in_plane = np.asarray(in_plane_strain, dtype=float)
         if in_plane.shape != (self._point_count, 3):
             raise ValueError(f"in_plane_strain must have shape {(self._point_count, 3)}")
+        # The closure state variables own the transverse strains: the law
+        # overwrites the transverse gradient components with (dezz, deyz,
+        # dexz) before rotating. The bridge passes the in-plane gradient in
+        # Kelvin storage (the repository convention for MGIS arrays) and zero
+        # transverse values, which the law never reads.
+        gradient = np.zeros((self._point_count, 6), dtype=float)
+        gradient[:, _PLANE_STRESS_COMPONENTS] = (
+            in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+        )
+        self._set_parameters()
+        started = time.perf_counter()
+        # d(deto_m)/ddeto restricted to the in-plane columns, in the MGIS
+        # storage: the rotation operator of the stock gradient rotation,
+        # with the transverse columns zeroed. The DSL's automatic tangent
+        # differentiates the local system as if every imposed gradient
+        # component entered the elastic residual; here only the in-plane
+        # ones do, so the returned tangent is post-multiplied by this
+        # operator.
+        if self._mgis_rotations is None:
+            in_plane_operator = np.eye(6, dtype=float)
+            in_plane_operator[:, _TRANSVERSE_COMPONENTS_3D] = 0.0
+        else:
+            identity_block = np.tile(np.eye(6, dtype=float), (self._point_count, 1))
+            rotated_block = np.ascontiguousarray(identity_block.reshape(-1).copy())
+            # Each virtual point (one per unit column) carries the rotation of
+            # its parent material point: repeat per row, never element-wise.
+            rotations_expanded = np.repeat(
+                self._mgis_rotations.reshape(self._point_count, 9), 6, axis=0
+            ).reshape(-1)
+            self._mgis.rotateGradients(rotated_block, self._behaviour, rotations_expanded)
+            in_plane_operator = rotated_block.reshape(self._point_count, 6, 6)
+            in_plane_operator[:, :, _TRANSVERSE_COMPONENTS_3D] = 0.0
+        self._last_local_failure = None
+        self._manager.s1.gradients[:, :] = (
+            np.asarray(self._manager.s0.gradients) + gradient
+        )
+        status = self._mgis.integrate(
+            self._manager,
+            self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
+            float(time_increment),
+            0,
+            self._point_count,
+        )
+        if status != 1:
+            self._last_local_failure = {"status": int(status)}
+            self.revert()
+            raise MFrontIntegrationError(
+                f"GPS UMAT integration failed with status {status}"
+            )
+        self._integration_seconds += time.perf_counter() - started
+        self._evaluate_calls += 1
+        internal_state_variables = np.asarray(
+            self._manager.s1.internal_state_variables
+        ).copy()
+        stress = np.asarray(self._manager.s1.thermodynamic_forces).copy()
+        elastic = internal_state_variables[
+            :, self._elastic_offset : self._elastic_offset + 6
+        ].copy()
+        tangent = np.asarray(self._manager.K).copy()
+        # Output rotations: stress and elastic strain back to the global frame,
+        # the tangent one-sided (its strain indices already are global), then
+        # the in-plane operator correction.
+        tangent = tangent @ in_plane_operator
+        if self._mgis_rotations is not None:
+            for tensor in (stress, elastic):
+                flat = np.ascontiguousarray(tensor.reshape(-1))
+                self._mgis.rotateThermodynamicForces(
+                    flat, self._behaviour, self._mgis_rotations
+                )
+                tensor[:, :] = flat.reshape(self._point_count, 6)
+            for column in range(6):
+                flat = np.ascontiguousarray(tangent[:, :, column].reshape(-1))
+                self._mgis.rotateThermodynamicForces(
+                    flat, self._behaviour, self._mgis_rotations
+                )
+                tangent[:, :, column] = flat.reshape(self._point_count, 6)
+        # Global total strain: in-plane from the imposed gradient, transverse
+        # from the closure state variables (engineering scalars -> Kelvin).
+        transverse = internal_state_variables[
+            :, [self._ezz_offset, self._exz_offset, self._eyz_offset]
+        ].copy()
         total = np.zeros((self._point_count, 6), dtype=float)
         total[:, _PLANE_STRESS_COMPONENTS] = (
             in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
         )
-        stress = np.empty_like(total)
-        tangent = np.empty((self._point_count, 6, 6), dtype=float)
-        condensed_tangent = np.empty((self._point_count, 3, 3), dtype=float)
-        transverse = np.empty((self._point_count, 3), dtype=float)
-        iterations = np.empty(self._point_count, dtype=np.int64)
-        observables: dict[str, NDArray] = {
-            name: np.empty((self._point_count, item.stop - item.start), dtype=float)
-            for name, item in self._observable_slices.items()
-        }
-        started = time.perf_counter()
-        self._set_parameters()
-        initial_transverse = self._accepted_transverse
-        if (
-            self._local_transverse_predictor == "tangent"
-            and self._accepted_in_plane is not None
-            and self._accepted_cbb is not None
-            and self._accepted_cba is not None
-        ):
-            delta_in_plane = (
-                in_plane - self._accepted_in_plane
-            ) * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
-            try:
-                correction = np.linalg.solve(
-                    self._accepted_cbb,
-                    -np.einsum(
-                        "nij,nj->ni", self._accepted_cba, delta_in_plane
-                    )[..., None],
-                )[..., 0]
-                if np.isfinite(correction).all():
-                    initial_transverse = self._accepted_transverse + correction
-            except np.linalg.LinAlgError:
-                initial_transverse = self._accepted_transverse
-        if not hasattr(self._mgis, "solve_generalised_plane_stress_batch"):
-            raise MFrontUnavailableError(
-                "the optional MGIS batch generalized-plane-stress binding is unavailable"
-            )
-        rotations = (
-            np.broadcast_to(np.eye(3), (self._point_count, 3, 3)).copy()
-            if self._rotations is None
-            else self._rotations
-        )
-        self._last_local_failure = None
-        try:
-            result = self._mgis.solve_generalised_plane_stress_batch(
-                self._data,
-                self._behaviour,
-                rotations,
-                in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
-                initial_transverse,
-                float(time_increment),
-                self._maximum_iterations,
-                self._relative_tolerance,
-                self._absolute_tolerance,
-                self._thread_count,
-            )
-        except Exception as error:
-            self._last_local_failure = {"message": str(error)}
-            self.revert()
-            raise RuntimeError(
-                f"native generalized plane-stress batch failure: {error}"
-            ) from error
-        stress = np.asarray(result["stress_global"], dtype=float).copy()
-        tangent = np.asarray(result["tangent_global"], dtype=float).copy()
-        condensed_tangent = np.asarray(result["condensed_tangent"], dtype=float).copy()
-        transverse = np.asarray(result["transverse_strain"], dtype=float).copy()
-        total = np.asarray(result["gradients_global"], dtype=float).copy()
-        elastic = np.asarray(result["elastic_strain_global"], dtype=float).copy()
-        iterations = np.asarray(result["iterations"], dtype=np.int64).copy()
-        internal_state_variables = np.asarray(
-            result["internal_state_variables"], dtype=float
+        total[:, _TRANSVERSE_COMPONENTS_3D] = transverse * np.array(
+            [1.0, 1.0 / _SQRT_TWO, 1.0 / _SQRT_TWO]
         )
         observables = {
             name: internal_state_variables[:, item].copy()
             for name, item in self._observable_slices.items()
         }
-        self._internal_integrations += int(np.sum(iterations))
-        if self._local_transverse_predictor == "tangent":
-            self._warm_start_uses += self._point_count
-        self._integration_seconds += time.perf_counter() - started
+        if "equivalent_plastic_slip" in observables:
+            observables["accumulated_slip"] = observables["equivalent_plastic_slip"].sum(axis=1)
         total_tensor = kelvin_3d_to_tensor(total, quantity="strain")
         elastic_tensor = kelvin_3d_to_tensor(elastic, quantity="strain")
         stress_tensor = kelvin_3d_to_tensor(stress, quantity="stress")
         plastic_tensor = total_tensor - elastic_tensor
-        if "equivalent_plastic_slip" in observables:
-            observables["accumulated_slip"] = observables["equivalent_plastic_slip"].sum(axis=1)
+        condensed_tangent = tangent[:, _PLANE_STRESS_COMPONENTS][
+            :, :, _PLANE_STRESS_COMPONENTS
+        ].copy()
         in_tangent = condensed_tangent.copy()
         in_tangent = in_tangent * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
         in_tangent = in_tangent * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
         in_stress = stress[:, _PLANE_STRESS_COMPONENTS] * _KELVIN_TO_ENGINEERING_STRESS_SCALE
+        residual = np.stack(
+            (stress_tensor[:, 2, 2], stress_tensor[:, 0, 2], stress_tensor[:, 1, 2]),
+            axis=-1,
+        )
+        self._maximum_residual = max(
+            self._maximum_residual, float(np.max(np.abs(residual)))
+        )
         self._latest_in_plane = in_plane.copy()
         self._latest_dt = float(time_increment)
         self._latest_total_kelvin = total.copy()
@@ -2575,7 +2618,11 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._latest_cba = tangent[:, _TRANSVERSE_COMPONENTS_3D][
             :, :, _PLANE_STRESS_COMPONENTS
         ].copy()
-        self._local_iterations[:] = iterations
+        # The law's internal Newton is not observable through stock MGIS; the
+        # closure is part of it, so the reported count is the law's own
+        # integration (one per point), documented as such.
+        self._local_iterations[:] = 1
+        self._internal_integrations += self._point_count
         self._latest_trial = ConstitutiveTrial(
             stress_in_plane_mpa=in_stress,
             tangent_in_plane_mpa=in_tangent if consistent_tangent else None,
@@ -2583,18 +2630,15 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             full_strain_tensor=total_tensor,
             elastic_strain_tensor=elastic_tensor,
             plastic_strain_tensor=plastic_tensor,
-            plane_stress_residual_mpa=np.stack(
-                (stress_tensor[:, 2, 2], stress_tensor[:, 0, 2], stress_tensor[:, 1, 2]), axis=-1
-            ),
+            plane_stress_residual_mpa=residual,
             observables=observables,
-            local_plane_stress_iterations=iterations.copy(),
+            local_plane_stress_iterations=self._local_iterations.copy(),
         )
         return self._latest_trial
 
     def commit(self) -> None:
         self.accept_global_trial()
-        for data in self._data:
-            data.update()
+        self._mgis.update(self._manager)
         if self._latest_total_kelvin is not None:
             self._committed_strain[:, :] = self._latest_total_kelvin
         self._latest_trial = None
@@ -2604,8 +2648,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._latest_cba = None
 
     def revert(self) -> None:
-        for data in self._data:
-            data.revert()
+        self._mgis.revert(self._manager)
         self._latest_trial = None
         self._latest_total_kelvin = None
         self._latest_transverse = None
@@ -2626,17 +2669,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._accepted_cbb = None if self._latest_cbb is None else self._latest_cbb.copy()
             self._accepted_cba = None if self._latest_cba is None else self._latest_cba.copy()
 
-    def snapshot_state(self) -> tuple[NDArray, tuple[tuple[NDArray, NDArray, NDArray], ...]]:
+    def snapshot_state(self) -> tuple[Any, ...]:
         return (
+            np.asarray(self._manager.s0.gradients, dtype=float).copy(),
+            np.asarray(self._manager.s0.internal_state_variables, dtype=float).copy(),
+            np.asarray(self._manager.s0.thermodynamic_forces, dtype=float).copy(),
             self._committed_strain.copy(),
-            tuple(
-                (
-                    np.asarray(data.s0.gradients).copy(),
-                    np.asarray(data.s0.internal_state_variables).copy(),
-                    np.asarray(data.s0.thermodynamic_forces).copy(),
-                )
-                for data in self._data
-            ),
             self._accepted_transverse.copy(),
             None if self._accepted_in_plane is None else self._accepted_in_plane.copy(),
             None if self._accepted_cbb is None else self._accepted_cbb.copy(),
@@ -2645,20 +2683,18 @@ class MFrontNativeGeneralisedPlaneStressBatch:
 
     def restore_state(self, snapshot: Any) -> None:
         self.revert()
-        self._committed_strain[:, :] = snapshot[0]
-        for data, state in zip(self._data, snapshot[1], strict=True):
-            data.s0.gradients[:] = state[0]
-            data.s1.gradients[:] = state[0]
-            data.s0.internal_state_variables[:] = state[1]
-            data.s1.internal_state_variables[:] = state[1]
-            data.s0.thermodynamic_forces[:] = state[2]
-            data.s1.thermodynamic_forces[:] = state[2]
-        self._accepted_transverse = np.asarray(snapshot[2]).copy()
+        for state in (self._manager.s0, self._manager.s1):
+            state.gradients[:, :] = snapshot[0]
+            state.internal_state_variables[:, :] = snapshot[1]
+            state.thermodynamic_forces[:, :] = snapshot[2]
+        self._committed_strain[:, :] = snapshot[3]
+        self._accepted_transverse[:, :] = snapshot[4]
         self._accepted_in_plane = (
-            None if snapshot[3] is None else np.asarray(snapshot[3]).copy()
+            None if snapshot[5] is None else np.asarray(snapshot[5]).copy()
         )
-        self._accepted_cbb = None if snapshot[4] is None else np.asarray(snapshot[4]).copy()
-        self._accepted_cba = None if snapshot[5] is None else np.asarray(snapshot[5]).copy()
+        self._accepted_cbb = None if snapshot[6] is None else np.asarray(snapshot[6]).copy()
+        self._accepted_cba = None if snapshot[7] is None else np.asarray(snapshot[7]).copy()
+        self._latest_trial = None
         self._latest_transverse = None
         self._latest_cbb = None
         self._latest_cba = None
@@ -2667,8 +2703,6 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         if self._latest_trial is None:
             raise RuntimeError("no native generalized plane-stress trial is available")
         return self._latest_trial
-
-
 class MFront3DCondensedPlaneStressBlockBatch:
     """Partition a condensed MFront batch into independently converged blocks.
 

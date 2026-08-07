@@ -12,6 +12,7 @@ behaviour_files=(
   "${repository_dir}/mfront/PixelMicromorphicLudwikJ2Plasticity3D.mfront"
   "${repository_dir}/mfront/Fcc316LMericCailletaud.mfront"
   "${repository_dir}/mfront/Fcc316LForestRubinSrix.mfront"
+  "${repository_dir}/mfront/Fcc316LForestRubinSrixGps.mfront"
 )
 
 if [[ ! -f "${tfel_env_file}" ]]; then

@@ -544,6 +544,12 @@ def _create_fcc_single_crystal_batch(
 
     local_options = dict(local_plane_stress_options or {})
     if backend == "mfront-native-generalised-plane-stress":
+        # The GPS backend selects the UMAT-closure variant of the law, which
+        # carries the same parameter registry as the parent SRIX law.
+        if behaviour.identifier == "fcc_forest_rubin_srix":
+            from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+
+            behaviour = MFRONT_BEHAVIOURS.get("fcc_forest_rubin_srix_gps")
         return MFrontNativeGeneralisedPlaneStressBatch(
             mfront_library,
             behaviour_spec=behaviour,

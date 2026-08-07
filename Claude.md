@@ -1,7 +1,180 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-04
+Dernière mise à jour : 2026-08-07
 Objectif de maturité : **au moins 4/5 sur tous les axes**
+
+## État de reprise — 2026-08-07
+
+Cette section est prioritaire pour toute nouvelle IA qui reprend le dépôt.
+Elle décrit les travaux récents qui n'étaient pas encore reportés dans ce
+fichier.
+
+### Branche applicative active
+
+La branche de travail est :
+
+```text
+codex/native-generalised-plane-stress
+HEAD: 6cf51b8 docs(mfront): document monolithic plane-stress blocker
+```
+
+Le dépôt applicatif contient actuellement des changements non commités,
+appartenant au travail de condensation par blocs :
+
+```text
+docs/explanation/spectral_mechanics/srix_p43_performance_and_step_control.md
+tests/unit/core/test_mfront.py
+scripts/benchmark_srix_ebsd_condensation_blocks.py
+validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks.csv
+validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks.json
+validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks/
+```
+
+**Ne pas écraser, réinitialiser ou inclure automatiquement ces fichiers dans
+un commit.** Ils doivent être inspectés et commités séparément après
+validation.
+
+### Résultats applicatifs déjà réalisés
+
+- La divergence non linéaire TRI2 a été vectorisée et les essais constitutifs
+  acceptés sont réutilisés au Newton suivant. Le commit correspondant est
+  `22143ec`.
+- Le backend SRIX avec condensation externe en contraintes planes reste le
+  backend de référence et doit rester disponible.
+- Le cas SRIX P43 M100 EBSD avec 8 incréments, Eisenstat--Walker, LGMRES
+  recyclé, prédicteur transverse tangent et quatre threads MFront a été
+  mesuré autour de `56,88 s` sur la configuration de référence. Ces chiffres
+  doivent toujours être accompagnés de l'environnement logiciel et du SHA
+  exact d'exécution.
+- La carte EBSD est bien prise en compte dans les campagnes EBSD ; elle ne doit
+  pas être remplacée par l'orientation homogène `[35,20,15]` sans le signaler.
+- Les blocs de condensation MGIS ont été ajoutés/étudiés, mais leur
+  qualification complète et la sélection d'une taille de bloc ne sont pas
+  encore clôturées. Le M200 est interdit tant que ce point n'est pas qualifié.
+- Le contrôleur adaptatif par doublement de pas a été étudié sur M20. Le
+  contrôleur ne doit pas être déclaré qualifié : près de la première activation
+  plastique, le critère relatif sur les glissements était dominé par une
+  amplitude de l'ordre de `1e-6`. Les seuils d'erreur doivent rester
+  réglables et distinguer contrôle par nombre de Newton et contrôle par erreur
+  constitutive.
+
+### Comparaison SRIX/Méric à retenir
+
+La comparaison P43 16 incréments des cartes de glissement est documentée. Les
+trois systèmes dominants sont les mêmes et dans le même ordre (`01`, `07`,
+`11`), avec une hiérarchie dominante commune mais une redistribution des
+amplitudes entre systèmes et dans l'espace. La distance de variation totale
+est d'environ `0,2565`, le recouvrement `S95` est `0,80`, et la corrélation de
+rang corrigée est `0,9385`.
+
+Le champ global comparé est la **somme des glissements cumulés des douze
+systèmes**, notée `total_accumulated_system_slip`; il ne s'agit pas d'une PEEQ.
+La comparaison des signes est par système et sépare désormais : activité dans
+les deux lois, même signe, signe opposé, activité Méric seule et activité SRIX
+seule. Un zéro dans une loi ne doit jamais être appelé « signe opposé ».
+
+Limites obligatoires : `R` SRIX est une transposition analytique de paramètres
+Méric à une vitesse de référence, non une identification directe du matériau
+P43 ; Méric dépend du pseudo-temps ; l'orientation actuelle est homogène dans
+ces cartes de comparaison ; les champs Méric à 16 incréments sont convergés
+numériquement mais ne constituent pas une étude de convergence temporelle.
+
+### Prototype TFEL externe — ne pas le confondre avec la production
+
+Le support monolithique de la contrainte plane généralisée est développé dans
+un fork TFEL séparé, pas dans le dépôt applicatif :
+
+```text
+repository : jeffwitz/tfel-generalised-plane-stress
+local path : /tmp/tfel-generalised-plane-stress
+branch     : agent/generalised-plane-stress
+HEAD       : ffcdcb3 docs(mfront): describe generalized plane stress prototype
+```
+
+Commits importants du fork :
+
+```text
+108891f  accepte GENERALISEDPLANESTRESS comme hypothèse de propriété MFront
+4b6b741  génère un système local prototype à trois inconnues transverses
+ffcdcb3  documente le statut et la limite du prototype
+```
+
+Vérification effectuée : avec le TFEL construit dans `/tmp/tfel-gps-build` et
+installé dans `/tmp/tfel-gps-install`, un comportement implicite minimal
+compile avec un système local de dimension 6 : trois composantes de
+déformation imposées et trois inconnues scalaires (`ezz`, `eyz`, `exz`).
+
+Cette avancée **ne constitue pas encore le comportement SRIX monolithique**.
+Le prototype MFront expose encore une représentation réduite de type tenseur
+symétrique ; il ne fournit pas à SRIX un tenseur de contrainte et une tangente
+3D internes permettant d'assembler correctement les trois équations
+`sigma_zz = sigma_yz = sigma_xz = 0`. Il ne faut donc pas sélectionner ce
+backend dans l'application, ni annoncer un gain M100.
+
+La prochaine étape technique est de concevoir cette séparation entre :
+
+1. gradient externe généralisé à trois composantes dans le plan ;
+2. état interne 3D complet pour l'élasticité, les rotations, les glissements
+   et les contraintes ;
+3. trois résidus transverses dans le même Newton local ;
+4. tangent condensé cohérent retourné au solveur global.
+
+Une simple enveloppe appelant SRIX 3D plusieurs fois depuis Python ou C++ ne
+respecterait pas l'objectif monolithique et ne doit pas être introduite sous
+ce nom.
+
+### Commandes et précautions de reprise
+
+Pour vérifier le prototype TFEL sans toucher au dépôt applicatif :
+
+```bash
+cd /tmp/tfel-generalised-plane-stress
+git log -3 --oneline
+cmake --build /tmp/tfel-gps-build -j4 --target TFELMFront mfront
+cmake --install /tmp/tfel-gps-build --prefix /tmp/tfel-gps-install
+```
+
+Le probe minimal utilisé pendant la vérification était temporaire dans
+`/tmp/GeneralisedPlaneStressProbe.mfront`; il n'est pas un comportement SRIX
+et n'est pas un artefact scientifique du dépôt.
+
+Avant toute modification applicative, lire notamment :
+
+```text
+docs/explanation/spectral_mechanics/srix_monolithic_plane_stress_architecture.md
+mfront/Fcc316LForestRubinSrix.mfront
+src/fem_inhouse/core/plane_stress_material.py
+src/fem_inhouse/core/mfront.py
+```
+
+Ne pas relancer M100/M200 pendant une phase de conception du générateur sans
+avoir d'abord validé un point matériel et M20. Le backend condensé externe
+reste la référence numérique.
+
+### 2026-08-07 — UMAT GPS : la fermeture marche, la qualification échoue sur les racines multiples de la loi
+
+La voie « fermeture dans l'UMat » (Q en 9 propriétés matériau, loi
+`Fcc316LForestRubinSrixGps`, pont passif `MFrontNativeGeneralisedPlaneStressBatch`)
+a été implémentée, compilée et qualifiée. **La fermeture est correcte et
+vérifiée** (σ_zz = σ_xz = σ_yz = 0 à `1e-14 MPa` dans le repère structural,
+accord parfait avec la référence à l'incrément élastique : contrainte
+`7e-15`, tangente `4e-11`). **Le F1 de la préinscription se déclenche** :
+dès le premier incrément plastique, la solution UMAT diverge de la référence
+(18 MPa à 12 incréments, 160 MPa à 96, avec échec du Newton local).
+
+**Diagnostic, établi par sonde C++ directe** : les deux états sont des racines
+du même système discret — la loi SRIX admet **plusieurs racines** au premier
+incrément plastique (ensembles de systèmes actifs différents sous le crochet
+de Macaulay) ; le Newton imbriqué Python et le Newton conjoint 21 inconnues
+sélectionnent des branches différentes. C'est le comportement « une autre
+solution » déjà consigné au journal 2026-08-03. La stratégie UMAT n'est donc
+**pas réfutée** (elle impose bien la fermeture structurale en un seul
+Newton) ; c'est la sélection de branche de la loi qui reste ouverte, et le
+backend condensé externe reste la référence. Résultat négatif archivé :
+`validation/srix_umat_gps_closure_results.md`, préinscription
+`validation/srix_umat_gps_closure_preregistration.md`, script
+`scripts/qualify_srix_umat_gps_closure.py`. La loi et le pont sont conservés,
+expérimentaux, non sélectionnés par défaut.
 
 ## Frontières d'extension — fusionné le 2026-08-02
 

@@ -227,3 +227,23 @@ MFRONT_BEHAVIOURS.register(
         parameter_registry="srix",
     )
 )
+# Generalised plane stress inside the local Newton (UMAT closure): the law
+# receives the nine rotation components as per-point material properties and
+# carries the closure on the global transverse stresses itself. Qualified by
+# validation/srix_umat_gps_closure_preregistration.md; not a production
+# backend until that qualification passes.
+MFRONT_BEHAVIOURS.register(
+    MFrontBehaviourSpec(
+        identifier="fcc_forest_rubin_srix_gps",
+        native_plane_stress_behaviour=None,
+        tridimensional_behaviour="Fcc316LForestRubinSrixGps",
+        material_properties=(),
+        internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
+        linear_system_matrix_type="nonsymmetric",
+        requires_rotation_matrix=True,
+        bridge_profile="fcc_single_crystal_v1",
+        paired_material_family="fcc_316l_guilhem_nasri_v1",
+        crystal_flow_rule="forest_rubin_srix",
+        parameter_registry="srix",
+    )
+)
