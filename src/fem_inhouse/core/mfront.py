@@ -2433,6 +2433,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._rerun_uses = 0
         self._rerun_failures = 0
         self._substep_divisions_max = 0
+        self._substep_points = 0
+        #: Bisection stops at this block size. Measured on P43 20x20: at 32 the
+        #: Newton count goes back to 63 from 52, the field agreement loses an
+        #: order of magnitude and the material time rises -- sub-stepping
+        #: thirty-one healthy points to spare one is worse on every count. One
+        #: is the right answer; it is the serial probing that costs, not the
+        #: depth.
+        self._minimum_substep_span = 1
         # Route 2 of the handoff, and the reason it is needed. Sub-stepping is
         # what makes the joint Newton reach the deep plastic states at all, but
         # the matrix it leaves behind is the LAST sub-step's, not the whole
@@ -2493,6 +2501,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     @property
     def substep_divisions_max(self) -> int:
         return self._substep_divisions_max
+
+    @property
+    def substep_points(self) -> int:
+        """Total points ever sub-stepped, against the whole batch before."""
+
+        return self._substep_points
 
     @property
     def point_count(self) -> int:
@@ -2568,6 +2582,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         in_plane_kelvin: NDArray,
         time_increment: float,
         transverse_kelvin: NDArray | None = None,
+        span: tuple[int, int] | None = None,
     ) -> int:
         """One integration, with the transverse strain kept in the gradient.
 
@@ -2608,7 +2623,21 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             gradients[:, _TRANSVERSE_COMPONENTS_3D] = transverse_kelvin
         self._manager.s1.gradients[:, :] = gradients
         integration_type = self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
-        if self._thread_pool is None:
+        if span is not None:
+            # A sub-range. `integrate` reads `s0` and writes `s1` for the range
+            # only, so the points outside it keep whatever a previous call left
+            # there -- which is what makes the isolation below safe.
+            begin, end = span
+            status = int(
+                self._mgis.integrate(
+                    self._manager,
+                    integration_type,
+                    float(time_increment),
+                    begin,
+                    end,
+                )
+            )
+        elif self._thread_pool is None:
             status = int(
                 self._mgis.integrate(
                     self._manager,
@@ -2640,9 +2669,10 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             closure = np.array(
                 [self._ezz_offset, self._exz_offset, self._eyz_offset], dtype=int
             )
-            self._manager.s1.gradients[:, _TRANSVERSE_COMPONENTS_3D] = np.asarray(
+            rows = slice(None) if span is None else slice(span[0], span[1])
+            self._manager.s1.gradients[rows, _TRANSVERSE_COMPONENTS_3D] = np.asarray(
                 self._manager.s1.internal_state_variables
-            )[:, closure]
+            )[rows, closure]
         return status
 
     def _shadow_condensed_tangent(
@@ -2766,46 +2796,81 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             return committed
         return committed + scale * self._previous_transverse_delta
 
-    def _integrate_with_substepping(
-        self,
-        in_plane_kelvin: NDArray,
-        time_increment: float,
-        transverse_kelvin: NDArray | None = None,
-    ) -> tuple[int, int]:
-        """Integrate one increment, halving it as often as needed.
+    def _failing_spans(
+        self, in_plane_kelvin: NDArray, time_increment: float
+    ) -> list[tuple[int, int]]:
+        """Which points refuse the full step, found by bisection on the batch.
 
-        The 21-unknown joint Newton of the GPS law has no line search and no
-        step control -- the Implicit DSL offers neither -- so it fails on large
-        plastic increments even though the root is there. Measured by
-        `scripts/diagnose_srix_closure_root_sweep.py`: the closure equation
-        `sigma_zz(eps_zz) = 0` has **exactly one** root at every increment of
-        the frozen history, increment 8 included, and the roots march at a
-        regular `-0.001` per increment. There is no fold and no branch to lose;
-        what fails is the iteration, not the problem. Halving the increment is
-        the standard remedy and the only one that addresses the actual cause.
-
-        Sub-stepping advances `s0` internally and then puts it back, so
-        `commit()` and `revert()` keep their meaning for the caller: `s1` holds
-        the end state, `s0` the true committed one.
-
-        The returned tangent is that of the LAST sub-step, not of the whole
-        increment. That is the usual compromise -- the stress, the closure and
-        the internal variables are exact; only the Newton matrix is
-        approximate, and the global iteration corrects for it.
+        `integrate` reports one status for a whole range, so a failing point is
+        located by halving. About `k log2(n)` range integrations for `k` bad
+        points, against the `n x divisions` the previous whole-batch
+        sub-stepping charged for every one of them.
         """
 
-        status = self._integrate_once(
-            in_plane_kelvin, time_increment, transverse_kelvin
-        )
-        if status == 1 or self._maximum_substeps <= 1:
-            return status, 1
+        # The bisection uses the SERIAL range overload -- MGIS only integrates
+        # a range without the pool -- so it trades parallelism for isolation.
+        # Splitting all the way down to a single point pays that trade far too
+        # often; stopping at a block keeps most of the benefit for a fraction
+        # of the probes.
+        spans: list[tuple[int, int]] = []
+        pending = [(0, self._point_count)]
+        while pending:
+            begin, end = pending.pop()
+            if self._integrate_once(
+                in_plane_kelvin, time_increment, None, (begin, end)
+            ) == 1:
+                continue
+            if end - begin <= self._minimum_substep_span:
+                spans.append((begin, end))
+                continue
+            middle = (begin + end) // 2
+            pending.append((middle, end))
+            pending.append((begin, middle))
+        return spans
 
-        snapshot = self._committed_snapshot()
-        committed_in_plane = snapshot[0][:, _PLANE_STRESS_COMPONENTS].copy()
+    def _advance_span(self, span: tuple[int, int]) -> None:
+        """`mgis.update` restricted to a range, in numpy.
+
+        MGIS updates the whole manager, which would drag every healthy point
+        along the sub-steps of a sick one. Only the range being sub-stepped
+        may advance.
+        """
+
+        begin, end = span
+        rows = slice(begin, end)
+        self._manager.s0.gradients[rows, :] = np.asarray(
+            self._manager.s1.gradients
+        )[rows, :]
+        self._manager.s0.thermodynamic_forces[rows, :] = np.asarray(
+            self._manager.s1.thermodynamic_forces
+        )[rows, :]
+        self._manager.s0.internal_state_variables[rows, :] = np.asarray(
+            self._manager.s1.internal_state_variables
+        )[rows, :]
+
+    def _restore_span(
+        self, snapshot: tuple[NDArray, NDArray, NDArray], span: tuple[int, int]
+    ) -> None:
+        gradients, forces, internal = snapshot
+        rows = slice(span[0], span[1])
+        self._manager.s0.gradients[rows, :] = gradients[rows, :]
+        self._manager.s0.thermodynamic_forces[rows, :] = forces[rows, :]
+        self._manager.s0.internal_state_variables[rows, :] = internal[rows, :]
+
+    def _substep_span(
+        self,
+        span: tuple[int, int],
+        in_plane_kelvin: NDArray,
+        time_increment: float,
+        snapshot: tuple[NDArray, NDArray, NDArray],
+    ) -> tuple[int, int]:
+        """Halve the increment for ONE range until it goes through."""
+
+        committed_in_plane = snapshot[0][:, _PLANE_STRESS_COMPONENTS]
         divisions = 2
+        status = -1
         while divisions <= self._maximum_substeps:
-            self._restore_committed(snapshot)
-            self._mgis.revert(self._manager)
+            self._restore_span(snapshot, span)
             step = time_increment / divisions
             succeeded = True
             for index in range(divisions):
@@ -2815,24 +2880,72 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 stage = committed_in_plane + weight * (
                     in_plane_kelvin - committed_in_plane
                 )
-                status = self._integrate_once(stage, step)
+                status = self._integrate_once(stage, step, None, span)
                 if status != 1:
                     succeeded = False
                     break
                 if index < divisions - 1:
-                    self._mgis.update(self._manager)
+                    self._advance_span(span)
             if succeeded:
-                # `s1` is the end state; `s0` goes back to the real committed
-                # state so the caller's transaction is unchanged.
-                self._restore_committed(snapshot)
-                self._substep_uses += 1
-                self._substep_divisions_max = max(self._substep_divisions_max, divisions)
+                self._restore_span(snapshot, span)
                 return 1, divisions
             divisions *= 2
-
-        self._restore_committed(snapshot)
-        self._mgis.revert(self._manager)
+        self._restore_span(snapshot, span)
         return status, divisions // 2
+
+    def _integrate_with_substepping(
+        self,
+        in_plane_kelvin: NDArray,
+        time_increment: float,
+        transverse_kelvin: NDArray | None = None,
+    ) -> tuple[int, int]:
+        """Integrate one increment, halving it for the points that need it.
+
+        The joint Newton of the GPS law has no line search and no step control
+        -- the Implicit DSL offers neither -- so it fails on large plastic
+        increments even though the root is there. Measured by
+        `scripts/diagnose_srix_closure_root_sweep.py`: the closure equation has
+        exactly one root at every increment of the frozen history. What fails
+        is the iteration, not the problem, and halving the increment is the
+        remedy.
+
+        Until 2026-08-07 that halving was applied to the WHOLE BATCH. One
+        stubborn point out of four hundred therefore charged four hundred
+        points for up to thirty-two sub-steps each. The failing points are now
+        isolated by bisection and only they are sub-stepped, with `s0` advanced
+        and restored on their range alone so no healthy point is dragged along.
+
+        The returned tangent of a sub-stepped point is that of its last
+        sub-step. Measured: A6 stays at `1.2e-07` at every increment of the
+        frozen history, sub-stepped ones included.
+        """
+
+        status = self._integrate_once(
+            in_plane_kelvin, time_increment, transverse_kelvin
+        )
+        if status == 1 or self._maximum_substeps <= 1:
+            return status, 1
+
+        snapshot = self._committed_snapshot()
+        spans = self._failing_spans(in_plane_kelvin, time_increment)
+        if not spans:
+            # The bisection found every range acceptable on its own, so `s1`
+            # now holds a complete state assembled range by range.
+            self._substep_uses += 1
+            return 1, 1
+        self._substep_points += sum(end - begin for begin, end in spans)
+        worst = 1
+        for span in spans:
+            status, divisions = self._substep_span(
+                span, in_plane_kelvin, time_increment, snapshot
+            )
+            worst = max(worst, divisions)
+            if status != 1:
+                self._restore_committed(snapshot)
+                return status, worst
+        self._substep_uses += 1
+        self._substep_divisions_max = max(self._substep_divisions_max, worst)
+        return 1, worst
 
     def evaluate_in_plane(
         self,

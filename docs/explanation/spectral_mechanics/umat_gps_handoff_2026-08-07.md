@@ -760,3 +760,64 @@ La reformulation est conservée malgré le gain modeste : elle supprime le
 point-selle, trois inconnues, trois équations, une rotation par évaluation de
 tangente, et rend le jacobien élastique constant. Le code est plus simple et
 plus proche de la loi brute.
+
+### 8.14 Sous-pas par point plutôt que par lot
+
+**Le constat qui a lancé la piste.** Les itérations globales par incrément,
+lues dans les journaux déjà archivés :
+
+| incrément | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| référence | 6 | 5 | 5 | 6 | 6 | 6 | 6 | 6 |
+| UMAT (avant) | 6 | 5 | 5 | 6 | **11** | **12** | **12** | **12** |
+
+Identiques sur quatre incréments, puis le double. Ce n'est donc pas la
+tangente — elle coûterait dès le premier. C'est un effet de seuil, à l'entrée
+en plasticité profonde, là où le sous-pas se déclenche.
+
+**Le défaut.** `_integrate_with_substepping` réintégrait les **400 points** dès
+qu'un seul échouait. Un point récalcitrant faisait donc payer trente-deux
+sous-pas à trois cent quatre-vingt-dix-neuf points sains — et les rendait
+*différents*, puisqu'une intégration en trente-deux pas ne donne pas la même
+réponse qu'en un seul (mesuré au §8.8 : 3 % entre 1 et 256, dont l'essentiel
+entre 1 et 4).
+
+**Le correctif.** Les points fautifs sont isolés par **dichotomie sur le lot** —
+`integrate` accepte une plage `[begin, end)` — et seuls eux sont sous-passés,
+avec `s0` avancé et restauré sur leur plage seule (`mgis.update` avancerait tout
+le manager).
+
+| | avant | après |
+|---|---|---|
+| itérations de Newton | 69 | **52** |
+| déplacement | `4,2e-07` | **`1,1e-08`** |
+| contrainte en plan | `3,2e-03` | **`3,8e-05`** |
+| glissements | `2,5e-03` | **`9,9e-05`** |
+| glissement cumulé | `9,5e-04` | **`8,4e-05`** |
+
+**Deux ordres de grandeur sur l'accord avec la référence**, et l'écart
+d'itérations qui tombe de `1,5×` à `1,13×`. Les `3e-3` du §8.9 étaient bien le
+sous-pas du lot entier, et ils sont expliqués.
+
+**Et le coût va dans le mauvais sens.** MGIS n'intègre une **plage** qu'avec la
+surcharge **série** : l'isolement perd les quatre threads. Le temps matériau
+passe de `2,13 s` à `2,3 – 2,4 s`, et le rapport contre la référence de `0,98×`
+à `0,65 – 0,89×` selon la charge machine — la référence elle-même varie de
+`1,56` à `2,12 s` d'une exécution à l'autre, donc ces rapports sont à prendre
+avec précaution ; les itérations et les écarts de champ, eux, sont
+déterministes.
+
+Une profondeur intermédiaire ne sauve rien : à des blocs de 32 le Newton
+remonte à 63, l'accord perd un ordre de grandeur et le temps monte encore.
+Sous-passer trente et un points sains pour en épargner un est pire sur les trois
+critères. La granularité est **un point**, ou rien.
+
+**Le levier suivant est donc de paralléliser l'isolement.** Les plages sont
+disjointes et `integrate` sur des plages disjointes du même manager est ce que
+le pool de MGIS fait déjà en interne ; un `ThreadPoolExecutor` Python sur les
+sondes devrait récupérer les quatre threads, à condition que le binding libère
+le GIL. C'est à vérifier avant d'implémenter, et cela n'a pas été fait.
+
+Le changement est conservé malgré la régression de temps : le critère de la
+préinscription est l'interchangeabilité avec la référence, et il gagne deux
+ordres de grandeur.
