@@ -117,6 +117,18 @@ g.setEntryName("PlasticSlip");
 @StateVariable strain eyz;
 @StateVariable strain exz;
 
+//! Closure-root predictor, set by the bridge after it located the root by
+//! sub-stepping (route 1 of the handoff): the full-increment Newton then
+//! starts from the exact closure strain increments and converges, and its
+//! consistent tangent is the exact one of the whole increment. Zero means
+//! "no location available": the physics-based guess below applies.
+@ExternalStateVariable strain gps_predictor_ezz;
+gps_predictor_ezz.setEntryName("GpsPredictorEzz");
+@ExternalStateVariable strain gps_predictor_eyz;
+gps_predictor_eyz.setEntryName("GpsPredictorEyz");
+@ExternalStateVariable strain gps_predictor_exz;
+gps_predictor_exz.setEntryName("GpsPredictorExz");
+
 
 @AuxiliaryStateVariable strain p[Nss];
 p.setEntryName("EquivalentPlasticSlip");
@@ -201,6 +213,16 @@ a.setEntryName("BackStrain");
   // start and they are small on a plate loaded in its plane.
   this->dexz = real(0);
   this->deyz = real(0);
+  // Route 1: an exact closure-root location overrides the guess.
+  if (gps_predictor_ezz != 0) {
+    this->dezz = gps_predictor_ezz;
+  }
+  if (gps_predictor_eyz != 0) {
+    this->deyz = gps_predictor_eyz;
+  }
+  if (gps_predictor_exz != 0) {
+    this->dexz = gps_predictor_exz;
+  }
 }
 
 @Integrator {

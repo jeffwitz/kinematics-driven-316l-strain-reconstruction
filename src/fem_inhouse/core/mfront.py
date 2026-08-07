@@ -2289,6 +2289,8 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         local_tolerance_mpa: float = 1.0e-8,
         local_transverse_predictor: str = "committed",
         local_condition_check_mode: str = "on_failure",
+        shadow_tangent: bool = False,
+        shadow_behaviour_name: str = "Fcc316LForestRubinSrix",
     ) -> None:
         if point_count < 1:
             raise ValueError("point_count must be positive")
@@ -2401,7 +2403,50 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # 1/256 of itself; beyond that a failure is not a step-size problem.
         self._maximum_substeps = 256
         self._substep_uses = 0
+        self._rerun_uses = 0
+        self._rerun_failures = 0
         self._substep_divisions_max = 0
+        # Route 2 of the handoff, and the reason it is needed. Sub-stepping is
+        # what makes the joint Newton reach the deep plastic states at all, but
+        # the matrix it leaves behind is the LAST sub-step's, not the whole
+        # increment's, and A6 then fails by a factor of two to five. Route 1
+        # (rerun the full increment from the located root, through a predictor
+        # external state variable) was implemented and measured to leave the
+        # tangent BIT-IDENTICAL -- the mechanism never fires -- so the
+        # conclusion drawn from it, that the DSL tangent machinery is at fault,
+        # is not supported. Measured instead: the RAW 3D law's consistent
+        # tangent is exact to 1e-10 at every depth of the frozen history, and
+        # the GPS tangent is exact wherever no sub-stepping happens (7e-08 at
+        # increment 1, 1e-07 at 2, 1.8e-06 at 3). The chain is right; only the
+        # sub-stepped matrix is wrong.
+        #
+        # Route 2 was then implemented on that basis and MEASURED TO FAIL, so
+        # it is off by default and kept only as the record. The premise was
+        # that imposing the located transverse strain turns the problem back
+        # into the plain 18-unknown one, whose tangent is the qualified one.
+        # It does not: driven in lockstep from the same committed state with
+        # exactly the GPS transverse strain imposed, the raw law converges to
+        # the OTHER root -- sigma_zz of -152 MPa at increment 2, growing to
+        # -4221 by increment 8, against the 0 the closure enforces. That is the
+        # multiple-root structure of
+        # `validation/srix_plane_stress_branch_diagnostic.md` reappearing
+        # inside the 18-unknown problem: imposing the strain does not select
+        # the branch. Any future route must carry the branch, not just the
+        # strain.
+        self._shadow: MFront3DMaterialPointBatch | None = None
+        self._shadow_failures = 0
+        self._shadow_has_trial = False
+        if shadow_tangent:
+            self._shadow = MFront3DMaterialPointBatch(
+                library_path,
+                behaviour_spec=behaviour_spec,
+                point_count=point_count,
+                rotation_global_to_material=self._rotations,
+                thread_count=thread_count,
+                behaviour_name=shadow_behaviour_name,
+                behaviour_parameters=behaviour_parameters,
+                temperature_k=temperature_k,
+            )
 
     @property
     def substep_uses(self) -> int:
@@ -2495,6 +2540,115 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 self._point_count,
             )
         )
+
+    def _set_closure_predictor(self, values: NDArray) -> None:
+        """Set the closure-root predictor external state variables (n, 3).
+
+        Zero means "no location available" and lets the law's physics-based
+        guess apply.
+        """
+
+        storage = self._mgis.MaterialStateManagerStorageMode.ExternalStorage
+        for index, name in enumerate(
+            ("GpsPredictorEzz", "GpsPredictorEyz", "GpsPredictorExz")
+        ):
+            column = np.ascontiguousarray(np.asarray(values[:, index], dtype=float))
+            self._mgis.setExternalStateVariable(self._manager.s0, name, column, storage)
+            self._mgis.setExternalStateVariable(self._manager.s1, name, column, storage)
+
+    def _rerun_full_increment_from_located_root(
+        self, gradient: NDArray, time_increment: float
+    ) -> int:
+        """Route 1 of the handoff: rerun the full increment from the root the
+        sub-stepping located.
+
+        The sub-stepped result is exact in the stress, the closure and the
+        internal variables, but its Newton matrix is that of the LAST
+        sub-step, not of the whole increment. Rerunning the full increment
+        with the located closure increments imposed through the predictor
+        external state variables gives the exact consistent tangent. If the
+        rerun fails, the sub-stepping is redone (deterministic) and its
+        result kept, restoring the previous behaviour.
+        """
+
+        closure_columns = np.array(
+            [self._ezz_offset, self._eyz_offset, self._exz_offset], dtype=int
+        )
+        located = (
+            np.asarray(self._manager.s1.internal_state_variables)[:, closure_columns]
+            - np.asarray(self._manager.s0.internal_state_variables)[:, closure_columns]
+        )
+        snapshot = self._committed_snapshot()
+        self._restore_committed(snapshot)
+        self._mgis.revert(self._manager)
+        self._set_closure_predictor(located)
+        status = self._integrate_once(gradient, time_increment)
+        if status == 1:
+            return 1
+        # Fallback: deterministic redo of the sub-stepping.
+        self._restore_committed(snapshot)
+        self._mgis.revert(self._manager)
+        self._set_closure_predictor(np.zeros((self._point_count, 3)))
+        status, _ = self._integrate_with_substepping(gradient, time_increment)
+        return status
+
+    def _shadow_condensed_tangent(
+        self,
+        in_plane: NDArray,
+        internal_state_variables: NDArray,
+        time_increment: float,
+    ) -> NDArray | None:
+        """Exact plane-stress tangent of the whole increment, or `None`.
+
+        The closure has just located the transverse strain. Imposing it turns
+        the problem back into the plain 18-unknown one the raw law solves, and
+        that law's consistent tangent is exact (measured to `1e-10` at every
+        depth of the frozen history). Condensing it with the Schur complement
+        the reference already uses gives the plane-stress tangent of the whole
+        increment -- which is precisely what sub-stepping cannot supply.
+
+        The transverse components are read from the closure state variables in
+        the STORAGE the law itself used: it writes them straight into Kelvin
+        slots 2, 4 and 5 of the gradient, so they are Kelvin and take no
+        `sqrt(2)`. (The reconstruction of the reported total strain further
+        down divides by `sqrt(2)`; the two cannot both be right, and the law's
+        own substitution is the authority. That inconsistency is real and is
+        recorded rather than silently aligned.)
+
+        Returns `None` on any shadow failure, leaving the sub-stepped tangent
+        in place: an approximate Newton matrix is worse than an exact one and
+        better than an exception.
+        """
+
+        if self._shadow is None:
+            return None
+        total = np.zeros((self._point_count, 6), dtype=float)
+        total[:, _PLANE_STRESS_COMPONENTS] = (
+            in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+        )
+        total[:, _TRANSVERSE_COMPONENTS_3D] = internal_state_variables[
+            :, [self._ezz_offset, self._exz_offset, self._eyz_offset]
+        ]
+        try:
+            trial = self._shadow.evaluate(total, time_increment=time_increment)
+            engineering, _ = condense_kelvin_tangent_to_engineering(
+                trial.consistent_tangent_kelvin_mpa, check_condition=False
+            )
+        except Exception:
+            self._shadow_failures += 1
+            self._shadow_has_trial = False
+            return None
+        if not np.isfinite(engineering).all():
+            self._shadow_failures += 1
+            self._shadow.revert()
+            self._shadow_has_trial = False
+            return None
+        self._shadow_has_trial = True
+        return np.asarray(engineering, dtype=float)
+
+    @property
+    def shadow_failures(self) -> int:
+        return self._shadow_failures
 
     def _committed_snapshot(self) -> tuple[NDArray, NDArray, NDArray]:
         return (
@@ -2634,6 +2788,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             )
             in_plane_operator[:, :, _TRANSVERSE_COMPONENTS_3D] = 0.0
         self._last_local_failure = None
+        # The closure-root predictor is reset at every evaluation; the
+        # sub-stepping path sets it to the located root (route 1).
+        self._set_closure_predictor(np.zeros((self._point_count, 3)))
         status, divisions = self._integrate_with_substepping(gradient, time_increment)
         if status != 1:
             self._last_local_failure = {
@@ -2645,6 +2802,22 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 f"GPS UMAT integration failed with status {status} after "
                 f"sub-stepping down to 1/{divisions} of the increment"
             )
+        if divisions > 1:
+            # Sub-stepping located the closure root; rerun the full increment
+            # from it so the returned tangent is the exact one of the whole
+            # increment, not of the last sub-step.
+            self._rerun_uses += 1
+            status = self._rerun_full_increment_from_located_root(
+                gradient, time_increment
+            )
+            if status != 1:
+                self._rerun_failures += 1
+                self._last_local_failure = {
+                    "status": int(status),
+                    "substep_divisions": int(divisions),
+                    "note": "full-increment rerun from the located root failed; "
+                    "kept the sub-stepped result with its last-sub-step tangent",
+                }
         self._integration_seconds += time.perf_counter() - started
         self._evaluate_calls += 1
         internal_state_variables = np.asarray(
@@ -2672,6 +2845,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                     flat, self._behaviour, self._mgis_rotations
                 )
                 tangent[:, :, column] = flat.reshape(self._point_count, 6)
+        shadow_tangent_engineering = self._shadow_condensed_tangent(
+            in_plane, internal_state_variables, time_increment
+        )
         # Global total strain: in-plane from the imposed gradient, transverse
         # from the closure state variables (engineering scalars -> Kelvin).
         transverse = internal_state_variables[
@@ -2700,6 +2876,8 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         in_tangent = condensed_tangent.copy()
         in_tangent = in_tangent * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
         in_tangent = in_tangent * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+        if shadow_tangent_engineering is not None:
+            in_tangent = shadow_tangent_engineering
         in_stress = stress[:, _PLANE_STRESS_COMPONENTS] * _KELVIN_TO_ENGINEERING_STRESS_SCALE
         residual = np.stack(
             (stress_tensor[:, 2, 2], stress_tensor[:, 0, 2], stress_tensor[:, 1, 2]),
@@ -2739,6 +2917,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     def commit(self) -> None:
         self.accept_global_trial()
         self._mgis.update(self._manager)
+        if self._shadow is not None and self._shadow_has_trial:
+            # The shadow tracks the SAME branch, so its committed state must
+            # advance with the closure's or its tangent would be evaluated
+            # from a state the law never reached. A shadow that failed has no
+            # trial to commit; the closure's own state is unaffected either
+            # way, so the increment is still accepted.
+            self._shadow.commit()
+            self._shadow_has_trial = False
         if self._latest_total_kelvin is not None:
             self._committed_strain[:, :] = self._latest_total_kelvin
         self._latest_trial = None
@@ -2749,6 +2935,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
 
     def revert(self) -> None:
         self._mgis.revert(self._manager)
+        if self._shadow is not None and self._shadow_has_trial:
+            self._shadow.revert()
+            self._shadow_has_trial = False
         self._latest_trial = None
         self._latest_total_kelvin = None
         self._latest_transverse = None

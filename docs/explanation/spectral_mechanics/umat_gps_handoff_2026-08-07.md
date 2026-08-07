@@ -299,3 +299,59 @@ tangente de contrainte plane exacte. La convention des variables de fermeture
 ISV de fermeture aux composantes du tenseur de déformation de la référence au
 point tourné). Le pont doit maintenir un scratch de la loi 3D brute (état
 committé synchronisé depuis celui du GPS, mapping ISV 45→42).
+
+### 8.6 Reprise : la route 1 n'a jamais tiré, la route 2 est réfutée
+
+Trois mesures, dans l'ordre où elles ont été faites.
+
+**La tangente 3D brute est exacte.** Différences finies centrées sur la loi
+`Fcc316LForestRubinSrix` seule, aux incréments 2, 4, 8 et 12 d'un trajet
+plastique : erreur relative `4,2e-11`, `2,7e-11`, `3,3e-11`, `1,7e-10`, rapport
+numérique/analytique `[1,000 ; 1,000]` partout. **La machinerie de tangente du
+DSL Implicit n'est donc pas en cause**, contrairement à ce que conclut le §8.5.
+Et la tangente GPS est elle aussi exacte partout où le sous-pas ne se déclenche
+pas : `7e-08` à l'incrément 1, `1e-07` au 2, `1,8e-06` au 3. La chaîne
+—jacobien, `J^-1`, post-multiplication par `ROT·P`, rotation de sortie— est
+juste. Seule la matrice issue du sous-pas est fausse.
+
+**La route 1 ne s'exerce pas.** En instrumentant l'appel :
+`_rerun_full_increment_from_located_root` est bien appelée (6 fois sur 8
+incréments), renvoie statut 1, et laisse `manager.K` **bit à bit identique**
+(`|ΔK| = 0,0`). Le « le rerun converge au même point » du §8.5 n'est donc pas
+une propriété de la physique : le mécanisme n'a produit aucun effet, et la
+conclusion « c'est la tangente du DSL le blocage » ne repose sur rien. Le
+pourquoi du no-op reste ouvert (variable externe `ExternalStorage` non
+maintenue en vie côté Python ? sortie anticipée du Newton au point de départ ?).
+
+**La route 2 est réfutée.** Elle a été implémentée : un jumeau
+`MFront3DMaterialPointBatch` piloté en phase, à qui l'on impose exactement la
+déformation transverse localisée par la fermeture, et dont la tangente 3D est
+condensée par le Schur `C^ps = Caa − Cab Cbb⁻¹ Cba`. Mesure de la contrainte
+du jumeau contre celle du GPS, même état committé, même déformation totale :
+
+| incrément | écart relatif | `sigma_zz` du jumeau |
+|---|---|---|
+| 1 | `1,6e-11` | `0,000` |
+| 2 | `1,06` | `-152,1` |
+| 4 | `5,37` | `-915,7` |
+| 8 | `22,0` | `-4221,4` |
+
+**Imposer la déformation ne sélectionne pas la branche.** Le problème à 18
+inconnues est lui-même multivalué, et le Newton brut retombe sur la racine
+« naturelle » — les `-152 MPa` sont les `-154,7 MPa` du diagnostic de branches.
+La prémisse « la loi 3D brute converge, c'est la mécanique de la référence »
+est fausse pour la sélection de branche. A6 avec le jumeau : `9,84`, `3,81`,
+`0,78` — pire que sans. Le code est conservé, `shadow_tangent=False` par
+défaut, comme trace du résultat négatif.
+
+**Ce qui reste.** Toute route future doit transporter la **branche**, pas
+seulement la déformation : par exemple partir le Newton 3D depuis l'état
+interne convergé du GPS (glissements compris) et non depuis l'état committé, ou
+obtenir la tangente sans réintégration, en assemblant `J^-1` du système
+augmenté au point convergé du sous-pas mais avec les incréments de l'incrément
+entier. Rien de cela n'est mesuré.
+
+Note annexe : `@CompareToNumericalJacobian` est **inutilisable** sur cette loi.
+TFEL 5.1 génère le bloc de comparaison avec de mauvais décalages de colonnes —
+l'intégrateur mappe `dfeel_ddezz` en colonne `StensorSize+12`, le comparateur
+en colonne `StensorSize` — et signale donc des blocs faux qui ne le sont pas.
