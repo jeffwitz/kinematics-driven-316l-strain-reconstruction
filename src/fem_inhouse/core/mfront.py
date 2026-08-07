@@ -2330,6 +2330,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             None if self._rotations is None else mgis_rotation_argument(self._rotations)
         )
         self._manager = self._mgis.MaterialDataManager(self._behaviour, point_count)
+        self._thread_pool = (
+            _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
+        )
         # The nine global-to-material rotation components are per-point
         # material properties: the law owns the strain rotation and needs Q to
         # assemble the closure residuals in the global frame.
@@ -2604,15 +2607,31 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             # missed. That is what makes one joint Newton enough.
             gradients[:, _TRANSVERSE_COMPONENTS_3D] = transverse_kelvin
         self._manager.s1.gradients[:, :] = gradients
-        status = int(
-            self._mgis.integrate(
-                self._manager,
-                self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
-                float(time_increment),
-                0,
-                self._point_count,
+        integration_type = self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
+        if self._thread_pool is None:
+            status = int(
+                self._mgis.integrate(
+                    self._manager,
+                    integration_type,
+                    float(time_increment),
+                    0,
+                    self._point_count,
+                )
             )
-        )
+        else:
+            # This bridge only ever had the SERIAL overload, so it integrated
+            # single-threaded while the reference used the whole pool. On a
+            # four-thread run that is most of the "unexplained factor 2.5" the
+            # per-integration cost carried: the two backends were not being
+            # compared on the same number of cores.
+            status = int(
+                self._mgis.integrate(
+                    self._thread_pool,
+                    self._manager,
+                    integration_type,
+                    float(time_increment),
+                )
+            )
         if status == 1:
             closure = np.array(
                 [self._ezz_offset, self._exz_offset, self._eyz_offset], dtype=int

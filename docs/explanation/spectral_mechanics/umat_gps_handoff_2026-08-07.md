@@ -648,3 +648,57 @@ solve local ne vient pas de sa taille, passer de 21 à 15 inconnues n'y changera
 rien non plus. Le profilage du solve local (assemblage du jacobien contre
 factorisation contre inversion pour la tangente cohérente) est le prochain pas,
 et il doit précéder toute réécriture.
+
+### 8.12 Le facteur 2,5 : le pont GPS n'était pas parallélisé
+
+Intuition de l'utilisateur, vérifiée en un grep, et c'était bien elle.
+
+`MFront3DMaterialPointBatch` — la loi brute, et donc la référence — a **deux**
+chemins d'intégration :
+
+```python
+if self._thread_pool is None:
+    status = self._mgis.integrate(manager, type, dt, 0, point_count)   # série
+else:
+    status = self._mgis.integrate(self._thread_pool, manager, type, dt)  # 4 fils
+```
+
+`MFrontNativeGeneralisedPlaneStressBatch` n'avait **que la surcharge série**, et
+ne construisait même pas de `ThreadPool`. Il intégrait sur un fil pendant que la
+référence en utilisait quatre. **Les deux backends n'étaient pas comparés sur le
+même nombre de cœurs.**
+
+| coût par point, sans sous-pas | avant | après |
+|---|---|---|
+| loi brute 18 inconnues | `13,0 µs` | `13,0 µs` |
+| loi GPS 21 inconnues | `75 – 113 µs` | **`26,2 µs`** |
+| rapport | `5,7 – 8,1×` | **`2,02×`** |
+
+`2,02` est exactement ce que prédit l'arithmétique : `21³/18³ = 1,59` pour la
+factorisation, fois un peu plus d'itérations locales (4 à 8 contre 3 à 5).
+**Le facteur inexpliqué n'existe plus.**
+
+Sur P43 20x20, le gain matériau contre la référence :
+
+| | temps matériau | gain |
+|---|---|---|
+| avant la route 1 retirée | `8,05 s` | `0,23×` |
+| après | `4,94 s` | `0,39×` |
+| **après la parallélisation** | **`2,38 s`** | **`0,89×`** |
+
+contre `2,12 s` pour la référence : **la parité est atteinte**, à 12 % près.
+
+#### Ce qui sépare encore de la victoire
+
+Il reste **69 itérations globales contre 46**, soit `1,5×`. Ce n'est pas la
+tangente : A6 vaut `1,2e-07` à *chaque* incrément, y compris les neuf sur douze
+qui sous-passent — la conclusion du §8.3 selon laquelle « le sous-pas détruit la
+tangente » était elle-même un artefact du chargement quadratique du §8.8, et
+elle est **rétractée**.
+
+Avec `3,3×` moins d'appels, un surcoût par appel de `2,0×` et une pénalité
+d'itérations globales de `1,5×`, le compte est `3,3 / (2,0 × 1,5) = 1,1` — la
+parité mesurée. Fermer l'écart des itérations globales, ou ramener le coût par
+appel sous `2×` par la réduction à 15 inconnues, ferait basculer le bilan.
+La réécriture à 15 inconnues garde donc tout son sens, et pour la première fois
+elle vise un objectif atteignable et non un facteur inexpliqué.
