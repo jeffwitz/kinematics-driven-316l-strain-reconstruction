@@ -2441,6 +2441,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         #: is the right answer; it is the serial probing that costs, not the
         #: depth.
         self._minimum_substep_span = 1
+        #: Indices that refused the full step last time, as single-point spans.
+        self._failing_cache: list[tuple[int, int]] = []
+        #: Above this many, the cache costs more than the bisection it saves.
+        self._maximum_cached_spans = 32
+        self._cache_hits = 0
+        self._cache_misses = 0
         # Route 2 of the handoff, and the reason it is needed. Sub-stepping is
         # what makes the joint Newton reach the deep plastic states at all, but
         # the matrix it leaves behind is the LAST sub-step's, not the whole
@@ -2501,6 +2507,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     @property
     def substep_divisions_max(self) -> int:
         return self._substep_divisions_max
+
+    @property
+    def substep_cache_hits(self) -> int:
+        return self._cache_hits
+
+    @property
+    def substep_cache_misses(self) -> int:
+        return self._cache_misses
 
     @property
     def substep_points(self) -> int:
@@ -2893,6 +2907,78 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._restore_span(snapshot, span)
         return status, divisions // 2
 
+    def _try_cached_spans(
+        self,
+        in_plane_kelvin: NDArray,
+        time_increment: float,
+        transverse_kelvin: NDArray | None,
+        snapshot: tuple[NDArray, NDArray, NDArray],
+    ) -> tuple[int, int] | None:
+        """Sub-step last call's failures, then PROVE no other point failed.
+
+        Plasticity localises: the points whose joint Newton refuses the full
+        step are the same from one call to the next -- two out of four hundred
+        on the P43 window, measured. Bisecting for them again costs about nine
+        whole-batch passes, and every one of them is serial because MGIS only
+        integrates a range without its pool.
+
+        The proof of completeness is the trick, and it is exact. Once a cached
+        point has been sub-stepped, its `s0` is ADVANCED onto the state it
+        reached. A grouped re-integration then presents that point a strain
+        increment of exactly zero -- it converges on the guarded elastic branch
+        in one iteration -- while every other point still sees the full
+        increment. So a status of 1 on that single POOLED call proves that no
+        point outside the cache failed. Nothing has to be read out of the
+        state, which the closure-residual detector showed is impossible
+        anyway.
+
+        Returns `None` when the cache is empty, incomplete or wrong, leaving
+        the caller to bisect.
+        """
+
+        if not self._failing_cache:
+            return None
+        advanced: list[tuple[int, int]] = []
+        tangents: list[NDArray] = []
+        worst = 1
+        complete = True
+        for span in self._failing_cache:
+            status, divisions = self._substep_span(
+                span, in_plane_kelvin, time_increment, snapshot
+            )
+            if status != 1:
+                complete = False
+                break
+            worst = max(worst, divisions)
+            # The verification below hands these points a ZERO increment, and
+            # the law then answers on its guarded elastic branch -- with the
+            # ELASTIC tangent. Their sub-stepped tangent has to be kept and put
+            # back, or the global Newton is given an elastic matrix exactly at
+            # the points that are most plastic. Measured the hard way: without
+            # this, P43 stops converging at increment 5.
+            tangents.append(np.asarray(self._manager.K)[span[0] : span[1]].copy())
+            self._advance_span(span)
+            advanced.append(span)
+
+        verified = 0
+        if complete:
+            verified = self._integrate_once(
+                in_plane_kelvin, time_increment, transverse_kelvin
+            )
+            for span, block in zip(advanced, tangents, strict=True):
+                self._manager.K[span[0] : span[1]] = block
+        for span in advanced:
+            self._restore_span(snapshot, span)
+        if complete and verified == 1:
+            self._cache_hits += 1
+            self._substep_uses += 1
+            self._substep_points += sum(end - begin for begin, end in advanced)
+            self._substep_divisions_max = max(self._substep_divisions_max, worst)
+            return 1, worst
+        self._cache_misses += 1
+        self._failing_cache = []
+        return None
+
     def _integrate_with_substepping(
         self,
         in_plane_kelvin: NDArray,
@@ -2927,6 +3013,11 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             return status, 1
 
         snapshot = self._committed_snapshot()
+        cached = self._try_cached_spans(
+            in_plane_kelvin, time_increment, transverse_kelvin, snapshot
+        )
+        if cached is not None:
+            return cached
         spans = self._failing_spans(in_plane_kelvin, time_increment)
         if not spans:
             # The bisection found every range acceptable on its own, so `s1`
@@ -2945,6 +3036,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 return status, worst
         self._substep_uses += 1
         self._substep_divisions_max = max(self._substep_divisions_max, worst)
+        self._failing_cache = spans if len(spans) <= self._maximum_cached_spans else []
         return 1, worst
 
     def evaluate_in_plane(

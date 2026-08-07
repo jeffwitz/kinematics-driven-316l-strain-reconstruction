@@ -878,3 +878,52 @@ dichotomie, et de retomber sur un seul appel groupé plus deux réparations
 minuscules. Le risque à traiter est un point qui échouerait sans être au cache
 — il faudrait une vérification, et rien dans l'état ne la fournit, comme on
 vient de le voir. C'est le point dur de cette piste.
+
+### 8.16 Cache des points fautifs, prouvé par ré-intégration groupée — l'UMAT passe devant
+
+Le §8.15 laissait la dichotomie payer ses niveaux supérieurs en série alors que
+**deux points sur quatre cents** échouent. Comme la plasticité localise, ce sont
+les mêmes d'un appel au suivant : un cache suffirait — s'il était vérifiable.
+
+**La preuve de complétude, et elle est exacte.** Une fois un point du cache
+sous-passé, son `s0` est **avancé** sur l'état atteint. Une ré-intégration
+groupée lui présente alors un incrément de déformation **exactement nul** — il
+converge en une itération sur sa branche élastique gardée — pendant que tous les
+autres voient l'incrément complet. **Un statut 1 sur ce seul appel groupé prouve
+donc qu'aucun point hors du cache n'a échoué.** Rien n'est lu dans l'état, ce
+que le §8.15 a montré impossible, et l'appel est *groupé* : le pool MGIS est
+conservé.
+
+Sur échec de la preuve, le cache est vidé et la dichotomie reprend la main.
+
+**Le piège, découvert en le payant.** L'appel de vérification recalcule aussi la
+tangente des points du cache — à incrément nul, donc la tangente **élastique**.
+Le solveur global recevait ainsi une matrice élastique précisément aux points
+les plus plastiques, et P43 cessait de converger à l'incrément 5. La tangente
+sous-passée est désormais sauvegardée avant l'avancement et remise après la
+preuve. C'est le même piège que la vérification A6 vacue du §8.3 : un incrément
+nul n'interroge pas la loi qu'on croit interroger.
+
+**Résultat, P43 20x20, trois exécutions :**
+
+| | référence | UMAT | gain matériau |
+|---|---|---|---|
+| 1 | `1,76 s` | `1,43 s` | **`1,23×`** |
+| 2 | `1,94 s` | `1,14 s` | **`1,70×`** |
+| 3 | `1,80 s` | `1,27 s` | **`1,41×`** |
+
+**L'UMAT est passé devant la référence Python**, avec en prime les deux ordres
+de grandeur d'accord du §8.14 conservés (déplacement `1,1e-08`, contrainte
+`3,8e-05`) et 52 itérations globales contre 46. Qualification ACCEPTÉE
+inchangée : fermeture `2 – 4e-14 MPa`, tangente FD `1,2 – 1,6e-07`, écart à la
+référence `1e-11`.
+
+La dispersion machine reste large — la référence varie de `1,56` à `2,12 s`
+d'une exécution à l'autre — donc le gain se lit comme « entre `1,2×` et `1,7×` »
+et non comme un chiffre unique. Les itérations et les écarts de champ, eux, sont
+déterministes.
+
+**Le compte, enfin cohérent.** `3,3×` moins d'appels constitutifs, `2,1×` de
+coût par appel, `1,13×` de pénalité d'itérations globales : `3,3/(2,1 x 1,13) =
+1,39`, à comparer aux `1,2 – 1,7` mesurés. Le seul terme encore inexpliqué reste
+le `2,1×` par appel, qui est donc ce qui limite le gain aujourd'hui.
