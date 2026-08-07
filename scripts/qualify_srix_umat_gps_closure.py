@@ -292,21 +292,37 @@ def _main() -> int:
             parameter_set=arguments.parameter_set,
             orientation=orientation,
         )
-        reference_probe = _make_batch(
-            "mfront-3d-condensed-plane-stress",
-            library=library,
-            parameter_set=arguments.parameter_set,
-            orientation=orientation,
-        )
         records = _run_history(candidate_probe, HISTORY)
         case_report["a3_global_transverse_residual_max_mpa"] = max(
             records["global_transverse_residual_max_mpa"]
         )
-        case_report["a6_fd_tangent_relative_error"] = _finite_difference_tangent_check(
-            candidate_probe,
-            HISTORY[-1],
-            time_increment=1.0 / INCREMENTS,
+        # A6 was VACUOUS until 2026-08-07. `_run_history` commits every
+        # increment, so probing at `HISTORY[-1]` afterwards asked the law for
+        # the response to a strain increment of exactly ZERO -- the guarded
+        # elastic branch -- and compared it against the elastic tangent. It
+        # agreed to 1e-9 and reported a pass while the real plastic tangent was
+        # wrong by a factor of ten. The check now runs at EVERY increment, from
+        # the state committed before it, so every probe carries a genuine
+        # non-zero increment, and the criterion is the worst of them.
+        tangent_probe = _make_batch(
+            "mfront-native-generalised-plane-stress",
+            library=library,
+            parameter_set=arguments.parameter_set,
+            orientation=orientation,
         )
+        fd_errors: list[float] = []
+        for step in HISTORY:
+            fd_errors.append(
+                _finite_difference_tangent_check(
+                    tangent_probe, step, time_increment=1.0 / INCREMENTS
+                )
+            )
+            tangent_probe.evaluate(
+                np.atleast_2d(step), time_increment=1.0 / INCREMENTS
+            )
+            tangent_probe.commit()
+        case_report["a6_fd_tangent_relative_error"] = max(fd_errors)
+        case_report["a6_fd_tangent_relative_error_per_increment"] = fd_errors
         accepted = (
             case_report["a3_global_transverse_residual_max_mpa"] <= A3_TOLERANCE_MPA
             and case_report["a6_fd_tangent_relative_error"] <= A6_TOLERANCE
@@ -321,25 +337,38 @@ def _main() -> int:
             f"{'ACCEPTED' if accepted else 'REJECTED'}"
         )
 
-    # Case C2b: material-frame closure deviation (diagnostic only).
+    # Case C2b: material-frame closure deviation (diagnostic only). It is not
+    # allowed to sink the qualification: `GpsClosureFrame` is a parameter of the
+    # GPS law and not of the SRIX registry, so the batch factory refuses it, and
+    # a diagnostic that cannot run must be recorded as such rather than crash
+    # the run whose acceptance criteria have already been measured above.
     delta: dict[str, float] = {}
+    c2b_failure: str | None = None
     for case_name, orientation in CASES.items():
         if orientation is None:
             continue
-        mat_frame = _make_batch(
-            "mfront-native-generalised-plane-stress",
-            library=library,
-            parameter_set=arguments.parameter_set,
-            orientation=orientation,
-            parameters={"GpsClosureFrame": 0.0},
-        )
-        mat_frame_records = _run_history(mat_frame, HISTORY)
+        try:
+            mat_frame = _make_batch(
+                "mfront-native-generalised-plane-stress",
+                library=library,
+                parameter_set=arguments.parameter_set,
+                orientation=orientation,
+                parameters={"GpsClosureFrame": 0.0},
+            )
+            mat_frame_records = _run_history(mat_frame, HISTORY)
+        except Exception as error:
+            c2b_failure = f"{type(error).__name__}: {error}"[:200]
+            break
         delta[case_name] = max(mat_frame_records["global_transverse_residual_max_mpa"])
     report["c2b_material_frame_closure_delta_mpa"] = delta
-    summary.append(
-        "C2b delta (MPa): "
-        + ", ".join(f"{name}={value:.3e}" for name, value in delta.items())
-    )
+    if c2b_failure is not None:
+        report["c2b_not_run"] = c2b_failure
+        summary.append(f"C2b not run: {c2b_failure}")
+    else:
+        summary.append(
+            "C2b delta (MPa): "
+            + ", ".join(f"{name}={value:.3e}" for name, value in delta.items())
+        )
 
     report["accepted"] = bool(all_accepted)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)

@@ -117,6 +117,7 @@ g.setEntryName("PlasticSlip");
 @StateVariable strain eyz;
 @StateVariable strain exz;
 
+
 @AuxiliaryStateVariable strain p[Nss];
 p.setEntryName("EquivalentPlasticSlip");
 
@@ -174,6 +175,32 @@ a.setEntryName("BackStrain");
          + (r11*r22 + r12*r21) * s5;
     return r;
   }
+}
+
+@Predictor{
+  // Transverse-strain predictor. Without one the joint Newton starts every
+  // increment at dezz = 0, and the sweep of
+  // `scripts/diagnose_srix_closure_root_sweep.py` measures ~100 MPa of
+  // sigma_zz per 1e-3 of eps_zz -- so the iteration starts far outside the
+  // basin and fails on 9 increments out of 12. The nested Python reference has
+  // had such a predictor from the start; this is the missing counterpart.
+  //
+  // Elastic while nothing has slipped: eps_zz = -nu/(1-nu) (eps_xx + eps_yy).
+  // Isochoric once slip is active: eps_zz = -(eps_xx + eps_yy), which the
+  // measured root path follows to three digits (-1.0e-3 per increment for an
+  // in-plane trace of +1.0e-3).
+  const auto gps_in_plane_trace = deto(0) + deto(1);
+  auto gps_slipped = real(0);
+  for (unsigned short gi = 0; gi != Nss; ++gi) {
+    gps_slipped += this->a[gi];
+  }
+  const auto gps_elastic_ratio = real(0.3881987577639752) / real(1 - 0.3881987577639752);
+  const auto gps_ratio = (gps_slipped > real(1.e-12)) ? real(1) : gps_elastic_ratio;
+  this->dezz = -gps_ratio * gps_in_plane_trace;
+  // The transverse shears have no such closed form; zero is their natural
+  // start and they are small on a plate loaded in its plane.
+  this->dexz = real(0);
+  this->deyz = real(0);
 }
 
 @Integrator {

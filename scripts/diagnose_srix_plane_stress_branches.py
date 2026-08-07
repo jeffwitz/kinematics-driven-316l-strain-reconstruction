@@ -129,11 +129,11 @@ def _raw_3d_roots(
     """
 
     from fem_inhouse.core.mfront import (
-        MFront3DMaterialPointBatch,
         _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
         _PLANE_STRESS_COMPONENTS,
-        _TRANSVERSE_COMPONENTS_3D,
         _SQRT_TWO,
+        _TRANSVERSE_COMPONENTS_3D,
+        MFront3DMaterialPointBatch,
     )
     from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
 
@@ -171,7 +171,8 @@ def _raw_3d_roots(
         if start > 0:
             # Perturb the committed internal state.
             isv = np.asarray(bridge._manager.s0.internal_state_variables).copy()
-            isv[:, 6:18] += PERTURBATION * (2 * np.random.default_rng(start).random(isv[:, 6:18].shape) - 1)
+            noise = np.random.default_rng(start).random(isv[:, 6:18].shape)
+            isv[:, 6:18] += PERTURBATION * (2 * noise - 1)
             for state in (bridge._manager.s0, bridge._manager.s1):
                 state.internal_state_variables[:, :] = isv
         trial = bridge.evaluate(target_kelvin[None, :], time_increment=time_increment)

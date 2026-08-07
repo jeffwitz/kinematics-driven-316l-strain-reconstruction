@@ -198,3 +198,76 @@ vers `build/mfront/src/libBehaviour.so`. Recompiler : `bash
 scripts/build_mfront_behaviour.sh`. Le fork TFEL
 `jeffwitz/tfel-generalised-plane-stress` (prototype générateur) est **parker**
 — la voie UMAT ne le nécessite pas.
+
+## 8. Reprise du 2026-08-07 (suite) — le mur, mesuré puis déplacé
+
+### 8.1 Il n'y a pas de repli de branche (hypothèse testée et réfutée)
+
+`scripts/diagnose_srix_closure_root_sweep.py` balaie `sigma_zz(eps_zz)` avec la
+loi 3D brute à chaque état committé de l'historique gelé, à incrément dans le
+plan figé. Résultat : **exactement une racine à chacun des douze incréments**,
+l'incrément 8 compris, et les racines avancent régulièrement de `-1,0e-3` par
+incrément — soit exactement `-(eps_xx + eps_yy)`, l'incompressibilité plastique.
+
+L'hypothèse d'un point limite (deux racines qui fusionnent) est donc **réfutée** :
+la racine de contrainte plane existe, elle est unique et bien séparée là où le
+Newton conjoint meurt. Le §5.2 n'est pas une limite du problème, c'est une
+limite de l'itération. Données :
+`validation/_generated/performance/srix_closure_root_sweep.json`.
+
+### 8.2 Le sous-pas franchit le mur
+
+`MFrontNativeGeneralisedPlaneStressBatch` réduit l'incrément par moitiés
+successives (jusqu'à 1/256) quand le Newton conjoint échoue, en avançant `s0`
+en interne puis en le remettant en place — `commit()` et `revert()` gardent leur
+sens pour l'appelant. Mesure : **sans sous-pas, la qualification ne dépasse pas
+l'incrément 3** ; avec, les trois cas parcourent les douze incréments, fermeture
+à `4e-14 MPa`. Le mur du §5.2 est franchi.
+
+Coût : 9 à 10 incréments sur 12 nécessitent le sous-pas, jusqu'à 1/256. Le gain
+de 6,7× n'est donc plus acquis et doit être remesuré.
+
+Un `@Predictor` transverse (élastique puis isochore) a été ajouté à la loi. Il
+est correct et il ne change rien au comptage de sous-pas : **l'échec n'est pas
+un problème de point de départ**, ce qui confirme le §5.2.
+
+### 8.3 Le vrai blocage : A6 était vacue, et la tangente est fausse
+
+`_finite_difference_tangent_check` était appelé **après** `_run_history`, donc
+sur un incrément de déformation **exactement nul** : la loi prenait sa branche
+élastique gardée et la différence finie s'accordait à `1e-9` avec la tangente
+élastique. **A6 ne testait pas la tangente plastique** et rapportait un succès.
+
+Corrigé : le contrôle tourne maintenant à **chaque** incrément, depuis l'état
+committé qui le précède, et le critère est le pire des douze. Ce que cela
+révèle :
+
+| cas | A6 (ancien, vacu) | A6 (réel) |
+|---|---|---|
+| C1 identité | — | `7,4e-01` |
+| C2 Bunge 35/20/15 | `2,0e-09` | `5,2e+00` |
+| C3 Bunge 54,7/45/10 | `1,2e-09` | `3,2e-07` |
+
+Par incrément, sans sous-pas, là où le Newton conjoint converge (incréments 1 à
+3) la tangente est excellente : `7e-08`, `1e-07`, `1,8e-06`. **La formulation de
+la tangente est juste ; c'est le sous-pas qui la détruit**, parce que la matrice
+retournée est celle du dernier sous-pas et non celle de l'incrément complet.
+
+Le mur de convergence a donc été échangé contre un mur de tangente, et le second
+était masqué par un test vacu. La qualification **rejette** maintenant C1 et C2.
+
+### 8.4 Voie identifiée pour la tangente
+
+Le sous-pas donne le `Δezz` exact. Il reste à obtenir la tangente cohérente de
+l'incrément entier. Deux routes, non implémentées :
+
+1. **Sous-pas pour localiser, puis un pas complet exact** : réinjecter le
+   `Δezz` trouvé comme point de départ du Newton conjoint sur l'incrément
+   entier (via une variable externe lue par le `@Predictor`). Un Newton parti
+   sur la racine converge, et la tangente est exacte. Préserve la vitesse.
+2. **Condenser** : à `Δezz` connu, intégrer la loi 3D **brute** sur l'incrément
+   entier (elle converge, c'est ce que fait la référence) et condenser
+   `C^ps = Caa − Cab Cbb⁻¹ Cba`. Exact, mais une intégration 3D de plus par
+   évaluation.
+
+La route 1 est la bonne si le prédicteur peut recevoir une valeur imposée.

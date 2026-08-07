@@ -1,0 +1,86 @@
+{
+  "preregistration": "validation/srix_umat_gps_closure_preregistration.md",
+  "parameter_set": "316l_srix_transposed_from_nasri2018_rate_1e-3",
+  "history_increments": 12,
+  "history_max_strain": 0.02,
+  "cases": {
+    "C1_identity": {
+      "in_plane_stress_relative_l2_max": 0.27143472805097796,
+      "transverse_strain_relative_l2_max": 5.697471854907117,
+      "tangent_relative_l2_max": 0.8191393821819719,
+      "branch_difference_in_plane_stress_relative_l2": 0.27143472805097796,
+      "branch_difference_transverse_strain_relative_l2": 5.697471854907117,
+      "branch_difference_tangent_relative_l2": 0.8191393821819719,
+      "a3_global_transverse_residual_max_mpa": 4.485417417128788e-14,
+      "a6_fd_tangent_relative_error": 0.7444730063701267,
+      "a6_fd_tangent_relative_error_per_increment": [
+        3.5411639041264726e-08,
+        2.2811498182942257e-08,
+        1.2920971372064113e-08,
+        7.1794030088702965e-09,
+        1.063451928402854e-08,
+        1.2624200514768882e-08,
+        3.687554921566246e-09,
+        0.7444730063701267,
+        0.7428116868401449,
+        0.739832845390841,
+        0.7361606192472887,
+        0.7321618718463817
+      ],
+      "accepted": false
+    },
+    "C2_bunge_35_20_15": {
+      "in_plane_stress_relative_l2_max": 0.4384699101922544,
+      "transverse_strain_relative_l2_max": 5.1133272829826755,
+      "tangent_relative_l2_max": 0.8428684587444149,
+      "branch_difference_in_plane_stress_relative_l2": 0.4384699101922544,
+      "branch_difference_transverse_strain_relative_l2": 5.1133272829826755,
+      "branch_difference_tangent_relative_l2": 0.8428684587444149,
+      "a3_global_transverse_residual_max_mpa": 3.60798040355501e-14,
+      "a6_fd_tangent_relative_error": 5.176143222635886,
+      "a6_fd_tangent_relative_error_per_increment": [
+        7.36526773897602e-08,
+        1.3179368024383567e-07,
+        0.8301362539972662,
+        1.1842569532581766,
+        5.960179005609291e-09,
+        1.1668288572933924e-08,
+        3.071938374137042,
+        4.265778651689492,
+        5.176143222635886,
+        1.1297651047725598e-09,
+        1.5505294532418735e-09,
+        1.5713208476152598e-09
+      ],
+      "accepted": false
+    },
+    "C3_bunge_54_45_10": {
+      "in_plane_stress_relative_l2_max": 0.16832816743217924,
+      "transverse_strain_relative_l2_max": 6.068649047747277,
+      "tangent_relative_l2_max": 0.8676535048632837,
+      "branch_difference_in_plane_stress_relative_l2": 0.16832816743217924,
+      "branch_difference_transverse_strain_relative_l2": 6.068649047747277,
+      "branch_difference_tangent_relative_l2": 0.8676535048632837,
+      "a3_global_transverse_residual_max_mpa": 6.084022174945858e-14,
+      "a6_fd_tangent_relative_error": 3.1736849515999847e-07,
+      "a6_fd_tangent_relative_error_per_increment": [
+        6.798555435315175e-08,
+        3.1736849515999847e-07,
+        1.8842257854571435e-08,
+        7.676814694775797e-09,
+        7.286675653739465e-09,
+        5.96798817606288e-09,
+        4.554565775871581e-09,
+        3.402425178776859e-09,
+        2.0749146202787943e-09,
+        1.709251494038665e-09,
+        4.373946532319677e-09,
+        1.20423198202232e-09
+      ],
+      "accepted": true
+    }
+  },
+  "c2b_material_frame_closure_delta_mpa": {},
+  "c2b_not_run": "ValueError: unknown SRIX parameter(s) GpsClosureFrame; accepted: C_mpa, Q_mpa, R_mpa, b, d, tau0_mpa, C11_mpa, C12_mpa, C44_mpa",
+  "accepted": false
+}

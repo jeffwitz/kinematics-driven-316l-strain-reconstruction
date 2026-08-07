@@ -2397,6 +2397,21 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._warm_start_resets = 0
         self._maximum_residual = 0.0
         self._last_local_failure: dict[str, object] | None = None
+        # Sub-stepping bound. Eight halvings take a full increment down to
+        # 1/256 of itself; beyond that a failure is not a step-size problem.
+        self._maximum_substeps = 256
+        self._substep_uses = 0
+        self._substep_divisions_max = 0
+
+    @property
+    def substep_uses(self) -> int:
+        """How many increments needed halving. Zero is the healthy case."""
+
+        return self._substep_uses
+
+    @property
+    def substep_divisions_max(self) -> int:
+        return self._substep_divisions_max
 
     @property
     def point_count(self) -> int:
@@ -2467,6 +2482,90 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._mgis, self._behaviour, self._parameters, self._behaviour_name
         )
 
+    def _integrate_once(self, gradient: NDArray, time_increment: float) -> int:
+        self._manager.s1.gradients[:, :] = (
+            np.asarray(self._manager.s0.gradients) + gradient
+        )
+        return int(
+            self._mgis.integrate(
+                self._manager,
+                self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
+                float(time_increment),
+                0,
+                self._point_count,
+            )
+        )
+
+    def _committed_snapshot(self) -> tuple[NDArray, NDArray, NDArray]:
+        return (
+            np.asarray(self._manager.s0.gradients).copy(),
+            np.asarray(self._manager.s0.thermodynamic_forces).copy(),
+            np.asarray(self._manager.s0.internal_state_variables).copy(),
+        )
+
+    def _restore_committed(self, snapshot: tuple[NDArray, NDArray, NDArray]) -> None:
+        gradients, forces, internal = snapshot
+        self._manager.s0.gradients[:, :] = gradients
+        self._manager.s0.thermodynamic_forces[:, :] = forces
+        self._manager.s0.internal_state_variables[:, :] = internal
+
+    def _integrate_with_substepping(
+        self, gradient: NDArray, time_increment: float
+    ) -> tuple[int, int]:
+        """Integrate one increment, halving it as often as needed.
+
+        The 21-unknown joint Newton of the GPS law has no line search and no
+        step control -- the Implicit DSL offers neither -- so it fails on large
+        plastic increments even though the root is there. Measured by
+        `scripts/diagnose_srix_closure_root_sweep.py`: the closure equation
+        `sigma_zz(eps_zz) = 0` has **exactly one** root at every increment of
+        the frozen history, increment 8 included, and the roots march at a
+        regular `-0.001` per increment. There is no fold and no branch to lose;
+        what fails is the iteration, not the problem. Halving the increment is
+        the standard remedy and the only one that addresses the actual cause.
+
+        Sub-stepping advances `s0` internally and then puts it back, so
+        `commit()` and `revert()` keep their meaning for the caller: `s1` holds
+        the end state, `s0` the true committed one.
+
+        The returned tangent is that of the LAST sub-step, not of the whole
+        increment. That is the usual compromise -- the stress, the closure and
+        the internal variables are exact; only the Newton matrix is
+        approximate, and the global iteration corrects for it.
+        """
+
+        status = self._integrate_once(gradient, time_increment)
+        if status == 1 or self._maximum_substeps <= 1:
+            return status, 1
+
+        snapshot = self._committed_snapshot()
+        divisions = 2
+        while divisions <= self._maximum_substeps:
+            self._restore_committed(snapshot)
+            self._mgis.revert(self._manager)
+            fraction = gradient / divisions
+            step = time_increment / divisions
+            succeeded = True
+            for index in range(divisions):
+                status = self._integrate_once(fraction, step)
+                if status != 1:
+                    succeeded = False
+                    break
+                if index < divisions - 1:
+                    self._mgis.update(self._manager)
+            if succeeded:
+                # `s1` is the end state; `s0` goes back to the real committed
+                # state so the caller's transaction is unchanged.
+                self._restore_committed(snapshot)
+                self._substep_uses += 1
+                self._substep_divisions_max = max(self._substep_divisions_max, divisions)
+                return 1, divisions
+            divisions *= 2
+
+        self._restore_committed(snapshot)
+        self._mgis.revert(self._manager)
+        return status, divisions // 2
+
     def evaluate_in_plane(
         self,
         in_plane_strain: ArrayLike,
@@ -2535,21 +2634,16 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             )
             in_plane_operator[:, :, _TRANSVERSE_COMPONENTS_3D] = 0.0
         self._last_local_failure = None
-        self._manager.s1.gradients[:, :] = (
-            np.asarray(self._manager.s0.gradients) + gradient
-        )
-        status = self._mgis.integrate(
-            self._manager,
-            self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
-            float(time_increment),
-            0,
-            self._point_count,
-        )
+        status, divisions = self._integrate_with_substepping(gradient, time_increment)
         if status != 1:
-            self._last_local_failure = {"status": int(status)}
+            self._last_local_failure = {
+                "status": int(status),
+                "substep_divisions": int(divisions),
+            }
             self.revert()
             raise MFrontIntegrationError(
-                f"GPS UMAT integration failed with status {status}"
+                f"GPS UMAT integration failed with status {status} after "
+                f"sub-stepping down to 1/{divisions} of the increment"
             )
         self._integration_seconds += time.perf_counter() - started
         self._evaluate_calls += 1
