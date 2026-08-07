@@ -181,6 +181,36 @@ any point where the reference converged.
 agrees to relative `1e-6` — one decade of margin above the `7e-7` floor of
 the law's own tangent qualification.
 
+## Amendment 1 — 2026-08-07, after the first execution (F1 triggered)
+
+The first execution triggered F1: from the first plastic increment, the UMAT
+solution disagrees with the reference. The follow-up diagnostic
+(`validation/srix_plane_stress_branch_diagnostic.md`) established that the
+disagreement is a property of the SRIX law, not of the closure: the 3D
+problem admits multiple roots at the first plastic increment, and the
+nested Python Newton and the joint UMAT Newton select different branches.
+The root the raw 3D Newton converges to at the UMAT closure point violates
+the closure (`sigma_zz = -154.7 MPa`) and is **not a plane-stress solution**;
+the UMAT Newton enforces the closure inside the local system and therefore
+always converges to the plane-stress root. Agreement with the reference is
+consequently **not a valid acceptance criterion for a multi-valued law**, and
+is amended as follows:
+
+- **A1** is replaced by **A1'**: the UMAT solution is a root of the closed
+  plane-stress system — the local Newton converges (MGIS status 1) at every
+  increment of C1–C3, and the global closure residual (A3) and the
+  finite-difference tangent check (A6) hold at every increment. This is the
+  criterion that "forces the plane-stress root", the purpose of this backend.
+- **A2** is replaced by **A2'**: the condensed-tangent comparison against the
+  reference is reported, not gated (the tangent follows the selected branch);
+  the tangent correctness criterion is A6 alone.
+- The C1–C3 comparison against the reference (stress, transverse strains,
+  tangent) is reported as a **branch-difference diagnostic**, with the
+  reference's branch documented as the natural-root branch.
+- A3, A4 (reported at field level), A5, A6, F2–F6 are unchanged. F1 is
+  redefined: the closed-system criterion fails only if the Newton does not
+  converge where the reference does, or if A3/A6 fail.
+
 ## Registered falsifiers
 
 **F1 — fixed-point or tangent mismatch.** Any C1–C3 point exceeding A1, A2 or

@@ -2526,7 +2526,13 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 self._mgis_rotations.reshape(self._point_count, 9), 6, axis=0
             ).reshape(-1)
             self._mgis.rotateGradients(rotated_block, self._behaviour, rotations_expanded)
-            in_plane_operator = rotated_block.reshape(self._point_count, 6, 6)
+            # The MGIS output rows are the rotated unit vectors; the
+            # derivative operator d(deto_m)/ddeto has them as COLUMNS, so the
+            # output is transposed. At the identity this is a no-op, which is
+            # why the error only showed up on rotated orientations.
+            in_plane_operator = rotated_block.reshape(self._point_count, 6, 6).transpose(
+                0, 2, 1
+            )
             in_plane_operator[:, :, _TRANSVERSE_COMPONENTS_3D] = 0.0
         self._last_local_failure = None
         self._manager.s1.gradients[:, :] = (

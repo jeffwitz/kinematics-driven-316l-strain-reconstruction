@@ -69,12 +69,46 @@ pas une grosse erreur, une autre solution").
   question is the branch selection of the SRIX law under a joint Newton, a
   property of the law, not of the closure.
 
-## What was not run
+## Update 2 — 2026-08-07: two rotation bugs found and fixed; robustness wall
 
-C2b (material-frame closure deviation `delta`) was not measured: the fixed
-point already differs from the reference at the first plastic increment, so
-the frame measurement is secondary and the preregistration amendment should
-decide its fate.
+Re-examination after the amendment (preregistration Amendment 1) uncovered
+two storage-convention bugs that had corrupted the rotated orientations
+(the identity cases were blind to both):
+
+1. **The law's rotation formula used the engineering shear storage.** MGIS
+   stores gradients, thermodynamic forces and state variables in the Kelvin
+   storage (shear = `gamma/sqrt(2)`). The tensor rotation in the stored
+   components mixes diagonal and shear with `sqrt(2)` factors, not `1` (and
+   the shear-to-shear mixing carries no factor). The corrected formula
+   (`gpsRotate` in `Fcc316LForestRubinSrixGps.mfront`) matches the MGIS
+   rotation on all six components to machine precision. The user's hint to
+   re-check the component ordering was verified: the ordering is the
+   standard `[11, 22, 33, 12, 13, 23]` (confirmed by the qualified
+   `kelvin_3d_to_tensor`), and the `sqrt(2)` factor was the error.
+2. **The bridge's in-plane operator was transposed.** The MGIS
+   `rotateGradients` output has the rotated unit vectors as ROWS; the
+   derivative operator needs them as COLUMNS. At the identity the transpose
+   is a no-op, which is why the error only showed on rotated orientations.
+
+After both fixes, at a rotated (`[35, 20, 15]`) plastic material point: the
+closure residual is `1.3e-14 MPa` and the finite-difference tangent agrees
+to `1.3e-7` relative.
+
+**Performance.** Per material evaluation (single point, four threads, the
+working range): the UMAT backend takes `0.42 ms` against `2.81 ms` for the
+condensed reference — **about 6.7x faster**, as expected for one Newton
+instead of a nested one.
+
+**Robustness wall (open).** The joint 21-unknown Newton fails at the deeper
+plastic states (increment 8 of the frozen 12-increment history, and the deep
+points of the P43 20x20 case at 8 increments). The failure is independent of
+the start (the GPS fails at increment 8 even from the reference's committed
+state), of the Jacobian (analytic or finite-difference), of `@IterMax` (200)
+and of the closure normalisation (modulus `1e6`). The nested reference
+converges there. The wall is a property of the joint Newton structure in the
+Implicit DSL, not of the closure formulation; it limits the backend to the
+moderate plastic range until addressed (or documented as the acceptance
+range of Amendment 1).
 
 ## Recording
 

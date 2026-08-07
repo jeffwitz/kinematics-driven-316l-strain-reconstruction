@@ -1,0 +1,35 @@
+{
+  "configuration": {
+    "crop_nodes": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "ebsd_orientation_h5": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "increments": 4,
+    "maximum_newton_iterations": 40,
+    "mfront_threads": 4,
+    "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3"
+  },
+  "schema_version": 1,
+  "status": "partial",
+  "variants": [
+    {
+      "backend": "mfront-3d-condensed-plane-stress",
+      "log": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_3d_condensed_plane_stress.log",
+      "report": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_3d_condensed_plane_stress.json",
+      "return_code": 1,
+      "status": "failed",
+      "wall_seconds": 1.2780127020087093
+    },
+    {
+      "backend": "mfront-native-generalised-plane-stress",
+      "log": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_native_generalised_plane_stress.log",
+      "report": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_native_generalised_plane_stress.json",
+      "return_code": 1,
+      "status": "failed",
+      "wall_seconds": 1.181073817977449
+    }
+  ]
+}

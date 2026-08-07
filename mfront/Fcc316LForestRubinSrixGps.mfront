@@ -42,6 +42,7 @@
 
 @Algorithm NewtonRaphson;
 @Epsilon 1.e-12;
+@IterMax 200;
 @Theta 1;
 
 @Brick StandardElasticity{
@@ -123,35 +124,51 @@ p.setEntryName("EquivalentPlasticSlip");
 a.setEntryName("BackStrain");
 
 /*!
- * Rotation of a symmetric tensor in engineering shear storage:
- * s'(i) = (R s R^T)(i), with the nine components of R passed row by row.
- * No TFEL rotate helper exists for stensor, so this is written out; the
- * engineering convention (shear components stored as gamma) is the one used
- * by MGIS gradients and by TFEL stensor components.
+ * Rotation of a symmetric tensor, s'(i) = (R s R^T)(i), with the nine
+ * components of R passed row by row. No TFEL rotate helper exists for
+ * stensor, so this is written out.
+ *
+ * The storage convention is the one MGIS uses for gradients, thermodynamic
+ * forces and internal state variables in this repository: the shear
+ * components are stored as gamma / sqrt(2) (Kelvin storage), NOT as the
+ * engineering gamma. The formula converts to engineering, applies the
+ * standard tensor rotation, and converts back. Using the engineering
+ * formula directly on the stored values is wrong by the sqrt(2) factors on
+ * the shear components as soon as the rotation mixes shear and diagonal
+ * components (measured: a general Bunge orientation disagreed with the MGIS
+ * rotation by an order of magnitude while the diagonal-only check passed).
  */
 @Private {
   static Stensor gpsRotate(const Stensor& s,
                            const real& r00, const real& r01, const real& r02,
                            const real& r10, const real& r11, const real& r12,
                            const real& r20, const real& r21, const real& r22) {
+    // Kelvin storage: the shear components are stored as gamma/sqrt(2), so
+    // the tensor rotation R s R^T reads, in the stored components,
+    //   diagonal:  r_i^2 s_diag + sqrt(2) r_i r_j s_shear
+    //   shear:     sqrt(2) r_i r_j s_diag + (r_i r_j + r_j r_i) s_shear
+    // The diagonal-to-shear mixing carries sqrt(2), not 1/sqrt(2); an
+    // engineering-storage formula applied to the stored values is wrong by
+    // that factor (measured against the MGIS rotation).
+    const auto sq2 = sqrt(real(2));
     const auto s0 = s(0), s1 = s(1), s2 = s(2);
     const auto s3 = s(3), s4 = s(4), s5 = s(5);
     auto r = s;
-    r(0) = r00*r00*s0 + r01*r01*s1 + r02*r02*s2 + r00*r01*s3
-         + r00*r02*s4 + r01*r02*s5;
-    r(1) = r10*r10*s0 + r11*r11*s1 + r12*r12*s2 + r10*r11*s3
-         + r10*r12*s4 + r11*r12*s5;
-    r(2) = r20*r20*s0 + r21*r21*s1 + r22*r22*s2 + r20*r21*s3
-         + r20*r22*s4 + r21*r22*s5;
-    r(3) = r00*r10*s0 + r01*r11*s1 + r02*r12*s2
+    r(0) = r00*r00*s0 + r01*r01*s1 + r02*r02*s2
+         + sq2 * (r00*r01*s3 + r00*r02*s4 + r01*r02*s5);
+    r(1) = r10*r10*s0 + r11*r11*s1 + r12*r12*s2
+         + sq2 * (r10*r11*s3 + r10*r12*s4 + r11*r12*s5);
+    r(2) = r20*r20*s0 + r21*r21*s1 + r22*r22*s2
+         + sq2 * (r20*r21*s3 + r20*r22*s4 + r21*r22*s5);
+    r(3) = sq2 * (r00*r10*s0 + r01*r11*s1 + r02*r12*s2)
          + (r00*r11 + r01*r10) * s3
          + (r00*r12 + r02*r10) * s4
          + (r01*r12 + r02*r11) * s5;
-    r(4) = r00*r20*s0 + r01*r21*s1 + r02*r22*s2
+    r(4) = sq2 * (r00*r20*s0 + r01*r21*s1 + r02*r22*s2)
          + (r00*r21 + r01*r20) * s3
          + (r00*r22 + r02*r20) * s4
          + (r01*r22 + r02*r21) * s5;
-    r(5) = r10*r20*s0 + r11*r21*s1 + r12*r22*s2
+    r(5) = sq2 * (r10*r20*s0 + r11*r21*s1 + r12*r22*s2)
          + (r10*r21 + r11*r20) * s3
          + (r10*r22 + r12*r20) * s4
          + (r11*r22 + r12*r21) * s5;
