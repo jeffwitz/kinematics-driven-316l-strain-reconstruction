@@ -189,6 +189,45 @@ fragilité n'est pas du côté attendu. Rapport :
 `scripts/diagnose_srix_plane_stress_branches.py`. Aucune décision n'en est
 tirée : la référence condensée reste la référence.
 
+**Décision de l'utilisateur (même jour) : la racine de contrainte plane est
+la seule valide — on la FORCE.** La racine « naturelle » à `sigma_zz =
+-154,7 MPa` viole la fermeture : ce n'est pas une solution de contrainte
+plane. Le Newton conjoint UMAT est l'implémentation de ce principe (la
+fermeture est une équation du Newton, chaque itéré se dirige vers la racine
+qui satisfait `sigma_transverse = 0`). Conséquences actées : (1) la
+préinscription est amendée — A1' = la solution UMAT est une racine du système
+fermé (Newton convergé + fermeture `<= 1e-6 MPa` + tangente FD), l'écart à
+la référence devient un écart de branche rapporté ; (2) à terme, les
+campagnes condensées archivées (sur la branche naturelle) devront être
+refaites ; pour l'instant on documente et on implémente.
+
+**Deux bugs de convention de stockage trouvés et corrigés (commit
+`6e9a423`)** — les cas identité étaient aveugles aux deux :
+1. la formule de rotation de la loi (`gpsRotate`) utilisait le stockage
+   ingénieur alors que MGIS stocke en Kelvin (cisaillement `gamma/sqrt(2)`) :
+   le mélange diagonale↔cisaillement porte `sqrt(2)`. L'ordonnancement
+   `[11,22,33,12,13,23]` est standard (confirmé par `kelvin_3d_to_tensor`) ;
+   le facteur `sqrt(2)` était l'erreur (l'intuition de l'utilisateur sur
+   l'ordonnancement a déclenché la vérification) ;
+2. l'opérateur dans le plan du pont était **transposé** (la sortie MGIS a
+   les vecteurs unités rotés en lignes, l'opérateur dérivé les veut en
+   colonnes).
+
+Après correction, au point tourné `[35,20,15]` plastique : fermeture
+`1,3e-14 MPa`, tangente FD `1,3e-7`. **Performance : ~6,7× plus rapide** que
+la condensation Python (`0,42 ms` contre `2,81 ms` par évaluation matériau).
+
+**Mur de robustesse, ouvert** : le Newton conjoint 21 inconnues diverge aux
+états plastiques profonds (incrément 8 de l'historique gelé à 12 incréments ;
+le P43 20×20 à 8 incréments échoue aux points profonds). Indépendant du
+départ (échoue même depuis l'état de la référence), du Jacobien (analytique
+ou FD), de `@IterMax` (200) et de la normalisation de la fermeture (module
+`1e6`). La référence imbriquée converge là. Limite de la structure du Newton
+conjoint dans le DSL Implicit, pas de la formulation de la fermeture.
+Benchmark : `scripts/benchmark_srix_umat_gps_p43.py`. La suite possible :
+acter le mur (backend qualifié sur la plage modérée) ou investiguer le bassin
+du Newton à l'inc 8 (la sonde C++ peut imprimer la trajectoire du résidu).
+
 ## Frontières d'extension — fusionné le 2026-08-02
 
 Le diff `kinematics_extension_v1.diff` de GPT Work est intégré : registres de
