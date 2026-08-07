@@ -2436,6 +2436,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._shadow: MFront3DMaterialPointBatch | None = None
         self._shadow_failures = 0
         self._shadow_has_trial = False
+        # tr(eel) = tr(eps_total) is the trace of the elastic residual: the
+        # Schmid tensors are deviatoric and a rotation preserves the trace, so
+        # a converged state that violates it is not a solution of the system
+        # the law says it solved. Cheap enough to check on every evaluation,
+        # and it is the invariant that exposed the overwrite defect.
+        self._maximum_kinematic_defect = 0.0
         if shadow_tangent:
             self._shadow = MFront3DMaterialPointBatch(
                 library_path,
@@ -2527,11 +2533,39 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._mgis, self._behaviour, self._parameters, self._behaviour_name
         )
 
-    def _integrate_once(self, gradient: NDArray, time_increment: float) -> int:
-        self._manager.s1.gradients[:, :] = (
-            np.asarray(self._manager.s0.gradients) + gradient
-        )
-        return int(
+    def _integrate_once(self, in_plane_kelvin: NDArray, time_increment: float) -> int:
+        """One integration, with the transverse strain kept in the gradient.
+
+        The law adds its closure unknowns to the gradient it is given rather
+        than replacing three of its components, so the transverse strain the
+        bridge supplies IS part of the imposed gradient. On success the
+        increment the closure found is folded back into `s1.gradients`, which
+        makes `s1.gradients` the true total strain at every point of the
+        transaction: `mgis.update` then carries it into the committed state,
+        `mgis.revert` discards it with everything else, and every sub-step
+        starts from the transverse strain the previous one reached.
+
+        This is the whole point of the change of 2026-08-07. While the law
+        overwrote the transverse components instead, MGIS held a gradient that
+        was fictitious on three components; nothing could cross-check the
+        state, and the recorded transverse strain drifted from the integrated
+        one by a factor equal to the increment number.
+        """
+
+        # `in_plane_kelvin` is the TOTAL in-plane strain, not an increment --
+        # that is the contract of `evaluate` for every plane-stress batch in
+        # this module, and the reference sets the gradient absolutely. This
+        # bridge used to write `s0.gradients + gradient`, so it applied the
+        # total as if it were an increment and the imposed strain accumulated
+        # as 1+2+3+... instead of 1,2,3: at increment 2 the in-plane trace was
+        # 3.0e-3 where 2.0e-3 was asked. Increment 1 was unaffected -- total
+        # and increment coincide there -- which is exactly why every
+        # comparison against the reference agreed at increment 1 and diverged
+        # from increment 2.
+        gradients = np.asarray(self._manager.s0.gradients).copy()
+        gradients[:, _PLANE_STRESS_COMPONENTS] = in_plane_kelvin
+        self._manager.s1.gradients[:, :] = gradients
+        status = int(
             self._mgis.integrate(
                 self._manager,
                 self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
@@ -2540,6 +2574,16 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 self._point_count,
             )
         )
+        if status == 1:
+            closure = np.array(
+                [self._ezz_offset, self._exz_offset, self._eyz_offset], dtype=int
+            )
+            increment = (
+                np.asarray(self._manager.s1.internal_state_variables)[:, closure]
+                - np.asarray(self._manager.s0.internal_state_variables)[:, closure]
+            )
+            self._manager.s1.gradients[:, _TRANSVERSE_COMPONENTS_3D] += increment
+        return status
 
     def _set_closure_predictor(self, values: NDArray) -> None:
         """Set the closure-root predictor external state variables (n, 3).
@@ -2557,7 +2601,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._mgis.setExternalStateVariable(self._manager.s1, name, column, storage)
 
     def _rerun_full_increment_from_located_root(
-        self, gradient: NDArray, time_increment: float
+        self, in_plane_kelvin: NDArray, time_increment: float
     ) -> int:
         """Route 1 of the handoff: rerun the full increment from the root the
         sub-stepping located.
@@ -2582,14 +2626,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._restore_committed(snapshot)
         self._mgis.revert(self._manager)
         self._set_closure_predictor(located)
-        status = self._integrate_once(gradient, time_increment)
+        status = self._integrate_once(in_plane_kelvin, time_increment)
         if status == 1:
             return 1
         # Fallback: deterministic redo of the sub-stepping.
         self._restore_committed(snapshot)
         self._mgis.revert(self._manager)
         self._set_closure_predictor(np.zeros((self._point_count, 3)))
-        status, _ = self._integrate_with_substepping(gradient, time_increment)
+        status, _ = self._integrate_with_substepping(in_plane_kelvin, time_increment)
         return status
 
     def _shadow_condensed_tangent(
@@ -2627,7 +2671,10 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
         )
         total[:, _TRANSVERSE_COMPONENTS_3D] = internal_state_variables[
-            :, [self._ezz_offset, self._exz_offset, self._eyz_offset]
+            :,
+            np.array(
+                [self._ezz_offset, self._exz_offset, self._eyz_offset], dtype=int
+            ),
         ]
         try:
             trial = self._shadow.evaluate(total, time_increment=time_increment)
@@ -2650,6 +2697,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     def shadow_failures(self) -> int:
         return self._shadow_failures
 
+    @property
+    def maximum_kinematic_defect(self) -> float:
+        """Worst relative violation of `tr(eel) = tr(eps_total)` so far."""
+
+        return self._maximum_kinematic_defect
+
     def _committed_snapshot(self) -> tuple[NDArray, NDArray, NDArray]:
         return (
             np.asarray(self._manager.s0.gradients).copy(),
@@ -2664,7 +2717,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._manager.s0.internal_state_variables[:, :] = internal
 
     def _integrate_with_substepping(
-        self, gradient: NDArray, time_increment: float
+        self, in_plane_kelvin: NDArray, time_increment: float
     ) -> tuple[int, int]:
         """Integrate one increment, halving it as often as needed.
 
@@ -2688,20 +2741,26 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         approximate, and the global iteration corrects for it.
         """
 
-        status = self._integrate_once(gradient, time_increment)
+        status = self._integrate_once(in_plane_kelvin, time_increment)
         if status == 1 or self._maximum_substeps <= 1:
             return status, 1
 
         snapshot = self._committed_snapshot()
+        committed_in_plane = snapshot[0][:, _PLANE_STRESS_COMPONENTS].copy()
         divisions = 2
         while divisions <= self._maximum_substeps:
             self._restore_committed(snapshot)
             self._mgis.revert(self._manager)
-            fraction = gradient / divisions
             step = time_increment / divisions
             succeeded = True
             for index in range(divisions):
-                status = self._integrate_once(fraction, step)
+                # Interpolate the TOTAL in-plane strain between the committed
+                # state and the target; a fraction of a total is not a strain.
+                weight = (index + 1) / divisions
+                stage = committed_in_plane + weight * (
+                    in_plane_kelvin - committed_in_plane
+                )
+                status = self._integrate_once(stage, step)
                 if status != 1:
                     succeeded = False
                     break
@@ -2754,10 +2813,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # dexz) before rotating. The bridge passes the in-plane gradient in
         # Kelvin storage (the repository convention for MGIS arrays) and zero
         # transverse values, which the law never reads.
-        gradient = np.zeros((self._point_count, 6), dtype=float)
-        gradient[:, _PLANE_STRESS_COMPONENTS] = (
-            in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
-        )
+        in_plane_kelvin = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
         self._set_parameters()
         started = time.perf_counter()
         # d(deto_m)/ddeto restricted to the in-plane columns, in the MGIS
@@ -2767,6 +2823,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # component entered the elastic residual; here only the in-plane
         # ones do, so the returned tangent is post-multiplied by this
         # operator.
+        in_plane_operator: NDArray
         if self._mgis_rotations is None:
             in_plane_operator = np.eye(6, dtype=float)
             in_plane_operator[:, _TRANSVERSE_COMPONENTS_3D] = 0.0
@@ -2791,7 +2848,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # The closure-root predictor is reset at every evaluation; the
         # sub-stepping path sets it to the located root (route 1).
         self._set_closure_predictor(np.zeros((self._point_count, 3)))
-        status, divisions = self._integrate_with_substepping(gradient, time_increment)
+        status, divisions = self._integrate_with_substepping(
+            in_plane_kelvin, time_increment
+        )
         if status != 1:
             self._last_local_failure = {
                 "status": int(status),
@@ -2808,7 +2867,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             # increment, not of the last sub-step.
             self._rerun_uses += 1
             status = self._rerun_full_increment_from_located_root(
-                gradient, time_increment
+                in_plane_kelvin, time_increment
             )
             if status != 1:
                 self._rerun_failures += 1
@@ -2848,17 +2907,18 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         shadow_tangent_engineering = self._shadow_condensed_tangent(
             in_plane, internal_state_variables, time_increment
         )
-        # Global total strain: in-plane from the imposed gradient, transverse
-        # from the closure state variables (engineering scalars -> Kelvin).
-        transverse = internal_state_variables[
-            :, [self._ezz_offset, self._exz_offset, self._eyz_offset]
-        ].copy()
-        total = np.zeros((self._point_count, 6), dtype=float)
-        total[:, _PLANE_STRESS_COMPONENTS] = (
-            in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
-        )
-        total[:, _TRANSVERSE_COMPONENTS_3D] = transverse * np.array(
-            [1.0, 1.0 / _SQRT_TWO, 1.0 / _SQRT_TWO]
+        # Global total strain: read straight off the gradient, which now
+        # carries the transverse strain too. There is no reconstruction from
+        # the closure state variables any more, and with it goes the
+        # engineering-versus-Kelvin ambiguity that reconstruction carried --
+        # the gradient has one storage convention and MGIS owns it.
+        total = np.asarray(self._manager.s1.gradients).copy()
+        transverse = total[:, _TRANSVERSE_COMPONENTS_3D].copy()
+        kinematic_defect = np.abs(
+            elastic[:, :3].sum(axis=1) - total[:, :3].sum(axis=1)
+        ) / np.maximum(np.abs(total[:, :3].sum(axis=1)), 1.0e-30)
+        self._maximum_kinematic_defect = max(
+            self._maximum_kinematic_defect, float(kinematic_defect.max())
         )
         observables = {
             name: internal_state_variables[:, item].copy()
@@ -2910,7 +2970,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             plastic_strain_tensor=plastic_tensor,
             plane_stress_residual_mpa=residual,
             observables=observables,
-            local_plane_stress_iterations=self._local_iterations.copy(),
+            local_plane_stress_iterations=self._local_iterations.astype(float),
         )
         return self._latest_trial
 

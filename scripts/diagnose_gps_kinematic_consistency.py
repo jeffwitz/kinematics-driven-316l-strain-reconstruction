@@ -9,8 +9,8 @@ the trace of a converged `feel` therefore gives
 
     tr(eel) = tr(eps_total)
 
-with `eps_total` the in-plane strain the bridge imposes plus the transverse
-strain the closure state variables hold. This is an identity of the residual,
+with `eps_total` read straight off the GRADIENT, which since 2026-08-07 carries
+the transverse strain too. This is an identity of the residual,
 not a physical claim: a converged state that violates it is not a solution of
 the system the law says it solved.
 
@@ -85,11 +85,6 @@ def main() -> int:
     if library is None:
         raise SystemExit("MFRONT_BEHAVIOUR_LIBRARY must be set")
 
-    from fem_inhouse.core.mfront import (
-        _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
-        _PLANE_STRESS_COMPONENTS,
-    )
-
     report: dict[str, Any] = {"parameter_set": arguments.parameter_set, "cases": {}}
     for name, euler in ORIENTATIONS.items():
         batch = _batch(library, euler, arguments.parameter_set)
@@ -100,13 +95,12 @@ def main() -> int:
             batch.evaluate(np.atleast_2d(in_plane), time_increment=1.0 / INCREMENTS)
             state = np.asarray(inner._manager.s1.internal_state_variables)[0]
             elastic = state[inner._elastic_offset : inner._elastic_offset + 6]
-            total = np.zeros(6)
-            total[_PLANE_STRESS_COMPONENTS] = (
-                in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
-            )
-            total[2] = state[inner._ezz_offset]
-            total[4] = state[inner._exz_offset]
-            total[5] = state[inner._eyz_offset]
+            # The gradient, NOT the closure state variables. Reconstructing
+            # the total strain from the internal variables is what produced a
+            # spurious 100 percent defect on 2026-08-07: the increments they
+            # carry are right, their accumulated value is not, and nothing
+            # needs it once the transverse strain lives in the gradient.
+            total = np.asarray(inner._manager.s1.gradients)[0].copy()
             elastic_trace = float(elastic[:3].sum())
             total_trace = float(total[:3].sum())
             defect = abs(elastic_trace - total_trace) / max(abs(total_trace), 1e-30)
@@ -116,13 +110,14 @@ def main() -> int:
                     "trace_elastic": elastic_trace,
                     "trace_total": total_trace,
                     "relative_defect": defect,
-                    "eps_zz": float(state[inner._ezz_offset]),
+                    "eps_zz_gradient": float(total[2]),
+                    "eps_zz_state_variable": float(state[inner._ezz_offset]),
                 }
             )
             print(
                 f"  {name:<16} inc {index:>2}  tr(eel)={elastic_trace:+.4e}  "
                 f"tr(eps)={total_trace:+.4e}  defect={defect:.2e}  "
-                f"eps_zz={state[inner._ezz_offset]:+.5f}"
+                f"eps_zz(grad)={total[2]:+.6f} eps_zz(isv)={state[inner._ezz_offset]:+.6f}"
             )
             batch.commit()
         report["cases"][name] = {

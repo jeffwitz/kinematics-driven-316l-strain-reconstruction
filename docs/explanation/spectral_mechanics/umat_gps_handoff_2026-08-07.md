@@ -415,3 +415,67 @@ l'affectation utilisateur `feel = deel - deto_m` et ce que le brick
 
 Tant que ce point n'est pas résolu, **la référence condensée reste la seule
 solution correcte**, et le backend UMAT ne doit pas être utilisé.
+
+### 8.8 RÉSOLU — le pont appliquait la déformation totale comme un incrément
+
+**Tout ce qui précède avait une cause unique, et ce n'était ni la loi, ni le
+DSL, ni une multiplicité de racines.**
+
+`evaluate(in_plane_strain, ...)` reçoit la déformation **totale** — c'est le
+contrat de tous les backends de contrainte plane de ce module, et la référence
+écrit son gradient de façon absolue. Le pont GPS faisait :
+
+```python
+self._manager.s1.gradients[:, :] = s0.gradients + gradient
+```
+
+Il appliquait donc le total comme un **incrément**, et la déformation imposée
+s'accumulait en `1+2+3+...` au lieu de `1,2,3`. À l'incrément 2, la trace en
+plan valait `3,0e-3` là où `2,0e-3` était demandé.
+
+L'incrément 1 n'était pas affecté — total et incrément y coïncident. **C'est
+exactement pourquoi toutes les comparaisons contre la référence s'accordaient à
+l'incrément 1 et divergeaient à partir du 2.**
+
+Corrigé : le gradient en plan est écrit **absolu**, la transverse reste celle de
+l'état committé et la fermeture y ajoute son incrément, et les sous-pas
+interpolent le total entre l'état committé et la cible (une fraction d'un total
+n'est pas une déformation).
+
+#### Ce que la correction emporte avec elle
+
+| | avant | après |
+|---|---|---|
+| A3 fermeture (MPa) | `4e-14` | `3e-14` |
+| A6 tangente FD, C1 | `7,4e-01` | **`1,6e-07`** |
+| A6 tangente FD, C2 | `5,2e+00` | **`1,2e-07`** |
+| A6 tangente FD, C3 | `3,2e-07` | **`1,4e-07`** |
+| écart à la référence, C1 | `2,7e-01` | **`1,1e-11`** |
+| écart à la référence, C2 | `4,4e-01` | **`7,4e-11`** |
+| écart à la référence, C3 | `1,7e-01` | **`4,8e-11`** |
+| verdict | REJETÉ | **ACCEPTÉ** |
+
+**Il n'y avait pas deux branches.** Le F1 du §5.1, la « multiplicité » du
+diagnostic de branches, le refus de la loi 3D brute de reproduire l'état UMAT
+(§8.6), le mur de robustesse du §5.2 (la déformation croissait
+quadratiquement !) et la tangente fausse du §8.3 sont **tous** des conséquences
+de cette seule ligne. La décision « on force la racine de contrainte plane »
+n'a plus d'objet, et les campagnes condensées archivées **n'ont pas à être
+refaites** : la référence avait raison depuis le début.
+
+`eps_zz` à l'incrément 2, identité : `-1,684e-3` contre `-1,65e-3` pour la
+référence, et la marche est désormais linéaire.
+
+#### Ce qui reste vrai des sections précédentes
+
+- Le sous-pas (§8.2) reste utile mais marginal : `max_div` tombe de 256 à 32, et
+  C3 n'en a plus besoin du tout. Conservé comme filet.
+- La réparation d'A6 (§8.3) reste indispensable : le contrôle vacu aurait
+  rapporté un succès sur une tangente fausse, et c'est lui qui a rendu la
+  correction vérifiable.
+- Le §8.6 (la route 1 ne tire pas, le bloc `@CompareToNumericalJacobian` de
+  TFEL 5.1 lit de mauvaises colonnes) reste valable.
+- Le §8.7 est **rétracté** : l'identité `tr(eel) = tr(eps_total)` est satisfaite
+  à `1e-13`; le défaut de 100 % que j'y rapportais venait de ma propre
+  reconstruction du total à partir des variables internes, pas de la loi.
+- La route 2 reste éteinte : elle n'a plus d'objet.

@@ -198,10 +198,17 @@ a.setEntryName("BackStrain");
   // --- generalised plane-stress closure: kinematics ---------------------
   // The imposed gradient is global; the closure unknowns replace its three
   // transverse components (Kelvin 2 = zz, 4 = xz, 5 = yz).
+  // The bridge now supplies the FULL gradient: its transverse components carry
+  // the committed transverse strain, and the closure unknowns are the
+  // INCREMENT on top of it. Replacing them, as this law did until 2026-08-07,
+  // hid the transverse strain from MGIS entirely -- the gradient it held was
+  // fictitious on three components, nothing could cross-check the state, and
+  // the recorded transverse strain drifted from the integrated one by a factor
+  // equal to the increment number. Adding keeps the strain where MGIS owns it.
   auto deto_g = deto;
-  deto_g(2) = dezz;
-  deto_g(4) = dexz;
-  deto_g(5) = deyz;
+  deto_g(2) += dezz;
+  deto_g(4) += dexz;
+  deto_g(5) += deyz;
   const auto q00 = Q11, q01 = Q12, q02 = Q13;
   const auto q10 = Q21, q11 = Q22, q12 = Q23;
   const auto q20 = Q31, q21 = Q32, q22 = Q33;
