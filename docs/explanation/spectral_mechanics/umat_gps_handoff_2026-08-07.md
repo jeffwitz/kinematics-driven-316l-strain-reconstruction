@@ -821,3 +821,60 @@ le GIL. C'est à vérifier avant d'implémenter, et cela n'a pas été fait.
 Le changement est conservé malgré la régression de temps : le critère de la
 préinscription est l'interchangeabilité avec la référence, et il gagne deux
 ordres de grandeur.
+
+### 8.15 Le GIL n'est pas libéré, et le détecteur ne détecte pas
+
+Les deux vérifications demandées, toutes deux négatives, et une mesure qui vaut
+plus que les deux.
+
+**Le binding retient le GIL.** Quatre plages disjointes du même manager :
+
+| | temps |
+|---|---|
+| en série | `20,49 ms` |
+| via un `ThreadPoolExecutor` Python | `28,04 ms` — **`0,73×`** |
+| lot entier via le pool MGIS | `7,26 ms` — `2,82×` |
+
+Le threading Python **ralentit**. Seul le pool interne parallélise, et il
+n'intègre que le manager entier. La parallélisation de l'isolement par cette
+voie est impossible ; elle n'a pas été implémentée.
+
+**Le détecteur par résidu de fermeture est réfuté.** Sur la vraie fenêtre EBSD
+P43 20x20 (400 points, 15 orientations distinctes) avec un champ de déformation
+fluctuant — le champ uniforme ne fait échouer aucun pas complet, la fluctuation
+est nécessaire pour reproduire le régime du solveur :
+
+```
+statut -1 a l'increment 2
+  residu |sigma_g,b| : median=1,4e-14  p90=3,2e-14  max=5,7e-14
+  points au-dessus de 1e-6 MPa : 0 / 400
+  points en echec (verite par point) : 2 / 400
+  detecteur a 1e-6 MPa : bons=0  faux positifs=0  manques=2
+```
+
+**Zéro détection sur deux échecs.** La raison : MFront laisse `s1` à l'état
+**committé** pour un point dont le Newton local a échoué — il n'y écrit pas
+d'état non convergé. Le résidu de fermeture d'un point fautif est donc celui de
+l'état committé, c'est-à-dire nul. Rien dans l'état ne distingue un point qui a
+échoué d'un point qui a réussi.
+
+Deux pièges méthodologiques rencontrés au passage, à ne pas refaire : lire `s1`
+**après** l'exception donne l'état restauré par `revert()`, donc convergé par
+construction ; et un banc à points identiques (orientation unique, déformation
+uniforme) ne peut rien montrer, puisque les 400 points y échouent ou réussissent
+ensemble.
+
+**La mesure qui compte : deux points sur quatre cents.** C'est la confirmation
+quantitative du §8.14 — le sous-pas par lot faisait payer trente-deux sous-pas à
+**398 points sains** pour en sauver deux. L'isolement par point fait donc
+exactement ce qu'il faut, et les deux ordres de grandeur gagnés sur l'accord
+avec la référence en sont la conséquence directe.
+
+**Ce qu'il reste à tenter.** Avec `k = 2`, la dichotomie coûte encore ses
+niveaux supérieurs : environ `400 x 9` intégrations de points, en série. Comme
+la plasticité localise, les mêmes points échouent d'un appel au suivant : **un
+cache des indices fautifs** permettrait de les sous-passer directement, sans
+dichotomie, et de retomber sur un seul appel groupé plus deux réparations
+minuscules. Le risque à traiter est un point qui échouerait sans être au cache
+— il faudrait une vérification, et rien dans l'état ne la fournit, comme on
+vient de le voir. C'est le point dur de cette piste.
