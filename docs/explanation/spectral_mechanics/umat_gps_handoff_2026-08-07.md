@@ -589,3 +589,62 @@ sortir la fermeture du Newton conjoint pour en faire une boucle externe en C++
 — ce qui est la structure de la référence, et retire à l'UMAT sa seule raison
 d'être. À `0,39×`, l'UMAT reste **2,6× plus lent** que la condensation Python :
 le backend de production ne change pas.
+
+### 8.11 Où passe le temps, et ce qui reste comme levier
+
+Trois mesures, et le suspect principal est innocenté.
+
+**Le sous-pas n'est pas le coût.** Avec le sous-pas **désactivé**, aux mêmes
+états, sur 400 points et 4 threads
+(`scripts/diagnose_gps_local_solve_cost.py`) :
+
+| | par point |
+|---|---|
+| loi brute, 18 inconnues | `10 – 14 µs` |
+| loi GPS, 21 inconnues, **sans sous-pas** | `79 – 113 µs` |
+| **rapport** | **`7,7 – 8,1×`** |
+
+Le facteur ~8 du benchmark P43 est donc le prix intrinsèque du Newton conjoint,
+pas le sous-pas.
+
+**Ce n'est pas non plus le nombre d'itérations.** Compteur `LocalIterations`
+ajouté à la loi : **4, 5, 8** itérations locales aux incréments 1 à 3 — des
+valeurs normales pour un return mapping. `21³/18³ = 1,6` fois deux fois plus
+d'itérations donne `3,2`, pas `8`. **Il reste un facteur ~2,5 inexpliqué.**
+
+**Ce n'est pas le recalcul de constantes.** Neuf `gpsRotate` sur des tenseurs
+constants et six produits `D·u_j` constants étaient refaits à chaque itération.
+Hissés dans `@InitLocalVariables` : rapport `7,74 → 8,09`, c'est-à-dire dans le
+bruit. Le hissage est conservé — c'est du travail provablement redondant en
+moins — mais il ne rapporte rien de mesurable.
+
+**`LevenbergMarquardt` confirme la diagnose et échoue sur le coût.** Le sous-pas
+s'effondre — identité `9 → 0`, `bunge_54` reste à `0`, `bunge_35` `11 → 8` :
+l'échec du Newton conjoint **est** bien un défaut de globalisation, et un
+amortissement le corrige. Mais le coût explose à `828 µs/point`, soit `73×` la
+loi brute. Rétabli à `NewtonRaphson`.
+
+#### Ce que cela laisse
+
+L'avantage structurel est réel et acquis : **3,3× moins d'appels constitutifs**
+(56 000 contre 121 600). Il faut passer sous `41 µs` par intégration pour que
+l'UMAT gagne, contre `79 – 113 µs` aujourd'hui.
+
+La piste la plus prometteuse reste la **réduction de la taille du système
+local**, parce que `sigma = D : eps_el` est exactement linéaire : la contrainte
+plane est donc une relation linéaire **constante** entre composantes de la
+déformation élastique,
+
+```
+eps_el,g,b = − D_g,bb^-1 D_g,ba · eps_el,g,a ,   D_g = R D R^T constante
+```
+
+ce qui ramène la loi à **15 inconnues** — trois déformations élastiques dans le
+plan global et douze glissements — sans lignes de fermeture, sans bloc diagonal
+nul, et **plus petite que la loi brute**.
+
+**Mais il faut d'abord expliquer le facteur 2,5 restant.** Si le surcoût du
+solve local ne vient pas de sa taille, passer de 21 à 15 inconnues n'y changera
+rien non plus. Le profilage du solve local (assemblage du jacobien contre
+factorisation contre inversion pour la tangente cohérente) est le prochain pas,
+et il doit précéder toute réécriture.

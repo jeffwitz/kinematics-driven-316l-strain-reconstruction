@@ -136,6 +136,13 @@ p.setEntryName("EquivalentPlasticSlip");
 @AuxiliaryStateVariable strain a[Nss];
 a.setEntryName("BackStrain");
 
+//! Local Newton iteration count of the last integration. Diagnostic only:
+//! the joint 21-unknown solve costs 7.7 times a raw 18-unknown integration
+//! even with no sub-stepping, and this says whether that is the price of an
+//! iteration or the number of them.
+@AuxiliaryStateVariable real localIterations;
+localIterations.setEntryName("LocalIterations");
+
 /*!
  * Rotation of a symmetric tensor, s'(i) = (R s R^T)(i), with the nine
  * components of R passed row by row. No TFEL rotate helper exists for
@@ -190,6 +197,36 @@ a.setEntryName("BackStrain");
 }
 
 
+//! Constants of the closure, hoisted out of the Newton loop. Q and D do not
+//! change during an integration, so `gpsRotate(u2)`, `gpsRotate(u4)`,
+//! `gpsRotate(u5)` and the six rotated stiffness columns of the closure
+//! Jacobian were nine constant tensor rotations plus six constant
+//! matrix-vector products recomputed at EVERY local iteration. Measured: the
+//! joint solve costs 7.7 times a raw 18-unknown integration with no
+//! sub-stepping at all, on 4 to 8 local iterations -- so the price is in the
+//! iteration, not in their number.
+@LocalVariable Stensor gpsU2;
+@LocalVariable Stensor gpsU4;
+@LocalVariable Stensor gpsU5;
+@LocalVariable Stensor gpsDc[6];
+
+@InitLocalVariables{
+  const auto q00 = Q11, q01 = Q12, q02 = Q13;
+  const auto q10 = Q21, q11 = Q22, q12 = Q23;
+  const auto q20 = Q31, q21 = Q32, q22 = Q33;
+  auto u2 = Stensor(real(0)); u2(2) = 1;
+  auto u4 = Stensor(real(0)); u4(4) = 1;
+  auto u5 = Stensor(real(0)); u5(5) = 1;
+  this->gpsU2 = gpsRotate(u2, q00, q01, q02, q10, q11, q12, q20, q21, q22);
+  this->gpsU4 = gpsRotate(u4, q00, q01, q02, q10, q11, q12, q20, q21, q22);
+  this->gpsU5 = gpsRotate(u5, q00, q01, q02, q10, q11, q12, q20, q21, q22);
+  for (unsigned short gj = 0; gj != 6; ++gj) {
+    auto uj = Stensor(real(0));
+    uj(gj) = 1;
+    this->gpsDc[gj] = gpsRotate(D * uj, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+  }
+}
+
 @Integrator {
   using size_type = unsigned short;
   const auto& ss = Fcc316LForestRubinSrixGpsSlipSystems<real>::getSlipSystems();
@@ -223,15 +260,9 @@ a.setEntryName("BackStrain");
   // the returned one post-multiplied by the in-plane rotation operator
   // d(deto_m)/ddeto; the passive bridge applies that constant operator.
   // dfeel/dclosure unknowns: -d(deto_m)/dunknown.
-  auto u2 = Stensor::Id();
-  u2(0) = 0; u2(1) = 0; u2(3) = 0; u2(4) = 0; u2(5) = 0;
-  auto u4 = Stensor::Id();
-  u4(0) = 0; u4(1) = 0; u4(2) = 0; u4(3) = 0; u4(4) = 1; u4(5) = 0;
-  auto u5 = Stensor::Id();
-  u5(0) = 0; u5(1) = 0; u5(2) = 0; u5(3) = 0; u5(4) = 0; u5(5) = 1;
-  dfeel_ddezz = -gpsRotate(u2, q00, q01, q02, q10, q11, q12, q20, q21, q22);
-  dfeel_ddexz = -gpsRotate(u4, q00, q01, q02, q10, q11, q12, q20, q21, q22);
-  dfeel_ddeyz = -gpsRotate(u5, q00, q01, q02, q10, q11, q12, q20, q21, q22);
+  dfeel_ddezz = -gpsU2;
+  dfeel_ddexz = -gpsU4;
+  dfeel_ddeyz = -gpsU5;
 
   // --- constitutive body, identical to Fcc316LForestRubinSrix -------------
   // Equation (8): equivalent measure of the deviatoric total strain increment.
@@ -315,6 +346,7 @@ a.setEntryName("BackStrain");
   // components in the structural frame. Normalised by a reference modulus so
   // that all residuals of the augmented system share a strain-like scale.
   const auto sigg = gpsRotate(sig, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+  this->localIterations = real(this->iter);
   const auto gps_modulus = stress(122000);
   if (gps_closure_frame > 0) {
     fezz = sigg(2) / gps_modulus;
@@ -332,15 +364,14 @@ a.setEntryName("BackStrain");
   // residual blocks written above. dsigma/ddeel = theta D, so the rows are
   // the (rotated) stiffness columns, normalised.
   for (size_type j = 0; j != 6; ++j) {
-    Stensor uj;
-    uj(0) = 0; uj(1) = 0; uj(2) = 0; uj(3) = 0; uj(4) = 0; uj(5) = 0;
-    uj(j) = 1;
     if (gps_closure_frame > 0) {
-      const auto dc = gpsRotate(D * uj, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+      const auto& dc = gpsDc[j];
       dfezz_ddeel(j) = theta * dc(2) / gps_modulus;
       dfeyz_ddeel(j) = theta * dc(5) / gps_modulus;
       dfexz_ddeel(j) = theta * dc(4) / gps_modulus;
     } else {
+      Stensor uj(real(0));
+      uj(j) = 1;
       const auto dm = D * uj;
       dfezz_ddeel(j) = theta * dm(2) / gps_modulus;
       dfeyz_ddeel(j) = theta * dm(5) / gps_modulus;
