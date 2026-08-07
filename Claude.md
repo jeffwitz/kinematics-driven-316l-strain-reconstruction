@@ -228,6 +228,60 @@ Benchmark : `scripts/benchmark_srix_umat_gps_p43.py`. La suite possible :
 acter le mur (backend qualifié sur la plage modérée) ou investiguer le bassin
 du Newton à l'inc 8 (la sonde C++ peut imprimer la trajectoire du résidu).
 
+**Reprise du 2026-08-07 (modèle suivant, commit `df59103`) — le mur est
+déplacé, le vrai blocage est la tangente.** Trois résultats, dans l'ordre de
+mesure :
+
+1. **Pas de repli de branche** : `scripts/diagnose_srix_closure_root_sweep.py`
+   balaie `sigma_zz(eps_zz)` avec la loi 3D brute à chaque état committé —
+   exactement une racine aux douze incréments, marchant à `-1,0e-3` par
+   incrément = `-(eps_xx + eps_yy)` (incompressibilité plastique). La racine
+   de contrainte plane existe, est unique et bien séparée où le Newton
+   conjoint meurt : le mur est une limite de l'itération, pas du problème.
+   (Nuance : le balayage suit la branche naturelle — la racine de fermeture
+   de l'UMat lui est invisible ; la multivaluation du §5.1 n'est pas réfutée.)
+2. **Le sous-pas franchit le mur de convergence** : le pont divise
+   l'incrément par moitiés jusqu'à 1/256 (s0 avancé puis restauré ;
+   `commit()`/`revert()` préservés). Sans sous-pas la qualification ne passe
+   pas l'incrément 3 ; avec, les trois cas parcourent les douze incréments,
+   fermeture à `4e-14 MPa`. Un `@Predictor` transverse (élastique puis
+   isochore) a été ajouté à la loi — il ne change pas le comptage de sous-pas
+   (l'échec n'est pas un problème de point de départ).
+3. **A6 était vacu (défaut de mon test)** : la vérification FD tournait après
+   l'historique, à incrément nul → branche élastique gardée → succès factice.
+   Corrigé (contrôle à chaque incrément, critère = le pire des douze) : le
+   vrai A6 est C1 = `7,4e-01`, C2 = `5,2e+00`, C3 = `3,2e-07` — C1 et C2
+   rejetés. Par incrément, SANS sous-pas, la tangente est excellente
+   (`7e-8`..`1,8e-6`) : la formulation est juste, c'est le **sous-pas qui
+   détruit la tangente** (matrice du dernier sous-pas ≠ matrice de l'incrément
+   entier). Le gain de `6,7×` n'est plus acquis (9-10/12 incréments
+   sous-pasés) — à remesurer.
+
+**Routes identifiées pour la tangente** (ni l'une ni l'autre implémentée) :
+route 1 (la bonne) — sous-pas pour **localiser** `Δeps_zz`, puis Newton
+complet sur l'incrément entier depuis la racine localisée, injectée au
+`@Predictor` via une variable externe posée par le pont — tangente exacte et
+Newton unique préservés ; route 2 — condenser avec la loi 3D brute sur
+l'incrément entier (`C^ps = Caa − Cab Cbb⁻¹ Cba`), exact mais une intégration
+3D de plus par évaluation. Autres réparations du même commit (préexistantes) :
+le `KeyError plastic_strain_2d` du solveur FEM (observables lues depuis le
+trial accepté), 1479 tests verts. Détails : §8 de
+`docs/explanation/spectral_mechanics/umat_gps_handoff_2026-08-07.md`.
+
+**Route 1 testée le 2026-08-07 (commit `3f9795f`) — le Newton complet ne
+peut pas converger aux états profonds.** La route 1 a été implémentée (3
+variables externes `GpsPredictorEzz/Eyz/Exz` lues par le `@Predictor`, re-run
+de l'incrément entier depuis la racine localisée). Mesuré : le re-run
+**réussit** mais converge vers le même point que le sous-pas (stress et
+tangente identiques) — le sous-pas accumulé est déjà une racine du problème
+complet. La **tangente cohérente du DSL à l'état plastique profond est fausse**
+(1,5-2,2× la différence finie, même à l'identité où la correction est un
+no-op) : le blocage n'est pas le chemin du Newton, c'est la mécanique
+`D_tdt·Je` du DSL. **Route 2 identifiée** : condenser la tangente qualifiée de
+la loi 3D brute sur l'incrément entier (`C^ps = Caa − Cab Cbb⁻¹ Cba`) — le
+Schur de la tangente de la référence, exact. Convention des variables de
+fermeture à trancher empiriquement avant (ingénieur vs Kelvin).
+
 ## Frontières d'extension — fusionné le 2026-08-02
 
 Le diff `kinematics_extension_v1.diff` de GPT Work est intégré : registres de
