@@ -176,6 +176,19 @@ backend condensé externe reste la référence. Résultat négatif archivé :
 `scripts/qualify_srix_umat_gps_closure.py`. La loi et le pont sont conservés,
 expérimentaux, non sélectionnés par défaut.
 
+**Diagnostic exploratoire des branches (option 2), même jour.** Le F1 est
+expliqué : le problème 3D admet plusieurs racines au premier incrément
+plastique (depuis le même état committé et le même incrément, le Newton 3D
+brut converge vers `sigma_zz = -154,7 MPa` et le Newton conjoint UMAT vers
+`sigma_zz = 0` — les deux convergés). Les ensembles de systèmes actifs sont
+identiques (`[1,2,4,5,7,8,10,11]`) ; les branches diffèrent par les
+amplitudes, via la rétroaction `eps_zz ↔ Deq`. La branche UMAT est robuste
+aux départs perturbés (10/10 identiques), la référence échoue 9/10 — la
+fragilité n'est pas du côté attendu. Rapport :
+`validation/srix_plane_stress_branch_diagnostic.md`, script
+`scripts/diagnose_srix_plane_stress_branches.py`. Aucune décision n'en est
+tirée : la référence condensée reste la référence.
+
 ## Frontières d'extension — fusionné le 2026-08-02
 
 Le diff `kinematics_extension_v1.diff` de GPT Work est intégré : registres de
