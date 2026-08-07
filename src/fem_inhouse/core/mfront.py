@@ -2633,68 +2633,16 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 )
             )
         if status == 1:
+            # The closure variables are OUTPUTS now, and they hold the TOTAL
+            # transverse strain rather than an increment, so the gradient takes
+            # them directly. `s1.gradients` is then the true total strain and
+            # `mgis.update` carries it into the committed state.
             closure = np.array(
                 [self._ezz_offset, self._exz_offset, self._eyz_offset], dtype=int
             )
-            increment = (
-                np.asarray(self._manager.s1.internal_state_variables)[:, closure]
-                - np.asarray(self._manager.s0.internal_state_variables)[:, closure]
-            )
-            self._manager.s1.gradients[:, _TRANSVERSE_COMPONENTS_3D] += increment
-        return status
-
-    def _set_closure_predictor(self, values: NDArray) -> None:
-        """Set the closure-root predictor external state variables (n, 3).
-
-        Zero means "no location available" and lets the law's physics-based
-        guess apply.
-        """
-
-        storage = self._mgis.MaterialStateManagerStorageMode.ExternalStorage
-        for index, name in enumerate(
-            ("GpsPredictorEzz", "GpsPredictorEyz", "GpsPredictorExz")
-        ):
-            # Same `ExternalStorage` hazard as the rotation properties: the
-            # buffer must be contiguous AND outlive the call.
-            column = np.ascontiguousarray(np.asarray(values[:, index], dtype=float))
-            self._property_buffers[name] = column
-            self._mgis.setExternalStateVariable(self._manager.s0, name, column, storage)
-            self._mgis.setExternalStateVariable(self._manager.s1, name, column, storage)
-
-    def _rerun_full_increment_from_located_root(
-        self, in_plane_kelvin: NDArray, time_increment: float
-    ) -> int:
-        """Route 1 of the handoff: rerun the full increment from the root the
-        sub-stepping located.
-
-        The sub-stepped result is exact in the stress, the closure and the
-        internal variables, but its Newton matrix is that of the LAST
-        sub-step, not of the whole increment. Rerunning the full increment
-        with the located closure increments imposed through the predictor
-        external state variables gives the exact consistent tangent. If the
-        rerun fails, the sub-stepping is redone (deterministic) and its
-        result kept, restoring the previous behaviour.
-        """
-
-        closure_columns = np.array(
-            [self._ezz_offset, self._eyz_offset, self._exz_offset], dtype=int
-        )
-        located = (
-            np.asarray(self._manager.s1.internal_state_variables)[:, closure_columns]
-            - np.asarray(self._manager.s0.internal_state_variables)[:, closure_columns]
-        )
-        snapshot = self._committed_snapshot()
-        self._restore_committed(snapshot)
-        self._mgis.revert(self._manager)
-        self._set_closure_predictor(located)
-        status = self._integrate_once(in_plane_kelvin, time_increment)
-        if status == 1:
-            return 1
-        # Fallback: deterministic redo of the sub-stepping.
-        self._restore_committed(snapshot)
-        self._mgis.revert(self._manager)
-        self._set_closure_predictor(np.zeros((self._point_count, 3)))
-        status, _ = self._integrate_with_substepping(in_plane_kelvin, time_increment)
+            self._manager.s1.gradients[:, _TRANSVERSE_COMPONENTS_3D] = np.asarray(
+                self._manager.s1.internal_state_variables
+            )[:, closure]
         return status
 
     def _shadow_condensed_tangent(
@@ -2932,35 +2880,17 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # ones do, so the returned tangent is post-multiplied by this
         # operator.
         in_plane_operator: NDArray
-        # Since the law ADDS its closure unknowns to the gradient instead of
-        # replacing three of its components, it reads all six: the true
-        # derivative is d(deto_m)/d(deto) = ROT on every column, and the
-        # transverse columns must NOT be zeroed. Zeroing them was correct for
-        # the replacing form, and it silently emptied `Cbb` -- which is why the
-        # transverse predictor below, machinery and all, produced exactly no
-        # correction.
-        if self._mgis_rotations is None:
-            in_plane_operator = np.eye(6, dtype=float)
-        else:
-            identity_block = np.tile(np.eye(6, dtype=float), (self._point_count, 1))
-            rotated_block = np.ascontiguousarray(identity_block.reshape(-1).copy())
-            # Each virtual point (one per unit column) carries the rotation of
-            # its parent material point: repeat per row, never element-wise.
-            rotations_expanded = np.repeat(
-                self._mgis_rotations.reshape(self._point_count, 9), 6, axis=0
-            ).reshape(-1)
-            self._mgis.rotateGradients(rotated_block, self._behaviour, rotations_expanded)
-            # The MGIS output rows are the rotated unit vectors; the
-            # derivative operator d(deto_m)/ddeto has them as COLUMNS, so the
-            # output is transposed. At the identity this is a no-op, which is
-            # why the error only showed up on rotated orientations.
-            in_plane_operator = rotated_block.reshape(self._point_count, 6, 6).transpose(
-                0, 2, 1
-            )
+        # d(feel)/d(deto) is now exactly -P, with P the CONSTANT in-plane
+        # projector diag(1, 1, 0, 1, 0, 0): the residual is written in the
+        # global frame, its in-plane rows are `rot(...) - deto` so they
+        # differentiate to -I, and its transverse rows are the plane-stress
+        # condition, which does not see `deto` at all. The DSL assumes -I on
+        # all six, so the returned tangent is post-multiplied by P -- a
+        # projector, not a rotation. The `rotateGradients` round trip that
+        # built the old operator is gone with it.
+        in_plane_operator = np.zeros((6, 6), dtype=float)
+        in_plane_operator[_PLANE_STRESS_COMPONENTS, _PLANE_STRESS_COMPONENTS] = 1.0
         self._last_local_failure = None
-        # The closure-root predictor is reset at every evaluation; the
-        # sub-stepping path sets it to the located root (route 1).
-        self._set_closure_predictor(np.zeros((self._point_count, 3)))
         status, divisions = self._integrate_with_substepping(
             in_plane_kelvin, time_increment, predicted_transverse
         )

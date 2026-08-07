@@ -702,3 +702,61 @@ parité mesurée. Fermer l'écart des itérations globales, ou ramener le coût 
 appel sous `2×` par la réduction à 15 inconnues, ferait basculer le bilan.
 La réécriture à 15 inconnues garde donc tout son sens, et pour la première fois
 elle vise un objectif atteignable et non un facteur inexpliqué.
+
+### 8.13 Réduction du système local : 21 -> 18 inconnues
+
+**Le principe.** Le résidu élastique est écrit dans le repère **global** :
+
+```
+feel_g = rot(deel + Σ dg·m, Qᵀ) − deto
+```
+
+Ses trois lignes **dans le plan** sont la cinématique. Ses trois lignes
+**transverses** ne sont pas des équations du problème — la surface libre laisse
+la déformation transverse totale indéterminée — donc elles sont libres, et on y
+met `sigma_g,b / G = 0`. La contrainte plane devient une *ligne de résidu*, plus
+une inconnue.
+
+Conséquences dans la loi :
+
+- `ezz, eyz, exz` passent de `@StateVariable` à `@AuxiliaryStateVariable` :
+  ce sont des **sorties**, calculées après coup par `eps = eel + Σ g·m` ;
+- **plus de lignes de fermeture, plus de bloc diagonal nul** ;
+- `∂feel/∂deto = −P` avec `P = diag(1,1,0,1,0,0)`, un projecteur **constant** :
+  la correction de tangente côté pont n'est plus une rotation, et l'aller-retour
+  `rotateGradients` qui la construisait disparaît ;
+- tout le bloc élastique du jacobien est constant, assemblé une fois dans
+  `@InitLocalVariables` (colonnes de la rotation, de la raideur tournée et des
+  douze tenseurs de Schmid tournés).
+
+Système local vérifié dans le code généré : `tmatrix<StensorSize+12,...>`,
+soit **18×18** au lieu de 21×21.
+
+**Résultat.** Qualification **ACCEPTÉE**, aux mêmes chiffres au bit près :
+fermeture `2e-14 MPa`, tangente FD `1,2 – 1,6e-07`, écart à la référence
+`1e-11`. P43 20x20 :
+
+| | temps matériau | gain |
+|---|---|---|
+| 21 inconnues, parallélisé | `2,38 s` | `0,89×` |
+| **18 inconnues** | **`2,13 s`** | **`0,98×`** |
+
+contre `2,09 s` pour la référence : **parité exacte**.
+
+**Et une prédiction fausse, à consigner.** J'attendais `21³/18³ = 1,59` sur le
+coût par intégration. Mesuré : `26,2 → 26,0 µs/point`, **inchangé**. La
+factorisation du système local n'est donc pas dominante non plus. Après le
+sous-pas, le nombre d'itérations, le recalcul de constantes, la parallélisation
+et maintenant la taille du système, le surcoût de `2,1×` par appel reste sans
+explication identifiée.
+
+Le bilan se lit : `3,3 / (2,1 × 1,5) = 1,05`, contre `0,98` mesuré. Les deux
+leviers restants sont donc **l'écart d'itérations globales** (69 contre 46, le
+plus gros des deux) et ce `2,1×` résiduel. La descente à 15 inconnues — qui
+exige d'abandonner le brick `StandardElasticity` — n'a plus de justification
+tant que la taille du système est mesurée sans effet.
+
+La reformulation est conservée malgré le gain modeste : elle supprime le
+point-selle, trois inconnues, trois équations, une rotation par évaluation de
+tangente, et rend le jacobien élastique constant. Le code est plus simple et
+plus proche de la loi brute.
