@@ -1,0 +1,71 @@
+{
+  "cases": {
+    "bunge_35_20_15": {
+      "maximum_relative_defect": 1.0423757669508087,
+      "records": [
+        {
+          "eps_zz": -0.0009290854935226602,
+          "increment": 1,
+          "relative_defect": 4.586658892557982e-15,
+          "trace_elastic": 7.09145064773395e-05,
+          "trace_total": 7.091450647733982e-05
+        },
+        {
+          "eps_zz": -0.002959346937741301,
+          "increment": 2,
+          "relative_defect": 1.0423757669508087,
+          "trace_elastic": 4.0653062258697416e-05,
+          "trace_total": -0.0009593469377413011
+        },
+        {
+          "eps_zz": -0.006008009370145554,
+          "increment": 3,
+          "relative_defect": 0.9973373187513832,
+          "trace_elastic": -8.009370145550208e-06,
+          "trace_total": -0.003008009370145554
+        },
+        {
+          "eps_zz": -0.010055660521421459,
+          "increment": 4,
+          "relative_defect": 0.9908085135841683,
+          "trace_elastic": -5.566052142153316e-05,
+          "trace_total": -0.006055660521421459
+        }
+      ]
+    },
+    "identity": {
+      "maximum_relative_defect": 1.5158567657553883,
+      "records": [
+        {
+          "eps_zz": -0.0007437120563452165,
+          "increment": 1,
+          "relative_defect": 4.2304064601100014e-16,
+          "trace_elastic": 0.00025628794365478345,
+          "trace_total": 0.00025628794365478355
+        },
+        {
+          "eps_zz": -0.0026596929357647287,
+          "increment": 2,
+          "relative_defect": 1.5158567657553883,
+          "trace_elastic": 0.0003403070642352701,
+          "trace_total": -0.0006596929357647286
+        },
+        {
+          "eps_zz": -0.005618840167172047,
+          "increment": 3,
+          "relative_defect": 1.1455452828339447,
+          "trace_elastic": 0.00038115983282795065,
+          "trace_total": -0.002618840167172047
+        },
+        {
+          "eps_zz": -0.009612115254075437,
+          "increment": 4,
+          "relative_defect": 1.0691156058569673,
+          "trace_elastic": 0.00038788474592455196,
+          "trace_total": -0.005612115254075437
+        }
+      ]
+    }
+  },
+  "parameter_set": "316l_srix_exploratory_r1"
+}

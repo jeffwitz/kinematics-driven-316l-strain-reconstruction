@@ -355,3 +355,63 @@ Note annexe : `@CompareToNumericalJacobian` est **inutilisable** sur cette loi.
 TFEL 5.1 génère le bloc de comparaison avec de mauvais décalages de colonnes —
 l'intégrateur mappe `dfeel_ddezz` en colonne `StensorSize+12`, le comparateur
 en colonne `StensorSize` — et signale donc des blocs faux qui ne le sont pas.
+
+### 8.7 Pourquoi cela n'arrive pas en Python — et ce que ça dit de la « branche »
+
+La question est la bonne, et sa réponse retourne le diagnostic.
+
+**En Python la déformation transverse est IMPOSÉE.** La loi reçoit un gradient
+complet et ses cinématiques sont cohérentes par construction : il n'y a aucun
+degré de liberté par lequel l'état pourrait dériver. Dans l'UMAT la déformation
+transverse est une inconnue **du même système**, et c'est là que le mode de
+défaillance devient possible.
+
+**L'identité qui tranche.** `feel = deel − deto_m + Σ dg m`, les tenseurs de
+Schmid sont déviatoriques (`tr(m) = 0`) et une rotation conserve la trace. Donc
+tout état convergé doit vérifier
+
+```
+tr(eel) = tr(eps_total)
+```
+
+Ce n'est pas une affirmation physique, c'est la trace du résidu : un état qui la
+viole n'est pas une solution du système que la loi prétend avoir résolu. Aucune
+référence n'est nécessaire pour l'évaluer.
+
+Mesure (`scripts/diagnose_gps_kinematic_consistency.py`) :
+
+| orientation | inc 1 | inc 2 | inc 3 | inc 4 |
+|---|---|---|---|---|
+| identité | `4,2e-16` | **`1,52`** | `1,15` | `1,07` |
+| Bunge 35/20/15 | `4,6e-15` | **`1,04`** | `1,00` | `0,99` |
+
+Exact à l'incrément 1, violé de 100 % dès le 2, sur les deux orientations.
+**Indépendant du sous-pas** (identique avec `_maximum_substeps = 1`) et
+**indépendant du prédicteur** (identique après suppression du bloc
+`@Predictor` — qui s'avère au passage totalement inerte, et a donc été retiré).
+La violation est intrinsèque à la loi GPS telle qu'écrite, depuis son premier
+commit.
+
+**Et le chiffre qui conclut.** À l'incrément 2, identité, la valeur de `eps_zz`
+qui satisfait l'identité vaut `tr(eel) − trace imposée = 3,40e-4 − 2,0e-3
+= -1,66e-3`. La référence donne `-1,65e-3`. L'UMAT donne `-2,66e-3`.
+
+**Il n'y a donc pas deux racines : il y a la solution, et un état incohérent.**
+La « multiplicité » du §5.1 et du diagnostic de branches, le refus de la loi 3D
+brute de reproduire l'état UMAT (§8.6), et la tangente fausse sont tous des
+conséquences du même défaut. La décision utilisateur « on force la racine de
+contrainte plane » n'a plus d'objet : la racine de contrainte plane est celle
+que la référence calcule déjà.
+
+**Ce qui reste à trouver** est le point précis où l'écart entre `dezz` utilisé
+et `dezz` stocké apparaît. Il vaut, à l'incrément 2, exactement l'incrément de
+trace imposé dans le plan (`+1,0e-3`) : la loi se comporte comme si elle avait
+intégré avec `dezz ≈ -0,92e-3` (cohérent) tout en enregistrant `-1,92e-3`. Les
+offsets de variables internes du pont sont vérifiés corrects (`eel` 0-5,
+`PlasticSlip` 6-17, `ezz` 18, `eyz` 19, `exz` 20), et aucune autre écriture sur
+`ezz` n'existe dans la loi. La piste suivante est l'ordre d'application entre
+l'affectation utilisateur `feel = deel - deto_m` et ce que le brick
+`StandardElasticity` écrit lui-même dans `feel`.
+
+Tant que ce point n'est pas résolu, **la référence condensée reste la seule
+solution correcte**, et le backend UMAT ne doit pas être utilisé.
