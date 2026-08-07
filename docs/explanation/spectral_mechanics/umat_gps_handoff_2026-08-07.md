@@ -271,3 +271,31 @@ l'incrément entier. Deux routes, non implémentées :
    évaluation.
 
 La route 1 est la bonne si le prédicteur peut recevoir une valeur imposée.
+
+### 8.5 Route 1 testée — le Newton complet ne peut pas converger aux états profonds
+
+La route 1 (sous-pas pour localiser `Δeps_zz`, puis Newton complet sur
+l'incrément entier depuis la racine localisée, injectée au `@Predictor` via
+une variable externe) a été implémentée : 3 variables externes
+`GpsPredictorEzz/Eyz/Exz` dans la loi, posées par le pont après le sous-pas,
+le prédicteur les lit. Résultat mesuré : le re-run **réussit** (status 1)
+mais converge vers **le même point que le sous-pas** (stress et tangente
+identiques, diff 0) — le sous-pas accumulé est déjà une racine du problème
+complet (les équations sont additives pour ce chargement monotone). La
+tangente du DSL à l'état profond est donc intrinsèquement fausse : à
+l'identité (où la correction `ROT_inplane` est un no-op), elle diffère de la
+différence finie d'un facteur `~1,5-2,2` (mesuré à l'incrément 8, vraie
+incrément : `1,48 / 1,74 / 1,72 / 1,74 / 2,21` par entrée). Le problème n'est
+pas le chemin du Newton, c'est la **tangente cohérente du DSL Implicit à
+l'état plastique profond** (le Jacobien 21×21 ou la mécanique `D_tdt·Je`).
+
+La route 2 devient la voie : avec la racine localisée (le sous-pas donne le
+`Δeps_zz` exact), intégrer la **loi 3D brute** sur l'incrément entier depuis
+le même état committé (elle converge — c'est la mécanique de la référence)
+et condenser sa tangente : `C^ps = Caa − Cab Cbb⁻¹ Cba`. La tangente de la
+loi 3D brute est celle qualifiée (celle de la référence) ; le Schur est la
+tangente de contrainte plane exacte. La convention des variables de fermeture
+(ingénieur vs Kelvin) doit être tranchée empiriquement avant (comparer les
+ISV de fermeture aux composantes du tenseur de déformation de la référence au
+point tourné). Le pont doit maintenir un scratch de la loi 3D brute (état
+committé synchronisé depuis celui du GPS, mapping ISV 45→42).
