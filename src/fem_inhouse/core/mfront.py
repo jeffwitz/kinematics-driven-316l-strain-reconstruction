@@ -2335,13 +2335,33 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             else self._rotations
         )
         storage_mode = self._mgis.MaterialStateManagerStorageMode.ExternalStorage
+        # `ExternalStorage` means MGIS keeps a POINTER into these buffers and
+        # reads them as contiguous. Two consequences, and a single material
+        # point hides both of them:
+        #
+        #  - `rotations[:, row, column]` is a strided view, nine doubles apart.
+        #    Handed over as a span it makes every point read another point's Q
+        #    components. With one point there is nothing to stride over, which
+        #    is exactly why every single-orientation qualification passed while
+        #    the 400-point EBSD case started its first Newton residual at 0.83
+        #    against the reference's 0.18.
+        #  - the buffers are temporaries. Once the loop ends they are freed and
+        #    MGIS is left pointing at reclaimed memory.
+        #
+        # Contiguous copies, kept alive on the instance for as long as the
+        # manager is.
+        self._property_buffers: dict[str, NDArray] = {}
         for row in range(3):
             for column in range(3):
                 name = f"Q{row + 1}{column + 1}"
-                values = np.asarray(rotations[:, row, column], dtype=float)
+                values = np.ascontiguousarray(rotations[:, row, column], dtype=float)
+                self._property_buffers[name] = values
                 self._mgis.setMaterialProperty(self._manager.s0, name, values, storage_mode)
                 self._mgis.setMaterialProperty(self._manager.s1, name, values, storage_mode)
-        temperature_values = np.full(point_count, self._temperature)
+        temperature_values = np.ascontiguousarray(
+            np.full(point_count, self._temperature, dtype=float)
+        )
+        self._property_buffers["Temperature"] = temperature_values
         self._mgis.setExternalStateVariable(
             self._manager.s0, "Temperature", temperature_values, storage_mode
         )
@@ -2596,7 +2616,10 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         for index, name in enumerate(
             ("GpsPredictorEzz", "GpsPredictorEyz", "GpsPredictorExz")
         ):
+            # Same `ExternalStorage` hazard as the rotation properties: the
+            # buffer must be contiguous AND outlive the call.
             column = np.ascontiguousarray(np.asarray(values[:, index], dtype=float))
+            self._property_buffers[name] = column
             self._mgis.setExternalStateVariable(self._manager.s0, name, column, storage)
             self._mgis.setExternalStateVariable(self._manager.s1, name, column, storage)
 

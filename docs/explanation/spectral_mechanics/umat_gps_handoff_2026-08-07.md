@@ -479,3 +479,59 @@ référence, et la marche est désormais linéaire.
   à `1e-13`; le défaut de 100 % que j'y rapportais venait de ma propre
   reconstruction du total à partir des variables internes, pas de la loi.
 - La route 2 reste éteinte : elle n'a plus d'objet.
+
+### 8.9 P43 20x20 : il tourne — et il est plus lent
+
+Le cas polycristallin échouait à l'**incrément 1**, résidu bloqué à `0,68`,
+alors que la qualification au point matériel passait à `1e-11`. La différence
+entre les deux : mes cas de qualification sont mono-orientation et **à un seul
+point matériel**.
+
+**Deuxième défaut trouvé, dans le même bloc que Q.** Le pont écrit les neuf
+composantes de la rotation en propriétés matériau avec `ExternalStorage` —
+MGIS conserve donc un *pointeur* et lit la mémoire comme contiguë. Or :
+
+- `rotations[:, row, column]` est une **vue à pas de neuf doubles**. Passée
+  comme span, chaque point lit les composantes `Q` d'un autre point. **Avec un
+  seul point il n'y a rien à enjamber** : c'est précisément pourquoi toutes les
+  qualifications mono-orientation passaient pendant que les 400 points EBSD
+  démarraient leur premier résidu à `0,835` contre `0,178` pour la référence.
+- les tampons sont des **temporaires**, libérés à la sortie de la boucle, MGIS
+  pointant ensuite sur de la mémoire recyclée.
+
+Corrigé : copies contiguës, conservées sur l'instance (`_property_buffers`).
+Le même risque existait sur `Temperature` et sur les variables externes de
+prédiction ; traité au même endroit.
+
+**Résultat sur P43 20x20, huit incréments, quatre threads :**
+
+| | référence condensée | UMAT GPS |
+|---|---|---|
+| incréments | 8 | **8** |
+| itérations de Newton | 46 | 69 |
+| temps total | `2,53 s` | `8,77 s` |
+| temps matériau | `1,88 s` | `8,05 s` |
+| **gain matériau** | — | **`0,23×`** |
+
+| champ | écart relatif L2 |
+|---|---|
+| déplacement | `4,2e-07` |
+| forces de réaction | `3,1e-03` |
+| contrainte en plan | `3,2e-03` |
+| glissements | `2,5e-03` |
+| glissement cumulé | `9,5e-04` |
+
+**Le cas converge, et l'argument de vitesse tombe.** Les `6,7×` annoncés au §4
+étaient mesurés sur **un point**, mono-orientation, sans sous-pas — et sous le
+chargement quadratique du défaut du §8.8. À l'échelle du polycristal réel le
+backend UMAT est **4,3× plus lent** que la condensation Python : le sous-pas,
+qui reste nécessaire, multiplie le coût d'un Newton conjoint par le nombre de
+divisions et détruit l'avantage du « un Newton au lieu d'un Newton imbriqué ».
+
+L'écart de champ de `3e-3` n'est pas expliqué. Il est du bon ordre de grandeur
+pour de l'erreur de discrétisation constitutive due au sous-pas (mesurée à 3 %
+entre 1 et 256 sous-pas au §8.8), mais cela n'est pas démontré.
+
+**Le levier suivant est donc la robustesse du Newton conjoint, pas la
+fermeture** : tant qu'il faut sous-passer, l'UMAT coûte plus cher qu'il ne
+rapporte. La référence condensée reste le backend de production.

@@ -7,29 +7,60 @@
       1095
     ],
     "ebsd_orientation_h5": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
-    "increments": 4,
+    "increments": 8,
     "maximum_newton_iterations": 40,
     "mfront_threads": 4,
     "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3"
   },
   "schema_version": 1,
-  "status": "partial",
+  "status": "completed",
   "variants": [
     {
+      "accepted_increments": 8,
       "backend": "mfront-3d-condensed-plane-stress",
+      "elapsed_seconds": 2.5302294660068583,
+      "field_file": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_3d_condensed_plane_stress.fields.npz",
+      "final_residual": 3.0997187658826228e-12,
+      "jacobian_seconds": 0.24704791654949076,
+      "krylov_seconds": 0.4484300000476651,
       "log": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_3d_condensed_plane_stress.log",
+      "material_condensation_seconds": 1.8589909959991928,
+      "material_integration_seconds": 1.452869580272818,
+      "material_point_integrations": 121600.0,
+      "material_seconds": 1.8789980339934118,
+      "newton_iterations": 46,
       "report": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_3d_condensed_plane_stress.json",
-      "return_code": 1,
-      "status": "failed",
-      "wall_seconds": 1.2780127020087093
+      "return_code": 0,
+      "status": "completed",
+      "wall_seconds": 3.667976741999155
     },
     {
+      "accepted_increments": 8,
       "backend": "mfront-native-generalised-plane-stress",
+      "elapsed_seconds": 8.766780625999672,
+      "field_errors_to_reference": {
+        "accumulated_slip_relative_l2": 0.0009475407061089655,
+        "displacement_relative_l2": 4.163008707293228e-07,
+        "equivalent_plastic_slip_relative_l2": 0.002526309507357893,
+        "plastic_slip_relative_l2": 0.002526309507357893,
+        "reaction_forces_relative_l2": 0.0031301824653896305,
+        "stress_in_plane_mpa_relative_l2": 0.0032026183608278797
+      },
+      "field_file": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_native_generalised_plane_stress.fields.npz",
+      "final_residual": 4.869359491411011e-09,
+      "jacobian_seconds": 0.28616243091528304,
+      "krylov_seconds": 0.5169530058919918,
       "log": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_native_generalised_plane_stress.log",
+      "material_condensation_seconds": 0.0,
+      "material_integration_seconds": 7.897110725141829,
+      "material_point_integrations": 56000.0,
+      "material_seconds": 8.051860018022126,
+      "material_speedup": 0.23336198465792163,
+      "newton_iterations": 69,
       "report": "validation/_generated/performance/srix_p43_20x20_umat_gps/mfront_native_generalised_plane_stress.json",
-      "return_code": 1,
-      "status": "failed",
-      "wall_seconds": 1.181073817977449
+      "return_code": 0,
+      "status": "completed",
+      "wall_seconds": 9.938711538998177
     }
   ]
 }
