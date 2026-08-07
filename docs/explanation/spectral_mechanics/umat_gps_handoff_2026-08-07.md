@@ -535,3 +535,57 @@ entre 1 et 256 sous-pas au §8.8), mais cela n'est pas démontré.
 **Le levier suivant est donc la robustesse du Newton conjoint, pas la
 fermeture** : tant qu'il faut sous-passer, l'UMAT coûte plus cher qu'il ne
 rapporte. La référence condensée reste le backend de production.
+
+### 8.10 Peut-on éviter le sous-pas ? Ce que la référence a, et ce qui se transfère
+
+Trois stratégies de `MFront3DCondensedPlaneStressBatch` ont été examinées et
+essayées. Une seule a payé, et ce n'est pas celle qu'on attendait.
+
+**1. Le prédicteur transverse — non transférable tel quel.** La référence part
+sa fermeture de `eps_b_accepté - Cbb^-1 Cba (eps_a - eps_a_accepté)`, une
+extrapolation exacte au premier ordre. Toute la machinerie
+(`_accepted_transverse`, `_accepted_cbb`, `_accepted_cba`,
+`accept_global_trial`) **était déjà dans le pont GPS, jamais utilisée**. Une
+fois branchée, elle ne produit rien : **`Cbb` est identiquement nul**, parce que
+la fermeture impose `sigma_transverse = 0` et que les lignes transverses de la
+tangente GPS sont donc nulles par construction. Le `Cbb` de la référence est un
+bloc de la tangente 3D **non contrainte**, que la loi GPS n'expose pas.
+
+Un prédicteur de remplacement a été implémenté — l'incrément transverse accepté
+précédent, remis à l'échelle de l'incrément en plan. Il laisse `3e-05` à
+corriger au lieu de `1e-03`, soit un départ trente fois plus proche. **Il ne
+change pas d'une unité le nombre de sous-pas.**
+
+**2. Un critère de convergence à l'échelle de la contrainte — perte sèche.**
+La référence converge sur `1e-8 MPa + 1e-10 |sigma|`; la loi utilise
+`@Epsilon 1e-12` sur la norme du résidu mixte à 21 composantes. Relâcher à
+`1e-9` : sous-pas **inchangé**, et A6 se dégrade de `1,2e-07` à `3,4e-05`,
+au-delà de la tolérance. Rétabli à `1e-12`.
+
+**3. Supprimer le travail inutile — le seul gain réel.** La route 1 (rerun de
+l'incrément complet depuis la racine localisée) avait été mesurée bit à bit
+inerte au §8.6. Pire : quand son propre essai échouait, elle **refaisait tout
+le sous-pas**. Chaque incrément sous-passé payait donc le sous-pas deux fois,
+plus un essai complet voué à l'échec. Retirée.
+
+| | avant | après |
+|---|---|---|
+| appels sous-passés (12 incréments) | 18 / 22 | **9 / 11** |
+| P43 20x20, temps matériau | `8,05 s` | **`4,94 s`** |
+| gain matériau contre la référence | `0,23×` | **`0,39×`** |
+
+Champs et qualification inchangés au bit près, ce qui confirme au passage que
+la route 1 et les prédicteurs étaient numériquement sans effet.
+
+**Conclusion : le sous-pas n'est pas évitable par ces leviers.** Il n'est causé
+ni par un mauvais point de départ, ni par un critère trop serré. C'est le
+Newton conjoint à 21 inconnues lui-même qui échoue, sur le chemin de
+déformation désormais correct — sans recherche linéaire ni contrôle de pas, ce
+que le DSL Implicit n'offre pas.
+
+Ce qui reste, non essayé : `@Algorithm LevenbergMarquardt` (amortissement, une
+ligne — `PowellDogLeg` est réputé échouer partout, LM ne l'a jamais été), ou
+sortir la fermeture du Newton conjoint pour en faire une boucle externe en C++
+— ce qui est la structure de la référence, et retire à l'UMAT sa seule raison
+d'être. À `0,39×`, l'UMAT reste **2,6× plus lent** que la condensation Python :
+le backend de production ne change pas.

@@ -2287,7 +2287,11 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         maximum_local_iterations: int = 25,
         local_relative_tolerance: float = 1.0e-10,
         local_tolerance_mpa: float = 1.0e-8,
-        local_transverse_predictor: str = "committed",
+        # `tangent` by default here, unlike the reference: the closure lives
+        # inside one Newton, so the quality of the starting point decides
+        # whether that Newton converges at all rather than merely how many
+        # outer iterations it takes.
+        local_transverse_predictor: str = "tangent",
         local_condition_check_mode: str = "on_failure",
         shadow_tangent: bool = False,
         shadow_behaviour_name: str = "Fcc316LForestRubinSrix",
@@ -2462,6 +2466,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # the law says it solved. Cheap enough to check on every evaluation,
         # and it is the invariant that exposed the overwrite defect.
         self._maximum_kinematic_defect = 0.0
+        self._previous_transverse_delta: NDArray | None = None
+        self._previous_in_plane_norm = 0.0
+        self._committed_in_plane = np.zeros((point_count, 3), dtype=float)
         if shadow_tangent:
             self._shadow = MFront3DMaterialPointBatch(
                 library_path,
@@ -2553,7 +2560,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._mgis, self._behaviour, self._parameters, self._behaviour_name
         )
 
-    def _integrate_once(self, in_plane_kelvin: NDArray, time_increment: float) -> int:
+    def _integrate_once(
+        self,
+        in_plane_kelvin: NDArray,
+        time_increment: float,
+        transverse_kelvin: NDArray | None = None,
+    ) -> int:
         """One integration, with the transverse strain kept in the gradient.
 
         The law adds its closure unknowns to the gradient it is given rather
@@ -2584,6 +2596,13 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # from increment 2.
         gradients = np.asarray(self._manager.s0.gradients).copy()
         gradients[:, _PLANE_STRESS_COMPONENTS] = in_plane_kelvin
+        if transverse_kelvin is not None:
+            # The transverse predictor of the reference, applied to the
+            # GRADIENT rather than to an outer iterate. The law adds its
+            # closure unknown on top, so `dezz` no longer has to travel the
+            # whole transverse strain -- it only corrects what the prediction
+            # missed. That is what makes one joint Newton enough.
+            gradients[:, _TRANSVERSE_COMPONENTS_3D] = transverse_kelvin
         self._manager.s1.gradients[:, :] = gradients
         status = int(
             self._mgis.integrate(
@@ -2739,8 +2758,52 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._manager.s0.thermodynamic_forces[:, :] = forces
         self._manager.s0.internal_state_variables[:, :] = internal
 
+    def _predicted_transverse(self, in_plane: NDArray) -> NDArray | None:
+        """Where the reference would start its closure, section 8.10.
+
+        Two strategies, both taken from `MFront3DCondensedPlaneStressBatch`:
+        the accepted transverse strain of the last global iterate, and -- when
+        the accepted condensed blocks are available -- a first-order
+        extrapolation of the closure along the in-plane increment,
+
+            eps_b <- eps_b_accepted - Cbb^-1 Cba (eps_a - eps_a_accepted)
+
+        which is exact to first order and is what lets the reference converge
+        its closure in a handful of iterations from any state. The GPS bridge
+        carried all of this machinery, unused, since it was written.
+        """
+
+        committed = self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D].copy()
+        if self._local_transverse_predictor == "committed":
+            return committed
+        # The reference extrapolates with `Cbb^-1 Cba`, and that route is NOT
+        # available here: the closure enforces sigma_transverse = 0, so the
+        # transverse ROWS of the GPS tangent are identically zero and `Cbb` is
+        # the zero matrix. The reference's `Cbb` is a block of the
+        # UNCONSTRAINED 3D tangent, which this law never exposes.
+        #
+        # What is available is the previous accepted transverse increment,
+        # rescaled by the in-plane increment it came with. On the frozen
+        # history that leaves about `3e-05` for the closure to find instead of
+        # `1e-03`: a starting point thirty times closer, from information the
+        # bridge already holds.
+        if self._previous_transverse_delta is None or self._previous_in_plane_norm <= 0.0:
+            return committed
+        norm = float(
+            np.linalg.norm(
+                (in_plane - self._committed_in_plane) * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+            )
+        )
+        scale = norm / self._previous_in_plane_norm
+        if not np.isfinite(scale) or scale > 10.0:
+            return committed
+        return committed + scale * self._previous_transverse_delta
+
     def _integrate_with_substepping(
-        self, in_plane_kelvin: NDArray, time_increment: float
+        self,
+        in_plane_kelvin: NDArray,
+        time_increment: float,
+        transverse_kelvin: NDArray | None = None,
     ) -> tuple[int, int]:
         """Integrate one increment, halving it as often as needed.
 
@@ -2764,7 +2827,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         approximate, and the global iteration corrects for it.
         """
 
-        status = self._integrate_once(in_plane_kelvin, time_increment)
+        status = self._integrate_once(
+            in_plane_kelvin, time_increment, transverse_kelvin
+        )
         if status == 1 or self._maximum_substeps <= 1:
             return status, 1
 
@@ -2837,6 +2902,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # Kelvin storage (the repository convention for MGIS arrays) and zero
         # transverse values, which the law never reads.
         in_plane_kelvin = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+        predicted_transverse = self._predicted_transverse(in_plane)
         self._set_parameters()
         started = time.perf_counter()
         # d(deto_m)/ddeto restricted to the in-plane columns, in the MGIS
@@ -2847,9 +2913,15 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         # ones do, so the returned tangent is post-multiplied by this
         # operator.
         in_plane_operator: NDArray
+        # Since the law ADDS its closure unknowns to the gradient instead of
+        # replacing three of its components, it reads all six: the true
+        # derivative is d(deto_m)/d(deto) = ROT on every column, and the
+        # transverse columns must NOT be zeroed. Zeroing them was correct for
+        # the replacing form, and it silently emptied `Cbb` -- which is why the
+        # transverse predictor below, machinery and all, produced exactly no
+        # correction.
         if self._mgis_rotations is None:
             in_plane_operator = np.eye(6, dtype=float)
-            in_plane_operator[:, _TRANSVERSE_COMPONENTS_3D] = 0.0
         else:
             identity_block = np.tile(np.eye(6, dtype=float), (self._point_count, 1))
             rotated_block = np.ascontiguousarray(identity_block.reshape(-1).copy())
@@ -2866,13 +2938,12 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             in_plane_operator = rotated_block.reshape(self._point_count, 6, 6).transpose(
                 0, 2, 1
             )
-            in_plane_operator[:, :, _TRANSVERSE_COMPONENTS_3D] = 0.0
         self._last_local_failure = None
         # The closure-root predictor is reset at every evaluation; the
         # sub-stepping path sets it to the located root (route 1).
         self._set_closure_predictor(np.zeros((self._point_count, 3)))
         status, divisions = self._integrate_with_substepping(
-            in_plane_kelvin, time_increment
+            in_plane_kelvin, time_increment, predicted_transverse
         )
         if status != 1:
             self._last_local_failure = {
@@ -2884,22 +2955,11 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                 f"GPS UMAT integration failed with status {status} after "
                 f"sub-stepping down to 1/{divisions} of the increment"
             )
-        if divisions > 1:
-            # Sub-stepping located the closure root; rerun the full increment
-            # from it so the returned tangent is the exact one of the whole
-            # increment, not of the last sub-step.
-            self._rerun_uses += 1
-            status = self._rerun_full_increment_from_located_root(
-                in_plane_kelvin, time_increment
-            )
-            if status != 1:
-                self._rerun_failures += 1
-                self._last_local_failure = {
-                    "status": int(status),
-                    "substep_divisions": int(divisions),
-                    "note": "full-increment rerun from the located root failed; "
-                    "kept the sub-stepped result with its last-sub-step tangent",
-                }
+        # Route 1 -- rerun the full increment from the located root -- is gone.
+        # It was measured to leave `manager.K` BIT-IDENTICAL, so it never did
+        # what it was written for, and when its own attempt failed it redid the
+        # entire sub-stepping: every sub-stepped increment paid for the
+        # sub-stepping twice plus one doomed full attempt.
         self._integration_seconds += time.perf_counter() - started
         self._evaluate_calls += 1
         internal_state_variables = np.asarray(
@@ -3009,7 +3069,23 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             self._shadow.commit()
             self._shadow_has_trial = False
         if self._latest_total_kelvin is not None:
+            # Record what the closure actually moved, and against which
+            # in-plane increment, so the next increment can start from it.
+            delta = (
+                self._latest_total_kelvin[:, _TRANSVERSE_COMPONENTS_3D]
+                - self._committed_strain[:, _TRANSVERSE_COMPONENTS_3D]
+            )
+            in_plane_step = (
+                self._latest_total_kelvin[:, _PLANE_STRESS_COMPONENTS]
+                - self._committed_strain[:, _PLANE_STRESS_COMPONENTS]
+            )
+            self._previous_transverse_delta = delta.copy()
+            self._previous_in_plane_norm = float(np.linalg.norm(in_plane_step))
             self._committed_strain[:, :] = self._latest_total_kelvin
+            self._committed_in_plane = (
+                self._latest_total_kelvin[:, _PLANE_STRESS_COMPONENTS]
+                / _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+            ).copy()
         self._latest_trial = None
         self._latest_total_kelvin = None
         self._latest_transverse = None
