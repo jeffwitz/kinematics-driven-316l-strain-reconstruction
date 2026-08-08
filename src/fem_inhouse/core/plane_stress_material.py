@@ -489,6 +489,13 @@ def _create_fcc_single_crystal_batch(
     paired_parameter_set = options.pop("paired_parameter_set", None)
     parameter_set = options.pop("parameter_set", None)
     explicit_parameters = options.pop("parameters", None)
+    # Diagnostic bench, GPS backend only: replace the Newton tangent by the
+    # reference Schur evaluated at the GPS's own converged state, leaving the
+    # stress, the state, the closure and the sub-stepping untouched. It is what
+    # showed the Newton penalty to be the tangent alone -- 52 iterations to 47
+    # on M20 with bit-identical fields -- and it is off by default because it
+    # costs a full extra 3D integration per evaluation.
+    shadow_tangent = bool(options.pop("gps_shadow_tangent", False))
     if paired_parameter_set is not None and (
         parameter_set is not None or explicit_parameters is not None
     ):
@@ -558,7 +565,13 @@ def _create_fcc_single_crystal_batch(
             thread_count=mfront_threads,
             behaviour_name=behaviour.behaviour_name("condensed_3d"),
             behaviour_parameters=overrides,
+            shadow_tangent=shadow_tangent,
             **local_options,
+        )
+    if shadow_tangent:
+        raise ValueError(
+            "gps_shadow_tangent only applies to the "
+            "'mfront-native-generalised-plane-stress' backend"
         )
     block_size = local_options.pop("condensation_block_size", None)
     condensed_factory = (

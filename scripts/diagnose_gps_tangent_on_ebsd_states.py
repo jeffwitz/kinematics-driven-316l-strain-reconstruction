@@ -21,7 +21,8 @@ hypotheses are about.
 Usage:
 
     .venv/bin/python scripts/diagnose_gps_tangent_on_ebsd_states.py \
-        --fields validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_3d_condensed_plane_stress.fields.npz
+        --fields validation/_generated/performance/srix_p43_100x100_umat_gps/\
+            mfront_3d_condensed_plane_stress.fields.npz
 """
 
 from __future__ import annotations

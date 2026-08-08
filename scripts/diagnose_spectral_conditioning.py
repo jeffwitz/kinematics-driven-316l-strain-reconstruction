@@ -148,19 +148,17 @@ def _run_backend(
     backend: str,
     arguments: argparse.Namespace,
 ) -> dict[str, object]:
-    from scripts.benchmark_tri2_j2_krylov import _load_case
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
+    from fem_inhouse.spectral2d.green import B0Green2D
     from fem_inhouse.spectral2d.newton_two_state import (
         EBISpectralSolverConfig,
-        TraditionalTwoStateTriangleBatch,
-        TwoSubcellDiagnostic2D,
         TwoStateJacobianWorkspace,
+        TwoSubcellDiagnostic2D,
         solve_two_state_dirichlet_plane_stress,
     )
     from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
-    from fem_inhouse.spectral2d.green import B0Green2D
     from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
-
+    from scripts.benchmark_tri2_j2_krylov import _load_case
     from scripts.qualify_crystal_tet2_p43 import _load_ebsd_orientation_crop
 
     mesh = arguments.crop_nodes[1] - arguments.crop_nodes[0]
@@ -246,7 +244,6 @@ def _run_backend(
     # Rebuild the solver's own operators: kinematics, the two-state batch and
     # the spectral preconditioner (identical for both backends).
     kinematics = TwoSubcellDiagnostic2D(grid)
-    elements = TraditionalTwoStateTriangleBatch(material, grid.pixel_shape)
     plan = create_full_dirichlet_dsti_plan(grid, config.transform)
     workspace = TwoStateJacobianWorkspace.create(grid)
     interior_shape = (*grid.interior_shape, 2)
@@ -406,7 +403,11 @@ def main() -> int:
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     for record in records:
-        print(f"=== {record['backend']}: {record['newton_iterations']} Newton, matrix {record['matrix_size']}x{record['matrix_size']}")
+        size = record["matrix_size"]
+        print(
+            f"=== {record['backend']}: {record['newton_iterations']} Newton, "
+            f"matrix {size}x{size}"
+        )
         for increment, data in record["per_increment"].items():
             calls = data["per_call"]
             raw_conds = [c["raw_conditioning"] for c in calls]

@@ -200,7 +200,9 @@ def _rotations(material: object) -> np.ndarray | None:
     return None if rotations is None else np.asarray(rotations, dtype=float)
 
 
-def _raw_3d_tangent_gps(material: object, snapshot: object, strain: np.ndarray, dt: float) -> np.ndarray:
+def _raw_3d_tangent_gps(
+    material: object, snapshot: object, strain: np.ndarray, dt: float
+) -> np.ndarray:
     """The GPS DSL tangent in the GLOBAL frame, 6x6 Kelvin per point.
 
     The manager's K is the DSL tangent in the CRYSTAL frame (the law owns the
@@ -378,7 +380,6 @@ def main() -> int:
     snapshot_ref = recording_ref.committed_snapshots[increment - 2]
 
     rotations_gps = _rotations(material_gps)
-    rotations_ref = _rotations(material_ref)
 
     rows = []
     for point in TOP_POINTS:
@@ -388,7 +389,9 @@ def main() -> int:
         # --- own states: each backend from its own committed snapshot ---
         own_gps = _evaluate_raw(material_gps, snapshot_gps, strain_gps, dt)
         own_ref = _evaluate_raw(material_ref, snapshot_ref, strain_ref, dt)
-        raw_gps_own = _raw_3d_tangent(material_gps, snapshot_gps, strain_gps, dt, is_reference=False)
+        raw_gps_own = _raw_3d_tangent(
+            material_gps, snapshot_gps, strain_gps, dt, is_reference=False
+        )
         raw_ref_own = _raw_3d_tangent(material_ref, snapshot_ref, strain_ref, dt, is_reference=True)
         row["own_states_relative_tangent_difference"] = float(
             np.linalg.norm(raw_gps_own[point] - raw_ref_own[point])
@@ -440,7 +443,9 @@ def main() -> int:
             gradient_in_crystal_frame=True,
             q_global_to_material=q,
         )
-        raw_gps_on_ref = _raw_3d_tangent(material_gps, snapshot_gps, strain_ref, dt, is_reference=False)
+        raw_gps_on_ref = _raw_3d_tangent(
+            material_gps, snapshot_gps, strain_ref, dt, is_reference=False
+        )
         row["ref_state_into_gps_3d_relative"] = float(
             np.linalg.norm(raw_ref_own[point] - raw_gps_on_ref[point])
             / max(np.linalg.norm(raw_gps_on_ref[point]), 1.0e-30)
@@ -451,7 +456,7 @@ def main() -> int:
         # to at this strain; the reference is then evaluated at that SAME
         # transverse, so the Schur-vs-projected comparison is formulation-only.
         material_gps.restore_state(snapshot_gps)
-        gps_trial_same = material_gps.evaluate(
+        material_gps.evaluate(
             strain_gps.reshape(-1, 3),
             time_increment=dt,
             consistent_tangent=True,
@@ -516,10 +521,13 @@ def main() -> int:
         print(f"  GPS state -> ref: 3D rel {row['gps_state_into_ref_3d_relative']:.3e}, "
               f"in-plane rel {row['gps_state_into_ref_in_plane_relative']:.3e}")
         print(f"  ref state -> GPS: 3D rel {row['ref_state_into_gps_3d_relative']:.3e}")
-        print(f"  same-state Schur(ref) vs GPS projected: {row['same_state_schur_vs_gps_projected_relative']:.3e}")
-        print(f"  same-state Schur(ref) vs ref returned:  {row['same_state_schur_vs_gps_returned_relative']:.3e}")
+        print("  same-state Schur(ref) vs GPS projected: "
+              f"{row['same_state_schur_vs_gps_projected_relative']:.3e}")
+        print("  same-state Schur(ref) vs ref returned:  "
+              f"{row['same_state_schur_vs_gps_returned_relative']:.3e}")
         print(f"  ref returned vs own Schur: {row['ref_returned_vs_own_schur_relative']:.3e}")
-        print(f"  Cbb cond ref-on-gps-state: {row['blocks_reference_on_gps_state']['cbb_condition']:.3e}, "
+        print("  Cbb cond ref-on-gps-state: "
+              f"{row['blocks_reference_on_gps_state']['cbb_condition']:.3e}, "
               f"min singular {row['blocks_reference_on_gps_state']['cbb_min_singular']:.3e}")
     return 0
 

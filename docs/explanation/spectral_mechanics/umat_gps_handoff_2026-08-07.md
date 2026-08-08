@@ -1036,3 +1036,71 @@ Rappel du bilan : `3,3 / (2,1 x 1,49) = 1,05` contre `1,04` mesuré à 100x100, 
 `3,3 / (2,1 x 1,13) = 1,39` contre `1,2 – 1,7` à 20x20. Le modèle est cohérent
 sur les deux échelles ; c'est la pénalité d'itérations qui décide, et elle n'est
 pas expliquée.
+
+### 8.19 Le jumeau comme oracle : la pénalité EST la tangente, et rien d'autre
+
+Consigne de l'utilisateur : activer `shadow_condensed_tangent` **uniquement** en
+remplacement de la tangente, sans toucher à la contrainte, à l'état, à la
+fermeture ni au sous-pas ; initialiser le jumeau depuis l'état GPS exact à
+chaque évaluation ; vérifier sur M20 ; ne modifier ni `P` ni la loi avant ce
+résultat.
+
+**Le jumeau est devenu un pur calculateur de dérivée.** Il n'a plus de vie
+propre : son état committé est transplanté depuis celui du GPS à chaque appel —
+variables internes **par nom** (les deux lois n'ont pas la même disposition : la
+GPS porte `ezz/eyz/exz` et `LocalIterations` que la brute n'a pas), contrainte
+committée telle quelle (repère matériau dans les deux lois), gradient committé
+tourné du repère global du GPS vers le repère cristal du pont brut. Il est
+ensuite intégré une fois à la déformation en plan imposée **avec la déformation
+transverse convergée par le GPS**, puis reverté. **Il ne commit jamais.**
+
+**Résultat sur M20 :**
+
+| | Newton |
+|---|---|
+| GPS, tangente DSL | 52 |
+| **GPS + Schur du jumeau** | **47** |
+| référence | 46 |
+
+Dans la fenêtre `46 – 47` annoncée. Et les champs sont **identiques au dernier
+chiffre** au calcul sans jumeau — déplacement `1,075e-08`, contrainte
+`3,845e-05`, glissements `9,861e-05` — donc la contrainte, l'état, la fermeture
+et le sous-pas sont bien intacts : seule la matrice a changé.
+
+**La démonstration est terminée** : le solveur local GPS est correct pour l'état
+et pour la contrainte ; **seule la tangente fournie au Newton global était
+inadaptée**. Cela referme la chaîne causale du §8.18 — `3,1e-3` d'écart de
+dérivée au même état, 32 % de l'action portée par le point 96, `52 → 47` quand
+on remplace ce seul point — et fournit une solution fonctionnelle de référence.
+
+**Rétractation.** Le §8.6 rejetait la route 2 au motif que « le jumeau ne suit
+pas la branche ». Cette mesure **précède** la correction du §8.8 (total appliqué
+comme incrément) : le GPS parcourait alors un chargement quadratiquement faux,
+que le jumeau ne pouvait évidemment pas reproduire. Il n'y a pas de branches, et
+le rejet ne tient pas.
+
+**Ce qui n'est pas résolu.** À M100 le calcul avec jumeau **ne converge pas** à
+l'incrément 8. Hors du périmètre de la consigne (« puis faire seulement M20 »),
+non diagnostiqué, et consigné tel quel. C'est la raison pour laquelle le jumeau
+reste **éteint par défaut** et devient une option de diagnostic :
+
+```python
+constitutive_options={"gps_shadow_tangent": True}   # backend GPS uniquement
+```
+
+Le backend condensé refuse l'option, pour qu'un manifeste ne puisse pas la
+porter sans effet.
+
+**Étape suivante, et le jumeau n'est pas la solution finale** — il coûte une
+intégration 3D complète par évaluation et retire au GPS monolithique une partie
+de sa raison d'être. Il sert d'**oracle** : pour le système local GPS
+`F(x, eps_a) = 0` avec `x = (Deps_el, Dgamma)`, la sensibilité correcte est
+
+```
+dx/deps_a = -(dF/dx)^-1 (dF/deps_a)   puis   C^ps = (dsigma_a/dx)(dx/deps_a)
+```
+
+et cette quantité doit redonner numériquement `Caa − Cab Cbb^-1 Cba`. Le
+critère est une erreur relative `<= 1e-10` contre le Schur du jumeau sur les
+points 96, 95 et 59. Cela se code dans MFront ou dans une extension du transfert
+de tangente — **pas en reconstruisant un second Newton**.

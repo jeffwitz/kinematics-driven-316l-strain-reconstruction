@@ -801,9 +801,9 @@ def test_gps_bridge_applies_per_point_rotations_independently() -> None:
     identity_trial = identity.evaluate(strain, time_increment=0.5)
     tilted_trial = tilted.evaluate(strain, time_increment=0.5)
     # The two orientations must give different responses to the same strain.
-    assert np.max(np.abs(identity_trial.stress_in_plane_mpa - tilted_trial.stress_in_plane_mpa)) > 1.0
+    difference = identity_trial.stress_in_plane_mpa - tilted_trial.stress_in_plane_mpa
+    assert np.max(np.abs(difference)) > 1.0
 
-    from fem_inhouse.core.crystal_orientation import rotation_from_euler_bunge_deg
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
 
     both = create_plane_stress_material_batch(
@@ -969,7 +969,7 @@ def test_gps_deep_history_is_deterministic_and_transactional() -> None:
         np.testing.assert_array_equal(first, second)
     # Revert from the final committed state restores it exactly.
     snapshot = batch.snapshot_state()
-    trial = batch.evaluate(np.atleast_2d(history[-1]), time_increment=1.0 / 12)
+    batch.evaluate(np.atleast_2d(history[-1]), time_increment=1.0 / 12)
     batch.revert()
     restored = batch.snapshot_state()
     np.testing.assert_array_equal(restored[0], snapshot[0])

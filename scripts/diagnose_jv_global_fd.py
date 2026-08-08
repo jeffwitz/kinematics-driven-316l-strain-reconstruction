@@ -151,14 +151,13 @@ def _run_backend(
     backend: str,
     arguments: argparse.Namespace,
 ) -> dict[str, object]:
-    from scripts.benchmark_tri2_j2_krylov import _load_case
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
     from fem_inhouse.spectral2d.newton_two_state import (
         EBISpectralSolverConfig,
         solve_two_state_dirichlet_plane_stress,
     )
     from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
-
+    from scripts.benchmark_tri2_j2_krylov import _load_case
     from scripts.qualify_crystal_tet2_p43 import _load_ebsd_orientation_crop
 
     mesh = arguments.crop_nodes[1] - arguments.crop_nodes[0]

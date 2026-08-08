@@ -280,7 +280,8 @@ def main() -> int:
         if status == "completed":
             print(
                 f"{record['variant']}: {record['newton_iterations']} Newton, "
-                f"{record['elapsed_seconds']:.2f}s total, {record['material_seconds']:.2f}s material"
+                f"{record['elapsed_seconds']:.2f}s total, "
+                f"{record['material_seconds']:.2f}s material"
             )
         else:
             print(f"{record['variant']}: FAILED (return {record['return_code']})")

@@ -2252,6 +2252,42 @@ class MFront3DCondensedPlaneStressBatch:
         return self._bridge.committed_nonlocal_equivalent_plastic_strain
 
 
+def _matching_internal_variable_slices(
+    mgis: Any, source: Any, target: Any
+) -> list[tuple[slice, slice]]:
+    """Pairs of slices for the internal variables the two behaviours share.
+
+    Matched on the variable NAME, so a law that carries extra state -- the GPS
+    one has the three closure outputs and an iteration counter the raw law does
+    not -- transplants cleanly onto the other.
+    """
+
+    def layout(behaviour: Any) -> dict[str, tuple[int, int]]:
+        offsets: dict[str, tuple[int, int]] = {}
+        cursor = 0
+        for variable in behaviour.isvs:
+            size = mgis.getVariableSize(variable, mgis.Hypothesis.Tridimensional)
+            offsets[variable.name] = (cursor, size)
+            cursor += size
+        return offsets
+
+    src, dst = layout(source), layout(target)
+    pairs: list[tuple[slice, slice]] = []
+    for name, (dst_offset, dst_size) in dst.items():
+        if name not in src:
+            continue
+        src_offset, src_size = src[name]
+        if src_size != dst_size:
+            raise ValueError(
+                f"internal variable {name!r} has size {src_size} in the source "
+                f"behaviour and {dst_size} in the target"
+            )
+        pairs.append(
+            (slice(src_offset, src_offset + src_size), slice(dst_offset, dst_offset + dst_size))
+        )
+    return pairs
+
+
 class MFrontNativeGeneralisedPlaneStressBatch:
     """Passive-bridge generalized-plane-stress crystal adapter (UMAT closure).
 
@@ -2301,6 +2337,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         local_condition_check_mode: str = "on_failure",
         shadow_tangent: bool = False,
         shadow_behaviour_name: str = "Fcc316LForestRubinSrix",
+        shadow_behaviour_id: str = "fcc_forest_rubin_srix",
     ) -> None:
         if point_count < 1:
             raise ValueError("point_count must be positive")
@@ -2499,15 +2536,24 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._previous_in_plane_norm = 0.0
         self._committed_in_plane = np.zeros((point_count, 3), dtype=float)
         if shadow_tangent:
+            from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+
+            shadow_spec = MFRONT_BEHAVIOURS.get(shadow_behaviour_id)
             self._shadow = MFront3DMaterialPointBatch(
                 library_path,
-                behaviour_spec=behaviour_spec,
+                behaviour_spec=shadow_spec,
                 point_count=point_count,
                 rotation_global_to_material=self._rotations,
                 thread_count=thread_count,
                 behaviour_name=shadow_behaviour_name,
                 behaviour_parameters=behaviour_parameters,
                 temperature_k=temperature_k,
+            )
+            # The two laws do not share an internal-variable layout -- the GPS
+            # one carries ezz/eyz/exz and LocalIterations that the raw one does
+            # not -- so the transplant is done by NAME, never by offset.
+            self._shadow_isv_map = _matching_internal_variable_slices(
+                self._mgis, self._behaviour, self._shadow._behaviour
             )
 
     @property
@@ -2710,55 +2756,77 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         internal_state_variables: NDArray,
         time_increment: float,
     ) -> NDArray | None:
-        """Exact plane-stress tangent of the whole increment, or `None`.
+        """The reference Schur, evaluated at the GPS's own converged state.
 
-        The closure has just located the transverse strain. Imposing it turns
-        the problem back into the plain 18-unknown one the raw law solves, and
-        that law's consistent tangent is exact (measured to `1e-10` at every
-        depth of the frozen history). Condensing it with the Schur complement
-        the reference already uses gives the plane-stress tangent of the whole
-        increment -- which is precisely what sub-stepping cannot supply.
+        A DERIVATIVE CALCULATOR, nothing else. The shadow has no life of its
+        own: its committed state is transplanted from the GPS's at every call
+        -- internal variables by name, committed stress as is, both being
+        material-frame in either law, and the committed gradient rotated from
+        the GPS's global convention into the crystal one the raw bridge uses --
+        it is then integrated once at the imposed in-plane strain WITH the
+        transverse strain the GPS closure converged, and reverted. It never
+        commits, so the stress, the state, the closure and the sub-stepping
+        stay exactly what the GPS produced.
 
-        The transverse components are read from the closure state variables in
-        the STORAGE the law itself used: it writes them straight into Kelvin
-        slots 2, 4 and 5 of the gradient, so they are Kelvin and take no
-        `sqrt(2)`. (The reconstruction of the reported total strain further
-        down divides by `sqrt(2)`; the two cannot both be right, and the law's
-        own substitution is the authority. That inconsistency is real and is
-        recorded rather than silently aligned.)
+        Why this is worth having. The tangent the DSL returns, post-multiplied
+        by the in-plane projector, differs from the reference's Schur by
+        `3e-3` at the same complete physical state, and one material point
+        carrying 32 percent of that difference accounts for the whole Newton
+        penalty -- 52 iterations against 46 on M20, back to 47 when that single
+        point's tangent is replaced. This path supplies the Schur exactly, so
+        it says whether the penalty is the tangent and nothing else.
 
-        Returns `None` on any shadow failure, leaving the sub-stepped tangent
-        in place: an approximate Newton matrix is worse than an exact one and
-        better than an exception.
+        An earlier measurement rejected this route on the grounds that "the
+        shadow does not follow the branch". That measurement predates the fix
+        of the total-strain-as-increment defect: the GPS was then walking a
+        quadratically wrong loading path, so of course the shadow did not
+        reproduce it. There are no branches, and the rejection does not stand.
+
+        Returns `None` on any failure, leaving the DSL tangent in place.
         """
 
         if self._shadow is None:
             return None
+        source = self._manager.s0
+        target = self._shadow._manager.s0
+        internal = np.asarray(source.internal_state_variables)
+        destination = np.asarray(target.internal_state_variables)
+        for source_slice, target_slice in self._shadow_isv_map:
+            destination[:, target_slice] = internal[:, source_slice]
+        target.internal_state_variables[:, :] = destination
+        # Stress is material-frame in both laws; the gradient is not.
+        target.thermodynamic_forces[:, :] = np.asarray(source.thermodynamic_forces)
+        gradients = np.ascontiguousarray(np.asarray(source.gradients).reshape(-1).copy())
+        if self._mgis_rotations is not None:
+            self._mgis.rotateGradients(
+                gradients, self._shadow._behaviour, self._mgis_rotations
+            )
+        target.gradients[:, :] = gradients.reshape(self._point_count, 6)
+        self._mgis.revert(self._shadow._manager)
+
         total = np.zeros((self._point_count, 6), dtype=float)
         total[:, _PLANE_STRESS_COMPONENTS] = (
             in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
         )
-        total[:, _TRANSVERSE_COMPONENTS_3D] = internal_state_variables[
-            :,
-            np.array(
-                [self._ezz_offset, self._exz_offset, self._eyz_offset], dtype=int
-            ),
+        total[:, _TRANSVERSE_COMPONENTS_3D] = np.asarray(self._manager.s1.gradients)[
+            :, _TRANSVERSE_COMPONENTS_3D
         ]
         try:
-            trial = self._shadow.evaluate(total, time_increment=time_increment)
+            trial = self._shadow.evaluate(
+                total, time_increment=time_increment, collect_observables=False
+            )
             engineering, _ = condense_kelvin_tangent_to_engineering(
                 trial.consistent_tangent_kelvin_mpa, check_condition=False
             )
         except Exception:
             self._shadow_failures += 1
-            self._shadow_has_trial = False
             return None
+        finally:
+            # No committed evolution of its own, ever.
+            self._shadow.revert()
         if not np.isfinite(engineering).all():
             self._shadow_failures += 1
-            self._shadow.revert()
-            self._shadow_has_trial = False
             return None
-        self._shadow_has_trial = True
         return np.asarray(engineering, dtype=float)
 
     @property
@@ -3229,14 +3297,6 @@ class MFrontNativeGeneralisedPlaneStressBatch:
     def commit(self) -> None:
         self.accept_global_trial()
         self._mgis.update(self._manager)
-        if self._shadow is not None and self._shadow_has_trial:
-            # The shadow tracks the SAME branch, so its committed state must
-            # advance with the closure's or its tangent would be evaluated
-            # from a state the law never reached. A shadow that failed has no
-            # trial to commit; the closure's own state is unaffected either
-            # way, so the increment is still accepted.
-            self._shadow.commit()
-            self._shadow_has_trial = False
         if self._latest_total_kelvin is not None:
             # Record what the closure actually moved, and against which
             # in-plane increment, so the next increment can start from it.
@@ -3263,9 +3323,6 @@ class MFrontNativeGeneralisedPlaneStressBatch:
 
     def revert(self) -> None:
         self._mgis.revert(self._manager)
-        if self._shadow is not None and self._shadow_has_trial:
-            self._shadow.revert()
-            self._shadow_has_trial = False
         self._latest_trial = None
         self._latest_total_kelvin = None
         self._latest_transverse = None

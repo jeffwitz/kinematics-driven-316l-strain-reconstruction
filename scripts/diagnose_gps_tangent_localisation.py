@@ -190,7 +190,6 @@ def _build_material(
     coefficient: np.ndarray,
 ) -> object:
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
-
     from scripts.qualify_crystal_tet2_p43 import _load_ebsd_orientation_crop
 
     return create_plane_stress_material_batch(
@@ -349,6 +348,8 @@ def test_a(
 ) -> dict[str, object]:
     """Newton directions from J_G and J_R on the SAME GPS residual."""
 
+    from scipy.linalg import solve
+
     from fem_inhouse.spectral2d.newton_ebi import pack_interior
     from fem_inhouse.spectral2d.newton_two_state import (
         TwoStateJacobianWorkspace,
@@ -356,8 +357,6 @@ def test_a(
     )
     from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
     from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
-
-    from scipy.linalg import solve
 
     calls_gps = _checkpoint_calls(recording_gps, increment)
     calls_ref = _checkpoint_calls(recording_ref, increment)
@@ -479,7 +478,7 @@ def test_b(
     )
     return {
         "increment": increment,
-        "point_count": int(len(scores)),
+        "point_count": len(scores),
         "total_score": total,
         "action_delta_sigma_norm": action_norm,
         "points_for_fraction": thresholds,
@@ -1015,7 +1014,7 @@ def main() -> int:
         f"rho_GPS = {a['rho_gps']:.3e}, rho_REF = {a['rho_ref']:.3e}"
     )
     print(
-        f"test B: points for 50/80/90/95% of the action: "
+        "test B: points for 50/80/90/95% of the action: "
         + " / ".join(
             f"{frac}: {count}"
             for frac, count in test_b_result["points_for_fraction"].items()

@@ -154,13 +154,13 @@ class RecordingMaterial:
 def _run(
     backend: str, arguments: argparse.Namespace
 ) -> tuple[RecordingMaterial, dict[str, object]]:
-    from scripts.benchmark_tri2_j2_krylov import _load_case
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
     from fem_inhouse.spectral2d.newton_two_state import (
         EBISpectralSolverConfig,
         solve_two_state_dirichlet_plane_stress,
     )
     from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
+    from scripts.benchmark_tri2_j2_krylov import _load_case
 
     mesh = arguments.crop_nodes[1] - arguments.crop_nodes[0]
     grid, _, yield_stress, coefficient, boundary = _load_case(mesh, arguments.crop_nodes)
@@ -268,7 +268,10 @@ def _first_divergence(
             detail["stress_mean_abs_diff_mpa"] = float(stress_diff.mean())
             detail["stress_reference_max_mpa"] = float(np.max(np.abs(np.asarray(ref["stress"]))))
             if "isv" in ref and "isv" in cand:
-                shared_diff = np.abs(_shared_isv(np.asarray(ref["isv"])) - _shared_isv(np.asarray(cand["isv"])))
+                shared_diff = np.abs(
+                    _shared_isv(np.asarray(ref["isv"]))
+                    - _shared_isv(np.asarray(cand["isv"]))
+                )
                 detail["isv_max_abs_diff"] = float(shared_diff.max())
                 detail["isv_mean_abs_diff"] = float(shared_diff.mean())
             detail["reference_substeps"] = int(ref.get("substeps", 0))
@@ -315,7 +318,11 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(
-        json.dumps(report, indent=2, default=lambda value: value.tolist() if isinstance(value, np.ndarray) else value)
+        json.dumps(
+            report,
+            indent=2,
+            default=lambda v: v.tolist() if isinstance(v, np.ndarray) else v,
+        )
         + "\n"
     )
     print(f"reference: {reference_summary['newton_iterations']} Newton, "

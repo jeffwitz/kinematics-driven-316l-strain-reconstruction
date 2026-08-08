@@ -55,7 +55,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 
 import numpy as np
@@ -317,14 +316,13 @@ def _run_backend(
     backend: str,
     arguments: argparse.Namespace,
 ) -> dict[str, object]:
-    from scripts.benchmark_tri2_j2_krylov import _load_case
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
     from fem_inhouse.spectral2d.newton_two_state import (
         EBISpectralSolverConfig,
         solve_two_state_dirichlet_plane_stress,
     )
     from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
-
+    from scripts.benchmark_tri2_j2_krylov import _load_case
     from scripts.qualify_crystal_tet2_p43 import _load_ebsd_orientation_crop
 
     mesh = arguments.crop_nodes[1] - arguments.crop_nodes[0]
@@ -476,7 +474,8 @@ def main() -> int:
             f"{record['backend']}: {record['newton_iterations']} Newton, "
             f"{record['solver_calls']} calls | purity {verdict} "
             f"(test1 {worst1:.2e}, test1b {worst1b:.2e}) | "
-            f"substep decision {'identical' if record['substep_decision']['identical'] else 'DIFFERENT'} "
+            f"substep decision "
+            f"{'identical' if record['substep_decision']['identical'] else 'DIFFERENT'} "
             f"| accept_global_trial {accept_verdict} ({worst2:.2e})"
         )
     return 0
