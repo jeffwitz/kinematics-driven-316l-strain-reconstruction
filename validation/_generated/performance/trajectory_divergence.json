@@ -1,0 +1,29 @@
+{
+  "configuration": {
+    "crop_nodes": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "increments": 8
+  },
+  "reference_evaluations": 69,
+  "candidate_evaluations": 61,
+  "reference_newton_iterations": 53,
+  "candidate_newton_iterations": 52,
+  "first_divergence": {
+    "index": 1,
+    "strain_differs": false,
+    "stress_differs": true,
+    "isv_differs": true,
+    "slip_differs": false,
+    "stress_max_abs_diff_mpa": 4.4209652116933285e-07,
+    "stress_mean_abs_diff_mpa": 8.502222885918058e-09,
+    "stress_reference_max_mpa": 164.6425058979023,
+    "isv_max_abs_diff": 4.938275266139214e-12,
+    "isv_mean_abs_diff": 2.2583118480161815e-14,
+    "reference_substeps": 0,
+    "candidate_substeps": 0
+  }
+}
