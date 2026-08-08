@@ -91,6 +91,43 @@ python scripts/benchmark_srix_ebsd_krylov.py \
   --output validation/_generated/performance/srix_p43_m20_ebsd_krylov_sweep.json
 ```
 
+## MFront condensation blocks on EBSD M100
+
+The existing block-condensation implementation was qualified on the same
+P43 M100 EBSD case. Only `condensation_block_size` changed; all runs used
+eight increments, four MFront threads, tangent transverse prediction,
+Eisenstat--Walker, LGMRES recycling, and production trial promotion.
+
+The complete sweep is archived in:
+
+```text
+validation/_generated/performance/
+  srix_p43_m100_ebsd_condensation_blocks.json
+  srix_p43_m100_ebsd_condensation_blocks.csv
+```
+
+| Configuration | Total (s) | Material (s) | MGIS block calls | Point integrations | Max field error | Newton |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Monolithic | 54.45 | 44.06 | 211 | 4,220,000 | 0 | 57 |
+| Block 10000 | 79.24 | 67.40 | 543 | 5,430,000 | 7.32e-11 | 57 |
+| Block 5000 | 84.32 | 72.04 | 1059 | 5,295,000 | 7.32e-11 | 57 |
+| Block 2500 | 82.49 | 70.06 | 2068 | 5,170,000 | 7.32e-11 | 57 |
+| Block 1250 | 83.57 | 71.47 | 4024 | 5,030,000 | 7.32e-11 | 57 |
+| Block 625 | 94.01 | 81.16 | 7829 | 4,893,125 | 7.32e-11 | 57 |
+
+All variants had eight accepted increments, no rejection, and the same final
+residual. Displacement, reactions, stresses, signed slips, accumulated slips,
+and equivalent slips all satisfy the requested field tolerances. The block
+implementation is therefore transactionally and numerically sound on this
+case, but no block size meets the required 10% speedup: the monolithic batch
+is the selected configuration.
+
+The point-integration count is the sum of the actual sizes sent to MGIS. The
+block variants do not yet compact converged material points; they only stop
+whole blocks independently. Consequently, the extra MGIS calls and repeated
+block setup dominate the theoretical benefit. An active-set implementation
+would require a separate design and is intentionally outside this campaign.
+
 ## Fixed increment sweep
 
 The current P43 path is proportional, so the same final boundary field can be

@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-07
+Dernière mise à jour : 2026-08-08
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## État de reprise — 2026-08-07
@@ -150,6 +150,85 @@ src/fem_inhouse/core/mfront.py
 Ne pas relancer M100/M200 pendant une phase de conception du générateur sans
 avoir d'abord validé un point matériel et M20. Le backend condensé externe
 reste la référence numérique.
+
+### 2026-08-08 — UMAT GPS : de bloqué à plus rapide que la référence, et le §5.1 est retiré
+
+Vingt-sept commits fusionnés dans `main` (`76e6959`). La substance tient en
+trois défauts et leurs conséquences.
+
+**Le pont appliquait la déformation TOTALE comme un incrément.** `evaluate`
+reçoit le total — c'est le contrat de tous les backends de contrainte plane du
+module — et le pont écrivait `s0.gradients + gradient`. La charge imposée
+s'accumulait donc en `1+2+3+…` au lieu de `1,2,3` : trace en plan de `3,0e-3`
+là où `2,0e-3` était demandé à l'incrément 2. L'incrément 1 n'était pas touché
+(total et incrément y coïncident), **et c'est exactement pourquoi toutes les
+comparaisons contre la référence s'accordaient à l'incrément 1 et divergeaient
+au 2** — signature lue trois jours durant comme un changement de branche.
+
+**Il n'y a jamais eu deux branches.** Le F1 de la préinscription, la
+« multiplicité de racines » du diagnostic, le mur de robustesse du §5.2 (la
+déformation croissait quadratiquement) et la tangente fausse découlent tous de
+cette ligne. La décision « on force la racine de contrainte plane » n'a plus
+d'objet, et **les campagnes condensées archivées n'ont pas à être refaites** :
+la référence avait raison depuis le début. Accord après correction : `1,1e-11`.
+
+**Les rotations par point étaient lues à travers les points.**
+`rotations[:, row, col]` est une vue à pas de neuf doubles, passée à MGIS en
+`ExternalStorage` — qui la lit comme contiguë. Chaque point lisait les `Q` d'un
+autre. Les tampons étaient de surcroît des temporaires libérés aussitôt. **Un
+seul point matériel masque les deux**, d'où le silence de toutes les
+qualifications mono-orientation pendant que les 400 points EBSD démarraient
+leur premier résidu à `0,835` contre `0,178`.
+
+**Le pont intégrait sur un seul fil** quand la référence en utilisait quatre —
+l'essentiel du « facteur 2,5 inexpliqué » du coût par intégration. Intuition de
+l'utilisateur, vérifiée en un grep.
+
+**Trois optimisations ensuite.** La contrainte plane portée par trois lignes de
+résidu au lieu de trois inconnues (21 → 18, plus de point-selle, jacobien
+élastique constant) ; le sous-pas appliqué **aux points fautifs** et non au lot
+entier, ce qui gagne **deux ordres de grandeur** sur l'accord avec la référence
+(contrainte `3,2e-3 → 3,8e-5`) ; et un cache des indices fautifs **prouvé
+complet par ré-intégration groupée** — avancer le `s0` d'un point du cache lui
+fait voir un incrément nul, donc un seul appel groupé prouve qu'aucun point hors
+cache n'a échoué, sans rien lire dans l'état.
+
+**Résultat.** Qualification **ACCEPTÉE** sur les trois cas : fermeture
+`2 – 4e-14 MPa`, tangente FD `1,2 – 1,6e-07`, écart à la référence `1e-11`.
+P43 20x20 tourne à `1,2 – 1,7×` la référence sur le temps matériau ; **100x100
+est à parité**, et la pénalité de `1,49×` sur les itérations globales qui l'y
+retient est mesurée mais **inexpliquée** — ce n'est pas le sous-pas, qui ne
+touche que `0,071 %` du lot (400 points sous-passés sur 1,72 M intégrations,
+cache à 91 % de succès).
+
+**Cinq résultats négatifs conservés et reproductibles** : la route 1 n'a jamais
+tiré (`|ΔK| = 0` bit à bit) ; la route 2 est réfutée (imposer la déformation ne
+sélectionne pas la branche) ; le GIL est retenu (`0,73×` en threads Python
+contre `2,82×` au pool MGIS) ; le détecteur par résidu de fermeture est aveugle
+(MFront laisse `s1` à l'état committé sur échec) ; et deux de mes propres
+lectures sont rétractées — le §8.7 (violation cinématique, en fait un artefact
+de ma reconstruction) et le §8.17 (ensemble fautif plus grand, en fait quatre
+fois plus petit).
+
+**Tout tourne sur TFEL/MFront 5.1.0 NON MODIFIÉ.** Vérifié par reconstruction
+depuis zéro, par les en-têtes installés identiques octet pour octet à l'état
+d'avant le fork, et par le `mfront` installé qui rejette l'hypothèse
+`GeneralisedPlaneStress` du fork. La voie UMAT a précisément été choisie pour
+éviter de patcher le générateur ; le fork `jeffwitz/tfel-generalised-plane-stress`
+reste hors de la chaîne de production.
+
+**Piège rencontré deux fois, à retenir** : un incrément de déformation nul
+n'interroge pas la loi qu'on croit interroger — la branche élastique gardée
+répond. Il a rendu la vérification A6 vacue (succès rapporté sur une tangente
+fausse d'un facteur cinq) puis cassé la convergence de P43 à l'incrément 5
+quand la ré-intégration de preuve a renvoyé la tangente élastique aux points les
+plus plastiques.
+
+**Reste ouvert** : la pénalité d'itérations globales à 100x100, et le `2,1×` de
+coût par appel — ni la taille du système local, ni le nombre d'itérations
+locales, ni le recalcul de constantes ne l'expliquent. Détail complet dans
+`docs/explanation/spectral_mechanics/umat_gps_handoff_2026-08-07.md`, §8.8 à
+§8.18.
 
 ### 2026-08-07 — UMAT GPS : la fermeture marche, la qualification échoue sur les racines multiples de la loi
 

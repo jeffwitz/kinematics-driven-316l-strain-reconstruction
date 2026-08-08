@@ -175,6 +175,16 @@ def test_block_condensation_matches_single_batch_and_rolls_back() -> None:
         rtol=0.0,
         atol=1e-12,
     )
+    timing = blocked.timing_statistics
+    assert timing.material_block_count == 2
+    assert timing.material_block_integration_calls > 0
+    assert timing.material_point_integrations == (
+        timing.material_point_integrations_with_tangent
+        + timing.material_point_integrations_without_tangent
+    )
+    assert timing.material_point_integrations == (
+        2 * timing.material_block_integration_calls
+    )
 @pytest.mark.mfront
 def test_compiled_mfront_behaviour_matches_elastic_plane_stress() -> None:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
