@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/scripts/qualify_crystal_tet2_p43.py", line 667, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/scripts/qualify_crystal_tet2_p43.py", line 450, in main
+    result = solve_two_state_dirichlet_plane_stress(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/spectral2d/newton_two_state.py", line 1360, in solve_two_state_dirichlet_plane_stress
+    raise RuntimeError(f"two-state increment {increment} did not converge")
+RuntimeError: two-state increment 1 did not converge
