@@ -1,0 +1,24 @@
+=== point 96
+  own states: 3D rel 8.493e-01, in-plane rel 9.302e-04
+  GPS state -> ref: 3D rel 8.476e-01, in-plane rel 2.693e-03
+  ref state -> GPS: 3D rel 2.981e+00
+  same-state Schur(ref) vs GPS projected: 3.125e-03
+  same-state Schur(ref) vs ref returned:  5.231e-04
+  ref returned vs own Schur: 0.000e+00
+  Cbb cond ref-on-gps-state: 9.060e+00, min singular 2.196e+04
+=== point 95
+  own states: 3D rel 8.808e-01, in-plane rel 2.188e-04
+  GPS state -> ref: 3D rel 8.773e-01, in-plane rel 3.452e-03
+  ref state -> GPS: 3D rel 3.898e+00
+  same-state Schur(ref) vs GPS projected: 3.745e-03
+  same-state Schur(ref) vs ref returned:  3.330e-04
+  ref returned vs own Schur: 0.000e+00
+  Cbb cond ref-on-gps-state: 6.524e+00, min singular 2.857e+04
+=== point 59
+  own states: 3D rel 7.716e-01, in-plane rel 7.527e-05
+  GPS state -> ref: 3D rel 7.710e-01, in-plane rel 1.371e-04
+  ref state -> GPS: 3D rel 1.839e+00
+  same-state Schur(ref) vs GPS projected: 1.420e-04
+  same-state Schur(ref) vs ref returned:  1.942e-05
+  ref returned vs own Schur: 0.000e+00
+  Cbb cond ref-on-gps-state: 6.084e+00, min singular 4.181e+04

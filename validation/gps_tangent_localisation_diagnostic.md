@@ -142,8 +142,44 @@ La chaîne du CdC §11 est établie avec localisation :
   réconcilie toutes les mesures globales (Jv exact, spectres identiques) avec
   le compte d'itérations.
 
-Prochaine étape conforme au CdC §12 : « si les mêmes états donnent des
-tangentes différentes → revenir au Jacobien local MFront GPS et comparer bloc
-par bloc avec la condensation référence » — ciblé sur le point 96 (et ses
-voisins 95, 59), aux états committés des deux trajectoires au checkpoint de
-l'incrément 6. Ne rien modifier avant cette démonstration.
+### Test F — bloc par bloc au même état complet : la formulation diffère de `3e-3`
+
+Étape §12 du CdC, `scripts/diagnose_gps_tangent_blocks.py`. Pour les points
+96, 95, 59 au checkpoint inc 6, avec un transplant COMPLET (ISV par nom +
+gradient tourné dans le repère du receveur + transverse convergé imposé) :
+
+- la tangente 3D de la référence est reconstruite à sa fermeture convergée
+  (évaluation du bridge au transverse `_latest_transverse`) — validé :
+  son Schur redonne la tangente retournée à `0.000e+00` ;
+- la tangente GPS est la tangente DSL globale (post-multiplication par le
+  projecteur in-plane, rotations de sortie répliquées), réévaluée au même
+  état.
+
+| point | Schur(réf) vs projetée(GPS) même état | retournées même état |
+|---|---|---|
+| 96 | `3,13e-3` | `2,69e-3` |
+| 95 | `3,75e-3` | `3,45e-3` |
+| 59 | `1,42e-4` | `1,37e-4` |
+
+**À même état complet, les deux formulations ne produisent pas la même
+tangente** : `3e-3` sur les points responsables, contre `1,4e-4` sur le point
+au score faible. L'écart croît avec le score de responsabilité — c'est le
+chaînon manquant. La comparaison 6×6 brute n'est pas pertinente (la tangente
+DSL GPS a les lignes transverses nulles par construction — Cbb = 0, déjà
+documenté dans `mfront.py`) ; c'est la projection in-plane qui décide du
+Newton, et elle diffère.
+
+**Conclusion causale finale** : la tangente GPS projetée (DSL + projecteur
+in-plane) diffère du Schur de la condensation référence de `~3e-3` à l'état
+réel du point 96 — une différence de FORMULATION (dérivée), pas d'état. Le
+solveur GPS applique cette matrice le long de la trajectoire ; la direction
+diffère de `8,4e-5` par itération (test A) et s'amplifie en écart de compte
+(52 vs 46). La localisation, la causalité et l'échelle sont établies.
+
+**Piste pour la correction** (non modifiée — démonstration d'abord) : la
+post-multiplication par le projecteur in-plane `P` est l'endroit où la
+tangente DSL GPS devrait coïncider avec le Schur — elle n'y arrive qu'à
+`3e-3`. La route 2 du handoff (tangente condensée via le Schur de la loi
+brute, `shadow_condensed_tangent`) produit exactement le Schur ; elle est
+désactivée par défaut car « le shadow ne suit pas la branche » — à
+réexaminer à la lumière de cette mesure.

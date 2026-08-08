@@ -407,6 +407,37 @@ MFront GPS et la condensation référence sur le point 96 (et voisins 95, 59),
 aux états committés des deux trajectoires au checkpoint de l'incrément 6.
 Ne rien modifier avant cette démonstration.
 
+### 2026-08-08 — Bloc par bloc : la formulation GPS diffère du Schur de `3e-3` au même état
+
+Étape §12 du CdC, `scripts/diagnose_gps_tangent_blocks.py`. Transplant
+COMPLET (ISV par nom + gradient tourné dans le repère du receveur +
+transverse convergé du GPS imposé) sur les points 96/95/59 au checkpoint
+inc 6. Contrôles méthodologiques passés : la tangente 3D de la référence
+reconstruite à sa fermeture convergée redonne son Schur à `0.000e+00` ;
+la tangente GPS est la tangente DSL globale réévaluée au même état.
+
+**Résultat : à même état complet, Schur(référence) vs tangente projetée(GPS)
+= `3,1e-3` (point 96), `3,8e-3` (95), `1,4e-4` (59)** — l'écart de
+formulation croît avec le score de responsabilité (test B). La comparaison
+6×6 brute n'est pas pertinente : la tangente DSL GPS a les lignes
+transverses nulles par construction (Cbb = 0, documenté dans `mfront.py`) ;
+c'est la projection in-plane qui décide du Newton, et elle diffère.
+
+**Conclusion causale finale** : la tangente GPS projetée (DSL + projecteur
+in-plane P) diffère du Schur de la condensation référence de `~3e-3` à
+l'état réel du point 96 — une différence de FORMULATION (dérivée), pas
+d'état. Le solveur GPS applique cette matrice le long de la trajectoire ;
+la direction diffère de `8,4e-5` par itération (test A) et s'amplifie en
+écart de compte (52 vs 46). Localisation, causalité et échelle établies.
+
+**Piste de correction (non modifiée — démonstration d'abord)** : la
+post-multiplication par le projecteur in-plane `P` est l'endroit où la
+tangente DSL GPS devrait coïncider avec le Schur — elle n'y arrive qu'à
+`3e-3`. La route 2 du handoff (`shadow_condensed_tangent`, Schur de la loi
+brute via le shadow) produit exactement le Schur ; désactivée par défaut
+car « le shadow ne suit pas la branche » — à réexaminer à la lumière de
+cette mesure.
+
 ### 2026-08-08 — Convention du wrapper halvéd corrigée ; le verdict 57 = 57 tient
 
 Le `UniformlyHalvedReference` interpolait `eps0` depuis
