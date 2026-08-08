@@ -1,0 +1,146 @@
+{
+  "backends": [
+    {
+      "accept_global_trial": {
+        "accumulated_slip": 0.0,
+        "back_strain": 0.0,
+        "equivalent_plastic_slip": 0.0,
+        "full_strain": 0.0,
+        "full_stress": 0.0,
+        "plastic_slip": 0.0,
+        "plastic_strain": 0.0,
+        "residual": 0.0,
+        "stress": 0.0,
+        "tangent": 0.0,
+        "transverse": 0.0
+      },
+      "accept_pass": true,
+      "backend": "mfront-native-generalised-plane-stress",
+      "newton_iterations": 52,
+      "purity_pass": true,
+      "purity_test1": {
+        "accumulated_slip": 0.0,
+        "back_strain": 0.0,
+        "equivalent_plastic_slip": 0.0,
+        "full_strain": 0.0,
+        "full_stress": 0.0,
+        "plastic_slip": 0.0,
+        "plastic_strain": 0.0,
+        "residual": 0.0,
+        "stress": 0.0,
+        "tangent": 0.0,
+        "transverse": 0.0
+      },
+      "purity_test1b": {
+        "accumulated_slip": 0.0,
+        "back_strain": 0.0,
+        "equivalent_plastic_slip": 0.0,
+        "full_strain": 0.0,
+        "full_stress": 0.0,
+        "plastic_slip": 0.0,
+        "plastic_strain": 0.0,
+        "residual": 0.0,
+        "stress": 0.0,
+        "tangent": 0.0,
+        "transverse": 0.0
+      },
+      "replayed_increment": 7,
+      "solver_calls": 53,
+      "strain_a_norm": 0.21869920351310668,
+      "strain_ab_diff": 0.00905371716256256,
+      "strain_b_norm": 0.216301821370994,
+      "substep_decision": {
+        "a1": {
+          "cache_hits": 1,
+          "cache_misses": 0,
+          "divisions": 0,
+          "substeps": 1
+        },
+        "a2": {
+          "cache_hits": 1,
+          "cache_misses": 0,
+          "divisions": 0,
+          "substeps": 1
+        },
+        "identical": true
+      }
+    },
+    {
+      "accept_global_trial": {
+        "accumulated_slip": 2.8507231297769664e-13,
+        "back_strain": 3.0094024874079833e-13,
+        "equivalent_plastic_slip": 9.605389400535458e-13,
+        "full_strain": 9.168221737354543e-13,
+        "full_stress": 5.925960522290552e-08,
+        "plastic_slip": 9.605389400535458e-13,
+        "plastic_strain": 7.892957121224953e-13,
+        "residual": 2.6759676252652298e-08,
+        "stress": 5.925960522290552e-08,
+        "tangent": 4.625947622116655e-05,
+        "transverse": 9.168221737354543e-13
+      },
+      "accept_pass": false,
+      "backend": "mfront-3d-condensed-plane-stress",
+      "newton_iterations": 46,
+      "purity_pass": false,
+      "purity_test1": {
+        "accumulated_slip": 0.0,
+        "back_strain": 0.0,
+        "equivalent_plastic_slip": 0.0,
+        "full_strain": 0.0,
+        "full_stress": 0.0,
+        "plastic_slip": 0.0,
+        "plastic_strain": 0.0,
+        "residual": 0.0,
+        "stress": 0.0,
+        "tangent": 0.0,
+        "transverse": 0.0
+      },
+      "purity_test1b": {
+        "accumulated_slip": 2.472570759248782e-13,
+        "back_strain": 2.7150290614905495e-13,
+        "equivalent_plastic_slip": 9.127965310690156e-13,
+        "full_strain": 7.950632339992492e-13,
+        "full_stress": 5.009972880998248e-08,
+        "plastic_slip": 9.127965310690156e-13,
+        "plastic_strain": 6.920497161444494e-13,
+        "residual": 2.465321369271578e-08,
+        "stress": 5.009972880998248e-08,
+        "tangent": 5.987718759570271e-05,
+        "transverse": 7.950632339992492e-13
+      },
+      "replayed_increment": 7,
+      "solver_calls": 47,
+      "strain_a_norm": 0.21869969429502137,
+      "strain_ab_diff": 0.009054120436226568,
+      "strain_b_norm": 0.2163021342118295,
+      "substep_decision": {
+        "a1": {
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "divisions": 0,
+          "substeps": 0
+        },
+        "a2": {
+          "cache_hits": 0,
+          "cache_misses": 0,
+          "divisions": 0,
+          "substeps": 0
+        },
+        "identical": true
+      }
+    }
+  ],
+  "configuration": {
+    "crop_nodes": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "increments": 8,
+    "mfront_threads": 4,
+    "purity_tolerance": 1e-10
+  },
+  "schema_version": 1
+}

@@ -1,0 +1,53 @@
+{
+  "backends": [
+    {
+      "backend": "mfront-native-generalised-plane-stress",
+      "delta_strain_norm": 0.007938517882561502,
+      "jv_solver_norm": 56.701190096427496,
+      "newton_iterations": 52,
+      "relative_errors_per_h": {
+        "1e-04": 0.009827656346439884,
+        "1e-05": 1.870602102958894e-07,
+        "1e-06": 2.845479440765401e-08,
+        "1e-07": 1.0735294863637863e-09
+      },
+      "replay_calls": 8,
+      "replay_increment": 8,
+      "substeps_first_call": 0,
+      "time_increment": 0.125
+    },
+    {
+      "backend": "mfront-3d-condensed-plane-stress",
+      "delta_strain_norm": 0.007938408032380006,
+      "jv_solver_norm": 56.704670817287585,
+      "newton_iterations": 46,
+      "relative_errors_per_h": {
+        "1e-04": 0.00981545325993979,
+        "1e-05": 8.246265784075428e-06,
+        "1e-06": 5.745123297050353e-08,
+        "1e-07": 5.744146700380803e-08
+      },
+      "replay_calls": 6,
+      "replay_increment": 8,
+      "substeps_first_call": 0,
+      "time_increment": 0.125
+    }
+  ],
+  "configuration": {
+    "crop_nodes": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "increments": 8,
+    "mfront_threads": 4,
+    "perturbations": [
+      0.0001,
+      1e-05,
+      1e-06,
+      1e-07
+    ]
+  },
+  "schema_version": 1
+}

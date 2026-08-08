@@ -280,6 +280,61 @@ seules hypothèses qui survivent à l'échelon local. Artefacts de campagne dans
 `validation/_generated/performance/` (résumés commités, répertoires de champs
 commités le 2026-08-08).
 
+### 2026-08-08 — Cinq tests du programme de falsification : le GPS est pur, le Jv est exact, et la pénalité suit le TANGENT
+
+Programme proposé par l'utilisateur après l'acquittement du chemin de
+sous-pas. Cinq tests sur 20×20 EBSD, GPS vs référence condensée, tous
+implémentés dans `scripts/diagnose_gps_trial_purity.py`,
+`scripts/diagnose_jv_global_fd.py`, `scripts/diagnose_crossed_stress_tangent.py`
+et un run de forcing. Résultats (52 vs 46 Newton à 20×20) :
+
+- **Test 1 — pureté `evaluate(A)-evaluate(B)-evaluate(A)` sans commit :
+  GPS PUR bit à bit** (`0.00e+00` sur stress, tangent, g/p/a[12], tenseurs
+  complets, transverses, décision de substepping, subdivisions, cache).
+  La variante snapshot/restore est aussi bit à bit. Le GPS est strictement
+  une fonction de `(s0, eps_trial)` : aucune fuite de trial/state/cache.
+  Contre-témoin surprenant : la RÉFÉRENCE est légèrement impure après
+  restore (`5.99e-05` sur le tangent, `5.01e-08` sur le stress) et son
+  `accept_global_trial` est transformatif (`4.63e-05`) — l'ordre de sa
+  tolérance de fermeture locale (`1e-8 MPa` absolu), pas un artefact de
+  structure : le warm-start local converge dans sa boule de tolérance.
+- **Test 2 — `accept_global_trial()` sans commit : NEUTRE sur le GPS**
+  (`0.00e+00`) : le prédicteur accepté n'a aucun effet sur la réponse.
+- **Test 3 — Jv global FD sur un vrai checkpoint d'incrément profond** :
+  l'opérateur que le solveur applique (`div(C·Bv)` avec la tangente du
+  premier itéré) contre `(R(u+hv)-R(u-hv))/2h` réintégré depuis le même
+  snapshot committé, h = 1e-4..1e-7, v = direction réelle de deux itérés
+  Newton consécutifs du run. GPS : `9.8e-3 → 1.9e-7 → 2.9e-8 → 1.1e-9` ;
+  référence : `9.8e-3 → 8.2e-6 → 5.7e-8 → 5.7e-8`. **Le Jv assemblé du
+  GPS est aussi exact que celui de la référence** — le contraste
+  `~1e-5` vs `~1e-1` attendu n'existe pas. Le plateau à `1e-2` pour
+  `h=1e-4` est la non-linéarité de la direction (`|Δε|=8e-3`), identique
+  aux deux backends.
+- **Test 4 — forcing Krylov serré** (GPS M20, `--linear-mode fixed`
+  `--gmres-rtol 1e-8` contre Eisenstat–Walker) : **52 → 50 Newton**.
+  L'interaction GPS/forcing inexact coûte 2 itérations sur 6 de pénalité,
+  pas le mécanisme.
+- **Test 5 — échange croisé stress/tangent, le décisif** :
+  GPS-stress + tangent REF = **47** Newton (≈ référence 46) ;
+  REF-stress + tangent GPS = **54** (≈ GPS 52). **Le nombre d'itérations
+  suit le TANGENT, pas le stress** : avec le bon tangent, le résidu GPS
+  converge comme la référence ; avec le tangent GPS, même le résidu
+  référence converge comme le GPS. La fonction résiduelle GPS est
+  innocentée ; c'est la matrice GPS qui porte la pénalité.
+
+**Lecture cohérente de l'ensemble** : la dérivée GPS est exacte (test 3,
+et tangentes identiques à `1e-16` à états appariés) mais la matrice GPS
+est un itérateur moins efficace aux états profonds — convergence linéaire
+à `×0.2` par itération contre `×0.05` pour la référence (mesuré dans
+`1df14a6`), et c'est ce taux qui décide du compte de Newton. Le problème
+n'est donc ni la fonction constitutive, ni sa dérivée prise isolément,
+mais le spectre/conditionnement de la matrice assemblée dans le régime
+plastique profond — piste : la structure de la tangente GPS (projecteur
+in-plane `P`, lignes transverses du résidu de fermeture, tangente du
+dernier sous-pas) vue par le Newton global. Point ouvert à investiguer
+(analyse spectrale de `BᵀCB` aux états profonds, GPS vs référence), pas
+un défaut de formulation constitutive.
+
 ### 2026-08-08 — Convention du wrapper halvéd corrigée ; le verdict 57 = 57 tient
 
 Le `UniformlyHalvedReference` interpolait `eps0` depuis

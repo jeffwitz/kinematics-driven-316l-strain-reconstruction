@@ -1,0 +1,2 @@
+mfront-native-generalised-plane-stress: 52 Newton | replay inc 8 (8 calls) | ||Jv|| 5.670e+01 | h=1e-04: 9.83e-03 | h=1e-05: 1.87e-07 | h=1e-06: 2.85e-08 | h=1e-07: 1.07e-09
+mfront-3d-condensed-plane-stress: 46 Newton | replay inc 8 (6 calls) | ||Jv|| 5.670e+01 | h=1e-04: 9.82e-03 | h=1e-05: 8.25e-06 | h=1e-06: 5.75e-08 | h=1e-07: 5.74e-08

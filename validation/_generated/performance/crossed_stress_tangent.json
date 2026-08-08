@@ -1,0 +1,53 @@
+{
+  "backends": [
+    {
+      "accepted_increments": 8,
+      "iterations_per_increment": [
+        6,
+        5,
+        5,
+        6,
+        7,
+        6,
+        6,
+        6
+      ],
+      "newton_iterations": 47,
+      "solver_succeeded": true,
+      "stress_from": "gps"
+    },
+    {
+      "accepted_increments": 8,
+      "iterations_per_increment": [
+        6,
+        5,
+        5,
+        6,
+        8,
+        7,
+        8,
+        9
+      ],
+      "newton_iterations": 54,
+      "solver_succeeded": true,
+      "stress_from": "reference"
+    }
+  ],
+  "configuration": {
+    "crop_nodes": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "increments": 8,
+    "mfront_threads": 4
+  },
+  "reference_points": {
+    "gps_gps": null,
+    "gps_ref": null,
+    "ref_gps": null,
+    "ref_ref": null
+  },
+  "schema_version": 1
+}

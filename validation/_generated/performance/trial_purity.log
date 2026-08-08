@@ -1,0 +1,2 @@
+mfront-native-generalised-plane-stress: 52 Newton, 53 calls | purity PURE (test1 0.00e+00, test1b 0.00e+00) | substep decision identical | accept_global_trial NEUTRAL (0.00e+00)
+mfront-3d-condensed-plane-stress: 46 Newton, 47 calls | purity IMPURE (test1 0.00e+00, test1b 5.99e-05) | substep decision identical | accept_global_trial TRANSFORMATIVE (4.63e-05)
