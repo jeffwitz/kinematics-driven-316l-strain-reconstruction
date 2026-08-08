@@ -135,6 +135,12 @@ class MFrontTimingStatistics:
     native_internal_integrations: int = 0
     native_total_local_iterations: int = 0
     native_thread_count: int = 1
+    #: Points that refused the full step and were sub-stepped individually, and
+    #: how often the failing-index cache spared the bisection. Zero on every
+    #: backend that does not sub-step.
+    native_substep_points: int = 0
+    native_substep_cache_hits: int = 0
+    native_substep_cache_misses: int = 0
     local_iteration_histogram: tuple[int, ...] = ()
 
 
@@ -2570,6 +2576,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             native_internal_integrations=self._internal_integrations,
             native_total_local_iterations=int(np.sum(self._local_iterations)),
             native_thread_count=self._thread_count,
+            native_substep_points=self._substep_points,
+            native_substep_cache_hits=self._cache_hits,
+            native_substep_cache_misses=self._cache_misses,
         )
 
     @property

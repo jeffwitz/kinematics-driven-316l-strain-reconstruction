@@ -979,3 +979,51 @@ condensée reste le choix par défaut ; l'UMAT n'a pas encore d'argument de
 vitesse à cette échelle. Les deux leviers restent les mêmes, et le premier a
 changé de rang : la pénalité d'itérations globales est désormais le terme
 dominant, devant le `2,1×` par appel.
+
+### 8.18 Combien de points échouent : mesuré, et le §8.17 est réfuté
+
+Deux mesures, l'une synthétique et l'autre sur le vrai calcul, qui disent la
+même chose.
+
+**Vérité terrain par intégration point par point**, même fluctuation
+synthétique sur les deux fenêtres, au premier incrément où le lot échoue :
+
+| fenêtre | points fautifs | fraction |
+|---|---|---|
+| 20x20 | `2 / 400` | `0,50 %` |
+| 100x100 | `3 / 10 000` | `0,03 %` |
+
+**Compteurs du vrai calcul** (`native_substep_*`, désormais remontés dans les
+diagnostics du solveur) :
+
+| | 20x20 | 100x100 |
+|---|---|---|
+| points sous-passés, total | 26 | 400 |
+| épisodes de sous-pas | 25 | 56 |
+| points par épisode | `1,0` | `7,1` |
+| **fraction du lot** | **`0,26 %`** | **`0,071 %`** |
+| cache : succès / épisodes | `25 / 25` | `51 / 56` |
+
+**La fraction fautive est presque quatre fois plus PETITE à 100x100, pas plus
+grande.** L'interprétation du §8.17 — « un ensemble de points fautifs
+proportionnellement plus grand ou plus dispersé » — est **réfutée**. Le sous-pas
+touche `0,071 %` du lot et ne peut pas expliquer une pénalité d'itérations de
+`1,49×`.
+
+Au passage, le cache du §8.16 tient ses promesses à l'échelle : **100 % de
+succès sur la petite fenêtre, 91 % sur la grande**. La dichotomie n'a tourné que
+cinq fois sur cinquante-six.
+
+**Ce qui reste ouvert, et c'est maintenant le seul point.** Les 85 itérations
+globales contre 57 ne viennent ni du sous-pas (mesuré ici), ni de la tangente au
+point matériel (A6 à `1,2e-07` à chaque incrément), ni de la parallélisation
+(corrigée), ni de la taille du système local (mesurée sans effet). Deux
+candidats non testés : une tangente moins exacte aux orientations et états que
+la qualification à trois cas ne couvre pas, ou une divergence de trajet
+authentique entre deux solutions qui diffèrent de `1,2e-04`. Rien ne permet de
+choisir aujourd'hui.
+
+Rappel du bilan : `3,3 / (2,1 x 1,49) = 1,05` contre `1,04` mesuré à 100x100, et
+`3,3 / (2,1 x 1,13) = 1,39` contre `1,2 – 1,7` à 20x20. Le modèle est cohérent
+sur les deux échelles ; c'est la pénalité d'itérations qui décide, et elle n'est
+pas expliquée.

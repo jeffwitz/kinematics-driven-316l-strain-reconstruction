@@ -1555,6 +1555,9 @@ def solve_two_state_dirichlet_plane_stress(
             "native_internal_integrations",
             "native_total_local_iterations",
             "native_thread_count",
+            "native_substep_points",
+            "native_substep_cache_hits",
+            "native_substep_cache_misses",
         )
     }
     provenance = collect_runtime_provenance(
