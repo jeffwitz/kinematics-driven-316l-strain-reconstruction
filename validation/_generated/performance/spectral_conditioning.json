@@ -1,0 +1,615 @@
+{
+  "backends": [
+    {
+      "backend": "mfront-native-generalised-plane-stress",
+      "matrix_size": 722,
+      "newton_iterations": 52,
+      "per_increment": {
+        "5": {
+          "calls": 8,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 37.86768435667506,
+              "preconditioned_max_abs": 0.6728995308585564,
+              "preconditioned_min_abs": 0.017769756516414558,
+              "raw_conditioning": 675.3295278583048,
+              "raw_max_abs": 890512.222890937,
+              "raw_min_abs": 1318.633624261993,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 38.050004336061576,
+              "preconditioned_max_abs": 0.6493180840094178,
+              "preconditioned_min_abs": 0.01706486228686266,
+              "raw_conditioning": 662.916359930343,
+              "raw_max_abs": 889031.1129726508,
+              "raw_min_abs": 1341.0909229424767,
+              "substeps": 1
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 38.53899919246439,
+              "preconditioned_max_abs": 0.6459600233430255,
+              "preconditioned_min_abs": 0.016761203894192753,
+              "raw_conditioning": 673.9435840272245,
+              "raw_max_abs": 897564.4126347487,
+              "raw_min_abs": 1331.8094183362548,
+              "substeps": 1
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 38.68313776973958,
+              "preconditioned_max_abs": 0.6469188840991232,
+              "preconditioned_min_abs": 0.016723536956849052,
+              "raw_conditioning": 675.5867671525353,
+              "raw_max_abs": 899031.6248556179,
+              "raw_min_abs": 1330.741909947198,
+              "substeps": 1
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 38.68526752665328,
+              "preconditioned_max_abs": 0.6469316139661504,
+              "preconditioned_min_abs": 0.016722945331072846,
+              "raw_conditioning": 675.5893663180623,
+              "raw_max_abs": 899053.3336491773,
+              "raw_min_abs": 1330.768923360925,
+              "substeps": 1
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 38.68526895748834,
+              "preconditioned_max_abs": 0.6469316869450646,
+              "preconditioned_min_abs": 0.016722946599026747,
+              "raw_conditioning": 675.5896550377021,
+              "raw_max_abs": 899053.4532253625,
+              "raw_min_abs": 1330.768531639505,
+              "substeps": 1
+            },
+            {
+              "call": 7,
+              "preconditioned_conditioning": 38.685269703944925,
+              "preconditioned_max_abs": 0.6469317030423145,
+              "preconditioned_min_abs": 0.016722946692454978,
+              "raw_conditioning": 675.5896914333819,
+              "raw_max_abs": 899053.4739787999,
+              "raw_min_abs": 1330.7684906667248,
+              "substeps": 1
+            },
+            {
+              "call": 8,
+              "preconditioned_conditioning": 38.68526972630556,
+              "preconditioned_max_abs": 0.6469317035847273,
+              "preconditioned_min_abs": 0.016722946696810046,
+              "raw_conditioning": 675.5896940899419,
+              "raw_max_abs": 899053.4748559227,
+              "raw_min_abs": 1330.7684867321716,
+              "substeps": 1
+            }
+          ]
+        },
+        "6": {
+          "calls": 7,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 43.53934433567745,
+              "preconditioned_max_abs": 0.6676701645998365,
+              "preconditioned_min_abs": 0.015334869525187762,
+              "raw_conditioning": 702.6801592966868,
+              "raw_max_abs": 907292.5448021396,
+              "raw_min_abs": 1291.1885056072304,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 44.4657819556568,
+              "preconditioned_max_abs": 0.6435412666054723,
+              "preconditioned_min_abs": 0.014472730227644247,
+              "raw_conditioning": 698.7490452910376,
+              "raw_max_abs": 894295.068794077,
+              "raw_min_abs": 1279.8515787904828,
+              "substeps": 1
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 44.55552249745393,
+              "preconditioned_max_abs": 0.6389664504177011,
+              "preconditioned_min_abs": 0.014340903542410799,
+              "raw_conditioning": 696.9051845810961,
+              "raw_max_abs": 891599.7286230448,
+              "raw_min_abs": 1279.37020465557,
+              "substeps": 1
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 44.63246133710338,
+              "preconditioned_max_abs": 0.6400161991448832,
+              "preconditioned_min_abs": 0.014339702090613403,
+              "raw_conditioning": 697.8833484773721,
+              "raw_max_abs": 893078.8269925367,
+              "raw_min_abs": 1279.6964262595434,
+              "substeps": 1
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 44.63684667930107,
+              "preconditioned_max_abs": 0.6400495213423628,
+              "preconditioned_min_abs": 0.014339039805855406,
+              "raw_conditioning": 697.9203880052843,
+              "raw_max_abs": 893124.9868944737,
+              "raw_min_abs": 1279.6946503412814,
+              "substeps": 1
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 44.636853959162615,
+              "preconditioned_max_abs": 0.6400496663336133,
+              "preconditioned_min_abs": 0.014339040715530315,
+              "raw_conditioning": 697.9207221503813,
+              "raw_max_abs": 893125.1654916027,
+              "raw_min_abs": 1279.69429355783,
+              "substeps": 1
+            },
+            {
+              "call": 7,
+              "preconditioned_conditioning": 44.63685413888823,
+              "preconditioned_max_abs": 0.6400496726924673,
+              "preconditioned_min_abs": 0.014339040800253154,
+              "raw_conditioning": 697.920741279092,
+              "raw_max_abs": 893125.1741849394,
+              "raw_min_abs": 1279.6942709398386,
+              "substeps": 1
+            }
+          ]
+        },
+        "7": {
+          "calls": 7,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 46.610395528325,
+              "preconditioned_max_abs": 0.6835760921706655,
+              "preconditioned_min_abs": 0.014665743219348102,
+              "raw_conditioning": 703.419793154724,
+              "raw_max_abs": 899401.3576829836,
+              "raw_min_abs": 1278.6125247475823,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 52.43016786114879,
+              "preconditioned_max_abs": 0.6879847168967252,
+              "preconditioned_min_abs": 0.01312192474223467,
+              "raw_conditioning": 750.4985958243271,
+              "raw_max_abs": 945250.9806974158,
+              "raw_min_abs": 1259.4973341145,
+              "substeps": 1
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 51.6360621012237,
+              "preconditioned_max_abs": 0.6837774981628573,
+              "preconditioned_min_abs": 0.013242247188068447,
+              "raw_conditioning": 740.784649316024,
+              "raw_max_abs": 926079.1134329743,
+              "raw_min_abs": 1250.13269954775,
+              "substeps": 1
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 51.08288662774997,
+              "preconditioned_max_abs": 0.6862019893103477,
+              "preconditioned_min_abs": 0.013433109101895963,
+              "raw_conditioning": 742.8049063932385,
+              "raw_max_abs": 928911.4357744267,
+              "raw_min_abs": 1250.5456382683933,
+              "substeps": 1
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 51.18651534108224,
+              "preconditioned_max_abs": 0.6862429564957282,
+              "preconditioned_min_abs": 0.01340671370033565,
+              "raw_conditioning": 742.7471317959122,
+              "raw_max_abs": 928973.8640466243,
+              "raw_min_abs": 1250.72696248645,
+              "substeps": 1
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 51.093317099250086,
+              "preconditioned_max_abs": 0.6862438997435754,
+              "preconditioned_min_abs": 0.013431187065238472,
+              "raw_conditioning": 742.8768912727028,
+              "raw_max_abs": 928974.5274500212,
+              "raw_min_abs": 1250.5093890570408,
+              "substeps": 1
+            },
+            {
+              "call": 7,
+              "preconditioned_conditioning": 51.0933186679278,
+              "preconditioned_max_abs": 0.6862439085427224,
+              "preconditioned_min_abs": 0.013431186825088546,
+              "raw_conditioning": 742.8769084601549,
+              "raw_max_abs": 928974.5447715918,
+              "raw_min_abs": 1250.5093834417098,
+              "substeps": 1
+            }
+          ]
+        },
+        "8": {
+          "calls": 8,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 47.33500615326359,
+              "preconditioned_max_abs": 0.6683519504516322,
+              "preconditioned_min_abs": 0.014119612624272398,
+              "raw_conditioning": 678.4203484569223,
+              "raw_max_abs": 863644.0880208733,
+              "raw_min_abs": 1273.0220872431748,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 54.272741771573365,
+              "preconditioned_max_abs": 0.6865165425258292,
+              "preconditioned_min_abs": 0.012649380151371098,
+              "raw_conditioning": 758.4029025974827,
+              "raw_max_abs": 937635.4296314782,
+              "raw_min_abs": 1236.3289043595894,
+              "substeps": 1
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 52.56312730682419,
+              "preconditioned_max_abs": 0.6807965175261516,
+              "preconditioned_min_abs": 0.012951978932915675,
+              "raw_conditioning": 762.6083896582245,
+              "raw_max_abs": 935268.3452130392,
+              "raw_min_abs": 1226.407102119864,
+              "substeps": 1
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 52.83018574069475,
+              "preconditioned_max_abs": 0.6815047193371415,
+              "preconditioned_min_abs": 0.012899911476407754,
+              "raw_conditioning": 763.7625130558293,
+              "raw_max_abs": 936958.8983245547,
+              "raw_min_abs": 1226.7673292523393,
+              "substeps": 1
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 52.83782984532409,
+              "preconditioned_max_abs": 0.6815264649774438,
+              "preconditioned_min_abs": 0.01289845678697487,
+              "raw_conditioning": 763.7744121696447,
+              "raw_max_abs": 937010.2504435416,
+              "raw_min_abs": 1226.815451674779,
+              "substeps": 1
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 52.83791507703095,
+              "preconditioned_max_abs": 0.6815266229253756,
+              "preconditioned_min_abs": 0.012898438970042565,
+              "raw_conditioning": 763.7742586169966,
+              "raw_max_abs": 937010.4725308799,
+              "raw_min_abs": 1226.815989095483,
+              "substeps": 1
+            },
+            {
+              "call": 7,
+              "preconditioned_conditioning": 52.837923556404355,
+              "preconditioned_max_abs": 0.6815266153044521,
+              "preconditioned_min_abs": 0.01289843675588281,
+              "raw_conditioning": 763.7742197229721,
+              "raw_max_abs": 937010.4734095368,
+              "raw_min_abs": 1226.81605271961,
+              "substeps": 1
+            },
+            {
+              "call": 8,
+              "preconditioned_conditioning": 52.837924749061855,
+              "preconditioned_max_abs": 0.6815266180684201,
+              "preconditioned_min_abs": 0.012898436517049635,
+              "raw_conditioning": 763.7742182004788,
+              "raw_max_abs": 937010.4759752215,
+              "raw_min_abs": 1226.816058524341,
+              "substeps": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "backend": "mfront-3d-condensed-plane-stress",
+      "matrix_size": 722,
+      "newton_iterations": 46,
+      "per_increment": {
+        "5": {
+          "calls": 6,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 37.86768435718716,
+              "preconditioned_max_abs": 0.6728995308604704,
+              "preconditioned_min_abs": 0.0177697565162248,
+              "raw_conditioning": 675.3295278554706,
+              "raw_max_abs": 890512.2228924328,
+              "raw_min_abs": 1318.6336242697419,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 38.05044319241715,
+              "preconditioned_max_abs": 0.6493180838497464,
+              "preconditioned_min_abs": 0.017064665464373494,
+              "raw_conditioning": 663.3420339461637,
+              "raw_max_abs": 889031.1129699091,
+              "raw_min_abs": 1340.23032986639,
+              "substeps": 0
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 38.54049825554884,
+              "preconditioned_max_abs": 0.6459697423257095,
+              "preconditioned_min_abs": 0.0167608041297885,
+              "raw_conditioning": 674.2918305468827,
+              "raw_max_abs": 897581.4093306859,
+              "raw_min_abs": 1331.1467953018275,
+              "substeps": 0
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 38.68145711445941,
+              "preconditioned_max_abs": 0.6469061484376528,
+              "preconditioned_min_abs": 0.01672393432655448,
+              "raw_conditioning": 675.8810015918166,
+              "raw_max_abs": 899016.5171419012,
+              "raw_min_abs": 1330.1402392204573,
+              "substeps": 0
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 38.68514936225569,
+              "preconditioned_max_abs": 0.6469303337307012,
+              "preconditioned_min_abs": 0.0167229633178539,
+              "raw_conditioning": 675.9042282275256,
+              "raw_max_abs": 899053.1000471818,
+              "raw_min_abs": 1330.1486549430772,
+              "substeps": 0
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 38.685150390325454,
+              "preconditioned_max_abs": 0.6469303664363434,
+              "preconditioned_min_abs": 0.016722963718867445,
+              "raw_conditioning": 675.9042377230509,
+              "raw_max_abs": 899053.1237097108,
+              "raw_min_abs": 1330.1486712650178,
+              "substeps": 0
+            }
+          ]
+        },
+        "6": {
+          "calls": 6,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 43.539223642805105,
+              "preconditioned_max_abs": 0.6676704245787656,
+              "preconditioned_min_abs": 0.01533491800534433,
+              "raw_conditioning": 702.6759788576115,
+              "raw_max_abs": 907292.8177973272,
+              "raw_min_abs": 1291.19657579924,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 44.524804051546816,
+              "preconditioned_max_abs": 0.6435408190591047,
+              "preconditioned_min_abs": 0.014453535119751924,
+              "raw_conditioning": 699.3183971159523,
+              "raw_max_abs": 894294.2360351046,
+              "raw_min_abs": 1278.808393606187,
+              "substeps": 0
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 44.55535269122936,
+              "preconditioned_max_abs": 0.6389664370019421,
+              "preconditioned_min_abs": 0.014340957896349937,
+              "raw_conditioning": 697.2236388189338,
+              "raw_max_abs": 891602.5224954234,
+              "raw_min_abs": 1278.7898643335716,
+              "substeps": 0
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 44.632989776733965,
+              "preconditioned_max_abs": 0.6400191734025759,
+              "preconditioned_min_abs": 0.014339598951450962,
+              "raw_conditioning": 698.1647330821855,
+              "raw_max_abs": 893083.7390059748,
+              "raw_min_abs": 1279.1876998187533,
+              "substeps": 0
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 44.63714823394138,
+              "preconditioned_max_abs": 0.6400495399753193,
+              "preconditioned_min_abs": 0.014338943353209913,
+              "raw_conditioning": 698.1948368493498,
+              "raw_max_abs": 893125.3324423853,
+              "raw_min_abs": 1279.19211845317,
+              "substeps": 0
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 44.63714733570555,
+              "preconditioned_max_abs": 0.6400495743814965,
+              "preconditioned_min_abs": 0.01433894441255023,
+              "raw_conditioning": 698.1948535039569,
+              "raw_max_abs": 893125.3655499493,
+              "raw_min_abs": 1279.1921353583678,
+              "substeps": 0
+            }
+          ]
+        },
+        "7": {
+          "calls": 6,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 46.61028131593046,
+              "preconditioned_max_abs": 0.6835763968857869,
+              "preconditioned_min_abs": 0.014665785693341314,
+              "raw_conditioning": 703.41671448962,
+              "raw_max_abs": 899401.8518850299,
+              "raw_min_abs": 1278.6188234631466,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 52.37914673397765,
+              "preconditioned_max_abs": 0.6879843095487443,
+              "preconditioned_min_abs": 0.013134698681573943,
+              "raw_conditioning": 751.8561548277213,
+              "raw_max_abs": 945250.122697238,
+              "raw_min_abs": 1257.2220319375194,
+              "substeps": 0
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 51.64223665239778,
+              "preconditioned_max_abs": 0.6838468513564925,
+              "preconditioned_min_abs": 0.013242006847213909,
+              "raw_conditioning": 741.2236259746636,
+              "raw_max_abs": 926170.3244404896,
+              "raw_min_abs": 1249.5153850804911,
+              "substeps": 0
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 51.0868374921318,
+              "preconditioned_max_abs": 0.6862158236798543,
+              "preconditioned_min_abs": 0.013432341036681762,
+              "raw_conditioning": 743.0710451218232,
+              "raw_max_abs": 928926.9015210175,
+              "raw_min_abs": 1250.1185554454273,
+              "substeps": 0
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 51.09464611907809,
+              "preconditioned_max_abs": 0.6862442310205846,
+              "preconditioned_min_abs": 0.013430844191018866,
+              "raw_conditioning": 743.136088069586,
+              "raw_max_abs": 928974.9672897313,
+              "raw_min_abs": 1250.073818515383,
+              "substeps": 0
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 51.09468243604583,
+              "preconditioned_max_abs": 0.6862445220956448,
+              "preconditioned_min_abs": 0.013430840341450465,
+              "raw_conditioning": 743.1362597071752,
+              "raw_max_abs": 928975.2145508333,
+              "raw_min_abs": 1250.0738625200256,
+              "substeps": 0
+            }
+          ]
+        },
+        "8": {
+          "calls": 6,
+          "per_call": [
+            {
+              "call": 1,
+              "preconditioned_conditioning": 47.334921211481245,
+              "preconditioned_max_abs": 0.6683523699863632,
+              "preconditioned_min_abs": 0.014119646824810855,
+              "raw_conditioning": 678.4193121678915,
+              "raw_max_abs": 863644.7892794916,
+              "raw_min_abs": 1273.0250654565116,
+              "substeps": 0
+            },
+            {
+              "call": 2,
+              "preconditioned_conditioning": 54.28245541046295,
+              "preconditioned_max_abs": 0.6865158767428748,
+              "preconditioned_min_abs": 0.012647104327755756,
+              "raw_conditioning": 759.6440771306903,
+              "raw_max_abs": 937634.4428275255,
+              "raw_min_abs": 1234.307580425212,
+              "substeps": 0
+            },
+            {
+              "call": 3,
+              "preconditioned_conditioning": 52.584566139772434,
+              "preconditioned_max_abs": 0.6808613655773343,
+              "preconditioned_min_abs": 0.012947931599693537,
+              "raw_conditioning": 762.7306708347304,
+              "raw_max_abs": 935365.3737298588,
+              "raw_min_abs": 1226.3376962489228,
+              "substeps": 0
+            },
+            {
+              "call": 4,
+              "preconditioned_conditioning": 52.82799082290039,
+              "preconditioned_max_abs": 0.6814946421222378,
+              "preconditioned_min_abs": 0.012900256691700963,
+              "raw_conditioning": 764.0493477669936,
+              "raw_max_abs": 936954.1503581901,
+              "raw_min_abs": 1226.3005695856257,
+              "substeps": 0
+            },
+            {
+              "call": 5,
+              "preconditioned_conditioning": 52.83917447112297,
+              "preconditioned_max_abs": 0.6815276138820155,
+              "preconditioned_min_abs": 0.012898150296698442,
+              "raw_conditioning": 764.0629024518792,
+              "raw_max_abs": 937012.1037243002,
+              "raw_min_abs": 1226.3546636244564,
+              "substeps": 0
+            },
+            {
+              "call": 6,
+              "preconditioned_conditioning": 52.83919111274073,
+              "preconditioned_max_abs": 0.6815276368311192,
+              "preconditioned_min_abs": 0.01289814666876661,
+              "raw_conditioning": 764.0629339297615,
+              "raw_max_abs": 937012.1493136169,
+              "raw_min_abs": 1226.3546727680343,
+              "substeps": 0
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "analysed_increments": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "crop_nodes": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "increments": 8,
+    "mfront_threads": 4
+  },
+  "schema_version": 1
+}

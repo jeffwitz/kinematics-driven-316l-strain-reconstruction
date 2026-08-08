@@ -326,14 +326,38 @@ et un run de forcing. Résultats (52 vs 46 Newton à 20×20) :
 et tangentes identiques à `1e-16` à états appariés) mais la matrice GPS
 est un itérateur moins efficace aux états profonds — convergence linéaire
 à `×0.2` par itération contre `×0.05` pour la référence (mesuré dans
-`1df14a6`), et c'est ce taux qui décide du compte de Newton. Le problème
-n'est donc ni la fonction constitutive, ni sa dérivée prise isolément,
-mais le spectre/conditionnement de la matrice assemblée dans le régime
-plastique profond — piste : la structure de la tangente GPS (projecteur
-in-plane `P`, lignes transverses du résidu de fermeture, tangente du
-dernier sous-pas) vue par le Newton global. Point ouvert à investiguer
-(analyse spectrale de `BᵀCB` aux états profonds, GPS vs référence), pas
-un défaut de formulation constitutive.
+`1df14a6`), et c'est ce taux qui décide du compte de Newton.
+
+### 2026-08-08 — Analyse spectrale de `BᵀCB` : le spectre n'explique pas la pénalité
+
+Suite de la piste « matrice moins efficace » : assemblage de la matrice
+PLEINE `J = BᵀCB` (722×722 sur 20×20) pour les deux backends, aux
+incréments 5–8, avec les tangentes réellement appliquées par le solveur
+(enregistrées à chaque appel, sous-pas GPS inclus), spectre brut et
+préconditionné `J·P` (le green spectral, identique pour les deux).
+`scripts/diagnose_spectral_conditioning.py`.
+
+**Résultat : les spectres sont identiques au 3ᵉ chiffre significatif à
+chaque itération de chaque incrément profond.** Conditionnement brut
+`6.6e2–7.6e2`, préconditionné `3.8e1–5.4e1`, mêmes bornes pour le GPS et
+la référence ; et ce malgré le sous-pas GPS actif à chaque appel après le
+premier (`substeps [0,1,1,…]` contre `[0,0,0,…]` pour la référence). La
+cinématique `BᵀB` domine le spectre et la tangente ne le différencie pas.
+**Le mauvais conditionnement intrinsèque du GPS est réfuté comme
+explication du taux `×0.2` vs `×0.05`.**
+
+Bilan de l'investigation complète (85 vs 57) : pureté du trial bit à bit,
+`accept_global_trial` neutre, Jv global exact à `1e-9`, forcing serré
+quasi neutre (52→50), compte suivant le tangent (47/54 croisés), spectre
+de `BᵀCB` identique. **Toute hypothèse structurelle locale est réfutée ;
+il ne reste que le cas A du cadre de divergence** (`ae1064e`) : les deux
+backends diffèrent dès l'évaluation 1 de l'incrément 1 — stress à
+`4.4e-7 MPa` (`2.7e-9` relatif), états internes à `1e-12` — et Newton
+amplifie cette différence d'évaluation en un écart de taux de convergence
+puis en un compte d'itérations. La cause racine est une différence
+d'évaluation constitutive de l'ordre de `1e-9` relatif, pas un défaut de
+structure (ni formulation, ni dérivée, ni sous-pas, ni cache, ni
+assemblage, ni conditionnement).
 
 ### 2026-08-08 — Convention du wrapper halvéd corrigée ; le verdict 57 = 57 tient
 

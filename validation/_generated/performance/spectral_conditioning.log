@@ -1,0 +1,10 @@
+=== mfront-native-generalised-plane-stress: 52 Newton, matrix 722x722
+  inc 5 (8 calls): raw cond 6.63e+02..6.76e+02 | precond cond 3.79e+01..3.87e+01 | substeps [0, 1, 1, 1, 1, 1, 1, 1]
+  inc 6 (7 calls): raw cond 6.97e+02..7.03e+02 | precond cond 4.35e+01..4.46e+01 | substeps [0, 1, 1, 1, 1, 1, 1]
+  inc 7 (7 calls): raw cond 7.03e+02..7.50e+02 | precond cond 4.66e+01..5.24e+01 | substeps [0, 1, 1, 1, 1, 1, 1]
+  inc 8 (8 calls): raw cond 6.78e+02..7.64e+02 | precond cond 4.73e+01..5.43e+01 | substeps [0, 1, 1, 1, 1, 1, 1, 1]
+=== mfront-3d-condensed-plane-stress: 46 Newton, matrix 722x722
+  inc 5 (6 calls): raw cond 6.63e+02..6.76e+02 | precond cond 3.79e+01..3.87e+01 | substeps [0, 0, 0, 0, 0, 0]
+  inc 6 (6 calls): raw cond 6.97e+02..7.03e+02 | precond cond 4.35e+01..4.46e+01 | substeps [0, 0, 0, 0, 0, 0]
+  inc 7 (6 calls): raw cond 7.03e+02..7.52e+02 | precond cond 4.66e+01..5.24e+01 | substeps [0, 0, 0, 0, 0, 0]
+  inc 8 (6 calls): raw cond 6.78e+02..7.64e+02 | precond cond 4.73e+01..5.43e+01 | substeps [0, 0, 0, 0, 0, 0]
