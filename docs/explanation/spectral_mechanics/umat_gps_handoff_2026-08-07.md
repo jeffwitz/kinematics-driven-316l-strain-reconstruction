@@ -1,8 +1,17 @@
 # Synthèse de reprise — UMAT GPS (fermeture de contrainte plane dans MFront)
 
-Date : 2026-08-07. Branche : `codex/native-generalised-plane-stress`.
-Auteur du travail : session Claude (avec l'utilisateur). Ce document est écrit
-pour qu'un nouveau modèle reprenne le travail sans contexte.
+Date : 2026-08-07. Auteur du travail : sessions Claude (avec l'utilisateur).
+
+> **Comment lire ce document.** Les sections 1 à 8.7 décrivent les versions
+> intermédiaires (système à 21 inconnues, « deux branches », mur de
+> robustesse) et les fausses pistes, avec leurs rétractations. L'état FINAL
+> est : formulation à **18 inconnues** (la contrainte plane dans les rangées
+> transverses du résidu, §8.8–8.18), **acceptée** à la qualification
+> (fermeture `2-4e-14 MPa`, tangente FD `1,2-1,6e-7`, accord référence
+> `1e-11`), P43 20×20 à `1,2-1,7×` et 100×100 à parité en temps matériau avec
+> une pénalité d'itérations globales (`85` vs `57`) **non expliquée** — le
+> terme ouvert. La « seconde branche » n'a jamais existé (bug de bookkeeping
+> de déformation, `6bfaf86`).
 
 ## 1. Le problème
 

@@ -8,9 +8,11 @@ solver configuration. Answers two questions:
    failures);
 2. how does its material time compare with the Python condensation.
 
-The branch difference is reported from the archived fields; the two backends
-solve the same multi-valued law and may legitimately land on different
-branches (see validation/srix_plane_stress_branch_diagnostic.md).
+Field agreement against the reference is reported from the archived fields
+(displacement, stresses, slips). The two backends share the same local
+equations and agree at the material-point level to about 1e-11; the field
+differences come from the sub-stepping discretisation and the global
+iteration path.
 
 Usage:
 

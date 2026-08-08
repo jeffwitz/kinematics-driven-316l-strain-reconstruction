@@ -347,8 +347,32 @@ le `KeyError plastic_strain_2d` du solveur FEM (observables lues depuis le
 trial accepté), 1479 tests verts. Détails : §8 de
 `docs/explanation/spectral_mechanics/umat_gps_handoff_2026-08-07.md`.
 
-**Route 1 testée le 2026-08-07 (commit `3f9795f`) — le Newton complet ne
-peut pas converger aux états profonds.** La route 1 a été implémentée (3
+**Résolu le 2026-08-08 — cause unique, trois défauts, qualification ACCEPTÉE.**
+La cause racine était un bug de bookkeeping de déformation : le pont GPS
+appliquait la déformation TOTALE comme un INCRÉMENT (la référence écrit son
+gradient en absolu). La charge imposée croissait en `1+2+3+...` ; l'incrément
+1 n'était pas affecté (total = incrément) — d'où la signature « accord à
+l'incrément 1, divergence à partir du 2 » lue comme un changement de branche
+pendant trois jours. **Il n'y a jamais eu deux branches** : la multivaluation,
+le mur de robustesse et la tangente fausse étaient les conséquences de cette
+ligne (fix `6bfaf86`). Les campagnes condensées archivées ne doivent PAS être
+refaites — la référence avait raison. Deux autres défauts corrigés dans la
+foulée : les rotations EBSD passées en vues stridées avec durée de vie
+incorrecte (invisible à un point — le champ 400 points échouait), et le
+backend qui tournait sur un seul thread.
+
+La formulation finale est plus élégante que la 21 inconnues initiale : le
+système garde **18 inconnues** et les trois rangées transverses du résidu
+cinématique (écrit en repère global) portent la condition de contrainte
+plane ; `ezz/eyz/exz` sont des sorties. Qualification ACCEPTÉE sur les trois
+cas : fermeture `2-4e-14 MPa`, tangente FD `1,2-1,6e-7`, accord référence
+`1e-11`. Performance : P43 20×20 matériau `1,2-1,7×` la référence ; **100×100
+à parité** (`1,02×`) avec une **pénalité d'itérations globales (`85` vs
+`57`) mesurée mais non expliquée** — le terme ouvert, et le backend condensé
+reste le backend de production. Le sous-pas est localisé aux points fautifs
+(0,071 % du lot à 100×100) avec cache prouvé complet. Voir le handoff §8 et
+`validation/srix_umat_gps_closure_preregistration.md` (amendement 1
+rétracté). La route 1 a été implémentée (3
 variables externes `GpsPredictorEzz/Eyz/Exz` lues par le `@Predictor`, re-run
 de l'incrément entier depuis la racine localisée). Mesuré : le re-run
 **réussit** mais converge vers le même point que le sous-pas (stress et

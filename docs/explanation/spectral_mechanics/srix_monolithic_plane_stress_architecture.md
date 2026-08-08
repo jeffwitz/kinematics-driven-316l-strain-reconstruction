@@ -1,69 +1,68 @@
 # SRIX monolithique en contrainte plane généralisée
 
-## État de faisabilité
+Statut : **réalisé sans modification de TFEL/MFront** (2026-08-08). Ce
+document décrit la voie suivie et l'état des alternatives.
 
-Le comportement SRIX actuellement compilé est un comportement MFront
-`@DSL Implicit` sous l’hypothèse `Tridimensional`. Son système local implicite
-contient les inconnues constitutives `deel` et `dg[12]`. Les six composantes de
-déformation sont des composantes du gradient imposé au comportement.
+## La formulation retenue — la fermeture dans les rangées transverses du résidu
 
-Les trois composantes transverses ne sont donc pas, dans ce comportement,
-des inconnues locales indépendantes auxquelles on pourrait simplement ajouter
-les équations
+Le comportement `Fcc316LForestRubinSrixGps`
+(`mfront/Fcc316LForestRubinSrixGps.mfront`) est un `@DSL Implicit` sous
+l'hypothèse `Tridimensional`, sur MFront 5.1.0 **non modifié**. Son système
+local garde les 18 inconnues SRIX (`deel[6] + dg[12]`).
+
+Le résidu cinématique est assemblé dans le repère **global** :
 
 ```text
-sigma_zz = 0
-sigma_yz = 0
-sigma_xz = 0
+rot(deel + sum dg m) - deto = 0
 ```
 
-sans modifier le générateur de code MFront.
+Ses trois rangées **dans le plan** sont la cinématique. Ses trois rangées
+**transverses** ne sont pas des équations de ce problème — la surface libre
+laisse la déformation totale transverse indéterminée — elles portent donc la
+condition de contrainte plane à la place :
 
-## Vérification du point d’extension
+```text
+(Q^T sigma Q)_zz = 0
+(Q^T sigma Q)_xz = 0
+(Q^T sigma Q)_yz = 0
+```
 
-La branche TFEL utilisée pour le prototype contient bien l’énumération et le
-plomberie de l’hypothèse `GeneralisedPlaneStress`. Sa propre documentation
-précise toutefois que le générateur MFront ne fournit pas encore le système
-local à trois inconnues nécessaire.
+dans le repère structural, normalisées par un module de référence. Les
+déformations transverses `ezz`, `eyz`, `exz` sont des **sorties**, reconstruites
+dans `@UpdateAuxiliaryStateVariables` comme `eel + sum(g m)` lues en repère
+global, et repliées dans le gradient par le pont. La rotation
+`Q_global_to_material` est passée à la loi comme **neuf propriétés matériau par
+point** ; le pont est passif (pas de rotation d'entrée, pas de fermeture
+Python).
 
-Le commentaire de `AbstractBehaviourDSL::isModellingHypothesisSupported`
-indique également que les hypothèses de contrainte plane nécessitent du code
-spécifique dans les DSL `Implicit` et `RungeKutta`. La présence de
-`GENERALISEDPLANESTRESS` dans les dimensions et dans le parseur ne constitue
-donc pas une implémentation du Newton monolithique.
+Avantages structurels : pas de point selle, pas d'inconnues supplémentaires,
+tout le bloc élastique du Jacobien est constant (assemblé une fois dans
+`@InitLocalVariables`), et la contrainte plane est effectivement dans le
+Newton constitutif — le « un unique Newton MFront » du cahier des charges.
 
-## Conséquence
+Qualification ponctuelle acceptée : fermeture `2-4e-14 MPa`, tangente par
+différences finies `1,2-1,6e-7`, accord avec la référence condensée
+`1e-11` (les critères A1/A2 d'accord avec la référence ont été restaurés le
+2026-08-08 ; l'interprétation « deux branches » qui les avait suspendus était
+un artefact d'un bug de bookkeeping de déformation, corrigé en `6bfaf86`).
+P43 20×20 : matériau `1,2-1,7×` la référence ; P43 100×100 : parité
+(`1,02×` matériau) avec une pénalité d'itérations globales (`85` contre `57`)
+mesurée mais non expliquée — le backend condensé reste le backend de
+production par défaut.
 
-Le backend C++ batch actuel reste explicitement une fermeture externe : il
-appelle le comportement 3D pour chaque point et résout les trois contraintes
-transverses autour de cet appel. Il est utile pour la qualification et pour
-réduire l’orchestration Python, mais il ne satisfait pas le contrat
-« un unique Newton MFront » et ne doit pas être présenté comme tel.
+## L'alternative générateur — parkée
 
-La réalisation monolithique nécessite une évolution de TFEL/MFront qui génère,
-pour cette hypothèse :
+Le prototype du fork `jeffwitz/tfel-generalised-plane-stress` (hypothèse
+`GENERALISEDPLANESTRESS` dans le générateur MFront) est **parker** : la voie
+UMat atteint l'objectif sur MFront non modifié, et le prototype du fork
+aurait imposé la fermeture dans le repère de la loi — incompatible avec la
+condition structurale pour les cristaux tournés (le DSL ne connaît pas la
+rotation). Ce document remplace l'ancienne lecture selon laquelle le
+monolithique exigeait une évolution du générateur.
 
-1. les trois inconnues de déformation transverses ;
-2. les trois résidus de contrainte plane ;
-3. les couplages de ces résidus avec `deel` et `dg` ;
-4. le tangent cohérent du système augmenté ;
-5. l’interface MGIS batch correspondante.
+## Backend de référence
 
-Cette évolution doit être faite dans le générateur MFront, pas dans le
-wrapper applicatif. Tant qu’elle n’est pas disponible, le backend condensé
-MGIS reste la référence et le backend C++ batch reste expérimental.
-
-## Résultats disponibles en attendant
-
-Le backend C++ batch déjà qualifié conserve les mêmes champs que la référence
-condensée à environ `1e-11` relatif sur P43 M100 EBSD. En quatre threads, il
-réduit le temps du backend natif scalaire de `188,05 s` à `76,09 s`, mais reste
-plus lent que la référence condensée à `56,88 s`. Ces résultats ne constituent
-pas une qualification du backend monolithique.
-
-## Décision
-
-Ne pas sélectionner le backend batch C++ comme backend SRIX par défaut et ne
-pas lancer M200 sur la base de cette optimisation. Le prochain chantier
-recevable est une extension ciblée du générateur TFEL/MFront, avec un prototype
-à un point et une vérification du tangent avant toute intégration spectrale.
+`mfront-3d-condensed-plane-stress` (la condensation Python) reste la
+référence numérique et le backend par défaut. La voie UMat est qualifiée au
+point matériel et crédible, mais pas consolidée au niveau problème global
+tant que la pénalité d'itérations n'est pas expliquée.

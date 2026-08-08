@@ -8,9 +8,9 @@
       "in_plane_stress_relative_l2_max": 1.1125250616914387e-11,
       "transverse_strain_relative_l2_max": 2.1297454538128265e-12,
       "tangent_relative_l2_max": 3.412946272406777e-11,
-      "branch_difference_in_plane_stress_relative_l2": 1.1125250616914387e-11,
-      "branch_difference_transverse_strain_relative_l2": 2.1297454538128265e-12,
-      "branch_difference_tangent_relative_l2": 3.412946272406777e-11,
+      "a1_in_plane_stress_relative_l2": 1.1125250616914387e-11,
+      "a1_transverse_strain_relative_l2": 2.1297454538128265e-12,
+      "a2_tangent_relative_l2": 3.412946272406777e-11,
       "a3_global_transverse_residual_max_mpa": 3.506654508059126e-14,
       "a6_fd_tangent_relative_error": 1.586703218763158e-07,
       "a6_fd_tangent_relative_error_per_increment": [
@@ -33,9 +33,9 @@
       "in_plane_stress_relative_l2_max": 7.444364534457703e-11,
       "transverse_strain_relative_l2_max": 8.119163844211919e-11,
       "tangent_relative_l2_max": 1.309239856305935e-10,
-      "branch_difference_in_plane_stress_relative_l2": 7.444364534457703e-11,
-      "branch_difference_transverse_strain_relative_l2": 8.119163844211919e-11,
-      "branch_difference_tangent_relative_l2": 1.309239856305935e-10,
+      "a1_in_plane_stress_relative_l2": 7.444364534457703e-11,
+      "a1_transverse_strain_relative_l2": 8.119163844211919e-11,
+      "a2_tangent_relative_l2": 1.309239856305935e-10,
       "a3_global_transverse_residual_max_mpa": 2.169210546345909e-14,
       "a6_fd_tangent_relative_error": 1.1926918693811188e-07,
       "a6_fd_tangent_relative_error_per_increment": [
@@ -58,9 +58,9 @@
       "in_plane_stress_relative_l2_max": 4.83467222582339e-11,
       "transverse_strain_relative_l2_max": 1.2282766659061e-10,
       "tangent_relative_l2_max": 4.433715384527036e-11,
-      "branch_difference_in_plane_stress_relative_l2": 4.83467222582339e-11,
-      "branch_difference_transverse_strain_relative_l2": 1.2282766659061e-10,
-      "branch_difference_tangent_relative_l2": 4.433715384527036e-11,
+      "a1_in_plane_stress_relative_l2": 4.83467222582339e-11,
+      "a1_transverse_strain_relative_l2": 1.2282766659061e-10,
+      "a2_tangent_relative_l2": 4.433715384527036e-11,
       "a3_global_transverse_residual_max_mpa": 4.618527782440651e-14,
       "a6_fd_tangent_relative_error": 1.3687120082893118e-07,
       "a6_fd_tangent_relative_error_per_increment": [
@@ -80,7 +80,5 @@
       "accepted": true
     }
   },
-  "c2b_material_frame_closure_delta_mpa": {},
-  "c2b_not_run": "ValueError: unknown SRIX parameter(s) GpsClosureFrame; accepted: C_mpa, Q_mpa, R_mpa, b, d, tau0_mpa, C11_mpa, C12_mpa, C44_mpa",
   "accepted": true
 }

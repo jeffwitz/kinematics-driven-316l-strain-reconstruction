@@ -38,17 +38,23 @@ correct: the law is the only component that knows `Q`.
   `Tridimensional` (unchanged law body and parameter sets), with:
   1. nine dimensionless material properties `Q11` … `Q33`, convention
      `Q_global_to_material` (the repo convention in
-     `core/crystal_orientation.py`; the law applies `Q deto Q^T` to the
-     imposed gradient inside the integrator);
-  2. three additional state variables: the **global** transverse strains
-     `ezz`, `eyz`, `exz`;
-  3. three residual equations
-     `(Q^T sigma Q)_zz = (Q^T sigma Q)_xz = (Q^T sigma Q)_yz = 0` in the same
-     `@Integrator`, with analytic derivatives (the transverse rows of the law's
-     3D tangent, rotated by `Q`);
+     `core/crystal_orientation.py`; the law applies the rotation inside the
+     integrator);
+  2. the kinematic residual assembled in the **global** frame
+     `rot(deel + sum dg m) - deto = 0`; its three in-plane rows are the
+     kinematics, and its three transverse rows carry the plane-stress
+     condition `(Q^T sigma Q)_zz = (Q^T sigma Q)_xz = (Q^T sigma Q)_yz = 0`
+     (normalised by a reference modulus), with analytic derivatives (the
+     transverse rows of the law's 3D tangent, rotated by `Q`);
+  3. the transverse total strains `ezz`, `eyz`, `exz` as **outputs**
+     (`@AuxiliaryStateVariable`, rebuilt as `eel + sum(g m)` read in the
+     global frame), folded back into the gradient by the bridge;
   4. consistent tangent via the DSL machinery (no hand-written
-     `@TangentOperator`), like the current law.
-  Local system dimension: 21 (`deel` 6 + `dg[12]` 12 + closure 3).
+     `@TangentOperator`); the bridge applies the in-plane projector and the
+     one-sided output rotation.
+  Local system dimension: 18 (`deel` 6 + `dg[12]` 12) — no extra unknowns,
+  no saddle point. The whole elastic block of the Jacobian is constant and
+  assembled once in `@InitLocalVariables`.
 - The bridge variant rejects a rotation argument (no double rotation: the
   batch must never rotate what the law rotates itself) and sets `Q` per point
   from the existing provider
@@ -95,7 +101,7 @@ is below tolerance at convergence, and the difference between a global-frame
 closure and a material-frame closure on a rotated crystal is measured and
 interpreted as preregistered below (F6).
 
-**H4 — robustness.** The 21-unknown Newton converges wherever the reference
+**H4 — robustness.** The 18-unknown Newton converges wherever the reference
 nested Newton converges, with the same set of accepted increments and no
 additional cutbacks.
 
@@ -183,33 +189,17 @@ the law's own tangent qualification.
 
 ## Amendment 1 — 2026-08-07, after the first execution (F1 triggered)
 
-The first execution triggered F1: from the first plastic increment, the UMAT
-solution disagrees with the reference. The follow-up diagnostic
-(`validation/srix_plane_stress_branch_diagnostic.md`) established that the
-disagreement is a property of the SRIX law, not of the closure: the 3D
-problem admits multiple roots at the first plastic increment, and the
-nested Python Newton and the joint UMAT Newton select different branches.
-The root the raw 3D Newton converges to at the UMAT closure point violates
-the closure (`sigma_zz = -154.7 MPa`) and is **not a plane-stress solution**;
-the UMAT Newton enforces the closure inside the local system and therefore
-always converges to the plane-stress root. Agreement with the reference is
-consequently **not a valid acceptance criterion for a multi-valued law**, and
-is amended as follows:
-
-- **A1** is replaced by **A1'**: the UMAT solution is a root of the closed
-  plane-stress system — the local Newton converges (MGIS status 1) at every
-  increment of C1–C3, and the global closure residual (A3) and the
-  finite-difference tangent check (A6) hold at every increment. This is the
-  criterion that "forces the plane-stress root", the purpose of this backend.
-- **A2** is replaced by **A2'**: the condensed-tangent comparison against the
-  reference is reported, not gated (the tangent follows the selected branch);
-  the tangent correctness criterion is A6 alone.
-- The C1–C3 comparison against the reference (stress, transverse strains,
-  tangent) is reported as a **branch-difference diagnostic**, with the
-  reference's branch documented as the natural-root branch.
-- A3, A4 (reported at field level), A5, A6, F2–F6 are unchanged. F1 is
-  redefined: the closed-system criterion fails only if the Newton does not
-  converge where the reference does, or if A3/A6 fail.
+**RETRACTED on 2026-08-08.** The first execution triggered F1 because the
+bridge applied the total strain as an increment (fixed in `6bfaf86`): the
+imposed load grew as 1+2+3+... instead of 1,2,3, and the "multiple roots" of
+the follow-up diagnostic
+(`validation/srix_plane_stress_branch_diagnostic.md`) were the signature of
+that bookkeeping defect, not a property of the law. There were never two
+branches. The reference agreement is restored as a primary acceptance
+criterion (A1 and A2 below are in force unchanged), alongside the
+closed-system checks A3 and A6 (the finite-difference tangent check at every
+increment, repaired on 2026-08-07 after the first version of A6 was shown to
+be vacuous — it probed the law at a zero strain increment).
 
 ## Registered falsifiers
 
@@ -218,7 +208,7 @@ A3 refutes H1/H2. The report must state which: a stress agreement with a
 tangent disagreement points to the derivative blocks; a stress disagreement
 points to the closure assembly.
 
-**F2 — robustness.** The 21-unknown Newton fails (non-convergence or failed
+**F2 — robustness.** The 18-unknown Newton fails (non-convergence or failed
 solve) on any point where the reference nested Newton converges: H4 refuted,
 not qualified.
 

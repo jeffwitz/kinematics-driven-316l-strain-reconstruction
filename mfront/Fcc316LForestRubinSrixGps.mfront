@@ -6,21 +6,22 @@
   Forest-Rubin SRIX rate-independent FCC crystal plasticity with the
   generalised plane-stress closure INSIDE the local Newton.
 
-  The constitutive body is identical to Fcc316LForestRubinSrix. What this
-  variant adds is the plane-stress closure as three extra unknowns of the
-  implicit system, in the GLOBAL (structural) frame:
+  The constitutive body is identical to Fcc316LForestRubinSrix; the system
+  keeps its 18 unknowns (deel[6] + dg[12]). What this variant changes is the
+  residual, assembled in the GLOBAL (structural) frame:
 
     - the nine components Q11..Q33 of the global-to-material rotation are
       passed as per-point material properties (dimensionless);
-    - three state variables ezz, eyz, exz hold the GLOBAL transverse strain
-      components (Kelvin components 2, 4, 5), replacing the corresponding
-      components of the imposed gradient;
-    - the imposed gradient is rotated into the crystal frame by Q inside the
-      integrator, so the law is integrated in the material frame while
-      receiving the global strain;
-    - the three closure residuals are the GLOBAL transverse stresses
+    - the kinematic residual rot(deel + sum dg m) - deto = 0 is written
+      componentwise in the global frame. Its three IN-PLANE rows are the
+      kinematics; its three TRANSVERSE rows are not equations of this
+      problem -- the free surface leaves the transverse total strain
+      undetermined -- so they carry the plane-stress condition instead:
       (Q^T sigma Q)_zz = (Q^T sigma Q)_xz = (Q^T sigma Q)_yz = 0, divided by
       a reference modulus for conditioning;
+    - the transverse total strains ezz, eyz, exz are OUTPUTS, rebuilt in
+      @UpdateAuxiliaryStateVariables as eel + sum(g m) read in the global
+      frame, and folded back into the gradient by the bridge;
     - the bridge must NOT rotate the strain itself: the law owns the
       rotation. Passing a rotated gradient is a double rotation and corrupts
       the closure.
@@ -28,6 +29,9 @@
   The returned stress and consistent tangent are material-frame quantities;
   the bridge rotates them back to the global frame (the tangent one-sided,
   because the law differentiates with respect to the GLOBAL imposed strain).
+
+  The whole elastic block of the Jacobian is constant during an integration
+  and is assembled once in @InitLocalVariables.
 
   This is the experimental UMAT-closure backend qualified by
   validation/srix_umat_gps_closure_preregistration.md. It is not selected as
@@ -79,16 +83,6 @@ R.setEntryName("SrixOverstressModulus");
 @Parameter strain deqeps = 1.e-14;
 deqeps.setEntryName("MinimumEquivalentStrainIncrement");
 
-/*!
- * Closure frame: 1 = structural (global) frame, the production setting;
- * 0 = material frame, DIAGNOSTIC ONLY, to measure the deviation a
- * material-frame closure leaves in the global frame (case C2b of
- * validation/srix_umat_gps_closure_preregistration.md). Never used for a
- * scientific run.
- */
-@Parameter real gps_closure_frame = 1.;
-gps_closure_frame.setEntryName("GpsClosureFrame");
-
 //! Global-to-material rotation, nine components, per material point.
 @MaterialProperty real Q11;
 Q11.setEntryName("Q11");
@@ -132,9 +126,9 @@ p.setEntryName("EquivalentPlasticSlip");
 a.setEntryName("BackStrain");
 
 //! Local Newton iteration count of the last integration. Diagnostic only:
-//! the joint 21-unknown solve costs 7.7 times a raw 18-unknown integration
-//! even with no sub-stepping, and this says whether that is the price of an
-//! iteration or the number of them.
+//! the GPS solve costs 7.7 times a raw 18-unknown integration even with no
+//! sub-stepping, and this says whether that is the price of an iteration or
+//! the number of them.
 @AuxiliaryStateVariable real localIterations;
 localIterations.setEntryName("LocalIterations");
 

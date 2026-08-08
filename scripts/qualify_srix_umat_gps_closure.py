@@ -1,10 +1,16 @@
 """Qualify the UMAT-closure generalised plane stress backend.
 
-Executes cases C1, C2, C3 and C2b of
+Executes cases C1, C2, C3 of
 validation/srix_umat_gps_closure_preregistration.md, before which this script
 must not be run. The reference backend is
 ``mfront-3d-condensed-plane-stress``; the candidate is
 ``mfront-native-generalised-plane-stress`` (Fcc316LForestRubinSrixGps).
+
+Acceptance: A1 (in-plane stress and transverse strains, relative L2),
+A2 (condensed tangent, relative L2), A3 (closure residual) and A6
+(finite-difference tangent at every increment) -- the reference agreement
+was restored as a primary criterion on 2026-08-08 after the "two branches"
+reading was shown to be an artefact of a strain bookkeeping bug (6bfaf86).
 
 Usage:
 
@@ -272,20 +278,20 @@ def _main() -> int:
         )
         comparison = _compare(candidate, reference, HISTORY, tangent=True)
         case_report: dict[str, object] = dict(comparison)
-        # Amendment 1 (2026-08-07): the reference comparison is reported as a
-        # branch-difference diagnostic, not gated. The law is multi-valued at
-        # the first plastic increment; the acceptance is the closed-system
-        # criterion (A1'): Newton converged everywhere, closure residual (A3)
-        # and finite-difference tangent (A6) hold at every increment.
-        case_report["branch_difference_in_plane_stress_relative_l2"] = comparison[
+        # Amendment 1 (2026-08-07) is RETRACTED (2026-08-08): the "two
+        # branches" it documented were an artefact of the bridge applying the
+        # total strain as an increment, fixed in 6bfaf86. The reference
+        # agreement is a primary acceptance criterion again: A1 (in-plane
+        # stress and transverse strains, relative L2) and A2 (condensed
+        # tangent, relative L2), alongside the closed-system checks A3
+        # (closure residual) and A6 (finite-difference tangent).
+        case_report["a1_in_plane_stress_relative_l2"] = comparison[
             "in_plane_stress_relative_l2_max"
         ]
-        case_report["branch_difference_transverse_strain_relative_l2"] = comparison[
+        case_report["a1_transverse_strain_relative_l2"] = comparison[
             "transverse_strain_relative_l2_max"
         ]
-        case_report["branch_difference_tangent_relative_l2"] = comparison[
-            "tangent_relative_l2_max"
-        ]
+        case_report["a2_tangent_relative_l2"] = comparison["tangent_relative_l2_max"]
         candidate_probe = _make_batch(
             "mfront-native-generalised-plane-stress",
             library=library,
@@ -324,51 +330,27 @@ def _main() -> int:
         case_report["a6_fd_tangent_relative_error"] = max(fd_errors)
         case_report["a6_fd_tangent_relative_error_per_increment"] = fd_errors
         accepted = (
-            case_report["a3_global_transverse_residual_max_mpa"] <= A3_TOLERANCE_MPA
+            case_report["a1_in_plane_stress_relative_l2"] <= A1_TOLERANCE
+            and case_report["a1_transverse_strain_relative_l2"] <= A1_TOLERANCE
+            and case_report["a2_tangent_relative_l2"] <= A2_TOLERANCE
+            and case_report["a3_global_transverse_residual_max_mpa"] <= A3_TOLERANCE_MPA
             and case_report["a6_fd_tangent_relative_error"] <= A6_TOLERANCE
         )
         case_report["accepted"] = bool(accepted)
         all_accepted = all_accepted and accepted
         report["cases"][case_name] = case_report
         summary.append(
-            f"{case_name}: residual={case_report['a3_global_transverse_residual_max_mpa']:.3e} "
-            f"fd={case_report['a6_fd_tangent_relative_error']:.3e} "
-            f"branch_diff={case_report['branch_difference_in_plane_stress_relative_l2']:.3e} "
+            f"{case_name}: a1={case_report['a1_in_plane_stress_relative_l2']:.3e} "
+            f"a2={case_report['a2_tangent_relative_l2']:.3e} "
+            f"a3={case_report['a3_global_transverse_residual_max_mpa']:.3e} "
+            f"a6={case_report['a6_fd_tangent_relative_error']:.3e} "
             f"{'ACCEPTED' if accepted else 'REJECTED'}"
         )
 
-    # Case C2b: material-frame closure deviation (diagnostic only). It is not
-    # allowed to sink the qualification: `GpsClosureFrame` is a parameter of the
-    # GPS law and not of the SRIX registry, so the batch factory refuses it, and
-    # a diagnostic that cannot run must be recorded as such rather than crash
-    # the run whose acceptance criteria have already been measured above.
-    delta: dict[str, float] = {}
-    c2b_failure: str | None = None
-    for case_name, orientation in CASES.items():
-        if orientation is None:
-            continue
-        try:
-            mat_frame = _make_batch(
-                "mfront-native-generalised-plane-stress",
-                library=library,
-                parameter_set=arguments.parameter_set,
-                orientation=orientation,
-                parameters={"GpsClosureFrame": 0.0},
-            )
-            mat_frame_records = _run_history(mat_frame, HISTORY)
-        except Exception as error:
-            c2b_failure = f"{type(error).__name__}: {error}"[:200]
-            break
-        delta[case_name] = max(mat_frame_records["global_transverse_residual_max_mpa"])
-    report["c2b_material_frame_closure_delta_mpa"] = delta
-    if c2b_failure is not None:
-        report["c2b_not_run"] = c2b_failure
-        summary.append(f"C2b not run: {c2b_failure}")
-    else:
-        summary.append(
-            "C2b delta (MPa): "
-            + ", ".join(f"{name}={value:.3e}" for name, value in delta.items())
-        )
+    # Case C2b (material-frame closure deviation) is removed: its mechanism,
+    # the `GpsClosureFrame` parameter, was declared but never implemented in
+    # the integrator and is deleted with the consolidation of 2026-08-08. A
+    # falsifier that cannot run must not look registered.
 
     report["accepted"] = bool(all_accepted)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
