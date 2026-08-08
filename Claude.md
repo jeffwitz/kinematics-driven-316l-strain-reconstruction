@@ -1,7 +1,286 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-04
+Dernière mise à jour : 2026-08-07
 Objectif de maturité : **au moins 4/5 sur tous les axes**
+
+## État de reprise — 2026-08-07
+
+Cette section est prioritaire pour toute nouvelle IA qui reprend le dépôt.
+Elle décrit les travaux récents qui n'étaient pas encore reportés dans ce
+fichier.
+
+### Branche applicative active
+
+La branche de travail est :
+
+```text
+codex/native-generalised-plane-stress
+HEAD: 6cf51b8 docs(mfront): document monolithic plane-stress blocker
+```
+
+Le dépôt applicatif contient actuellement des changements non commités,
+appartenant au travail de condensation par blocs :
+
+```text
+docs/explanation/spectral_mechanics/srix_p43_performance_and_step_control.md
+tests/unit/core/test_mfront.py
+scripts/benchmark_srix_ebsd_condensation_blocks.py
+validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks.csv
+validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks.json
+validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks/
+```
+
+**Ne pas écraser, réinitialiser ou inclure automatiquement ces fichiers dans
+un commit.** Ils doivent être inspectés et commités séparément après
+validation.
+
+### Résultats applicatifs déjà réalisés
+
+- La divergence non linéaire TRI2 a été vectorisée et les essais constitutifs
+  acceptés sont réutilisés au Newton suivant. Le commit correspondant est
+  `22143ec`.
+- Le backend SRIX avec condensation externe en contraintes planes reste le
+  backend de référence et doit rester disponible.
+- Le cas SRIX P43 M100 EBSD avec 8 incréments, Eisenstat--Walker, LGMRES
+  recyclé, prédicteur transverse tangent et quatre threads MFront a été
+  mesuré autour de `56,88 s` sur la configuration de référence. Ces chiffres
+  doivent toujours être accompagnés de l'environnement logiciel et du SHA
+  exact d'exécution.
+- La carte EBSD est bien prise en compte dans les campagnes EBSD ; elle ne doit
+  pas être remplacée par l'orientation homogène `[35,20,15]` sans le signaler.
+- Les blocs de condensation MGIS ont été ajoutés/étudiés, mais leur
+  qualification complète et la sélection d'une taille de bloc ne sont pas
+  encore clôturées. Le M200 est interdit tant que ce point n'est pas qualifié.
+- Le contrôleur adaptatif par doublement de pas a été étudié sur M20. Le
+  contrôleur ne doit pas être déclaré qualifié : près de la première activation
+  plastique, le critère relatif sur les glissements était dominé par une
+  amplitude de l'ordre de `1e-6`. Les seuils d'erreur doivent rester
+  réglables et distinguer contrôle par nombre de Newton et contrôle par erreur
+  constitutive.
+
+### Comparaison SRIX/Méric à retenir
+
+La comparaison P43 16 incréments des cartes de glissement est documentée. Les
+trois systèmes dominants sont les mêmes et dans le même ordre (`01`, `07`,
+`11`), avec une hiérarchie dominante commune mais une redistribution des
+amplitudes entre systèmes et dans l'espace. La distance de variation totale
+est d'environ `0,2565`, le recouvrement `S95` est `0,80`, et la corrélation de
+rang corrigée est `0,9385`.
+
+Le champ global comparé est la **somme des glissements cumulés des douze
+systèmes**, notée `total_accumulated_system_slip`; il ne s'agit pas d'une PEEQ.
+La comparaison des signes est par système et sépare désormais : activité dans
+les deux lois, même signe, signe opposé, activité Méric seule et activité SRIX
+seule. Un zéro dans une loi ne doit jamais être appelé « signe opposé ».
+
+Limites obligatoires : `R` SRIX est une transposition analytique de paramètres
+Méric à une vitesse de référence, non une identification directe du matériau
+P43 ; Méric dépend du pseudo-temps ; l'orientation actuelle est homogène dans
+ces cartes de comparaison ; les champs Méric à 16 incréments sont convergés
+numériquement mais ne constituent pas une étude de convergence temporelle.
+
+### Prototype TFEL externe — ne pas le confondre avec la production
+
+Le support monolithique de la contrainte plane généralisée est développé dans
+un fork TFEL séparé, pas dans le dépôt applicatif :
+
+```text
+repository : jeffwitz/tfel-generalised-plane-stress
+local path : /tmp/tfel-generalised-plane-stress
+branch     : agent/generalised-plane-stress
+HEAD       : ffcdcb3 docs(mfront): describe generalized plane stress prototype
+```
+
+Commits importants du fork :
+
+```text
+108891f  accepte GENERALISEDPLANESTRESS comme hypothèse de propriété MFront
+4b6b741  génère un système local prototype à trois inconnues transverses
+ffcdcb3  documente le statut et la limite du prototype
+```
+
+Vérification effectuée : avec le TFEL construit dans `/tmp/tfel-gps-build` et
+installé dans `/tmp/tfel-gps-install`, un comportement implicite minimal
+compile avec un système local de dimension 6 : trois composantes de
+déformation imposées et trois inconnues scalaires (`ezz`, `eyz`, `exz`).
+
+Cette avancée **ne constitue pas encore le comportement SRIX monolithique**.
+Le prototype MFront expose encore une représentation réduite de type tenseur
+symétrique ; il ne fournit pas à SRIX un tenseur de contrainte et une tangente
+3D internes permettant d'assembler correctement les trois équations
+`sigma_zz = sigma_yz = sigma_xz = 0`. Il ne faut donc pas sélectionner ce
+backend dans l'application, ni annoncer un gain M100.
+
+La prochaine étape technique est de concevoir cette séparation entre :
+
+1. gradient externe généralisé à trois composantes dans le plan ;
+2. état interne 3D complet pour l'élasticité, les rotations, les glissements
+   et les contraintes ;
+3. trois résidus transverses dans le même Newton local ;
+4. tangent condensé cohérent retourné au solveur global.
+
+Une simple enveloppe appelant SRIX 3D plusieurs fois depuis Python ou C++ ne
+respecterait pas l'objectif monolithique et ne doit pas être introduite sous
+ce nom.
+
+### Commandes et précautions de reprise
+
+Pour vérifier le prototype TFEL sans toucher au dépôt applicatif :
+
+```bash
+cd /tmp/tfel-generalised-plane-stress
+git log -3 --oneline
+cmake --build /tmp/tfel-gps-build -j4 --target TFELMFront mfront
+cmake --install /tmp/tfel-gps-build --prefix /tmp/tfel-gps-install
+```
+
+Le probe minimal utilisé pendant la vérification était temporaire dans
+`/tmp/GeneralisedPlaneStressProbe.mfront`; il n'est pas un comportement SRIX
+et n'est pas un artefact scientifique du dépôt.
+
+Avant toute modification applicative, lire notamment :
+
+```text
+docs/explanation/spectral_mechanics/srix_monolithic_plane_stress_architecture.md
+mfront/Fcc316LForestRubinSrix.mfront
+src/fem_inhouse/core/plane_stress_material.py
+src/fem_inhouse/core/mfront.py
+```
+
+Ne pas relancer M100/M200 pendant une phase de conception du générateur sans
+avoir d'abord validé un point matériel et M20. Le backend condensé externe
+reste la référence numérique.
+
+### 2026-08-07 — UMAT GPS : la fermeture marche, la qualification échoue sur les racines multiples de la loi
+
+La voie « fermeture dans l'UMat » (Q en 9 propriétés matériau, loi
+`Fcc316LForestRubinSrixGps`, pont passif `MFrontNativeGeneralisedPlaneStressBatch`)
+a été implémentée, compilée et qualifiée. **La fermeture est correcte et
+vérifiée** (σ_zz = σ_xz = σ_yz = 0 à `1e-14 MPa` dans le repère structural,
+accord parfait avec la référence à l'incrément élastique : contrainte
+`7e-15`, tangente `4e-11`). **Le F1 de la préinscription se déclenche** :
+dès le premier incrément plastique, la solution UMAT diverge de la référence
+(18 MPa à 12 incréments, 160 MPa à 96, avec échec du Newton local).
+
+**Diagnostic, établi par sonde C++ directe** : les deux états sont des racines
+du même système discret — la loi SRIX admet **plusieurs racines** au premier
+incrément plastique (ensembles de systèmes actifs différents sous le crochet
+de Macaulay) ; le Newton imbriqué Python et le Newton conjoint 21 inconnues
+sélectionnent des branches différentes. C'est le comportement « une autre
+solution » déjà consigné au journal 2026-08-03. La stratégie UMAT n'est donc
+**pas réfutée** (elle impose bien la fermeture structurale en un seul
+Newton) ; c'est la sélection de branche de la loi qui reste ouverte, et le
+backend condensé externe reste la référence. Résultat négatif archivé :
+`validation/srix_umat_gps_closure_results.md`, préinscription
+`validation/srix_umat_gps_closure_preregistration.md`, script
+`scripts/qualify_srix_umat_gps_closure.py`. La loi et le pont sont conservés,
+expérimentaux, non sélectionnés par défaut.
+
+**Diagnostic exploratoire des branches (option 2), même jour.** Le F1 est
+expliqué : le problème 3D admet plusieurs racines au premier incrément
+plastique (depuis le même état committé et le même incrément, le Newton 3D
+brut converge vers `sigma_zz = -154,7 MPa` et le Newton conjoint UMAT vers
+`sigma_zz = 0` — les deux convergés). Les ensembles de systèmes actifs sont
+identiques (`[1,2,4,5,7,8,10,11]`) ; les branches diffèrent par les
+amplitudes, via la rétroaction `eps_zz ↔ Deq`. La branche UMAT est robuste
+aux départs perturbés (10/10 identiques), la référence échoue 9/10 — la
+fragilité n'est pas du côté attendu. Rapport :
+`validation/srix_plane_stress_branch_diagnostic.md`, script
+`scripts/diagnose_srix_plane_stress_branches.py`. Aucune décision n'en est
+tirée : la référence condensée reste la référence.
+
+**Décision de l'utilisateur (même jour) : la racine de contrainte plane est
+la seule valide — on la FORCE.** La racine « naturelle » à `sigma_zz =
+-154,7 MPa` viole la fermeture : ce n'est pas une solution de contrainte
+plane. Le Newton conjoint UMAT est l'implémentation de ce principe (la
+fermeture est une équation du Newton, chaque itéré se dirige vers la racine
+qui satisfait `sigma_transverse = 0`). Conséquences actées : (1) la
+préinscription est amendée — A1' = la solution UMAT est une racine du système
+fermé (Newton convergé + fermeture `<= 1e-6 MPa` + tangente FD), l'écart à
+la référence devient un écart de branche rapporté ; (2) à terme, les
+campagnes condensées archivées (sur la branche naturelle) devront être
+refaites ; pour l'instant on documente et on implémente.
+
+**Deux bugs de convention de stockage trouvés et corrigés (commit
+`6e9a423`)** — les cas identité étaient aveugles aux deux :
+1. la formule de rotation de la loi (`gpsRotate`) utilisait le stockage
+   ingénieur alors que MGIS stocke en Kelvin (cisaillement `gamma/sqrt(2)`) :
+   le mélange diagonale↔cisaillement porte `sqrt(2)`. L'ordonnancement
+   `[11,22,33,12,13,23]` est standard (confirmé par `kelvin_3d_to_tensor`) ;
+   le facteur `sqrt(2)` était l'erreur (l'intuition de l'utilisateur sur
+   l'ordonnancement a déclenché la vérification) ;
+2. l'opérateur dans le plan du pont était **transposé** (la sortie MGIS a
+   les vecteurs unités rotés en lignes, l'opérateur dérivé les veut en
+   colonnes).
+
+Après correction, au point tourné `[35,20,15]` plastique : fermeture
+`1,3e-14 MPa`, tangente FD `1,3e-7`. **Performance : ~6,7× plus rapide** que
+la condensation Python (`0,42 ms` contre `2,81 ms` par évaluation matériau).
+
+**Mur de robustesse, ouvert** : le Newton conjoint 21 inconnues diverge aux
+états plastiques profonds (incrément 8 de l'historique gelé à 12 incréments ;
+le P43 20×20 à 8 incréments échoue aux points profonds). Indépendant du
+départ (échoue même depuis l'état de la référence), du Jacobien (analytique
+ou FD), de `@IterMax` (200) et de la normalisation de la fermeture (module
+`1e6`). La référence imbriquée converge là. Limite de la structure du Newton
+conjoint dans le DSL Implicit, pas de la formulation de la fermeture.
+Benchmark : `scripts/benchmark_srix_umat_gps_p43.py`. La suite possible :
+acter le mur (backend qualifié sur la plage modérée) ou investiguer le bassin
+du Newton à l'inc 8 (la sonde C++ peut imprimer la trajectoire du résidu).
+
+**Reprise du 2026-08-07 (modèle suivant, commit `df59103`) — le mur est
+déplacé, le vrai blocage est la tangente.** Trois résultats, dans l'ordre de
+mesure :
+
+1. **Pas de repli de branche** : `scripts/diagnose_srix_closure_root_sweep.py`
+   balaie `sigma_zz(eps_zz)` avec la loi 3D brute à chaque état committé —
+   exactement une racine aux douze incréments, marchant à `-1,0e-3` par
+   incrément = `-(eps_xx + eps_yy)` (incompressibilité plastique). La racine
+   de contrainte plane existe, est unique et bien séparée où le Newton
+   conjoint meurt : le mur est une limite de l'itération, pas du problème.
+   (Nuance : le balayage suit la branche naturelle — la racine de fermeture
+   de l'UMat lui est invisible ; la multivaluation du §5.1 n'est pas réfutée.)
+2. **Le sous-pas franchit le mur de convergence** : le pont divise
+   l'incrément par moitiés jusqu'à 1/256 (s0 avancé puis restauré ;
+   `commit()`/`revert()` préservés). Sans sous-pas la qualification ne passe
+   pas l'incrément 3 ; avec, les trois cas parcourent les douze incréments,
+   fermeture à `4e-14 MPa`. Un `@Predictor` transverse (élastique puis
+   isochore) a été ajouté à la loi — il ne change pas le comptage de sous-pas
+   (l'échec n'est pas un problème de point de départ).
+3. **A6 était vacu (défaut de mon test)** : la vérification FD tournait après
+   l'historique, à incrément nul → branche élastique gardée → succès factice.
+   Corrigé (contrôle à chaque incrément, critère = le pire des douze) : le
+   vrai A6 est C1 = `7,4e-01`, C2 = `5,2e+00`, C3 = `3,2e-07` — C1 et C2
+   rejetés. Par incrément, SANS sous-pas, la tangente est excellente
+   (`7e-8`..`1,8e-6`) : la formulation est juste, c'est le **sous-pas qui
+   détruit la tangente** (matrice du dernier sous-pas ≠ matrice de l'incrément
+   entier). Le gain de `6,7×` n'est plus acquis (9-10/12 incréments
+   sous-pasés) — à remesurer.
+
+**Routes identifiées pour la tangente** (ni l'une ni l'autre implémentée) :
+route 1 (la bonne) — sous-pas pour **localiser** `Δeps_zz`, puis Newton
+complet sur l'incrément entier depuis la racine localisée, injectée au
+`@Predictor` via une variable externe posée par le pont — tangente exacte et
+Newton unique préservés ; route 2 — condenser avec la loi 3D brute sur
+l'incrément entier (`C^ps = Caa − Cab Cbb⁻¹ Cba`), exact mais une intégration
+3D de plus par évaluation. Autres réparations du même commit (préexistantes) :
+le `KeyError plastic_strain_2d` du solveur FEM (observables lues depuis le
+trial accepté), 1479 tests verts. Détails : §8 de
+`docs/explanation/spectral_mechanics/umat_gps_handoff_2026-08-07.md`.
+
+**Route 1 testée le 2026-08-07 (commit `3f9795f`) — le Newton complet ne
+peut pas converger aux états profonds.** La route 1 a été implémentée (3
+variables externes `GpsPredictorEzz/Eyz/Exz` lues par le `@Predictor`, re-run
+de l'incrément entier depuis la racine localisée). Mesuré : le re-run
+**réussit** mais converge vers le même point que le sous-pas (stress et
+tangente identiques) — le sous-pas accumulé est déjà une racine du problème
+complet. La **tangente cohérente du DSL à l'état plastique profond est fausse**
+(1,5-2,2× la différence finie, même à l'identité où la correction est un
+no-op) : le blocage n'est pas le chemin du Newton, c'est la mécanique
+`D_tdt·Je` du DSL. **Route 2 identifiée** : condenser la tangente qualifiée de
+la loi 3D brute sur l'incrément entier (`C^ps = Caa − Cab Cbb⁻¹ Cba`) — le
+Schur de la tangente de la référence, exact. Convention des variables de
+fermeture à trancher empiriquement avant (ingénieur vs Kelvin).
 
 ## Frontières d'extension — fusionné le 2026-08-02
 

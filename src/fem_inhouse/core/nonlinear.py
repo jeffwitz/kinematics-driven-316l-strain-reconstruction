@@ -672,6 +672,7 @@ def run_fem(
         sf_acc = sig.copy()
         eps_p_acc = eps_p.copy()
         ep_new = ep_bar.copy()
+        plastic_scalar_deferred = False
         constitutive_trial_acc: InPlaneConstitutiveTrial | None = None
         nonlocal_evaluation_acc: NonlocalCouplingEvaluation | None = None
         increment_nonlocal_iterations = 0
@@ -848,25 +849,47 @@ def run_fem(
                 )
                 break
             sf = trial.stress_in_plane_mpa.reshape(n_e, N_GP, 3)
-            eps_p_trial = trial.observables["plastic_strain_2d"].reshape(n_e, N_GP, 3)
+            # `plastic_strain_2d` is an OBSERVABLE, and since the condensed
+            # MFront batch learned to answer at a reduced response level
+            # (`e4ee961`) an iteration trial no longer carries one -- only the
+            # completed trial does. Reading it unconditionally broke every
+            # crystal solve through `run_fem` with a `KeyError`; the MFront
+            # integration tests are gated on the library, which CI does not
+            # build, so they skipped and the breakage went unseen. The plastic
+            # strain is only ever needed for the FINAL output, and the accepted
+            # trial is completed below, so an absent observable is simply
+            # deferred rather than demanded here.
+            eps_p_trial = (
+                trial.observables["plastic_strain_2d"].reshape(n_e, N_GP, 3)
+                if "plastic_strain_2d" in trial.observables
+                else None
+            )
             # A single crystal has twelve slips and no scalar equivalent plastic
             # strain. Rather than manufacture one, the field is left at zero and
             # the accumulated slip is reported under its own name; a caller that
             # genuinely needs a J2 PEEQ must check `equivalent_plastic_strain`
             # is meaningful for the behaviour it selected, and the micromorphic
             # coupling refuses these behaviours outright at the factory.
-            if "equivalent_plastic_strain" in trial.observables:
-                ep_new = trial.observables["equivalent_plastic_strain"].reshape(n_e, N_GP)
-            elif "accumulated_slip" in trial.observables:
-                # Left at zero on purpose. The accumulated slip is available on
+            # A trial carrying NO observable at all is a light response, not a
+            # backend that exposes neither field: the contract below is checked
+            # on the completed trial instead, so a reduced response level costs
+            # nothing and cannot silently drop the field either.
+            if trial.observables:
+                plastic_scalar_deferred = False
+                if "equivalent_plastic_strain" in trial.observables:
+                    ep_new = trial.observables["equivalent_plastic_strain"].reshape(
+                        n_e, N_GP
+                    )
+                elif "accumulated_slip" not in trial.observables:
+                    raise RuntimeError(
+                        "constitutive backend exposes neither equivalent_plastic_strain "
+                        "nor accumulated_slip"
+                    )
+                # Accumulated slip: left at zero on purpose. It is available on
                 # the material batch under its own name, but it is not an
                 # equivalent plastic strain and must not be reported as one.
-                pass
             else:
-                raise RuntimeError(
-                    "constitutive backend exposes neither equivalent_plastic_strain "
-                    "nor accumulated_slip"
-                )
+                plastic_scalar_deferred = True
             material_tangents = trial.tangent_in_plane_mpa
             if material_tangents is None:
                 raise RuntimeError("constitutive backend did not return a consistent tangent")
@@ -895,7 +918,8 @@ def run_fem(
 
             # Save state from this iteration (used if we break here)
             sf_acc = sf
-            eps_p_acc = eps_p_trial
+            if eps_p_trial is not None:
+                eps_p_acc = eps_p_trial
             constitutive_trial_acc = trial
 
             # Internal forces and residual
@@ -1383,6 +1407,24 @@ def run_fem(
                 accepted_constitutive_trial = constitutive_trial_acc
             else:
                 accepted_constitutive_trial = complete_trial(constitutive_trial_acc)
+            # The completed trial is the authority for the reported plastic
+            # strain: light iteration trials may have carried none, and it is
+            # only this final state that leaves the solver.
+            final_observables = accepted_constitutive_trial.observables
+            if "plastic_strain_2d" in final_observables:
+                eps_p_acc = final_observables["plastic_strain_2d"].reshape(
+                    n_e, N_GP, 3
+                )
+            if plastic_scalar_deferred:
+                if "equivalent_plastic_strain" in final_observables:
+                    ep_new = final_observables["equivalent_plastic_strain"].reshape(
+                        n_e, N_GP
+                    )
+                elif "accumulated_slip" not in final_observables:
+                    raise RuntimeError(
+                        "constitutive backend exposes neither equivalent_plastic_strain "
+                        "nor accumulated_slip"
+                    )
         # R is the complete mechanical internal force at the converged state,
         # including the stiffness hourglass contribution when CPS4R is active.
         # Integrate its work only now, so failed trials and cutbacks contribute

@@ -1545,6 +1545,19 @@ def solve_two_state_dirichlet_plane_stress(
             "local_condensation_evaluations",
             "full_batch_integration_calls",
             "equivalent_active_point_integrations",
+            "material_point_integrations",
+            "material_point_integrations_with_tangent",
+            "material_point_integrations_without_tangent",
+            "material_block_integration_calls",
+            "material_block_count",
+            "native_batch_calls",
+            "native_material_points",
+            "native_internal_integrations",
+            "native_total_local_iterations",
+            "native_thread_count",
+            "native_substep_points",
+            "native_substep_cache_hits",
+            "native_substep_cache_misses",
         )
     }
     provenance = collect_runtime_provenance(
@@ -1683,7 +1696,7 @@ def solve_two_state_dirichlet_plane_stress(
                 for name, value in values.items()
             },
             **{
-                f"material_{name}": value
+                (name if name.startswith("material_") else f"material_{name}"): value
                 for name, value in material_timing_values.items()
             },
             "material_condition_checks": float(

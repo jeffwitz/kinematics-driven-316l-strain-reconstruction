@@ -1,0 +1,374 @@
+@DSL Implicit;
+@Behaviour Fcc316LForestRubinSrixGps;
+@Author fem_inhouse project;
+@Date 07 / 08 / 2026;
+@Description {
+  Forest-Rubin SRIX rate-independent FCC crystal plasticity with the
+  generalised plane-stress closure INSIDE the local Newton.
+
+  The constitutive body is identical to Fcc316LForestRubinSrix. What this
+  variant adds is the plane-stress closure as three extra unknowns of the
+  implicit system, in the GLOBAL (structural) frame:
+
+    - the nine components Q11..Q33 of the global-to-material rotation are
+      passed as per-point material properties (dimensionless);
+    - three state variables ezz, eyz, exz hold the GLOBAL transverse strain
+      components (Kelvin components 2, 4, 5), replacing the corresponding
+      components of the imposed gradient;
+    - the imposed gradient is rotated into the crystal frame by Q inside the
+      integrator, so the law is integrated in the material frame while
+      receiving the global strain;
+    - the three closure residuals are the GLOBAL transverse stresses
+      (Q^T sigma Q)_zz = (Q^T sigma Q)_xz = (Q^T sigma Q)_yz = 0, divided by
+      a reference modulus for conditioning;
+    - the bridge must NOT rotate the strain itself: the law owns the
+      rotation. Passing a rotated gradient is a double rotation and corrupts
+      the closure.
+
+  The returned stress and consistent tangent are material-frame quantities;
+  the bridge rotates them back to the global frame (the tangent one-sided,
+  because the law differentiates with respect to the GLOBAL imposed strain).
+
+  This is the experimental UMAT-closure backend qualified by
+  validation/srix_umat_gps_closure_preregistration.md. It is not selected as
+  a production backend until that qualification passes.
+
+  Parameters: identical to Fcc316LForestRubinSrix. R remains an analytical
+  transposition, not an identified 316L parameter.
+}
+
+@ModellingHypothesis Tridimensional;
+@OrthotropicBehaviour;
+
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 200;
+@Theta 1;
+
+@Brick StandardElasticity{
+  young_modulus1 : 99950.31055900622,
+  young_modulus2 : 99950.31055900622,
+  young_modulus3 : 99950.31055900622,
+  poisson_ratio12 : 0.3881987577639752,
+  poisson_ratio23 : 0.3881987577639752,
+  poisson_ratio13 : 0.3881987577639752,
+  shear_modulus12 : 122000.,
+  shear_modulus23 : 122000.,
+  shear_modulus13 : 122000.
+};
+
+@CrystalStructure FCC;
+@SlidingSystem<0, 1, -1>{1, 1, 1};
+@InteractionMatrix{1.0, 1.0, 0.6, 1.8, 1.6, 12.3, 1.6};
+
+//! Overstress modulus of the SRIX flow rule, equation (7). Replaces (K, n).
+@Parameter stress R = 18.7819100705;
+R.setEntryName("SrixOverstressModulus");
+
+@Parameter stress tau0 = 40.;
+@Parameter stress Q = 10.;
+@Parameter real b = 3.;
+@Parameter real d = 1500.;
+@Parameter stress C = 40000.;
+
+/*!
+ * Equivalent strain increment below which the step is treated as producing no
+ * slip at all. Guards the rate-independent flow rule against a vanishing or
+ * purely hydrostatic increment; see section 4.3 of the specification.
+ */
+@Parameter strain deqeps = 1.e-14;
+deqeps.setEntryName("MinimumEquivalentStrainIncrement");
+
+/*!
+ * Closure frame: 1 = structural (global) frame, the production setting;
+ * 0 = material frame, DIAGNOSTIC ONLY, to measure the deviation a
+ * material-frame closure leaves in the global frame (case C2b of
+ * validation/srix_umat_gps_closure_preregistration.md). Never used for a
+ * scientific run.
+ */
+@Parameter real gps_closure_frame = 1.;
+gps_closure_frame.setEntryName("GpsClosureFrame");
+
+//! Global-to-material rotation, nine components, per material point.
+@MaterialProperty real Q11;
+Q11.setEntryName("Q11");
+@MaterialProperty real Q12;
+Q12.setEntryName("Q12");
+@MaterialProperty real Q13;
+Q13.setEntryName("Q13");
+@MaterialProperty real Q21;
+Q21.setEntryName("Q21");
+@MaterialProperty real Q22;
+Q22.setEntryName("Q22");
+@MaterialProperty real Q23;
+Q23.setEntryName("Q23");
+@MaterialProperty real Q31;
+Q31.setEntryName("Q31");
+@MaterialProperty real Q32;
+Q32.setEntryName("Q32");
+@MaterialProperty real Q33;
+Q33.setEntryName("Q33");
+
+@StateVariable strain g[Nss];
+g.setEntryName("PlasticSlip");
+
+//! Global transverse strain components (Kelvin 2, 4, 5). Since 2026-08-07
+//! these are OUTPUTS, not unknowns. The plane-stress condition is carried by
+//! three rows of the elastic residual instead of by three extra unknowns and
+//! three closure equations: the residual is written in the GLOBAL frame, its
+//! three in-plane rows are the kinematics, and its three transverse rows are
+//! free to hold `sigma_g,b = 0`. The local system is back to eighteen
+//! unknowns -- the size of the raw law -- with no zero diagonal block, and the
+//! transverse strain is recovered afterwards from `eel + sum(g m)`.
+@AuxiliaryStateVariable strain ezz;
+@AuxiliaryStateVariable strain eyz;
+@AuxiliaryStateVariable strain exz;
+
+
+@AuxiliaryStateVariable strain p[Nss];
+p.setEntryName("EquivalentPlasticSlip");
+
+@AuxiliaryStateVariable strain a[Nss];
+a.setEntryName("BackStrain");
+
+//! Local Newton iteration count of the last integration. Diagnostic only:
+//! the joint 21-unknown solve costs 7.7 times a raw 18-unknown integration
+//! even with no sub-stepping, and this says whether that is the price of an
+//! iteration or the number of them.
+@AuxiliaryStateVariable real localIterations;
+localIterations.setEntryName("LocalIterations");
+
+/*!
+ * Rotation of a symmetric tensor, s'(i) = (R s R^T)(i), with the nine
+ * components of R passed row by row. No TFEL rotate helper exists for
+ * stensor, so this is written out.
+ *
+ * The storage convention is the one MGIS uses for gradients, thermodynamic
+ * forces and internal state variables in this repository: the shear
+ * components are stored as gamma / sqrt(2) (Kelvin storage), NOT as the
+ * engineering gamma. The formula converts to engineering, applies the
+ * standard tensor rotation, and converts back. Using the engineering
+ * formula directly on the stored values is wrong by the sqrt(2) factors on
+ * the shear components as soon as the rotation mixes shear and diagonal
+ * components (measured: a general Bunge orientation disagreed with the MGIS
+ * rotation by an order of magnitude while the diagonal-only check passed).
+ */
+@Private {
+  static Stensor gpsRotate(const Stensor& s,
+                           const real& r00, const real& r01, const real& r02,
+                           const real& r10, const real& r11, const real& r12,
+                           const real& r20, const real& r21, const real& r22) {
+    // Kelvin storage: the shear components are stored as gamma/sqrt(2), so
+    // the tensor rotation R s R^T reads, in the stored components,
+    //   diagonal:  r_i^2 s_diag + sqrt(2) r_i r_j s_shear
+    //   shear:     sqrt(2) r_i r_j s_diag + (r_i r_j + r_j r_i) s_shear
+    // The diagonal-to-shear mixing carries sqrt(2), not 1/sqrt(2); an
+    // engineering-storage formula applied to the stored values is wrong by
+    // that factor (measured against the MGIS rotation).
+    const auto sq2 = sqrt(real(2));
+    const auto s0 = s(0), s1 = s(1), s2 = s(2);
+    const auto s3 = s(3), s4 = s(4), s5 = s(5);
+    auto r = s;
+    r(0) = r00*r00*s0 + r01*r01*s1 + r02*r02*s2
+         + sq2 * (r00*r01*s3 + r00*r02*s4 + r01*r02*s5);
+    r(1) = r10*r10*s0 + r11*r11*s1 + r12*r12*s2
+         + sq2 * (r10*r11*s3 + r10*r12*s4 + r11*r12*s5);
+    r(2) = r20*r20*s0 + r21*r21*s1 + r22*r22*s2
+         + sq2 * (r20*r21*s3 + r20*r22*s4 + r21*r22*s5);
+    r(3) = sq2 * (r00*r10*s0 + r01*r11*s1 + r02*r12*s2)
+         + (r00*r11 + r01*r10) * s3
+         + (r00*r12 + r02*r10) * s4
+         + (r01*r12 + r02*r11) * s5;
+    r(4) = sq2 * (r00*r20*s0 + r01*r21*s1 + r02*r22*s2)
+         + (r00*r21 + r01*r20) * s3
+         + (r00*r22 + r02*r20) * s4
+         + (r01*r22 + r02*r21) * s5;
+    r(5) = sq2 * (r10*r20*s0 + r11*r21*s1 + r12*r22*s2)
+         + (r10*r21 + r11*r20) * s3
+         + (r10*r22 + r12*r20) * s4
+         + (r11*r22 + r12*r21) * s5;
+    return r;
+  }
+}
+
+
+//! Constants of the closure, hoisted out of the Newton loop. Q and D do not
+//! change during an integration, so `gpsRotate(u2)`, `gpsRotate(u4)`,
+//! `gpsRotate(u5)` and the six rotated stiffness columns of the closure
+//! Jacobian were nine constant tensor rotations plus six constant
+//! matrix-vector products recomputed at EVERY local iteration. Measured: the
+//! joint solve costs 7.7 times a raw 18-unknown integration with no
+//! sub-stepping at all, on 4 to 8 local iterations -- so the price is in the
+//! iteration, not in their number.
+//! Columns of the material-to-global rotation operator, of the rotated
+//! stiffness and of the rotated Schmid tensors. All constant during an
+//! integration, so the whole elastic block of the Jacobian is assembled once.
+@LocalVariable Stensor gpsRotT[6];
+@LocalVariable Stensor gpsDc[6];
+@LocalVariable Stensor gpsRotM[Nss];
+
+@InitLocalVariables{
+  const auto q00 = Q11, q01 = Q12, q02 = Q13;
+  const auto q10 = Q21, q11 = Q22, q12 = Q23;
+  const auto q20 = Q31, q21 = Q32, q22 = Q33;
+  for (unsigned short gj = 0; gj != 6; ++gj) {
+    auto uj = Stensor(real(0));
+    uj(gj) = 1;
+    // Material -> global, so the TRANSPOSED rotation.
+    this->gpsRotT[gj] = gpsRotate(uj, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+    this->gpsDc[gj] = gpsRotate(D * uj, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+  }
+  const auto& gps_ss = Fcc316LForestRubinSrixGpsSlipSystems<real>::getSlipSystems();
+  for (unsigned short gi = 0; gi != Nss; ++gi) {
+    this->gpsRotM[gi] =
+        gpsRotate(gps_ss.mus[gi], q00, q10, q20, q01, q11, q21, q02, q12, q22);
+  }
+}
+
+@Integrator {
+  using size_type = unsigned short;
+  const auto& ss = Fcc316LForestRubinSrixGpsSlipSystems<real>::getSlipSystems();
+  const auto& m = ss.him;
+
+  // --- kinematics, written in the GLOBAL frame --------------------------
+  // rot(deel + sum dg m) - deto = 0 holds componentwise in the global frame.
+  // Its three IN-PLANE rows are the kinematics; its three transverse rows are
+  // not equations of this problem -- the free surface leaves the transverse
+  // total strain undetermined -- so they are free to carry the plane-stress
+  // condition instead. The residual is assembled after the slips below.
+  const auto q00 = Q11, q01 = Q12, q02 = Q13;
+  const auto q10 = Q21, q11 = Q22, q12 = Q23;
+  const auto q20 = Q31, q21 = Q32, q22 = Q33;
+  static_cast<void>(q00); static_cast<void>(q01); static_cast<void>(q02);
+  static_cast<void>(q10); static_cast<void>(q11); static_cast<void>(q12);
+  static_cast<void>(q20); static_cast<void>(q21); static_cast<void>(q22);
+  auto gpsPlastic = Stensor(real(0));
+
+  // --- constitutive body, identical to Fcc316LForestRubinSrix -------------
+  // Equation (8): equivalent measure of the deviatoric total strain increment.
+  // Built from the UNKNOWNS rather than from deto; see the SRIX law for the
+  // full argument. It also keeps the plane-stress closure honest: every
+  // update of the transverse strain changes deel and therefore Deq.
+  auto de = deviator(deel);
+  for (size_type i = 0; i != Nss; ++i) {
+    de += dg[i] * ss.mus[i];
+  }
+  const auto deq = sqrt(2 * (de | de) / 3);
+
+  // Section 4.3. A null or purely hydrostatic increment produces no slip. The
+  // default residual fg = dg with an identity Jacobian already expresses
+  // Dg = 0, and feel = deel - deto_m is the purely elastic answer, so
+  // skipping the loop is exactly the required branch. No division by deq is
+  // ever reached. The closure residuals below still apply.
+  if (deq >= deqeps) {
+  const auto flow_slope = deq / R;
+  // Gradient of Deq with respect to the deviatoric strain increment:
+  // dDeq/dDe = (2 / (3 Deq)) De. Already deviatoric, so contracting it with the
+  // deviator projector leaves it unchanged and dDeq/ddeel is simply this.
+  const auto ndeq = (2 / (3 * deq)) * de;
+
+  real exp_bp[Nss];
+  for (size_type i = 0; i != Nss; ++i) {
+    const auto p_ = p[i] + theta * abs(dg[i]);
+    exp_bp[i] = exp(-b * p_);
+  }
+  for (size_type i = 0; i != Nss; ++i) {
+    const auto tau = sig | ss.mus[i];
+    auto r = tau0;
+    for (size_type j = 0; j != Nss; ++j) {
+      r += Q * m(i, j) * (1 - exp_bp[j]);
+    }
+    const auto da =  //
+        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+    const auto x = C * (a[i] + theta * da);
+    // Macaulay bracket of equation (7), kept alongside its unclamped argument.
+    const auto overstress = abs(tau - x) - r;
+    const auto f = max(overstress, stress(0));
+    // No overflow guard here: the flow rule is linear in f, unlike the Norton
+    // power of Meric-Cailletaud. Rejecting a large f would discard valid states.
+    //
+    // The slope of the flow rule with respect to f is Deq / R on an active
+    // system and ZERO on an inactive one, where the bracket clamps. Unlike
+    // Meric-Cailletaud, where dv = n v / f vanishes on its own as f goes to
+    // zero, nothing here vanishes by itself: Deq / R does not depend on f at
+    // all, so it stays finite as the bracket closes. (Deq itself is a function
+    // of the unknowns, as built above; it is only with respect to f that this
+    // slope is constant.) Writing the active slope on an inactive system
+    // corrupts the Jacobian by exactly the number of inactive systems, which
+    // makes the local Newton fail non-monotonically in the step size.
+    const auto dflow = (overstress > stress(0)) ? flow_slope : 0 * flow_slope;
+    const auto sgn = tau - x > 0 ? 1 : -1;
+    // elasticity
+    gpsPlastic += dg[i] * ss.mus[i];
+    // Row block below; the constraint rows do not see the slips.
+    auto gpsCol = gpsRotM[i];
+    gpsCol(2) = 0; gpsCol(4) = 0; gpsCol(5) = 0;
+    dfeel_ddg(i) = gpsCol;
+    // rate-independent plasticity
+    fg[i] -= flow_slope * f * sgn;
+    // Two distinct routes carry the strain increment into this residual: f
+    // through the stress, and Deq through the flow amplitude. Differentiating
+    // f alone would reproduce the incomplete tangent this formulation exists to
+    // avoid, so the Deq route is carried explicitly below as -(f sgn / R) dDeq.
+    const auto damplitude = f * sgn / R;
+    dfg_ddeel(i) = -dflow * theta * (ss.mus[i] | D) - damplitude * ndeq;
+    const auto sgn_gi = dg(i) > 0 ? 1 : -1;
+    const auto dda_ddg =
+        (1 - d * a[i] * sgn_gi) / (power<2>(1 + theta * d * abs(dg[i])));
+    dfg_ddg(i, i) += dflow * C * theta * dda_ddg;
+    for (size_type j = 0; j != Nss; ++j) {
+      const auto sgn_gj = dg(j) > 0 ? 1 : -1;
+      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj;
+      dfg_ddg(i, j) += dflow * dr * sgn - damplitude * (ndeq | ss.mus[j]);
+    }
+  }
+  }  // end of the Deq >= deqeps branch
+
+  // --- the residual, assembled in the global frame -----------------------
+  // In-plane rows: kinematics. Transverse rows: the plane-stress condition,
+  // normalised by a reference modulus so the six rows share a strain-like
+  // scale. No extra unknowns, no zero diagonal block, and every derivative of
+  // this block is a CONSTANT built once in @InitLocalVariables.
+  const auto gps_modulus = stress(122000);
+  const auto gpsResidual =
+      gpsRotate(deel + gpsPlastic, q00, q10, q20, q01, q11, q21, q02, q12, q22) - deto;
+  const auto gpsSigmaGlobal =
+      gpsRotate(sig, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+  feel(0) = gpsResidual(0);
+  feel(1) = gpsResidual(1);
+  feel(3) = gpsResidual(3);
+  feel(2) = gpsSigmaGlobal(2) / gps_modulus;
+  feel(4) = gpsSigmaGlobal(4) / gps_modulus;
+  feel(5) = gpsSigmaGlobal(5) / gps_modulus;
+  for (size_type j = 0; j != 6; ++j) {
+    dfeel_ddeel(0, j) = gpsRotT[j](0);
+    dfeel_ddeel(1, j) = gpsRotT[j](1);
+    dfeel_ddeel(3, j) = gpsRotT[j](3);
+    dfeel_ddeel(2, j) = theta * gpsDc[j](2) / gps_modulus;
+    dfeel_ddeel(4, j) = theta * gpsDc[j](4) / gps_modulus;
+    dfeel_ddeel(5, j) = theta * gpsDc[j](5) / gps_modulus;
+  }
+}
+
+@UpdateAuxiliaryStateVariables {
+  using size_type = unsigned short;
+  // The transverse total strain is an OUTPUT now: eps = eel + sum(g m), read
+  // in the global frame. It is what the bridge folds back into the gradient.
+  const auto& ss_aux = Fcc316LForestRubinSrixGpsSlipSystems<real>::getSlipSystems();
+  auto gpsTotal = eel;
+  for (size_type i = 0; i != Nss; ++i) {
+    gpsTotal += g[i] * ss_aux.mus[i];
+  }
+  const auto gpsTotalGlobal = gpsRotate(gpsTotal, Q11, Q21, Q31, Q12, Q22, Q32,
+                                        Q13, Q23, Q33);
+  ezz = gpsTotalGlobal(2);
+  exz = gpsTotalGlobal(4);
+  eyz = gpsTotalGlobal(5);
+  for (size_type i = 0; i != Nss; ++i) {
+    // Same implicit hardening update as Meric-Cailletaud: Dp_s = |Dg_s|.
+    p[i] += abs(dg[i]);
+    const auto da =  //
+        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+    a[i] += da;
+  }
+}

@@ -467,6 +467,7 @@ def _create_fcc_single_crystal_batch(
     from fem_inhouse.core.mfront import (
         MFront3DCondensedPlaneStressBatch,
         MFront3DCondensedPlaneStressBlockBatch,
+        MFrontNativeGeneralisedPlaneStressBatch,
     )
     from fem_inhouse.core.srix_parameters import resolve_srix_parameters
 
@@ -542,6 +543,23 @@ def _create_fcc_single_crystal_batch(
         overrides = None
 
     local_options = dict(local_plane_stress_options or {})
+    if backend == "mfront-native-generalised-plane-stress":
+        # The GPS backend selects the UMAT-closure variant of the law, which
+        # carries the same parameter registry as the parent SRIX law.
+        if behaviour.identifier == "fcc_forest_rubin_srix":
+            from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+
+            behaviour = MFRONT_BEHAVIOURS.get("fcc_forest_rubin_srix_gps")
+        return MFrontNativeGeneralisedPlaneStressBatch(
+            mfront_library,
+            behaviour_spec=behaviour,
+            point_count=point_count,
+            rotation_global_to_material=provider.rotations_global_to_material(point_count),
+            thread_count=mfront_threads,
+            behaviour_name=behaviour.behaviour_name("condensed_3d"),
+            behaviour_parameters=overrides,
+            **local_options,
+        )
     block_size = local_options.pop("condensation_block_size", None)
     condensed_factory = (
         MFront3DCondensedPlaneStressBlockBatch
@@ -599,6 +617,7 @@ def create_plane_stress_material_batch(
         "mfront",
         "mfront-native-plane-stress",
         "mfront-3d-condensed-plane-stress",
+        "mfront-native-generalised-plane-stress",
     }:
         from fem_inhouse.core.mfront import (
             MFront3DCondensedPlaneStressBatch,
