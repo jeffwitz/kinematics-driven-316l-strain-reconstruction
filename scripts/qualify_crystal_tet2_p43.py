@@ -142,10 +142,13 @@ def main() -> int:
         "--material-backend",
         choices=(
             "mfront-3d-condensed-plane-stress",
+            "mfront-3d-condensed-plane-stress-halved",
             "mfront-native-generalised-plane-stress",
         ),
         default="mfront-3d-condensed-plane-stress",
-        help="reference Python condensation or experimental native MGIS closure",
+        help="reference Python condensation, the reference forced through the "
+        "uniform two-half sub-stepping path, or the experimental native MGIS "
+        "closure",
     )
     parser.add_argument("--paired-parameter-set", required=True)
     parser.add_argument(
@@ -305,8 +308,13 @@ def main() -> int:
     history = np.stack(
         [fraction * boundary for fraction in np.linspace(0.0, 1.0, arguments.increments + 1)]
     )
+    backend = (
+        "mfront-3d-condensed-plane-stress"
+        if arguments.material_backend == "mfront-3d-condensed-plane-stress-halved"
+        else arguments.material_backend
+    )
     material = create_plane_stress_material_batch(
-        arguments.material_backend,
+        backend,
         np.repeat(yield_stress, 2),
         np.repeat(coefficient, 2),
         0.245,
@@ -405,6 +413,13 @@ def main() -> int:
                 fftw_use_wisdom=False,
             ),
         )
+    if arguments.material_backend == "mfront-3d-condensed-plane-stress-halved":
+        # Decisive sub-stepping-path test: the reference forced through the
+        # same uniform two-half path the GPS sub-stepping imposes on its
+        # failing points, law and tangent untouched.
+        from scripts.benchmark_substepping_path import UniformlyHalvedReference
+
+        material = UniformlyHalvedReference(material)
     try:
         result = solve_two_state_dirichlet_plane_stress(
             grid=grid,

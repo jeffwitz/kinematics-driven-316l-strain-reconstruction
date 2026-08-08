@@ -1,0 +1,48 @@
+{
+  "configuration": {
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "increments": 8,
+    "mfront_threads": 4
+  },
+  "schema_version": 1,
+  "variants": [
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 61.60264723197906,
+      "log": "validation/_generated/performance/substepping_path_m100/mfront_3d_condensed_plane_stress.log",
+      "material_seconds": 50.121895552874776,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress",
+      "wall_seconds": 63.50093908299459
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 62.95759179900051,
+      "log": "validation/_generated/performance/substepping_path_m100/mfront_3d_condensed_plane_stress_halved.log",
+      "material_seconds": 50.60633190601948,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress-halved",
+      "wall_seconds": 64.85357732500415
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 69.73721303400816,
+      "log": "validation/_generated/performance/substepping_path_m100/mfront_native_generalised_plane_stress.log",
+      "material_seconds": 48.34797261809581,
+      "newton_iterations": 85,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-native-generalised-plane-stress",
+      "wall_seconds": 71.61904764501378
+    }
+  ]
+}
