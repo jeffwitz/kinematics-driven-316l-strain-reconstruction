@@ -2443,8 +2443,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._minimum_substep_span = 1
         #: Indices that refused the full step last time, as single-point spans.
         self._failing_cache: list[tuple[int, int]] = []
-        #: Above this many, the cache costs more than the bisection it saves.
-        self._maximum_cached_spans = 32
+        # Above this many the cache would cost more than the bisection it
+        # saves, so it scales with the batch: `k` cached spans cost `k`
+        # single-point sub-steps plus one pooled proof, against the roughly
+        # `n log2(n)` SERIAL point integrations a bisection charges. A fixed 32
+        # was fine on four hundred points and silently disabled the cache on
+        # ten thousand, where the failing set is proportionally larger -- the
+        # 100x100 window then fell back to 0.96x while 20x20 ran at 1.2-1.7x.
+        self._maximum_cached_spans = max(32, point_count // 8)
         self._cache_hits = 0
         self._cache_misses = 0
         # Route 2 of the handoff, and the reason it is needed. Sub-stepping is

@@ -927,3 +927,55 @@ déterministes.
 coût par appel, `1,13×` de pénalité d'itérations globales : `3,3/(2,1 x 1,13) =
 1,39`, à comparer aux `1,2 – 1,7` mesurés. Le seul terme encore inexpliqué reste
 le `2,1×` par appel, qui est donc ce qui limite le gain aujourd'hui.
+
+### 8.17 P43 100x100 : le gain ne monte pas en taille
+
+La fenêtre enregistrée complète, `1570..1670 x 1035..1135`, soit 10 000 points
+— vingt-cinq fois le cas précédent — huit incréments, quatre threads.
+
+| | référence | UMAT |
+|---|---|---|
+| incréments | 8 | 8 |
+| itérations de Newton | **57** | **85** |
+| temps matériau | `49,7 s` | `48,0 s` |
+| **gain matériau** | — | **`1,04×`** |
+
+| champ | 20x20 | 100x100 |
+|---|---|---|
+| déplacement | `1,1e-08` | `1,3e-07` |
+| contrainte en plan | `3,8e-05` | `1,2e-04` |
+| glissements | `9,9e-05` | `9,0e-04` |
+
+**Les `1,2 – 1,7×` du 20x20 ne se retrouvent pas : à 100x100 c'est la parité.**
+
+**Ce n'est pas le plafond du cache.** Premier réflexe, et faux : le plafond fixe
+de 32 spans a été remplacé par `point_count // 8`, soit 1250 au lieu de 32. Le
+temps passe de `0,96×` à `1,04×` — mais **itérations et écarts de champ sont
+identiques au bit près**, donc rien n'a changé numériquement et l'écart de temps
+est du bruit machine. Le changement est conservé (il est principiel : le cache
+coûte `k` sous-pas contre `n log n` intégrations sérielles de dichotomie), mais
+il ne répare rien.
+
+**Ce qui coûte est la pénalité d'itérations globales**, et elle grandit :
+
+| | 20x20 | 100x100 |
+|---|---|---|
+| itérations UMAT / référence | `52/46 = 1,13` | `85/57 = 1,49` |
+
+Le compte se referme exactement : `3,3 / (2,1 x 1,49) = 1,05` contre `1,04`
+mesuré. **La totalité de la perte est là**, et rien d'autre n'a bougé.
+
+**Interprétation, non démontrée.** Les écarts de champ grandissent d'un ordre de
+grandeur en même temps que la pénalité, ce qui est cohérent avec un ensemble de
+points fautifs proportionnellement plus grand ou plus dispersé : plus de points
+sous-passés, donc une solution qui s'éloigne davantage de celle de la référence,
+donc un Newton global qui travaille plus. Le nombre de points fautifs à 100x100
+n'a **pas** été mesuré — il l'a été à 20x20 (deux sur quatre cents) et c'est la
+mesure qui manque pour trancher.
+
+**Conséquence pratique.** Le backend UMAT est **à parité** sur le cas de
+production et plus rapide seulement sur les petites fenêtres. La référence
+condensée reste le choix par défaut ; l'UMAT n'a pas encore d'argument de
+vitesse à cette échelle. Les deux leviers restent les mêmes, et le premier a
+changé de rang : la pénalité d'itérations globales est désormais le terme
+dominant, devant le `2,1×` par appel.

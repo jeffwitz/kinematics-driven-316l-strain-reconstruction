@@ -1,0 +1,66 @@
+{
+  "configuration": {
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "ebsd_orientation_h5": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "increments": 8,
+    "maximum_newton_iterations": 40,
+    "mfront_threads": 4,
+    "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3"
+  },
+  "schema_version": 1,
+  "status": "completed",
+  "variants": [
+    {
+      "accepted_increments": 8,
+      "backend": "mfront-3d-condensed-plane-stress",
+      "elapsed_seconds": 60.99638286099071,
+      "field_file": "validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_3d_condensed_plane_stress.fields.npz",
+      "final_residual": 1.301755577160456e-09,
+      "jacobian_seconds": 5.8872088626085315,
+      "krylov_seconds": 9.582641735963989,
+      "log": "validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_3d_condensed_plane_stress.log",
+      "material_condensation_seconds": 49.43187272286741,
+      "material_integration_seconds": 40.57273040706059,
+      "material_point_integrations": 4220000.0,
+      "material_seconds": 49.737611947144615,
+      "newton_iterations": 57,
+      "report": "validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_3d_condensed_plane_stress.json",
+      "return_code": 0,
+      "status": "completed",
+      "wall_seconds": 62.557270046992926
+    },
+    {
+      "accepted_increments": 8,
+      "backend": "mfront-native-generalised-plane-stress",
+      "elapsed_seconds": 68.6600644630089,
+      "field_errors_to_reference": {
+        "accumulated_slip_relative_l2": 0.0006356735812701319,
+        "displacement_relative_l2": 1.3353097587698329e-07,
+        "equivalent_plastic_slip_relative_l2": 0.0008992830168402818,
+        "plastic_slip_relative_l2": 0.0008992830168402818,
+        "reaction_forces_relative_l2": 4.245504723662443e-05,
+        "stress_in_plane_mpa_relative_l2": 0.00012361478342536503
+      },
+      "field_file": "validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_native_generalised_plane_stress.fields.npz",
+      "final_residual": 5.138176996529863e-09,
+      "jacobian_seconds": 11.536107435182203,
+      "krylov_seconds": 18.8698263609258,
+      "log": "validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_native_generalised_plane_stress.log",
+      "material_condensation_seconds": 0.0,
+      "material_integration_seconds": 43.38075521818246,
+      "material_point_integrations": 1720000.0,
+      "material_seconds": 47.97430568013806,
+      "material_speedup": 1.036755222238403,
+      "newton_iterations": 85,
+      "report": "validation/_generated/performance/srix_p43_100x100_umat_gps/mfront_native_generalised_plane_stress.json",
+      "return_code": 0,
+      "status": "completed",
+      "wall_seconds": 70.32954428397352
+    }
+  ]
+}
