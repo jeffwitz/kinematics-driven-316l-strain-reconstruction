@@ -676,3 +676,300 @@ def test_failed_local_condensation_does_not_pollute_committed_state() -> None:
         atol=1e-15,
     )
     assert batch.statistics.local_plane_stress_failures == 1
+
+
+# ---------------------------------------------------------------------------
+# UMAT GPS regression tests (consolidation 2026-08-08).
+#
+# Each of the three production defects found between 2026-08-06 and
+# 2026-08-08 is pinned here as a permanent regression test: the total strain
+# applied as an increment (6bfaf86), the per-point rotations handed over as
+# strided views with dangling buffers (4deeffb), and the single-threaded
+# integration (b201ae0). Plus the anti-vacuous finite-difference tangent
+# check at a genuine non-zero increment.
+# ---------------------------------------------------------------------------
+
+
+def _gps_batch(
+    library: str,
+    *,
+    point_count: int = 1,
+    orientation: tuple[float, float, float] | None = None,
+    thread_count: int = 1,
+) -> Any:
+    from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
+
+    options: dict[str, object] = {
+        "parameter_set": "316l_srix_transposed_from_nasri2018_rate_1e-3"
+    }
+    if orientation is not None:
+        from fem_inhouse.core.crystal_orientation import rotation_from_euler_bunge_deg
+
+        options["crystal_orientation"] = {
+            "mode": "homogeneous",
+            "matrix": np.asarray(
+                rotation_from_euler_bunge_deg(*orientation), dtype=float
+            ).tolist(),
+        }
+    return create_plane_stress_material_batch(
+        "mfront-native-generalised-plane-stress",
+        np.full((point_count, 1), 250.0),
+        np.full((point_count, 1), 500.0),
+        0.245,
+        young_modulus_mpa=205000.0,
+        poisson_ratio=0.3,
+        hardening_mode="ludwik",
+        plastic_strain_max=0.2,
+        plastic_table_points=1000,
+        first_positive_plastic_strain=1e-6,
+        mfront_library=library,
+        mfront_threads=thread_count,
+        mfront_behaviour_id="fcc_forest_rubin_srix",
+        constitutive_options=options,
+    )
+
+
+@pytest.mark.mfront
+def test_gps_bridge_writes_the_total_strain_absolutely() -> None:
+    """The evaluate contract is TOTAL strain, applied absolutely.
+
+    Regression for 6bfaf86: the bridge added the total to the committed
+    gradient, so the imposed strain accumulated as 1+2+3+... instead of
+    1,2,3. Increment 1 was unaffected (total = increment), which hid the bug
+    from every single-increment comparison.
+    """
+
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+    from fem_inhouse.core.mfront import (
+        _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
+        _PLANE_STRESS_COMPONENTS,
+    )
+
+    first = np.array([[0.003, -0.0012, 0.0]])
+    second = np.array([[0.004, -0.0016, 0.0]])
+    stepped = _gps_batch(library)
+    stepped.evaluate(first, time_increment=0.5)
+    stepped.commit()
+    stepped.evaluate(second, time_increment=0.5)
+    # The gradient written into the manager is the ABSOLUTE total, not the
+    # committed state plus the total.
+    written = np.asarray(stepped._manager.s1.gradients)[0].copy()
+    np.testing.assert_allclose(
+        written[_PLANE_STRESS_COMPONENTS],
+        second[0] * _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
+        rtol=0.0,
+        atol=1e-14,
+    )
+    # And the response equals a fresh batch driven through the same history
+    # (the law is path-dependent, so the fresh batch must share the first
+    # increment to be comparable).
+    fresh = _gps_batch(library)
+    fresh.evaluate(first, time_increment=0.5)
+    fresh.commit()
+    stepped_trial = stepped.evaluate(second, time_increment=0.5)
+    fresh_trial = fresh.evaluate(second, time_increment=0.5)
+    np.testing.assert_allclose(
+        stepped_trial.stress_in_plane_mpa,
+        fresh_trial.stress_in_plane_mpa,
+        rtol=0.0,
+        atol=1e-9,
+    )
+
+
+@pytest.mark.mfront
+def test_gps_bridge_applies_per_point_rotations_independently() -> None:
+    """Each material point must read its OWN rotation components.
+
+    Regression for 4deeffb: the nine Q components were handed to MGIS as a
+    strided view under ExternalStorage, so every point read another point's
+    rotation, and the buffers were temporaries freed at the end of the loop.
+    A single point hides both; two points with different orientations expose
+    them.
+    """
+
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+
+    strain = np.array([[0.003, -0.0012, 0.0005]])
+    identity = _gps_batch(library, orientation=None)
+    tilted = _gps_batch(library, orientation=(35.0, 20.0, 15.0))
+    identity_trial = identity.evaluate(strain, time_increment=0.5)
+    tilted_trial = tilted.evaluate(strain, time_increment=0.5)
+    # The two orientations must give different responses to the same strain.
+    assert np.max(np.abs(identity_trial.stress_in_plane_mpa - tilted_trial.stress_in_plane_mpa)) > 1.0
+
+    from fem_inhouse.core.crystal_orientation import rotation_from_euler_bunge_deg
+    from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
+
+    both = create_plane_stress_material_batch(
+        "mfront-native-generalised-plane-stress",
+        np.full((2, 1), 250.0),
+        np.full((2, 1), 500.0),
+        0.245,
+        young_modulus_mpa=205000.0,
+        poisson_ratio=0.3,
+        hardening_mode="ludwik",
+        plastic_strain_max=0.2,
+        plastic_table_points=1000,
+        first_positive_plastic_strain=1e-6,
+        mfront_library=library,
+        mfront_threads=1,
+        mfront_behaviour_id="fcc_forest_rubin_srix",
+        constitutive_options={
+            "parameter_set": "316l_srix_transposed_from_nasri2018_rate_1e-3",
+            "crystal_orientation": {
+                "mode": "ebsd",
+                "euler_bunge_deg": np.array(
+                    [[[0.0, 0.0, 0.0]], [[35.0, 20.0, 15.0]]], dtype=float
+                ),
+            },
+        },
+    )
+    both_trial = both.evaluate(np.vstack([strain, strain]), time_increment=0.5)
+    # Point 0 behaves as the identity single point, point 1 as the tilted one.
+    np.testing.assert_allclose(
+        both_trial.stress_in_plane_mpa[0],
+        identity_trial.stress_in_plane_mpa[0],
+        rtol=0.0,
+        atol=1e-6,
+    )
+    np.testing.assert_allclose(
+        both_trial.stress_in_plane_mpa[1],
+        tilted_trial.stress_in_plane_mpa[0],
+        rtol=0.0,
+        atol=1e-6,
+    )
+
+
+@pytest.mark.mfront
+def test_gps_bridge_thread_count_matches_serial_results() -> None:
+    """Four threads must give the same material response as one.
+
+    Regression for b201ae0: the GPS bridge integrated single-threaded while
+    the reference used four, silently paying the thread-count cost.
+    """
+
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+
+    serial = _gps_batch(library, thread_count=1, orientation=(35.0, 20.0, 15.0))
+    parallel = _gps_batch(library, thread_count=4, orientation=(35.0, 20.0, 15.0))
+    history = np.array(
+        [
+            [0.001, -0.0004, 0.0],
+            [0.002, -0.0008, 0.0002],
+            [0.003, -0.0012, 0.0],
+        ]
+    )
+    for step in history:
+        serial_trial = serial.evaluate(np.atleast_2d(step), time_increment=1.0 / 3)
+        parallel_trial = parallel.evaluate(np.atleast_2d(step), time_increment=1.0 / 3)
+        np.testing.assert_allclose(
+            serial_trial.stress_in_plane_mpa,
+            parallel_trial.stress_in_plane_mpa,
+            rtol=0.0,
+            atol=1e-9,
+        )
+        serial.commit()
+        parallel.commit()
+    assert parallel.timing_statistics.native_thread_count == 4
+    assert serial.timing_statistics.native_thread_count == 1
+
+
+@pytest.mark.mfront
+def test_gps_plastic_tangent_matches_finite_differences_at_real_increment() -> None:
+    """The FD tangent is checked at a genuine non-zero increment.
+
+    The first version of the A6 check probed the law at a strain increment of
+    exactly zero -- the guarded elastic branch -- and reported a pass on a
+    tangent that was wrong by a factor of ten at plastic states. This test
+    commits through a plastic history and probes the NEXT increment, so every
+    finite-difference probe carries a real plastic increment.
+    """
+
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+
+    batch = _gps_batch(library, orientation=(35.0, 20.0, 15.0))
+    history = np.array(
+        [[i / 12 * 0.02, -0.4 * i / 12 * 0.02, 0.0] for i in range(1, 4)]
+    )
+    for step in history:
+        batch.evaluate(np.atleast_2d(step), time_increment=1.0 / 12)
+        batch.commit()
+    # The next increment is a genuine plastic step, not zero.
+    target = np.array([[4 / 12 * 0.02, -0.4 * 4 / 12 * 0.02, 0.0]])
+    trial = batch.evaluate(target, time_increment=1.0 / 12)
+    tangent_returned = np.asarray(trial.tangent_in_plane_mpa)[0]
+    fd = np.zeros((3, 3))
+    perturbation = 1.0e-6
+    for column in range(3):
+        plus = target.copy()
+        minus = target.copy()
+        plus[:, column] += perturbation
+        minus[:, column] -= perturbation
+        stress_plus = np.asarray(
+            batch.evaluate(plus, time_increment=1.0 / 12).stress_in_plane_mpa
+        )[0]
+        stress_minus = np.asarray(
+            batch.evaluate(minus, time_increment=1.0 / 12).stress_in_plane_mpa
+        )[0]
+        fd[:, column] = (stress_plus - stress_minus) / (2 * perturbation)
+    batch.revert()
+    relative_error = np.max(np.abs(tangent_returned - fd)) / max(
+        np.max(np.abs(fd)), 1.0e-30
+    )
+    assert relative_error <= 1.0e-6
+
+
+@pytest.mark.mfront
+def test_gps_deep_history_is_deterministic_and_transactional() -> None:
+    """Deep plastic increments: deterministic results, clean commit/revert.
+
+    The sub-stepping advances and restores the committed state internally;
+    commit() and revert() must keep their meaning, and a re-run from the same
+    committed state must give bit-identical results.
+    """
+
+    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+
+    history = np.array(
+        [[i / 12 * 0.02, -0.4 * i / 12 * 0.02, 0.0] for i in range(1, 13)]
+    )
+    def _drive() -> list[np.ndarray]:
+        batch = _gps_batch(library)
+        pass_results: list[np.ndarray] = []
+        for step in history:
+            trial = batch.evaluate(np.atleast_2d(step), time_increment=1.0 / 12)
+            pass_results.append(np.asarray(trial.stress_in_plane_mpa).copy())
+            batch.commit()
+        return pass_results
+
+    # Determinism: two identical passes from the virgin state reproduce each
+    # other to machine precision.
+    first_pass = _drive()
+    second_pass = _drive()
+    batch = _gps_batch(library)
+    for step in history:
+        batch.evaluate(np.atleast_2d(step), time_increment=1.0 / 12)
+        batch.commit()
+    for first, second in zip(first_pass, second_pass, strict=True):
+        np.testing.assert_array_equal(first, second)
+    # Revert from the final committed state restores it exactly.
+    snapshot = batch.snapshot_state()
+    trial = batch.evaluate(np.atleast_2d(history[-1]), time_increment=1.0 / 12)
+    batch.revert()
+    restored = batch.snapshot_state()
+    np.testing.assert_array_equal(restored[0], snapshot[0])
