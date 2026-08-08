@@ -1,0 +1,17 @@
+reference: GPS 52 Newton, REF 46 Newton | checkpoint inc 6
+test A: |du_G - du_R|/|du_R| = 8.438e-05, cos(theta) = 1.000000, rho_GPS = 2.188e-01, rho_REF = 2.187e-01
+test B: points for 50/80/90/95% of the action: 0.50: 6 / 0.80: 54 / 0.90: 142 / 0.95: 253
+test D: top points characterised, 20 rows
+  test E point 96 (score 4.70e-02): on S_G 1.858e-03, on S_R 1.861e-03
+  test E point 95 (score 1.12e-02): on S_G 3.589e-03, on S_R 3.600e-03
+  test E point 59 (score 7.02e-03): on S_G 1.889e-04, on S_R 1.888e-04
+  test E point 20 (score 4.31e-03): on S_G 1.966e-04, on S_R 1.966e-04
+  test E point 21 (score 3.04e-03): on S_G 8.748e-05, on S_R 8.747e-05
+substitution top 0: 52 Newton
+substitution top 1: 47 Newton
+substitution top 5: 47 Newton
+substitution top 10: 47 Newton
+substitution top 25: 47 Newton
+substitution top 50: 47 Newton
+substitution top 100: 47 Newton
+substitution top 800: 47 Newton

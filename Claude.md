@@ -359,6 +359,54 @@ d'évaluation constitutive de l'ordre de `1e-9` relatif, pas un défaut de
 structure (ni formulation, ni dérivée, ni sous-pas, ni cache, ni
 assemblage, ni conditionnement).
 
+### 2026-08-08 — Localisation causale 52 vs 46 : UN point matériel porte la pénalité
+
+CdC de l'utilisateur : arrêter les analyses globales, localiser
+spatialement. `scripts/diagnose_gps_tangent_localisation.py`, checkpoint
+incrément 6 (premier appel Newton) du run M20 EBSD, tests A–E
+(rapport complet : `validation/gps_tangent_localisation_diagnostic.md`).
+
+- **Test A — directions Newton au checkpoint quasi identiques** :
+  `|δu_G − δu_R|/|δu_R| = 8,4e-5`, `cos θ = 1 − 3e-9`, et les deux
+  corrections réduisent le résidu GPS du même facteur
+  (`ρ_GPS = ρ_REF = 0,219`, qui reproduit exactement la réduction réelle du
+  solveur `4,86e-2 → 1,07e-2`). La pénalité n'est pas une mauvaise direction
+  locale au checkpoint.
+- **Test B — action très concentrée** : 6 points (sur 800) font 50 % de
+  l'action `(J_G − J_R)δu` ; le point 96 (pixel (8,2), subcell 0) fait 32 %
+  seul. CSV : `gps_tangent_localisation_points.csv`.
+- **Test C — le test central : top-1 suffit.** Substitution chirurgicale de
+  la tangente référence (stress/état/loi/substepping GPS conservés) sur les
+  top-k points : 0 → 52, **1 → 47**, 5..800 → 47. Un seul point matériel
+  porte toute la pénalité ; le critère du CdC (« 52 → 46–48 ») est atteint
+  avec k = 1.
+- **Test D** : le point 96 a le système de glissement 11 dominant
+  (`−1,1e-2`), 6 systèmes actifs, stress au checkpoint
+  GPS `[−152,6, 119,8, −40,6]` vs réf `[−152,6, 119,9, −40,5]` MPa — états
+  proches, tangentes non.
+- **Test E — à même état, les tangentes diffèrent encore** : transplant des
+  ISV par nom (elastic strain, g, p, back strain) sur les top-5 points,
+  évaluation au même strain imposé : `1,9e-3` (point 96), `3,6e-3` (95),
+  `1,9e-4` (59), `2,0e-4` (20), `8,7e-5` (21), symétrique S_G/S_R. Le seuil
+  `1e-10` de formulation identique est manqué de 7 ordres de grandeur.
+  Limite documentée : le transplant est partiel (le gradient committé de la
+  référence est en repère cristal, celui du GPS en global ; imposer le
+  gradient global à la référence fait échouer son Newton local — vérifié).
+  La différence à même ISV peut venir des transverses committées ou d'une
+  différence algébrique réelle de la tangente.
+
+**Chaîne causale établie avec localisation** : `ΔC_i` (point 96, `1,9e-3` à
+même ISV) → `ΔJ` (32 % de l'action sur ce point) → `Δδu` par itération
+(`8,4e-5`, petite mais systématique) → amplification le long de la
+trajectoire → 52 vs 46. La mesure globale (Jv exact, spectres identiques)
+et le compte d'itérations sont réconciliés : la différence est locale au
+point 96 et s'amplifie au fil des itérations.
+
+**Prochaine étape (CdC §12)** : comparer bloc par bloc le Jacobien local
+MFront GPS et la condensation référence sur le point 96 (et voisins 95, 59),
+aux états committés des deux trajectoires au checkpoint de l'incrément 6.
+Ne rien modifier avant cette démonstration.
+
 ### 2026-08-08 — Convention du wrapper halvéd corrigée ; le verdict 57 = 57 tient
 
 Le `UniformlyHalvedReference` interpolait `eps0` depuis
