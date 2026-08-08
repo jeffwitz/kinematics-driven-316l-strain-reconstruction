@@ -438,6 +438,28 @@ brute via le shadow) produit exactement le Schur ; désactivée par défaut
 car « le shadow ne suit pas la branche » — à réexaminer à la lumière de
 cette mesure.
 
+### 2026-08-08 — Sensibilité directe 18×18 : le DSL est exact, le SYSTÈME diffère du Schur
+
+Étapes 1-2 du CdC, `scripts/diagnose_gps_direct_sensitivity.py`.
+Réimplémentation numpy complète des 18 équations GPS (résidu + Jacobien
+déclaré), validée : **`|F(x*)| = 1e-15`** à l'état convergé, et
+**`C_sens = C_DSL` à `1e-15`** — la sensibilité directe
+`(∂σ_a/∂x)(−A⁻¹B)` avec `B = [−I₃; 0; 0]` reproduit exactement la tangente
+retournée par le bridge. **Le DSL ne fait pas d'erreur de calcul.**
+
+Mais **`C_sens ≠ C_shadow` à `3,1e-3`** (point 96) : le jalon du CdC
+(`≤ 1e-10`) est réfuté par la mesure. Interprétation : c'est le SYSTÈME,
+pas la dérivée — la fermeture GPS (`σ_b = 0` lignes 2,4,5 de `feel`) ne
+voit que `deel` (∂σ_b/∂dg = 0), alors que le Schur de la référence élimine
+les transverses par la cinématique complète (dépend de `dg`). Mêmes
+valeurs (`1e-11`), dérivées différentes (`3e-3`). Le shadow (52 → 47) ne
+corrige pas une dérivée mal calculée : il substitue la matrice d'un AUTRE
+système. Améliorer la convergence GPS = rapprocher la formulation de la
+condensation, pas recalculer la dérivée (déjà exacte). Vérification FD
+cohérente : l'écart `A_an vs A_FD ≈ 2,5e-3` constant en h, concentré sur
+les lignes `fg` des systèmes inactifs (non-différentiabilité du crochet de
+Macaulay).
+
 ### 2026-08-08 — Convention du wrapper halvéd corrigée ; le verdict 57 = 57 tient
 
 Le `UniformlyHalvedReference` interpolait `eps0` depuis

@@ -183,3 +183,48 @@ tangente DSL GPS devrait coïncider avec le Schur — elle n'y arrive qu'à
 brute, `shadow_condensed_tangent`) produit exactement le Schur ; elle est
 désactivée par défaut car « le shadow ne suit pas la branche » — à
 réexaminer à la lumière de cette mesure.
+
+### Test G — sensibilité directe du système GPS : le DSL est exact, le SYSTÈME diffère
+
+Étape 1-2 du CdC de l'utilisateur, `scripts/diagnose_gps_direct_sensitivity.py`.
+Réimplémentation numpy complète des 18 équations de
+`Fcc316LForestRubinSrixGps.mfront` (résidu ET Jacobien, avec les blocs
+déclarés `dfeel_ddeel`, `dfeel_ddg`, `dfg_ddeel`, `dfg_ddg`), validée sur le
+point 96 au checkpoint inc 6 :
+
+- **`|F(x*)| = 1e-15`** à l'état convergé — la réimplémentation du résidu est
+  exacte (conventions : rotation `Qᵀ` dans `gpsRotate`, `deto` = incrément
+  `s1.gradients − s0.gradients`, tenseurs de Schmid recopiés du `.ixx`
+  généré) ;
+- **`C_sens vs C_DSL = 1e-15`** — la sensibilité directe `C_sens =
+  (∂σ_a/∂x)·(−A⁻¹B)` avec `B = ∂F/∂ε_a = [−I₃; 0; 0]` reproduit EXACTEMENT
+  la tangente que le bridge retourne. **Le DSL ne fait pas d'erreur de
+  calcul** : il assemble précisément la dérivée du système qu'il résout ;
+- **`C_sens vs C_shadow = 3,1e-3`** (point 96), `3,7e-3` (95), `1,4e-4` (59)
+  — la sensibilité du système GPS diffère du Schur de la référence de la
+  même quantité que la tangente DSL. **Le jalon du CdC
+  (`|C_sens − C_shadow|/|C_shadow| ≤ 1e-10`) est réfuté par la mesure.**
+
+**Interprétation — c'est le SYSTÈME, pas la dérivée.** Le DSL calcule
+exactement la dérivée du système GPS tel qu'il est formulé ; ce système
+diffère du problème condensé de la référence par la STRUCTURE de
+l'élimination transverse : la fermeture GPS (`σ_b = 0` dans les lignes
+2,4,5 de `feel`) ne voit que `deel` (∂σ_b/∂dg = 0), alors que le Schur de la
+référence élimine les transverses à travers la cinématique complète
+(`deel_b + plastic_b − deto_b`, qui dépend de `dg`). Les deux systèmes
+donnent les mêmes valeurs (stress à `1e-11`) mais des dérivées différentes
+à `3e-3` — une différence de formulation, pas de calcul. Le shadow
+(`2da6268`, 52 → 47) ne « corrige » donc pas une dérivée mal calculée : il
+remplace la matrice du système GPS par celle d'un autre système (la
+référence), dont la convergence est meilleure. La leçon : améliorer la
+convergence du GPS exige de rapprocher la FORMULATION du système de la
+condensation (la dépendance transverse complète), pas de recalculer la
+dérivée du système actuel — celle-ci est déjà exacte.
+
+La vérification FD du Jacobien est cohérente avec cette lecture : l'écart
+`|A_an − A_FD|/|A_FD| ≈ 2,5e-3` ne diminue pas quand h décroît (`1e-7` →
+`1e-9`) et se concentre sur les lignes `fg` des systèmes inactifs — la
+non-différentiabilité du crochet de Macaulay (la perturbation traverse le
+coin `overstress = 0`), pas une erreur de transcription : la validation
+décisive est l'égalité `C_sens = C_DSL` à `1e-15`, où `C_DSL` est la
+tangente réellement retournée par MFront.
