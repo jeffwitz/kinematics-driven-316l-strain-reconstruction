@@ -130,12 +130,15 @@ def _run_variant(
         "--output",
         str(report_path),
     ]
-    if variant == "mfront-3d-condensed-plane-stress-halved":
-        command.extend(("--material-backend", "mfront-3d-condensed-plane-stress"))
-    elif variant == "mfront-3d-condensed-plane-stress":
-        command.extend(("--material-backend", "mfront-3d-condensed-plane-stress"))
-    elif variant == "mfront-native-generalised-plane-stress":
+    if variant == "mfront-native-generalised-plane-stress":
         command.extend(("--material-backend", "mfront-native-generalised-plane-stress"))
+    elif variant.startswith("mfront-3d-condensed-plane-stress"):
+        command.extend(("--material-backend", "mfront-3d-condensed-plane-stress"))
+        if "-halved" in variant:
+            command.extend(("--material-backend", "mfront-3d-condensed-plane-stress-halved"))
+        tolerance = arguments.closure_tolerances.get(variant)
+        if tolerance is not None:
+            command.extend(("--local-closure-tolerance", str(tolerance)))
     environment = {
         **os.environ,
         "OMP_NUM_THREADS": "1",
@@ -190,11 +193,16 @@ def main() -> int:
         default=Path("validation/_generated/performance/substepping_path.json"),
     )
     arguments = parser.parse_args()
+    arguments.closure_tolerances = {
+        "mfront-3d-condensed-plane-stress-tol-1e-10": 1.0e-10,
+        "mfront-3d-condensed-plane-stress-tol-1e-12": 1.0e-12,
+    }
     output_directory = arguments.output.with_suffix("")
     output_directory.mkdir(parents=True, exist_ok=True)
     variants = (
         "mfront-3d-condensed-plane-stress",
-        "mfront-3d-condensed-plane-stress-halved",
+        "mfront-3d-condensed-plane-stress-tol-1e-10",
+        "mfront-3d-condensed-plane-stress-tol-1e-12",
         "mfront-native-generalised-plane-stress",
     )
     records = [_run_variant(variant, arguments, output_directory) for variant in variants]

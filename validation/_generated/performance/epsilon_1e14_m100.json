@@ -1,0 +1,59 @@
+{
+  "configuration": {
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "increments": 8,
+    "mfront_threads": 4
+  },
+  "schema_version": 1,
+  "variants": [
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 63.88237974100048,
+      "log": "validation/_generated/performance/epsilon_1e14_m100/mfront_3d_condensed_plane_stress.log",
+      "material_seconds": 50.95486638895818,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress",
+      "wall_seconds": 66.08176432800246
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 69.20616383000743,
+      "log": "validation/_generated/performance/epsilon_1e14_m100/mfront_3d_condensed_plane_stress_tol_1e_10.log",
+      "material_seconds": 55.868437838944374,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress-tol-1e-10",
+      "wall_seconds": 71.12493044999428
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 53.39264344400726,
+      "log": "validation/_generated/performance/epsilon_1e14_m100/mfront_3d_condensed_plane_stress_tol_1e_12.log",
+      "material_seconds": 43.480526516068494,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress-tol-1e-12",
+      "wall_seconds": 54.96694635099266
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 68.3475861599727,
+      "log": "validation/_generated/performance/epsilon_1e14_m100/mfront_native_generalised_plane_stress.log",
+      "material_seconds": 48.02797922369791,
+      "newton_iterations": 85,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-native-generalised-plane-stress",
+      "wall_seconds": 70.41456191698671
+    }
+  ]
+}

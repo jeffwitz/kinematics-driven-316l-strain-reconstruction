@@ -169,6 +169,13 @@ def main() -> int:
         help="partition the MFront plane-stress condensation into independent blocks",
     )
     parser.add_argument(
+        "--local-closure-tolerance",
+        type=float,
+        help="local plane-stress closure tolerance in MPa (default 1e-8 for the "
+        "condensed reference); tightening it aligns the reference's local "
+        "solution with the GPS's ~1e-14",
+    )
+    parser.add_argument(
         "--progress-output",
         type=Path,
         help="JSONL file written after each increment/Newton event",
@@ -332,6 +339,11 @@ def main() -> int:
         local_plane_stress_options={
             "local_condition_check_mode": "on_failure",
             "local_transverse_predictor": arguments.local_transverse_predictor,
+            **(
+                {"local_tolerance_mpa": arguments.local_closure_tolerance}
+                if arguments.local_closure_tolerance is not None
+                else {}
+            ),
             **(
                 {"condensation_block_size": arguments.condensation_block_size}
                 if arguments.condensation_block_size is not None
