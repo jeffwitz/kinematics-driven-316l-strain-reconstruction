@@ -47,18 +47,53 @@ PAIRED_PARAMETER_SET = "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3"
 class UniformlyHalvedReference:
     """The condensed reference forced through a uniform two-half path.
 
-    Each increment is integrated as eps0 -> eps/2 -> eps (the proportional
-    halves, half the time increment each), exactly the path the GPS
-    sub-stepping imposes on its failing points, with the law and the tangent
-    untouched. The committed state is restored at the end of the evaluation,
-    so the solver's trial/commit/revert semantics are preserved.
+    Each increment is integrated from the committed state through the
+    mid-point: eps0 -> eps0 + (eps1 - eps0)/2 -> eps1, half the time
+    increment each -- exactly the path the GPS sub-stepping imposes on its
+    failing points, with the law and the tangent untouched.
+
+    The transaction is explicit: the sub-stepped final state is captured and
+    re-instated on commit, so the solver's commit() really advances the
+    committed state to the end of the sub-stepped path, and revert() returns
+    to the state before the evaluation.
     """
 
     def __init__(self, inner: object, divisions: int = 2) -> None:
         self._inner = inner
         self._divisions = divisions
         self._snapshot = None
+        self._final_state = None
         self._trial = None
+
+    def _manager(self) -> object | None:
+        inner = self._inner
+        manager = getattr(inner, "_manager", None)
+        if manager is None:
+            bridge = getattr(inner, "_bridge", None)
+            manager = getattr(bridge, "_manager", None)
+        return manager
+
+    def _committed_in_plane(self) -> np.ndarray:
+        """The committed total in-plane strain (Kelvin), from the manager."""
+
+        manager = self._manager()
+        if manager is None:
+            return np.zeros((self._inner.point_count, 3))
+        return np.asarray(manager.s0.gradients)[:, [0, 1, 3]].copy()
+
+    def _capture_s1(self) -> tuple[np.ndarray, ...]:
+        manager = self._manager()
+        return (
+            np.asarray(manager.s1.gradients).copy(),
+            np.asarray(manager.s1.internal_state_variables).copy(),
+            np.asarray(manager.s1.thermodynamic_forces).copy(),
+        )
+
+    def _restore_s1(self, state: tuple[np.ndarray, ...]) -> None:
+        manager = self._manager()
+        manager.s1.gradients[:, :] = state[0]
+        manager.s1.internal_state_variables[:, :] = state[1]
+        manager.s1.thermodynamic_forces[:, :] = state[2]
 
     def evaluate(
         self,
@@ -67,33 +102,50 @@ class UniformlyHalvedReference:
         time_increment: float,
         consistent_tangent: bool = True,
     ) -> object:
+        eps1 = np.asarray(in_plane_strain, dtype=float)
+        eps0 = self._committed_in_plane()
         snapshot = self._inner.snapshot_state()
-        fractions = np.linspace(1.0 / self._divisions, 1.0, self._divisions)
         trial = None
-        for fraction in fractions:
+        for step in range(1, self._divisions + 1):
+            alpha = step / self._divisions
+            eps_step = eps0 + alpha * (eps1 - eps0)
             trial = self._inner.evaluate(
-                fraction * np.asarray(in_plane_strain, dtype=float),
+                eps_step,
                 time_increment=time_increment / self._divisions,
                 consistent_tangent=consistent_tangent,
             )
-            if fraction < 1.0:
+            if step < self._divisions:
                 self._inner.commit()
+        # Capture the sub-stepped final state, restore the committed one so
+        # revert() works, and re-instate the final state on commit().
+        self._final_state = self._capture_s1()
         self._inner.restore_state(snapshot)
         self._snapshot = snapshot
         self._trial = trial
         return trial
 
     def commit(self) -> None:
+        if self._final_state is not None:
+            self._restore_s1(self._final_state)
         self._inner.commit()
         self._snapshot = None
+        self._final_state = None
 
     def revert(self) -> None:
         if self._snapshot is not None:
             self._inner.restore_state(self._snapshot)
+        self._final_state = None
+
+    @property
+    def point_count(self) -> int:
+        return self._inner.point_count
 
     @property
     def timing_statistics(self) -> object:
         return getattr(self._inner, "timing_statistics", None)
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._inner, name)
 
 
 def _run_variant(
