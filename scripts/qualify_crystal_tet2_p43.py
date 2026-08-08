@@ -176,6 +176,14 @@ def main() -> int:
         "solution with the GPS's ~1e-14",
     )
     parser.add_argument(
+        "--gps-condensed-tangent",
+        action="store_true",
+        help="for the native GPS backend, enable the law's CondensedTangent "
+        "parameter: the @TangentOperator returns the exact plane-stress Schur "
+        "of the raw law computed inside the local Newton (no shadow, no second "
+        "integration)",
+    )
+    parser.add_argument(
         "--progress-output",
         type=Path,
         help="JSONL file written after each increment/Newton event",
@@ -357,6 +365,12 @@ def main() -> int:
             "paired_parameter_set": arguments.paired_parameter_set,
         },
     )
+    if (
+        arguments.gps_condensed_tangent
+        and arguments.material_backend == "mfront-native-generalised-plane-stress"
+    ):
+        material._parameters["CondensedTangent"] = 1.0
+        material._condensed_tangent = True
     started = time.perf_counter()
     progress_path = arguments.progress_output or arguments.output.with_suffix(".progress.jsonl")
     progress_path.parent.mkdir(parents=True, exist_ok=True)

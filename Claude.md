@@ -407,6 +407,31 @@ MFront GPS et la condensation référence sur le point 96 (et voisins 95, 59),
 aux états committés des deux trajectoires au checkpoint de l'incrément 6.
 Ne rien modifier avant cette démonstration.
 
+### 2026-08-08 — Sensibilité directe = FD : la tangente OFF est exacte, le shadow est un autre système
+
+La vérification FD du stress (transverses libres, fermeture GPS convergée
+dans chaque évaluation) au point 96 donne `41115` — identique à C_sens et à
+la tangente OFF. **La tangente DSL projetée est la dérivée exacte du système
+GPS** ; le shadow (`41400`, `3e-3`) est la dérivée d'un autre système (loi
+brute avec transverses imposées). La pénalité 85-vs-57 n'est pas une
+tangente fausse : le gain du shadow (52→47) est une substitution de matrice
+d'un système différent, pas une correction de dérivée.
+
+### 2026-08-08 — Option MFront-native du Schur : échec documenté
+
+CdC étape 3 implémentée : `@TangentOperator` custom dans
+`Fcc316LForestRubinSrixGps.mfront` (paramètre `CondensedTangent`, défaut 0)
+qui reconstruit la matrice de la loi brute, résout `A X = [I6;0]`, tourne
+en global et retourne le Schur — sans shadow. Résultat : tangente fausse
+(`46 %` d'erreur FD au point 96, `42526` vs C_sens `41115`) et run M20 non
+convergent (incrément 1). Le Schur du jacobian GPS régénéré ne reproduit
+pas le Schur de la loi brute (le shadow évalue la loi brute avec le strain
+complet, ce que le jacobian GPS ne fait pas). **L'option reste dans la loi
+(paramètre inactif par défaut, chemin OFF vérifié à 52 Newton M20), mais la
+voie du CdC pour la production n'est pas praticable par cette construction.**
+Le shadow reste l'oracle de dérivée le plus proche de la référence, au prix
+de son intégration 3D.
+
 ### 2026-08-08 — Bloc par bloc : la formulation GPS diffère du Schur de `3e-3` au même état
 
 Étape §12 du CdC, `scripts/diagnose_gps_tangent_blocks.py`. Transplant

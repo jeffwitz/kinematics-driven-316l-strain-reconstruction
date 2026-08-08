@@ -228,3 +228,32 @@ non-différentiabilité du crochet de Macaulay (la perturbation traverse le
 coin `overstress = 0`), pas une erreur de transcription : la validation
 décisive est l'égalité `C_sens = C_DSL` à `1e-15`, où `C_DSL` est la
 tangente réellement retournée par MFront.
+
+### Test H — Sensibilité directe vs FD : C_sens EST la dérivée exacte du système GPS
+
+Le FD du stress (transverses libres, la fermeture GPS converge dans chaque
+évaluation) au point 96 du checkpoint donne **`41115` — identique à C_sens
+et à la tangente OFF** à la précision du FD. La tangente DSL projetée (OFF)
+est donc la dérivée exacte du système GPS avec fermeture ; le shadow
+(`41400`, `3e-3` d'écart) est la dérivée d'un AUTRE système (la loi brute
+avec transverses imposées). La pénalité 85-vs-57 n'est pas une tangente
+fausse : OFF est exact, et le gain du shadow (52→47) est la substitution
+d'une matrice d'un système différent, pas une correction de dérivée.
+
+### Test I — Tentative d'option MFront-native : le Schur dans la loi ne converge pas
+
+Suite du CdC étape 3 : un `@TangentOperator` custom dans
+`Fcc316LForestRubinSrixGps.mfront` (paramètre `CondensedTangent`) reconstruit
+la matrice de la loi brute (lignes transverses = cinématique complète),
+résout `A X = [I6; 0]`, tourne les colonnes en global et retourne le Schur
+`C_aa − C_ab C_bb⁻¹ C_ba` — le tout dans le Newton local, sans shadow.
+Résultat : la tangente produite ne matche NI la FD (`46 %` d'erreur relative
+au point 96) NI C_sens (`41115` vs `42526`), et le run M20 ne converge pas
+(incrément 1). Le Schur du jacobian GPS régénéré diffère du Schur de la loi
+brute : le shadow évalue la loi brute avec le strain complet (transverses
+GPS), ce que le jacobian GPS (fermeture dans les lignes 2,4,5) ne reproduit
+pas. **L'option MFront-native du Schur est un échec documenté** : le paramètre
+`CondensedTangent` reste dans la loi (défaut 0, chemin OFF intact à 52 Newton
+M20 vérifié), mais la voie du CdC pour la production n'est pas praticable par
+cette construction — le shadow reste l'oracle de dérivée le plus proche de la
+référence, au prix de son intégration 3D.

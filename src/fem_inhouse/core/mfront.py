@@ -2361,6 +2361,19 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._maximum_iterations = int(maximum_local_iterations)
         self._relative_tolerance = float(local_relative_tolerance)
         self._absolute_tolerance = float(local_tolerance_mpa)
+        # The CondensedTangent flag of the law: when the behaviour was
+        # compiled with `@Parameter real condensedTangent = 1`, its
+        # @TangentOperator returns the exact plane-stress Schur of the raw
+        # law (computed inside the local Newton) instead of the DSL tangent
+        # projected by the in-plane operator. The bridge then skips the
+        # projection and the one-sided rotation: the returned tangent is
+        # already global and already the condensed block.
+        condensed_default = float(
+            self._mgis.getParameterDefaultValue(self._behaviour, "CondensedTangent")
+        )
+        self._condensed_tangent = condensed_default > 0.0
+        if self._condensed_tangent:
+            self._parameters.setdefault("CondensedTangent", 1.0)
         if local_transverse_predictor not in {"committed", "tangent"}:
             raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
         self._local_transverse_predictor = local_transverse_predictor
@@ -3207,10 +3220,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             :, self._elastic_offset : self._elastic_offset + 6
         ].copy()
         tangent = np.asarray(self._manager.K).copy()
-        # Output rotations: stress and elastic strain back to the global frame,
-        # the tangent one-sided (its strain indices already are global), then
-        # the in-plane operator correction.
-        tangent = tangent @ in_plane_operator
+        # Output rotations: stress and elastic strain back to the global frame
+        # ALWAYS (the law returns them in the material frame). The tangent is
+        # rotated one-sided (its strain indices already are global) and
+        # post-multiplied by the in-plane operator ONLY in the default mode:
+        # with the law's CondensedTangent flag set, the returned tangent IS
+        # the global plane-stress Schur of the raw law, computed inside the
+        # local Newton -- no projection, no rotation, the in-plane block is
+        # taken as is below.
         if self._mgis_rotations is not None:
             for tensor in (stress, elastic):
                 flat = np.ascontiguousarray(tensor.reshape(-1))
@@ -3218,15 +3235,20 @@ class MFrontNativeGeneralisedPlaneStressBatch:
                     flat, self._behaviour, self._mgis_rotations
                 )
                 tensor[:, :] = flat.reshape(self._point_count, 6)
-            for column in range(6):
-                flat = np.ascontiguousarray(tangent[:, :, column].reshape(-1))
-                self._mgis.rotateThermodynamicForces(
-                    flat, self._behaviour, self._mgis_rotations
-                )
-                tangent[:, :, column] = flat.reshape(self._point_count, 6)
+        if not self._condensed_tangent:
+            tangent = tangent @ in_plane_operator
+            if self._mgis_rotations is not None:
+                for column in range(6):
+                    flat = np.ascontiguousarray(tangent[:, :, column].reshape(-1))
+                    self._mgis.rotateThermodynamicForces(
+                        flat, self._behaviour, self._mgis_rotations
+                    )
+                    tangent[:, :, column] = flat.reshape(self._point_count, 6)
         shadow_tangent_engineering = self._shadow_condensed_tangent(
             in_plane, internal_state_variables, time_increment
         )
+        if self._condensed_tangent:
+            shadow_tangent_engineering = None
         # Global total strain: read straight off the gradient, which now
         # carries the transverse strain too. There is no reconstruction from
         # the closure state variables any more, and with it goes the

@@ -83,6 +83,27 @@ R.setEntryName("SrixOverstressModulus");
 @Parameter strain deqeps = 1.e-14;
 deqeps.setEntryName("MinimumEquivalentStrainIncrement");
 
+/*!
+ * Exact plane-stress Schur as the returned tangent, computed INSIDE the
+ * local Newton -- no shadow, no second integration.
+ *
+ * The DSL's default consistent tangent is `Dt = D_tdt * Je` with
+ * `Je = ddeel/ddeto` under the standard assumption `dF/ddeto = -I` on all
+ * six rows of `feel`. This law violates that assumption: its transverse
+ * rows (2, 4, 5) carry the closure `sigma_b = 0` and do not see `deto` at
+ * all, so the default tangent differs from the reference condensation Schur
+ * by ~3e-3 at the responsible points (measured, 2026-08-08). When this
+ * parameter is true, the `@TangentOperator` below rebuilds the RAW-law
+ * jacobian (transverse rows = full transverse kinematics, which DO depend
+ * on `dg`), solves the sensitivity `A_brute X = [I6; 0]`, rotates the 3D
+ * tangent to the global frame and returns the Schur complement
+ * `C_aa - C_ab C_bb^-1 C_ba` -- exactly the operator the reference
+ * condensation produces, at the cost of one extra 18x18 factorisation per
+ * evaluation instead of a full 3D integration.
+ */
+@Parameter real condensedTangent = 0.;
+condensedTangent.setEntryName("CondensedTangent");
+
 //! Global-to-material rotation, nine components, per material point.
 @MaterialProperty real Q11;
 Q11.setEntryName("Q11");
@@ -364,5 +385,159 @@ localIterations.setEntryName("LocalIterations");
     const auto da =  //
         (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
     a[i] += da;
+  }
+}
+
+@TangentOperator{
+  using namespace tfel::math;
+  using size_type = unsigned short;
+  constexpr auto system_size = 18u;  // 6 elastic + 12 slips
+  if((smt==ELASTIC)||(smt==SECANTOPERATOR)){
+    this->Dt = this->D_tdt;
+  } else if (smt==CONSISTENTTANGENTOPERATOR){
+    if(!this->condensedTangent){
+      // Default DSL consistent tangent: Dt = D_tdt * ddeel/ddeto, assuming
+      // dF/ddeto = -I on ALL six rows of feel. The GPS closure violates that
+      // on the transverse rows (they carry sigma_b = 0 and do not see deto),
+      // which is the measured ~3e-3 difference against the reference Schur.
+      Stensor4 Je;
+      getPartialJacobianInvert(Je);
+      this->Dt = (this->D_tdt)*Je;
+    } else {
+      // Exact plane-stress Schur inside the local Newton, no shadow.
+      //
+      // The DSL has ALREADY factorised `this->jacobian` (decomp) before this
+      // block runs, so it holds the LU of the last Newton iteration, not the
+      // system matrix. Regenerate the system matrix from the converged
+      // unknowns with `computeFdF(false)` -- it fills `this->jacobian` with
+      // the declared derivatives at the current state -- and preserve
+      // `fzeros` across the call (computeFdF rewrites it; the residual is not
+      // needed here but must not be corrupted for the caller).
+      //
+      // Then rebuild the RAW-law matrix: the three transverse rows (2, 4, 5)
+      // of the elastic block are replaced by the full transverse kinematics
+      // of the unconstrained law -- dfeel_b/ddeel = gpsRotT[j]_b,
+      // dfeel_b/ddg = gpsRotM[i]_b -- instead of the closure rows. Everything
+      // else (in-plane rows, slips) is identical to the converged system
+      // matrix.
+      tvector<system_size, real> saved_fzeros;
+      for(size_type i = 0; i != system_size; ++i){
+        saved_fzeros(i) = this->fzeros(i);
+      }
+      // computeFdF evaluates the integrator body against `sig` and `deto`,
+      // which it does not recompute itself (computeResidual calls
+      // computeThermodynamicForces first). At the converged state `sig` is
+      // right, but `deto` still carries the PREDICTED transverse strain: the
+      // closure rows of the jacobian would then be evaluated away from the
+      // converged closure, which is exactly the difference between the GPS
+      // system and the reference Schur (measured ~3e-3). Impose the closure
+      // SOLUTION's transverse total strain -- eel + sum(g m) in the global
+      // frame, the same quantity @UpdateAuxiliaryStateVariables writes into
+      // ezz/eyz/exz -- for the regeneration, then restore deto.
+      const auto& ss_tangent = Fcc316LForestRubinSrixGpsSlipSystems<real>::getSlipSystems();
+      auto gps_total = this->eel;
+      for(size_type i = 0; i != Nss; ++i){
+        gps_total += this->g[i] * ss_tangent.mus[i];
+      }
+      const auto gps_total_global = gpsRotate(
+          gps_total, this->Q11, this->Q21, this->Q31, this->Q12, this->Q22,
+          this->Q32, this->Q13, this->Q23, this->Q33);
+      Stensor saved_deto = this->deto;
+      this->deto(2) = gps_total_global(2);
+      this->deto(4) = gps_total_global(4);
+      this->deto(5) = gps_total_global(5);
+      this->computeThermodynamicForces();
+      this->computeFdF(false);
+      tmatrix<system_size, system_size, real> A = this->jacobian;
+      for(size_type i = 0; i != system_size; ++i){
+        this->fzeros(i) = saved_fzeros(i);
+      }
+      this->deto = saved_deto;
+      for(size_type j = 0; j != 6u; ++j){
+        A(2, j) = this->gpsRotT[j](2);
+        A(4, j) = this->gpsRotT[j](4);
+        A(5, j) = this->gpsRotT[j](5);
+      }
+      for(size_type i = 0; i != 12u; ++i){
+        A(2, 6u + i) = this->gpsRotM[i](2);
+        A(4, 6u + i) = this->gpsRotM[i](4);
+        A(5, 6u + i) = this->gpsRotM[i](5);
+      }
+      TinyPermutation<system_size> permutation;
+      if(!TinyMatrixSolve<system_size, real, false>::decomp(A, permutation)){
+        return false;
+      }
+      // Sensitivity X = d(deel, dg)/ddeto for the six imposed strain columns:
+      // A X = [I6; 0]. The tangent is then D_tdt * X[:6, :] (stress depends on
+      // deel only), and its COLUMNS are rotated material -> global with the
+      // same one-sided rotation the bridge applies to the returned tangent.
+      const auto q00 = Q11, q01 = Q12, q02 = Q13;
+      const auto q10 = Q21, q11 = Q22, q12 = Q23;
+      const auto q20 = Q31, q21 = Q32, q22 = Q33;
+      tmatrix<6u, 6u, real> C3d_global(real(0));
+      for(size_type k = 0; k != 6u; ++k){
+        tvector<system_size, real> rhs(real(0));
+        rhs(k) = real(1);
+        if(!TinyMatrixSolve<system_size, real, false>::back_substitute(
+               A, permutation, rhs)){
+          return false;
+        }
+        Stensor col_mat(real(0));
+        for(size_type i = 0; i != 6u; ++i){
+          for(size_type j = 0; j != 6u; ++j){
+            col_mat(i) += this->D_tdt(i, j) * rhs(j);
+          }
+        }
+        const auto col_glob = gpsRotate(
+            col_mat, q00, q10, q20, q01, q11, q21, q02, q12, q22);
+        for(size_type i = 0; i != 6u; ++i){
+          C3d_global(i, k) = col_glob(i);
+        }
+      }
+      // Schur complement in the GLOBAL frame: C_ps = C_aa - C_ab C_bb^-1 C_ba
+      // with a = in-plane (0, 1, 3), b = transverse (2, 4, 5), Kelvin storage.
+      constexpr unsigned short ia[3] = {0u, 1u, 3u};
+      constexpr unsigned short ib[3] = {2u, 4u, 5u};
+      tmatrix<3u, 3u, real> Caa, Cab, Cba, Cbb;
+      for(size_type i = 0; i != 3u; ++i){
+        for(size_type j = 0; j != 3u; ++j){
+          Caa(i, j) = C3d_global(ia[i], ia[j]);
+          Cab(i, j) = C3d_global(ia[i], ib[j]);
+          Cba(i, j) = C3d_global(ib[i], ia[j]);
+          Cbb(i, j) = C3d_global(ib[i], ib[j]);
+        }
+      }
+      TinyPermutation<3u> permutation3;
+      if(!TinyMatrixSolve<3u, real, false>::decomp(Cbb, permutation3)){
+        return false;
+      }
+      tmatrix<3u, 3u, real> Cps;
+      for(size_type k = 0; k != 3u; ++k){
+        tvector<3u, real> rhs(real(0));
+        for(size_type i = 0; i != 3u; ++i){
+          rhs(i) = Cba(i, k);
+        }
+        if(!TinyMatrixSolve<3u, real, false>::back_substitute(
+               Cbb, permutation3, rhs)){
+          return false;
+        }
+        for(size_type i = 0; i != 3u; ++i){
+          Cps(i, k) = Caa(i, k);
+          for(size_type j = 0; j != 3u; ++j){
+            Cps(i, k) -= Cab(i, j) * rhs(j);
+          }
+        }
+      }
+      // The returned tangent is the in-plane block of the global Schur; the
+      // bridge converts Kelvin -> engineering as it does for the reference.
+      this->Dt = Stensor4(real(0));
+      for(size_type i = 0; i != 3u; ++i){
+        for(size_type j = 0; j != 3u; ++j){
+          this->Dt(ia[i], ia[j]) = Cps(i, j);
+        }
+      }
+    }
+  } else {
+    return false;
   }
 }
