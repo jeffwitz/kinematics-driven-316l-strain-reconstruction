@@ -56,6 +56,8 @@ tet2_newton_gmres
 srix_production_choice
 srix_meric_p43_slip_system_comparison
 srix_p43_performance_and_step_control
+srix_monolithic_plane_stress_architecture
+umat_gps_handoff_2026-08-07
 ebi_variational_formulation
 ebi_srix_falsification
 constrained_dic_extension
