@@ -1,0 +1,59 @@
+{
+  "configuration": {
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "increments": 8,
+    "mfront_threads": 4
+  },
+  "schema_version": 1,
+  "variants": [
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 52.577418764005415,
+      "log": "validation/_generated/performance/substepping_path_fixed_m100/mfront_3d_condensed_plane_stress.log",
+      "material_seconds": 42.6571031290805,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress",
+      "wall_seconds": 54.17512009001803
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 53.230560163006885,
+      "log": "validation/_generated/performance/substepping_path_fixed_m100/mfront_3d_condensed_plane_stress_tol_1e_10.log",
+      "material_seconds": 43.29454475201783,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress-tol-1e-10",
+      "wall_seconds": 54.68058470400865
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 53.750452122010756,
+      "log": "validation/_generated/performance/substepping_path_fixed_m100/mfront_3d_condensed_plane_stress_tol_1e_12.log",
+      "material_seconds": 43.646175494999625,
+      "newton_iterations": 57,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-3d-condensed-plane-stress-tol-1e-12",
+      "wall_seconds": 55.227032205002615
+    },
+    {
+      "accepted_increments": 8,
+      "elapsed_seconds": 61.3916694750078,
+      "log": "validation/_generated/performance/substepping_path_fixed_m100/mfront_native_generalised_plane_stress.log",
+      "material_seconds": 43.71519710001303,
+      "newton_iterations": 85,
+      "return_code": 0,
+      "status": "completed",
+      "variant": "mfront-native-generalised-plane-stress",
+      "wall_seconds": 62.85316651800531
+    }
+  ]
+}

@@ -230,6 +230,56 @@ locales, ni le recalcul de constantes ne l'expliquent. Détail complet dans
 `docs/explanation/spectral_mechanics/umat_gps_handoff_2026-08-07.md`, §8.8 à
 §8.18.
 
+### 2026-08-08 — Pénalité 85 vs 57 à M100 : les hypothèses locales sont toutes éliminées
+
+Cinq commits (`f18e89a` → `f83a19b`) contre la pénalité d'itérations globales
+qui retient le backend GPS UMAT à parité de temps mais pas de Newton. **Chaque
+hypothèse locale a été réfutée ou acquittée ; le mécanisme restant est un écart
+de taux de convergence aux états profonds.**
+
+- **Tangente réfutée** (`f18e89a`) : sur 40 états réels de la campagne M100
+  archivée (déformation par élément du champ de déplacement, orientations EBSD
+  du crop), les tangentes UMAT et référence sont identiques à `1e-16`. L'écart
+  FD de 6–30 % mesuré précédemment est un artefact du sous-pas : la réponse
+  sous-passée n'est pas lisse à l'échelle de la sonde (rapport 0,05 à 0,21
+  entre perturbations `1e-6` et `1e-4`).
+- **Chemin de sous-pas acquitté** (`ba6c861`) : nouveau backend
+  `mfront-3d-condensed-plane-stress-halved` qui force la référence condensée
+  dans le même chemin deux-moitiés que le sous-pas GPS (loi et tangente
+  intactes). 20×20 : référence 46 | halved 46 | GPS 52. M100 : référence 57 |
+  halved 57 | GPS 85.
+- **Divergence dès la première évaluation** (`ae1064e`) : sur 20×20, évaluation
+  1 de l'incrément 1 — avant tout sous-pas — les contraintes diffèrent déjà de
+  `4,4e-7 MPa` (`2,7e-9` relatif), états internes à `1e-12`. Cas A du cadre de
+  divergence : différence d'évaluation à états committés identiques. Suspect :
+  l'écart de tolérance de fermeture (référence `1e-8 MPa`, GPS ~`1e-14`).
+- **Tolérance de fermeture et epsilon éliminés** (`1df14a6`) : référence
+  resserrée à `1e-10` et `1e-12` → 57 Newton inchangé ; loi GPS remise à
+  `@Epsilon 1.e-14` (comme le SRIX brut) → 85 inchangé. Les historiques de
+  résidu montrent le mécanisme : aux incréments profonds (5–8), les quatre
+  premières itérations sont identiques, puis le GPS converge **linéairement**
+  (résidu ×0,2 par itération, 11 itérations pour `3e-9`) contre **quadratique**
+  pour la référence (×0,05, 7 itérations pour `7,6e-11`). La pénalité est un
+  écart de taux de convergence aux états profonds, pas une différence de
+  formulation locale.
+- **Le wrapper halved était cassé, le test corrigé acquitte** (`f83a19b`) : le
+  `UniformlyHalvedReference` appliquait `fraction × déformation totale` — avec
+  le contrat en absolu, cela renvoyait le matériau **en arrière** (à
+  l'incrément 5 de 8 : `5/16` au lieu de `9/16` de `eps_f`) et restaurait
+  l'état committé avant le commit du solveur, jetant l'évolution sous-passée.
+  Le 57 = 57 de `ba6c861` était donc **vacant**. Corrigé : interpolation
+  `eps0 + α(eps1 − eps0)` et ré-instauration de l'état final sous-passé au
+  commit. M100 corrigé : référence directe 57 | référence vraiment sous-passée
+  57 | GPS 85. Le chemin de sous-pas — et la structure de tangente du dernier
+  sous-pas qu'il partage avec la référence halvée — sont acquittés par un test
+  valide.
+
+**Suspects restants** : la gestion trial/état du GPS (cas C du cadre de
+divergence) et les différences de solution locale aux points sous-passés —
+seules hypothèses qui survivent à l'échelon local. Artefacts de campagne dans
+`validation/_generated/performance/` (résumés commités, répertoires de champs
+commités le 2026-08-08).
+
 ### 2026-08-07 — UMAT GPS : la fermeture marche, la qualification échoue sur les racines multiples de la loi
 
 La voie « fermeture dans l'UMat » (Q en 9 propriétés matériau, loi
