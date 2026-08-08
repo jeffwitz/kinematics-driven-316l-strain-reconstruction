@@ -280,6 +280,29 @@ seules hypothèses qui survivent à l'échelon local. Artefacts de campagne dans
 `validation/_generated/performance/` (résumés commités, répertoires de champs
 commités le 2026-08-08).
 
+### 2026-08-08 — Convention du wrapper halvéd corrigée ; le verdict 57 = 57 tient
+
+Le `UniformlyHalvedReference` interpolait `eps0` depuis
+`manager.s0.gradients[:, [0, 1, 3]]` — du **Kelvin dans le repère cristal**
+(le pont 3D tourne les déformations globales vers le cristal avant
+l'intégration, `commit()` = `mgis.update` s1→s0) — avec `eps1 =
+in_plane_strain` en **ingénieur dans le repère global**. Le mélange
+corrompait le cisaillement (facteur `√2` entre Kelvin et ingénieur) dès
+l'incrément 2, et toutes les composantes sous orientation EBSD quelconque.
+Le wrapper tenait donc sa propre comptabilité depuis le premier commit, la
+correction est triviale : `_committed_in_plane_engineering` (ingénieur,
+global, zéro initial, mise à jour au `commit()` avec la dernière demande,
+incluse dans snapshot/revert), sans plus jamais lire le manager.
+
+Vérification M100 (mêmes flags que `reference_halved_fixed_m100`, env TFEL
+sourcé) : **57 Newton — identique au run à la convention mélangée.** La
+pénalité 85 vs 57 n'est donc pas un artefact du wrapper : référence directe
+57 | référence vraiment sous-passée 57 | GPS 85, acquittement du chemin de
+sous-pas confirmé sur une base saine. La leçon, déjà rencontrée ailleurs :
+ne jamais mélanger les conventions de stockage (Kelvin vs ingénieur, global
+vs cristal) dans une interpolation — le wrapper de test doit parler la
+convention de son interface, pas celle du manager MGIS.
+
 ### 2026-08-07 — UMAT GPS : la fermeture marche, la qualification échoue sur les racines multiples de la loi
 
 La voie « fermeture dans l'UMat » (Q en 9 propriétés matériau, loi

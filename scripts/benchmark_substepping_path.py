@@ -56,6 +56,13 @@ class UniformlyHalvedReference:
     re-instated on commit, so the solver's commit() really advances the
     committed state to the end of the sub-stepped path, and revert() returns
     to the state before the evaluation.
+
+    The wrapper keeps its own committed-total bookkeeping in the convention of
+    its interface -- engineering ``[e11, e22, gamma12]`` in the global frame --
+    and never reads it from the manager: ``s0.gradients`` is Kelvin and, with
+    EBSD rotations, in the crystal frame, so mixing it with the engineering
+    input would corrupt the interpolation (shear scaled by sqrt(2), and every
+    component rotated) from the second increment on.
     """
 
     def __init__(self, inner: object, divisions: int = 2) -> None:
@@ -64,6 +71,8 @@ class UniformlyHalvedReference:
         self._snapshot = None
         self._final_state = None
         self._trial = None
+        self._committed_in_plane_engineering = np.zeros((inner.point_count, 3), dtype=float)
+        self._last_requested_engineering: np.ndarray | None = None
 
     def _manager(self) -> object | None:
         inner = self._inner
@@ -72,14 +81,6 @@ class UniformlyHalvedReference:
             bridge = getattr(inner, "_bridge", None)
             manager = getattr(bridge, "_manager", None)
         return manager
-
-    def _committed_in_plane(self) -> np.ndarray:
-        """The committed total in-plane strain (Kelvin), from the manager."""
-
-        manager = self._manager()
-        if manager is None:
-            return np.zeros((self._inner.point_count, 3))
-        return np.asarray(manager.s0.gradients)[:, [0, 1, 3]].copy()
 
     def _capture_s1(self) -> tuple[np.ndarray, ...]:
         manager = self._manager()
@@ -103,7 +104,8 @@ class UniformlyHalvedReference:
         consistent_tangent: bool = True,
     ) -> object:
         eps1 = np.asarray(in_plane_strain, dtype=float)
-        eps0 = self._committed_in_plane()
+        eps0 = self._committed_in_plane_engineering
+        self._last_requested_engineering = eps1.copy()
         snapshot = self._inner.snapshot_state()
         trial = None
         for step in range(1, self._divisions + 1):
@@ -128,13 +130,17 @@ class UniformlyHalvedReference:
         if self._final_state is not None:
             self._restore_s1(self._final_state)
         self._inner.commit()
+        if self._last_requested_engineering is not None:
+            self._committed_in_plane_engineering = self._last_requested_engineering.copy()
         self._snapshot = None
         self._final_state = None
+        self._last_requested_engineering = None
 
     def revert(self) -> None:
         if self._snapshot is not None:
             self._inner.restore_state(self._snapshot)
         self._final_state = None
+        self._last_requested_engineering = None
 
     @property
     def point_count(self) -> int:
