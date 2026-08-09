@@ -113,3 +113,43 @@ globalK.setEntryName("StructuralTotalStrain");
     this->globalK[i] = global_total(i);
   }
 };
+
+@TangentOperator {
+  using namespace tfel::math;
+  constexpr ushort active_columns[3] = {0, 1, 3};
+  constexpr auto Gref = real(210000.);
+  // The generated Newton solver may have factorised jacobian already.
+  // Rebuild the actual GPS residual/Jacobian at the converged state.
+  this->computeThermodynamicForces();
+  this->computeFdF(false);
+  const auto raw_A = this->jacobian;
+  auto A = raw_A;
+  TinyPermutation<StensorSize> permutation;
+  if (!TinyMatrixSolve<StensorSize, real, false>::decomp(A, permutation)) {
+    return false;
+  }
+  this->Dt = Stensor4(real(0));
+  for (ushort column = 0; column != 3; ++column) {
+    tvector<StensorSize, real> rhs(real(0));
+    rhs(active_columns[column]) = 1;
+    if (!TinyMatrixSolve<StensorSize, real, false>::back_substitute(
+            A, permutation, rhs)) {
+      return false;
+    }
+    auto stress_material = Stensor(real(0));
+    for (ushort i = 0; i != StensorSize; ++i) {
+      for (ushort j = 0; j != StensorSize; ++j) {
+        stress_material(i) += this->D_tdt(i, j) * rhs(j);
+      }
+    }
+    const auto stress_global = rotate(stress_material);
+    for (ushort i = 0; i != StensorSize; ++i) {
+      this->Dt(i, active_columns[column]) = stress_global(i);
+    }
+  }
+  // computeFdF evaluates the residual at the current Newton variables and
+  // leaves the trial thermodynamic force in that temporary form. Restore the
+  // committed final stress before MGIS returns the result.
+  this->computeFinalThermodynamicForces();
+  static_cast<void>(Gref);
+};

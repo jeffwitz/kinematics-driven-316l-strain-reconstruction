@@ -5297,5 +5297,9 @@ probe is now available at
 error. It uses the repository Bunge convention `Q=global_to_material`,
 `T=Q.T`, and leaves `deto` unrotated. The earlier `0c12ac7` fixed matrix and
 rotated-gradient result is historical hook evidence only, not the physical
-rotation proof. The corrected probe still does not qualify per-point
-orientation properties, a condensed tangent, J2, SRIX or Méric.
+rotation proof. The corrected probe now also reconstructs its converged
+Jacobian and returns `T D X_e`; its live Schur comparison is `6.95e-16` and
+central-FD errors for steps `1e-5,1e-6,1e-7` are approximately
+`1.77e-14,4.78e-13,5.50e-12`. Its six auxiliary strain entries are located
+from MGIS metadata. This qualifies only the rotated elastic probe, not yet
+per-point orientation properties, J2, SRIX or Méric.

@@ -174,15 +174,40 @@ transverse traction `2.3e-14`, and the reconstructed structural total strain
 matches the imposed in-plane strain with maximum error `4.9e-19`.
 
 This is now a valid rotated elastic closure probe. The rotation is still fixed
-in the probe; per-point orientation properties and a consistent condensed
-tangent remain to be implemented and qualified. The earlier `0c12ac7` probe
-used a non-orthogonal test matrix and rotated `deto`; it remains in history as
-a hook experiment but must not be cited as the physical rotated-closure proof.
+in the probe; per-point orientation properties remain to be implemented and
+qualified. The earlier `0c12ac7` probe used a non-orthogonal test matrix and
+rotated `deto`; it remains in history as a hook experiment but must not be
+cited as the physical rotated-closure proof.
 
 The generated header is intentionally placed in a temporary build directory;
 no generated probe library is versioned.
 
-## 4. `StandardElasticity` and the proposed `feel` oracle
+## 4. Elastic tangent proof
+
+The rotated probe now reconstructs the converged GPS Jacobian, solves `A X =
+P` with only global in-plane columns `(0, 1, 3)`, and returns `T D X_e` as a
+complete six-by-six tangent with inactive columns set to zero. The tangent
+code restores the final thermodynamic force after rebuilding the Jacobian;
+otherwise the diagnostic `computeFdF(false)` evaluation would leave a
+temporary Newton stress in the MGIS output.
+
+The script independently constructs the rotated anisotropic elastic stiffness,
+forms the three-by-three Schur complement, and checks central finite
+differences at `h = 1e-5, 1e-6, 1e-7`:
+
+```text
+GPS versus Schur relative error       6.95e-16
+GPS versus FD relative errors          1.77e-14, 4.78e-13, 5.50e-12
+maximum inactive tangent column        0
+maximum transverse tangent row         7.69e-11
+```
+
+The six auxiliary-strain entries are located from MGIS variable metadata in
+the test script; no fixed internal-state offset is used. This validates the
+elastic rotated tangent mechanism, but not yet a law with additional implicit
+unknowns. J2 is the next required generality test.
+
+## 5. `StandardElasticity` and the proposed `feel` oracle
 
 The installed `StandardElasticity` documentation confirms that the brick is
 built on the `Hooke` stress potential and that the implicit integrator exposes
@@ -210,7 +235,7 @@ generic implementation foundation. It should first be tested on a deliberately
 small behaviour whose residual blocks are explicitly named or registered by an
 adapter contract.
 
-## 5. Multiple bricks and `@Import`
+## 6. Multiple bricks and `@Import`
 
 The parser supports multiple registered bricks through the DSL's internal brick
 collection, and `@Import` includes external MFront files sequentially through
@@ -228,7 +253,7 @@ an already-generated behaviour's Newton equations. SRIX deduplication through
 `@Import` is therefore a separate, controlled refactor and should not be
 coupled to the first plugin feasibility test.
 
-## 6. Structural rotation and tangent implications
+## 7. Structural rotation and tangent implications
 
 The proposed structural closure is compatible with the existing convention:
 the host supplies an unrotated structural/global strain, while the closure
@@ -243,7 +268,7 @@ blocks, but it does not provide a generic row-replacement operation. A first
 prototype must therefore make the row convention explicit and test it against
 the existing raw 3D Schur oracle before any claim of generality.
 
-## 7. Recommended implementation order
+## 8. Recommended implementation order
 
 1. Keep the failed external probe as a regression artifact and decide whether
    exporting the brick base classes is acceptable upstream.
