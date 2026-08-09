@@ -84,20 +84,26 @@ R.setEntryName("SrixOverstressModulus");
 deqeps.setEntryName("MinimumEquivalentStrainIncrement");
 
 /*!
- * Exact plane-stress Schur as the returned tangent, computed INSIDE the
- * local Newton -- no shadow, no second integration.
+ * Optional plane-stress Schur sensitivity reconstruction inside the local
+ * Newton -- no shadow, no second integration. The standard one-step GPS
+ * tangent is consistent once differentiated with respect to the actual
+ * in-plane imposed gradient; this option is an alternative/diagnostic
+ * construction, not a repair of an intrinsic one-step tangent defect.
  *
  * The DSL's default consistent tangent is `Dt = D_tdt * Je` with
  * `Je = ddeel/ddeto` under the standard assumption `dF/ddeto = -I` on all
- * six rows of `feel`. The transverse GPS rows do not use that default
- * dependence, so a dedicated sensitivity reconstruction is required. When
- * this parameter is true, the `@TangentOperator` below rebuilds the RAW-law
+ * six rows of `feel`. When this parameter is true, the `@TangentOperator`
+ * below rebuilds the RAW-law
  * jacobian (transverse rows = full transverse kinematics, which DO depend
  * on `dg`), solves the sensitivity `A_brute X = [I6; 0]`, rotates the 3D
  * tangent to the global frame and returns the Schur complement
  * `C_aa - C_ab C_bb^-1 C_ba` -- exactly the operator the reference
  * condensation produces, at the cost of one extra 18x18 factorisation per
  * evaluation instead of a full 3D integration.
+ *
+ * Historical note: an earlier same-state comparison reported a 3e-3
+ * discrepancy. Corrected snapshot transplantation invalidated that result;
+ * it was a diagnostic-state error, not a constitutive GPS/Schur mismatch.
  */
 @Parameter real condensedTangent = 0.;
 condensedTangent.setEntryName("CondensedTangent");
@@ -394,10 +400,11 @@ localIterations.setEntryName("LocalIterations");
     this->Dt = this->D_tdt;
   } else if (smt==CONSISTENTTANGENTOPERATOR){
     if(!this->condensedTangent){
-      // Default DSL consistent tangent: Dt = D_tdt * ddeel/ddeto, assuming
-      // dF/ddeto = -I on ALL six rows of feel. The GPS closure changes that
-      // dependence on the transverse rows, so use the dedicated sensitivity
-      // reconstruction below instead of applying the default formula.
+      // Standard one-step GPS tangent. It is differentiated with respect to
+      // the actual in-plane imposed gradient by the host-side GPS contract.
+      // The CondensedTangent branch below is retained as an alternative
+      // sensitivity construction and diagnostic, not as a repair of an
+      // intrinsic one-step tangent defect.
       Stensor4 Je;
       getPartialJacobianInvert(Je);
       this->Dt = (this->D_tdt)*Je;
