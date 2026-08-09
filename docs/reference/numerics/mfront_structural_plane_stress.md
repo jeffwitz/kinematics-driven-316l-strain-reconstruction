@@ -538,11 +538,15 @@ The point-material evidence is:
 | SRIX | \(9.30\times10^{-15}\) MPa | \(1.74\times10^{-18}\) | FD \(2.48\times10^{-10}\) at \(h=10^{-7}\) | crystal plasticity closure and one-step tangent |
 | Méric--Cailletaud | \(6.77\times10^{-15}\) MPa | \(1.42\times10^{-19}\) | FD \(3.97\times10^{-15}\) to \(2.45\times10^{-13}\) over the tested \(h\) range | second implicit crystal law, same closure code |
 
-The generic SRIX and Méric one-step tangents have been checked by finite
-differences. A dedicated, archived same-state comparison of those two generic
-variants against a live raw-3D Schur oracle is not yet available; the Schur
-identity is therefore a required next validation artifact, not a claim made by
-this table.
+The generic SRIX and Méric one-step tangents have now also been compared at
+the same committed state, orientation, increment and constitutive branch
+against a live raw-3D condensation oracle. The maximum relative errors are
+`6.23e-13` for SRIX and `1.66e-11` for Méric--Cailletaud across six successive
+material-point states. The complete protocol and report are archived in
+`validation/structural_plane_stress_same_state_schur.md` and
+`validation/_generated/performance/structural_plane_stress_same_state_schur.json`.
+This closes the one-step Schur qualification; host substepping and its
+composite tangent remain separate driver-level algorithms.
 
 The P43 M100 single-run comparison used the same EBSD crop, eight increments,
 four MFront threads, one BLAS thread and one FFTW thread:

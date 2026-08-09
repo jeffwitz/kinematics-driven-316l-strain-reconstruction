@@ -14,18 +14,20 @@ python_bin="$repo_root/.venv/bin/python"
 STRUCTURAL_BEHAVIOUR_NAME="$behaviour_name" "$python_bin" - "$source_mfront" "$generated_output" <<'PY'
 from pathlib import Path
 import sys
+import re
 
 source = Path(sys.argv[1]).read_text()
 target = Path(sys.argv[2])
 generated_behaviour = __import__("os").environ["STRUCTURAL_BEHAVIOUR_NAME"]
-if generated_behaviour != "Fcc316LForestRubinSrix":
-    source = source.replace("Fcc316LForestRubinSrix", generated_behaviour)
+behaviour_match = re.search(r"@Behaviour\s+([A-Za-z_]\w*)\s*;", source)
+if behaviour_match is None:
+    raise SystemExit("could not find the source @Behaviour declaration")
+source_behaviour = behaviour_match.group(1)
+# MFront derives the generated slip-system helper type from the behaviour
+# name. Rename the constitutive shell consistently, while leaving unrelated
+# identifiers untouched.
+source = source.replace(source_behaviour, generated_behaviour)
 slip_class = generated_behaviour + "SlipSystems"
-source = source.replace(
-    "@Behaviour Fcc316LForestRubinSrix;",
-    f"@Behaviour {generated_behaviour};",
-    1,
-)
 aux = r'''
 @MaterialProperty real Q11;
 @MaterialProperty real Q12;

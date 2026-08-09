@@ -1,0 +1,807 @@
+{
+  "protocol": "same committed state, same target, live raw 3-D Schur",
+  "history": [
+    [
+      2e-05,
+      -4e-06,
+      6e-06
+    ],
+    [
+      5e-05,
+      -1e-05,
+      1.5e-05
+    ],
+    [
+      0.0001,
+      -2e-05,
+      3e-05
+    ],
+    [
+      0.0002,
+      -4e-05,
+      6e-05
+    ],
+    [
+      0.0005,
+      -0.0001,
+      0.00015
+    ],
+    [
+      0.001,
+      -0.0002,
+      0.0003
+    ]
+  ],
+  "srix": {
+    "law": "srix",
+    "generic_behaviour": "Fcc316LForestRubinSrixStructuralPlaneStress",
+    "raw_behaviour": "Fcc316LForestRubinSrix",
+    "orientation_bunge_deg": [
+      35.0,
+      20.0,
+      15.0
+    ],
+    "states": [
+      {
+        "state_index": 0,
+        "target_in_plane_engineering": [
+          2e-05,
+          -4e-06,
+          6e-06
+        ],
+        "target_total_kelvin": [
+          2e-05,
+          -4e-06,
+          -9.554815148356306e-06,
+          4.242640687119285e-06,
+          -3.518398910398958e-06,
+          5.172629616887748e-06
+        ],
+        "time_increment": 1.0,
+        "same_state_differences": {
+          "gradient": 0.0,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 2.573680864876925e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 1,
+        "target_in_plane_engineering": [
+          5e-05,
+          -1e-05,
+          1.5e-05
+        ],
+        "target_total_kelvin": [
+          5e-05,
+          -1e-05,
+          -1.4332222722534445e-05,
+          1.0606601717798212e-05,
+          -5.277598365598449e-06,
+          7.758944425331618e-06
+        ],
+        "time_increment": 1.0,
+        "same_state_differences": {
+          "gradient": 2.541098841762901e-21,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 2.4707336302818485e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 2,
+        "target_in_plane_engineering": [
+          0.0001,
+          -2e-05,
+          3e-05
+        ],
+        "target_total_kelvin": [
+          0.0001,
+          -2e-05,
+          -2.3887037870890756e-05,
+          2.1213203435596424e-05,
+          -8.79599727599742e-06,
+          1.2931574042219377e-05
+        ],
+        "time_increment": 1.0,
+        "same_state_differences": {
+          "gradient": 1.3552527156068805e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 1.647155753521232e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 3,
+        "target_in_plane_engineering": [
+          0.0002,
+          -4e-05,
+          6e-05
+        ],
+        "target_total_kelvin": [
+          0.0002,
+          -4e-05,
+          -4.777407574178151e-05,
+          4.242640687119285e-05,
+          -1.7591994551994835e-05,
+          2.5863148084438747e-05
+        ],
+        "time_increment": 1.0,
+        "same_state_differences": {
+          "gradient": 2.710505431213761e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 3.294311507042464e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 4,
+        "target_in_plane_engineering": [
+          0.0005,
+          -0.0001,
+          0.00015
+        ],
+        "target_total_kelvin": [
+          0.0005,
+          -0.0001,
+          -0.00015682954987417634,
+          0.00010606601717798211,
+          -4.8612345329365765e-05,
+          9.122686965309092e-05
+        ],
+        "time_increment": 1.0,
+        "same_state_differences": {
+          "gradient": 5.421010862427522e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 7.212563939981943e-13,
+        "generic_vs_raw_schur_relative": 6.233246257110471e-13,
+        "generic_tangent_engineering": [
+          [
+            105579.83144733861,
+            -796.2522061970207,
+            -74.52335703092912
+          ],
+          [
+            3898.7485683086784,
+            216204.01532536684,
+            -24053.34872594351
+          ],
+          [
+            1106.1594450331204,
+            -24364.832338262197,
+            39375.30851918205
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            105579.83144747338,
+            -796.2522061804484,
+            -74.52335701795849
+          ],
+          [
+            3898.748568277486,
+            216204.01532535983,
+            -24053.348725948286
+          ],
+          [
+            1106.1594450395196,
+            -24364.832338263186,
+            39375.30851918169
+          ]
+        ]
+      },
+      {
+        "state_index": 5,
+        "target_in_plane_engineering": [
+          0.001,
+          -0.0002,
+          0.0003
+        ],
+        "target_total_kelvin": [
+          0.001,
+          -0.0002,
+          -0.0003580761850232406,
+          0.00021213203435596422,
+          -0.00011749480437953567,
+          0.00021320785855144243
+        ],
+        "time_increment": 1.0,
+        "same_state_differences": {
+          "gradient": 1.0842021724855044e-19,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 2.9669474600530457e-15,
+        "generic_vs_raw_schur_relative": 2.4366512223535827e-15,
+        "generic_tangent_engineering": [
+          [
+            37373.77446424802,
+            7288.7486033405685,
+            -6881.260669770646
+          ],
+          [
+            21296.873906030898,
+            200065.21888652554,
+            -16684.340736945665
+          ],
+          [
+            -7093.766732587068,
+            -17806.738950643325,
+            28530.90629973802
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            37373.774464248505,
+            7288.748603340515,
+            -6881.260669770531
+          ],
+          [
+            21296.873906030858,
+            200065.21888652554,
+            -16684.340736945636
+          ],
+          [
+            -7093.766732587202,
+            -17806.738950643376,
+            28530.906299737984
+          ]
+        ]
+      }
+    ],
+    "max_tangent_relative_error": 6.233246257110471e-13,
+    "max_stress_relative_error": 7.212563939981943e-13
+  },
+  "meric": {
+    "law": "meric",
+    "generic_behaviour": "Fcc316LMericCailletaudStructuralPlaneStress",
+    "raw_behaviour": "Fcc316LMericCailletaud",
+    "orientation_bunge_deg": [
+      35.0,
+      20.0,
+      15.0
+    ],
+    "states": [
+      {
+        "state_index": 0,
+        "target_in_plane_engineering": [
+          2e-05,
+          -4e-06,
+          6e-06
+        ],
+        "target_total_kelvin": [
+          2e-05,
+          -4e-06,
+          -9.554815148356306e-06,
+          4.242640687119285e-06,
+          -3.518398910398958e-06,
+          5.172629616887748e-06
+        ],
+        "time_increment": 0.001,
+        "same_state_differences": {
+          "gradient": 0.0,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 2.573680864876925e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 1,
+        "target_in_plane_engineering": [
+          5e-05,
+          -1e-05,
+          1.5e-05
+        ],
+        "target_total_kelvin": [
+          5e-05,
+          -1e-05,
+          -1.4332222722534445e-05,
+          1.0606601717798212e-05,
+          -5.277598365598449e-06,
+          7.758944425331618e-06
+        ],
+        "time_increment": 0.001,
+        "same_state_differences": {
+          "gradient": 2.541098841762901e-21,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 2.4707336302818485e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 2,
+        "target_in_plane_engineering": [
+          0.0001,
+          -2e-05,
+          3e-05
+        ],
+        "target_total_kelvin": [
+          0.0001,
+          -2e-05,
+          -2.3887037870890756e-05,
+          2.1213203435596424e-05,
+          -8.79599727599742e-06,
+          1.2931574042219377e-05
+        ],
+        "time_increment": 0.001,
+        "same_state_differences": {
+          "gradient": 1.3552527156068805e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 1.647155753521232e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 3,
+        "target_in_plane_engineering": [
+          0.0002,
+          -4e-05,
+          6e-05
+        ],
+        "target_total_kelvin": [
+          0.0002,
+          -4e-05,
+          -4.777407574178151e-05,
+          4.242640687119285e-05,
+          -1.7591994551994835e-05,
+          2.5863148084438747e-05
+        ],
+        "time_increment": 0.001,
+        "same_state_differences": {
+          "gradient": 2.710505431213761e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 3.294311507042464e-16,
+        "generic_vs_raw_schur_relative": 2.560956897826427e-16,
+        "generic_tangent_engineering": [
+          [
+            209846.96333383434,
+            -19702.222168309185,
+            6334.574288107391
+          ],
+          [
+            -19702.222168309145,
+            227288.71759954357,
+            -21593.10977157907
+          ],
+          [
+            6334.574288107388,
+            -21593.10977157904,
+            41834.3914095808
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            209846.9633338343,
+            -19702.222168309127,
+            6334.574288107406
+          ],
+          [
+            -19702.22216830912,
+            227288.71759954363,
+            -21593.109771579053
+          ],
+          [
+            6334.574288107415,
+            -21593.109771579046,
+            41834.39140958079
+          ]
+        ]
+      },
+      {
+        "state_index": 4,
+        "target_in_plane_engineering": [
+          0.0005,
+          -0.0001,
+          0.00015
+        ],
+        "target_total_kelvin": [
+          0.0005,
+          -0.0001,
+          -0.00014695093582108796,
+          0.00010606601717798211,
+          -5.2266543122902844e-05,
+          8.475682841120653e-05
+        ],
+        "time_increment": 0.001,
+        "same_state_differences": {
+          "gradient": 5.421010862427522e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 1.3920701810311566e-11,
+        "generic_vs_raw_schur_relative": 1.662559064973611e-11,
+        "generic_tangent_engineering": [
+          [
+            129547.01353244756,
+            12638.11754795178,
+            10050.149444365841
+          ],
+          [
+            12638.117540730167,
+            214134.43790950006,
+            -23160.26288853512
+          ],
+          [
+            10050.149440418518,
+            -23160.26288727947,
+            41623.80840670231
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            129547.01353600767,
+            12638.117546404406,
+            10050.149444139064
+          ],
+          [
+            12638.117539182756,
+            214134.43791010394,
+            -23160.262888474103
+          ],
+          [
+            10050.14944019176,
+            -23160.262887218472,
+            41623.80840669624
+          ]
+        ]
+      },
+      {
+        "state_index": 5,
+        "target_in_plane_engineering": [
+          0.001,
+          -0.0002,
+          0.0003
+        ],
+        "target_total_kelvin": [
+          0.001,
+          -0.0002,
+          -0.0003644085077883137,
+          0.00021213203435596422,
+          -8.186569772874376e-05,
+          0.0002358263909936019
+        ],
+        "time_increment": 0.001,
+        "same_state_differences": {
+          "gradient": 5.421010862427522e-20,
+          "committed_global_strain": 0.0,
+          "stress_material_frame": 0.0,
+          "equivalent_plastic_slip": 0.0,
+          "plastic_slip": 0.0,
+          "elastic_strain": 0.0,
+          "back_strain": 0.0
+        },
+        "generic_vs_raw_stress_relative": 2.3939026326846755e-12,
+        "generic_vs_raw_schur_relative": 3.1489797734173576e-12,
+        "generic_tangent_engineering": [
+          [
+            39330.767662063525,
+            24899.758042948943,
+            -5320.746556193751
+          ],
+          [
+            24899.753700130852,
+            181130.68686696666,
+            -23163.273523186675
+          ],
+          [
+            -5320.793755057218,
+            -23163.24578030974,
+            24454.655504032464
+          ]
+        ],
+        "raw_schur_engineering": [
+          [
+            39330.76766263199,
+            24899.758043260706,
+            -5320.746556091235
+          ],
+          [
+            24899.753700442627,
+            181130.68686753704,
+            -23163.273523053707
+          ],
+          [
+            -5320.793754954699,
+            -23163.245780176814,
+            24454.655504128437
+          ]
+        ]
+      }
+    ],
+    "max_tangent_relative_error": 1.662559064973611e-11,
+    "max_stress_relative_error": 1.3920701810311566e-11
+  }
+}
