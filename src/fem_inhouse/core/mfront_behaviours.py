@@ -7,7 +7,7 @@ from typing import Literal
 
 from fem_inhouse.core.linear_solver import LinearSystemMatrixType
 
-PlaneStressStrategy = Literal["native", "condensed_3d"]
+PlaneStressStrategy = Literal["native", "condensed_3d", "structural_plane_stress"]
 VariableKind = Literal["scalar", "vector", "symmetric_tensor", "tensor"]
 
 
@@ -43,6 +43,7 @@ class MFrontBehaviourSpec:
     native_plane_stress_behaviour: str | None
     tridimensional_behaviour: str | None
     material_properties: tuple[MFrontVariableSpec, ...]
+    structural_plane_stress_behaviour: str | None = None
     external_state_variables: tuple[MFrontVariableSpec, ...] = ()
     internal_state_variables: tuple[MFrontVariableSpec, ...] = ()
     linear_system_matrix_type: LinearSystemMatrixType = "nonsymmetric"
@@ -73,11 +74,12 @@ class MFrontBehaviourSpec:
                 raise ValueError("MFront variable bindings must be unique inside each group")
 
     def behaviour_name(self, strategy: PlaneStressStrategy) -> str:
-        value = (
-            self.native_plane_stress_behaviour
-            if strategy == "native"
-            else self.tridimensional_behaviour
-        )
+        if strategy == "native":
+            value = self.native_plane_stress_behaviour
+        elif strategy == "condensed_3d":
+            value = self.tridimensional_behaviour
+        else:
+            value = self.structural_plane_stress_behaviour
         if value is None:
             raise ValueError(
                 f"MFront behaviour {self.identifier!r} does not support {strategy!r}"
@@ -202,6 +204,7 @@ MFRONT_BEHAVIOURS.register(
         native_plane_stress_behaviour=None,
         tridimensional_behaviour="Fcc316LMericCailletaud",
         material_properties=(),
+        structural_plane_stress_behaviour="Fcc316LMericCailletaudStructuralPlaneStress",
         internal_state_variables=_fcc_internal(
             "ViscoplasticSlip", "EquivalentViscoplasticSlip"
         ),
@@ -218,6 +221,7 @@ MFRONT_BEHAVIOURS.register(
         native_plane_stress_behaviour=None,
         tridimensional_behaviour="Fcc316LForestRubinSrix",
         material_properties=(),
+        structural_plane_stress_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
         internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
         linear_system_matrix_type="nonsymmetric",
         requires_rotation_matrix=True,
@@ -253,6 +257,7 @@ MFRONT_BEHAVIOURS.register(
         native_plane_stress_behaviour=None,
         tridimensional_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
         material_properties=(),
+        structural_plane_stress_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
         internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
         linear_system_matrix_type="nonsymmetric",
         requires_rotation_matrix=True,
@@ -260,5 +265,22 @@ MFRONT_BEHAVIOURS.register(
         paired_material_family="fcc_316l_guilhem_nasri_v1",
         crystal_flow_rule="forest_rubin_srix",
         parameter_registry="srix",
+    )
+)
+MFRONT_BEHAVIOURS.register(
+    MFrontBehaviourSpec(
+        identifier="fcc_meric_cailletaud_structural_plane_stress",
+        native_plane_stress_behaviour=None,
+        tridimensional_behaviour="Fcc316LMericCailletaudStructuralPlaneStress",
+        material_properties=(),
+        structural_plane_stress_behaviour="Fcc316LMericCailletaudStructuralPlaneStress",
+        internal_state_variables=_fcc_internal(
+            "ViscoplasticSlip", "EquivalentViscoplasticSlip"
+        ),
+        linear_system_matrix_type="nonsymmetric",
+        requires_rotation_matrix=True,
+        bridge_profile="fcc_single_crystal_v1",
+        paired_material_family="fcc_316l_guilhem_nasri_v1",
+        crystal_flow_rule="meric_cailletaud",
     )
 )

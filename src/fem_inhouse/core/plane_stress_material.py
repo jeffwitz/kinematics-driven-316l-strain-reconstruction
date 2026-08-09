@@ -555,23 +555,29 @@ def _create_fcc_single_crystal_batch(
         "mfront-native-generalised-plane-stress",
         "mfront-structural-plane-stress",
     }:
-        # The GPS backend selects the UMAT-closure variant of the law, which
-        # carries the same parameter registry as the parent SRIX law.
-        if behaviour.identifier == "fcc_forest_rubin_srix":
+        # The structural backend selects the generated closure variant from
+        # the catalogue.  The host adapter is identical for SRIX and Méric;
+        # only the registered MFront behaviour changes.
+        if backend == "mfront-structural-plane-stress":
             from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
 
-            behaviour = MFRONT_BEHAVIOURS.get(
-                "fcc_forest_rubin_srix_gps"
-                if backend == "mfront-native-generalised-plane-stress"
-                else "fcc_forest_rubin_srix_structural_plane_stress"
-            )
+            structural_id = f"{behaviour.identifier}_structural_plane_stress"
+            behaviour = MFRONT_BEHAVIOURS.get(structural_id)
+        elif behaviour.identifier == "fcc_forest_rubin_srix":
+            from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
+
+            behaviour = MFRONT_BEHAVIOURS.get("fcc_forest_rubin_srix_gps")
         return MFrontNativeGeneralisedPlaneStressBatch(
             mfront_library,
             behaviour_spec=behaviour,
             point_count=point_count,
             rotation_global_to_material=provider.rotations_global_to_material(point_count),
             thread_count=mfront_threads,
-            behaviour_name=behaviour.behaviour_name("condensed_3d"),
+            behaviour_name=behaviour.behaviour_name(
+                "structural_plane_stress"
+                if backend == "mfront-structural-plane-stress"
+                else "condensed_3d"
+            ),
             behaviour_parameters=overrides,
             shadow_tangent=shadow_tangent,
             shadow_tangent_scope=shadow_tangent_scope,

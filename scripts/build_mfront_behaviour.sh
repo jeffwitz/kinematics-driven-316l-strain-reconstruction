@@ -15,6 +15,7 @@ behaviour_files=(
   "${repository_dir}/mfront/Fcc316LForestRubinSrixGps.mfront"
 )
 structural_behaviour_source="${build_dir}/Fcc316LForestRubinSrixStructuralPlaneStress.mfront"
+meric_structural_behaviour_source="${build_dir}/Fcc316LMericCailletaudStructuralPlaneStress.mfront"
 
 if [[ ! -f "${tfel_env_file}" ]]; then
   echo "TFEL environment file not found: ${tfel_env_file}" >&2
@@ -32,6 +33,14 @@ STRUCTURAL_BEHAVIOUR_NAME="Fcc316LForestRubinSrixStructuralPlaneStress" \
 STRUCTURAL_PLANE_STRESS_GENERATE_ONLY=1 \
 "${repository_dir}/scripts/probe_structural_plane_stress_srix.sh" >/dev/null
 behaviour_files+=("${structural_behaviour_source}")
+
+STRUCTURAL_PLANE_STRESS_OUTPUT="${meric_structural_behaviour_source}" \
+STRUCTURAL_BEHAVIOUR_NAME="Fcc316LMericCailletaudStructuralPlaneStress" \
+STRUCTURAL_PLANE_STRESS_GENERATE_ONLY=1 \
+"${repository_dir}/scripts/probe_structural_plane_stress_srix.sh" \
+  "${repository_dir}/mfront/Fcc316LMericCailletaud.mfront" \
+  "Fcc316LMericCailletaudStructuralPlaneStress" >/dev/null
+behaviour_files+=("${meric_structural_behaviour_source}")
 
 mkdir -p "${build_dir}"
 cd "${build_dir}"
