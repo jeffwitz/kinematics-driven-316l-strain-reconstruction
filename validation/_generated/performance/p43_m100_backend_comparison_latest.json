@@ -1,0 +1,64 @@
+{
+  "case": "P43 M100 EBSD",
+  "crop_nodes": [1570, 1670, 1035, 1135],
+  "increments": 8,
+  "threads": {
+    "mfront": 4,
+    "blas": 1,
+    "fftw": 1,
+    "omp": 1,
+    "mkl": 1,
+    "openblas": 1
+  },
+  "runs": {
+    "python_condensed": {
+      "backend": "mfront-3d-condensed-plane-stress",
+      "elapsed_seconds": 56.72160232998431,
+      "newton": 57,
+      "iterations_per_increment": [6, 6, 7, 7, 7, 8, 8, 8],
+      "final_residual": 1.301755577160456e-09,
+      "field_file": "p43_m100_python_condensed_latest.fields.npz"
+    },
+    "handwritten_gps_fd": {
+      "backend": "mfront-native-generalised-plane-stress",
+      "elapsed_seconds": 51.645042398013175,
+      "newton": 58,
+      "iterations_per_increment": [6, 6, 7, 7, 7, 8, 8, 9],
+      "final_residual": 5.340683735206042e-09,
+      "substepped_points": 192,
+      "field_file": "p43_m100_gps_fd_latest.fields.npz"
+    },
+    "generic_structural_plane_stress_fd": {
+      "backend": "mfront-structural-plane-stress",
+      "elapsed_seconds": 54.56389983801637,
+      "newton": 58,
+      "iterations_per_increment": [6, 6, 7, 7, 7, 8, 8, 9],
+      "final_residual": 5.340642882164636e-09,
+      "substepped_points": 192,
+      "field_file": "p43_m100_generic_gps_fd_latest.fields.npz"
+    }
+  },
+  "field_errors_vs_handwritten_gps_fd": {
+    "generic_structural_plane_stress_fd": {
+      "displacement_relative_l2": 1.2328073892087397e-16,
+      "stress_in_plane_mpa_relative_l2": 4.756584811976403e-12,
+      "reaction_forces_relative_l2": 3.648487148350416e-12,
+      "plastic_slip_relative_l2": 1.5733601720995727e-12,
+      "equivalent_plastic_slip_relative_l2": 1.5733601720995727e-12,
+      "accumulated_slip_relative_l2": 8.523507141769798e-13
+    },
+    "python_condensed": {
+      "displacement_relative_l2": 1.335304678574656e-07,
+      "stress_in_plane_mpa_relative_l2": 1.236145461920854e-04,
+      "reaction_forces_relative_l2": 4.245500547309806e-05,
+      "plastic_slip_relative_l2": 8.993402280715807e-04,
+      "equivalent_plastic_slip_relative_l2": 8.993402280715807e-04,
+      "accumulated_slip_relative_l2": 6.35694749332391e-04
+    }
+  },
+  "notes": [
+    "Single run per backend; no repeated sweep.",
+    "The generic and handwritten GPS routes use the same host adapter, substepping, and composite FD policy.",
+    "Compilation is excluded from elapsed_seconds."
+  ]
+}
