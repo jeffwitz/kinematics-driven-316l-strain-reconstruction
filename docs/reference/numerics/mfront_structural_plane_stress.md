@@ -490,7 +490,14 @@ route and the generic route are retained as separate validation artefacts.
 
 Relevant MFront concepts are the `StandardElasticity`/Hooke stress-potential
 infrastructure, Behaviour Bricks, the generic behaviour interface and MGIS's
-batch material-data interface. The repository's feasibility report records
+batch material-data interface. See the official references:
+
+- [Hooke stress potential and standard elasticity](https://thelfer.github.io/tfel/web/HookeStressPotential.html)
+- [Behaviour Bricks](https://thelfer.github.io/tfel/web/BehaviourBricks.html)
+- [Generic behaviour interface](https://thelfer.github.io/tfel/web/generic-behaviours-interface.html)
+- [TFEL/MFront documentation index](https://thelfer.github.io/tfel/web/documentations.html)
+
+The repository's feasibility report records
 the TFEL 5.1 ABI probe and the generated-hook experiments:
 `validation/structural_plane_stress_mfront_feasibility.md`.
 
