@@ -1,0 +1,19 @@
+title: "Structural Plane Stress from Generic Three-Dimensional MFront Behaviours"
+subtitle: "A constitutive closure for small-strain implicit StandardElasticity-compatible laws"
+author: "Kinematics-Driven 316L Strain Reconstruction"
+date: "August 2026"
+lang: en-GB
+documentclass: scrartcl
+classoption:
+  - parskip=half
+  - headings=small
+geometry:
+  - margin=27mm
+  - headheight=15pt
+fontsize: 10.5pt
+toc: true
+toc-depth: 2
+linkcolor: blue
+urlcolor: blue
+colorlinks: true
+---

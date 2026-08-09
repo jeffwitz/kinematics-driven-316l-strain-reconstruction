@@ -1,0 +1,42 @@
+\usepackage{iftex}
+\ifLuaTeX
+  \usepackage{fontspec}
+  \IfFontExistsTF{Libertinus Serif}{\setmainfont{Libertinus Serif}}{\setmainfont{Latin Modern Roman}}
+  \IfFontExistsTF{Libertinus Sans}{\setsansfont{Libertinus Sans}}{\setsansfont{Latin Modern Sans}}
+  \IfFontExistsTF{Libertinus Mono}{\setmonofont{Libertinus Mono}}{\setmonofont{Latin Modern Mono}}
+  \usepackage{unicode-math}
+  \IfFontExistsTF{Libertinus Math}{\setmathfont{Libertinus Math}}{\setmathfont{Latin Modern Math}}
+\fi
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{243447}
+\definecolor{accent}{HTML}{176B87}
+\definecolor{softblue}{HTML}{EAF4F7}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{graphicx}
+\usepackage{mdframed}
+\usepackage{fvextra}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent,citecolor=accent}
+\urlstyle{same}
+\setlength{\emergencystretch}{3em}
+\setlist{topsep=3pt,itemsep=2pt}
+\titleformat{\section}{\Large\bfseries\color{ink}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{accent}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{ink}}{\thesubsubsection}{0.7em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{ink}Structural plane stress / MFront}
+\fancyhead[R]{\small\color{ink}Technical note}
+\fancyfoot[C]{\small\thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{accent}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\arraystretch}{1.18}
+\AtBeginDocument{\color{ink}}
