@@ -1,6 +1,6 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-08
+Dernière mise à jour : 2026-08-09
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
 ## État courant prioritaire — 2026-08-08, après reprise des agents
@@ -9,9 +9,46 @@ La branche active de référence est désormais :
 
 ```text
 main
-HEAD = origin/main = b009364
+HEAD = origin/main = cb96390
 worktree = propre
 ```
+
+### Correction de la régression BLAS dans Krylov — 2026-08-09
+
+La régression de performance observée sur les solveurs spectraux venait de la
+sur-souscription BLAS dans SciPy LGMRES/LGMRES/GCROT, pas de MFront ni de la
+condensation. À Newton, les produits scalaires et opérations vectorielles de
+Krylov utilisaient plusieurs threads BLAS alors que les appels étaient déjà
+répétés et que MFront disposait de ses propres threads.
+
+Le commit `cb96390` ajoute la dépendance `threadpoolctl` et borne par défaut
+BLAS à un thread uniquement pendant l'appel au solveur Krylov. Le paramètre
+`EBISpectralSolverConfig.krylov_blas_threads` est réglable : `1` par défaut,
+`None` pour désactiver la limitation. Les threads MFront et FFTW ne sont pas
+modifiés. La provenance archive désormais le backend BLAS chargé, ses threads
+natifs, le réglage demandé et l'application du plafond runtime.
+
+Confirmation reproductible sur P43 M100 EBSD, 8 incréments, 4 threads MFront,
+sans variables BLAS exportées dans le shell :
+
+| configuration | temps | Newton | overhead Krylov |
+|---|---:|---:|---:|
+| avant correction runtime | `119,48 s` | `57` | `56,13 s` |
+| BLAS limité dans le shell | `61,24 s` | `57` | `1,31 s` |
+| limitation intégrée au solveur | `62,38 s` | `57` | `1,57 s` |
+
+Artefacts versionnés :
+
+```text
+validation/_generated/performance/
+  srix_p43_m100_condensed_blas1.json
+  srix_p43_m100_condensed_blas1.fields.npz
+  srix_p43_m100_condensed_runtime_blas1.json
+  srix_p43_m100_condensed_runtime_blas1.fields.npz
+```
+
+Ces résultats ne modifient aucune loi constitutive. Les journaux et fichiers
+`.progress.jsonl` temporaires restent volontairement hors commit.
 
 La branche `codex/native-generalised-plane-stress` et son ancien HEAD
 `6cf51b8` sont historiques. Ne pas reprendre leur état comme état courant.
