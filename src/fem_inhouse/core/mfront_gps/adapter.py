@@ -280,6 +280,11 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         self._latest_dt: float | None = None
         self._evaluate_calls = 0
         self._internal_integrations = 0
+        # Include the extra MGIS calls made by bisection and selective
+        # sub-stepping; the legacy counter is only the logical full-batch
+        # count retained for backward compatibility.
+        self._native_integrate_calls = 0
+        self._native_integrate_points = 0
         self._integration_seconds = 0.0
         self._local_iterations = np.zeros(point_count, dtype=np.int64)
         self._accepted_transverse = np.zeros((point_count, 3), dtype=float)
@@ -463,6 +468,8 @@ class MFrontNativeGeneralisedPlaneStressBatch(
             native_batch_calls=self._evaluate_calls,
             native_material_points=self._evaluate_calls * self._point_count,
             native_internal_integrations=self._internal_integrations,
+            native_integrate_calls=self._native_integrate_calls,
+            native_integrate_points=self._native_integrate_points,
             native_total_local_iterations=int(np.sum(self._local_iterations)),
             native_thread_count=self._thread_count,
             native_substep_points=self._substep_counters.points,
@@ -556,6 +563,10 @@ class MFrontNativeGeneralisedPlaneStressBatch(
             # missed. That is what makes one joint Newton enough.
             gradients[:, _TRANSVERSE_COMPONENTS_3D] = transverse_kelvin
         self._manager.s1.gradients[:, :] = gradients
+        self._native_integrate_calls += 1
+        self._native_integrate_points += (
+            self._point_count if span is None else span[1] - span[0]
+        )
         integration_type = self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
         if span is not None:
             # A sub-range. `integrate` reads `s0` and writes `s1` for the range

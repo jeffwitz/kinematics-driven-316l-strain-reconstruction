@@ -72,6 +72,8 @@ class MFrontTimingStatistics:
     native_batch_calls: int = 0
     native_material_points: int = 0
     native_internal_integrations: int = 0
+    native_integrate_calls: int = 0
+    native_integrate_points: int = 0
     native_total_local_iterations: int = 0
     native_thread_count: int = 1
     #: Points that refused the full step and were sub-stepped individually, and
