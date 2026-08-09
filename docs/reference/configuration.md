@@ -75,22 +75,28 @@ Supported backend values are:
 | `python` | historical analytical/tabulated J2 regression implementation |
 | any registered identifier | process-local constitutive plugin |
 
-{doc}`../how-to/choose_an_mfront_backend` says which one to use, and
+{doc}`../how-to/choose_mfront_backend` says which one to use, and
 {doc}`numerics/three_dimensional_condensation` derives the two plane-stress
 routes. The local plane-stress controls below are used only by the condensed
 3D backend.
 
-### `constitutive_options` of the generalised plane-stress backend
+### Production options for the generalised plane-stress backend
 
 Accepted only by `mfront-native-generalised-plane-stress`; the condensed
 backend refuses them, so a configuration cannot carry one without effect.
 
 | Key | Default | Meaning |
 |---|---:|---|
-| `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of the points the local Newton had to sub-step. Recommended: a sub-stepped point otherwise returns its LAST sub-step's tangent, which is not the derivative of the path it followed. On P43 M100 it takes the GPS from 85 Newton iterations to 58, against 57 for the reference |
+| `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of points the local Newton had to sub-step. Recommended `true` for the qualified SRIX + EBSD workflow; otherwise a sub-stepped point returns its last sub-step's tangent. On P43 M100 it takes GPS from 85 Newton iterations to 58, against 57 for the reference |
 | `gps_composite_fd_step` | `1.0e-6` | perturbation of that finite difference, relative to the strain increment. A numerical tolerance, not a tuning knob |
-| `gps_shadow_tangent` | `false` | diagnostic: replace the Newton matrix by the reference Schur evaluated at the GPS's own converged state. Costs a full extra 3D integration per evaluation and is what established that the iteration penalty was the matrix; not a production setting |
-| `gps_shadow_tangent_scope` | `"all"` | which points the shadow applies to |
+
+The following options are diagnostic only and must remain disabled in
+production unless a validation experiment explicitly requests them:
+
+| Key | Default | Meaning |
+|---|---:|---|
+| `gps_shadow_tangent` | `false` | replace the Newton matrix by the reference Schur evaluated at the GPS state; useful for diagnosis, not production |
+| `gps_shadow_tangent_scope` | `"all"` | diagnostic scope for the shadow tangent |
 
 ## NonlocalPlasticityConfig
 

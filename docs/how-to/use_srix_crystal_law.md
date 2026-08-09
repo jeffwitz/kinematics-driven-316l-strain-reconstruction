@@ -22,7 +22,7 @@ rate-dependent reference, `fcc_meric_cailletaud`. Neither declares a native
 plane-stress hypothesis, so the plane-stress condition has to be closed around
 or inside the 3D law, and there are **two routes**. They agree to `1e-11` at a
 material point; pick on what you need, not on accuracy.
-{doc}`choose_an_mfront_backend` is the full decision page.
+{doc}`choose_mfront_backend` is the full decision page.
 
 ### Route 1 — generalised plane stress, recommended for SRIX on EBSD
 
@@ -30,9 +30,11 @@ material point; pick on what you need, not on accuracy.
 solver:
   constitutive_backend: mfront-native-generalised-plane-stress
   mfront_behaviour_id: fcc_forest_rubin_srix
+  mfront_library: build/mfront/src/libBehaviour.so
   mfront_threads: 4
   constitutive_options:
     gps_composite_fd_tangent: true
+    gps_composite_fd_step: 1.0e-6
     parameter_set: 316l_srix_transposed_from_nasri2018_rate_1e-3
     crystal_orientation:
       mode: ebsd
@@ -132,8 +134,8 @@ reports independence, the harness is broken and the first result means nothing.
 
 ## Run a small plane-stress case
 
-The crystal laws have no native plane-stress hypothesis, so the 3D behaviour is
-condensed. Select the condensed backend and, optionally, an orientation:
+For the independent/reference route, select the condensed backend and,
+optionally, an orientation:
 
 ```yaml
 solver:
@@ -151,6 +153,10 @@ solver:
 `euler_bunge_deg: [phi1, Phi, phi2]` may be given instead of `matrix`. Omitting
 `crystal_orientation` entirely means the identity: crystal axes aligned with the
 specimen axes.
+
+For qualified SRIX + EBSD production runs, use the GPS configuration shown
+above instead. The GPS route is available specifically because SRIX has a GPS
+variant; a generic 3D behaviour should use the condensed reference route.
 
 The matrix is `Q_global_to_material`, so `eps_crystal = Q eps_global Q^T`. The
 plane-stress condition is imposed in the GLOBAL frame, and all three out-of-plane

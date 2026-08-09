@@ -22,6 +22,7 @@
 ## Extend
 
 - {doc}`add_mfront_behaviour`
+- {doc}`choose_mfront_backend`
 - {doc}`use_srix_crystal_law`
 - {doc}`use_reduced_integration`
 - {doc}`add_nonlocal_criterion`
@@ -48,6 +49,7 @@ inspect_p0043_evm_fields
 characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
+choose_mfront_backend
 choose_an_mfront_backend
 use_srix_crystal_law
 use_reduced_integration

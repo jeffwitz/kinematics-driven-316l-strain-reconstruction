@@ -55,6 +55,20 @@ are intentionally not hidden behind a boolean rotation flag.
 mfront.py is now a compatibility façade. Existing imports remain valid,
 including the diagnostic private helpers used by validation scripts.
 
+> **You probably do not need to know this.** Users selecting a registered
+> backend do not need to manipulate MGIS state managers, Kelvin rotations,
+> snapshots, Schur blocks, or substep caches directly. These modules document
+> implementation boundaries for maintainers.
+
+## Common mistakes
+
+- Do not rotate the GPS input gradient externally.
+- Do not use the raw in-plane block of a 3D tangent as the plane-stress tangent.
+- Do not disable composite FD merely to save time: it is sparse and qualified.
+- Do not use `equivalent_plastic_strain` for SRIX crystal results.
+- Do not treat a homogeneous orientation as a polycrystal.
+- Do not enable the shadow tangent in production.
+
 ## Qualification checkpoint
 
 The extraction was replayed on the registered P43 M100 EBSD case with the

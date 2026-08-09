@@ -1,5 +1,8 @@
 # How to choose an MFront backend
 
+This historical page is retained for compatibility with older notes. The
+current, canonical decision page is {doc}`choose_mfront_backend`.
+
 **Category: How-to.** Which `constitutive_backend` to put in your
 configuration, and why. If you only want the answer for 316L crystal
 plasticity on EBSD orientations, it is the first block below.

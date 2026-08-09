@@ -80,6 +80,8 @@ Recommended journeys
    :doc:`reference/model_contract` →
    :doc:`reference/numerics/mfront_transaction` →
    :doc:`reference/numerics/three_dimensional_condensation` →
+   :doc:`how-to/choose_mfront_backend` →
+   :doc:`how-to/use_srix_crystal_law` →
    :doc:`how-to/add_mfront_behaviour`
 
 .. toctree::

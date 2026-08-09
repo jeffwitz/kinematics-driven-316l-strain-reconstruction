@@ -121,6 +121,31 @@ usable, and it is not optional in practice:
 The finite difference touched `192` points and `1152` trajectories for `2.15 s`
 of its own cost, and the converged residual is `5.3e-09`.
 
+The benchmark below is from one qualified campaign and is not a universal
+speed guarantee. Hardware, thread placement, BLAS settings, compiler versions
+and the selected loading path can change the wall time:
+
+| P43 M100 EBSD, 8 increments | Newton | elapsed |
+|---|---:|---:|
+| 3D + Python condensation | 57 | approximately `62.4 s` |
+| GPS + composite FD | 58 | approximately `58.4 s` |
+
+The diagnostic comparison also explains why the composite tangent is part of
+the qualified GPS route. Without it, the same GPS run takes 85 Newton
+iterations; with it, it takes 58. A wrapper that replaces one constitutive
+increment by a composition of sub-steps computes
+
+$$
+D\Phi_{\mathrm{last}}
+\neq
+D(\Phi_n\circ\cdots\circ\Phi_1),
+$$
+
+in general. The tangent returned by the last sub-step is therefore not the
+tangent of the composed path seen by the global Newton. The sparse composite
+FD correction supplies that missing derivative only where sub-stepping was
+used.
+
 **What it costs.** The law has to be written for it, once per behaviour: a
 crystal model that has not been given the closure rows cannot use this route.
 And a host code owes three conventions, which the bridge here implements and
@@ -171,7 +196,7 @@ answer you get.
 Route A remains the **numerical reference**: it accepts any 3D behaviour, and
 every route-B result is measured against it. Route B with the composite tangent
 is now the **faster** of the two on the qualified SRIX/EBSD case and is what
-{doc}`../../how-to/choose_an_mfront_backend` recommends there — closure to
+{doc}`../../how-to/choose_mfront_backend` recommends there — closure to
 `2e-14` MPa, finite-difference tangent to `1.2e-07`, agreement with route A to
 `1e-11`. Without the composite tangent route B is slower than route A at M100,
 so the two are not interchangeable on performance alone.
