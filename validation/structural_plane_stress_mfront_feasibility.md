@@ -207,7 +207,41 @@ the test script; no fixed internal-state offset is used. This validates the
 elastic rotated tangent mechanism, but not yet a law with additional implicit
 unknowns. J2 is the next required generality test.
 
-## 5. `StandardElasticity` and the proposed `feel` oracle
+## 5. J2 proof: all local Jacobian columns
+
+The first non-elastic prototype is now:
+
+```text
+validation/mfront/StructuralPlaneStressJ2Probe.mfront
+scripts/probe_structural_plane_stress_j2.sh
+```
+
+It uses `StandardElastoViscoPlasticity` and a local system of six elastic
+unknowns plus one plastic unknown. The closure code never names that plastic
+unknown: the in-plane rows transform every column of the raw six-row
+Jacobian, while the traction rows retain only the six elastic columns and set
+the extra column to zero. The tangent reconstructs the seven-by-seven system,
+solves only the three active right-hand sides, and restores the final stress
+after the diagnostic Jacobian rebuild.
+
+At a plastic point with the same fully three-dimensional rotation:
+
+```text
+maximum transverse stress       7.99e-14
+FD tangent error, h=1e-5       3.94e-7
+FD tangent error, h=1e-6       3.94e-9
+FD tangent error, h=1e-7       3.12e-11
+maximum inactive tangent column 0
+```
+
+This demonstrates that the row transformation can act on additional local
+unknowns without constitutive-variable knowledge. It is still a proof of the
+prototype contract, not yet a qualification against an independent 3D
+condensation oracle or a demonstration on SRIX/Méric. The next tests are SRIX
+and Méric using the same closure mechanism, with their existing 3D behaviours
+kept as references.
+
+## 6. `StandardElasticity` and the proposed `feel` oracle
 
 The installed `StandardElasticity` documentation confirms that the brick is
 built on the `Hooke` stress potential and that the implicit integrator exposes
@@ -235,7 +269,7 @@ generic implementation foundation. It should first be tested on a deliberately
 small behaviour whose residual blocks are explicitly named or registered by an
 adapter contract.
 
-## 6. Multiple bricks and `@Import`
+## 7. Multiple bricks and `@Import`
 
 The parser supports multiple registered bricks through the DSL's internal brick
 collection, and `@Import` includes external MFront files sequentially through
@@ -253,7 +287,7 @@ an already-generated behaviour's Newton equations. SRIX deduplication through
 `@Import` is therefore a separate, controlled refactor and should not be
 coupled to the first plugin feasibility test.
 
-## 7. Structural rotation and tangent implications
+## 8. Structural rotation and tangent implications
 
 The proposed structural closure is compatible with the existing convention:
 the host supplies an unrotated structural/global strain, while the closure
@@ -268,7 +302,7 @@ blocks, but it does not provide a generic row-replacement operation. A first
 prototype must therefore make the row convention explicit and test it against
 the existing raw 3D Schur oracle before any claim of generality.
 
-## 8. Recommended implementation order
+## 9. Recommended implementation order
 
 1. Keep the failed external probe as a regression artifact and decide whether
    exporting the brick base classes is acceptable upstream.

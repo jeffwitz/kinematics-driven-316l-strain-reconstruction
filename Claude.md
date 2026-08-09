@@ -5302,4 +5302,11 @@ Jacobian and returns `T D X_e`; its live Schur comparison is `6.95e-16` and
 central-FD errors for steps `1e-5,1e-6,1e-7` are approximately
 `1.77e-14,4.78e-13,5.50e-12`. Its six auxiliary strain entries are located
 from MGIS metadata. This qualifies only the rotated elastic probe, not yet
-per-point orientation properties, J2, SRIX or Méric.
+per-point orientation properties, J2, SRIX or Méric. A J2 probe now exists at
+`validation/mfront/StructuralPlaneStressJ2Probe.mfront`, with
+`scripts/probe_structural_plane_stress_j2.sh`; it transforms all seven local
+Jacobian columns without naming the plastic variable. The plastic-point
+maximum transverse stress is `7.99e-14`, and FD tangent errors for
+`1e-5,1e-6,1e-7` are `3.94e-7,3.94e-9,3.12e-11`. This is still a prototype
+contract proof, not yet an independent condensation qualification or SRIX/Méric
+qualification.
