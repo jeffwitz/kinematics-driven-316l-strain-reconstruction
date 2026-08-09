@@ -8,6 +8,7 @@ from typing import Literal
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.sparse.linalg import LinearOperator, gcrotmk, gmres, lgmres
+from threadpoolctl import threadpool_limits  # type: ignore[import-untyped]
 
 FloatArray = NDArray[np.float64]
 KrylovMethod = Literal["gmres", "lgmres", "gcrotmk"]
@@ -40,6 +41,7 @@ def solve_nonsymmetric_krylov(
     gcrotmk_m: int = 20,
     gcrotmk_k: int = 10,
     callback: object | None = None,
+    blas_threads: int | None = 1,
 ) -> tuple[FloatArray, int, int]:
     """Solve a non-symmetric linear system and return ``(x, info, calls)``."""
 
@@ -54,45 +56,46 @@ def solve_nonsymmetric_krylov(
         if callback is not None:
             callback(value)  # type: ignore[operator]
 
-    if method == "gmres":
-        solution, info = gmres(
-            operator,
-            values,
-            M=preconditioner,
-            rtol=rtol,
-            atol=0.0,
-            restart=restart,
-            maxiter=maximum_iterations,
-            callback=counted,
-            callback_type="pr_norm",
-        )
-    elif method == "lgmres":
-        solution, info = lgmres(
-            operator,
-            values,
-            M=preconditioner,
-            rtol=rtol,
-            atol=0.0,
-            maxiter=maximum_iterations,
-            callback=counted,
-            inner_m=lgmres_inner_m,
-            outer_k=lgmres_outer_k,
-            outer_v=recycle.lgmres_outer_v if recycle is not None else None,
-            store_outer_Av=True,
-        )
-    else:
-        solution, info = gcrotmk(
-            operator,
-            values,
-            M=preconditioner,
-            rtol=rtol,
-            atol=0.0,
-            maxiter=maximum_iterations,
-            callback=counted,
-            m=gcrotmk_m,
-            k=gcrotmk_k,
-            CU=recycle.gcrotmk_cu if recycle is not None else None,
-        )
+    with threadpool_limits(limits=blas_threads, user_api="blas"):
+        if method == "gmres":
+            solution, info = gmres(
+                operator,
+                values,
+                M=preconditioner,
+                rtol=rtol,
+                atol=0.0,
+                restart=restart,
+                maxiter=maximum_iterations,
+                callback=counted,
+                callback_type="pr_norm",
+            )
+        elif method == "lgmres":
+            solution, info = lgmres(
+                operator,
+                values,
+                M=preconditioner,
+                rtol=rtol,
+                atol=0.0,
+                maxiter=maximum_iterations,
+                callback=counted,
+                inner_m=lgmres_inner_m,
+                outer_k=lgmres_outer_k,
+                outer_v=recycle.lgmres_outer_v if recycle is not None else None,
+                store_outer_Av=True,
+            )
+        else:
+            solution, info = gcrotmk(
+                operator,
+                values,
+                M=preconditioner,
+                rtol=rtol,
+                atol=0.0,
+                maxiter=maximum_iterations,
+                callback=counted,
+                m=gcrotmk_m,
+                k=gcrotmk_k,
+                CU=recycle.gcrotmk_cu if recycle is not None else None,
+            )
     if info != 0 and recycle is not None:
         # Recycled vectors can become stale after a strongly changing Newton
         # tangent. Retry once without them; the caller still owns the policy
@@ -112,6 +115,7 @@ def solve_nonsymmetric_krylov(
             gcrotmk_m=gcrotmk_m,
             gcrotmk_k=gcrotmk_k,
             callback=callback,
+            blas_threads=blas_threads,
         )
         return retry_solution, retry_info, calls + retry_calls
     return np.asarray(solution, dtype=np.float64), int(info), calls

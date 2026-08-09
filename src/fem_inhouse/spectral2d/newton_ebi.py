@@ -49,6 +49,7 @@ class EBISpectralSolverConfig:
     lgmres_outer_k: int = 3
     gcrotmk_m: int = 20
     gcrotmk_k: int = 10
+    krylov_blas_threads: int | None = 1
     linear_tolerance_mode: Literal["fixed", "eisenstat_walker"] = "fixed"
     forcing_initial: float = 1.0e-1
     forcing_minimum: float = 1.0e-8
@@ -86,6 +87,8 @@ class EBISpectralSolverConfig:
             raise ValueError("Krylov dimensions must be positive")
         if self.lgmres_outer_k < 0 or self.gcrotmk_m < 1 or self.gcrotmk_k < 0:
             raise ValueError("Krylov recycling dimensions are invalid")
+        if self.krylov_blas_threads is not None and self.krylov_blas_threads < 1:
+            raise ValueError("krylov_blas_threads must be positive or None")
         if self.linear_tolerance_mode not in {"fixed", "eisenstat_walker"}:
             raise ValueError("unsupported linear tolerance mode")
         if not 0.0 < self.forcing_minimum <= self.forcing_maximum < 1.0:
@@ -429,6 +432,7 @@ def solve_ebi_dirichlet_plane_stress(
         gcrotmk_m=config.gcrotmk_m,
         gcrotmk_k=config.gcrotmk_k,
         reference_update_mode=config.reference_update_mode,
+        krylov_blas_threads=config.krylov_blas_threads,
     )
     provenance.update(
         {

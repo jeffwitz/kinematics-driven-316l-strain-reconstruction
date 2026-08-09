@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import importlib.metadata
+import json
 import os
 import platform
 import subprocess
@@ -156,6 +157,7 @@ def collect_runtime_provenance(
     gcrotmk_m: int | None = None,
     gcrotmk_k: int | None = None,
     reference_update_mode: str | None = None,
+    krylov_blas_threads: int | None = 1,
 ) -> dict[str, str | int | float | bool | None]:
     """Collect reproducibility metadata for a spectral solve."""
 
@@ -191,6 +193,33 @@ def collect_runtime_provenance(
         except importlib.metadata.PackageNotFoundError:
             return None
 
+    try:
+        from threadpoolctl import threadpool_info  # type: ignore[import-untyped]
+    except ImportError:
+        blas_threadpools = []
+    else:
+        blas_threadpools = [
+            {
+                "filepath": item.get("filepath"),
+                "internal_api": item.get("internal_api"),
+                "internal_api_num_threads": item.get("num_threads"),
+                "prefix": item.get("prefix"),
+                "user_api": item.get("user_api"),
+            }
+            for item in threadpool_info()
+            if item.get("user_api") == "blas"
+        ]
+    blas_backends = ",".join(
+        str(item["internal_api"])
+        for item in blas_threadpools
+        if item.get("internal_api") is not None
+    ) or None
+    blas_effective_threads = ",".join(
+        str(item["internal_api_num_threads"])
+        for item in blas_threadpools
+        if item.get("internal_api_num_threads") is not None
+    ) or None
+
     return {
         "commit_sha": commit_sha,
         "date_utc": datetime.datetime.now(datetime.UTC).isoformat(),
@@ -209,6 +238,11 @@ def collect_runtime_provenance(
         "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
         "mkl_num_threads": os.environ.get("MKL_NUM_THREADS"),
         "openblas_num_threads": os.environ.get("OPENBLAS_NUM_THREADS"),
+        "krylov_blas_threads": krylov_blas_threads,
+        "blas_backend": blas_backends,
+        "blas_library_threads": blas_effective_threads,
+        "krylov_blas_limit_applied": krylov_blas_threads is not None,
+        "blas_threadpools_json": json.dumps(blas_threadpools, sort_keys=True),
         "transform_backend": transform.backend,
         "gmres_restart": gmres_restart,
         "gmres_maximum_iterations": gmres_maximum_iterations,

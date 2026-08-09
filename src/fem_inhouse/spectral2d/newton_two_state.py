@@ -1108,6 +1108,7 @@ def solve_two_state_dirichlet_plane_stress(
                 gcrotmk_m=config.gcrotmk_m,
                 gcrotmk_k=config.gcrotmk_k,
                 callback=count_gmres,
+                blas_threads=config.krylov_blas_threads,
             )
             linear_residual_ratio: float | None = None
             if config.verify_linear_residual and info == 0 and np.isfinite(correction).all():
@@ -1578,6 +1579,7 @@ def solve_two_state_dirichlet_plane_stress(
         gcrotmk_m=config.gcrotmk_m,
         gcrotmk_k=config.gcrotmk_k,
         reference_update_mode=config.reference_update_mode,
+        krylov_blas_threads=config.krylov_blas_threads,
     )
     provenance.update(
         {
