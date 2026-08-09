@@ -5212,3 +5212,34 @@ field-authorized but not performance-authorized, and retains the limitations
 of the analytically transposed SRIX `R`, homogeneous orientation, undocumented
 physical DIC time, and the unqualified temporal accuracy of the Méric
 16-increment path.
+
+## MFront architectural refactor
+
+The staged refactor of the MFront backend is pushed through commit affb32c.
+The compatibility facade remains at src/fem_inhouse/core/mfront.py, while
+the implementation is split into:
+
+- mfront_runtime.py: MGIS loading, parameters, introspection and Kelvin
+  conversions;
+- mfront_state.py: snapshots and public timing records;
+- mfront_native.py: native 2D bridge;
+- mfront_3d.py: raw 3D bridge and explicit rotations;
+- mfront_condensation.py: external plane-stress closure, Schur and blocks;
+- mfront_gps/adapter.py: GPS adapter;
+- mfront_gps/substepping.py: unchanged GPS substep policy;
+- mfront_gps/composite_tangent.py: unchanged composite FD policy;
+- mfront_gps/diagnostics.py: non-production shadow tangent.
+
+The extraction was intentionally algorithm-preserving. The exact MFront
+qualification environment was used for the targeted tests:
+
+~~~text
+52 passed
+Ruff: passed
+mypy: passed
+~~~
+
+The architectural reference is docs/reference/numerics/mfront_architecture.md.
+Existing facade imports, including diagnostic private helpers, remain
+supported. Unrelated benchmark files present in the worktree were not
+included in the refactor commits.
