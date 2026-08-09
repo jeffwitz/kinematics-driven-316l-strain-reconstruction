@@ -1,0 +1,137 @@
+{
+  "configuration": {
+    "backend": "mfront-structural-plane-stress",
+    "behaviour": "fcc_forest_rubin_srix",
+    "boundary_sha256": "59de0a1ac44b8f4bebc3a28838923b271eadc9e67666265bfa14e94bf8effcea",
+    "crop_nodes": [
+      1520,
+      1720,
+      985,
+      1185
+    ],
+    "ebsd_file": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "fftw_threads": 1,
+    "increments": 8,
+    "krylov_blas_threads": 1,
+    "mesh": [
+      200,
+      200
+    ],
+    "mfront_threads": 4
+  },
+  "displacement_vs_dic": {
+    "ebsd": {
+      "interior_relative_l2": 0.0013893016365394114,
+      "interior_rmse_mm": 6.807110858039573e-05,
+      "relative_l2": 0.0013754599176190212,
+      "rmse_mm": 6.73937841169092e-05
+    },
+    "homogeneous": {
+      "interior_relative_l2": 0.0009814310065917504,
+      "interior_rmse_mm": 4.80868192024036e-05,
+      "relative_l2": 0.0009716529340870375,
+      "rmse_mm": 4.760834338944436e-05
+    }
+  },
+  "field_comparison_ebsd_vs_homogeneous": {
+    "accumulated_slip_correlation": 0.6166942844715099,
+    "accumulated_slip_quantiles_ebsd": {
+      "max": 0.05351454020161195,
+      "p50": 0.007275058650797874,
+      "p90": 0.012775551135142543,
+      "p95": 0.014835583237192194,
+      "p99": 0.02091851867144069
+    },
+    "accumulated_slip_quantiles_homogeneous": {
+      "max": 0.03327636562166764,
+      "p50": 0.011920118134640265,
+      "p90": 0.014386155307231611,
+      "p95": 0.016774979284050466,
+      "p99": 0.021403691440597845
+    },
+    "accumulated_slip_relative_l2": 0.42782876326751923,
+    "displacement_relative_l2": 0.0010860489388423615,
+    "dominant_system_agreement": 0.0833625,
+    "equivalent_plastic_slip_relative_l2": 1.006747575218801,
+    "max_system_slip_correlation": 0.5066515167292622,
+    "max_system_slip_quantiles_ebsd": {
+      "max": 0.033380747661182195,
+      "p50": 0.002896331557802246,
+      "p90": 0.00600036510831014,
+      "p95": 0.007260630225601145,
+      "p99": 0.011084948132825784
+    },
+    "max_system_slip_quantiles_homogeneous": {
+      "max": 0.015238753819706054,
+      "p50": 0.003941703744221451,
+      "p90": 0.005025403585907011,
+      "p95": 0.006324276824832884,
+      "p99": 0.009859983088639161
+    },
+    "plastic_slip_relative_l2": 1.3822675113600476,
+    "reaction_relative_l2": 0.5076373732068792,
+    "stress_component_correlation": [
+      0.5360027779554986,
+      0.3070694778431293,
+      0.2972646749665081
+    ],
+    "stress_relative_l2": 0.4401029975761906,
+    "top_5_percent_accumulated_slip_jaccard": 0.17577895355673134,
+    "top_5_percent_max_system_slip_jaccard": 0.17647058823529413
+  },
+  "runs": {
+    "ebsd": {
+      "elapsed_seconds": 355.8930756530026,
+      "final_residual": 8.62251012293433e-09,
+      "iterations_per_increment": [
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        8,
+        10
+      ],
+      "jacobian_seconds": 32.74557130696485,
+      "krylov_overhead_seconds": 6.383309027354699,
+      "krylov_seconds": 50.935514892975334,
+      "material_integration_seconds": 270.9625201802701,
+      "material_seconds": 297.14180828194367,
+      "newton_iterations": 58,
+      "preconditioner_seconds": 11.806634558655787,
+      "substep_cache_hits": 23.0,
+      "substep_cache_misses": 15.0,
+      "substep_points": 978.0
+    },
+    "homogeneous": {
+      "elapsed_seconds": 90.06295371201122,
+      "final_residual": 1.1554078763686198e-11,
+      "iterations_per_increment": [
+        6,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        6
+      ],
+      "jacobian_seconds": 12.105697481136303,
+      "krylov_overhead_seconds": 1.5396831488469616,
+      "krylov_seconds": 17.920561884122435,
+      "material_integration_seconds": 46.286031750030816,
+      "material_seconds": 61.61327553115552,
+      "newton_iterations": 42,
+      "preconditioner_seconds": 4.27518125413917,
+      "substep_cache_hits": 0.0,
+      "substep_cache_misses": 0.0,
+      "substep_points": 0.0
+    }
+  },
+  "source_reports": {
+    "ebsd": "srix_p43_m200_ebsd_structural_fd.json",
+    "homogeneous": "srix_p43_m200_homogeneous_structural_fd.json"
+  },
+  "status": "completed_srix_m200_homogeneous_vs_ebsd"
+}

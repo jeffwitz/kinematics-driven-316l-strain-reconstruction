@@ -1559,6 +1559,16 @@ def solve_two_state_dirichlet_plane_stress(
             "native_substep_points",
             "native_substep_cache_hits",
             "native_substep_cache_misses",
+            "composite_fd_seconds",
+            "composite_fd_points",
+            "composite_fd_trajectories",
+            "composite_fd_partition_changes",
+            "composite_fd_mgis_calls",
+            "composite_fd_actual_point_integrations",
+            "composite_fd_snapshot_seconds",
+            "composite_fd_restore_seconds",
+            "composite_fd_integration_seconds",
+            "composite_fd_other_seconds",
         )
     }
     provenance = collect_runtime_provenance(
