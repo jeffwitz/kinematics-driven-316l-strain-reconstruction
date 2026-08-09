@@ -21,10 +21,10 @@
   },
   "displacement_vs_dic": {
     "ebsd": {
-      "interior_relative_l2": 0.0013893016365394114,
-      "interior_rmse_mm": 6.807110858039573e-05,
-      "relative_l2": 0.0013754599176190212,
-      "rmse_mm": 6.73937841169092e-05
+      "interior_relative_l2": 0.0013893016365394122,
+      "interior_rmse_mm": 6.807110858039577e-05,
+      "relative_l2": 0.001375459917619022,
+      "rmse_mm": 6.739378411690923e-05
     },
     "homogeneous": {
       "interior_relative_l2": 0.0009814310065917504,
@@ -34,13 +34,13 @@
     }
   },
   "field_comparison_ebsd_vs_homogeneous": {
-    "accumulated_slip_correlation": 0.6166942844715099,
+    "accumulated_slip_correlation": 0.61669428447151,
     "accumulated_slip_quantiles_ebsd": {
-      "max": 0.05351454020161195,
-      "p50": 0.007275058650797874,
-      "p90": 0.012775551135142543,
-      "p95": 0.014835583237192194,
-      "p99": 0.02091851867144069
+      "max": 0.053514540201617,
+      "p50": 0.007275058650810382,
+      "p90": 0.012775551135155308,
+      "p95": 0.014835583237178106,
+      "p99": 0.020918518671449008
     },
     "accumulated_slip_quantiles_homogeneous": {
       "max": 0.03327636562166764,
@@ -49,17 +49,17 @@
       "p95": 0.016774979284050466,
       "p99": 0.021403691440597845
     },
-    "accumulated_slip_relative_l2": 0.42782876326751923,
-    "displacement_relative_l2": 0.0010860489388423615,
+    "accumulated_slip_relative_l2": 0.42782876326751945,
+    "displacement_relative_l2": 0.001086048938842363,
     "dominant_system_agreement": 0.0833625,
     "equivalent_plastic_slip_relative_l2": 1.006747575218801,
-    "max_system_slip_correlation": 0.5066515167292622,
+    "max_system_slip_correlation": 0.5066515167292558,
     "max_system_slip_quantiles_ebsd": {
-      "max": 0.033380747661182195,
-      "p50": 0.002896331557802246,
-      "p90": 0.00600036510831014,
-      "p95": 0.007260630225601145,
-      "p99": 0.011084948132825784
+      "max": 0.033380747661194275,
+      "p50": 0.002896331557802811,
+      "p90": 0.006000365108317658,
+      "p95": 0.007260630225610077,
+      "p99": 0.01108494813282558
     },
     "max_system_slip_quantiles_homogeneous": {
       "max": 0.015238753819706054,
@@ -69,20 +69,20 @@
       "p99": 0.009859983088639161
     },
     "plastic_slip_relative_l2": 1.3822675113600476,
-    "reaction_relative_l2": 0.5076373732068792,
+    "reaction_relative_l2": 0.507637373206887,
     "stress_component_correlation": [
-      0.5360027779554986,
-      0.3070694778431293,
-      0.2972646749665081
+      0.5360027779555026,
+      0.30706947784312194,
+      0.29726467496650166
     ],
-    "stress_relative_l2": 0.4401029975761906,
+    "stress_relative_l2": 0.4401029975761913,
     "top_5_percent_accumulated_slip_jaccard": 0.17577895355673134,
     "top_5_percent_max_system_slip_jaccard": 0.17647058823529413
   },
   "runs": {
     "ebsd": {
-      "elapsed_seconds": 355.8930756530026,
-      "final_residual": 8.62251012293433e-09,
+      "elapsed_seconds": 305.0178585120011,
+      "final_residual": 8.622525439991957e-09,
       "iterations_per_increment": [
         6,
         6,
@@ -93,13 +93,13 @@
         8,
         10
       ],
-      "jacobian_seconds": 32.74557130696485,
-      "krylov_overhead_seconds": 6.383309027354699,
-      "krylov_seconds": 50.935514892975334,
-      "material_integration_seconds": 270.9625201802701,
-      "material_seconds": 297.14180828194367,
+      "jacobian_seconds": 25.80426095717121,
+      "krylov_overhead_seconds": 5.1565206668456085,
+      "krylov_seconds": 40.57809761899989,
+      "material_integration_seconds": 233.53650362085318,
+      "material_seconds": 256.5344723998569,
       "newton_iterations": 58,
-      "preconditioner_seconds": 11.806634558655787,
+      "preconditioner_seconds": 9.617315994983073,
       "substep_cache_hits": 23.0,
       "substep_cache_misses": 15.0,
       "substep_points": 978.0
