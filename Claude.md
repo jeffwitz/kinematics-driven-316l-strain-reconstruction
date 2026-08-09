@@ -9,8 +9,8 @@ La branche active de référence est désormais :
 
 ```text
 main
-HEAD = origin/main = cb96390
-worktree = propre
+HEAD = origin/main = 1377d47
+worktree = fichiers suivis propres ; journaux temporaires non suivis conservés
 ```
 
 ### Correction de la régression BLAS dans Krylov — 2026-08-09
