@@ -191,6 +191,12 @@ def main() -> int:
         "sub-stepped points by finite differences on the composite trajectory",
     )
     parser.add_argument(
+        "--srix-smoothing-epsilon",
+        type=float,
+        default=None,
+        help="experimental SRIX Charbonnier stress scale in MPa; zero preserves the historical law",
+    )
+    parser.add_argument(
         "--gps-condensed-tangent",
         action="store_true",
         help="for the native GPS backend, enable the law's CondensedTangent "
@@ -378,6 +384,11 @@ def main() -> int:
                 **orientation_configuration,
             },
             "paired_parameter_set": arguments.paired_parameter_set,
+            **(
+                {"srix_smoothing_epsilon": arguments.srix_smoothing_epsilon}
+                if arguments.srix_smoothing_epsilon is not None
+                else {}
+            ),
             **(
                 {"gps_shadow_tangent": True}
                 if arguments.gps_shadow_tangent
@@ -575,6 +586,7 @@ def main() -> int:
         "accepted_increments": accepted_increment_count,
         "tolerance": arguments.tolerance,
         "behaviour": arguments.behaviour,
+        "srix_smoothing_epsilon_mpa": arguments.srix_smoothing_epsilon,
         "mfront_threads": arguments.mfront_threads,
         "maximum_newton_iterations": arguments.maximum_newton_iterations,
         "local_transverse_predictor": arguments.local_transverse_predictor,

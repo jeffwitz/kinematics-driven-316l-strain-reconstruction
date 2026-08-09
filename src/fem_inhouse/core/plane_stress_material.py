@@ -497,6 +497,7 @@ def _create_fcc_single_crystal_batch(
     shadow_tangent_scope = str(options.pop("gps_shadow_tangent_scope", "all"))
     composite_fd_tangent = bool(options.pop("gps_composite_fd_tangent", False))
     composite_fd_step = float(options.pop("gps_composite_fd_step", 1.0e-6))
+    srix_smoothing_epsilon = options.pop("srix_smoothing_epsilon", None)
     if paired_parameter_set is not None and (
         parameter_set is not None or explicit_parameters is not None
     ):
@@ -549,6 +550,14 @@ def _create_fcc_single_crystal_batch(
         )
     else:
         overrides = None
+
+    if srix_smoothing_epsilon is not None:
+        if behaviour.crystal_flow_rule != "forest_rubin_srix":
+            raise ValueError(
+                "srix_smoothing_epsilon is only valid for the Forest-Rubin SRIX law"
+            )
+        overrides = dict(overrides or {})
+        overrides["SrixSmoothingEpsilon"] = float(srix_smoothing_epsilon)
 
     local_options = dict(local_plane_stress_options or {})
     if backend in {

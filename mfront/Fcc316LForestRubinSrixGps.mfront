@@ -69,6 +69,11 @@
 @Parameter stress R = 18.7819100705;
 R.setEntryName("SrixOverstressModulus");
 
+//! Charbonnier stress scale for the optional smooth Macaulay regularisation.
+//! Zero selects the historical non-smooth SRIX law exactly.
+@Parameter stress srixSmoothingEpsilon = 0.;
+srixSmoothingEpsilon.setEntryName("SrixSmoothingEpsilon");
+
 @Parameter stress tau0 = 40.;
 @Parameter stress Q = 10.;
 @Parameter real b = 3.;
@@ -300,9 +305,25 @@ localIterations.setEntryName("LocalIterations");
     const auto da =  //
         (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
     const auto x = C * (a[i] + theta * da);
-    // Macaulay bracket of equation (7), kept alongside its unclamped argument.
-    const auto overstress = abs(tau - x) - r;
-    const auto f = max(overstress, stress(0));
+    // Optional Charbonnier regularisation of the signed Macaulay flow.
+    const auto drive = tau - x;
+    const auto smooth = srixSmoothingEpsilon > stress(0);
+    const auto drive_norm = smooth
+        ? sqrt(drive * drive + srixSmoothingEpsilon * srixSmoothingEpsilon)
+        : abs(drive);
+    const auto drive_abs = smooth
+        ? drive_norm - srixSmoothingEpsilon
+        : drive_norm;
+    const auto drive_sign = smooth
+        ? drive / drive_norm
+        : (drive > stress(0) ? 1 : -1);
+    const auto overstress = drive_abs - r;
+    const auto overstress_norm = smooth
+        ? sqrt(overstress * overstress + srixSmoothingEpsilon * srixSmoothingEpsilon)
+        : abs(overstress);
+    const auto f = smooth
+        ? (overstress + overstress_norm) / 2
+        : max(overstress, stress(0));
     // No overflow guard here: the flow rule is linear in f, unlike the Norton
     // power of Meric-Cailletaud. Rejecting a large f would discard valid states.
     //
@@ -315,8 +336,16 @@ localIterations.setEntryName("LocalIterations");
     // slope is constant.) Writing the active slope on an inactive system
     // corrupts the Jacobian by exactly the number of inactive systems, which
     // makes the local Newton fail non-monotonically in the step size.
-    const auto dflow = (overstress > stress(0)) ? flow_slope : 0 * flow_slope;
-    const auto sgn = tau - x > 0 ? 1 : -1;
+    const auto dpositive = smooth
+        ? (1 + overstress / overstress_norm) / 2
+        : (overstress > stress(0) ? 1 : 0);
+    const auto dflow = flow_slope * dpositive * drive_sign * drive_sign
+        + (smooth ? flow_slope * f *
+              (srixSmoothingEpsilon * srixSmoothingEpsilon) /
+                  (drive_norm * drive_norm * drive_norm)
+            : 0 * flow_slope);
+    const auto dflow_hardening = flow_slope * dpositive;
+    const auto sgn = drive_sign;
     // elasticity
     gpsPlastic += dg[i] * ss.mus[i];
     // Row block below; the constraint rows do not see the slips.
@@ -338,7 +367,7 @@ localIterations.setEntryName("LocalIterations");
     for (size_type j = 0; j != Nss; ++j) {
       const auto sgn_gj = dg(j) > 0 ? 1 : -1;
       const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj;
-      dfg_ddg(i, j) += dflow * dr * sgn - damplitude * (ndeq | ss.mus[j]);
+      dfg_ddg(i, j) += dflow_hardening * dr * sgn - damplitude * (ndeq | ss.mus[j]);
     }
   }
   }  // end of the Deq >= deqeps branch

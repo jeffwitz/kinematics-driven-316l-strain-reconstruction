@@ -1554,6 +1554,8 @@ def solve_two_state_dirichlet_plane_stress(
             "native_batch_calls",
             "native_material_points",
             "native_internal_integrations",
+            "native_integrate_calls",
+            "native_integrate_points",
             "native_total_local_iterations",
             "native_thread_count",
             "native_substep_points",
