@@ -5276,8 +5276,7 @@ ABI/visibility limitation, not evidence that the StructuralPlaneStress3D
 equations are infeasible.
 
 The safe genericity claim at this gate is only an explicit additional
-elastic-residual/Jacobian adapter contract. No TFEL fork has been created, and
-no J2, SRIX or Méric generic-brick proof has been claimed yet. A local
+elastic-residual/Jacobian adapter contract. No TFEL fork has been created. A local
 `@Integrator` prototype now compiles against the installed TFEL 5.1.0 and
 demonstrates that `fzeros` and `jacobian` can be transformed after the
 StandardElasticity residual initialization and before the generated Newton
@@ -5299,14 +5298,22 @@ error. It uses the repository Bunge convention `Q=global_to_material`,
 rotated-gradient result is historical hook evidence only, not the physical
 rotation proof. The corrected probe now also reconstructs its converged
 Jacobian and returns `T D X_e`; its live Schur comparison is `6.95e-16` and
-central-FD errors for steps `1e-5,1e-6,1e-7` are approximately
+ central-FD errors for steps `1e-5,1e-6,1e-7` are approximately
 `1.77e-14,4.78e-13,5.50e-12`. Its six auxiliary strain entries are located
 from MGIS metadata. This qualifies only the rotated elastic probe, not yet
-per-point orientation properties, J2, SRIX or Méric. A J2 probe now exists at
+per-point orientation properties or Méric. A J2 probe now exists at
 `validation/mfront/StructuralPlaneStressJ2Probe.mfront`, with
 `scripts/probe_structural_plane_stress_j2.sh`; it transforms all seven local
 Jacobian columns without naming the plastic variable. The plastic-point
 maximum transverse stress is `7.99e-14`, and FD tangent errors for
 `1e-5,1e-6,1e-7` are `3.94e-7,3.94e-9,3.12e-11`. This is still a prototype
-contract proof, not yet an independent condensation qualification or SRIX/Méric
-qualification.
+contract proof, not yet an independent condensation qualification. A SRIX
+closure probe is now available at
+`scripts/probe_structural_plane_stress_srix.sh`; it generates a temporary
+variant from the raw SRIX law, applies the same generic `fzeros`/`jacobian`
+row transformation, and does not modify the production MFront source. With
+the qualified Bunge rotation it reaches `9.30e-15` maximum transverse
+traction and `1.74e-18` in-plane kinematic error. This SRIX gate intentionally
+uses `IntegrationWithoutTangentOperator`: the generic closure is demonstrated,
+but the complete SRIX pre-update state must still be reconstructed before its
+tangent can be qualified. Méric remains unqualified.

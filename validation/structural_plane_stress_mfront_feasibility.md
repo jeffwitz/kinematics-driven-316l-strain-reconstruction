@@ -333,6 +333,11 @@ compatibility.
     adapter contract (prototype target, not yet implemented)
 ```
 
-This is a feasibility result, not a qualification result. The local hook
-prototype has compiled and passed its generated-code ordering check, but no
-J2 proof, SRIX proof or Méric proof has been run yet.
+The rotated elastic and J2 probes now pass. The SRIX closure probe also passes
+using the same transformation and no SRIX-specific symbol in the closure
+code: its maximum rotated transverse traction is `9.30e-15` and its in-plane
+kinematic error is `1.74e-18`. It is deliberately run without a tangent
+operator at this gate; the SRIX tangent requires reconstructing the complete
+pre-update state (`deel`, `dg`, hardening variables) before rebuilding the
+local Jacobian. This is a closure proof, not yet a live SRIX tangent or an
+independent condensation qualification. Méric remains unqualified.
