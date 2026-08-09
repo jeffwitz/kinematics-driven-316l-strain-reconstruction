@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/scripts/benchmark_gps_composite_fd_m20.py", line 14, in <module>
+    from scripts.benchmark_tri2_j2_krylov import _load_case
+ModuleNotFoundError: No module named 'scripts'

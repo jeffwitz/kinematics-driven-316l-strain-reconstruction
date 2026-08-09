@@ -66,3 +66,23 @@ and a final residual of 5.34e-9. The measured elapsed time was 44.98 s.
 The corresponding artifacts are
 validation/_generated/performance/mfront_refactor_m100_gps_fd.json and
 validation/_generated/performance/mfront_refactor_m100_gps_fd.fields.npz.
+
+## Known coupling, recorded rather than fixed
+
+`GPSSubsteppingMixin` and `CompositeTangentMixin` are extracted from the
+adapter but not decoupled from it. Both reach into adapter attributes --
+`_manager`, `_failing_cache`, `_maximum_substeps`, `_last_substep_mask` and
+others -- and both carry a `# mypy: ignore-errors` header for that reason. A
+reader cannot take either file on its own and learn its contract: the contract
+is the adapter's internals.
+
+That is a large improvement on three thousand lines in one module, and it is
+not the end state. The end state is an explicit interface -- a
+`GPSIntegrationContext` protocol, or an integrator object handed the operations
+it needs -- so that the mixins depend on a named surface instead of on whatever
+the adapter happens to expose.
+
+It is **not** being done now: the regression risk of rewiring the
+sub-stepping and the composite tangent outweighs the readability gain while the
+qualification numbers are fresh. It is written here so the split is understood
+as a stage rather than as finished work.

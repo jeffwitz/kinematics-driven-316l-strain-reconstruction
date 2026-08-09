@@ -1,0 +1,49 @@
+{
+  "crop_nodes": [
+    1570,
+    1670,
+    1035,
+    1135
+  ],
+  "increments": 8,
+  "gps": {
+    "elapsed_seconds": 75.46849458897486,
+    "newton": 85,
+    "per_increment": [
+      6,
+      6,
+      7,
+      7,
+      11,
+      13,
+      17,
+      18
+    ],
+    "residual": 5.138127918218007e-09,
+    "timing": {
+      "composite_fd_seconds": 0.0,
+      "composite_fd_points": 0.0,
+      "composite_fd_trajectories": 0.0
+    }
+  },
+  "composite_fd": {
+    "elapsed_seconds": 52.440918100008275,
+    "newton": 58,
+    "per_increment": [
+      6,
+      6,
+      7,
+      7,
+      7,
+      8,
+      8,
+      9
+    ],
+    "residual": 5.340683735206039e-09,
+    "timing": {
+      "composite_fd_seconds": 2.0483991272049025,
+      "composite_fd_points": 192.0,
+      "composite_fd_trajectories": 1152.0
+    }
+  }
+}

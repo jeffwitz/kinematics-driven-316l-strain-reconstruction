@@ -100,6 +100,27 @@ Cast3M, `code_aster`, an in-house solver — the plane-stress logic is no longer
 in the host code, so it cannot drift between hosts and does not have to be
 re-implemented or re-qualified for each.
 
+**Sub-stepping, and why it needs a tangent repair.** The joint local Newton
+refuses the full increment at a few deeply plastic points -- two out of four
+hundred on the small P43 window, `0.071 %` of the batch at M100 -- and only
+those points are integrated in sub-steps. A sub-stepped point then returns the
+tangent of its **last** sub-step, which is not the derivative of the composite
+path it actually followed, and the global Newton pays for it: 85 iterations
+against the reference's 57 at M100.
+
+`gps_composite_fd_tangent` rebuilds the tangent of exactly those points by
+finite differences along the composite trajectory. It is what makes this route
+usable, and it is not optional in practice:
+
+| P43 M100 EBSD, 8 increments, 4 threads | time | Newton |
+|---|---:|---:|
+| condensed reference | `62.38 s` | 57 |
+| GPS, tangent as the DSL returns it | `74.05 s` | 85 |
+| **GPS + composite FD** | **`58.38 s`** | **58** |
+
+The finite difference touched `192` points and `1152` trajectories for `2.15 s`
+of its own cost, and the converged residual is `5.3e-09`.
+
 **What it costs.** The law has to be written for it, once per behaviour: a
 crystal model that has not been given the closure rows cannot use this route.
 And a host code owes three conventions, which the bridge here implements and
@@ -139,17 +160,21 @@ SolverConfig(
 | works with any 3D law | **yes** | no, one law per behaviour |
 | usable from another FEM code | no | **yes** |
 | constitutive calls per point and global iteration | `6.6` | `2.0` |
-| P43 20x20 material time against route A | — | `1.2 – 1.7x` faster |
-| P43 100x100 | — | parity |
+| needs `gps_composite_fd_tangent` | — | yes, in practice |
+| P43 20x20 material time against route A | — | `1.4 – 1.5x` faster |
+| P43 100x100, total time | `62.38 s` | **`58.38 s`** |
 
 The two agree to `1e-11` at a material point and to `1e-8` on P43
 displacements, so the choice is about what you need to build, not about which
 answer you get.
 
-Route A is the production default and the numerical reference. Route B is
-qualified — closure to `2e-14` MPa, finite-difference tangent to `1.2e-07`,
-agreement with route A to `1e-11` — and is the one to reach for when the law has
-to run somewhere else.
+Route A remains the **numerical reference**: it accepts any 3D behaviour, and
+every route-B result is measured against it. Route B with the composite tangent
+is now the **faster** of the two on the qualified SRIX/EBSD case and is what
+{doc}`../../how-to/choose_an_mfront_backend` recommends there — closure to
+`2e-14` MPa, finite-difference tangent to `1.2e-07`, agreement with route A to
+`1e-11`. Without the composite tangent route B is slower than route A at M100,
+so the two are not interchangeable on performance alone.
 
 Both build and run on **unmodified TFEL/MFront 5.1.0**. An earlier attempt to add
 a `GeneralisedPlaneStress` modelling hypothesis to the generator was abandoned:

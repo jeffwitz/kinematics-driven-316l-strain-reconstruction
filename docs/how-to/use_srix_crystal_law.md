@@ -15,17 +15,65 @@ Both crystal laws are in `mfront/` and are compiled by the usual script:
 It prints the path of `libBehaviour.so`, which must be exported as
 `MFRONT_BEHAVIOUR_LIBRARY` for anything below to run.
 
-## Select the law
+## Select the law and a backend
 
 The behaviour identifiers are `fcc_forest_rubin_srix` and, for the
-rate-dependent reference, `fcc_meric_cailletaud`:
+rate-dependent reference, `fcc_meric_cailletaud`. Neither declares a native
+plane-stress hypothesis, so the plane-stress condition has to be closed around
+or inside the 3D law, and there are **two routes**. They agree to `1e-11` at a
+material point; pick on what you need, not on accuracy.
+{doc}`choose_an_mfront_backend` is the full decision page.
 
-```bash
---constitutive-backend mfront --mfront-behaviour-id fcc_forest_rubin_srix
+### Route 1 — generalised plane stress, recommended for SRIX on EBSD
+
+```yaml
+solver:
+  constitutive_backend: mfront-native-generalised-plane-stress
+  mfront_behaviour_id: fcc_forest_rubin_srix
+  mfront_threads: 4
+  constitutive_options:
+    gps_composite_fd_tangent: true
+    parameter_set: 316l_srix_transposed_from_nasri2018_rate_1e-3
+    crystal_orientation:
+      mode: ebsd
+      euler_bunge_deg: [...]        # (nx, ny, 3), degrees
 ```
 
-Neither declares a native plane-stress hypothesis, so the solver condenses the
-3D law. That is deliberate; see the explanation page.
+> **Recommended for the qualified P43 SRIX/EBSD workflow.**
+> Use `mfront-3d-condensed-plane-stress` as the independent numerical reference
+> or for a 3D behaviour that has no GPS variant.
+
+The law carries the closure in its own local Newton, so the behaviour is
+self-contained and usable from another finite-element code.
+`gps_composite_fd_tangent` repairs the tangent of the few points the local
+Newton had to sub-step; without it the same run needs 85 Newton iterations
+instead of 58 on P43 M100.
+
+### Route 2 — condensed 3D, the numerical reference
+
+```yaml
+solver:
+  constitutive_backend: mfront-3d-condensed-plane-stress
+  mfront_behaviour_id: fcc_forest_rubin_srix
+  mfront_threads: 4
+  constitutive_options:
+    parameter_set: 316l_srix_transposed_from_nasri2018_rate_1e-3
+    crystal_orientation:
+      mode: ebsd
+      euler_bunge_deg: [...]
+```
+
+The closure is an outer Newton in Python and the law is never modified, so this
+route accepts **any** 3D behaviour — including `fcc_meric_cailletaud`, which
+has no GPS variant. It is the independent reference every GPS result is
+measured against.
+
+Both routes are reachable from the command line as well:
+
+```bash
+--constitutive-backend mfront-3d-condensed-plane-stress \
+    --mfront-behaviour-id fcc_forest_rubin_srix
+```
 
 ## Choose or compute R
 

@@ -176,6 +176,20 @@ def main() -> int:
         "solution with the GPS's ~1e-14",
     )
     parser.add_argument(
+        "--gps-shadow-tangent",
+        action="store_true",
+        help="for the native GPS backend, replace the Newton tangent by the "
+        "reference Schur evaluated at the GPS's own converged state (one extra "
+        "3D integration per evaluation); stress, state, closure and "
+        "sub-stepping are untouched",
+    )
+    parser.add_argument(
+        "--gps-composite-fd-tangent",
+        action="store_true",
+        help="for the native GPS backend, rebuild the tangent of the "
+        "sub-stepped points by finite differences on the composite trajectory",
+    )
+    parser.add_argument(
         "--gps-condensed-tangent",
         action="store_true",
         help="for the native GPS backend, enable the law's CondensedTangent "
@@ -363,6 +377,16 @@ def main() -> int:
                 **orientation_configuration,
             },
             "paired_parameter_set": arguments.paired_parameter_set,
+            **(
+                {"gps_shadow_tangent": True}
+                if arguments.gps_shadow_tangent
+                else {}
+            ),
+            **(
+                {"gps_composite_fd_tangent": True}
+                if arguments.gps_composite_fd_tangent
+                else {}
+            ),
         },
     )
     if (

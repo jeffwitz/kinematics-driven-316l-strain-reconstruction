@@ -70,11 +70,27 @@ Supported backend values are:
 |---|---|
 | `mfront` | compatibility alias for native MFront plane stress |
 | `mfront-native-plane-stress` | explicit native MFront plane stress |
-| `mfront-3d-condensed-plane-stress` | experimental 3D law with local condensation |
+| `mfront-3d-condensed-plane-stress` | 3D law with the plane-stress closure solved outside it, in Python; works with any 3D behaviour and is the numerical reference |
+| `mfront-native-generalised-plane-stress` | 3D law whose own local Newton carries the closure; needs a GPS variant of the behaviour |
 | `python` | historical analytical/tabulated J2 regression implementation |
 | any registered identifier | process-local constitutive plugin |
 
-The local plane-stress controls are used only by the condensed 3D backend.
+{doc}`../how-to/choose_an_mfront_backend` says which one to use, and
+{doc}`numerics/three_dimensional_condensation` derives the two plane-stress
+routes. The local plane-stress controls below are used only by the condensed
+3D backend.
+
+### `constitutive_options` of the generalised plane-stress backend
+
+Accepted only by `mfront-native-generalised-plane-stress`; the condensed
+backend refuses them, so a configuration cannot carry one without effect.
+
+| Key | Default | Meaning |
+|---|---:|---|
+| `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of the points the local Newton had to sub-step. Recommended: a sub-stepped point otherwise returns its LAST sub-step's tangent, which is not the derivative of the path it followed. On P43 M100 it takes the GPS from 85 Newton iterations to 58, against 57 for the reference |
+| `gps_composite_fd_step` | `1.0e-6` | perturbation of that finite difference, relative to the strain increment. A numerical tolerance, not a tuning knob |
+| `gps_shadow_tangent` | `false` | diagnostic: replace the Newton matrix by the reference Schur evaluated at the GPS's own converged state. Costs a full extra 3D integration per evaluation and is what established that the iteration penalty was the matrix; not a production setting |
+| `gps_shadow_tangent_scope` | `"all"` | which points the shadow applies to |
 
 ## NonlocalPlasticityConfig
 

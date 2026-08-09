@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/scripts/qualify_crystal_tet2_p43.py", line 17, in <module>
+    from fem_inhouse.core.crystal_parameter_pairs import (
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/__init__.py", line 4, in <module>
+    from fem_inhouse.core.tensor_reconstruction import FullTensorState
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/__init__.py", line 26, in <module>
+    from fem_inhouse.core.mfront import (
+  File "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/mfront.py", line 52
+    name: str,
+        ^
+SyntaxError: invalid syntax

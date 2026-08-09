@@ -10,7 +10,8 @@ are grouped as follows:
 | `fem_inhouse.config` | typed mesh, material, solver and nonlocal configuration |
 | `fem_inhouse.results` | result fields and solver diagnostics |
 | `fem_inhouse.core.tensor_reconstruction` | engineering, Kelvin and complete-tensor conversion |
-| `fem_inhouse.core.plane_stress_material` | common plane-stress material protocol |
+| `fem_inhouse.core.plane_stress_material` | common plane-stress material protocol, and the factory that turns a `constitutive_backend` into a batch |
+| `fem_inhouse.core.mfront` | compatibility and public integration façade over the MFront bridges; re-exports the runtime, state, native, 3D, condensation and generalised-plane-stress pieces under one name, with an explicit `__all__` |
 | `fem_inhouse.postprocessing.helmholtz` | element-centred Helmholtz filter |
 | `fem_inhouse.postprocessing.metrics` | field, overlap and diffusivity metrics |
 | `fem_inhouse.workflows.nonlocality_diagnostic` | output-only spatial-width campaign |

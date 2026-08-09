@@ -1,0 +1,58 @@
+{
+  "composite_fd_actual_point_integrations": 1152,
+  "composite_fd_displacement_sha256": "a06a99de9ffe10a071a6971c992a47f4b2db4eaedb56e7279dd05e86320c952a",
+  "composite_fd_elapsed_seconds": 52.39796228602063,
+  "composite_fd_integration_seconds": 1.6520492832642049,
+  "composite_fd_mgis_calls": 1152,
+  "composite_fd_newton": 58,
+  "composite_fd_other_seconds": 0.42256209533661604,
+  "composite_fd_partition_changes": 19,
+  "composite_fd_per_increment": [
+    6,
+    6,
+    7,
+    7,
+    7,
+    8,
+    8,
+    9
+  ],
+  "composite_fd_points": 192,
+  "composite_fd_residual": 5.340683735206039e-09,
+  "composite_fd_restore_seconds": 0.04688208596780896,
+  "composite_fd_seconds": 2.125255856954027,
+  "composite_fd_snapshot_seconds": 0.0037623923853971064,
+  "composite_fd_speed_ratio": 0.707558112386997,
+  "composite_fd_trajectories": 1152,
+  "crop_nodes": [
+    1570,
+    1670,
+    1035,
+    1135
+  ],
+  "displacement_relative_l2": 2.190879686958204e-12,
+  "gps_displacement_sha256": "5ee4dc38a3840452af393de904cd33b39c8aa9037096c68fc86ddbae9cc8d3ee",
+  "gps_elapsed_seconds": 74.05464140500408,
+  "gps_newton": 85,
+  "gps_per_increment": [
+    6,
+    6,
+    7,
+    7,
+    11,
+    13,
+    17,
+    18
+  ],
+  "gps_residual": 5.138127918218007e-09,
+  "increments": 8,
+  "observable_relative_l2": {
+    "accumulated_slip": 1.6952818585921195e-08,
+    "back_strain": 4.706702210132803e-09,
+    "elastic_strain": 4.874154783185864e-09,
+    "equivalent_plastic_slip": 2.1699767644390315e-08,
+    "plastic_slip": 2.1699767644390315e-08
+  },
+  "reaction_relative_l2": 6.266014761224665e-10,
+  "stress_relative_l2": 5.985607790657431e-09
+}

@@ -1,0 +1,81 @@
+{
+  "records": [
+    {
+      "converged": true,
+      "elapsed_seconds": 59.15493978897575,
+      "material_integration_seconds": 39.01757709309459,
+      "material_point_integrations": 4220000.0,
+      "material_seconds": 47.79124987398973,
+      "newton_iterations": 57,
+      "repeat": 1,
+      "variant": "reference",
+      "wall_seconds": 61.20814285997767
+    },
+    {
+      "converged": true,
+      "elapsed_seconds": 75.05162490904331,
+      "material_integration_seconds": 49.39816056325799,
+      "material_point_integrations": 1720000.0,
+      "material_seconds": 53.97005809604889,
+      "newton_iterations": 85,
+      "repeat": 1,
+      "variant": "gps",
+      "wall_seconds": 76.93943669396685
+    },
+    {
+      "converged": false,
+      "log": "validation/_generated/performance/gps_tangent_variants_m100/gps_composite_r1.log",
+      "repeat": 1,
+      "variant": "gps_composite"
+    },
+    {
+      "converged": false,
+      "log": "validation/_generated/performance/gps_tangent_variants_m100/reference_r2.log",
+      "repeat": 2,
+      "variant": "reference"
+    },
+    {
+      "converged": false,
+      "log": "validation/_generated/performance/gps_tangent_variants_m100/gps_r2.log",
+      "repeat": 2,
+      "variant": "gps"
+    },
+    {
+      "converged": false,
+      "log": "validation/_generated/performance/gps_tangent_variants_m100/gps_composite_r2.log",
+      "repeat": 2,
+      "variant": "gps_composite"
+    }
+  ],
+  "summary": {
+    "gps": {
+      "converged": true,
+      "elapsed_median": 75.05162490904331,
+      "material_max": 53.97005809604889,
+      "material_median": 53.97005809604889,
+      "material_min": 53.97005809604889,
+      "material_point_integrations": 1720000.0,
+      "material_speedup_vs_reference": 0.885514145434809,
+      "newton_iterations": [
+        85
+      ],
+      "runs": 1
+    },
+    "gps_composite": {
+      "converged": false
+    },
+    "reference": {
+      "converged": true,
+      "elapsed_median": 59.15493978897575,
+      "material_max": 47.79124987398973,
+      "material_median": 47.79124987398973,
+      "material_min": 47.79124987398973,
+      "material_point_integrations": 4220000.0,
+      "material_speedup_vs_reference": 1.0,
+      "newton_iterations": [
+        57
+      ],
+      "runs": 1
+    }
+  }
+}

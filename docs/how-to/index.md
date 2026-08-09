@@ -48,6 +48,7 @@ inspect_p0043_evm_fields
 characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
+choose_an_mfront_backend
 use_srix_crystal_law
 use_reduced_integration
 add_nonlocal_criterion
