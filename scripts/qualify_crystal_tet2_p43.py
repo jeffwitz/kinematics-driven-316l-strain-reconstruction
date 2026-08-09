@@ -197,6 +197,12 @@ def main() -> int:
         help="experimental SRIX Charbonnier stress scale in MPa; zero preserves the historical law",
     )
     parser.add_argument(
+        "--srix-smoothing-exponent",
+        type=float,
+        default=None,
+        help="experimental SRIX generalized Charbonnier exponent",
+    )
+    parser.add_argument(
         "--gps-condensed-tangent",
         action="store_true",
         help="for the native GPS backend, enable the law's CondensedTangent "
@@ -387,6 +393,11 @@ def main() -> int:
             **(
                 {"srix_smoothing_epsilon": arguments.srix_smoothing_epsilon}
                 if arguments.srix_smoothing_epsilon is not None
+                else {}
+            ),
+            **(
+                {"srix_smoothing_exponent": arguments.srix_smoothing_exponent}
+                if arguments.srix_smoothing_exponent is not None
                 else {}
             ),
             **(
@@ -587,6 +598,7 @@ def main() -> int:
         "tolerance": arguments.tolerance,
         "behaviour": arguments.behaviour,
         "srix_smoothing_epsilon_mpa": arguments.srix_smoothing_epsilon,
+        "srix_smoothing_exponent": arguments.srix_smoothing_exponent,
         "mfront_threads": arguments.mfront_threads,
         "maximum_newton_iterations": arguments.maximum_newton_iterations,
         "local_transverse_predictor": arguments.local_transverse_predictor,
