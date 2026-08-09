@@ -117,6 +117,10 @@ R.setEntryName("SrixOverstressModulus");
 @Parameter stress srixSmoothingEpsilon = 0.;
 srixSmoothingEpsilon.setEntryName("SrixSmoothingEpsilon");
 
+//! Exponent of the generalized Charbonnier norm used by the optional smoothing.
+@Parameter real srixSmoothingExponent = 11.;
+srixSmoothingExponent.setEntryName("SrixSmoothingExponent");
+
 @Parameter stress tau0 = 40.;
 @Parameter stress Q = 10.;
 @Parameter real b = 3.;
@@ -206,7 +210,9 @@ a.setEntryName("BackStrain");
     const auto drive = tau - x;
     const auto smooth = srixSmoothingEpsilon > stress(0);
     const auto drive_norm = smooth
-        ? sqrt(drive * drive + srixSmoothingEpsilon * srixSmoothingEpsilon)
+        ? pow(pow(abs(drive), srixSmoothingExponent) +
+                  pow(srixSmoothingEpsilon, srixSmoothingExponent),
+              1 / srixSmoothingExponent)
         : abs(drive);
     const auto drive_abs = smooth
         ? drive_norm - srixSmoothingEpsilon
@@ -216,7 +222,9 @@ a.setEntryName("BackStrain");
         : (drive > stress(0) ? 1 : -1);
     const auto overstress = drive_abs - r;
     const auto overstress_norm = smooth
-        ? sqrt(overstress * overstress + srixSmoothingEpsilon * srixSmoothingEpsilon)
+        ? pow(pow(abs(overstress), srixSmoothingExponent) +
+                  pow(srixSmoothingEpsilon, srixSmoothingExponent),
+              1 / srixSmoothingExponent)
         : abs(overstress);
     const auto f = smooth
         ? (overstress + overstress_norm) / 2
@@ -233,14 +241,22 @@ a.setEntryName("BackStrain");
     // slope is constant.) Writing the active slope on an inactive system
     // corrupts the Jacobian by exactly the number of inactive systems, which
     // makes the local Newton fail non-monotonically in the step size.
+    const auto drive_abs_derivative = smooth
+        ? (drive > stress(0) ? 1 : -1) *
+              pow(abs(drive) / drive_norm, srixSmoothingExponent - 1)
+        : (drive > stress(0) ? 1 : -1);
+    const auto direction_derivative = smooth
+        ? (drive_norm - drive * drive_abs_derivative) /
+              (drive_norm * drive_norm)
+        : 0;
     const auto dpositive = smooth
-        ? (1 + overstress / overstress_norm) / 2
+        ? (1 + (overstress > stress(0) ? 1 : -1) *
+              pow(abs(overstress) / overstress_norm, srixSmoothingExponent - 1)) / 2
         : (overstress > stress(0) ? 1 : 0);
-    const auto dflow = flow_slope * dpositive * drive_sign * drive_sign
-        + (smooth ? flow_slope * f *
-              (srixSmoothingEpsilon * srixSmoothingEpsilon) /
-                  (drive_norm * drive_norm * drive_norm)
-            : 0 * flow_slope);
+    const auto dflow = smooth
+        ? flow_slope * (dpositive * drive_abs_derivative * drive_sign +
+                        f * direction_derivative)
+        : flow_slope;
     const auto dflow_hardening = flow_slope * dpositive;
     const auto sgn = drive_sign;
     // elasticity
