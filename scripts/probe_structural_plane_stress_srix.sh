@@ -2,7 +2,8 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
-source_mfront="$repo_root/mfront/Fcc316LForestRubinSrix.mfront"
+source_mfront="${1:-$repo_root/mfront/Fcc316LForestRubinSrix.mfront}"
+behaviour_name="${2:-Fcc316LForestRubinSrix}"
 probe_dir=$(mktemp -d /tmp/structural-plane-stress-srix.XXXXXX)
 set +u
 source /home/jeff/.local/share/tfel/env/env.sh
@@ -15,6 +16,7 @@ import sys
 
 source = Path(sys.argv[1]).read_text()
 target = Path(sys.argv[2])
+slip_class = Path(sys.argv[1]).stem + "SlipSystems"
 aux = r'''
 @AuxiliaryStateVariable real structuralTotalStrain[6];
 structuralTotalStrain.setEntryName("StructuralTotalStrain");
@@ -103,7 +105,7 @@ if source.count(marker) != 1:
 source = source.replace(marker, "\n" + integrator + "}\n\n@UpdateAuxiliaryStateVariables", 1)
 source = source.replace("@StateVariable strain g[Nss];", aux + "\n@StateVariable strain g[Nss];", 1)
 source = source.replace("@UpdateAuxiliaryStateVariables {", """@UpdateAuxiliaryStateVariables {
-  const auto& ss = Fcc316LForestRubinSrixSlipSystems<real>::getSlipSystems();
+  const auto& ss = SLIP_SYSTEM_CLASS<real>::getSlipSystems();
   auto material_total = this->deel;
   for (ushort i = 0; i != Nss; ++i) {
     material_total += this->dg[i] * ss.mus[i];
@@ -111,18 +113,18 @@ source = source.replace("@UpdateAuxiliaryStateVariables {", """@UpdateAuxiliaryS
   const auto global_total = rotate(material_total);
   for (ushort i = 0; i != StensorSize; ++i) {
     this->structuralTotalStrain[i] = global_total(i);
-  }""", 1)
+  }""".replace("SLIP_SYSTEM_CLASS", slip_class), 1)
 target.write_text(source)
 PY
 
 cd "$probe_dir"
 mfront --obuild --interface=generic "$probe_dir/Fcc316LForestRubinSrixStructuralProbe.mfront" >/dev/null
-LIBRARY="$probe_dir/src/libBehaviour.so" "$python_bin" - <<'PY'
+BEHAVIOUR_NAME="$behaviour_name" LIBRARY="$probe_dir/src/libBehaviour.so" "$python_bin" - <<'PY'
 import os
 import mgis.behaviour as mgis
 import numpy as np
 
-behaviour = mgis.load(os.environ["LIBRARY"], "Fcc316LForestRubinSrix",
+behaviour = mgis.load(os.environ["LIBRARY"], os.environ["BEHAVIOUR_NAME"],
                       mgis.Hypothesis.Tridimensional)
 q = np.array([
     [0.6517403912340062, 0.7532585459971657, 0.08852132690137686],
@@ -144,10 +146,12 @@ def rotate(values):
 data = mgis.MaterialDataManager(behaviour, 1)
 for state in (data.s0, data.s1):
     mgis.setExternalStateVariable(state, "Temperature", 293.15)
-strain = np.array([1.0e-2, -2.0e-3, 0.0, 3.0e-3, 0.0, 0.0])
+scale = 1.0e-2 if os.environ["BEHAVIOUR_NAME"].endswith("Srix") else 1.0e-4
+strain = scale * np.array([1.0, -2.0e-1, 0.0, 3.0e-1, 0.0, 0.0])
+time_increment = 1.0 if os.environ["BEHAVIOUR_NAME"].endswith("Srix") else 1.0e-3
 data.s1.gradients[0] = strain
 result = mgis.integrate(data, mgis.IntegrationType.IntegrationWithoutTangentOperator,
-                        1.0, 0, 1)
+                        time_increment, 0, 1)
 if result != 1:
     raise SystemExit(f"SRIX structural closure integration failed: result={result}")
 stress_global = rotate(np.asarray(data.s1.thermodynamic_forces[0]))
@@ -168,7 +172,7 @@ structural_total = total[structural_indices]
 kinematic_error = np.max(np.abs(structural_total[[0, 1, 3]] - strain[[0, 1, 3]]))
 if float(kinematic_error) > 1.0e-10:
     raise SystemExit(f"SRIX in-plane kinematics failed: {kinematic_error}")
-print("generic SRIX structural plane-stress probe: passed "
+print(f"generic {os.environ['BEHAVIOUR_NAME']} structural plane-stress probe: passed "
       f"(max transverse stress={np.max(transverse):.3e}, "
       f"max in-plane strain error={kinematic_error:.3e}, "
       f"internal-state-size={total.size})")

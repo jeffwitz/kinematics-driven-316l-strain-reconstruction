@@ -5316,4 +5316,8 @@ the qualified Bunge rotation it reaches `9.30e-15` maximum transverse
 traction and `1.74e-18` in-plane kinematic error. This SRIX gate intentionally
 uses `IntegrationWithoutTangentOperator`: the generic closure is demonstrated,
 but the complete SRIX pre-update state must still be reconstructed before its
-tangent can be qualified. Méric remains unqualified.
+tangent can be qualified. The same generator also passes on the raw
+`Fcc316LMericCailletaud` behaviour, using a smaller rate-dependent probe
+increment: maximum transverse traction `6.77e-15` and in-plane error
+`1.42e-19`. This is a closure proof for both laws, not yet a generic tangent
+qualification; the production behaviours remain unchanged.

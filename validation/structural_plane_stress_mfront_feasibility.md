@@ -340,4 +340,8 @@ kinematic error is `1.74e-18`. It is deliberately run without a tangent
 operator at this gate; the SRIX tangent requires reconstructing the complete
 pre-update state (`deel`, `dg`, hardening variables) before rebuilding the
 local Jacobian. This is a closure proof, not yet a live SRIX tangent or an
-independent condensation qualification. Méric remains unqualified.
+independent condensation qualification. The same closure generator also
+passes on the raw Méric-Cailletaud behaviour (with a smaller rate-dependent
+probe increment): maximum transverse traction `6.77e-15` and in-plane error
+`1.42e-19`. This demonstrates that the closure code does not depend on the
+SRIX flow rule. Neither Méric nor SRIX has a qualified generic tangent yet.
