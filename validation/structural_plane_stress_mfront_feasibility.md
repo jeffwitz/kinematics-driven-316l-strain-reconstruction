@@ -149,6 +149,22 @@ of `8.9e-15` in the installed runtime. This is a closure proof for the local
 identity-orientation prototype, not yet a proof of the rotated structural
 formulation or of a condensed tangent.
 
+A second isolated probe,
+`validation/mfront/StructuralPlaneStressRotatedElasticProbe.mfront`, applies
+the same row transformation with a fixed three-dimensional rotation mixing
+normal and shear components. It is built and checked by:
+
+```bash
+./scripts/probe_structural_plane_stress_rotated_hook.sh
+```
+
+The returned material stress, rotated back in the runtime check, has maximum
+transverse traction `5.9e-14`. This demonstrates that the local hook can carry
+the structural rotation through the closure without a second host-side
+rotation for this controlled elastic case. The rotation is intentionally fixed
+in the probe; per-point orientation properties and a consistent condensed
+tangent remain to be implemented and qualified.
+
 The generated header is intentionally placed in a temporary build directory;
 no generated probe library is versioned.
 

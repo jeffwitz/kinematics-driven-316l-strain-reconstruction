@@ -5289,4 +5289,9 @@ identity-orientation elastic hook probe, not a qualified generic backend. The
 script also performs one MGIS point integration and observes a maximum
 transverse stress of about `8.9e-15`. The next step is to add structural
 rotation and a live one-point tangent/closure oracle, without changing the
-qualified GPS or 3D-condensation backends.
+qualified GPS or 3D-condensation backends. A second fixed-rotation elastic
+probe is now available at
+`validation/mfront/StructuralPlaneStressRotatedElasticProbe.mfront`, driven by
+`scripts/probe_structural_plane_stress_rotated_hook.sh`; it reaches about
+`5.9e-14` maximum rotated transverse traction. This still does not qualify
+per-point orientation properties, a condensed tangent, J2, SRIX or Méric.

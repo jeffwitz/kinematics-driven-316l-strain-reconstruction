@@ -1,0 +1,106 @@
+@DSL Implicit;
+@Behaviour StructuralPlaneStressRotatedElasticProbe;
+@Author fem_inhouse project;
+@Date 09 / 08 / 2026;
+@Description {
+  Feasibility probe for a structural plane-stress row transformation with a
+  fixed, fully three-dimensional rotation. This is not a production law.
+};
+
+@ModellingHypothesis Tridimensional;
+@OrthotropicBehaviour;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 20;
+@Theta 1;
+
+@Brick StandardElasticity{
+  young_modulus1 : 210000.,
+  young_modulus2 : 190000.,
+  young_modulus3 : 180000.,
+  poisson_ratio12 : 0.25,
+  poisson_ratio23 : 0.27,
+  poisson_ratio13 : 0.23,
+  shear_modulus12 : 80000.,
+  shear_modulus23 : 70000.,
+  shear_modulus13 : 75000.
+};
+
+@Private {
+  static Stensor rotate(const Stensor& s) {
+    // Fixed structural-to-material rotation, deliberately mixing all shear
+    // components. Values are a proper orthogonal matrix.
+    constexpr auto r00 = real(0.788071);
+    constexpr auto r01 = real(-0.482929);
+    constexpr auto r02 = real(0.382683);
+    constexpr auto r10 = real(0.548985);
+    constexpr auto r11 = real(0.425669);
+    constexpr auto r12 = real(-0.719846);
+    constexpr auto r20 = real(0.280166);
+    constexpr auto r21 = real(0.765908);
+    constexpr auto r22 = real(0.579228);
+    const auto q = sqrt(real(2));
+    const auto s0 = s(0), s1 = s(1), s2 = s(2);
+    const auto s3 = s(3), s4 = s(4), s5 = s(5);
+    auto r = s;
+    r(0) = r00*r00*s0+r01*r01*s1+r02*r02*s2
+         + q*(r00*r01*s3+r00*r02*s4+r01*r02*s5);
+    r(1) = r10*r10*s0+r11*r11*s1+r12*r12*s2
+         + q*(r10*r11*s3+r10*r12*s4+r11*r12*s5);
+    r(2) = r20*r20*s0+r21*r21*s1+r22*r22*s2
+         + q*(r20*r21*s3+r20*r22*s4+r21*r22*s5);
+    r(3) = q*(r00*r10*s0+r01*r11*s1+r02*r12*s2)
+         +(r00*r11+r01*r10)*s3+(r00*r12+r02*r10)*s4
+         +(r01*r12+r02*r11)*s5;
+    r(4) = q*(r00*r20*s0+r01*r21*s1+r02*r22*s2)
+         +(r00*r21+r01*r20)*s3+(r00*r22+r02*r20)*s4
+         +(r01*r22+r02*r21)*s5;
+    r(5) = q*(r10*r20*s0+r11*r21*s1+r12*r22*s2)
+         +(r10*r21+r11*r20)*s3+(r10*r22+r12*r20)*s4
+         +(r11*r22+r12*r21)*s5;
+    return r;
+  }
+};
+
+@Integrator {
+  constexpr auto Gref = real(210000.);
+  constexpr ushort transverse[3] = {2, 4, 5};
+  const auto deto_global = rotate(this->deto);
+  const auto sig_global = rotate(this->sig);
+  auto K_material = Stensor(real(0));
+  for (ushort i = 0; i != StensorSize; ++i) {
+    K_material(i) = this->fzeros(i) + this->deto(i);
+  }
+  const auto K_global = rotate(K_material);
+  tmatrix<StensorSize, StensorSize, real> rotation;
+  for (ushort j = 0; j != StensorSize; ++j) {
+    auto basis = Stensor(real(0));
+    basis(j) = 1;
+    const auto column = rotate(basis);
+    for (ushort i = 0; i != StensorSize; ++i) {
+      rotation(i, j) = column(i);
+    }
+  }
+  const auto raw_jacobian = this->jacobian;
+  for (ushort i = 0; i != StensorSize; ++i) {
+    this->fzeros(i) = K_global(i) - deto_global(i);
+    for (ushort j = 0; j != StensorSize; ++j) {
+      auto value = real(0);
+      for (ushort k = 0; k != StensorSize; ++k) {
+        value += rotation(i, k) * raw_jacobian(k, j);
+      }
+      this->jacobian(i, j) = value;
+    }
+  }
+  for (ushort k = 0; k != 3; ++k) {
+    const auto i = transverse[k];
+    this->fzeros(i) = sig_global(i) / Gref;
+    for (ushort j = 0; j != StensorSize; ++j) {
+      auto value = real(0);
+      for (ushort l = 0; l != StensorSize; ++l) {
+        value += rotation(i, l) * this->D_tdt(l, j);
+      }
+      this->jacobian(i, j) = value / Gref;
+    }
+  }
+};
