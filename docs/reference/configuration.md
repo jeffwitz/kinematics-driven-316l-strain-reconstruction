@@ -88,7 +88,7 @@ backend refuses them, so a configuration cannot carry one without effect.
 | Key | Default | Meaning |
 |---|---:|---|
 | `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of points the local Newton had to sub-step. Recommended `true` for the qualified SRIX + EBSD workflow; otherwise a sub-stepped point returns its last sub-step's tangent. On P43 M100 it takes GPS from 85 Newton iterations to 58, against 57 for the reference |
-| `gps_composite_fd_step` | `1.0e-6` | perturbation of that finite difference, relative to the strain increment. A numerical tolerance, not a tuning knob |
+| `gps_composite_fd_step` | `1.0e-6` | absolute engineering-strain perturbation used by the central finite difference. A numerical tolerance, not a relative increment scale |
 
 The following options are diagnostic only and must remain disabled in
 production unless a validation experiment explicitly requests them:

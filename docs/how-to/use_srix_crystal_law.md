@@ -45,8 +45,11 @@ solver:
 > Use `mfront-3d-condensed-plane-stress` as the independent numerical reference
 > or for a 3D behaviour that has no GPS variant.
 
-The law carries the closure in its own local Newton, so the behaviour is
-self-contained and usable from another finite-element code.
+The law carries the plane-stress closure in its own local Newton, so that
+closure is portable with the behaviour. The presently qualified robust policy
+around it — selective host-side sub-stepping and the composite FD tangent —
+still lives in this repository's adapter and is not automatically provided to
+another finite-element code that calls the behaviour alone.
 `gps_composite_fd_tangent` repairs the tangent of the few points the local
 Newton had to sub-step; without it the same run needs 85 Newton iterations
 instead of 58 on P43 M100.

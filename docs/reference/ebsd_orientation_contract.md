@@ -1,8 +1,12 @@
 # EBSD orientation assignment: the contract
 
-Section 15 of the 2026-08-03 specification. **This is a contract, not an
-implementation.** No polycrystalline computation has been run, and none should
-be until every clause below is satisfied by the data actually in hand.
+This page is the current EBSD orientation contract. The orientation plumbing
+and pixel-map provider are implemented: `mode: ebsd` accepts Bunge Euler angles
+in degrees, converts them to validated rotations, and replicates the map to
+the material points required by the selected batch. The P43 SRIX workflow has
+also been qualified on an EBSD map, including the P43 M100 campaign. This page
+therefore records both the implemented interface and the provenance conditions
+that still apply to each experimental map.
 
 The chain is
 
@@ -13,12 +17,28 @@ EBSD pixel  ->  grain  ->  element  ->  Gauss point  ->  Q_global_to_material
 and each arrow loses information or makes a choice. What follows fixes those
 choices in advance so that a later map cannot quietly adopt a different one.
 
-## What the code already accepts
+## What the code accepts
 
-`fem_inhouse.core.crystal_orientation` takes orientations as an array of shape
-`(n_points, 3, 3)`, one rotation per Gauss point, already validated for
-orthogonality and for having determinant `+1`. The plumbing is therefore in
-place; what is missing is everything upstream of it.
+`PixelOrientationProvider` accepts an Euler-angle array of shape `(nx, ny, 3)`
+through `orientation_provider_from_mapping({"mode": "ebsd", ...})`. It
+converts each Bunge triple to a rotation, validates orthogonality and
+determinant `+1`, and returns the per-point rotations consumed by the material
+batch. A direct `(n_points, 3, 3)` rotation array is also accepted by the lower
+level orientation contract.
+
+The provider assigns the supplied pixel map to the case's material points; it
+does not perform grain segmentation, grain averaging, or a physical
+pixel-to-element homogenisation. Those remain case-level choices and must be
+recorded when they are applied.
+
+## Qualified use
+
+The qualified P43 SRIX + EBSD workflow uses the registered EBSD provider with
+the GPS backend and composite tangent described in
+{doc}`../how-to/choose_mfront_backend`. The independent 3D-condensation route
+accepts the same orientation map and remains the numerical reference. This
+qualification validates the declared case and map; it does not make arbitrary
+unproven orientation files interchangeable.
 
 ## The rotation convention
 
@@ -141,9 +161,11 @@ The orientation map is an input like any other and is hashed like one:
 This goes in the campaign manifest beside the existing input digests, in the
 same way `crystal_parameters` does today.
 
-## What must not happen before this contract is satisfied
+## Remaining provenance requirements
 
-- No polycrystalline experimental computation.
-- No conclusion about a grain whose orientation convention has not been verified
-  against a feature visible in both the EBSD map and the DIC field.
-- No orientation map committed without its provenance block.
+- Do not draw a grain-level conclusion unless the orientation convention has
+  been verified against a feature visible in both the EBSD map and the DIC
+  field.
+- Do not commit or publish an orientation map without its provenance block.
+- Report the mapping, non-indexed fraction, assignment rule and any grain
+  averaging or segmentation applied to the case.

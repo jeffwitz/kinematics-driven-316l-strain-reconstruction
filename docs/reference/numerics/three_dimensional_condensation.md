@@ -93,12 +93,14 @@ hold $\sigma_{g,b}/G_{\text{ref}}=0$. The rotation reaches the law as nine
 per-point material properties `Q11..Q33`. There is no outer loop at all — one
 local Newton returns a converged plane-stress state.
 
-**Its advantage is that it travels.** The behaviour is self-contained: any
-finite-element code able to call an MFront/MGIS behaviour obtains plane stress
-without writing a closure loop, because the closure is part of the law. Abaqus,
-Cast3M, `code_aster`, an in-house solver — the plane-stress logic is no longer
-in the host code, so it cannot drift between hosts and does not have to be
-re-implemented or re-qualified for each.
+**Its advantage is that the closure travels with the behaviour.** Any
+finite-element code able to call the MFront/MGIS GPS behaviour can impose the
+generalised plane-stress closure without reimplementing that local closure.
+However, the presently qualified robust integration policy is still host-side:
+selective sub-stepping and the composite FD tangent live in this repository's
+GPS adapter. A different host calling only the behaviour does not automatically
+obtain that policy and may therefore have a different global-Newton cost or
+robustness envelope.
 
 **Sub-stepping, and why it needs a tangent repair.** The joint local Newton
 refuses the full increment at a few deeply plastic points -- two out of four

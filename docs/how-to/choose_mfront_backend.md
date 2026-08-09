@@ -6,12 +6,12 @@ For the qualified 316L SRIX + EBSD workflow, use
 `mfront-3d-condensed-plane-stress` as the independent numerical reference and
 for 3D behaviours without a GPS implementation.
 
-| Backend | Usage recommandé | Avantage | Limite |
+| Backend | Recommended use | Advantage | Limitation |
 |---|---|---|---|
-| `mfront-native-plane-stress` | lois natives 2D simples | direct | pas général pour CP 3D |
-| `mfront-3d-condensed-plane-stress` | référence / nouvelle loi 3D | fonctionne avec toute loi 3D | condensation Python |
-| `mfront-native-generalised-plane-stress` | SRIX GPS qualifié | monolithique et performant | nécessite une variante GPS de la loi |
-| `python` | régression J2 historique | indépendant de MFront | pas production CP |
+| `mfront-native-plane-stress` | simple native 2D laws | direct | not general for 3D crystal plasticity |
+| `mfront-3d-condensed-plane-stress` | independent reference / new 3D law | works with any 3D law | Python condensation |
+| `mfront-native-generalised-plane-stress` | qualified SRIX GPS workflow | monolithic and performant | requires a GPS law variant |
+| `python` | historical J2 regression | independent of MFront | not production crystal plasticity |
 
 GPS (*generalised plane stress*) conserve les six composantes 3D et résout
 localement les trois déformations hors plan nécessaires pour imposer
@@ -44,7 +44,7 @@ solver:
       # orientation source defined by the case
 ```
 
-## Référence indépendante
+## Independent reference
 
 ```yaml
 solver:
@@ -53,11 +53,10 @@ solver:
   mfront_threads: 4
 ```
 
-La première configuration est la route de production qualifiée pour SRIX +
-EBSD. La seconde est la référence indépendante à utiliser pour qualifier une
-nouvelle loi ou vérifier un résultat GPS.
+The first configuration is the qualified production route for SRIX + EBSD. The
+second is the independent reference to qualify a new law or check a GPS result.
 
-Pour les détails du choix de `R`, des paramètres 316L, des orientations et des
-sorties par système, voir {doc}`use_srix_crystal_law`. La formulation de la
-référence est détaillée dans
+For the details of `R`, the 316L parameters, orientations and per-system
+outputs, see {doc}`use_srix_crystal_law`. The reference formulation is detailed
+in
 {doc}`../reference/numerics/three_dimensional_condensation`.
