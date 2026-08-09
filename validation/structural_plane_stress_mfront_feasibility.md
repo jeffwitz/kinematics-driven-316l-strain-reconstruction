@@ -24,7 +24,7 @@ TFEL source checkout; conclusions below are therefore based on the installed
 
 | Question | Result |
 |---|---|
-| Register a first-level brick from an external library? | **Yes, technically feasible.** |
+| Register a first-level brick from an external library? | **The loader works, but the installed build cannot load a normal external brick implementation.** |
 | Compose several bricks in one behaviour? | **Yes, at the parser/description level.** |
 | Derive/decorate the concrete `StandardElasticity` implementation externally? | **Not demonstrated; no public concrete header is installed.** |
 | Inject code into residual, Jacobian, tangent and auxiliary-state stages? | **Partly.** Named code blocks can be created/replaced/appended, but the API is string/code-block based rather than a typed transformation API. |
@@ -55,14 +55,26 @@ BehaviourBrickFactory::getFactory()
                                   constructor);
 ```
 
-An external module can therefore register a brick from a static initializer,
-provided it is compiled against the same TFEL/MFront ABI and loaded before the
-input file is analysed. This is a build-time/parser plugin, not a runtime MGIS
-plugin. The API is C++ ABI-sensitive: the module must be rebuilt for the exact
-MFront installation, compiler ABI and relevant build options.
+The loader itself works, but the minimal external probe in
+`validation/mfront/structural_plane_stress_brick_probe.cxx` fails when MFront
+loads the module. The installed `libTFELMFront.so.5.1.0` does not export the
+out-of-line implementation symbols needed by a normal derived brick, including
+`BehaviourBrickBase::treatKeyword` and the `AbstractBehaviourBrick` destructor.
+The loader reports an undefined symbol before the registered brick can be
+listed. The relevant symbols are local in the installed shared library even
+though the factory registration methods are exported.
 
-This proves the mechanism needed for a prototype. It does not prove that every
-possible brick can be implemented without relying on MFront internals.
+Therefore, **an external first-level brick is not usable with this exact
+installation** without one of the following changes:
+
+1. rebuilding TFEL/MFront with the required brick base symbols exported;
+2. adding an upstream/plugin-ABI change that makes the brick API loadable;
+3. compiling the brick into the MFront library itself.
+
+This is a concrete ABI/visibility blocker, not a missing include or a problem
+with the proposed plane-stress equations. It also means that
+`MFRONT_ADDITIONAL_LIBRARIES` proves the library-loading mechanism, but does
+not by itself prove external Behaviour Brick support.
 
 ## 2. What a brick can actually control
 
@@ -158,9 +170,9 @@ the existing raw 3D Schur oracle before any claim of generality.
 
 ## 6. Recommended implementation order
 
-1. Build a minimal external registration probe that adds a harmless brick name
-   and confirms that `MFRONT_ADDITIONAL_LIBRARIES` loads it before parsing.
-2. Build a J2/`StandardElasticity` prototype with an explicit, documented
+1. Keep the failed external probe as a regression artifact and decide whether
+   exporting the brick base classes is acceptable upstream.
+2. Until that decision, build a J2/`StandardElasticity` prototype with an explicit, documented
    elastic-residual/Jacobian contract. Do not claim arbitrary-law support yet.
 3. Compare its one-step response and tangent with native plane stress and raw
    3D condensation.
@@ -169,10 +181,11 @@ the existing raw 3D Schur oracle before any claim of generality.
 5. Only after those tests succeed, evaluate whether the contract can be
    promoted to a reusable `StructuralPlaneStress3D` brick.
 
-No TFEL fork is justified by the current evidence. If the public code-block
-API cannot express safe row replacement, the next fallback is a small local
-extension of the implicit DSL or an explicit adapter contract, not a silent
-claim of arbitrary MFront compatibility.
+No TFEL fork is justified by the current evidence. The first engineering choice
+is whether to request/export a small upstream ABI surface for bricks. If that is
+not accepted, the next fallback is a small local extension of the implicit DSL
+or an explicit adapter contract, not a silent claim of arbitrary MFront
+compatibility.
 
 ## Final genericity level at this gate
 
