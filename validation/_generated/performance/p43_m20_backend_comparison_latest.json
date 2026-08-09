@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case": "P43 M20 EBSD, 8 increments",
+  "configuration": {
+    "crop_nodes": [1610, 1630, 1075, 1095],
+    "mfront_threads": 4,
+    "blas_threads": 1,
+    "fftw_threads": 1,
+    "krylov": "LGMRES + Eisenstat-Walker + recycling",
+    "orientation": "CP_dataset.h5"
+  },
+  "results": {
+    "python_condensation": {
+      "backend": "mfront-3d-condensed-plane-stress",
+      "elapsed_seconds": 2.8902672639815137,
+      "material_seconds": 2.1658671699115075,
+      "newton": 46,
+      "iterations_per_increment": [6, 5, 5, 6, 6, 6, 6, 6],
+      "final_residual": 3.1729536197324385e-12,
+      "artifact": "p43_m20_python_condensed_latest.json"
+    },
+    "gps_composite_fd": {
+      "backend": "mfront-native-generalised-plane-stress",
+      "elapsed_seconds": 2.103789724991657,
+      "material_seconds": 1.4422482009977102,
+      "newton": 45,
+      "iterations_per_increment": [6, 5, 5, 6, 5, 6, 6, 6],
+      "final_residual": 1.306264113273414e-10,
+      "artifact": "p43_m20_gps_fd_latest.json"
+    },
+    "generic_mfront_probe": {
+      "full_field_status": "not_available",
+      "reason": "StructuralPlaneStress3D is currently a validation-generated MFront prototype and is not registered as a spectral material backend.",
+      "point_probe_wall_seconds_including_build": 10.10,
+      "point_probe_result": "passed",
+      "warning": "The point-probe wall time is not comparable with the two full-field solver runs."
+    }
+  },
+  "interpretation": {
+    "gps_fd_speedup_over_python": 1.373,
+    "conclusion": "GPS+FD is faster on this run, but the generic MFront route has no honest full-field timing until its adapter/factory integration is implemented."
+  },
+  "execution_commit": "81b757bb8f310aa38f20f25534fd02e7fcecca80"
+}
