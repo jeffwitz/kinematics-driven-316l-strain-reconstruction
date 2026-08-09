@@ -1,0 +1,25 @@
+{
+  "crop_nodes": [
+    1570,
+    1670,
+    1035,
+    1135
+  ],
+  "increments": 8,
+  "elapsed_seconds": 58.38157799799228,
+  "newton": 58,
+  "per_increment": [
+    6,
+    6,
+    7,
+    7,
+    7,
+    8,
+    8,
+    9
+  ],
+  "residual": 5.340683735206039e-09,
+  "composite_fd_seconds": 2.146375308802817,
+  "composite_fd_points": 192,
+  "composite_fd_trajectories": 1152
+}

@@ -37,6 +37,13 @@ sans variables BLAS exportées dans le shell :
 | BLAS limité dans le shell | `61,24 s` | `57` | `1,31 s` |
 | limitation intégrée au solveur | `62,38 s` | `57` | `1,57 s` |
 
+Le test GPS+FD a ensuite été relancé avec cette limitation intégrée, sur le
+même crop : `58,38 s`, `58` Newton, incréments `[6,6,7,7,7,8,8,9]`, résidu
+`5,34e-9`. Le FD a concerné `192` points et `1152` trajectoires, pour
+`2,15 s` de coût propre. Il devient donc légèrement plus rapide que la
+condensation Python sur ce cas, tout en conservant les écarts de champs déjà
+qualifiés (`<3e-8` pour les observables de glissement).
+
 Artefacts versionnés :
 
 ```text
@@ -45,6 +52,7 @@ validation/_generated/performance/
   srix_p43_m100_condensed_blas1.fields.npz
   srix_p43_m100_condensed_runtime_blas1.json
   srix_p43_m100_condensed_runtime_blas1.fields.npz
+  gps_fd_m100_runtime_blas1.json
 ```
 
 Ces résultats ne modifient aucune loi constitutive. Les journaux et fichiers
