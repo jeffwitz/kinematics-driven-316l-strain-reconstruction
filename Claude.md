@@ -5257,3 +5257,26 @@ measured elapsed time was 44.98 s with four MFront threads, one FFTW thread,
 and one Krylov BLAS thread. The M20 replay retained 46 Newton iterations for
 the condensed reference and 52 for GPS. The archived performance JSON is a
 qualification artifact, not a new constitutive calibration.
+
+## StructuralPlaneStress3D feasibility gate
+
+The first generic-GPS feasibility gate is documented in
+`validation/structural_plane_stress_mfront_feasibility.md` and was pushed in
+commits `a6c457b` and `2cc86cf`. The inspected installation is unmodified
+TFEL/MFront 5.1.0 (`deee4cd`) under `/home/jeff/.local`.
+
+The public headers expose `BehaviourBrickFactory` registration and
+`MFRONT_ADDITIONAL_LIBRARIES`, and `@Import` is available. A reproducible
+external-brick probe is at
+`validation/mfront/structural_plane_stress_brick_probe.cxx`, driven by
+`scripts/probe_mfront_brick_plugin.sh`. The loader reaches the external module
+but the installed library does not export the normal brick-base implementation
+symbols, so an external first-level brick is not currently loadable. This is an
+ABI/visibility limitation, not evidence that the StructuralPlaneStress3D
+equations are infeasible.
+
+The safe genericity claim at this gate is only an explicit additional
+elastic-residual/Jacobian adapter contract. No TFEL fork has been created, and
+no J2, SRIX or Méric generic-brick proof has been claimed yet. The next step is
+to prototype the narrow contract through the viable local/`@Import` route,
+without changing the qualified GPS or 3D-condensation backends.
