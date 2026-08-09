@@ -72,18 +72,20 @@ Supported backend values are:
 | `mfront-native-plane-stress` | explicit native MFront plane stress |
 | `mfront-3d-condensed-plane-stress` | 3D law with the plane-stress closure solved outside it, in Python; works with any 3D behaviour and is the numerical reference |
 | `mfront-native-generalised-plane-stress` | 3D law whose own local Newton carries the closure; needs a GPS variant of the behaviour |
+| `mfront-structural-plane-stress` | generated structural plane-stress closure for the V1 `Implicit`/`StandardElasticity` 3D contract |
 | `python` | historical analytical/tabulated J2 regression implementation |
 | any registered identifier | process-local constitutive plugin |
 
 {doc}`../how-to/choose_mfront_backend` says which one to use, and
-{doc}`numerics/three_dimensional_condensation` derives the two plane-stress
+{doc}`numerics/three_dimensional_condensation` derives the plane-stress
 routes. The local plane-stress controls below are used only by the condensed
 3D backend.
 
 ### Production options for the generalised plane-stress backend
 
-Accepted only by `mfront-native-generalised-plane-stress`; the condensed
-backend refuses them, so a configuration cannot carry one without effect.
+Accepted by `mfront-native-generalised-plane-stress` and
+`mfront-structural-plane-stress`; the condensed backend refuses them, so a
+configuration cannot carry one without effect.
 
 | Key | Default | Meaning |
 |---|---:|---|

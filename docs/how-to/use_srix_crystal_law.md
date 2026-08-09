@@ -20,8 +20,11 @@ It prints the path of `libBehaviour.so`, which must be exported as
 The behaviour identifiers are `fcc_forest_rubin_srix` and, for the
 rate-dependent reference, `fcc_meric_cailletaud`. Neither declares a native
 plane-stress hypothesis, so the plane-stress condition has to be closed around
-or inside the 3D law, and there are **two routes**. They agree to `1e-11` at a
-material point; pick on what you need, not on accuracy.
+or inside the 3D law. There are three implemented routes: external 3D
+condensation, specialised SRIX GPS, and the generic `StructuralPlaneStress3D`
+backend. They agree at the qualified material-point accuracy; choose based on
+scope and portability, not on a claim that one formulation changes the
+physical law.
 {doc}`choose_mfront_backend` is the full decision page.
 
 ### Route 1 — generalised plane stress, recommended for SRIX on EBSD
@@ -72,6 +75,29 @@ The closure is an outer Newton in Python and the law is never modified, so this
 route accepts **any** 3D behaviour — including `fcc_meric_cailletaud`, which
 has no GPS variant. It is the independent reference every GPS result is
 measured against.
+
+### Route 3 — generic structural plane stress
+
+```yaml
+solver:
+  constitutive_backend: mfront-structural-plane-stress
+  mfront_behaviour_id: fcc_forest_rubin_srix
+  mfront_library: build/mfront/src/libBehaviour.so
+  mfront_threads: 4
+  constitutive_options:
+    gps_composite_fd_tangent: true
+    gps_composite_fd_step: 1.0e-6
+    parameter_set: 316l_srix_transposed_from_nasri2018_rate_1e-3
+    crystal_orientation:
+      mode: ebsd
+      euler_bunge_deg: [...]        # (nx, ny, 3), degrees
+```
+
+This route applies the generic structural closure to the
+`StandardElasticity`-compatible SRIX behaviour. It uses the same host-side
+substepping and composite tangent as the specialised GPS route. Its scope and
+the current MFront 5.1 integration limitation are documented in
+{doc}`../reference/numerics/mfront_structural_plane_stress`.
 
 Both routes are reachable from the command line as well:
 

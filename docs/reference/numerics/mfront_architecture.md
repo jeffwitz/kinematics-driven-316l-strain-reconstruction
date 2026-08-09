@@ -12,9 +12,9 @@ through fem_inhouse.core.mfront.
           │                   │
       raw 3D bridge       GPS adapter
           │                   │
-    condensation          substepping
+    condensation       specialised or generic GPS
                               │
-                       composite tangent
+                       substepping / FD tangent
 ~~~
 
 The responsibilities are deliberately separate:
@@ -33,6 +33,13 @@ The responsibilities are deliberately separate:
 - mfront_gps/composite_tangent.py differentiates the composed substepped
   application when required.
 - mfront_gps/diagnostics.py contains the non-production shadow tangent.
+
+The registered `mfront-structural-plane-stress` backend uses the same GPS
+adapter, substepper and composite-tangent layer as the specialised SRIX GPS
+backend. Only the MFront behaviour loaded by the adapter changes. The generic
+behaviour transforms the `StandardElasticity` residual/Jacobian block and is
+therefore narrower in scope than the raw 3D bridge, which can call any
+compatible behaviour unchanged.
 
 The constitutive behaviour, the substepping strategy, and the derivative of
 the composed integration algorithm are three distinct layers. In particular,

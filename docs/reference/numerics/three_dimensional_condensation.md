@@ -6,9 +6,10 @@ A plane-stress solver needs a three-component response, and a crystal law is
 written in six. The missing three components are not a modelling choice: the
 sheet has free surfaces normal to `z`, so the transverse **stresses** vanish and
 the transverse **strains** are unknowns. Closing that gap is what this page is
-about, and there are two ways to do it in this repository. They compute the same
-thing and they are interchangeable — the qualification measures their agreement
-at `1e-11` — but they are not interchangeable in what they let you build on.
+about. The repository now contains three implementations: external 3D
+condensation, a specialised SRIX GPS behaviour, and the generic
+`StructuralPlaneStress3D` transformation. They agree on the qualified SRIX
+states, but differ in portability and scope.
 
 ## The condition, once
 
@@ -179,6 +180,14 @@ SolverConfig(
 
 `mfront_behaviour_id` names the **parent** law; the factory selects the
 `_gps` variant. Naming `fcc_forest_rubin_srix_gps` directly works too.
+
+## Generic structural closure
+
+The generic structural formulation is documented in
+{doc}`mfront_structural_plane_stress`. It keeps the law tridimensional and
+transforms the standard elastic residual/Jacobian block rather than adding a
+law-specific closure. Its demonstrated V1 scope is narrower than external
+condensation, but it is reusable across compatible implicit behaviours.
 
 ## Choosing
 

@@ -36,6 +36,7 @@ argue for the scientific model.
 - {doc}`numerics/mfront_architecture`
 - {doc}`numerics/mfront_transaction`
 - {doc}`numerics/three_dimensional_condensation`
+- {doc}`numerics/mfront_structural_plane_stress`
 - {doc}`numerics/nonlocal_fixed_point`
 - {doc}`numerics/sparse_solver`
 - {doc}`numerics/spectral_notation`
@@ -81,6 +82,7 @@ numerics/plane_stress
 numerics/mfront_architecture
 numerics/mfront_transaction
 numerics/three_dimensional_condensation
+numerics/mfront_structural_plane_stress
 numerics/nonlocal_fixed_point
 numerics/sparse_solver
 numerics/spectral_notation
