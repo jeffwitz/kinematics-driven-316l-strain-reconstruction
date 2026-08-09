@@ -19,6 +19,24 @@ import re
 source = Path(sys.argv[1]).read_text()
 target = Path(sys.argv[2])
 generated_behaviour = __import__("os").environ["STRUCTURAL_BEHAVIOUR_NAME"]
+contract = {
+    "@DSL Implicit;": "the Implicit DSL",
+    "@ModellingHypothesis Tridimensional;": "the Tridimensional hypothesis",
+    "@Brick StandardElasticity": "the StandardElasticity brick",
+    "@StateVariable strain g[Nss];": "the FCC slip increment state g[Nss]",
+    "SlipSystems<real>": "the generated FCC SlipSystems helper",
+}
+missing = [description for marker, description in contract.items() if marker not in source]
+if missing:
+    raise SystemExit(
+        "StructuralPlaneStress3D generated-shell contract is not satisfied; "
+        "missing " + ", ".join(missing)
+    )
+if "dg" not in source:
+    raise SystemExit(
+        "StructuralPlaneStress3D generated-shell contract is not satisfied; "
+        "the constitutive core does not expose dg increments"
+    )
 behaviour_match = re.search(r"@Behaviour\s+([A-Za-z_]\w*)\s*;", source)
 if behaviour_match is None:
     raise SystemExit("could not find the source @Behaviour declaration")
