@@ -60,18 +60,20 @@ point; they are not additional FEM degrees of freedom.
 
 ## 2. Relation to existing MFront plane-stress hypotheses
 
-MFront and `StandardElasticity` already provide powerful support for standard
-`PlaneStress` and `GeneralisedPlaneStress` modelling hypotheses. For
+MFront and `StandardElasticity` already provide powerful support for the
+standard `PlaneStress` hypothesis and also provide axial-stress relaxation
+machinery for the axisymmetrical generalised-plane-stress case. For
 `PlaneStress`, an axial-strain unknown is introduced and \(\sigma_{zz}=0\) is
-enforced. In the generalised plane-stress case, the same axial strain is
-solved while the axial stress may be prescribed through an external state
-variable. In both cases the additional kinematics remain axial: the standard
-mechanism does not introduce the two transverse shear strains required by the
-structural relaxation considered here.
+enforced. In the axisymmetrical generalised-plane-stress case, the same axial
+strain is solved while the axial stress may be prescribed through an external
+state variable. These standard mechanisms remain axial: they do not introduce
+the two transverse shear strains required by the structural relaxation
+considered here. This note does not use `GeneralisedPlaneStress` as the name of
+a generic Cartesian MFront modelling hypothesis.
 
 The problem addressed here is different:
 
-| Existing standard hypothesis | Structural 3D closure in this note |
+| Existing standard mechanism | Structural 3D closure in this note |
 |---|---|
 | additional local unknown typically \(\varepsilon_{zz}\) | \(\varepsilon_{zz},\gamma_{xz},\gamma_{yz}\) |
 | closure typically \(\sigma_{zz}=0\) | \(\sigma_{zz}=\sigma_{xz}=\sigma_{yz}=0\) |
@@ -190,7 +192,8 @@ so that the complete traction vector vanishes.
 ### Numerical illustration
 
 The rotated elastic probe uses the Bunge orientation \([35^\circ,20^\circ,15^\circ]\),
-the cubic 316L stiffness \(C_{11}=197000\), \(C_{12}=125000\) and
+and the cubic elastic constants used in the 316L probe,
+\(C_{11}=197000\), \(C_{12}=125000\) and
 \(C_{44}=122000\) MPa, and the structural engineering strain
 
 $$
@@ -222,7 +225,8 @@ W^{3D}(\varepsilon_a,\varepsilon_b),
 \frac{\partial W}{\partial\varepsilon_b}=\sigma_b=0.
 $$
 
-For an incremental dissipative law, the same idea is realised by the local
+For a positive-definite elastic potential, this minimum is well-defined. For
+an incremental dissipative law, the same idea is realised by the local
 implicit constitutive equations rather than by a global energy minimisation.
 No explicit through-thickness heterogeneity or warping is resolved; a material
 that varies through the thickness requires a 3D, layered or shell/multilayer
@@ -249,7 +253,28 @@ use either a committed or tangent transverse predictor, monitors the
 conditioning of \(C_{bb}\), and records the local closure iterations. This is
 the independent reference because it can use an unchanged compatible 3D law.
 
-## 6. Exact equivalence of external and monolithic closure
+## 6. Specialised SRIX monolithic closure: the constructive proof
+
+Before the generic transformation was attempted, the same idea was written
+explicitly in `Fcc316LForestRubinSrixGps`. The SRIX local system contains six
+elastic unknowns `deel[6]` and twelve slip unknowns `dg[12]`. Its three in-plane
+elastic rows impose the structural in-plane increment, while rows `zz`, `xz`
+and `yz` impose the three structural traction equations. The remaining SRIX
+flow and hardening equations are unchanged.
+
+This specialised behaviour demonstrated that a real anisotropic crystal law
+can converge with the three transverse kinematics relaxed inside its local
+implicit Newton. It also provided a second implementation against which the
+generic `StructuralPlaneStress3D` behaviour could be compared on M20 and M100.
+It is not generic: its source knows the SRIX slip variables and must be
+maintained as a law-specific GPS variant. Its qualified host integration still
+uses selective substepping and, where necessary, the composite tangent.
+
+The specialised route is therefore the constructive proof that the closure is
+practical for crystal plasticity; the generic route is the attempt to express
+the same row/Jacobian transformation without knowing SRIX variables.
+
+## 7. Exact equivalence of external and monolithic closure
 
 The equivalence is easiest to see before differentiating. Let \(x\) contain
 the local constitutive unknowns and write the raw 3D system as
@@ -284,7 +309,7 @@ $$
 The Schur tangent and the monolithic implicit tangent are two eliminations of
 the same local equations, not two different physical models.
 
-## 7. Generic MFront residual transformation
+## 8. Generic MFront residual transformation
 
 The specialised SRIX behaviour writes the closure equations explicitly. The
 generic prototype instead uses the standard elastic residual as an algebraic
@@ -334,7 +359,7 @@ then \(\partial\sigma/\partial d\ne0\) and the currently zeroed transverse
 columns would not be correct. This is part of the contract, not an accidental
 detail.
 
-## 8. Residual scaling
+## 9. Residual scaling
 
 The traction rows are scaled as
 
@@ -349,7 +374,7 @@ constant. An upstream implementation should derive the scale from a
 representative elastic modulus or expose it as a well-documented behaviour
 parameter.
 
-## 9. One-step consistent tangent
+## 10. One-step consistent tangent
 
 At convergence, let
 
@@ -378,21 +403,35 @@ $$
 
 The implementation solves this system and never forms \(A^{-1}\). If \(X_e\)
 denotes the elastic-state rows and \(D_m\) is the material-frame
-stress/elastic-strain tangent, then
+stress/elastic-strain tangent, first form the six-output operator
 
 $$
-C^{PS}=\mathcal R_K(Q)^T D_m X_e.
+\widehat C^{PS}=\mathcal R_K(Q)^T D_m X_e
+\in\mathbb R^{6\times3}.
+$$
+
+Let \(S_a\in\mathbb R^{3\times6}\) select the structural stress components
+`xx`, `yy` and `xy`. The tangent returned to the two-dimensional solver is
+
+$$
+\boxed{
+C^{PS}=S_a\widehat C^{PS}
+=S_a\mathcal R_K(Q)^T D_m X_e
+\in\mathbb R^{3\times3}.}
+$$
+
+The six-output form is useful for checking the transverse traction rows, but
+the Schur complement is the selected 3-by-3 operator. Thus
+
+$$
+C^{PS}=C_{aa}-C_{ab}C_{bb}^{-1}C_{ba}.
 $$
 
 The inactive structural columns are not independent input columns and are set
-to zero in the returned operator used by the 2D solver. This is the tangent of
-one constitutive step. The raw 3D route gives the same derivative through
+to zero in the six-column operator exposed to the host. This is the tangent of
+one constitutive step.
 
-$$
-C_{aa}-C_{ab}C_{bb}^{-1}C_{ba}.
-$$
-
-## 10. Host substepping and the composite tangent
+## 11. Host substepping and the composite tangent
 
 The implementation has three distinct derivative layers:
 
@@ -447,7 +486,7 @@ is only piecewise smooth and the finite difference is a secant/generalised
 Jacobian diagnostic rather than a classical derivative. Partition changes are
 recorded; constitutive branch changes are not currently detected generically.
 
-## 11. Numerical controls and algorithmic choices
+## 12. Numerical controls and algorithmic choices
 
 | Control | External condensation | GPS / generic SPS |
 |---|---|---|
@@ -463,7 +502,7 @@ recorded; constitutive branch changes are not currently detected generically.
 The shadow tangent must not be enabled in production. The composite FD is
 sparse: on the qualified M100 run it touched 192 points and 1152 trajectories.
 
-## 12. What is generic, and what is still prototype-specific
+## 13. What is generic, and what is still prototype-specific
 
 Three levels must be distinguished:
 
@@ -488,7 +527,7 @@ is used. The honest current genericity claim is therefore:
 > contract; the registered full-field implementation is currently qualified
 > for SRIX.
 
-## 13. Verification and qualification
+## 14. Verification and qualification
 
 The point-material evidence is:
 
@@ -520,7 +559,7 @@ Both used 192 substepped points. These are single-campaign measurements, not
 universal speed guarantees. The complete comparison is archived in
 `validation/_generated/performance/p43_m100_backend_comparison_latest.json`.
 
-## 14. Current source notes and upstream design
+## 15. Current source notes and upstream design
 
 The generated prototype uses \(S_{ref}=210000\) MPa and the fixed 18-by-18
 transport buffer described above. These should be replaced by a dimension-safe
@@ -541,7 +580,7 @@ and its Jacobian before gradient subtraction, rather than relying on generated
 `fzeros` positions. It should also make the stress-dependence contract and
 residual scaling explicit.
 
-## 15. Reproducibility and references
+## 16. Reproducibility and references
 
 The reports record TFEL/MGIS and Python versions, source hashes, the EBSD source
 hash, orientations, parameter set, thread settings, Newton/Krylov diagnostics
