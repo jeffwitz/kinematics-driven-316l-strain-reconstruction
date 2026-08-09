@@ -135,6 +135,7 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         composite_fd_step: float = 1.0e-6,
         shadow_behaviour_name: str = "Fcc316LForestRubinSrix",
         shadow_behaviour_id: str = "fcc_forest_rubin_srix",
+        backend_label: str = "mfront-native-generalised-plane-stress",
     ) -> None:
         if point_count < 1:
             raise ValueError("point_count must be positive")
@@ -151,6 +152,7 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         )
         self._specification = behaviour_spec
         self._behaviour_name = behaviour_name
+        self._backend_label = backend_label
         self._library_path = str(Path(library_path).resolve())
         self._point_count = point_count
         self._thread_count = int(thread_count)
@@ -427,11 +429,11 @@ class MFrontNativeGeneralisedPlaneStressBatch(
 
     @property
     def backend_name(self) -> str:
-        return "mfront-native-generalised-plane-stress"
+        return self._backend_label
 
     @property
     def completion_strategy(self) -> str:
-        return "mfront_native_generalised_plane_stress"
+        return self._backend_label.replace("-", "_")
 
     @property
     def linear_system_matrix_type(self) -> LinearSystemMatrixType:

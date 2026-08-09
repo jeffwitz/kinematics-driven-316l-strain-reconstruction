@@ -579,6 +579,7 @@ def _create_fcc_single_crystal_batch(
                 else "condensed_3d"
             ),
             behaviour_parameters=overrides,
+            backend_label=backend,
             shadow_tangent=shadow_tangent,
             shadow_tangent_scope=shadow_tangent_scope,
             composite_fd_tangent=composite_fd_tangent,
