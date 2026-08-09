@@ -5286,5 +5286,7 @@ solve. It is at
 reproducible check in
 `scripts/probe_structural_plane_stress_integrator_hook.sh`. This remains an
 identity-orientation elastic hook probe, not a qualified generic backend. The
-next step is to add structural rotation and a live one-point tangent/closure
-oracle, without changing the qualified GPS or 3D-condensation backends.
+script also performs one MGIS point integration and observes a maximum
+transverse stress of about `8.9e-15`. The next step is to add structural
+rotation and a live one-point tangent/closure oracle, without changing the
+qualified GPS or 3D-condensation backends.

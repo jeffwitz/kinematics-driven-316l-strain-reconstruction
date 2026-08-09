@@ -143,6 +143,12 @@ The probe can be rerun without modifying the production build:
 ./scripts/probe_structural_plane_stress_integrator_hook.sh
 ```
 
+It also runs one MGIS material-point integration. For the anisotropic elastic
+probe strain, the three replaced rows converge to a maximum transverse stress
+of `8.9e-15` in the installed runtime. This is a closure proof for the local
+identity-orientation prototype, not yet a proof of the rotated structural
+formulation or of a condensed tangent.
+
 The generated header is intentionally placed in a temporary build directory;
 no generated probe library is versioned.
 

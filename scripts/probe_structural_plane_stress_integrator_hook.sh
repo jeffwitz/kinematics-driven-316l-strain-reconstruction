@@ -36,3 +36,39 @@ echo "StructuralPlaneStress3D local hook probe: passed"
 echo "generated_header=$probe_dir/$header"
 echo "computeFdF_line=$compute_line"
 echo "row_replacement_line=$probe_line"
+
+python_bin="${PYTHON_BIN:-$repo_root/.venv/bin/python}"
+if [[ ! -x "$python_bin" ]]; then
+  echo "runtime probe requires an executable Python with MGIS: $python_bin" >&2
+  exit 2
+fi
+
+LIBRARY="$probe_dir/src/libBehaviour.so" "$python_bin" - <<'PY'
+import os
+
+import mgis.behaviour as mgis
+import numpy as np
+
+library = os.environ["LIBRARY"]
+behaviour = mgis.load(
+    library,
+    "StructuralPlaneStressIntegratorHookProbe",
+    mgis.Hypothesis.Tridimensional,
+)
+data = mgis.MaterialDataManager(behaviour, 1)
+for state in (data.s0, data.s1):
+    mgis.setExternalStateVariable(state, "Temperature", 293.15)
+data.s1.gradients[0] = np.array([1.0e-3, -2.0e-4, 0.0, 3.0e-4, 0.0, 0.0])
+mgis.integrate(
+    data,
+    mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
+    1.0,
+    0,
+    1,
+)
+stress = np.asarray(data.s1.thermodynamic_forces[0])
+transverse = np.abs(stress[[2, 4, 5]])
+if float(np.max(transverse)) > 1.0e-8:
+    raise SystemExit(f"plane-stress probe failed: transverse stress={transverse}")
+print(f"runtime closure probe: passed (max transverse stress={np.max(transverse):.3e})")
+PY
