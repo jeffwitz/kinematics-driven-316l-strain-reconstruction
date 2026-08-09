@@ -5215,7 +5215,8 @@ physical DIC time, and the unqualified temporal accuracy of the Méric
 
 ## MFront architectural refactor
 
-The staged refactor of the MFront backend is pushed through commit affb32c.
+The staged refactor of the MFront backend is pushed through commits c20ca45,
+1ce6a8a, affb32c and 404dc91.
 The compatibility facade remains at src/fem_inhouse/core/mfront.py, while
 the implementation is split into:
 
@@ -5243,3 +5244,16 @@ The architectural reference is docs/reference/numerics/mfront_architecture.md.
 Existing facade imports, including diagnostic private helpers, remain
 supported. Unrelated benchmark files present in the worktree were not
 included in the refactor commits.
+
+The post-refactor M20 and M100 replays are archived in:
+
+- validation/_generated/performance/mfront_refactor_m20_substepping_path.json
+- validation/_generated/performance/mfront_refactor_m100_gps_fd.json
+- validation/_generated/performance/mfront_refactor_m100_gps_fd.fields.npz
+
+The M100 GPS+FD replay retained 58 Newton iterations, 8 accepted increments,
+192 FD points, 1152 FD trajectories and a final residual of 5.34e-9. Its
+measured elapsed time was 44.98 s with four MFront threads, one FFTW thread,
+and one Krylov BLAS thread. The M20 replay retained 46 Newton iterations for
+the condensed reference and 52 for GPS. The archived performance JSON is a
+qualification artifact, not a new constitutive calibration.

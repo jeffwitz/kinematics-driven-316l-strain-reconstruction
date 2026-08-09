@@ -33,6 +33,7 @@ argue for the scientific model.
 ## Solver internals
 
 - {doc}`numerics/plane_stress`
+- {doc}`numerics/mfront_architecture`
 - {doc}`numerics/mfront_transaction`
 - {doc}`numerics/three_dimensional_condensation`
 - {doc}`numerics/nonlocal_fixed_point`
@@ -77,6 +78,7 @@ cli
 api
 extension_interfaces
 numerics/plane_stress
+numerics/mfront_architecture
 numerics/mfront_transaction
 numerics/three_dimensional_condensation
 numerics/nonlocal_fixed_point

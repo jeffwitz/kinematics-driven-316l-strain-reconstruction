@@ -54,3 +54,15 @@ are intentionally not hidden behind a boolean rotation flag.
 
 mfront.py is now a compatibility façade. Existing imports remain valid,
 including the diagnostic private helpers used by validation scripts.
+
+## Qualification checkpoint
+
+The extraction was replayed on the registered P43 M100 EBSD case with the
+qualified runtime settings (four MFront threads, one FFTW thread, one Krylov
+BLAS thread). GPS with composite FD retained 58 Newton iterations, the
+increment sequence [6, 6, 7, 7, 7, 8, 8, 9], 192 FD points, 1152 trajectories,
+and a final residual of 5.34e-9. The measured elapsed time was 44.98 s.
+
+The corresponding artifacts are
+validation/_generated/performance/mfront_refactor_m100_gps_fd.json and
+validation/_generated/performance/mfront_refactor_m100_gps_fd.fields.npz.
