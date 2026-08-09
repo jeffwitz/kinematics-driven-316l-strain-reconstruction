@@ -31,13 +31,13 @@ set -u
 STRUCTURAL_PLANE_STRESS_OUTPUT="${structural_behaviour_source}" \
 STRUCTURAL_BEHAVIOUR_NAME="Fcc316LForestRubinSrixStructuralPlaneStress" \
 STRUCTURAL_PLANE_STRESS_GENERATE_ONLY=1 \
-"${repository_dir}/scripts/probe_structural_plane_stress_srix.sh" >/dev/null
+"${repository_dir}/scripts/generate_structural_plane_stress.sh" >/dev/null
 behaviour_files+=("${structural_behaviour_source}")
 
 STRUCTURAL_PLANE_STRESS_OUTPUT="${meric_structural_behaviour_source}" \
 STRUCTURAL_BEHAVIOUR_NAME="Fcc316LMericCailletaudStructuralPlaneStress" \
 STRUCTURAL_PLANE_STRESS_GENERATE_ONLY=1 \
-"${repository_dir}/scripts/probe_structural_plane_stress_srix.sh" \
+"${repository_dir}/scripts/generate_structural_plane_stress.sh" \
   "${repository_dir}/mfront/Fcc316LMericCailletaud.mfront" \
   "Fcc316LMericCailletaudStructuralPlaneStress" >/dev/null
 behaviour_files+=("${meric_structural_behaviour_source}")

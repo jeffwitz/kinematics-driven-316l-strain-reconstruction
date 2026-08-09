@@ -57,7 +57,7 @@ def _generate_meric_library(directory: Path) -> Path:
         "STRUCTURAL_PLANE_STRESS_GENERATE_ONLY": "1",
     }
     command = [
-        "scripts/probe_structural_plane_stress_srix.sh",
+        "scripts/generate_structural_plane_stress.sh",
         "mfront/Fcc316LMericCailletaud.mfront",
         "Fcc316LMericCailletaudStructuralPlaneStress",
     ]
