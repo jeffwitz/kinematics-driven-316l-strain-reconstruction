@@ -54,5 +54,5 @@
     "field_errors_generic_vs_handwritten_gps": "approximately 1e-12 relative",
     "conclusion": "The generic StructuralPlaneStress3D backend now runs the same full-field M20 problem through the same GPS adapter, substepping and composite-FD policy. It is about 11.6 percent slower than the handwritten GPS on this single run, with fields agreeing to about 1e-12 relative."
   },
-  "execution_commit": "pending-current-worktree-commit"
+  "execution_commit": "017ecd1"
 }
