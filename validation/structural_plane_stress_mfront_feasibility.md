@@ -27,7 +27,7 @@ TFEL source checkout; conclusions below are therefore based on the installed
 | Register a first-level brick from an external library? | **The loader works, but the installed build cannot load a normal external brick implementation.** |
 | Compose several bricks in one behaviour? | **Yes, at the parser/description level.** |
 | Derive/decorate the concrete `StandardElasticity` implementation externally? | **Not demonstrated; no public concrete header is installed.** |
-| Inject code into residual, Jacobian, tangent and auxiliary-state stages? | **Partly.** Named code blocks can be created/replaced/appended, but the API is string/code-block based rather than a typed transformation API. |
+| Inject code into residual, Jacobian, tangent and auxiliary-state stages? | **Partly.** The local `@Integrator` hook can access and modify `fzeros` and `jacobian`; named code blocks can also be created/replaced/appended. There is still no typed row-transformation API. |
 | Recover a generic `K(x)` and `dK/dx` from every compatible law? | **No public contract found.** |
 | Safe V1 genericity claim | **Only behaviours implementing an explicit additional adapter contract**, unless a prototype proves a narrower `StandardElasticity` code-block contract. |
 
@@ -107,7 +107,46 @@ auxiliary variables have been updated. `@UpdateAuxiliaryStateVariables` is a
 post-integration hook. Neither one, by itself, is a mechanism for changing the
 local Newton system before convergence.
 
-## 3. `StandardElasticity` and the proposed `feel` oracle
+## 3. Local hook prototype
+
+The first controlled experiment is now reproducible with:
+
+```text
+validation/mfront/StructuralPlaneStressIntegratorHookProbe.mfront
+scripts/probe_structural_plane_stress_integrator_hook.sh
+```
+
+The probe uses an anisotropic `StandardElasticity` brick and an identity
+structural orientation. Its `@Integrator` replaces the three transverse rows
+with `sig/Gref` and writes the corresponding elastic columns of `D_tdt/Gref`,
+without naming any constitutive variable. It compiles with the installed
+TFEL/MFront 5.1.0 and the generated C++ confirms that the code is emitted
+inside `computeFdF` after the standard residual initialization (`feel -=
+deto`) and before the generated Newton solve consumes the Jacobian.
+
+This proves the narrow implementation hook needed for the prototype:
+
+```text
+StandardElasticity residual/Jacobian assembly
+    -> local @Integrator transformation
+    -> generated Newton solve
+```
+
+It does **not** yet prove the full generic closure. The probe is identity
+orientation, elastic only, and uses the known `StandardElasticity` stress and
+tangent symbols. A production-quality structural rotation, generic row
+layout validation, and consistent plane-stress tangent are still required.
+
+The probe can be rerun without modifying the production build:
+
+```bash
+./scripts/probe_structural_plane_stress_integrator_hook.sh
+```
+
+The generated header is intentionally placed in a temporary build directory;
+no generated probe library is versioned.
+
+## 4. `StandardElasticity` and the proposed `feel` oracle
 
 The installed `StandardElasticity` documentation confirms that the brick is
 built on the `Hooke` stress potential and that the implicit integrator exposes
@@ -135,7 +174,7 @@ generic implementation foundation. It should first be tested on a deliberately
 small behaviour whose residual blocks are explicitly named or registered by an
 adapter contract.
 
-## 4. Multiple bricks and `@Import`
+## 5. Multiple bricks and `@Import`
 
 The parser supports multiple registered bricks through the DSL's internal brick
 collection, and `@Import` includes external MFront files sequentially through
@@ -153,7 +192,7 @@ an already-generated behaviour's Newton equations. SRIX deduplication through
 `@Import` is therefore a separate, controlled refactor and should not be
 coupled to the first plugin feasibility test.
 
-## 5. Structural rotation and tangent implications
+## 6. Structural rotation and tangent implications
 
 The proposed structural closure is compatible with the existing convention:
 the host supplies an unrotated structural/global strain, while the closure
@@ -168,17 +207,19 @@ blocks, but it does not provide a generic row-replacement operation. A first
 prototype must therefore make the row convention explicit and test it against
 the existing raw 3D Schur oracle before any claim of generality.
 
-## 6. Recommended implementation order
+## 7. Recommended implementation order
 
 1. Keep the failed external probe as a regression artifact and decide whether
    exporting the brick base classes is acceptable upstream.
-2. Until that decision, build a J2/`StandardElasticity` prototype with an explicit, documented
+2. Extend the local-hook probe to an anisotropic elastic point with an explicit
+   structural rotation, then add the one-step condensed tangent check.
+3. Build a J2/`StandardElasticity` prototype with an explicit, documented
    elastic-residual/Jacobian contract. Do not claim arbitrary-law support yet.
-3. Compare its one-step response and tangent with native plane stress and raw
+4. Compare its one-step response and tangent with native plane stress and raw
    3D condensation.
-4. Apply the same contract to SRIX and Méric without writing law-specific GPS
+5. Apply the same contract to SRIX and Méric without writing law-specific GPS
    equations.
-5. Only after those tests succeed, evaluate whether the contract can be
+6. Only after those tests succeed, evaluate whether the contract can be
    promoted to a reusable `StructuralPlaneStress3D` brick.
 
 No TFEL fork is justified by the current evidence. The first engineering choice
@@ -197,5 +238,6 @@ compatibility.
     adapter contract (prototype target, not yet implemented)
 ```
 
-This is a feasibility result, not a qualification result. No prototype
-behaviour, J2 proof, SRIX proof or Méric proof has been run in this first gate.
+This is a feasibility result, not a qualification result. The local hook
+prototype has compiled and passed its generated-code ordering check, but no
+J2 proof, SRIX proof or Méric proof has been run yet.

@@ -1,0 +1,43 @@
+@DSL Implicit;
+@Behaviour StructuralPlaneStressIntegratorHookProbe;
+@Author fem_inhouse project;
+@Date 09 / 08 / 2026;
+@Description {
+  Feasibility probe only.  This behaviour checks whether a user Integrator
+  block can see and modify the complete residual/Jacobian assembled by the
+  StandardElasticity brick.
+};
+
+@ModellingHypothesis Tridimensional;
+@OrthotropicBehaviour;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@IterMax 20;
+@Theta 1;
+
+@Brick StandardElasticity{
+  young_modulus1 : 210000.,
+  young_modulus2 : 190000.,
+  young_modulus3 : 180000.,
+  poisson_ratio12 : 0.25,
+  poisson_ratio23 : 0.27,
+  poisson_ratio13 : 0.23,
+  shear_modulus12 : 80000.,
+  shear_modulus23 : 70000.,
+  shear_modulus13 : 75000.
+};
+
+@Integrator {
+  // Identity-orientation prototype of the generic row replacement. The
+  // StandardElasticity block has already assembled fzeros and jacobian when
+  // this code is emitted. No constitutive variable is named here.
+  constexpr auto Gref = real(210000.);
+  constexpr ushort transverse[3] = {2, 4, 5};
+  for (ushort k = 0; k != 3; ++k) {
+    const auto i = transverse[k];
+    this->fzeros(i) = this->sig(i) / Gref;
+    for (ushort j = 0; j != StensorSize; ++j) {
+      this->jacobian(i, j) = this->D_tdt(i, j) / Gref;
+    }
+  }
+};

@@ -5277,6 +5277,14 @@ equations are infeasible.
 
 The safe genericity claim at this gate is only an explicit additional
 elastic-residual/Jacobian adapter contract. No TFEL fork has been created, and
-no J2, SRIX or Méric generic-brick proof has been claimed yet. The next step is
-to prototype the narrow contract through the viable local/`@Import` route,
-without changing the qualified GPS or 3D-condensation backends.
+no J2, SRIX or Méric generic-brick proof has been claimed yet. A local
+`@Integrator` prototype now compiles against the installed TFEL 5.1.0 and
+demonstrates that `fzeros` and `jacobian` can be transformed after the
+StandardElasticity residual initialization and before the generated Newton
+solve. It is at
+`validation/mfront/StructuralPlaneStressIntegratorHookProbe.mfront`, with the
+reproducible check in
+`scripts/probe_structural_plane_stress_integrator_hook.sh`. This remains an
+identity-orientation elastic hook probe, not a qualified generic backend. The
+next step is to add structural rotation and a live one-point tangent/closure
+oracle, without changing the qualified GPS or 3D-condensation backends.
