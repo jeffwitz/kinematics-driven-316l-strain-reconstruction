@@ -3417,7 +3417,11 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         in_plane = np.asarray(in_plane_strain, dtype=float)
         if in_plane.shape != (self._point_count, 3):
             raise ValueError(f"in_plane_strain must have shape {(self._point_count, 3)}")
-        committed_snapshot = self.snapshot_state()
+        # The full snapshot is only needed when the selective composite-FD
+        # tangent is enabled.  Keeping the baseline path free of this copy is
+        # important: ``composite_fd=False`` must remain a performance-neutral
+        # switch.
+        committed_snapshot = self.snapshot_state() if self._composite_fd_enabled else None
         # The closure state variables own the transverse strains: the law
         # overwrites the transverse gradient components with (dezz, deyz,
         # dexz) before rotating. The bridge passes the in-plane gradient in
@@ -3535,6 +3539,8 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         if shadow_tangent_engineering is not None:
             in_tangent = shadow_tangent_engineering
         if self._composite_fd_enabled and np.any(self._last_substep_mask):
+            if committed_snapshot is None:
+                raise RuntimeError("composite-FD tangent requires a committed snapshot")
             composite_tangent = self._composite_fd_tangent(
                 in_plane, time_increment, committed_snapshot
             )
