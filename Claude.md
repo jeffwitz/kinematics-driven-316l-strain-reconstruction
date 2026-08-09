@@ -3,23 +3,240 @@
 Dernière mise à jour : 2026-08-08
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
+## État courant prioritaire — 2026-08-08, après reprise des agents
+
+La branche active de référence est désormais :
+
+```text
+main
+HEAD = origin/main = b009364
+worktree = propre
+```
+
+La branche `codex/native-generalised-plane-stress` et son ancien HEAD
+`6cf51b8` sont historiques. Ne pas reprendre leur état comme état courant.
+
+### Résultat principal des travaux GPS
+
+Le backend produit actuellement est un backend **UMAT de contrainte plane
+généralisée**, et non un comportement MFront monolithique. Il est intégré dans
+le dépôt applicatif et documenté dans :
+
+```text
+mfront/Fcc316LForestRubinSrixGps.mfront
+src/fem_inhouse/core/mfront.py
+src/fem_inhouse/core/mfront_behaviours.py
+src/fem_inhouse/core/plane_stress_material.py
+docs/explanation/spectral_mechanics/umat_gps_handoff_2026-08-07.md
+```
+
+La voie UMAT a été retenue pour éviter de modifier le générateur TFEL. Elle
+est fonctionnellement qualifiée sur les cas M20/M100 avec fermeture plane,
+tangente par différences finies et champs proches de la référence. Elle reste
+toutefois pénalisée à M100 : environ `85` Newton contre `57` pour la référence,
+alors que la comparaison locale et les champs sont corrects. Le travail de
+diagnostic a établi que cette pénalité suit la tangente GPS, pas le résidu :
+la différence locale de formulation est d'environ `3e-3` au point matériel
+responsable. Le backend UMAT ne doit donc pas être déclaré équivalent à la
+condensation de référence ni sélectionné sans tenir compte de ce surcoût.
+
+Le fork TFEL `jeffwitz/tfel-generalised-plane-stress` reste un prototype
+extérieur, non utilisé par la production. Le TFEL de production est
+`5.1.0` non modifié. Le fork explore uniquement le support générateur d'une
+hypothèse à trois inconnues transverses ; il n'a pas encore de comportement
+SRIX monolithique 3D qualifié.
+
+### Sweep de condensation par blocs M100
+
+Le sweep est désormais versionné dans :
+
+```text
+validation/_generated/performance/
+  srix_p43_m100_ebsd_condensation_blocks.json
+  srix_p43_m100_ebsd_condensation_blocks.csv
+  srix_p43_m100_ebsd_condensation_blocks/
+scripts/benchmark_srix_ebsd_condensation_blocks.py
+```
+
+Configuration : P43 M100 EBSD, 8 incréments, SRIX, 4 threads MFront,
+Eisenstat--Walker, LGMRES recyclé, prédicteur transverse tangent.
+
+Résultats mesurés :
+
+| variante | temps | Newton | erreur de champs vs monolithique |
+|---|---:|---:|---:|
+| monolithique | `54,45 s` | `57` | référence |
+| blocs 10000 | `79,24 s` | `57` | `7,32e-11` |
+| blocs 5000 | `84,32 s` | `57` | `7,32e-11` |
+| blocs 2500 | `82,49 s` | `57` | `7,32e-11` |
+| blocs 1250 | `83,57 s` | `57` | `7,32e-11` |
+| blocs 625 | `94,01 s` | `57` | `7,32e-11` |
+
+Conclusion : la gestion par blocs est fidèle mais plus lente que le batch
+monolithique sur M100. Aucun bloc ne doit être choisi comme optimisation de
+production. La télémétrie montre notamment l'augmentation des appels MGIS
+avec la diminution de la taille des blocs.
+
+### Diagnostic final de la pénalité GPS 85/57
+
+Les résultats récents sont à lire dans l'ordre des commits `8f7b415` à
+`b009364` et dans les rapports associés. Les points établis sont :
+
+- le trial GPS est pur et transactionnel ;
+- `accept_global_trial` est neutre pour le GPS ;
+- le chemin sous-pas a été acquitté avec un wrapper corrigé ;
+- le forcing Krylov serré réduit seulement `52` à `50` Newton sur M20 ;
+- le spectre de `BᵀCB` est pratiquement identique entre GPS et référence ;
+- un seul point matériel EBSD porte l'essentiel de la différence d'action ;
+- la sensibilité directe reproduit exactement le jacobien DSL GPS ;
+- le Schur de la référence diffère de la projection GPS d'environ `3e-3` au
+  même état complet.
+
+La conclusion actuelle est donc une différence de **formulation de tangent**
+entre GPS et condensation Schur, et non un défaut de cache, de rollback, de
+Krylov, de rotation ou de convergence locale. L'option `CondensedTangent`
+ajoutée expérimentalement dans `Fcc316LForestRubinSrixGps.mfront` est
+conservée mais son résultat est négatif (`46 %` d'erreur FD au point 96 et
+échec du run M20) ; elle reste désactivée par défaut.
+
+### Test Python du Schur brut — 2026-08-08
+
+Le test proposé après `aa3c33a` a été ajouté à
+`scripts/diagnose_gps_direct_sensitivity.py` sans modifier le `.mfront` : les
+trois lignes de fermeture GPS sont remplacées en Python par les six lignes
+cinématiques brutes, six seconds membres sont résolus, puis le tangent 3D et
+son Schur sont reconstruits.
+
+Artefact :
+
+```text
+validation/_generated/performance/gps_direct_sensitivity_raw_star.json
+```
+
+Résultat au checkpoint de l'incrément 6 :
+
+| point | `C_sens` vs Schur référence | `C_raw*` vs Schur référence | `C_raw*` vs `C_sens` |
+|---:|---:|---:|---:|
+| 96 | `3,125e-3` | `3,125e-3` | `9,756e-16` |
+| 95 | `3,745e-3` | `3,745e-3` | `7,304e-16` |
+| 59 | `1,420e-4` | `1,420e-4` | `3,695e-16` |
+
+Le premier câblage du test utilisait seulement trois seconds membres et
+calculait une réponse de type déformation plane ; il a été corrigé avant la
+mesure archivée. Le test corrigé montre donc que le remplacement algébrique
+des lignes GPS ne rapproche pas le résultat du Schur de référence : il
+reproduit `C_sens` à la précision machine. La piste « les trois lignes
+cinématiques suffisent à récupérer le Schur » n'est pas confirmée par cet
+artefact.
+
+Les valeurs de branche Macaulay calculées pour GPS et pour le backend de
+référence aux points 96, 95 et 59 ont les mêmes signes/masques actifs dans ce
+checkpoint. Elles ne démontrent donc pas une inversion de branche à cet
+endroit. Elles restent enregistrées par système dans l'artefact ; il faudra
+étendre l'inspection à un état strictement transplanté si la piste de
+non-différentiabilité doit être poursuivie.
+
+### Correction same-state et oracle Schur live — 2026-08-08
+
+La conclusion ci-dessus est désormais historique et doit être remplacée par
+le diagnostic corrigé. L'ancien transplant mutait `manager.s0`, puis les
+helpers restauraient le snapshot original ; les écarts de l'ordre de `3e-3`
+étaient donc contaminés. Le script
+`scripts/diagnose_gps_tangent_blocks.py` construit maintenant un snapshot cible
+immutable, convertit explicitement les gradients global/cristal, copie les
+ISV par nom et conserve le `committed_global_strain`.
+
+Le script `scripts/diagnose_gps_direct_sensitivity.py` ne lit plus
+`gps_tangent_blocks.json` comme oracle : il reconstruit à chaque exécution le
+raw 3D de la référence sur le snapshot GPS transplanté, puis son Schur.
+Artefacts courants :
+
+```text
+validation/_generated/performance/gps_tangent_blocks_same_state_v2.json
+validation/_generated/performance/gps_direct_sensitivity_same_state_v2.json
+validation/gps_same_state_transplant_diagnostic.md
+```
+
+Résultats live au checkpoint, pour les points 96/95/59 :
+
+```text
+|C_sens-C_raw,Schur|/|C_raw,Schur| = 1.36e-13, 1.82e-11, 3.54e-14
+|C_raw*-C_sens|/|C_sens|         = 9.76e-16, 7.30e-16, 3.70e-16
+```
+
+La formulation GPS et le Schur brut sont donc algébriquement cohérents au
+même état physique committé, au même incrément et avec la même orientation.
+Cela invalide l'interprétation des anciens écarts comme différence
+intrinsèque de formulation. Aucune loi `.mfront` n'a été modifiée et aucune
+campagne M20/M100 n'a été lancée pour cette étape.
+
+### Diagnostic shadow/sous-pas — 2026-08-08
+
+Le shadow runtime n'est pas un oracle same-state : `_shadow_condensed_tangent`
+repart de l'état committé GPS et réintègre le comportement raw en un pas avec
+la transverse finale GPS. Il peut donc suivre une trajectoire différente de la
+composition des sous-pas GPS.
+
+Une instrumentation ajoutée à `MFrontNativeGeneralisedPlaneStressBatch` archive
+le masque de sous-pas, les divisions, les différences d'ISV et l'écart de
+tangent par point. Les campagnes M20 donnent :
+
+```text
+GPS sans shadow                         52 Newton
+shadow sur points non sous-pasés       52 Newton
+shadow sur points sous-pasés            47 Newton
+shadow sur tous les points              47 Newton
+```
+
+La différence causale est donc portée par la classe de points sous-pasés,
+même si certains points non marqués sous-pasés suivent aussi une trajectoire
+raw full-step différente. L'oracle FD de l'application complète donne au point
+96, pour `h=1e-7`, `FD/GPS=1.35e-1` et `FD/shadow=6.35e-2`; aux points 95 et 59,
+les deux tangentes coïncident avec FD à environ `1e-9`. Le shadow est ainsi un
+quasi-Newton potentiellement utile, pas une correction d'une erreur algébrique
+GPS. Voir `validation/gps_substep_tangent_diagnostic.md`.
+
+### Tangente FD composite sélective — 2026-08-08
+
+Une option expérimentale `gps_composite_fd_tangent=True` est maintenant
+implémentée dans `MFrontNativeGeneralisedPlaneStressBatch`. Elle ne calcule la
+différence finie centrale que pour les points effectivement sous-pasés ; les
+autres conservent le tangent GPS MFront. Sur M20 :
+
+```text
+GPS                  52 Newton
+FD composite ciblée  45 Newton
+référence raw        46 Newton
+19 points FD, 114 trajectoires, 0 changement de partition
+écart déplacement 4,24e-13, contrainte 2,65e-9, glissements 4,00e-9
+```
+
+L'option reste désactivée par défaut et n'est pas qualifiée sur M100. Elle
+utilise des évaluateurs GPS mono-point cachés ; il faut mesurer le coût réel,
+la stabilité de la partition et la reproductibilité avant toute activation de
+production. Artefact :
+`validation/_generated/performance/gps_composite_fd_vs_gps_m20.json`.
+
 ## État de reprise — 2026-08-07
 
 Cette section est prioritaire pour toute nouvelle IA qui reprend le dépôt.
 Elle décrit les travaux récents qui n'étaient pas encore reportés dans ce
 fichier.
 
-### Branche applicative active
+### État historique de la branche expérimentale
 
-La branche de travail est :
+La branche décrite ci-dessous n'est plus la branche active ; elle est conservée
+comme historique de conception :
 
 ```text
 codex/native-generalised-plane-stress
-HEAD: 6cf51b8 docs(mfront): document monolithic plane-stress blocker
+HEAD historique: 6cf51b8 docs(mfront): document monolithic plane-stress blocker
 ```
 
-Le dépôt applicatif contient actuellement des changements non commités,
-appartenant au travail de condensation par blocs :
+À l'époque, le dépôt applicatif contenait des changements non commités
+appartenant au travail de condensation par blocs. Ils ont depuis été intégrés
+et archivés sur `main`; la liste ci-dessous est conservée uniquement comme
+trace historique :
 
 ```text
 docs/explanation/spectral_mechanics/srix_p43_performance_and_step_control.md
@@ -30,9 +247,8 @@ validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks.json
 validation/_generated/performance/srix_p43_m100_ebsd_condensation_blocks/
 ```
 
-**Ne pas écraser, réinitialiser ou inclure automatiquement ces fichiers dans
-un commit.** Ils doivent être inspectés et commités séparément après
-validation.
+Sur l'état courant `main`, ces fichiers sont versionnés. Ne pas utiliser cette
+ancienne liste pour déduire l'état du worktree.
 
 ### Résultats applicatifs déjà réalisés
 
@@ -42,15 +258,17 @@ validation.
 - Le backend SRIX avec condensation externe en contraintes planes reste le
   backend de référence et doit rester disponible.
 - Le cas SRIX P43 M100 EBSD avec 8 incréments, Eisenstat--Walker, LGMRES
-  recyclé, prédicteur transverse tangent et quatre threads MFront a été
-  mesuré autour de `56,88 s` sur la configuration de référence. Ces chiffres
-  doivent toujours être accompagnés de l'environnement logiciel et du SHA
-  exact d'exécution.
+  recyclé, prédicteur transverse tangent et quatre threads MFront avait une
+  référence à `56,88 s`. Le dernier artefact de la campagne par blocs mesure
+  `54,45 s` pour le batch monolithique dans son environnement précis. Ces
+  chiffres ne doivent être comparés qu'avec les manifestes et l'environnement
+  exacts.
 - La carte EBSD est bien prise en compte dans les campagnes EBSD ; elle ne doit
   pas être remplacée par l'orientation homogène `[35,20,15]` sans le signaler.
-- Les blocs de condensation MGIS ont été ajoutés/étudiés, mais leur
-  qualification complète et la sélection d'une taille de bloc ne sont pas
-  encore clôturées. Le M200 est interdit tant que ce point n'est pas qualifié.
+- Les blocs de condensation MGIS ont été qualifiés en fidélité sur M100, mais
+  aucune taille de bloc n'est une optimisation : `79,24–94,01 s` contre
+  `54,45 s` pour le batch monolithique, avec `57` Newton dans tous les cas.
+  Le surcoût vient de la multiplication des appels MGIS.
 - Le contrôleur adaptatif par doublement de pas a été étudié sur M20. Le
   contrôleur ne doit pas être déclaré qualifié : près de la première activation
   plastique, le critère relatif sur les glissements était dominé par une

@@ -21,7 +21,7 @@ For each of the top points (96, 95, 59) at the checkpoint increment 6:
 Usage:
 
     .venv/bin/python scripts/diagnose_gps_tangent_blocks.py \
-        --output validation/_generated/performance/gps_tangent_blocks.json
+        --output validation/_generated/performance/gps_tangent_blocks_same_state_v2.json
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def _rotate_gradient_to_global(
     from fem_inhouse.core.tensor_reconstruction import kelvin_3d_to_tensor, tensor_to_kelvin_3d
 
     tensor = kelvin_3d_to_tensor(gradient_crystal_kelvin, quantity="strain")
-    rotated = np.einsum("ji,jk,lk->il", q_global_to_material, tensor, q_global_to_material)
+    rotated = np.einsum("ji,jk,kl->il", q_global_to_material, tensor, q_global_to_material)
     return tensor_to_kelvin_3d(rotated, quantity="strain")
 
 
@@ -155,43 +155,235 @@ def _committed_point_state(
     return exported
 
 
-def _implant_point_state(
-    material: object,
-    snapshot: object,
-    point: int,
-    state: dict[str, np.ndarray],
-    *,
-    gradient_in_crystal_frame: bool,
-    q_global_to_material: np.ndarray | None,
-) -> None:
-    """Implant a complete exported state into one point of a backend.
+def _bridge_snapshot(snapshot: object) -> object:
+    """Return the 3-D snapshot carried by either backend."""
 
-    `gradient_in_crystal_frame` tells whether the exported gradient is already
-    in the recipient's frame; otherwise it is rotated with Q.
-    """
+    return getattr(snapshot, "bridge", snapshot)
+
+
+def _snapshot_arrays(snapshot: object) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Extract gradient, ISV, force and global-gradient arrays from a snapshot."""
+
+    bridge = _bridge_snapshot(snapshot)
+    if isinstance(bridge, tuple):
+        return (
+            np.asarray(bridge[0], dtype=float),
+            np.asarray(bridge[1], dtype=float),
+            np.asarray(bridge[2], dtype=float),
+            np.asarray(bridge[3], dtype=float),
+        )
+    return (
+        np.asarray(bridge.gradients_s0, dtype=float),
+        np.asarray(bridge.internal_state_variables_s0, dtype=float),
+        np.asarray(bridge.thermodynamic_forces_s0, dtype=float),
+        np.asarray(bridge.committed_global_strain, dtype=float),
+    )
+
+
+def _copy_shared_isvs(
+    source_material: object,
+    source_snapshot: object,
+    target_material: object,
+    target_isv: np.ndarray,
+    point: int,
+) -> None:
+    """Copy shared ISVs by declared name, never by assumed offsets."""
 
     from fem_inhouse.core.mfront import _declared_internal_slices
 
-    native = _native(material)
-    manager = native._manager
-    material.restore_state(snapshot)
-    slices = _declared_internal_slices(
-        native._mgis,
-        native._behaviour,
-        native._mgis.Hypothesis.Tridimensional,
-        native._specification,
+    source_native = _native(source_material)
+    target_native = _native(target_material)
+    source_slices = _declared_internal_slices(
+        source_native._mgis,
+        source_native._behaviour,
+        source_native._mgis.Hypothesis.Tridimensional,
+        source_native._specification,
     )
-    gradient = state["gradient"]
-    if not gradient_in_crystal_frame and q_global_to_material is not None:
-        gradient = _rotate_gradient_to_crystal(gradient, q_global_to_material)
-    np.asarray(manager.s0.gradients)[point, :] = gradient
-    np.asarray(manager.s0.thermodynamic_forces)[point, :] = state["forces"]
-    isv = np.asarray(manager.s0.internal_state_variables)
-    for name, values in state.items():
-        if name in {"gradient", "forces"}:
-            continue
-        if name in slices:
-            isv[point, slices[name]] = values
+    target_slices = _declared_internal_slices(
+        target_native._mgis,
+        target_native._behaviour,
+        target_native._mgis.Hypothesis.Tridimensional,
+        target_native._specification,
+    )
+    source_isv = _snapshot_arrays(source_snapshot)[1]
+    for name, target_slice in target_slices.items():
+        if name in source_slices:
+            source_slice = source_slices[name]
+            if (target_slice.stop - target_slice.start) != (source_slice.stop - source_slice.start):
+                raise ValueError(f"incompatible shared ISV size for {name}")
+            target_isv[point, target_slice] = source_isv[point, source_slice]
+
+
+def _make_transplanted_snapshot(
+    material: object,
+    target_snapshot: object,
+    source_material: object,
+    source_snapshot: object,
+    point: int,
+    *,
+    q_global_to_material: np.ndarray,
+) -> object:
+    """Build a new target snapshot containing one physical source state.
+
+    The returned object is the only state subsequently passed to an evaluator.
+    In particular, no helper is allowed to restore the pre-transplant target
+    snapshot after this function has been called.
+    """
+
+    from fem_inhouse.core.mfront import MFrontMaterialStateSnapshot
+
+    target_bridge = _bridge_snapshot(target_snapshot)
+    target_grad, target_isv0, target_forces, target_global = _snapshot_arrays(target_snapshot)
+    source_grad, _, source_forces, source_global = _snapshot_arrays(source_snapshot)
+    gradients = target_grad.copy()
+    isv = target_isv0.copy()
+    forces = target_forces.copy()
+    committed_global = target_global.copy()
+
+    source_native = _native(source_material)
+    target_native = _native(material)
+    source_is_gps = source_native.__class__.__name__ == "MFrontNativeGeneralisedPlaneStressBatch"
+    target_is_gps = target_native.__class__.__name__ == "MFrontNativeGeneralisedPlaneStressBatch"
+    physical_global = source_global[point].copy()
+    if source_is_gps:
+        gradient_target = (
+            physical_global.copy()
+            if target_is_gps
+            else _rotate_gradient_to_crystal(physical_global, q_global_to_material)
+        )
+    else:
+        source_crystal = source_grad[point]
+        physical_global = _rotate_gradient_to_global(source_crystal, q_global_to_material)
+        gradient_target = (
+            _rotate_gradient_to_crystal(physical_global, q_global_to_material)
+            if not target_is_gps
+            else physical_global.copy()
+        )
+    gradients[point, :] = gradient_target
+    committed_global[point, :] = physical_global
+
+    # MGIS thermodynamic forces are stored in the material frame in both
+    # bridges.  The two behaviours use the same material orientation here.
+    forces[point, :] = source_forces[point]
+    _copy_shared_isvs(source_material, source_snapshot, material, isv, point)
+
+    if isinstance(target_bridge, tuple):
+        values = list(target_bridge)
+        values[0] = gradients
+        values[1] = isv
+        values[2] = forces
+        values[3] = committed_global
+        values[4] = np.asarray(values[4], dtype=float).copy()
+        values[4][point, :] = physical_global[list(_TRANSVERSE)]
+        if values[5] is not None:
+            values[5] = np.asarray(values[5], dtype=float).copy()
+            values[5][point, :] = physical_global[list(_PLANE)]
+        return tuple(values)
+
+    bridge = MFrontMaterialStateSnapshot(
+        gradients_s0=gradients,
+        internal_state_variables_s0=isv,
+        thermodynamic_forces_s0=forces,
+        committed_global_strain=committed_global,
+        committed_nonlocal_values=target_bridge.committed_nonlocal_values,
+    )
+    if hasattr(target_snapshot, "accepted_transverse"):
+        from fem_inhouse.core.mfront import MFrontCondensedStateSnapshot
+
+        accepted = np.asarray(target_snapshot.accepted_transverse, dtype=float).copy()
+        accepted[point, :] = physical_global[list(_TRANSVERSE)]
+        accepted_in = (
+            None
+            if target_snapshot.accepted_in_plane is None
+            else np.asarray(target_snapshot.accepted_in_plane, dtype=float).copy()
+        )
+        if accepted_in is not None:
+            accepted_in[point, :] = physical_global[list(_PLANE)]
+        return MFrontCondensedStateSnapshot(
+            bridge=bridge,
+            accepted_transverse=accepted,
+            latest_transverse=None,
+            has_accepted_global_trial=False,
+            last_in_plane=None,
+            last_time_increment=None,
+            accepted_in_plane=accepted_in,
+            accepted_cbb=target_snapshot.accepted_cbb,
+            accepted_cba=target_snapshot.accepted_cba,
+        )
+    return bridge
+
+
+def _assert_same_physical_committed_state(
+    gps_material: object,
+    gps_snapshot: object,
+    ref_material: object,
+    ref_snapshot: object,
+    point: int,
+    q_global_to_material: np.ndarray,
+    tolerance: float = 1.0e-13,
+) -> dict[str, float]:
+    """Assert physical equality after explicit frame conversion."""
+
+    _, gps_isv, gps_forces, gps_global = _snapshot_arrays(gps_snapshot)
+    ref_grad, ref_isv, ref_forces, ref_global = _snapshot_arrays(ref_snapshot)
+    gps_global_point = gps_global[point]
+    try:
+        ref_global_point = _rotate_gradient_to_global(ref_grad[point], q_global_to_material)
+    except ValueError as exc:
+        raise ValueError(
+            f"reference gradient not rotatable at point {point}: "
+            f"{ref_grad[point]!r}; q={q_global_to_material!r}"
+        ) from exc
+    shared = _declared_shared_names(gps_material, gps_snapshot, ref_material, ref_snapshot)
+    diffs = {
+        "gradient": float(np.max(np.abs(gps_global_point - ref_global_point))),
+        "committed_global_strain": float(np.max(np.abs(gps_global_point - ref_global[point]))),
+        "stress_material_frame": float(
+            np.max(np.abs(gps_forces[point] - ref_forces[point]))
+        ),
+    }
+    gps_slices, ref_slices = shared
+    for name in gps_slices:
+        diffs[name] = float(
+            np.max(
+                np.abs(
+                    gps_isv[point, gps_slices[name]]
+                    - ref_isv[point, ref_slices[name]]
+                )
+            )
+        )
+    if max(diffs.values(), default=0.0) >= tolerance:
+        raise AssertionError(f"transplanted physical state mismatch at point {point}: {diffs}")
+    return diffs
+
+
+def _declared_shared_names(
+    source_material: object,
+    source_snapshot: object,
+    target_material: object,
+    target_snapshot: object,
+) -> tuple[dict[str, slice], dict[str, slice]]:
+    from fem_inhouse.core.mfront import _declared_internal_slices
+
+    source = _native(source_material)
+    target = _native(target_material)
+    source_slices = _declared_internal_slices(
+        source._mgis,
+        source._behaviour,
+        source._mgis.Hypothesis.Tridimensional,
+        source._specification,
+    )
+    target_slices = _declared_internal_slices(
+        target._mgis,
+        target._behaviour,
+        target._mgis.Hypothesis.Tridimensional,
+        target._specification,
+    )
+    names = set(source_slices).intersection(target_slices)
+    return (
+        {name: source_slices[name] for name in names},
+        {name: target_slices[name] for name in names},
+    )
 
 
 def _rotations(material: object) -> np.ndarray | None:
@@ -359,7 +551,9 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("validation/_generated/performance/gps_tangent_blocks.json"),
+        default=Path(
+            "validation/_generated/performance/gps_tangent_blocks_same_state_v2.json"
+        ),
     )
     arguments = parser.parse_args()
 
@@ -403,19 +597,28 @@ def main() -> int:
         )
 
         # --- complete transplant: GPS state into the reference ---
-        gps_state = _committed_point_state(material_gps, snapshot_gps, point)
-        _implant_point_state(
+        if q is None:
+            raise RuntimeError("same-state transplant requires EBSD rotations")
+        ref_on_gps_snapshot = _make_transplanted_snapshot(
             material_ref,
             snapshot_ref,
+            material_gps,
+            snapshot_gps,
             point,
-            gps_state,
-            gradient_in_crystal_frame=False,
             q_global_to_material=q,
         )
-        ref_on_gps_state = _evaluate_raw(material_ref, snapshot_ref, strain_gps, dt)
+        state_diffs = _assert_same_physical_committed_state(
+            material_gps,
+            snapshot_gps,
+            material_ref,
+            ref_on_gps_snapshot,
+            point,
+            q,
+        )
+        ref_on_gps_state = _evaluate_raw(material_ref, ref_on_gps_snapshot, strain_gps, dt)
         raw_ref_on_gps = _raw_3d_tangent(
             material_ref,
-            snapshot_ref,
+            ref_on_gps_snapshot,
             strain_gps,
             dt,
             is_reference=True,
@@ -432,19 +635,19 @@ def main() -> int:
             )
             / max(np.linalg.norm(ref_on_gps_state["tangent_in_plane"][point]), 1.0e-30)
         )
+        row["transplant_state_differences"] = state_diffs
 
         # --- complete transplant: reference state into the GPS ---
-        ref_state = _committed_point_state(material_ref, snapshot_ref, point)
-        _implant_point_state(
+        gps_on_ref_snapshot = _make_transplanted_snapshot(
             material_gps,
             snapshot_gps,
+            material_ref,
+            snapshot_ref,
             point,
-            ref_state,
-            gradient_in_crystal_frame=True,
             q_global_to_material=q,
         )
         raw_gps_on_ref = _raw_3d_tangent(
-            material_gps, snapshot_gps, strain_ref, dt, is_reference=False
+            material_gps, gps_on_ref_snapshot, strain_ref, dt, is_reference=False
         )
         row["ref_state_into_gps_3d_relative"] = float(
             np.linalg.norm(raw_ref_own[point] - raw_gps_on_ref[point])
@@ -471,7 +674,7 @@ def main() -> int:
         # GPS state transplant already in place.
         raw_ref_on_gps = _raw_3d_tangent(
             material_ref,
-            snapshot_ref,
+            ref_on_gps_snapshot,
             strain_gps,
             dt,
             is_reference=True,

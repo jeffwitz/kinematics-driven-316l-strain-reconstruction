@@ -141,6 +141,16 @@ class MFrontTimingStatistics:
     native_substep_points: int = 0
     native_substep_cache_hits: int = 0
     native_substep_cache_misses: int = 0
+    composite_fd_seconds: float = 0.0
+    composite_fd_points: int = 0
+    composite_fd_trajectories: int = 0
+    composite_fd_partition_changes: int = 0
+    composite_fd_mgis_calls: int = 0
+    composite_fd_actual_point_integrations: int = 0
+    composite_fd_snapshot_seconds: float = 0.0
+    composite_fd_restore_seconds: float = 0.0
+    composite_fd_integration_seconds: float = 0.0
+    composite_fd_other_seconds: float = 0.0
     local_iteration_histogram: tuple[int, ...] = ()
 
 
@@ -2336,6 +2346,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         local_transverse_predictor: str = "tangent",
         local_condition_check_mode: str = "on_failure",
         shadow_tangent: bool = False,
+        shadow_tangent_scope: str = "all",
+        composite_fd_tangent: bool = False,
+        composite_fd_step: float = 1.0e-6,
         shadow_behaviour_name: str = "Fcc316LForestRubinSrix",
         shadow_behaviour_id: str = "fcc_forest_rubin_srix",
     ) -> None:
@@ -2354,6 +2367,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         )
         self._specification = behaviour_spec
         self._behaviour_name = behaviour_name
+        self._library_path = str(Path(library_path).resolve())
         self._point_count = point_count
         self._thread_count = int(thread_count)
         self._parameters = dict(behaviour_parameters or {})
@@ -2377,6 +2391,26 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         if local_transverse_predictor not in {"committed", "tangent"}:
             raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
         self._local_transverse_predictor = local_transverse_predictor
+        if shadow_tangent_scope not in {"all", "substepped", "non_substepped"}:
+            raise ValueError(
+                "shadow_tangent_scope must be 'all', 'substepped' or 'non_substepped'"
+            )
+        self._shadow_tangent_scope = shadow_tangent_scope
+        if composite_fd_step <= 0.0 or not np.isfinite(composite_fd_step):
+            raise ValueError("composite_fd_step must be finite and positive")
+        self._composite_fd_enabled = bool(composite_fd_tangent)
+        self._composite_fd_step = float(composite_fd_step)
+        self._composite_fd_materials: dict[int, MFrontNativeGeneralisedPlaneStressBatch] = {}
+        self._composite_fd_seconds = 0.0
+        self._composite_fd_points = 0
+        self._composite_fd_trajectories = 0
+        self._composite_fd_partition_changes = 0
+        self._composite_fd_mgis_calls = 0
+        self._composite_fd_actual_point_integrations = 0
+        self._composite_fd_snapshot_seconds = 0.0
+        self._composite_fd_restore_seconds = 0.0
+        self._composite_fd_integration_seconds = 0.0
+        self._last_composite_fd_diagnostics: dict[str, object] | None = None
         self._rotations = (
             None
             if rotation_global_to_material is None
@@ -2499,6 +2533,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         self._minimum_substep_span = 1
         #: Indices that refused the full step last time, as single-point spans.
         self._failing_cache: list[tuple[int, int]] = []
+        self._last_substep_mask = np.zeros(point_count, dtype=bool)
+        self._last_substep_divisions = np.ones(point_count, dtype=np.int64)
+        self._last_shadow_diagnostics: dict[str, object] | None = None
         # Above this many the cache would cost more than the bisection it
         # saves, so it scales with the batch: `k` cached spans cost `k`
         # single-point sub-steps plus one pooled proof, against the roughly
@@ -2594,6 +2631,28 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         return self._substep_points
 
     @property
+    def last_substep_mask(self) -> NDArray:
+        """Points sub-stepped during the most recent constitutive call."""
+
+        return self._last_substep_mask.copy()
+
+    @property
+    def last_substep_divisions(self) -> NDArray:
+        """Per-point division count used by the most recent constitutive call."""
+
+        return self._last_substep_divisions.copy()
+
+    @property
+    def last_shadow_diagnostics(self) -> dict[str, object] | None:
+        """Pointwise comparison of the runtime shadow and GPS trial."""
+
+        return self._last_shadow_diagnostics
+
+    @property
+    def last_composite_fd_diagnostics(self) -> dict[str, object] | None:
+        return self._last_composite_fd_diagnostics
+
+    @property
     def point_count(self) -> int:
         return self._point_count
 
@@ -2638,6 +2697,22 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             native_substep_points=self._substep_points,
             native_substep_cache_hits=self._cache_hits,
             native_substep_cache_misses=self._cache_misses,
+            composite_fd_seconds=self._composite_fd_seconds,
+            composite_fd_points=self._composite_fd_points,
+            composite_fd_trajectories=self._composite_fd_trajectories,
+            composite_fd_partition_changes=self._composite_fd_partition_changes,
+            composite_fd_mgis_calls=self._composite_fd_mgis_calls,
+            composite_fd_actual_point_integrations=self._composite_fd_actual_point_integrations,
+            composite_fd_snapshot_seconds=self._composite_fd_snapshot_seconds,
+            composite_fd_restore_seconds=self._composite_fd_restore_seconds,
+            composite_fd_integration_seconds=self._composite_fd_integration_seconds,
+            composite_fd_other_seconds=max(
+                0.0,
+                self._composite_fd_seconds
+                - self._composite_fd_snapshot_seconds
+                - self._composite_fd_restore_seconds
+                - self._composite_fd_integration_seconds,
+            ),
         )
 
     @property
@@ -2769,7 +2844,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         internal_state_variables: NDArray,
         time_increment: float,
     ) -> NDArray | None:
-        """The reference Schur, evaluated at the GPS's own converged state.
+        """Evaluate the runtime raw full-step shadow tangent.
 
         A DERIVATIVE CALCULATOR, nothing else. The shadow has no life of its
         own: its committed state is transplanted from the GPS's at every call
@@ -2777,23 +2852,14 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         material-frame in either law, and the committed gradient rotated from
         the GPS's global convention into the crystal one the raw bridge uses --
         it is then integrated once at the imposed in-plane strain WITH the
-        transverse strain the GPS closure converged, and reverted. It never
-        commits, so the stress, the state, the closure and the sub-stepping
-        stay exactly what the GPS produced.
+        transverse strain the GPS closure converged, and reverted. This is a
+        separate full-step constitutive trajectory, not a same-state
+        derivative oracle when GPS used sub-stepping.
 
-        Why this is worth having. The tangent the DSL returns, post-multiplied
-        by the in-plane projector, differs from the reference's Schur by
-        `3e-3` at the same complete physical state, and one material point
-        carrying 32 percent of that difference accounts for the whole Newton
-        penalty -- 52 iterations against 46 on M20, back to 47 when that single
-        point's tangent is replaced. This path supplies the Schur exactly, so
-        it says whether the penalty is the tangent and nothing else.
-
-        An earlier measurement rejected this route on the grounds that "the
-        shadow does not follow the branch". That measurement predates the fix
-        of the total-strain-as-increment defect: the GPS was then walking a
-        quadratically wrong loading path, so of course the shadow did not
-        reproduce it. There are no branches, and the rejection does not stand.
+        Runtime diagnostics compare this tangent and the final internal
+        variables pointwise with the GPS trial. A mismatch can therefore be a
+        full-step versus sub-stepped trajectory difference, not an algebraic
+        tangent defect.
 
         Returns `None` on any failure, leaving the DSL tangent in place.
         """
@@ -2831,8 +2897,46 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             engineering, _ = condense_kelvin_tangent_to_engineering(
                 trial.consistent_tangent_kelvin_mpa, check_condition=False
             )
+            gps_tangent = np.asarray(self._manager.K).copy()
+            in_plane_operator = np.zeros((6, 6), dtype=float)
+            in_plane_operator[_PLANE_STRESS_COMPONENTS, _PLANE_STRESS_COMPONENTS] = 1.0
+            gps_tangent = gps_tangent @ in_plane_operator
+            if self._mgis_rotations is not None:
+                for column in range(6):
+                    flat = np.ascontiguousarray(gps_tangent[:, :, column].reshape(-1))
+                    self._mgis.rotateThermodynamicForces(
+                        flat, self._behaviour, self._mgis_rotations
+                    )
+                    gps_tangent[:, :, column] = flat.reshape(self._point_count, 6)
+            gps_tangent = gps_tangent[:, _PLANE_STRESS_COMPONENTS][
+                :, :, _PLANE_STRESS_COMPONENTS
+            ]
+            gps_tangent = gps_tangent * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
+            gps_tangent = gps_tangent * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+            self._gps_tangent_engineering = gps_tangent
+            tangent_error = np.linalg.norm(engineering - gps_tangent, axis=(1, 2)) / np.maximum(
+                np.linalg.norm(gps_tangent, axis=(1, 2)), 1.0e-30
+            )
+            state_differences: dict[str, NDArray] = {}
+            gps_isv = np.asarray(source.internal_state_variables)
+            shadow_isv = np.asarray(target.internal_state_variables)
+            for source_slice, target_slice in self._shadow_isv_map:
+                name = str(source_slice)
+                state_differences[name] = np.max(
+                    np.abs(gps_isv[:, source_slice] - shadow_isv[:, target_slice]), axis=1
+                )
+            self._last_shadow_diagnostics = {
+                "substep": self._last_substep_mask.copy(),
+                "divisions": self._last_substep_divisions.copy(),
+                "tangent_relative_error": tangent_error,
+                "state_differences": state_differences,
+                "gps_tangent": np.asarray(gps_tangent).copy(),
+                "shadow_tangent": np.asarray(engineering).copy(),
+                "scope": self._shadow_tangent_scope,
+            }
         except Exception:
             self._shadow_failures += 1
+            self._last_shadow_diagnostics = {"failure": True}
             return None
         finally:
             # No committed evolution of its own, ever.
@@ -2840,7 +2944,148 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         if not np.isfinite(engineering).all():
             self._shadow_failures += 1
             return None
-        return np.asarray(engineering, dtype=float)
+        selected = np.ones(self._point_count, dtype=bool)
+        if self._shadow_tangent_scope == "substepped":
+            selected = self._last_substep_mask
+        elif self._shadow_tangent_scope == "non_substepped":
+            selected = ~self._last_substep_mask
+        result = np.asarray(self._gps_tangent_engineering, dtype=float).copy()
+        result[selected] = np.asarray(engineering, dtype=float)[selected]
+        return result
+
+    def _composite_fd_material(self, point: int) -> MFrontNativeGeneralisedPlaneStressBatch:
+        """Return a cached one-point GPS evaluator for composite FD."""
+
+        if point not in self._composite_fd_materials:
+            self._composite_fd_materials[point] = type(self)(
+                self._library_path,
+                behaviour_spec=self._specification,
+                point_count=1,
+                rotation_global_to_material=(
+                    None if self._rotations is None else self._rotations[point : point + 1]
+                ),
+                thread_count=1,
+                behaviour_name=self._behaviour_name,
+                behaviour_parameters=self._parameters,
+                temperature_k=self._temperature,
+                maximum_local_iterations=self._maximum_iterations,
+                local_relative_tolerance=self._relative_tolerance,
+                local_tolerance_mpa=self._absolute_tolerance,
+                local_transverse_predictor=self._local_transverse_predictor,
+                local_condition_check_mode="on_failure",
+                shadow_tangent=False,
+                composite_fd_tangent=False,
+            )
+        return self._composite_fd_materials[point]
+
+    @staticmethod
+    def _point_snapshot(snapshot: tuple[Any, ...], point: int) -> tuple[Any, ...]:
+        """Restrict a full GPS snapshot to one material point."""
+
+        values = []
+        for index, value in enumerate(snapshot):
+            if value is None:
+                values.append(None)
+            elif index < 5:
+                values.append(np.asarray(value)[point : point + 1].copy())
+            else:
+                values.append(np.asarray(value)[point : point + 1].copy())
+        return tuple(values)
+
+    def _composite_fd_tangent(
+        self,
+        in_plane: NDArray,
+        time_increment: float,
+        committed_snapshot: tuple[Any, ...],
+    ) -> NDArray:
+        """Finite-difference the actual sub-stepped application at bad points."""
+
+        started = time.perf_counter()
+        result = np.zeros((self._point_count, 3, 3), dtype=float)
+        diagnostics: list[dict[str, object]] = []
+        active_points = np.flatnonzero(self._last_substep_mask)
+        for point in active_points:
+            point_material = self._composite_fd_material(int(point))
+            snapshot_started = time.perf_counter()
+            point_snapshot = self._point_snapshot(committed_snapshot, int(point))
+            self._composite_fd_snapshot_seconds += time.perf_counter() - snapshot_started
+            base_partition = bool(self._last_substep_mask[point])
+            tangent = np.zeros((3, 3), dtype=float)
+            partition_changed = False
+            for column in range(3):
+                plus = np.asarray(in_plane[point : point + 1], dtype=float).copy()
+                minus = plus.copy()
+                plus[0, column] += self._composite_fd_step
+                minus[0, column] -= self._composite_fd_step
+                restore_started = time.perf_counter()
+                point_material.restore_state(point_snapshot)
+                self._composite_fd_restore_seconds += time.perf_counter() - restore_started
+                before = point_material.timing_statistics
+                trial_plus = point_material.evaluate(
+                    plus, time_increment=time_increment, consistent_tangent=True
+                )
+                after = point_material.timing_statistics
+                self._composite_fd_mgis_calls += max(
+                    0,
+                    after.native_batch_calls - before.native_batch_calls,
+                )
+                self._composite_fd_actual_point_integrations += max(
+                    0,
+                    after.native_internal_integrations
+                    - before.native_internal_integrations,
+                )
+                self._composite_fd_integration_seconds += max(
+                    0.0,
+                    after.integration_seconds - before.integration_seconds,
+                )
+                plus_partition = bool(point_material.last_substep_mask[0])
+                restore_started = time.perf_counter()
+                point_material.restore_state(point_snapshot)
+                self._composite_fd_restore_seconds += time.perf_counter() - restore_started
+                before = point_material.timing_statistics
+                trial_minus = point_material.evaluate(
+                    minus, time_increment=time_increment, consistent_tangent=True
+                )
+                after = point_material.timing_statistics
+                self._composite_fd_mgis_calls += max(
+                    0,
+                    after.native_batch_calls - before.native_batch_calls,
+                )
+                self._composite_fd_actual_point_integrations += max(
+                    0,
+                    after.native_internal_integrations
+                    - before.native_internal_integrations,
+                )
+                self._composite_fd_integration_seconds += max(
+                    0.0,
+                    after.integration_seconds - before.integration_seconds,
+                )
+                minus_partition = bool(point_material.last_substep_mask[0])
+                partition_changed |= plus_partition != base_partition
+                partition_changed |= minus_partition != base_partition
+                tangent[:, column] = (
+                    np.asarray(trial_plus.stress_in_plane_mpa)[0]
+                    - np.asarray(trial_minus.stress_in_plane_mpa)[0]
+                ) / (2.0 * self._composite_fd_step)
+            result[point] = tangent
+            self._composite_fd_trajectories += 6
+            if partition_changed:
+                self._composite_fd_partition_changes += 1
+            diagnostics.append(
+                {
+                    "point": int(point),
+                    "divisions": int(self._last_substep_divisions[point]),
+                    "partition_unchanged": not partition_changed,
+                    "tangent": tangent.copy(),
+                }
+            )
+        self._composite_fd_seconds += time.perf_counter() - started
+        self._composite_fd_points += len(active_points)
+        self._last_composite_fd_diagnostics = {
+            "points": diagnostics,
+            "step": self._composite_fd_step,
+        }
+        return result
 
     @property
     def shadow_failures(self) -> int:
@@ -3102,6 +3347,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         frozen history, sub-stepped ones included.
         """
 
+        self._last_substep_mask[:] = False
+        self._last_substep_divisions[:] = 1
+        self._last_shadow_diagnostics = None
         status = self._integrate_once(
             in_plane_kelvin, time_increment, transverse_kelvin
         )
@@ -3113,6 +3361,9 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             in_plane_kelvin, time_increment, transverse_kelvin, snapshot
         )
         if cached is not None:
+            for begin, end in self._failing_cache:
+                self._last_substep_mask[begin:end] = True
+                self._last_substep_divisions[begin:end] = cached[1]
             return cached
         spans = self._failing_spans(in_plane_kelvin, time_increment)
         if not spans:
@@ -3130,6 +3381,8 @@ class MFrontNativeGeneralisedPlaneStressBatch:
             if status != 1:
                 self._restore_committed(snapshot)
                 return status, worst
+            self._last_substep_mask[span[0] : span[1]] = True
+            self._last_substep_divisions[span[0] : span[1]] = divisions
         self._substep_uses += 1
         self._substep_divisions_max = max(self._substep_divisions_max, worst)
         self._failing_cache = spans if len(spans) <= self._maximum_cached_spans else []
@@ -3164,6 +3417,7 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         in_plane = np.asarray(in_plane_strain, dtype=float)
         if in_plane.shape != (self._point_count, 3):
             raise ValueError(f"in_plane_strain must have shape {(self._point_count, 3)}")
+        committed_snapshot = self.snapshot_state()
         # The closure state variables own the transverse strains: the law
         # overwrites the transverse gradient components with (dezz, deyz,
         # dexz) before rotating. The bridge passes the in-plane gradient in
@@ -3280,6 +3534,13 @@ class MFrontNativeGeneralisedPlaneStressBatch:
         in_tangent = in_tangent * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
         if shadow_tangent_engineering is not None:
             in_tangent = shadow_tangent_engineering
+        if self._composite_fd_enabled and np.any(self._last_substep_mask):
+            composite_tangent = self._composite_fd_tangent(
+                in_plane, time_increment, committed_snapshot
+            )
+            in_tangent[self._last_substep_mask] = composite_tangent[
+                self._last_substep_mask
+            ]
         in_stress = stress[:, _PLANE_STRESS_COMPONENTS] * _KELVIN_TO_ENGINEERING_STRESS_SCALE
         residual = np.stack(
             (stress_tensor[:, 2, 2], stress_tensor[:, 0, 2], stress_tensor[:, 1, 2]),

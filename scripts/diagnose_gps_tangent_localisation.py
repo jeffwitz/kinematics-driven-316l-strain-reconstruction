@@ -110,6 +110,14 @@ class RecordingMaterial:
                     if "back_strain" not in observables
                     else np.asarray(observables["back_strain"], dtype=float).copy()
                 ),
+                "substep_mask": getattr(self._inner, "last_substep_mask", None),
+                "substep_divisions": getattr(self._inner, "last_substep_divisions", None),
+                "shadow_diagnostics": getattr(
+                    self._inner, "last_shadow_diagnostics", None
+                ),
+                "composite_fd_diagnostics": getattr(
+                    self._inner, "last_composite_fd_diagnostics", None
+                ),
             }
         )
         self._last_substeps = substeps
@@ -192,6 +200,32 @@ def _build_material(
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
     from scripts.qualify_crystal_tet2_p43 import _load_ebsd_orientation_crop
 
+    constitutive_options = {
+        "paired_parameter_set": arguments.paired_parameter_set,
+        "crystal_orientation": {
+            "mode": "ebsd",
+            "euler_bunge_deg": _load_ebsd_orientation_crop(
+                arguments.ebsd_orientation_h5, arguments.crop_nodes
+            )[0],
+        },
+    }
+    shadow_scope = getattr(arguments, "shadow_scope", None)
+    if backend == GPS and shadow_scope is not None:
+        constitutive_options.update(
+            {
+                "gps_shadow_tangent": True,
+                "gps_shadow_tangent_scope": shadow_scope,
+            }
+        )
+    if backend == GPS and bool(getattr(arguments, "composite_fd_tangent", False)):
+        constitutive_options.update(
+            {
+                "gps_composite_fd_tangent": True,
+                "gps_composite_fd_step": float(
+                    getattr(arguments, "composite_fd_step", 1.0e-6)
+                ),
+            }
+        )
     return create_plane_stress_material_batch(
         backend,
         np.repeat(yield_stress, 2),
@@ -210,15 +244,7 @@ def _build_material(
             "local_condition_check_mode": "on_failure",
             "local_transverse_predictor": "tangent",
         },
-        constitutive_options={
-            "paired_parameter_set": arguments.paired_parameter_set,
-            "crystal_orientation": {
-                "mode": "ebsd",
-                "euler_bunge_deg": _load_ebsd_orientation_crop(
-                    arguments.ebsd_orientation_h5, arguments.crop_nodes
-                )[0],
-            },
-        },
+        constitutive_options=constitutive_options,
     )
 
 
@@ -278,6 +304,58 @@ def _checkpoint_calls(
         for call in recording.calls
         if call["committed_before"] == committed
     ]
+
+
+def _shadow_runtime_summary(recording: RecordingMaterial) -> list[dict[str, object]]:
+    """Make the pointwise shadow/substep telemetry JSON-safe."""
+
+    rows: list[dict[str, object]] = []
+    for index, call in enumerate(recording.calls):
+        diagnostic = call.get("shadow_diagnostics")
+        if not isinstance(diagnostic, dict):
+            continue
+        row: dict[str, object] = {
+            "call": index,
+            "substep": np.asarray(call["substep_mask"]).tolist(),
+            "divisions": np.asarray(call["substep_divisions"]).tolist(),
+            "scope": diagnostic.get("scope"),
+            "tangent_relative_error": np.asarray(
+                diagnostic.get("tangent_relative_error", [])
+            ).tolist(),
+        }
+        state_differences = diagnostic.get("state_differences", {})
+        row["state_differences"] = {
+            str(name): np.asarray(values).tolist()
+            for name, values in state_differences.items()
+        }
+        rows.append(row)
+    return rows
+
+
+def _composite_fd_runtime_summary(recording: RecordingMaterial) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for index, call in enumerate(recording.calls):
+        diagnostic = call.get("composite_fd_diagnostics")
+        if not isinstance(diagnostic, dict):
+            continue
+        entries = []
+        for item in diagnostic.get("points", []):
+            entries.append(
+                {
+                    "point": int(item["point"]),
+                    "divisions": int(item["divisions"]),
+                    "partition_unchanged": bool(item["partition_unchanged"]),
+                    "tangent": np.asarray(item["tangent"]).tolist(),
+                }
+            )
+        rows.append(
+            {
+                "call": index,
+                "step": float(diagnostic["step"]),
+                "points": entries,
+            }
+        )
+    return rows
 
 
 def _residual_at(
@@ -897,6 +975,14 @@ def main() -> int:
     parser.add_argument("--maximum-newton-iterations", type=int, default=40)
     parser.add_argument("--checkpoint-increment", type=int, default=6)
     parser.add_argument(
+        "--shadow-scope",
+        choices=("all", "substepped", "non_substepped"),
+        default=None,
+        help="Use the runtime raw shadow tangent on the selected GPS points.",
+    )
+    parser.add_argument("--composite-fd-tangent", action="store_true")
+    parser.add_argument("--composite-fd-step", type=float, default=1.0e-6)
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path("validation/_generated/performance/gps_tangent_localisation_m20.json"),
@@ -983,6 +1069,8 @@ def main() -> int:
             "increments": arguments.increments,
             "mfront_threads": arguments.mfront_threads,
             "checkpoint_increment": increment,
+            "composite_fd_tangent": arguments.composite_fd_tangent,
+            "composite_fd_step": arguments.composite_fd_step,
         },
         "reference": {
             "gps_newton": int(sum(result_gps.diagnostics.iterations_per_increment)),
@@ -998,6 +1086,8 @@ def main() -> int:
         },
         "test_d": test_d_result,
         "test_e": test_e_result,
+        "shadow_runtime": _shadow_runtime_summary(recording_gps),
+        "composite_fd_runtime": _composite_fd_runtime_summary(recording_gps),
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")

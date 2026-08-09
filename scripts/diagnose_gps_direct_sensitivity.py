@@ -1,4 +1,4 @@
-"""Direct sensitivity of the GPS local system: C_sens vs shadow Schur vs DSL.
+"""Direct sensitivity of the GPS local system and a Python raw-row experiment.
 
 CdC step 1-2: the GPS local system is F(x, eps_a) = 0 with x = (deel[6],
 dg[12]) in R^18 and eps_a the imposed in-plane strain. The consistent tangent
@@ -18,11 +18,17 @@ At the converged state:
     A X = -B             (three right-hand sides, one LU factorisation)
     C_sens = (dsig_a/dx) X
 
-Comparison on the responsible points (96, 95, 59) at the checkpoint
-increment 6:
+The diagnostic also replaces the three GPS closure rows by the six-component
+raw kinematic rows, solves six right-hand sides, reconstructs the full 3D
+tangent, and applies the Schur complement. This is deliberately done in
+Python only: it does not modify ``.mfront`` or ``deto``.
+
+Comparison on the responsible points (96, 95, 59) at checkpoint increment 6:
 
     |C_sens - C_shadow| / |C_shadow|   -- target <= 1e-10
-    |C_sens - C_DSL_projected| / |C_DSL|  -- reproduces the ~3e-3 gap
+    |C_raw* - C_shadow| / |C_shadow|   -- tests the algebraic replacement
+    |C_raw* - C_sens| / |C_sens|       -- checks whether it changes the result
+    |C_sens - C_DSL_projected| / |C_DSL| -- reproduces the ~3e-3 gap
 
 Usage:
 
@@ -320,12 +326,73 @@ class GpsLocalSystem:
             out[2, j] = rotated[3]
         return out
 
+    def stress_full_sensitivity(self, x: np.ndarray) -> np.ndarray:
+        """Return the full 6x18 Kelvin stress sensitivity."""
+
+        out = np.zeros((6, 18), dtype=float)
+        for j in range(6):
+            out[:, j] = self.gps_dc[j]
+        return out
+
+    def overstress_branches(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Return the SRIX overstresses and Macaulay branches at ``x``.
+
+        The branch is deliberately reported separately from the value of the
+        constitutive residual.  Values on opposite sides of zero can produce
+        indistinguishable stresses while selecting different derivatives.
+        """
+
+        deel = x[:6]
+        dg = x[6:]
+        sig = self.stress(deel)
+        exp_bp = np.exp(-self.b * (self.p + np.abs(dg)))
+        overstress = np.empty(12, dtype=float)
+        for i in range(12):
+            tau = _kelvin_dot(sig, self.mus[i])
+            r_hard = self.tau0 + self.q_hard * np.sum(
+                self.m[i, :] * (1.0 - exp_bp)
+            )
+            da = (dg[i] - self.d_hard * self.a[i] * abs(dg[i])) / (
+                1.0 + self.d_hard * abs(dg[i])
+            )
+            backstress = self.c_hard * (self.a[i] + da)
+            overstress[i] = abs(tau - backstress) - r_hard
+        return overstress, overstress > 0.0
+
+    def raw_closure_jacobian(self, x: np.ndarray) -> np.ndarray:
+        """Replace only the three GPS closure rows by raw 3D kinematics.
+
+        This is the Python-only algebraic experiment proposed in the
+        diagnostic: it does not call MFront and does not alter the behaviour.
+        Row scaling is immaterial because the corresponding right-hand side
+        is zero.
+        """
+
+        out = self.jacobian(x)
+        for row in _TRANSVERSE:
+            out[row, :6] = [self.gps_rot_t[j][row] for j in range(6)]
+            out[row, 6:] = self.gps_rot_m[:, row]
+        return out
+
     def tangent_to_engineering(self, c_kelvin: np.ndarray) -> np.ndarray:
         """Kelvin 3x3 in-plane tangent to engineering, the bridge's scaling."""
 
         stress_scale = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
         strain_scale = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
         return c_kelvin * stress_scale[:, None] * strain_scale[None, :]
+
+
+def _schur_from_full_kelvin(c_full: np.ndarray) -> np.ndarray:
+    """Condense a full Kelvin tangent to the in-plane engineering tangent."""
+
+    caa = c_full[np.ix_(_PLANE, _PLANE)]
+    cab = c_full[np.ix_(_PLANE, _TRANSVERSE)]
+    cba = c_full[np.ix_(_TRANSVERSE, _PLANE)]
+    cbb = c_full[np.ix_(_TRANSVERSE, _TRANSVERSE)]
+    c_ps = caa - cab @ np.linalg.solve(cbb, cba)
+    stress_scale = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
+    strain_scale = np.array([1.0, 1.0, 1.0 / _SQRT_TWO])
+    return c_ps * stress_scale[:, None] * strain_scale[None, :]
 
 
 def _extract_elastic_stiffness(library: str) -> np.ndarray:
@@ -511,6 +578,30 @@ def main() -> int:
             d_hard=float(overrides["d"]),
         )
         x = np.concatenate((state["deel"], state["dg"]))
+        # This is a diagnostic comparison with the reference backend at the
+        # same imposed global strain, not a claim that both branches share the
+        # same internal state.  Keeping that distinction explicit prevents a
+        # trajectory difference from being mistaken for a Macaulay mismatch.
+        reference_state = _converged_increment(
+            material_ref, snapshot_ref, strain_gps, dt, point
+        )
+        reference_system = GpsLocalSystem(
+            q=q,
+            sig0=reference_state["sig0"],
+            p=reference_state["p"],
+            a=reference_state["a"],
+            d=d,
+            m=m,
+            r=float(overrides["SrixOverstressModulus"]),
+            tau0=float(overrides["tau0"]),
+            q_hard=float(overrides["Q"]),
+            b=float(overrides["b"]),
+            c_hard=float(overrides["C"]),
+            d_hard=float(overrides["d"]),
+        )
+        reference_overstress, reference_active = reference_system.overstress_branches(
+            np.concatenate((reference_state["deel"], reference_state["dg"]))
+        )
         # The DSL's deto: the INCREMENT of the imposed gradient (s1 - s0),
         # read from the converged evaluation.
         deto = state["deto_increment"]
@@ -524,55 +615,102 @@ def main() -> int:
         from scipy.linalg import solve
 
         x_sens = solve(a_jac, -b_mat)
+        a_raw_star = system.raw_closure_jacobian(x)
+        b_full = np.zeros((18, 6), dtype=float)
+        b_full[:6, :] = -np.eye(6)
+        x_sens_raw_star = solve(a_raw_star, -b_full)
         dsig_dx = system.stress_a_sensitivity(x)
+        dsig_full_dx = system.stress_full_sensitivity(x)
         c_sens_kelvin = dsig_dx @ x_sens
+        c_raw_star_full_kelvin = dsig_full_dx @ x_sens_raw_star
         c_sens = system.tangent_to_engineering(c_sens_kelvin)
+        c_raw_star = _schur_from_full_kelvin(c_raw_star_full_kelvin)
+        gps_overstress, gps_active = system.overstress_branches(x)
 
-        # C_shadow: the reference Schur on the GPS state (from the blocks run).
+        # Rebuild the raw reference oracle live from an immutable GPS->reference
+        # transplant.  Never use the historical blocks JSON here: it was
+        # generated before the transplant helper stopped restoring the source
+        # snapshot over the transplanted point.
         from scripts.diagnose_gps_tangent_blocks import (
-            _block_analysis,
+            _assert_same_physical_committed_state,
+            _make_transplanted_snapshot,
             _schur_plane_stress,
             _raw_3d_tangent,
         )
-
-        # Reference tangent on the GPS-transplanted state is costly to rebuild;
-        # reuse the archived block analysis of gps_tangent_blocks.json.
-        blocks_path = Path(
-            "validation/_generated/performance/gps_tangent_blocks.json"
+        ref_on_gps_snapshot = _make_transplanted_snapshot(
+            material_ref,
+            snapshot_ref,
+            material_gps,
+            snapshot_gps,
+            point,
+            q_global_to_material=q,
         )
-        archived = json.loads(blocks_path.read_text(encoding="utf-8"))
-        block_row = next(
-            row for row in archived["rows"] if row["point"] == point
+        transplant_diffs = _assert_same_physical_committed_state(
+            material_gps,
+            snapshot_gps,
+            material_ref,
+            ref_on_gps_snapshot,
+            point,
+            q,
         )
-        schur_ref = _schur_plane_stress(
-            np.asarray(block_row["blocks_reference_on_gps_state"]["caa"])
-            if False
-            else np.asarray(
-                _rebuild_tangent_from_blocks(block_row["blocks_reference_on_gps_state"])
-            )
+        gps_transverse = np.asarray(material_gps._manager.s1.gradients)[
+            :, _TRANSVERSE
+        ].copy()
+        raw_reference_live = _raw_3d_tangent(
+            material_ref,
+            ref_on_gps_snapshot,
+            strain_gps,
+            dt,
+            is_reference=True,
+            transverse_global=gps_transverse,
         )
+        schur_ref = _schur_plane_stress(raw_reference_live[point])
         c_dsl = state["tangent_returned"]
-        rel_shadow = float(
+        rel_live_raw_schur = float(
             np.linalg.norm(c_sens - schur_ref)
             / max(np.linalg.norm(schur_ref), 1.0e-30)
         )
         rel_dsl = float(
             np.linalg.norm(c_sens - c_dsl) / max(np.linalg.norm(c_dsl), 1.0e-30)
         )
+        rel_raw_star_live_raw_schur = float(
+            np.linalg.norm(c_raw_star - schur_ref)
+            / max(np.linalg.norm(schur_ref), 1.0e-30)
+        )
+        rel_raw_star_dsl = float(
+            np.linalg.norm(c_raw_star - c_dsl)
+            / max(np.linalg.norm(c_dsl), 1.0e-30)
+        )
+        rel_raw_star_sens = float(
+            np.linalg.norm(c_raw_star - c_sens)
+            / max(np.linalg.norm(c_sens), 1.0e-30)
+        )
         rows.append(
             {
                 "point": point,
                 "residual_norm_at_convergence": float(np.linalg.norm(residual_at_convergence)),
-                "relative_to_shadow": rel_shadow,
+                "relative_to_live_raw_schur": rel_live_raw_schur,
                 "relative_to_dsl": rel_dsl,
+                "relative_raw_star_to_live_raw_schur": rel_raw_star_live_raw_schur,
+                "relative_raw_star_to_dsl": rel_raw_star_dsl,
+                "relative_raw_star_to_sens": rel_raw_star_sens,
+                "transplant_state_differences": transplant_diffs,
+                "gps_overstress_mpa": gps_overstress.tolist(),
+                "gps_active": gps_active.tolist(),
+                "reference_backend_overstress_mpa": reference_overstress.tolist(),
+                "reference_backend_active": reference_active.tolist(),
                 "c_sens": c_sens.tolist(),
-                "c_shadow": schur_ref.tolist(),
+                "c_raw_star": c_raw_star.tolist(),
+                "c_raw_schur_live": schur_ref.tolist(),
                 "c_dsl": c_dsl.tolist(),
             }
         )
         print(
             f"point {point}: |F(x*)| = {np.linalg.norm(residual_at_convergence):.3e} | "
-            f"C_sens vs shadow {rel_shadow:.3e} | C_sens vs DSL {rel_dsl:.3e}"
+            f"C_sens vs live raw Schur {rel_live_raw_schur:.3e} | "
+            f"C_raw* vs live raw Schur {rel_raw_star_live_raw_schur:.3e} | "
+            f"C_raw* vs C_sens {rel_raw_star_sens:.3e} | "
+            f"C_sens vs DSL {rel_dsl:.3e}"
         )
 
     payload = {
@@ -581,6 +719,10 @@ def main() -> int:
             "crop_nodes": arguments.crop_nodes,
             "increments": arguments.increments,
             "checkpoint_increment": increment,
+            "experiment": (
+                "replace GPS closure rows by raw 3D kinematic rows in Python; "
+                "no MFront changes; live same-state raw Schur oracle"
+            ),
         },
         "rows": rows,
     }

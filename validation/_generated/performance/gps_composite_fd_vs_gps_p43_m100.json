@@ -1,0 +1,52 @@
+{
+  "composite_fd_displacement_sha256": "5af7f8f1b383036f779ba764d1f03a496b2c58f9e26b8b1002cde8c75bd6e5a9",
+  "composite_fd_elapsed_seconds": 65.62387992005097,
+  "composite_fd_newton": 51,
+  "composite_fd_partition_changes": 0,
+  "composite_fd_per_increment": [
+    6,
+    6,
+    6,
+    7,
+    6,
+    7,
+    7,
+    6
+  ],
+  "composite_fd_points": 0,
+  "composite_fd_residual": 9.712009276650438e-09,
+  "composite_fd_seconds": 0.0,
+  "composite_fd_speed_ratio": 0.8592638171329952,
+  "composite_fd_trajectories": 0,
+  "crop_nodes": [
+    1610,
+    1710,
+    1075,
+    1175
+  ],
+  "displacement_relative_l2": 0.0,
+  "gps_displacement_sha256": "5af7f8f1b383036f779ba764d1f03a496b2c58f9e26b8b1002cde8c75bd6e5a9",
+  "gps_elapsed_seconds": 76.37221376202069,
+  "gps_newton": 51,
+  "gps_per_increment": [
+    6,
+    6,
+    6,
+    7,
+    6,
+    7,
+    7,
+    6
+  ],
+  "gps_residual": 9.712009276650438e-09,
+  "increments": 8,
+  "observable_relative_l2": {
+    "accumulated_slip": 0.0,
+    "back_strain": 0.0,
+    "elastic_strain": 0.0,
+    "equivalent_plastic_slip": 0.0,
+    "plastic_slip": 0.0
+  },
+  "reaction_relative_l2": 0.0,
+  "stress_relative_l2": 0.0
+}

@@ -489,13 +489,14 @@ def _create_fcc_single_crystal_batch(
     paired_parameter_set = options.pop("paired_parameter_set", None)
     parameter_set = options.pop("parameter_set", None)
     explicit_parameters = options.pop("parameters", None)
-    # Diagnostic bench, GPS backend only: replace the Newton tangent by the
-    # reference Schur evaluated at the GPS's own converged state, leaving the
-    # stress, the state, the closure and the sub-stepping untouched. It is what
-    # showed the Newton penalty to be the tangent alone -- 52 iterations to 47
-    # on M20 with bit-identical fields -- and it is off by default because it
-    # costs a full extra 3D integration per evaluation.
+    # Diagnostic bench, GPS backend only: replace selected tangent points by a
+    # raw full-step shadow trajectory. This is intentionally experimental: it
+    # is not a same-state Schur oracle when the GPS path uses sub-stepping, and
+    # it is off by default because it costs a full extra 3D integration.
     shadow_tangent = bool(options.pop("gps_shadow_tangent", False))
+    shadow_tangent_scope = str(options.pop("gps_shadow_tangent_scope", "all"))
+    composite_fd_tangent = bool(options.pop("gps_composite_fd_tangent", False))
+    composite_fd_step = float(options.pop("gps_composite_fd_step", 1.0e-6))
     if paired_parameter_set is not None and (
         parameter_set is not None or explicit_parameters is not None
     ):
@@ -566,6 +567,9 @@ def _create_fcc_single_crystal_batch(
             behaviour_name=behaviour.behaviour_name("condensed_3d"),
             behaviour_parameters=overrides,
             shadow_tangent=shadow_tangent,
+            shadow_tangent_scope=shadow_tangent_scope,
+            composite_fd_tangent=composite_fd_tangent,
+            composite_fd_step=composite_fd_step,
             **local_options,
         )
     if shadow_tangent:
