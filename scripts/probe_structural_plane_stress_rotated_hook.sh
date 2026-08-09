@@ -41,18 +41,31 @@ stress = np.array(
         [values[4] / np.sqrt(2), values[5] / np.sqrt(2), values[2]],
     ]
 )
-rotation = np.array(
+q_global_to_material = np.array(
     [
-        [0.788071, -0.482929, 0.382683],
-        [0.548985, 0.425669, -0.719846],
-        [0.280166, 0.765908, 0.579228],
+        [0.6517403912340062, 0.7532585459971657, 0.08852132690137686],
+        [-0.7326322075147665, 0.5950699920075869, 0.33036608954935215],
+        [0.19617469496901108, -0.2801664995932355, 0.9396926207859084],
     ]
 )
-global_stress = rotation @ stress @ rotation.T
+assert np.max(np.abs(q_global_to_material @ q_global_to_material.T - np.eye(3))) < 1.0e-12
+assert abs(np.linalg.det(q_global_to_material) - 1.0) < 1.0e-12
+material_to_global = q_global_to_material.T
+global_stress = material_to_global @ stress @ material_to_global.T
 transverse = np.abs(
     [global_stress[2, 2], global_stress[1, 2], global_stress[0, 2]]
 )
 if float(np.max(transverse)) > 1.0e-7:
     raise SystemExit(f"rotated closure probe failed: transverse stress={transverse}")
-print(f"rotated structural closure probe: passed (max transverse stress={np.max(transverse):.3e})")
+internal = np.asarray(data.s1.internal_state_variables[0])
+structural_total_strain = internal[6:12]
+imposed = np.asarray(data.s1.gradients[0])
+in_plane_error = np.max(np.abs(structural_total_strain[[0, 1, 3]] - imposed[[0, 1, 3]]))
+if float(in_plane_error) > 1.0e-12:
+    raise SystemExit(f"rotated kinematics probe failed: error={in_plane_error}")
+print(
+    "rotated structural closure probe: passed "
+    f"(max transverse stress={np.max(transverse):.3e}, "
+    f"max in-plane strain error={in_plane_error:.3e})"
+)
 PY

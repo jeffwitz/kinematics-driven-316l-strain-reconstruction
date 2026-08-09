@@ -5293,5 +5293,9 @@ qualified GPS or 3D-condensation backends. A second fixed-rotation elastic
 probe is now available at
 `validation/mfront/StructuralPlaneStressRotatedElasticProbe.mfront`, driven by
 `scripts/probe_structural_plane_stress_rotated_hook.sh`; it reaches about
-`5.9e-14` maximum rotated transverse traction. This still does not qualify
-per-point orientation properties, a condensed tangent, J2, SRIX or Méric.
+`2.3e-14` maximum rotated transverse traction and `4.9e-19` in-plane strain
+error. It uses the repository Bunge convention `Q=global_to_material`,
+`T=Q.T`, and leaves `deto` unrotated. The earlier `0c12ac7` fixed matrix and
+rotated-gradient result is historical hook evidence only, not the physical
+rotation proof. The corrected probe still does not qualify per-point
+orientation properties, a condensed tangent, J2, SRIX or Méric.

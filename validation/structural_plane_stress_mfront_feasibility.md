@@ -158,12 +158,26 @@ normal and shear components. It is built and checked by:
 ./scripts/probe_structural_plane_stress_rotated_hook.sh
 ```
 
-The returned material stress, rotated back in the runtime check, has maximum
-transverse traction `5.9e-14`. This demonstrates that the local hook can carry
-the structural rotation through the closure without a second host-side
-rotation for this controlled elastic case. The rotation is intentionally fixed
+The corrected probe uses the repository convention explicitly:
+
+```text
+Q = global -> material       (Bunge [35, 20, 15] degrees)
+T = material -> global = Q.T
+deto is supplied in the structural/global frame and is not rotated
+F_a = (T K_m)_a - deto_a
+F_b = (T sigma_m)_b / Gref
+```
+
+The script asserts `Q Q.T = I` and `det(Q) = 1` to machine precision. The
+returned material stress, rotated back in the runtime check, has maximum
+transverse traction `2.3e-14`, and the reconstructed structural total strain
+matches the imposed in-plane strain with maximum error `4.9e-19`.
+
+This is now a valid rotated elastic closure probe. The rotation is still fixed
 in the probe; per-point orientation properties and a consistent condensed
-tangent remain to be implemented and qualified.
+tangent remain to be implemented and qualified. The earlier `0c12ac7` probe
+used a non-orthogonal test matrix and rotated `deto`; it remains in history as
+a hook experiment but must not be cited as the physical rotated-closure proof.
 
 The generated header is intentionally placed in a temporary build directory;
 no generated probe library is versioned.

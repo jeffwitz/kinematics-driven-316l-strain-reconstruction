@@ -26,19 +26,22 @@
   shear_modulus13 : 75000.
 };
 
+@AuxiliaryStateVariable real globalK[6];
+globalK.setEntryName("StructuralTotalStrain");
+
 @Private {
   static Stensor rotate(const Stensor& s) {
-    // Fixed structural-to-material rotation, deliberately mixing all shear
-    // components. Values are a proper orthogonal matrix.
-    constexpr auto r00 = real(0.788071);
-    constexpr auto r01 = real(-0.482929);
-    constexpr auto r02 = real(0.382683);
-    constexpr auto r10 = real(0.548985);
-    constexpr auto r11 = real(0.425669);
-    constexpr auto r12 = real(-0.719846);
-    constexpr auto r20 = real(0.280166);
-    constexpr auto r21 = real(0.765908);
-    constexpr auto r22 = real(0.579228);
+    // Material-to-global T = Q^T, where Q is the repository's
+    // Q_global_to_material Bunge rotation for [35,20,15] degrees.
+    constexpr auto r00 = real(0.6517403912340062);
+    constexpr auto r01 = real(-0.7326322075147665);
+    constexpr auto r02 = real(0.19617469496901108);
+    constexpr auto r10 = real(0.7532585459971657);
+    constexpr auto r11 = real(0.5950699920075869);
+    constexpr auto r12 = real(-0.2801664995932355);
+    constexpr auto r20 = real(0.08852132690137686);
+    constexpr auto r21 = real(0.33036608954935215);
+    constexpr auto r22 = real(0.9396926207859084);
     const auto q = sqrt(real(2));
     const auto s0 = s(0), s1 = s(1), s2 = s(2);
     const auto s3 = s(3), s4 = s(4), s5 = s(5);
@@ -65,7 +68,6 @@
 @Integrator {
   constexpr auto Gref = real(210000.);
   constexpr ushort transverse[3] = {2, 4, 5};
-  const auto deto_global = rotate(this->deto);
   const auto sig_global = rotate(this->sig);
   auto K_material = Stensor(real(0));
   for (ushort i = 0; i != StensorSize; ++i) {
@@ -83,7 +85,7 @@
   }
   const auto raw_jacobian = this->jacobian;
   for (ushort i = 0; i != StensorSize; ++i) {
-    this->fzeros(i) = K_global(i) - deto_global(i);
+    this->fzeros(i) = K_global(i) - this->deto(i);
     for (ushort j = 0; j != StensorSize; ++j) {
       auto value = real(0);
       for (ushort k = 0; k != StensorSize; ++k) {
@@ -102,5 +104,12 @@
       }
       this->jacobian(i, j) = value / Gref;
     }
+  }
+};
+
+@UpdateAuxiliaryStateVariables {
+  const auto global_total = rotate(this->eel);
+  for (ushort i = 0; i != StensorSize; ++i) {
+    this->globalK[i] = global_total(i);
   }
 };
