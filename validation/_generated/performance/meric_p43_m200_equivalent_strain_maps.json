@@ -1,0 +1,19 @@
+{
+  "behaviour": "meric",
+  "common_max": 0.018791104380012597,
+  "common_min": 0.000548124187303774,
+  "crop_nodes": [
+    1520,
+    1720,
+    985,
+    1185
+  ],
+  "difference_abs_max": 0.013662001001614195,
+  "measure": "plane-stress von Mises equivalent total strain",
+  "npz": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/meric_p43_m200_equivalent_strain_maps.npz",
+  "png": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/meric_p43_m200_equivalent_strain_maps.png",
+  "poisson_ratio": 0.3,
+  "shear_convention": "engineering",
+  "spacing_mm": 0.00184,
+  "status": "completed_srix_m200_equivalent_strain_maps"
+}

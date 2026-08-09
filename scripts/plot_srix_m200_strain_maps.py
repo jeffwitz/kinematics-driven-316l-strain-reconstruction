@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -40,6 +41,15 @@ def _evm(displacement: np.ndarray, spacing: float) -> np.ndarray:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--behaviour", choices=("srix", "meric"), default="srix")
+    arguments = parser.parse_args()
+    if arguments.behaviour == "meric":
+        stem = "meric_p43_m200"
+        title_prefix = "Méric"
+    else:
+        stem = "srix_p43_m200"
+        title_prefix = "SRIX"
     crop = (1520, 1720, 985, 1185)
     x0, x1, y0, y1 = crop
     spacing = 0.00184
@@ -53,11 +63,11 @@ def main() -> int:
     fields = {
         "dic": _evm(dic, spacing),
         "homogeneous": _evm(
-            _displacement(PERF / "srix_p43_m200_homogeneous_structural_fd.fields.npz"),
+            _displacement(PERF / f"{stem}_homogeneous_structural_fd.fields.npz"),
             spacing,
         ),
         "ebsd": _evm(
-            _displacement(PERF / "srix_p43_m200_ebsd_structural_fd.fields.npz"),
+            _displacement(PERF / f"{stem}_ebsd_structural_fd.fields.npz"),
             spacing,
         ),
     }
@@ -65,7 +75,7 @@ def main() -> int:
     fields["ebsd_minus_dic"] = fields["ebsd"] - fields["dic"]
     fields["ebsd_minus_homogeneous"] = fields["ebsd"] - fields["homogeneous"]
 
-    output_npz = PERF / "srix_p43_m200_equivalent_strain_maps.npz"
+    output_npz = PERF / f"{stem}_equivalent_strain_maps.npz"
     np.savez_compressed(output_npz, **fields)
 
     common_min = float(min(np.min(fields[name]) for name in ("dic", "homogeneous", "ebsd")))
@@ -79,8 +89,8 @@ def main() -> int:
     figure, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
     panels = (
         ("dic", "DIC equivalent strain"),
-        ("homogeneous", "FEM homogeneous orientation"),
-        ("ebsd", "FEM EBSD orientation"),
+        ("homogeneous", f"{title_prefix} - homogeneous orientation"),
+        ("ebsd", f"{title_prefix} - EBSD orientation"),
         ("homogeneous_minus_dic", "Homogeneous - DIC"),
         ("ebsd_minus_dic", "EBSD - DIC"),
         ("ebsd_minus_homogeneous", "EBSD - homogeneous"),
@@ -112,12 +122,13 @@ def main() -> int:
         axis.set_xlabel("x node index")
         axis.set_ylabel("y node index")
         figure.colorbar(image, ax=axis, label=label)
-    output_png = PERF / "srix_p43_m200_equivalent_strain_maps.png"
+    output_png = PERF / f"{stem}_equivalent_strain_maps.png"
     figure.savefig(output_png, dpi=220)
     plt.close(figure)
 
     summary = {
-        "status": "completed_srix_m200_equivalent_strain_maps",
+        "status": "completed_m200_equivalent_strain_maps",
+        "behaviour": arguments.behaviour,
         "crop_nodes": list(crop),
         "spacing_mm": spacing,
         "poisson_ratio": 0.30,
@@ -129,7 +140,7 @@ def main() -> int:
         "npz": str(output_npz),
         "png": str(output_png),
     }
-    (PERF / "srix_p43_m200_equivalent_strain_maps.json").write_text(
+    (PERF / f"{stem}_equivalent_strain_maps.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n"
     )
     print(json.dumps(summary, indent=2, sort_keys=True))

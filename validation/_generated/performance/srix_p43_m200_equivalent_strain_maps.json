@@ -1,4 +1,5 @@
 {
+  "behaviour": "srix",
   "common_max": 0.018588997018305093,
   "common_min": 0.0006505785861146733,
   "crop_nodes": [
