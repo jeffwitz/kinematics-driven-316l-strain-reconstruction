@@ -13,8 +13,6 @@ _TRANSVERSE_COMPONENTS_3D = np.array([2, 4, 5])
 
 
 class GPSSubsteppingMixin:
-    _last_shadow_diagnostics: dict[str, object] | None
-
     def _committed_snapshot(self) -> tuple[NDArray, NDArray, NDArray]:
         return (
             np.asarray(self._manager.s0.gradients).copy(),
@@ -229,12 +227,14 @@ class GPSSubsteppingMixin:
         for span in advanced:
             self._restore_span(snapshot, span)
         if complete and verified == 1:
-            self._cache_hits += 1
-            self._substep_uses += 1
-            self._substep_points += sum(end - begin for begin, end in advanced)
-            self._substep_divisions_max = max(self._substep_divisions_max, worst)
+            self._substep_counters.cache_hits += 1
+            self._substep_counters.uses += 1
+            self._substep_counters.points += sum(end - begin for begin, end in advanced)
+            self._substep_counters.divisions_max = max(
+                self._substep_counters.divisions_max, worst
+            )
             return 1, worst
-        self._cache_misses += 1
+        self._substep_counters.cache_misses += 1
         self._failing_cache = []
         return None
 
@@ -267,7 +267,7 @@ class GPSSubsteppingMixin:
 
         self._last_substep_mask[:] = False
         self._last_substep_divisions[:] = 1
-        self._last_shadow_diagnostics = None
+        self._gps_diagnostics_counters.last_shadow_diagnostics = None
         status = self._integrate_once(
             in_plane_kelvin, time_increment, transverse_kelvin
         )
@@ -287,9 +287,9 @@ class GPSSubsteppingMixin:
         if not spans:
             # The bisection found every range acceptable on its own, so `s1`
             # now holds a complete state assembled range by range.
-            self._substep_uses += 1
+            self._substep_counters.uses += 1
             return 1, 1
-        self._substep_points += sum(end - begin for begin, end in spans)
+        self._substep_counters.points += sum(end - begin for begin, end in spans)
         worst = 1
         for span in spans:
             status, divisions = self._substep_span(
@@ -301,7 +301,9 @@ class GPSSubsteppingMixin:
                 return status, worst
             self._last_substep_mask[span[0] : span[1]] = True
             self._last_substep_divisions[span[0] : span[1]] = divisions
-        self._substep_uses += 1
-        self._substep_divisions_max = max(self._substep_divisions_max, worst)
+        self._substep_counters.uses += 1
+        self._substep_counters.divisions_max = max(
+            self._substep_counters.divisions_max, worst
+        )
         self._failing_cache = spans if len(spans) <= self._maximum_cached_spans else []
         return 1, worst

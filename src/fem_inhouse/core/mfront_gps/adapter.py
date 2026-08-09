@@ -15,6 +15,11 @@ from fem_inhouse.core.linear_solver import LinearSystemMatrixType
 from fem_inhouse.core.mfront_3d import MFront3DMaterialPointBatch
 from fem_inhouse.core.mfront_behaviours import MFrontBehaviourSpec
 from fem_inhouse.core.mfront_gps.composite_tangent import CompositeTangentMixin
+from fem_inhouse.core.mfront_gps.counters import (
+    CompositeTangentCounters,
+    GPSDiagnosticsCounters,
+    GPSSubstepCounters,
+)
 from fem_inhouse.core.mfront_gps.diagnostics import GPSDiagnosticsMixin
 from fem_inhouse.core.mfront_gps.substepping import GPSSubsteppingMixin
 from fem_inhouse.core.mfront_runtime import (
@@ -180,16 +185,7 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         self._composite_fd_enabled = bool(composite_fd_tangent)
         self._composite_fd_step = float(composite_fd_step)
         self._composite_fd_materials: dict[int, MFrontNativeGeneralisedPlaneStressBatch] = {}
-        self._composite_fd_seconds = 0.0
-        self._composite_fd_points = 0
-        self._composite_fd_trajectories = 0
-        self._composite_fd_partition_changes = 0
-        self._composite_fd_mgis_calls = 0
-        self._composite_fd_actual_point_integrations = 0
-        self._composite_fd_snapshot_seconds = 0.0
-        self._composite_fd_restore_seconds = 0.0
-        self._composite_fd_integration_seconds = 0.0
-        self._last_composite_fd_diagnostics: dict[str, object] | None = None
+        self._composite_fd_counters = CompositeTangentCounters()
         self._rotations = (
             None
             if rotation_global_to_material is None
@@ -298,11 +294,9 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         # Sub-stepping bound. Eight halvings take a full increment down to
         # 1/256 of itself; beyond that a failure is not a step-size problem.
         self._maximum_substeps = 256
-        self._substep_uses = 0
+        self._substep_counters = GPSSubstepCounters()
         self._rerun_uses = 0
         self._rerun_failures = 0
-        self._substep_divisions_max = 0
-        self._substep_points = 0
         #: Bisection stops at this block size. Measured on P43 20x20: at 32 the
         #: Newton count goes back to 63 from 52, the field agreement loses an
         #: order of magnitude and the material time rises -- sub-stepping
@@ -314,7 +308,6 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         self._failing_cache: list[tuple[int, int]] = []
         self._last_substep_mask = np.zeros(point_count, dtype=bool)
         self._last_substep_divisions = np.ones(point_count, dtype=np.int64)
-        self._last_shadow_diagnostics: dict[str, object] | None = None
         # Above this many the cache would cost more than the bisection it
         # saves, so it scales with the batch: `k` cached spans cost `k`
         # single-point sub-steps plus one pooled proof, against the roughly
@@ -323,8 +316,7 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         # ten thousand, where the failing set is proportionally larger -- the
         # 100x100 window then fell back to 0.96x while 20x20 ran at 1.2-1.7x.
         self._maximum_cached_spans = max(32, point_count // 8)
-        self._cache_hits = 0
-        self._cache_misses = 0
+        self._gps_diagnostics_counters = GPSDiagnosticsCounters()
         # Route 2 of the handoff, and the reason it is needed. Sub-stepping is
         # what makes the joint Newton reach the deep plastic states at all, but
         # the matrix it leaves behind is the LAST sub-step's, not the whole
@@ -353,14 +345,12 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         # the branch. Any future route must carry the branch, not just the
         # strain.
         self._shadow: MFront3DMaterialPointBatch | None = None
-        self._shadow_failures = 0
         self._shadow_has_trial = False
         # tr(eel) = tr(eps_total) is the trace of the elastic residual: the
         # Schmid tensors are deviatoric and a rotation preserves the trace, so
         # a converged state that violates it is not a solution of the system
         # the law says it solved. Cheap enough to check on every evaluation,
         # and it is the invariant that exposed the overwrite defect.
-        self._maximum_kinematic_defect = 0.0
         self._previous_transverse_delta: NDArray | None = None
         self._previous_in_plane_norm = 0.0
         self._committed_in_plane = np.zeros((point_count, 3), dtype=float)
@@ -389,25 +379,25 @@ class MFrontNativeGeneralisedPlaneStressBatch(
     def substep_uses(self) -> int:
         """How many increments needed halving. Zero is the healthy case."""
 
-        return self._substep_uses
+        return self._substep_counters.uses
 
     @property
     def substep_divisions_max(self) -> int:
-        return self._substep_divisions_max
+        return self._substep_counters.divisions_max
 
     @property
     def substep_cache_hits(self) -> int:
-        return self._cache_hits
+        return self._substep_counters.cache_hits
 
     @property
     def substep_cache_misses(self) -> int:
-        return self._cache_misses
+        return self._substep_counters.cache_misses
 
     @property
     def substep_points(self) -> int:
         """Total points ever sub-stepped, against the whole batch before."""
 
-        return self._substep_points
+        return self._substep_counters.points
 
     @property
     def last_substep_mask(self) -> NDArray:
@@ -425,11 +415,11 @@ class MFrontNativeGeneralisedPlaneStressBatch(
     def last_shadow_diagnostics(self) -> dict[str, object] | None:
         """Pointwise comparison of the runtime shadow and GPS trial."""
 
-        return self._last_shadow_diagnostics
+        return self._gps_diagnostics_counters.last_shadow_diagnostics
 
     @property
     def last_composite_fd_diagnostics(self) -> dict[str, object] | None:
-        return self._last_composite_fd_diagnostics
+        return self._gps_diagnostics_counters.last_composite_fd_diagnostics
 
     @property
     def point_count(self) -> int:
@@ -473,24 +463,24 @@ class MFrontNativeGeneralisedPlaneStressBatch(
             native_internal_integrations=self._internal_integrations,
             native_total_local_iterations=int(np.sum(self._local_iterations)),
             native_thread_count=self._thread_count,
-            native_substep_points=self._substep_points,
-            native_substep_cache_hits=self._cache_hits,
-            native_substep_cache_misses=self._cache_misses,
-            composite_fd_seconds=self._composite_fd_seconds,
-            composite_fd_points=self._composite_fd_points,
-            composite_fd_trajectories=self._composite_fd_trajectories,
-            composite_fd_partition_changes=self._composite_fd_partition_changes,
-            composite_fd_mgis_calls=self._composite_fd_mgis_calls,
-            composite_fd_actual_point_integrations=self._composite_fd_actual_point_integrations,
-            composite_fd_snapshot_seconds=self._composite_fd_snapshot_seconds,
-            composite_fd_restore_seconds=self._composite_fd_restore_seconds,
-            composite_fd_integration_seconds=self._composite_fd_integration_seconds,
+            native_substep_points=self._substep_counters.points,
+            native_substep_cache_hits=self._substep_counters.cache_hits,
+            native_substep_cache_misses=self._substep_counters.cache_misses,
+            composite_fd_seconds=self._composite_fd_counters.seconds,
+            composite_fd_points=self._composite_fd_counters.points,
+            composite_fd_trajectories=self._composite_fd_counters.trajectories,
+            composite_fd_partition_changes=self._composite_fd_counters.partition_changes,
+            composite_fd_mgis_calls=self._composite_fd_counters.mgis_calls,
+            composite_fd_actual_point_integrations=self._composite_fd_counters.actual_point_integrations,
+            composite_fd_snapshot_seconds=self._composite_fd_counters.snapshot_seconds,
+            composite_fd_restore_seconds=self._composite_fd_counters.restore_seconds,
+            composite_fd_integration_seconds=self._composite_fd_counters.integration_seconds,
             composite_fd_other_seconds=max(
                 0.0,
-                self._composite_fd_seconds
-                - self._composite_fd_snapshot_seconds
-                - self._composite_fd_restore_seconds
-                - self._composite_fd_integration_seconds,
+                self._composite_fd_counters.seconds
+                - self._composite_fd_counters.snapshot_seconds
+                - self._composite_fd_counters.restore_seconds
+                - self._composite_fd_counters.integration_seconds,
             ),
         )
 
@@ -746,8 +736,9 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         kinematic_defect = np.abs(
             elastic[:, :3].sum(axis=1) - total[:, :3].sum(axis=1)
         ) / np.maximum(np.abs(total[:, :3].sum(axis=1)), 1.0e-30)
-        self._maximum_kinematic_defect = max(
-            self._maximum_kinematic_defect, float(kinematic_defect.max())
+        self._gps_diagnostics_counters.maximum_kinematic_defect = max(
+            self._gps_diagnostics_counters.maximum_kinematic_defect,
+            float(kinematic_defect.max()),
         )
         observables = {
             name: internal_state_variables[:, item].copy()

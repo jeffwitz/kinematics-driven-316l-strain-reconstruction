@@ -15,8 +15,6 @@ _TRANSVERSE_COMPONENTS_3D = np.array([2, 4, 5])
 
 
 class GPSDiagnosticsMixin:
-    _last_shadow_diagnostics: dict[str, object] | None
-
     def _shadow_condensed_tangent(
         self,
         in_plane: NDArray,
@@ -104,7 +102,7 @@ class GPSDiagnosticsMixin:
                 state_differences[name] = np.max(
                     np.abs(gps_isv[:, source_slice] - shadow_isv[:, target_slice]), axis=1
                 )
-            self._last_shadow_diagnostics = {
+            self._gps_diagnostics_counters.last_shadow_diagnostics = {
                 "substep": self._last_substep_mask.copy(),
                 "divisions": self._last_substep_divisions.copy(),
                 "tangent_relative_error": tangent_error,
@@ -114,14 +112,14 @@ class GPSDiagnosticsMixin:
                 "scope": self._shadow_tangent_scope,
             }
         except Exception:
-            self._shadow_failures += 1
-            self._last_shadow_diagnostics = {"failure": True}
+            self._gps_diagnostics_counters.shadow_failures += 1
+            self._gps_diagnostics_counters.last_shadow_diagnostics = {"failure": True}
             return None
         finally:
             # No committed evolution of its own, ever.
             self._shadow.revert()
         if not np.isfinite(engineering).all():
-            self._shadow_failures += 1
+            self._gps_diagnostics_counters.shadow_failures += 1
             return None
         selected = np.ones(self._point_count, dtype=bool)
         if self._shadow_tangent_scope == "substepped":
@@ -134,10 +132,10 @@ class GPSDiagnosticsMixin:
 
     @property
     def shadow_failures(self) -> int:
-        return self._shadow_failures
+        return self._gps_diagnostics_counters.shadow_failures
 
     @property
     def maximum_kinematic_defect(self) -> float:
         """Worst relative violation of `tr(eel) = tr(eps_total)` so far."""
 
-        return self._maximum_kinematic_defect
+        return self._gps_diagnostics_counters.maximum_kinematic_defect

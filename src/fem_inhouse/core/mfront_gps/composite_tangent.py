@@ -13,8 +13,6 @@ _PLANE_STRESS_COMPONENTS = np.array([0, 1, 3])
 
 
 class CompositeTangentMixin:
-    _last_composite_fd_diagnostics: dict[str, object] | None
-
     def _composite_fd_material(self, point: int) -> Any:
         """Return a cached one-point GPS evaluator for composite FD."""
 
@@ -70,7 +68,7 @@ class CompositeTangentMixin:
             point_material = self._composite_fd_material(int(point))
             snapshot_started = time.perf_counter()
             point_snapshot = self._point_snapshot(committed_snapshot, int(point))
-            self._composite_fd_snapshot_seconds += time.perf_counter() - snapshot_started
+            self._composite_fd_counters.snapshot_seconds += time.perf_counter() - snapshot_started
             base_partition = bool(self._last_substep_mask[point])
             tangent = np.zeros((3, 3), dtype=float)
             partition_changed = False
@@ -81,44 +79,44 @@ class CompositeTangentMixin:
                 minus[0, column] -= self._composite_fd_step
                 restore_started = time.perf_counter()
                 point_material.restore_state(point_snapshot)
-                self._composite_fd_restore_seconds += time.perf_counter() - restore_started
+                self._composite_fd_counters.restore_seconds += time.perf_counter() - restore_started
                 before = point_material.timing_statistics
                 trial_plus = point_material.evaluate(
                     plus, time_increment=time_increment, consistent_tangent=True
                 )
                 after = point_material.timing_statistics
-                self._composite_fd_mgis_calls += max(
+                self._composite_fd_counters.mgis_calls += max(
                     0,
                     after.native_batch_calls - before.native_batch_calls,
                 )
-                self._composite_fd_actual_point_integrations += max(
+                self._composite_fd_counters.actual_point_integrations += max(
                     0,
                     after.native_internal_integrations
                     - before.native_internal_integrations,
                 )
-                self._composite_fd_integration_seconds += max(
+                self._composite_fd_counters.integration_seconds += max(
                     0.0,
                     after.integration_seconds - before.integration_seconds,
                 )
                 plus_partition = bool(point_material.last_substep_mask[0])
                 restore_started = time.perf_counter()
                 point_material.restore_state(point_snapshot)
-                self._composite_fd_restore_seconds += time.perf_counter() - restore_started
+                self._composite_fd_counters.restore_seconds += time.perf_counter() - restore_started
                 before = point_material.timing_statistics
                 trial_minus = point_material.evaluate(
                     minus, time_increment=time_increment, consistent_tangent=True
                 )
                 after = point_material.timing_statistics
-                self._composite_fd_mgis_calls += max(
+                self._composite_fd_counters.mgis_calls += max(
                     0,
                     after.native_batch_calls - before.native_batch_calls,
                 )
-                self._composite_fd_actual_point_integrations += max(
+                self._composite_fd_counters.actual_point_integrations += max(
                     0,
                     after.native_internal_integrations
                     - before.native_internal_integrations,
                 )
-                self._composite_fd_integration_seconds += max(
+                self._composite_fd_counters.integration_seconds += max(
                     0.0,
                     after.integration_seconds - before.integration_seconds,
                 )
@@ -130,9 +128,9 @@ class CompositeTangentMixin:
                     - np.asarray(trial_minus.stress_in_plane_mpa)[0]
                 ) / (2.0 * self._composite_fd_step)
             result[point] = tangent
-            self._composite_fd_trajectories += 6
+            self._composite_fd_counters.trajectories += 6
             if partition_changed:
-                self._composite_fd_partition_changes += 1
+                self._composite_fd_counters.partition_changes += 1
             diagnostics.append(
                 {
                     "point": int(point),
@@ -141,9 +139,9 @@ class CompositeTangentMixin:
                     "tangent": tangent.copy(),
                 }
             )
-        self._composite_fd_seconds += time.perf_counter() - started
-        self._composite_fd_points += len(active_points)
-        self._last_composite_fd_diagnostics = {
+        self._composite_fd_counters.seconds += time.perf_counter() - started
+        self._composite_fd_counters.points += len(active_points)
+        self._gps_diagnostics_counters.last_composite_fd_diagnostics = {
             "points": diagnostics,
             "step": self._composite_fd_step,
         }
