@@ -5216,7 +5216,7 @@ physical DIC time, and the unqualified temporal accuracy of the Méric
 ## MFront architectural refactor
 
 The staged refactor of the MFront backend is pushed through commits c20ca45,
-1ce6a8a, affb32c and 404dc91.
+1ce6a8a, affb32c, 404dc91 and eae0afa.
 The compatibility facade remains at src/fem_inhouse/core/mfront.py, while
 the implementation is split into:
 
