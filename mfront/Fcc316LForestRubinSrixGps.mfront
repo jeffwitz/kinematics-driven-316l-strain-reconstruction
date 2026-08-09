@@ -89,11 +89,9 @@ deqeps.setEntryName("MinimumEquivalentStrainIncrement");
  *
  * The DSL's default consistent tangent is `Dt = D_tdt * Je` with
  * `Je = ddeel/ddeto` under the standard assumption `dF/ddeto = -I` on all
- * six rows of `feel`. This law violates that assumption: its transverse
- * rows (2, 4, 5) carry the closure `sigma_b = 0` and do not see `deto` at
- * all, so the default tangent differs from the reference condensation Schur
- * by ~3e-3 at the responsible points (measured, 2026-08-08). When this
- * parameter is true, the `@TangentOperator` below rebuilds the RAW-law
+ * six rows of `feel`. The transverse GPS rows do not use that default
+ * dependence, so a dedicated sensitivity reconstruction is required. When
+ * this parameter is true, the `@TangentOperator` below rebuilds the RAW-law
  * jacobian (transverse rows = full transverse kinematics, which DO depend
  * on `dg`), solves the sensitivity `A_brute X = [I6; 0]`, rotates the 3D
  * tangent to the global frame and returns the Schur complement
@@ -397,9 +395,9 @@ localIterations.setEntryName("LocalIterations");
   } else if (smt==CONSISTENTTANGENTOPERATOR){
     if(!this->condensedTangent){
       // Default DSL consistent tangent: Dt = D_tdt * ddeel/ddeto, assuming
-      // dF/ddeto = -I on ALL six rows of feel. The GPS closure violates that
-      // on the transverse rows (they carry sigma_b = 0 and do not see deto),
-      // which is the measured ~3e-3 difference against the reference Schur.
+      // dF/ddeto = -I on ALL six rows of feel. The GPS closure changes that
+      // dependence on the transverse rows, so use the dedicated sensitivity
+      // reconstruction below instead of applying the default formula.
       Stensor4 Je;
       getPartialJacobianInvert(Je);
       this->Dt = (this->D_tdt)*Je;
@@ -429,8 +427,7 @@ localIterations.setEntryName("LocalIterations");
       // computeThermodynamicForces first). At the converged state `sig` is
       // right, but `deto` still carries the PREDICTED transverse strain: the
       // closure rows of the jacobian would then be evaluated away from the
-      // converged closure, which is exactly the difference between the GPS
-      // system and the reference Schur (measured ~3e-3). Impose the closure
+      // converged closure. Impose the closure
       // SOLUTION's transverse total strain -- eel + sum(g m) in the global
       // frame, the same quantity @UpdateAuxiliaryStateVariables writes into
       // ezz/eyz/exz -- for the regeneration, then restore deto.

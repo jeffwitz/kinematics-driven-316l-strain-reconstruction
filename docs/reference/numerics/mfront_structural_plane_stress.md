@@ -1,72 +1,152 @@
 # Structural plane stress from generic three-dimensional MFront behaviours
 
-**Category: scientific reference.**
+**Category: scientific reference and upstream design note.**
 
-This document describes a structural plane-stress closure for a genuinely
-three-dimensional constitutive behaviour. It is intended for small-strain,
-implicit MFront behaviours using the standard elastic-strain split provided by
-`StandardElasticity`. The constitutive state remains three-dimensional; plane
-stress is a local closure, not a reduction of the finite-element kinematics.
+This note describes a structural plane-stress closure for a genuinely
+three-dimensional constitutive behaviour. It is not a plate or shell theory:
+the finite-element model is a two-dimensional membrane model with a local
+constitutive closure at each material point.
 
-## 1. Plane stress is a traction-free condition
-
-Let the structural surface normal be \(\mathbf n=\mathbf e_z\). A free surface
-has zero traction:
+The demonstrated V1 domain is deliberately narrow:
 
 $$
-\mathbf t=\boldsymbol\sigma\mathbf n=\mathbf 0.
+\boxed{\text{small strain} + \text{Implicit} + \text{Tridimensional}
+       + \text{StandardElasticity-compatible elastic split}.}
 $$
 
-For a symmetric stress tensor this is the three-component condition
+The constitutive state remains three-dimensional. The generic mathematical
+transformation has been demonstrated on rotated elasticity, J2, SRIX and
+Méric--Cailletaud; the currently registered full-field implementation still
+uses SRIX-specific source-generation scaffolding, documented in Section 12.
+
+## 1. Structural assumptions and the meaning of plane stress
+
+For a body with structural thickness coordinate \(z\), a free face has the
+boundary condition
+
+$$
+\boldsymbol\sigma\mathbf n=\mathbf 0
+\qquad\text{on }z=+h/2\text{ and }z=-h/2.
+$$
+
+The two-dimensional plane-stress approximation extends this surface condition
+to the representative constitutive state through the thickness of a
+sufficiently thin membrane. Under that approximation, with
+\(\mathbf n=\mathbf e_z\), the local closure is
 
 $$
 \boxed{\sigma_{zz}=0,\qquad \sigma_{xz}=0,\qquad \sigma_{yz}=0.}
 $$
 
-The familiar one-equation formulation is a special case. For isotropic
-elasticity, or for an aligned orthotropy, transverse shear is decoupled and
-\(\gamma_{xz}=\gamma_{yz}=0\) follows. A crystal orientation measured by EBSD
-is generally not aligned with the structural frame, so that simplification is
-not valid.
+This is an approximation to a three-dimensional boundary-value problem, not a
+claim that the traction condition holds at every point of a finite-thickness
+body. Bending, transverse shear and through-thickness variation are outside
+this formulation.
 
-The structural model still has only
+The FEM unknowns remain only
 
 $$
-u_x(x,y),\qquad u_y(x,y)
+u_x(x,y),\qquad u_y(x,y).
 $$
 
-as finite-element unknowns. The three transverse strains
+The three transverse strains
 
 $$
 \varepsilon_b=(\varepsilon_{zz},\gamma_{xz},\gamma_{yz})
 $$
 
-are local constitutive unknowns at each material point; they are condensed and
-are not additional FEM degrees of freedom.
+are local constitutive unknowns. They are solved and condensed at a material
+point; they are not additional FEM degrees of freedom.
 
-## 2. Why crystal plasticity needs the full three-dimensional state
+## 2. Relation to existing MFront plane-stress hypotheses
 
-Crystal plasticity evolves
+MFront and `StandardElasticity` already provide powerful support for standard
+`PlaneStress` and `GeneralisedPlaneStress` modelling hypotheses. In the usual
+case, the extra local unknown is the axial strain \(\varepsilon_{zz}\), and the
+additional equation is \(\sigma_{zz}=0\). This is exactly the right
+abstraction for an isotropic material, or an aligned material for which the
+transverse shear components are decoupled.
+
+The problem addressed here is different:
+
+| Existing standard hypothesis | Structural 3D closure in this note |
+|---|---|
+| additional local unknown typically \(\varepsilon_{zz}\) | \(\varepsilon_{zz},\gamma_{xz},\gamma_{yz}\) |
+| closure typically \(\sigma_{zz}=0\) | \(\sigma_{zz}=\sigma_{xz}=\sigma_{yz}=0\) |
+| behaviour represented under a plane-stress hypothesis | behaviour remains `Tridimensional` |
+| suitable for the standard decoupled case | suitable for arbitrary 3D material orientation |
+
+The proposal does not replace MFront's existing plane-stress mechanisms. It
+targets a three-dimensional law with a complete three-dimensional internal
+state and a structural surface orientation that is independent of the crystal
+orientation. In particular, an EBSD crystal orientation is not generally
+aligned with the structural normal.
+
+## 3. Tensor and Kelvin notation
+
+The scientific derivation uses Kelvin components. The structural engineering
+interface uses engineering shear components. With component order
 
 $$
-\Delta\boldsymbol\varepsilon^p
-=\sum_s \Delta\gamma_s\,\mathbf M_s.
+(xx,yy,zz,xy,xz,yz),
 $$
 
-After an arbitrary three-dimensional orientation, each Schmid tensor may have
-`xx`, `yy`, `zz`, `xy`, `xz` and `yz` components in the structural frame.
-Consequently, both the elastic anisotropy and the plastic strain can generate
-transverse shear traction. Setting \(\sigma_{zz}=0\) while prescribing
-\(\gamma_{xz}=\gamma_{yz}=0\) does not impose a free surface.
-
-Partition engineering components in the structural frame as
+the engineering strain and Kelvin strain vectors are
 
 $$
-\varepsilon_a=(\varepsilon_{xx},\varepsilon_{yy},\gamma_{xy}),\qquad
-\varepsilon_b=(\varepsilon_{zz},\gamma_{xz},\gamma_{yz}),
+[\varepsilon]_{eng}=
+\begin{bmatrix}\varepsilon_{xx}&\varepsilon_{yy}&\varepsilon_{zz}&
+\gamma_{xy}&\gamma_{xz}&\gamma_{yz}\end{bmatrix}^{T},
 $$
 
-and similarly \(\sigma=(\sigma_a,\sigma_b)\). In a linearized state,
+$$
+[\varepsilon]_{K}=
+\begin{bmatrix}\varepsilon_{xx}&\varepsilon_{yy}&\varepsilon_{zz}&
+\sqrt2\varepsilon_{xy}&\sqrt2\varepsilon_{xz}&\sqrt2\varepsilon_{yz}
+\end{bmatrix}^{T},
+\qquad \gamma_{ij}=2\varepsilon_{ij}.
+$$
+
+The stress Kelvin vector is
+
+$$
+[\sigma]_K=
+\begin{bmatrix}\sigma_{xx}&\sigma_{yy}&\sigma_{zz}&
+\sqrt2\sigma_{xy}&\sqrt2\sigma_{xz}&\sqrt2\sigma_{yz}\end{bmatrix}^{T}.
+$$
+
+Let \(Q\in SO(3)\) map global/structural tensors to material tensors:
+
+$$
+\boldsymbol A_m=Q\boldsymbol A_gQ^T,
+\qquad
+\boldsymbol A_g=Q^T\boldsymbol A_mQ.
+$$
+
+The corresponding Kelvin operator is a distinct six-dimensional object,
+\(\mathcal R_K(Q)\in\mathbb R^{6\times6}\):
+
+$$
+[A_m]_K=\mathcal R_K(Q)[A_g]_K,
+\qquad
+[A_g]_K=\mathcal R_K(Q)^T[A_m]_K.
+$$
+
+Thus no 3-by-3 matrix is ever multiplied directly by a six-component vector.
+The raw 3D bridge applies \(\mathcal R_K(Q)\) to the input gradient and its
+transpose to returned stresses and tangents. GPS behaviours receive the
+structural gradient and own the crystal rotation through per-point `Qij`
+properties. Applying both rotations would rotate the gradient twice.
+
+## 4. Why \(\sigma_{zz}=0\) alone fails for rotated anisotropy
+
+Partition the structural Kelvin components as
+
+$$
+a=(xx,yy,xy),\qquad b=(zz,xz,yz).
+$$
+
+The linearized response is
 
 $$
 \begin{bmatrix}\sigma_a\\\sigma_b\end{bmatrix}
@@ -75,303 +155,345 @@ $$
 \begin{bmatrix}\varepsilon_a\\\varepsilon_b\end{bmatrix}.
 $$
 
-For a rotated anisotropic material, \(C_{ba}\ne0\) in general. The three
-transverse strains must therefore be solved so that \(\sigma_b=0\).
+For a rotated anisotropic material, \(C_{ba}\ne0\) in general. A purely
+in-plane strain therefore produces transverse shear traction. Fixing
+\(\gamma_{xz}=\gamma_{yz}=0\) and adjusting only \(\varepsilon_{zz}\) can make
+\(\sigma_{zz}=0\) while leaving \(\sigma_{xz}\) and \(\sigma_{yz}\) non-zero.
 
-## 3. Structural and material frames
-
-The implementation uses the convention
+Crystal plasticity makes the same point independently of elasticity:
 
 $$
-Q:\text{ global/structural}\rightarrow\text{material},\qquad
-T=Q^T:\text{ material}\rightarrow\text{global}.
+\Delta\boldsymbol\varepsilon^p=
+\sum_s\Delta\gamma_s\,\mathbf M_s.
 $$
 
-The finite-element gradient is supplied in the structural frame. The raw
-three-dimensional bridge rotates it to the material frame before calling MGIS
-and rotates stresses and tangents back. The GPS behaviours instead receive the
-global gradient and own the crystal rotation through per-point `Qij`
-properties. These two paths must not both rotate the same gradient.
+After an arbitrary EBSD orientation, each Schmid tensor can have all six
+structural components. The three transverse strains must therefore be solved
+so that the complete traction vector vanishes.
 
-All six-component operations use the repository's engineering/Kelvin
-conventions. The structural closure is always expressed in the structural
-frame, regardless of the material's crystal axes.
+## 5. External 3D condensation: the independent reference
 
-## 4. Three-dimensional reference: external condensation
-
-The backend
-`mfront-3d-condensed-plane-stress` keeps the law unchanged. It solves
+The backend `mfront-3d-condensed-plane-stress` leaves the behaviour unchanged.
+It solves the three local equations
 
 $$
 \sigma_b(\varepsilon_a,\varepsilon_b)=0
 $$
 
-with an outer local Newton method. Every trial is restored from the same
-committed state, and the converged three-dimensional tangent is partitioned
-and condensed:
+with an outer Newton iteration. Every trial is restored from one complete
+committed snapshot. After convergence, the constrained tangent is
 
 $$
-\boxed{
-C^{PS}=C_{aa}-C_{ab}C_{bb}^{-1}C_{ba}.}
+\boxed{C^{PS}=C_{aa}-C_{ab}C_{bb}^{-1}C_{ba}.}
 $$
 
-The inverse is never formed explicitly: linear systems with \(C_{bb}\) are
-solved. This route is the independent numerical reference because it accepts
-any compatible three-dimensional behaviour without modifying its MFront
-source. Its cost is the repeated MGIS integration and the host-side closure.
+The inverse is not formed: a 3-by-3 linear system is solved. The bridge can
+use either a committed or tangent transverse predictor, monitors the
+conditioning of \(C_{bb}\), and records the local closure iterations. This is
+the independent reference because it can use an unchanged compatible 3D law.
 
-## 5. Specialised monolithic GPS behaviour
+## 6. Exact equivalence of external and monolithic closure
 
-The historical SRIX route is
-`mfront-native-generalised-plane-stress`, backed by
-`Fcc316LForestRubinSrixGps`. The local MFront system retains the three-
-dimensional SRIX state and replaces the appropriate elastic residual rows by
-the in-plane kinematics and the three traction-free equations.
-
-This formulation is algebraically equivalent to external condensation for one
-smooth constitutive step. It is specialised: a new law requires a corresponding
-GPS variant and its own qualification. Its robust integration policy is partly
-host-side, as described below.
-
-## 6. Generic `StructuralPlaneStress3D`
-
-The new backend is
-`mfront-structural-plane-stress`. It applies the same closure transformation
-to a `Tridimensional`, small-strain, `Implicit` behaviour compatible with
-`StandardElasticity`, without referring to a law-specific variable such as a
-slip, a hardening variable, or a Schmid tensor.
-
-The key contract is the standard elastic block. If \(x\) denotes all local
-implicit unknowns, the elastic residual has the form
+The equivalence is easiest to see before differentiating. Let \(x\) contain
+the local constitutive unknowns and write the raw 3D system as
 
 $$
-f_e(x)=K_m(x)-\Delta\varepsilon_m,
-\qquad K_m(x)=f_e(x)+\Delta\varepsilon_m.
+K_a(x)-\varepsilon_a=0,\qquad
+K_b(x)-\varepsilon_b=0,\qquad
+G(x)=0,
 $$
 
-Thus the complete constitutive kinematics can be recovered from the first six
-elastic residual rows without knowing the inelastic variables. The generic
-transformation computes
+where \(G\) denotes all other constitutive equations. Plane stress adds
 
 $$
-K_g=T K_m,
+S_b(x)=0.
 $$
 
-then replaces only the elastic rows by
+The second raw equation gives \(\varepsilon_b=K_b(x)\). Eliminating it leaves
 
 $$
-F_a=(K_g)_a-\Delta\varepsilon^{global}_a,
+K_a(x)-\varepsilon_a=0,\qquad G(x)=0,\qquad S_b(x)=0,
+$$
+
+which is exactly the monolithic structural closure. Therefore, on the same
+committed state, increment, orientation and differentiable constitutive
+branch,
+
+$$
+\boxed{\text{external 3D condensation}
+\equiv\text{monolithic structural closure}.}
+$$
+
+The Schur tangent and the monolithic implicit tangent are two eliminations of
+the same local equations, not two different physical models.
+
+## 7. Generic MFront residual transformation
+
+The specialised SRIX behaviour writes the closure equations explicitly. The
+generic prototype instead uses the standard elastic residual as an algebraic
+access point. In the current generated hook, `StandardElasticity` has already
+assembled a block of the form
+
+$$
+f_e^{std}=K_m-g,
+$$
+
+where `g` is the six-component gradient stored in the standard `deto` slot.
+Here `g` is the structural gradient supplied by the host; it must not be
+renamed \(\Delta\varepsilon_m\). Before the standard rows are consumed by
+Newton, the hook recovers
+
+$$
+K_m=f_e^{std}+g.
+$$
+
+This is an implementation-level algebraic extraction, not a statement that a
+structural gradient is a material-frame tensor. A future upstream interface
+should expose \(K_m\) or the elastic block directly instead of relying on the
+generated residual layout.
+
+The recovered tensor is transformed with \(\mathcal R_K(Q)^T\). The six
+elastic rows are replaced by
+
+$$
+F_a=(K_g)_a-g_a,
 \qquad
-F_b=\frac{(T\sigma_m)_b}{G_{ref}}.
+F_b=\frac{(\sigma_g)_b}{S_{ref}},
 $$
 
-All remaining constitutive rows are left unchanged. For every local Jacobian
-column, the elastic rows are transformed with the same material-to-structural
-operator; no knowledge of the number or meaning of the inelastic unknowns is
-required. The generated source currently provides this mechanism through
-MFront fragments and a generated behaviour, because the installed TFEL 5.1
-ABI does not export the symbols needed to distribute a new external
-`BehaviourBrick` implementation.
+while all other constitutive rows are left unchanged. All columns of the
+elastic-row Jacobian are transformed, including columns belonging to unknowns
+whose names and physical meanings are not known to the closure.
 
-The demonstrated V1 domain is therefore deliberately limited to:
-
-- small strain and symmetric stress;
-- `@DSL Implicit` and `@ModellingHypothesis Tridimensional`;
-- the `StandardElasticity` elastic split;
-- a six-component `deel`/`feel` elastic block;
-- constitutive laws whose imposed gradient enters through that standard block.
-
-This is not a claim about arbitrary MFront behaviours, finite strains, cohesive
-laws, or multi-gradient formulations.
-
-## 7. Consistent one-step tangent
-
-At convergence, let the transformed local system be
+The current V1 Jacobian transformation additionally assumes
 
 $$
-F(x,\varepsilon_a)=0,
-\qquad A=\frac{\partial F}{\partial x}.
+\sigma_m=D_m e_m^{el},
+$$
+
+with no direct dependence of stress on another implicit variable. If, for
+example, \(\sigma=\sigma(e^{el},d)\) with an implicit damage variable \(d\),
+then \(\partial\sigma/\partial d\ne0\) and the currently zeroed transverse
+columns would not be correct. This is part of the contract, not an accidental
+detail.
+
+## 8. Residual scaling
+
+The traction rows are scaled as
+
+$$
+F_b=\sigma_b/S_{ref},\qquad S_{ref}>0.
+$$
+
+The root is unchanged, but the scaling affects local Newton conditioning.
+The current generated prototype uses the fixed value
+\(S_{ref}=210000\) MPa. This is a prototype limitation, not a generic physical
+constant. An upstream implementation should derive the scale from a
+representative elastic modulus or expose it as a well-documented behaviour
+parameter.
+
+## 9. One-step consistent tangent
+
+At convergence, let
+
+$$
+F(x,g_a)=0,\qquad A=\frac{\partial F}{\partial x}.
 $$
 
 Let \(P\) contain the dependence on the three imposed structural components;
-its active entries are the columns corresponding to `xx`, `yy` and `xy`.
-The local sensitivity is obtained from
+its active columns are `xx`, `yy` and `xy`, with the sign convention taken
+from the actual transformed residual. Solve
 
 $$
 AX=P,
-\qquad X=\frac{\partial x}{\partial\varepsilon_a}.
+\qquad X=\frac{\partial x}{\partial g_a}.
 $$
 
-The implementation solves this system and never forms \(A^{-1}\). Since the
-stress is obtained from the elastic state,
+The implementation solves this system and never forms \(A^{-1}\). If \(X_e\)
+denotes the elastic-state rows and \(D_m\) is the material-frame
+stress/elastic-strain tangent, then
 
 $$
-\boxed{C^{PS}=T\,D_{\sigma e}\,X_e,}
+C^{PS}=\mathcal R_K(Q)^T D_m X_e.
 $$
 
-where \(X_e\) denotes the elastic-state rows. This is the tangent of the
-one-step structural constitutive map. In the raw three-dimensional route,
-eliminating \(\varepsilon_b\) first gives the Schur complement above; the two
-expressions are the same implicit derivative written after different
-eliminations.
+The inactive structural columns are not independent input columns and are set
+to zero in the returned operator used by the 2D solver. This is the tangent of
+one constitutive step. The raw 3D route gives the same derivative through
 
-The tangent is a constitutive contract. It is distinct from the tangent of a
-host integration algorithm that may later compose several sub-steps.
+$$
+C_{aa}-C_{ab}C_{bb}^{-1}C_{ba}.
+$$
 
-## 8. Substepping and the composite-map tangent
+## 10. Host substepping and the composite tangent
 
-The layers are:
+The implementation has three distinct derivative layers:
 
 ```text
 3D constitutive physics
         ↓
-StructuralPlaneStress3D or specialised GPS
+one-step structural closure and tangent
         ↓
-one-step constitutive map and tangent
+host substepping policy
         ↓
-optional host substepping
-        ↓
-optional composite-map tangent
+derivative of the composed algorithm
         ↓
 global FEM Newton
 ```
 
-If a host replaces one increment by
+For a fixed sequence of maps, a simplified notation is
 
 $$
-\Phi=\Phi_n\circ\cdots\circ\Phi_1,
+\Phi=\Phi_N\circ\cdots\circ\Phi_1,
+\qquad D\Phi=D\Phi_N\cdots D\Phi_1.
 $$
 
-the global Newton needs
+The actual driver distributes the target increment over the sub-steps,
 
 $$
-D\Phi=D\Phi_n\,D\Phi_{n-1}\cdots D\Phi_1,
+\Delta g_k=\frac{1}{N}(g_{target}-g_n),
 $$
 
-not merely the tangent of the last sub-step. The qualified GPS adapter detects
-the few points that require substepping and reconstructs this composite
-tangent by central finite differences when
-`gps_composite_fd_tangent=true`. The absolute engineering-strain perturbation
-is controlled by `gps_composite_fd_step` (default `1e-6`). The diagnostic shadow
-tangent is not a production mechanism.
-
-This distinction explains the M100 change from 85 Newton iterations for the
-unrepaired GPS tangent to 58 with the composite tangent. The correction belongs
-to the host composition layer; it is not a modification of the constitutive
-law's one-step tangent.
-
-## 9. Implemented strategies and selection
-
-| Strategy | MFront law | Closure | Generality |
-|---|---|---|---|
-| Native `PlaneStress` | 2D behaviour | MFront standard hypothesis | laws designed for that hypothesis |
-| External 3D condensation | unchanged 3D law | host Python | any compatible 3D law |
-| Specialised structural GPS | SRIX GPS variant | law-specific MFront system | one qualified law per variant |
-| Generic `StructuralPlaneStress3D` | generated 3D variant | generic residual/Jacobian transformation | V1 `StandardElasticity`-compatible implicit laws |
-
-For the qualified SRIX + EBSD workflow, use the specialised GPS route with
-composite FD or the generic structural backend. Use external condensation as
-the independent reference and for a new three-dimensional law.
-
-```yaml
-solver:
-  constitutive_backend: mfront-structural-plane-stress
-  mfront_behaviour_id: fcc_forest_rubin_srix
-  mfront_library: build/mfront/src/libBehaviour.so
-  mfront_threads: 4
-  constitutive_options:
-    gps_composite_fd_tangent: true
-    gps_composite_fd_step: 1.0e-6
-    crystal_orientation:
-      mode: ebsd
-```
-
-The independent reference is:
-
-```yaml
-solver:
-  constitutive_backend: mfront-3d-condensed-plane-stress
-  mfront_behaviour_id: fcc_forest_rubin_srix
-  mfront_threads: 4
-```
-
-Other important options control the transverse predictor, closure tolerances,
-conditioning checks for \(C_{bb}\), local iteration limits, the EBSD orientation
-provider, and the MGIS thread pool. They exist because the closure is a local
-nonlinear solve: the predictor controls its initial distance to the root,
-conditioning checks prevent unstable transverse corrections, and explicit
-transactional snapshots make rejected trials reproducible. These are numerical
-controls, not changes to SRIX parameters.
-
-## 10. Qualification hierarchy
-
-The evidence was built in the following order:
+so each map also depends directly on the final target. With
 
 $$
-\text{rotated anisotropic elasticity}
-\rightarrow J2
-\rightarrow \text{SRIX}
-\rightarrow \text{Méric--Cailletaud}
-\rightarrow \text{P43 M20}
-\rightarrow \text{P43 M100}.
+F_k(z_k,S_{k-1},\Delta g_k)=0,
 $$
 
-The point-material probes verify transverse traction, in-plane kinematics and
-the one-step tangent. SRIX and Méric use the same generic transformation; no
-law-specific closure equation appears in `StructuralPlaneStress3D`.
+the sensitivity obeys the recurrence
 
-On the single-run P43 M100 EBSD campaign (8 increments, crop
-`[1570:1670] × [1035:1135]`, four MFront threads, one BLAS and one FFTW
-thread), the measured results were:
+$$
+A_k\frac{dz_k}{dg_{target}}
+=-
+\left(F_{S,k}\frac{dS_{k-1}}{dg_{target}}
+ +F_{\Delta g,k}\frac{d\Delta g_k}{dg_{target}}\right).
+$$
 
-| Strategy | Newton | elapsed |
-|---|---:|---:|
-| 3D + Python condensation | 57 | 56.72 s |
-| specialised GPS + composite FD | 58 | 51.65 s |
-| generic `StructuralPlaneStress3D` + composite FD | 58 | 54.56 s |
+The product formula is therefore only an illustration; the direct target
+terms and state propagation are part of the true composite derivative.
 
-The generic and specialised GPS fields agree at approximately
-`1e-12` relative L2 for stresses, reactions and crystal slips, and at
-`1e-16` for displacement in this run. Both used 192 substepped points and the
-same Newton sequence `[6, 6, 7, 7, 7, 8, 8, 9]`. The generic route is about
-5.7% slower than the specialised route in this single campaign, but remains
-faster than external condensation. These are reproducibility results, not a
-universal speed guarantee.
+The qualified adapter reconstructs this derivative by central finite
+differences for points that actually sub-step. If the plus and minus
+perturbations follow the same partition, the result approximates the local
+derivative of the algorithmic map. If the adaptive partition changes, the map
+is only piecewise smooth and the finite difference is a secant/generalised
+Jacobian diagnostic rather than a classical derivative. The partition and any
+branch mismatch are recorded.
 
-The complete artefact is
+## 11. Numerical controls and algorithmic choices
+
+| Control | Mathematical role | Production/diagnostic |
+|---|---|---|
+| `local_transverse_predictor=committed` | starts \(\varepsilon_b\) from the last committed state | production option |
+| `local_transverse_predictor=tangent` | uses the previous transverse tangent to predict the new state | qualified production option |
+| absolute/relative closure tolerances | scales the three traction residuals | production |
+| `local_condition_check_mode=always` | checks \(C_{bb}\) after every local solve | production option |
+| `on_failure` | checks conditioning only after a failed local solve | production default in GPS diagnostics |
+| `diagnostic_sample` | samples conditioning without paying for every point | diagnostic/performance option |
+| maximum local iterations | bounds the transverse Newton | production safety bound |
+| `maximum_substeps=256` | maximum GPS path subdivision | production safety bound |
+| `minimum_substep_span=1` | prevents further subdivision of one-point spans | production safety bound |
+| failure-span bisection/cache | isolates failing points and reuses known spans | production GPS policy |
+| `gps_composite_fd_tangent` | replaces last-substep tangent on selected points | qualified production GPS option |
+| `gps_composite_fd_step=1e-6` | absolute engineering-strain central-FD step | production numerical option |
+| `gps_shadow_tangent` | compares with a raw full-step diagnostic tangent | diagnostic only |
+| `gps_shadow_tangent_scope` | selects all, substepped or non-substepped points | diagnostic only |
+| MGIS thread count | parallelizes constitutive batches | performance setting |
+
+The shadow tangent must not be enabled in production. The composite FD is
+sparse: on the qualified M100 run it touched 192 points and 1152 trajectories.
+
+## 12. What is generic, and what is still prototype-specific
+
+Three levels must be distinguished:
+
+1. **Generic mathematical transformation.** The residual/Jacobian idea does
+   not refer to SRIX, Méric, slips or hardening and has been demonstrated on
+   rotated elasticity, J2, SRIX and Méric.
+2. **Generic prototype closure/tangent.** The probes transform all local
+   Jacobian columns and derive the local system size from the Jacobian type.
+3. **Registered full-field backend.** The current generated SRIX backend still
+   uses source-rewriting scaffolding, an exposed
+   `StructuralJacobian[324]` auxiliary buffer and SRIX-oriented output
+   extraction. Thus the industrialised field backend is not yet arbitrary-law
+   generic. In particular, `324=18^2` is a current implementation limitation
+   and a law with a different local system size is not yet covered by this
+   production transport path.
+
+The external Behaviour Brick route was investigated, but the installed TFEL
+5.1 ABI does not export the required `BehaviourBrickBase` symbols. No TFEL fork
+is used. The honest current genericity claim is therefore:
+
+> The transformation is mathematically generic for the demonstrated V1
+> contract; the registered full-field implementation is currently qualified
+> for SRIX.
+
+## 13. Verification and qualification
+
+The point-material evidence is:
+
+| Behaviour | transverse traction | in-plane kinematic error | tangent check | what it proves |
+|---|---:|---:|---:|---|
+| rotated anisotropic elasticity | \(2.3\times10^{-14}\) MPa | \(4.9\times10^{-19}\) | Schur \(6.95\times10^{-16}\) | frame transformation and elastic closure |
+| J2 plastic | \(7.99\times10^{-14}\) MPa | — | FD \(3.12\times10^{-11}\) at \(h=10^{-7}\) | all local columns can be transformed |
+| SRIX | \(9.30\times10^{-15}\) MPa | \(1.74\times10^{-18}\) | FD \(2.48\times10^{-10}\) at \(h=10^{-7}\) | crystal plasticity closure and one-step tangent |
+| Méric--Cailletaud | \(6.77\times10^{-15}\) MPa | \(1.42\times10^{-19}\) | FD \(O(10^{-13})\) | second implicit crystal law, same closure code |
+
+The generic SRIX and Méric one-step tangents have been checked by finite
+differences. A dedicated, archived same-state comparison of those two generic
+variants against a live raw-3D Schur oracle is not yet available; the Schur
+identity is therefore a required next validation artifact, not a claim made by
+this table.
+
+The P43 M100 single-run comparison used the same EBSD crop, eight increments,
+four MFront threads, one BLAS thread and one FFTW thread:
+
+| strategy | Newton | sequence | elapsed |
+|---|---:|---|---:|
+| 3D + Python condensation | 57 | `[6,6,7,7,7,8,8,8]` | 56.72 s |
+| specialised GPS + composite FD | 58 | `[6,6,7,7,7,8,8,9]` | 51.65 s |
+| generic `StructuralPlaneStress3D` + composite FD | 58 | `[6,6,7,7,7,8,8,9]` | 54.56 s |
+
+The generic and specialised GPS fields agree at approximately `1e-12` relative
+L2 for stress, reactions and crystal slips, and at `1e-16` for displacement.
+Both used 192 substepped points. These are single-campaign measurements, not
+universal speed guarantees. The complete comparison is archived in
 `validation/_generated/performance/p43_m100_backend_comparison_latest.json`.
-The condensation, specialised GPS and generic GPS reports and field files are
-stored alongside it.
 
-## 11. Current implementation limits and upstream question
+## 14. Current source notes and upstream design
 
-The generic mechanism is currently implemented as generated/local MFront
-fragments. The external Behaviour Brick route was investigated, but the
-installed TFEL 5.1 ABI does not export the required `BehaviourBrickBase`
-symbols. No TFEL fork is used.
+The generated prototype uses \(S_{ref}=210000\) MPa and the fixed 18-by-18
+transport buffer described above. These should be replaced by a dimension-safe
+private transport and an explicit residual-scale contract before claiming a
+fully distributable generic backend.
 
-The result is a demonstrated V1 capability, not yet an upstream MFront feature.
-The natural upstream question is:
+The specialised source contains historical diagnostic comments about a
+three-per-thousand GPS/Schur tangent discrepancy. Those comments referred to a
+same-state transplant bug in an earlier diagnostic and are invalid as a
+qualification claim. The corrected result is that the one-step GPS tangent and
+the raw Schur agree when they start from the same physical state; the remaining
+Newton issue was the tangent of the host substepping composition.
 
-> Can this transformation be represented as a first-class MFront mechanism for
-> `Implicit`, small-strain, `StandardElasticity`-compatible, tridimensional
-> behaviours?
-
-Possible designs include a Behaviour Brick, an extension of
+Possible upstream designs are a Behaviour Brick, an extension of
 `StandardElasticity`, or a dedicated structural-plane-stress transformation in
-the `Implicit` DSL. Whichever design is chosen, it should preserve the
-separation between the constitutive one-step map and any host-side substepping
-policy.
+the `Implicit` DSL. The appropriate interface should expose the elastic block
+and its Jacobian before gradient subtraction, rather than relying on generated
+`fzeros` positions. It should also make the stress-dependence contract and
+residual scaling explicit.
 
-## 12. Reproducibility and scope
+## 15. Reproducibility and references
 
-The M100 reports record the source hashes, EBSD source hash, orientations,
-parameter set, thread settings, Newton/Krylov diagnostics and field hashes.
-The external condensation route remains the independent oracle; the specialised
-GPS route remains a second implementation; the generic route is the proposed
-reusable mechanism.
+The reports record TFEL/MGIS and Python versions, source hashes, the EBSD source
+hash, orientations, parameter set, thread settings, Newton/Krylov diagnostics
+and field hashes. The independent condensation route, the specialised GPS
+route and the generic route are retained as separate validation artefacts.
 
-This reference does not claim that all MFront behaviours support the closure.
-It does not cover finite strains, cohesive-zone behaviours, non-standard
-multi-gradient systems, Méric-specific GPS source code, or a distributed
-external Behaviour Brick for TFEL 5.1.
+Relevant MFront concepts are the `StandardElasticity`/Hooke stress-potential
+infrastructure, Behaviour Bricks, the generic behaviour interface and MGIS's
+batch material-data interface. The repository's feasibility report records
+the TFEL 5.1 ABI probe and the generated-hook experiments:
+`validation/structural_plane_stress_mfront_feasibility.md`.
+
+This note does not claim support for arbitrary MFront behaviours, finite
+strains, cohesive-zone behaviours, non-standard multi-gradient systems, or a
+distributed external Behaviour Brick for TFEL 5.1.

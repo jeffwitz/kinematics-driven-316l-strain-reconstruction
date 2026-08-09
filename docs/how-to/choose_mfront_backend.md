@@ -14,17 +14,18 @@ for 3D behaviours without a GPS implementation.
 | `mfront-structural-plane-stress` | generic qualified SRIX workflow | reusable structural closure | limited to the demonstrated V1 MFront contract |
 | `python` | historical J2 regression | independent of MFront | not production crystal plasticity |
 
-GPS (*generalised plane stress*) conserve les six composantes 3D et résout
-localement les trois déformations hors plan nécessaires pour imposer
-`sigma_zz = sigma_xz = sigma_yz = 0` dans le repère global. La variante GPS
-SRIX carries this closure in its constitutive Newton. The generic structural
+GPS (*generalised plane stress*) retains all six three-dimensional components
+and locally solves the three transverse strains required to impose
+`sigma_zz = sigma_xz = sigma_yz = 0` in the structural frame. The specialised
+SRIX GPS variant carries this closure in its constitutive Newton. The generic structural
 backend applies the same closure through the reusable `StructuralPlaneStress3D`
 transformation, while the condensed route performs it in the Python bridge.
 
-Lorsqu'un point GPS doit sous-intégrer un incrément, le dernier sous-pas ne
-représente pas à lui seul la dérivée de la trajectoire composée. Le tangent FD
-composite reconstruit cette dérivée pour les seuls points concernés. Il est
-donc activé dans le workflow SRIX qualifié, avec un coût mesuré et limité.
+When a GPS point must sub-step an increment, the last sub-step does not by
+itself provide the derivative of the composed trajectory. The composite FD
+tangent reconstructs that derivative for the affected points only. It is
+therefore enabled in the qualified SRIX workflow, with a measured and limited
+cost.
 
 ## Qualified production route
 
