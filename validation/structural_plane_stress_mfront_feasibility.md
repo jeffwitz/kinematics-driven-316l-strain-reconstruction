@@ -328,20 +328,23 @@ compatibility.
 ```text
 [ ] arbitrary MFront behaviour
 [ ] arbitrary Implicit small-strain behaviour
-[ ] arbitrary StandardElasticity-compatible Implicit behaviour
-[x] behaviours implementing an explicit additional elastic-residual/Jacobian
-    adapter contract (prototype target, not yet implemented)
+[x] StandardElasticity-compatible Implicit small-strain behaviours (prototype)
+[ ] arbitrary MFront behaviour
 ```
 
 The rotated elastic and J2 probes now pass. The SRIX closure probe also passes
 using the same transformation and no SRIX-specific symbol in the closure
 code: its maximum rotated transverse traction is `9.30e-15` and its in-plane
 kinematic error is `1.74e-18`. It is deliberately run without a tangent
-operator at this gate; the SRIX tangent requires reconstructing the complete
-pre-update state (`deel`, `dg`, hardening variables) before rebuilding the
-local Jacobian. This is a closure proof, not yet a live SRIX tangent or an
-independent condensation qualification. The same closure generator also
+operator at this gate; the generated tangent code now stores the transformed
+Jacobian before state promotion and passes central-FD checks on SRIX with
+relative errors `2.46e-6` at `h=1e-5` down to `2.48e-10` at `h=1e-7`.
+This is a one-step tangent proof, not yet an independent raw-3D same-state
+Schur qualification. The same closure generator also
 passes on the raw Méric-Cailletaud behaviour (with a smaller rate-dependent
 probe increment): maximum transverse traction `6.77e-15` and in-plane error
-`1.42e-19`. This demonstrates that the closure code does not depend on the
-SRIX flow rule. Neither Méric nor SRIX has a qualified generic tangent yet.
+`1.42e-19`. Its generic tangent passes central-FD checks from `3.97e-15` to
+`2.45e-13` over the same step range. This demonstrates that the closure and
+tangent code do not depend on the SRIX flow rule. The prototype still stores
+an 18x18 Jacobian in an auxiliary validation buffer; making that storage
+dimension fully generated and reusable is the next engineering step.

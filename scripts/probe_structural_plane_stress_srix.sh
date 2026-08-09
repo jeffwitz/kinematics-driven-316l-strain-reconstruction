@@ -20,6 +20,8 @@ slip_class = Path(sys.argv[1]).stem + "SlipSystems"
 aux = r'''
 @AuxiliaryStateVariable real structuralTotalStrain[6];
 structuralTotalStrain.setEntryName("StructuralTotalStrain");
+@AuxiliaryStateVariable real structuralJacobian[324];
+structuralJacobian.setEntryName("StructuralJacobian");
 
 @Private {
   static Stensor rotate(const Stensor& s) {
@@ -58,7 +60,10 @@ structuralTotalStrain.setEntryName("StructuralTotalStrain");
 integrator = r'''
   constexpr auto Gref = real(210000.);
   constexpr ushort transverse[3] = {2, 4, 5};
-  constexpr ushort system_size = StensorSize + Nss;
+  using jacobian_type = decltype(this->jacobian);
+  using indexing_policy = typename jacobian_type::indexing_policy;
+  constexpr indexing_policy indexing{};
+  constexpr auto system_size = indexing.size(0);
   const auto sig_global = rotate(this->sig);
   auto K_material = Stensor(real(0));
   for (ushort i = 0; i != StensorSize; ++i) {
@@ -98,6 +103,11 @@ integrator = r'''
       this->jacobian(i, j) = value / Gref;
     }
   }
+  for (ushort i = 0; i != system_size; ++i) {
+    for (ushort j = 0; j != system_size; ++j) {
+      this->structuralJacobian[i * system_size + j] = this->jacobian(i, j);
+    }
+  }
 '''
 marker = "\n}\n\n@UpdateAuxiliaryStateVariables"
 if source.count(marker) != 1:
@@ -114,6 +124,55 @@ source = source.replace("@UpdateAuxiliaryStateVariables {", """@UpdateAuxiliaryS
   for (ushort i = 0; i != StensorSize; ++i) {
     this->structuralTotalStrain[i] = global_total(i);
   }""".replace("SLIP_SYSTEM_CLASS", slip_class), 1)
+tangent = r'''
+
+@TangentOperator {
+  constexpr ushort active_columns[3] = {0, 1, 3};
+  using jacobian_type = decltype(this->jacobian);
+  using indexing_policy = typename jacobian_type::indexing_policy;
+  constexpr indexing_policy indexing{};
+  constexpr auto system_size = indexing.size(0);
+  tmatrix<system_size, system_size, real> A;
+  for (ushort i = 0; i != system_size; ++i) {
+    for (ushort j = 0; j != system_size; ++j) {
+      A(i, j) = this->structuralJacobian[i * system_size + j];
+    }
+  }
+  TinyPermutation<system_size> permutation;
+  if (!TinyMatrixSolve<system_size, real, false>::decomp(A, permutation)) {
+    return false;
+  }
+  this->Dt = Stensor4(real(0));
+  tmatrix<StensorSize, StensorSize, real> rotation;
+  for (ushort j = 0; j != StensorSize; ++j) {
+    auto basis = Stensor(real(0));
+    basis(j) = 1;
+    const auto column = rotate(basis);
+    for (ushort i = 0; i != StensorSize; ++i) {
+      rotation(i, j) = column(i);
+    }
+  }
+  for (ushort column = 0; column != 3; ++column) {
+    tvector<system_size, real> rhs(real(0));
+    rhs(active_columns[column]) = 1;
+    if (!TinyMatrixSolve<system_size, real, false>::back_substitute(
+            A, permutation, rhs)) {
+      return false;
+    }
+    auto stress_material = Stensor(real(0));
+    for (ushort i = 0; i != StensorSize; ++i) {
+      for (ushort j = 0; j != StensorSize; ++j) {
+        stress_material(i) += this->D_tdt(i, j) * rhs(j);
+      }
+    }
+    const auto stress_global = rotate(stress_material);
+    for (ushort i = 0; i != StensorSize; ++i) {
+      this->Dt(i, active_columns[column]) = stress_global(i);
+    }
+  }
+};
+'''
+source += tangent
 target.write_text(source)
 PY
 
@@ -172,8 +231,45 @@ structural_total = total[structural_indices]
 kinematic_error = np.max(np.abs(structural_total[[0, 1, 3]] - strain[[0, 1, 3]]))
 if float(kinematic_error) > 1.0e-10:
     raise SystemExit(f"SRIX in-plane kinematics failed: {kinematic_error}")
+
+def integrate_with_tangent(value):
+    trial = mgis.MaterialDataManager(behaviour, 1)
+    for state in (trial.s0, trial.s1):
+        mgis.setExternalStateVariable(state, "Temperature", 293.15)
+    trial.s1.gradients[0] = value
+    status = mgis.integrate(
+        trial, mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
+        time_increment, 0, 1,
+    )
+    if status != 1:
+        raise SystemExit(f"{os.environ['BEHAVIOUR_NAME']} tangent integration failed: {status}")
+    return rotate(np.asarray(trial.s1.thermodynamic_forces[0])), np.asarray(trial.K[0]).copy()
+
+tangent_stress, tangent = integrate_with_tangent(strain)
+active = np.array([0, 1, 3])
+fd_errors = []
+for step in (1.0e-5, 3.0e-6, 1.0e-6, 3.0e-7, 1.0e-7):
+    fd = np.zeros((3, 3))
+    for column, component in enumerate(active):
+        plus = strain.copy()
+        minus = strain.copy()
+        plus[component] += step
+        minus[component] -= step
+        plus_stress = integrate_with_tangent(plus)[0]
+        minus_stress = integrate_with_tangent(minus)[0]
+        fd[:, column] = (plus_stress[active] - minus_stress[active]) / (2 * step)
+    error = np.max(np.abs(fd - tangent[np.ix_(active, active)])) / np.max(
+        np.abs(tangent[np.ix_(active, active)]))
+    fd_errors.append(float(error))
+    if error > 1.0e-4:
+        print("FD=", fd)
+        print("Tangent=", tangent[np.ix_(active, active)])
+        raise SystemExit(f"{os.environ['BEHAVIOUR_NAME']} tangent failed for h={step}: {error}")
+inactive = np.delete(np.arange(6), active)
+inactive_error = float(np.max(np.abs(tangent[:, inactive])))
 print(f"generic {os.environ['BEHAVIOUR_NAME']} structural plane-stress probe: passed "
       f"(max transverse stress={np.max(transverse):.3e}, "
       f"max in-plane strain error={kinematic_error:.3e}, "
+      f"tangent FD errors={fd_errors}, max inactive-column={inactive_error:.3e}, "
       f"internal-state-size={total.size})")
 PY

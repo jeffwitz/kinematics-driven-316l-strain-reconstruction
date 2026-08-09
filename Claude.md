@@ -5313,11 +5313,15 @@ closure probe is now available at
 variant from the raw SRIX law, applies the same generic `fzeros`/`jacobian`
 row transformation, and does not modify the production MFront source. With
 the qualified Bunge rotation it reaches `9.30e-15` maximum transverse
-traction and `1.74e-18` in-plane kinematic error. This SRIX gate intentionally
-uses `IntegrationWithoutTangentOperator`: the generic closure is demonstrated,
-but the complete SRIX pre-update state must still be reconstructed before its
-tangent can be qualified. The same generator also passes on the raw
+traction and `1.74e-18` in-plane kinematic error. The same generated tangent
+code stores the transformed Jacobian before state promotion and passes central
+FD checks from `2.46e-6` at `h=1e-5` down to `2.48e-10` at `h=1e-7`. The same
+generator also passes on the raw
 `Fcc316LMericCailletaud` behaviour, using a smaller rate-dependent probe
 increment: maximum transverse traction `6.77e-15` and in-plane error
-`1.42e-19`. This is a closure proof for both laws, not yet a generic tangent
-qualification; the production behaviours remain unchanged.
+`1.42e-19`. Its tangent FD errors range from `3.97e-15` to `2.45e-13` over
+the same steps. This is a one-step generic closure/tangent proof for both
+laws, not yet a same-state raw-3D Schur qualification; the production
+behaviours remain unchanged. The validation generator currently uses an
+18x18 auxiliary Jacobian buffer, which must be replaced by a dimension-safe
+reusable mechanism before industrialisation.
