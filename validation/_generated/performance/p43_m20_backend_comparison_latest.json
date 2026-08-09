@@ -28,17 +28,31 @@
       "final_residual": 1.306264113273414e-10,
       "artifact": "p43_m20_gps_fd_latest.json"
     },
-    "generic_mfront_probe": {
-      "full_field_status": "not_available",
-      "reason": "StructuralPlaneStress3D is currently a validation-generated MFront prototype and is not registered as a spectral material backend.",
-      "point_probe_wall_seconds_including_build": 10.10,
-      "point_probe_result": "passed",
-      "warning": "The point-probe wall time is not comparable with the two full-field solver runs."
+    "generic_structural_plane_stress": {
+      "backend": "mfront-structural-plane-stress",
+      "elapsed_seconds": 2.3471748580341227,
+      "material_seconds": 1.6272084929514676,
+      "newton": 45,
+      "iterations_per_increment": [6, 5, 5, 6, 5, 6, 6, 6],
+      "final_residual": 1.305491318573692e-10,
+      "substepped_points": 19,
+      "field_errors_vs_handwritten_gps": {
+        "displacement": 9.148e-17,
+        "reaction_forces": 1.587e-12,
+        "stress_in_plane_mpa": 2.172e-12,
+        "plastic_slip": 1.098e-12,
+        "equivalent_plastic_slip": 1.098e-12,
+        "accumulated_slip": 3.068e-13
+      },
+      "artifact": "p43_m20_generic_gps_fd_latest.json"
     }
   },
   "interpretation": {
     "gps_fd_speedup_over_python": 1.373,
-    "conclusion": "GPS+FD is faster on this run, but the generic MFront route has no honest full-field timing until its adapter/factory integration is implemented."
+    "generic_speedup_over_python": 1.231,
+    "generic_overhead_vs_handwritten_gps": 1.116,
+    "field_errors_generic_vs_handwritten_gps": "approximately 1e-12 relative",
+    "conclusion": "The generic StructuralPlaneStress3D backend now runs the same full-field M20 problem through the same GPS adapter, substepping and composite-FD policy. It is about 11.6 percent slower than the handwritten GPS on this single run, with fields agreeing to about 1e-12 relative."
   },
-  "execution_commit": "81b757bb8f310aa38f20f25534fd02e7fcecca80"
+  "execution_commit": "pending-current-worktree-commit"
 }

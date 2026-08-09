@@ -144,6 +144,7 @@ def main() -> int:
             "mfront-3d-condensed-plane-stress",
             "mfront-3d-condensed-plane-stress-halved",
             "mfront-native-generalised-plane-stress",
+            "mfront-structural-plane-stress",
         ),
         default="mfront-3d-condensed-plane-stress",
         help="reference Python condensation, the reference forced through the "

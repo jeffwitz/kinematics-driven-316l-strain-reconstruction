@@ -3,37 +3,53 @@ set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 source_mfront="${1:-$repo_root/mfront/Fcc316LForestRubinSrix.mfront}"
-behaviour_name="${2:-Fcc316LForestRubinSrix}"
+behaviour_name="${2:-${STRUCTURAL_BEHAVIOUR_NAME:-Fcc316LForestRubinSrix}}"
 probe_dir=$(mktemp -d /tmp/structural-plane-stress-srix.XXXXXX)
+generated_output="${STRUCTURAL_PLANE_STRESS_OUTPUT:-$probe_dir/Fcc316LForestRubinSrixStructuralProbe.mfront}"
 set +u
 source /home/jeff/.local/share/tfel/env/env.sh
 set -u
 python_bin="$repo_root/.venv/bin/python"
 
-"$python_bin" - "$source_mfront" "$probe_dir/Fcc316LForestRubinSrixStructuralProbe.mfront" <<'PY'
+STRUCTURAL_BEHAVIOUR_NAME="$behaviour_name" "$python_bin" - "$source_mfront" "$generated_output" <<'PY'
 from pathlib import Path
 import sys
 
 source = Path(sys.argv[1]).read_text()
 target = Path(sys.argv[2])
-slip_class = Path(sys.argv[1]).stem + "SlipSystems"
+generated_behaviour = __import__("os").environ["STRUCTURAL_BEHAVIOUR_NAME"]
+if generated_behaviour != "Fcc316LForestRubinSrix":
+    source = source.replace("Fcc316LForestRubinSrix", generated_behaviour)
+slip_class = generated_behaviour + "SlipSystems"
+source = source.replace(
+    "@Behaviour Fcc316LForestRubinSrix;",
+    f"@Behaviour {generated_behaviour};",
+    1,
+)
 aux = r'''
+@MaterialProperty real Q11;
+@MaterialProperty real Q12;
+@MaterialProperty real Q13;
+@MaterialProperty real Q21;
+@MaterialProperty real Q22;
+@MaterialProperty real Q23;
+@MaterialProperty real Q31;
+@MaterialProperty real Q32;
+@MaterialProperty real Q33;
+@Parameter real CondensedTangent = 1.;
 @AuxiliaryStateVariable real structuralTotalStrain[6];
 structuralTotalStrain.setEntryName("StructuralTotalStrain");
+@AuxiliaryStateVariable strain ezz;
+@AuxiliaryStateVariable strain eyz;
+@AuxiliaryStateVariable strain exz;
 @AuxiliaryStateVariable real structuralJacobian[324];
 structuralJacobian.setEntryName("StructuralJacobian");
 
 @Private {
-  static Stensor rotate(const Stensor& s) {
-    constexpr auto r00 = real(0.6517403912340062);
-    constexpr auto r01 = real(-0.7326322075147665);
-    constexpr auto r02 = real(0.19617469496901108);
-    constexpr auto r10 = real(0.7532585459971657);
-    constexpr auto r11 = real(0.5950699920075869);
-    constexpr auto r12 = real(-0.2801664995932355);
-    constexpr auto r20 = real(0.08852132690137686);
-    constexpr auto r21 = real(0.33036608954935215);
-    constexpr auto r22 = real(0.9396926207859084);
+  Stensor rotate(const Stensor& s) const {
+    const auto r00 = this->Q11, r01 = this->Q21, r02 = this->Q31;
+    const auto r10 = this->Q12, r11 = this->Q22, r12 = this->Q32;
+    const auto r20 = this->Q13, r21 = this->Q23, r22 = this->Q33;
     const auto q = sqrt(real(2));
     const auto s0 = s(0), s1 = s(1), s2 = s(2);
     const auto s3 = s(3), s4 = s(4), s5 = s(5);
@@ -123,7 +139,10 @@ source = source.replace("@UpdateAuxiliaryStateVariables {", """@UpdateAuxiliaryS
   const auto global_total = rotate(material_total);
   for (ushort i = 0; i != StensorSize; ++i) {
     this->structuralTotalStrain[i] = global_total(i);
-  }""".replace("SLIP_SYSTEM_CLASS", slip_class), 1)
+  }
+  this->ezz = global_total(2);
+  this->eyz = global_total(5);
+  this->exz = global_total(4);""".replace("SLIP_SYSTEM_CLASS", slip_class), 1)
 tangent = r'''
 
 @TangentOperator {
@@ -176,8 +195,13 @@ source += tangent
 target.write_text(source)
 PY
 
+if [[ "${STRUCTURAL_PLANE_STRESS_GENERATE_ONLY:-0}" == "1" ]]; then
+  printf '%s\n' "$generated_output"
+  exit 0
+fi
+
 cd "$probe_dir"
-mfront --obuild --interface=generic "$probe_dir/Fcc316LForestRubinSrixStructuralProbe.mfront" >/dev/null
+mfront --obuild --interface=generic "$generated_output" >/dev/null
 BEHAVIOUR_NAME="$behaviour_name" LIBRARY="$probe_dir/src/libBehaviour.so" "$python_bin" - <<'PY'
 import os
 import mgis.behaviour as mgis
@@ -203,6 +227,10 @@ def rotate(values):
                      np.sqrt(2)*r[0, 2], np.sqrt(2)*r[1, 2]])
 
 data = mgis.MaterialDataManager(behaviour, 1)
+for state in (data.s0, data.s1):
+    for row in range(3):
+        for column in range(3):
+            mgis.setMaterialProperty(state, f"Q{row + 1}{column + 1}", q[row, column])
 for state in (data.s0, data.s1):
     mgis.setExternalStateVariable(state, "Temperature", 293.15)
 scale = 1.0e-2 if os.environ["BEHAVIOUR_NAME"].endswith("Srix") else 1.0e-4
@@ -234,6 +262,10 @@ if float(kinematic_error) > 1.0e-10:
 
 def integrate_with_tangent(value):
     trial = mgis.MaterialDataManager(behaviour, 1)
+    for state in (trial.s0, trial.s1):
+        for row in range(3):
+            for column in range(3):
+                mgis.setMaterialProperty(state, f"Q{row + 1}{column + 1}", q[row, column])
     for state in (trial.s0, trial.s1):
         mgis.setExternalStateVariable(state, "Temperature", 293.15)
     trial.s1.gradients[0] = value

@@ -247,3 +247,18 @@ MFRONT_BEHAVIOURS.register(
         parameter_registry="srix",
     )
 )
+MFRONT_BEHAVIOURS.register(
+    MFrontBehaviourSpec(
+        identifier="fcc_forest_rubin_srix_structural_plane_stress",
+        native_plane_stress_behaviour=None,
+        tridimensional_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
+        material_properties=(),
+        internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
+        linear_system_matrix_type="nonsymmetric",
+        requires_rotation_matrix=True,
+        bridge_profile="fcc_single_crystal_v1",
+        paired_material_family="fcc_316l_guilhem_nasri_v1",
+        crystal_flow_rule="forest_rubin_srix",
+        parameter_registry="srix",
+    )
+)
