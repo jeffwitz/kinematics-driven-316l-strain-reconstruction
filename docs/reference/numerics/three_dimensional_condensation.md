@@ -95,17 +95,11 @@ thread count. The conditioning policy may be `always`, `on_failure` or a
 diagnostic sample. These options control the nonlinear closure and do not alter
 the constitutive parameters.
 
-## Qualification checkpoint
+## Qualification role
 
-On the single-run P43 M100 EBSD campaign (8 increments, crop
-`[1570:1670] × [1035:1135]`, four MFront threads, one BLAS thread and one FFTW
-thread), external condensation produced:
-
-| Newton | increments | elapsed | final residual |
-|---:|---|---:|---:|
-| 57 | `[6,6,7,7,7,8,8,8]` | 56.72 s | `1.30e-9` |
-
-The corresponding GPS and generic results are 58 Newton and 51.65 s / 54.56 s
-respectively; those values belong to the canonical comparison document, not to
-this reference-route contract. The artefacts are stored under
-`validation/_generated/performance/p43_m100_*_latest.*`.
+Use this backend as the independent constitutive reference when introducing a
+new three-dimensional behaviour or checking a structural closure. A comparison
+is meaningful only when the two routes use the same committed state,
+orientation, parameter set, load path, and tolerances. Numerical values belong
+to the case-specific qualification artefact rather than to this stable
+algorithmic contract.
