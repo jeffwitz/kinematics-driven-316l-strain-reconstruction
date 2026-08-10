@@ -2,6 +2,12 @@
 
 **Category: How-to.** Choose the concrete task you need to complete.
 
+## Start here
+
+- {doc}`install` — the toolchain, once.
+- {doc}`run_316l_crystal_plasticity` — **the short path**: run the qualified
+  316L crystal-plasticity workflow without having used MFront before.
+
 ## Set up and reconstruct
 
 - {doc}`install`
@@ -22,7 +28,6 @@
 ## Extend
 
 - {doc}`add_mfront_behaviour`
-- {doc}`run_316l_crystal_plasticity`
 - {doc}`choose_mfront_backend`
 - {doc}`use_srix_crystal_law`
 - {doc}`use_reduced_integration`

@@ -76,6 +76,12 @@ Recommended journeys
    :doc:`how-to/run_coupled_reconstruction` →
    :doc:`how-to/run_identification`
 
+**Run 316L crystal plasticity, having never used MFront**
+   :doc:`how-to/install` → :doc:`how-to/run_316l_crystal_plasticity` →
+   :doc:`how-to/choose_mfront_backend` →
+   :doc:`how-to/use_srix_crystal_law` →
+   :doc:`explanation/forest_rubin_srix`
+
 **Extend the model**
    :doc:`reference/model_contract` →
    :doc:`reference/numerics/mfront_transaction` →
