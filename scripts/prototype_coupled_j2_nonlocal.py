@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Run a small real J2 micromorphic ``(u, chi)`` Newton pilot.
 
-The pilot uses the existing TET2 kinematics and MFront micromorphic law.  All
-four Jacobian blocks are assembled by same-state central finite differences;
-the linear solve uses the experimental block driver with the actual DST-I/B0
-and DCT-II/Helmholtz inverses.  Production partitioned mechanics is untouched.
+The pilot uses the existing TET2 kinematics and MFront micromorphic law.  The
+mechanical/non-local diagonal blocks use the actual DST-I/B0 and
+DCT-II/Helmholtz inverses, while the constitutive coupling blocks are built
+from pointwise material derivatives and applied matrix-free.  Production
+partitioned mechanics is untouched.
 """
 
 from __future__ import annotations
@@ -118,36 +119,64 @@ def main() -> None:
         material.revert()
         return mechanical_residual, nonlocal_residual.reshape(-1), tangent
 
-    def residual(mechanical: np.ndarray, chi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        mechanical_residual, nonlocal_residual, _ = response(mechanical, chi)
-        return mechanical_residual, nonlocal_residual
+    def local_coupling_derivatives(
+        mechanical: np.ndarray, chi: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return pointwise derivatives needed by the off-diagonal blocks.
+
+        The constitutive response is evaluated at the current trial state and
+        reverted after every call.  Keeping these derivatives local avoids
+        assembling dense global coupling matrices while retaining the exact
+        TET2 and Helmholtz transfer operators in the block actions.
+        """
+
+        samples = strain_from_mechanical(mechanical)
+        point_chi = np.repeat(chi, 2)
+        chi_step = min(h_chi, 0.5 * float(np.min(chi)))
+        if chi_step <= 0.0:
+            raise ValueError("the local coupling probe requires strictly positive chi")
+
+        def stress_source(
+            chi_values: np.ndarray, strain_values: np.ndarray
+        ) -> tuple[np.ndarray, np.ndarray]:
+            material.set_nonlocal_equivalent_plastic_strain(chi_values)
+            trial = material.evaluate_in_plane(
+                strain_values,
+                time_increment=args.time_increment,
+                consistent_tangent=False,
+            )
+            stress = np.asarray(trial.stress_in_plane_mpa).copy()
+            source = np.asarray(
+                trial.observables["equivalent_plastic_strain"]
+            ).copy()
+            material.revert()
+            return stress, source
+
+        stress_plus, source_plus = stress_source(point_chi + chi_step, samples)
+        stress_minus, source_minus = stress_source(point_chi - chi_step, samples)
+        dsigma_dchi = (stress_plus - stress_minus) / (2.0 * chi_step)
+        dp_dchi = (source_plus - source_minus) / (2.0 * chi_step)
+
+        dp_depsilon = np.empty((point_count, 3), dtype=float)
+        for component in range(3):
+            strain_plus = samples.copy()
+            strain_minus = samples.copy()
+            strain_plus[:, component] += h_u
+            strain_minus[:, component] -= h_u
+            _, source_plus = stress_source(point_chi, strain_plus)
+            _, source_minus = stress_source(point_chi, strain_minus)
+            dp_depsilon[:, component] = (source_plus - source_minus) / (2.0 * h_u)
+
+        return dsigma_dchi, dp_depsilon, dp_dchi
 
     def evaluate(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
         mechanical, chi = state
         ru, g, tangent = response(mechanical, chi)
         nu = mechanical.size
         nc = chi.size
-        ruchi = np.empty((nu, nc))
-        gu = np.empty((nc, nu))
-        gchi = np.empty((nc, nc))
-
-        for column in range(nu):
-            plus = mechanical.copy()
-            minus = mechanical.copy()
-            plus[column] += h_u
-            minus[column] -= h_u
-            _, gp = residual(plus, chi)
-            _, gm = residual(minus, chi)
-            gu[:, column] = (gp - gm) / (2.0 * h_u)
-        for column in range(nc):
-            plus = chi.copy()
-            minus = chi.copy()
-            plus[column] += h_chi
-            minus[column] -= h_chi
-            rp, gp = residual(mechanical, plus)
-            rm, gm = residual(mechanical, minus)
-            ruchi[:, column] = (rp - rm) / (2.0 * h_chi)
-            gchi[:, column] = (gp - gm) / (2.0 * h_chi)
+        dsigma_dchi, dp_depsilon, dp_dchi = local_coupling_derivatives(
+            mechanical, chi
+        )
 
         def ruu_action(value: np.ndarray) -> np.ndarray:
             displacement = unpack_interior(value, grid)
@@ -157,6 +186,28 @@ def main() -> None:
             )
             return pack_interior(kinematics.divergence(stress_increment))
 
+        def ruchi_action(value: np.ndarray) -> np.ndarray:
+            point_value = np.repeat(value, 2)
+            stress_increment = (dsigma_dchi * point_value[:, None]).reshape(
+                grid.nx, grid.ny, 2, 3
+            )
+            return pack_interior(kinematics.divergence(stress_increment))
+
+        def g_u_action(value: np.ndarray) -> np.ndarray:
+            displacement = unpack_interior(value, grid)
+            strain_increment = kinematics.strain_samples(displacement).reshape(-1, 3)
+            source_increment = np.einsum(
+                "pi,pi->p", dp_depsilon, strain_increment
+            ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
+            return -nonlocal_inverse(source_increment.reshape(-1))
+
+        def g_chi_action(value: np.ndarray) -> np.ndarray:
+            source_increment = (
+                dp_dchi.reshape(grid.nx, grid.ny, 2).mean(axis=2)
+                * value.reshape(grid.pixel_shape)
+            )
+            return value - nonlocal_inverse(source_increment.reshape(-1))
+
         return CoupledLinearisation(
             mechanical_residual=ru,
             nonlocal_residual=g,
@@ -164,9 +215,9 @@ def main() -> None:
                 mechanical_size=nu,
                 nonlocal_size=nc,
                 ruu=ruu_action,
-                ruchi=lambda value: ruchi @ value,
-                g_u=lambda value: gu @ value,
-                g_chi=lambda value: gchi @ value,
+                ruchi=ruchi_action,
+                g_u=g_u_action,
+                g_chi=g_chi_action,
                 mechanical_inverse=mechanical_inverse,
                 nonlocal_inverse=nonlocal_inverse,
             ),
