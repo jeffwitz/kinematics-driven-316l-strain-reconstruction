@@ -66,6 +66,7 @@ Recommended journeys
 
 **Understand the spectral mechanics evidence**
    :doc:`explanation/spectral_mechanics/index` →
+   :doc:`explanation/spectral_mechanics/solver_pipeline` →
    :doc:`explanation/spectral_mechanics/one_point_instability` →
    :doc:`explanation/spectral_mechanics/tet2_newton_gmres` →
    :doc:`explanation/spectral_mechanics/ebi_srix_falsification`

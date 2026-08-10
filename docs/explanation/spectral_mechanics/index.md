@@ -28,24 +28,16 @@ about every SRIX loading path.
   [doi:10.1002/nme.70170](https://onlinelibrary.wiley.com/doi/10.1002/nme.70170).
 * Frigo and Johnson, *The Design and Implementation of FFTW3*.
 
-```{graphviz}
-digraph spectral_pipeline {
-  rankdir=LR;
-  node [shape=box, style=rounded];
-  dic [label="DIC boundary\\nu* extension"];
-  fluct [label="zero-boundary\\nfluctuation u^f"];
-  dtt [label="DST-I / B0\\npreconditioner"];
-  material [label="plane-stress\\nSRIX material"];
-  residual [label="adjoint residual\\nR(u)"];
-  dic -> fluct -> dtt -> residual;
-  fluct -> material -> residual;
-}
-```
+The complete Newton--GMRES data flow is described in
+{doc}`solver_pipeline`. In particular, the DST-I appears only in the GMRES
+preconditioner; the actual residual and matrix-free Jacobian action come from
+the local kinematics and constitutive response.
 
 ```{toctree}
 :maxdepth: 1
 
 scientific_question
+solver_pipeline
 full_dirichlet_formulation
 discrete_kinematics
 dtt_green_operator
