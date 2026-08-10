@@ -961,7 +961,12 @@ def main() -> int:
     parser.add_argument("--length-scale", type=float, default=0.05888)
     parser.add_argument("--coupling-modulus-mpa", type=float, default=5168.0)
     parser.add_argument("--krylov-relative-tolerance", type=float, default=1.0e-4)
-    parser.add_argument("--absolute-tolerance", type=float, default=1.0e-10)
+    parser.add_argument(
+        "--absolute-tolerance",
+        type=float,
+        default=1.0e-6,
+        help="mechanical residual tolerance (use 1e-8 or tighter for qualification)",
+    )
     parser.add_argument("--staggered-relaxation", type=float, default=1.0)
     parser.add_argument("--fd-strain-step", type=float, default=1.0e-7)
     parser.add_argument("--fd-chi-step", type=float, default=1.0e-7)
