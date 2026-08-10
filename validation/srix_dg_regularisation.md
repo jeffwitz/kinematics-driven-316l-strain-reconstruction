@@ -78,6 +78,22 @@ versus the historical run were `5.37e-8` displacement, `3.86e-5` stress,
 Thus the semismooth control and the compact `delta=1e-5` run lead to the same
 qualitative M200 conclusion; neither is yet a validated replacement law.
 
+## Tangent finite-difference check
+
+The returned one-step GPS tangent was checked against central differences for
+the identity and Bunge `[35,20,15]` orientations over a 12-step plastic
+history. For `delta=1e-5`, the maximum relative tangent errors were:
+
+| orientation | `h=1e-5` | `h=1e-6` | `h=1e-7` |
+|---|---:|---:|---:|
+| identity | `4.09e-6` | `4.09e-8` | `8.00e-10` |
+| Bunge `[35,20,15]` | `1.38e-5` | `1.38e-7` | `1.38e-9` |
+
+The maximum transverse residual was `4.45e-14 MPa` for identity and
+`1.94e-14 MPa` for the rotated case. The error decreases quadratically with
+the finite-difference step over the tested range, which is consistent with a
+correct regularised tangent rather than a branch mismatch.
+
 ## Reproducibility
 
 The replay and screening artefacts are:
@@ -87,6 +103,7 @@ The replay and screening artefacts are:
 - `validation/_generated/performance/srix_dg_regularisation_sweep.json`
 - `validation/_generated/performance/srix_dg_regularisation_m20_delta_*.json`
 - `validation/_generated/performance/srix_dg_regularisation_m200.json`
+- `validation/_generated/performance/srix_dg_regularisation_tangent.json`
 
 The implementation is in both SRIX MFront behaviours and the option is
 forwarded by `plane_stress_material.py`. `delta=0` preserves the historical
