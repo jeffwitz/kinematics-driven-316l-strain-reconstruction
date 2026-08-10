@@ -367,6 +367,87 @@ def _solve_production_nested_sequence(
                 step *= 0.5
             else:
                 a_direction = mechanical_action(correction)
+                base_trial_vectors: list[np.ndarray] = []
+                for _ in range(5):
+                    repeated_eval = nested_trial(base_mechanical, base_chi)
+                    base_trial_vectors.append(residual_vector(repeated_eval.constitutive_trial))
+                repeatability = {
+                    "samples": len(base_trial_vectors),
+                    "max_difference_vs_first": float(
+                        max(
+                            np.linalg.norm(vector - base_trial_vectors[0])
+                            for vector in base_trial_vectors[1:]
+                        )
+                    ),
+                    "rms_difference_vs_first": float(
+                        np.sqrt(
+                            np.mean(
+                                [
+                                    np.linalg.norm(vector - base_trial_vectors[0]) ** 2
+                                    for vector in base_trial_vectors[1:]
+                                ]
+                            )
+                        )
+                    ),
+                }
+                strain_direction = kinematics.strain_samples(
+                    unpack_interior(correction, grid)
+                ).reshape(grid.nx, grid.ny, 2, 3)
+                strain_max = float(np.max(np.abs(strain_direction)))
+                controlled_amplitude_diagnostics: list[dict[str, object]] = []
+                if strain_max > 0.0:
+                    for target_strain in (1.0e-5, 1.0e-6, 1.0e-7, 1.0e-8, 1.0e-9):
+                        scaled_correction = correction * (target_strain / strain_max)
+                        try:
+                            plus_eval = nested_trial(
+                                base_mechanical + scaled_correction, base_chi
+                            )
+                            minus_eval = nested_trial(
+                                base_mechanical - scaled_correction, base_chi
+                            )
+                            nested_central = (
+                                residual_vector(plus_eval.constitutive_trial)
+                                - residual_vector(minus_eval.constitutive_trial)
+                            ) / 2.0
+                            plus_fixed = fixed_chi_residual(
+                                base_mechanical + scaled_correction, base_chi
+                            )
+                            minus_fixed = fixed_chi_residual(
+                                base_mechanical - scaled_correction, base_chi
+                            )
+                            fixed_central = (plus_fixed - minus_fixed) / 2.0
+                            tangent_action = mechanical_action(scaled_correction)
+                            tangent_norm = float(np.linalg.norm(tangent_action))
+                            nested_norm = float(np.linalg.norm(nested_central))
+                            fixed_norm = float(np.linalg.norm(fixed_central))
+                            controlled_amplitude_diagnostics.append(
+                                {
+                                    "max_strain_amplitude": target_strain,
+                                    "nested_relative_error_vs_A": float(
+                                        np.linalg.norm(nested_central - tangent_action)
+                                        / max(nested_norm, np.finfo(float).tiny)
+                                    ),
+                                    "fixed_chi_relative_error_vs_A": float(
+                                        np.linalg.norm(fixed_central - tangent_action)
+                                        / max(fixed_norm, np.finfo(float).tiny)
+                                    ),
+                                    "nested_cosine_vs_A": float(
+                                        np.dot(nested_central, tangent_action)
+                                        / max(nested_norm * tangent_norm, np.finfo(float).tiny)
+                                    ),
+                                    "fixed_chi_cosine_vs_A": float(
+                                        np.dot(fixed_central, tangent_action)
+                                        / max(fixed_norm * tangent_norm, np.finfo(float).tiny)
+                                    ),
+                                }
+                            )
+                        except (RuntimeError, ValueError) as error:
+                            controlled_amplitude_diagnostics.append(
+                                {
+                                    "max_strain_amplitude": target_strain,
+                                    "failure": str(error),
+                                }
+                            )
                 alpha_diagnostics: list[dict[str, object]] = []
                 for diagnostic_alpha in (1.0 / 512.0, 1.0 / 1024.0, 1.0 / 2048.0, 1.0 / 4096.0):
                     diagnostic_candidate = base_mechanical + diagnostic_alpha * correction
@@ -424,6 +505,8 @@ def _solve_production_nested_sequence(
                     "current_residual_norm": current_norm,
                     "line_search_curve": line_search_curve,
                     "A_correction_norm": float(np.linalg.norm(a_direction)),
+                    "repeatability": repeatability,
+                    "controlled_amplitude_diagnostics": controlled_amplitude_diagnostics,
                     "secant_diagnostics": alpha_diagnostics,
                 }
                 detail = (
