@@ -172,6 +172,7 @@ def _make_native_material(
     point_count: int,
     yield_stress: np.ndarray,
     hardening: np.ndarray,
+    coupling_modulus_mpa: float,
 ) -> MFrontNativePlaneStressBatch:
     return MFrontNativePlaneStressBatch(
         library,
@@ -179,7 +180,7 @@ def _make_native_material(
         np.repeat(hardening, 2),
         np.full(point_count, 0.245),
         behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
-        micromorphic_coupling_modulus_mpa=2_000.0,
+        micromorphic_coupling_modulus_mpa=coupling_modulus_mpa,
     )
 
 
@@ -196,14 +197,25 @@ def _solve_sequence(
     nonlocal_inverse: object,
     nonlocal_operator: object,
     length_scale: float,
+    coupling_modulus_mpa: float,
     krylov_tolerance: float,
     absolute_tolerance: float,
     method: str,
     backend: str,
     staggered_relaxation: float,
 ) -> dict[str, object]:
-    material_factory = _make_material if backend == "generic" else _make_native_material
-    material = material_factory(library, kinematics.material_point_count, yield_stress, hardening)
+    if backend == "generic":
+        material = _make_material(
+            library, kinematics.material_point_count, yield_stress, hardening
+        )
+    else:
+        material = _make_native_material(
+            library,
+            kinematics.material_point_count,
+            yield_stress,
+            hardening,
+            coupling_modulus_mpa,
+        )
     mechanical = np.zeros(2 * grid.interior_shape[0] * grid.interior_shape[1])
     chi = np.zeros(grid.nx * grid.ny)
     total_newton = 0
@@ -489,7 +501,8 @@ def main() -> int:
         help="retry the complete solve with doubled global DIC subdivisions",
     )
     parser.add_argument("--maximum-path-substeps", type=int, default=16)
-    parser.add_argument("--length-scale", type=float, default=0.8)
+    parser.add_argument("--length-scale", type=float, default=0.05888)
+    parser.add_argument("--coupling-modulus-mpa", type=float, default=5168.0)
     parser.add_argument("--krylov-relative-tolerance", type=float, default=1.0e-4)
     parser.add_argument("--absolute-tolerance", type=float, default=1.0e-10)
     parser.add_argument("--staggered-relaxation", type=float, default=1.0)
@@ -511,8 +524,12 @@ def main() -> int:
     grid = StructuredGrid2D(mesh, mesh, mesh * PIXEL_SIZE_MM, mesh * PIXEL_SIZE_MM)
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
-    material_factory = _make_material if args.backend == "generic" else _make_native_material
-    virgin = material_factory(library, point_count, yield_stress, hardening)
+    if args.backend == "generic":
+        virgin = _make_material(library, point_count, yield_stress, hardening)
+    else:
+        virgin = _make_native_material(
+            library, point_count, yield_stress, hardening, args.coupling_modulus_mpa
+        )
     virgin_trial = virgin.evaluate_in_plane(
         np.zeros((point_count, 3)), time_increment=1.0, consistent_tangent=True
     )
@@ -555,6 +572,7 @@ def main() -> int:
                 nonlocal_inverse=nonlocal_inverse,
                 nonlocal_operator=nonlocal_operator,
                 length_scale=args.length_scale,
+                coupling_modulus_mpa=args.coupling_modulus_mpa,
                 krylov_tolerance=args.krylov_relative_tolerance,
                 absolute_tolerance=args.absolute_tolerance,
                 backend=args.backend,
@@ -581,6 +599,7 @@ def main() -> int:
         "effective_increments": len(_refine_history(history, actual_path_substeps)) - 1,
         "pixel_size_mm": PIXEL_SIZE_MM,
         "length_scale": args.length_scale,
+        "coupling_modulus_mpa": args.coupling_modulus_mpa,
         "krylov_relative_tolerance": args.krylov_relative_tolerance,
         "absolute_tolerance": args.absolute_tolerance,
         "staggered_relaxation": args.staggered_relaxation,
