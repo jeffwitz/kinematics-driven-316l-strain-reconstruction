@@ -1,0 +1,42 @@
+{
+  "case": "coupled micromorphic J2 M20",
+  "grid": [20, 20],
+  "time_increment": 1.0,
+  "generic_library": "validation-only generated StructuralPlaneStress probe",
+  "compilation_included": false,
+  "generic_structural": {
+    "converged": true,
+    "newton_iterations": 2,
+    "krylov_iterations": [11, 39],
+    "elapsed_seconds": 0.17847838101442903,
+    "material_seconds": 0.07152614503866062,
+    "material_evaluations": 3,
+    "coupling_derivative_seconds": 0.0000056219869293272495,
+    "coupling_probe_evaluations": 0,
+    "final_residual_norm": 6.949216933826468e-12,
+    "partitioned_reference_seconds": 0.08340706798480824,
+    "coupled_over_partitioned": 2.1398472015217833,
+    "chi_linf_vs_partitioned": 8.147544271197571e-12,
+    "chi_l2_vs_partitioned": 1.6295061723571714e-10
+  },
+  "native_fd_reference": {
+    "converged": true,
+    "newton_iterations": 2,
+    "krylov_iterations": [13, 73],
+    "elapsed_seconds": 0.24802388297393918,
+    "material_seconds": 0.07966621016385034,
+    "material_evaluations": 13,
+    "coupling_derivative_seconds": 0.05928750603925437,
+    "coupling_probe_evaluations": 10,
+    "final_residual_norm": 7.61989877709138e-12,
+    "partitioned_reference_seconds": 0.08900450903456658,
+    "coupled_over_partitioned": 2.786644021345193,
+    "chi_linf_vs_partitioned": 4.698366695699008e-12,
+    "chi_l2_vs_partitioned": 9.39670518479844e-11
+  },
+  "interpretation": {
+    "generic_speedup_vs_native_coupled": 1.389075340488208,
+    "generic_coupling_fd_removed": true,
+    "qualification": "same M20 discrete solution within approximately 1e-11 in chi; validation-only generated behavior, not a registered production backend"
+  }
+}

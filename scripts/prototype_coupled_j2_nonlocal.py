@@ -23,6 +23,7 @@ from fem_inhouse.core.constitutive_sensitivities import (
 )
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
 from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
+from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
     make_dct_helmholtz_inverse,
@@ -41,12 +42,141 @@ from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 
+class GenericStructuralMicromorphicBatch:
+    """Validation adapter for the generic structural MFront probe.
+
+    This is deliberately local to the benchmark script.  It proves the M20
+    cost of the four MFront tangent blocks before moving the adapter into the
+    production bridge.
+    """
+
+    def __init__(self, library: Path, point_count: int) -> None:
+        import mgis.behaviour as mgis
+
+        self._mgis = mgis
+        behaviour = mgis.load(
+            str(library),
+            "MicromorphicJ2GenericStructuralPlaneStressProbe",
+            mgis.Hypothesis.Tridimensional,
+        )
+        # Keep the Python behaviour wrapper alive for the lifetime of the
+        # manager.  MGIS's manager refers to the underlying behaviour object;
+        # letting this local go out of scope can leave a dangling handle.
+        self._behaviour = behaviour
+        self._manager = mgis.MaterialDataManager(behaviour, point_count)
+        properties = {
+            "YoungModulus": 205.0e3,
+            "PoissonRatio": 0.3,
+            "InitialYieldStress": 250.0,
+            "HardeningCoefficient": 380.0,
+            "HardeningExponent": 0.245,
+            "MicromorphicCouplingModulus": 2.0e3,
+        }
+        for state in (self._manager.s0, self._manager.s1):
+            for name, value in properties.items():
+                mgis.setMaterialProperty(state, name, value)
+            mgis.setExternalStateVariable(state, "Temperature", 293.15)
+        self._chi = np.zeros(point_count)
+        self._has_trial = False
+
+    @property
+    def point_count(self) -> int:
+        return self._manager.n
+
+    def set_nonlocal_equivalent_plastic_strain(self, values: np.ndarray) -> None:
+        supplied = np.asarray(values, dtype=float)
+        if supplied.shape != (self.point_count,):
+            raise ValueError("generic probe chi has an unexpected shape")
+        if self._has_trial:
+            self.revert()
+        self._chi[:] = supplied
+
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: np.ndarray,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial:
+        strain = np.asarray(in_plane_strain, dtype=float)
+        if strain.shape != (self.point_count, 3):
+            raise ValueError("generic probe strain has an unexpected shape")
+        if self._has_trial:
+            self.revert()
+        gradients = np.zeros((self.point_count, 7), dtype=float)
+        gradients[:, 0] = strain[:, 0]
+        gradients[:, 1] = strain[:, 1]
+        gradients[:, 3] = strain[:, 2] / np.sqrt(2.0)
+        gradients[:, 6] = self._chi
+        self._manager.s1.gradients[:, :] = gradients
+        integration_type = (
+            self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
+            if consistent_tangent
+            else self._mgis.IntegrationType.IntegrationWithoutTangentOperator
+        )
+        status = self._mgis.integrate(
+            self._manager, integration_type, float(time_increment), 0, self.point_count
+        )
+        if status != 1:
+            self.revert()
+            raise RuntimeError(f"generic structural probe integration failed: {status}")
+        self._has_trial = True
+        forces = np.asarray(self._manager.s1.thermodynamic_forces)
+        stress = forces[:, [0, 1, 3]].copy()
+        stress[:, 2] /= np.sqrt(2.0)
+        tangent = None
+        dsigma_dchi = None
+        dp_depsilon = None
+        dp_dchi = None
+        if consistent_tangent:
+            # MGIS stores declared tangent blocks consecutively, not as one
+            # row-major 7x7 matrix: 6x6, 6x1, 1x6, 1x1.
+            blocks = np.asarray(self._manager.K)
+            mechanical_block = blocks[:, :36].reshape(self.point_count, 6, 6)
+            stress_chi_block = blocks[:, 36:42]
+            source_strain_block = blocks[:, 42:48]
+            source_chi_block = blocks[:, 48]
+            tangent = mechanical_block[:, [0, 1, 3]][:, :, [0, 1, 3]].copy()
+            tangent[:, 2, :] /= np.sqrt(2.0)
+            tangent[:, :, 2] /= np.sqrt(2.0)
+            dsigma_dchi = stress_chi_block[:, [0, 1, 3]].copy()
+            dsigma_dchi[:, 2] /= np.sqrt(2.0)
+            dp_depsilon = source_strain_block[:, [0, 1, 3]].copy()
+            dp_depsilon[:, 2] /= np.sqrt(2.0)
+            dp_dchi = source_chi_block.copy()
+        observables = {
+            "equivalent_plastic_strain": forces[:, 6].copy(),
+            "generic_dsigma_dchi": dsigma_dchi,
+            "generic_dp_depsilon": dp_depsilon,
+            "generic_dp_dchi": dp_dchi,
+        }
+        return InPlaneConstitutiveTrial(
+            stress_in_plane_mpa=stress,
+            tangent_in_plane_mpa=tangent,
+            observables=observables,
+        )
+
+    def revert(self) -> None:
+        self._mgis.revert(self._manager)
+        self._has_trial = False
+
+    def commit(self) -> None:
+        self._mgis.update(self._manager)
+        self._has_trial = False
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--library",
         type=Path,
         default=os.environ.get("MFRONT_BEHAVIOUR_LIBRARY"),
+    )
+    parser.add_argument(
+        "--generic-library",
+        type=Path,
+        default=os.environ.get("MFRONT_GENERIC_BEHAVIOUR_LIBRARY"),
+        help="validation-only generic structural MFront library",
     )
     parser.add_argument("--nx", type=int, default=3)
     parser.add_argument("--ny", type=int, default=3)
@@ -68,14 +198,18 @@ def main() -> None:
     grid = StructuredGrid2D(args.nx, args.ny, float(args.nx), float(args.ny))
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
-    material = MFrontNativePlaneStressBatch(
-        args.library,
-        np.full(point_count, 250.0),
-        np.full(point_count, 380.0),
-        np.full(point_count, 0.245),
-        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
-        micromorphic_coupling_modulus_mpa=2_000.0,
-    )
+    generic_mode = args.generic_library is not None
+    if generic_mode:
+        material = GenericStructuralMicromorphicBatch(args.generic_library, point_count)
+    else:
+        material = MFrontNativePlaneStressBatch(
+            args.library,
+            np.full(point_count, 250.0),
+            np.full(point_count, 380.0),
+            np.full(point_count, 0.245),
+            behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+            micromorphic_coupling_modulus_mpa=2_000.0,
+        )
     plan = create_full_dirichlet_dsti_plan(grid, SpectralTransformConfig())
     green = B0Green2D(
         kinematics_reference_symbols(kinematics, plan),
@@ -119,7 +253,14 @@ def main() -> None:
 
     def response(
         mechanical: np.ndarray, chi: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        tuple[np.ndarray, np.ndarray, np.ndarray] | None,
+    ]:
         nonlocal coupled_material_seconds, coupled_material_evaluations
         nonlocal coupled_response_evaluations
         samples = strain_from_mechanical(mechanical)
@@ -148,6 +289,13 @@ def main() -> None:
         tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
             grid.nx, grid.ny, 2, 3, 3
         )
+        generic_couplings = None
+        if generic_mode:
+            generic_couplings = (
+                np.asarray(trial.observables["generic_dsigma_dchi"]).copy(),
+                np.asarray(trial.observables["generic_dp_depsilon"]).copy(),
+                np.asarray(trial.observables["generic_dp_dchi"]).copy(),
+            )
         material.revert()
         return (
             mechanical_residual,
@@ -155,14 +303,29 @@ def main() -> None:
             tangent,
             source_point,
             stress_point,
+            generic_couplings,
         )
 
     cached_state: tuple[np.ndarray, np.ndarray] | None = None
-    cached_response: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
+    cached_response: tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        tuple[np.ndarray, np.ndarray, np.ndarray] | None,
+    ] | None = None
 
     def response_for_state(
         state: tuple[np.ndarray, np.ndarray]
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        tuple[np.ndarray, np.ndarray, np.ndarray] | None,
+    ]:
         nonlocal cached_state, cached_response
         if (
             cached_state is None
@@ -185,6 +348,7 @@ def main() -> None:
         chi: np.ndarray,
         base_source: np.ndarray,
         base_stress: np.ndarray,
+        generic_couplings: tuple[np.ndarray, np.ndarray, np.ndarray] | None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return generic pointwise FD sensitivities for the current law.
 
@@ -198,6 +362,8 @@ def main() -> None:
         nonlocal coupled_material_seconds, coupled_material_evaluations
         nonlocal coupled_coupling_probe_evaluations
         nonlocal coupled_chi_derivative_seconds, coupled_strain_derivative_seconds
+        if generic_couplings is not None:
+            return generic_couplings
         samples = strain_from_mechanical(mechanical)
         point_chi = np.repeat(chi, 2)
         chi_step = min(h_chi, 0.5 * float(np.min(chi)))
@@ -254,12 +420,12 @@ def main() -> None:
     def evaluate(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
         nonlocal coupled_coupling_derivative_seconds
         mechanical, chi = state
-        ru, g, tangent, base_source, base_stress = response_for_state(state)
+        ru, g, tangent, base_source, base_stress, generic_couplings = response_for_state(state)
         nu = mechanical.size
         nc = chi.size
         coupling_derivative_start = time.perf_counter()
         dsigma_dchi, dp_depsilon, dp_dchi = local_coupling_derivatives(
-            mechanical, chi, base_source, base_stress
+            mechanical, chi, base_source, base_stress, generic_couplings
         )
         coupled_coupling_derivative_seconds += (
             time.perf_counter() - coupling_derivative_start
