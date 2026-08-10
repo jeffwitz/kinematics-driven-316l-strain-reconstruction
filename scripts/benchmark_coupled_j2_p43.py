@@ -200,6 +200,7 @@ def _solve_sequence(
     absolute_tolerance: float,
     method: str,
     backend: str,
+    staggered_relaxation: float,
 ) -> dict[str, object]:
     material_factory = _make_material if backend == "generic" else _make_native_material
     material = material_factory(library, kinematics.material_point_count, yield_stress, hardening)
@@ -431,7 +432,11 @@ def _solve_sequence(
                     mechanical_solves += 1
                     krylov_counts.append(calls)
                     continue
-                updated_chi = np.maximum(nonlocal_inverse(source), 0.0)
+                filtered_chi = np.maximum(nonlocal_inverse(source), 0.0)
+                updated_chi = (
+                    (1.0 - staggered_relaxation) * chi
+                    + staggered_relaxation * filtered_chi
+                )
                 chi_residual = float(np.linalg.norm(updated_chi - chi))
                 chi = updated_chi
                 if chi_residual <= absolute_tolerance:
@@ -487,6 +492,7 @@ def main() -> int:
     parser.add_argument("--length-scale", type=float, default=0.8)
     parser.add_argument("--krylov-relative-tolerance", type=float, default=1.0e-4)
     parser.add_argument("--absolute-tolerance", type=float, default=1.0e-10)
+    parser.add_argument("--staggered-relaxation", type=float, default=1.0)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     library = args.generic_library if args.backend == "generic" else args.library
@@ -500,6 +506,8 @@ def main() -> int:
     history = history[: args.increments + 1]
     if args.path_substeps < 1 or args.maximum_path_substeps < args.path_substeps:
         raise SystemExit("path subdivision limits are inconsistent")
+    if not 0.0 < args.staggered_relaxation <= 1.0:
+        raise SystemExit("staggered relaxation must lie in (0, 1]")
     grid = StructuredGrid2D(mesh, mesh, mesh * PIXEL_SIZE_MM, mesh * PIXEL_SIZE_MM)
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
@@ -550,6 +558,7 @@ def main() -> int:
                 krylov_tolerance=args.krylov_relative_tolerance,
                 absolute_tolerance=args.absolute_tolerance,
                 backend=args.backend,
+                staggered_relaxation=args.staggered_relaxation,
             )
             if args.method in ("monolithic", "both"):
                 mono = _solve_sequence(**common, method="monolithic")
@@ -574,6 +583,7 @@ def main() -> int:
         "length_scale": args.length_scale,
         "krylov_relative_tolerance": args.krylov_relative_tolerance,
         "absolute_tolerance": args.absolute_tolerance,
+        "staggered_relaxation": args.staggered_relaxation,
         "b0_lambda": lambda_0,
         "b0_mu": mu_0,
         "b0_projection_error": projection_error,
