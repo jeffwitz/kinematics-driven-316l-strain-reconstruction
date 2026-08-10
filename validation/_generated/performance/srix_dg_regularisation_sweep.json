@@ -1,0 +1,14 @@
+{
+  "source_diagnostic": "3d90d70 / srix_p43_m200_failure_diagnostics.failure_diagnostics.npz",
+  "epsilon_macaulay_mpa": 0.0,
+  "records": 380,
+  "distinct_points": 50,
+  "candidates": [
+    {"delta": 0.0, "failed_trials": 380, "rescued_trials": 0, "new_failures": 0},
+    {"delta": 1.0e-5, "failed_trials": 0, "rescued_trials": 380, "new_failures": 0},
+    {"delta": 3.0e-5, "failed_trials": 0, "rescued_trials": 380, "new_failures": 0},
+    {"delta": 1.0e-4, "failed_trials": 0, "rescued_trials": 380, "new_failures": 0},
+    {"delta": 3.0e-4, "failed_trials": 0, "rescued_trials": 380, "new_failures": 0}
+  ],
+  "note": "This replay measures rescue of the archived isolated trials; it is not by itself a proof that all full-field branches are unchanged."
+}
