@@ -72,3 +72,18 @@ export these blocks from the generated local integration context, or to add a
 small DSL contract allowing a behaviour to declare the observable and its
 partial derivatives. That contract must be exercised on both SRIX and
 Méric–Cailletaud before replacing the probes in the coupled driver.
+
+## Verified MGIS boundary
+
+The installed headers were checked directly under
+`/home/jeff/.local/include/MGIS/Behaviour`. `State` stores gradients,
+thermodynamic forces, material properties and state-variable arrays, while
+`MaterialDataManager` exposes the consistent tangent operator and the
+transactional state operations. Neither public interface contains a local
+implicit residual, its Jacobian, or derivatives of an arbitrary observable.
+
+This is a deliberate boundary of the current prototype, not an omission in
+the Python adapter. A future export must therefore be an explicit MFront/TFEL
+contract, rather than an inference from the MGIS tangent or from the names of
+SRIX/Méric state variables. The generic Python algebra is ready to consume
+that contract as soon as it is available.

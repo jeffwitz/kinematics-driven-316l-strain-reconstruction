@@ -89,6 +89,10 @@ def finite_difference_sensitivities(
     parameter_step_values = np.asarray(parameter_step, dtype=np.float64)
     if np.any(parameter_step_values <= 0) or not np.isfinite(parameter_step_values).all():
         raise ValueError("parameter_step must be finite and positive")
+    if scalar_parameter and parameter_step_values.ndim == 1:
+        if parameter_step_values.size not in (1, parameter_values.shape[0]):
+            raise ValueError("parameter_step has an incompatible point count")
+        parameter_step_values = parameter_step_values[:, None]
     parameter_step_values = np.broadcast_to(parameter_step_values, parameter_values.shape)
     parameter_count = parameter_values.shape[-1]
 
