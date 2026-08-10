@@ -22,6 +22,7 @@ from scipy.sparse.linalg import LinearOperator
 
 from fem_inhouse.core.constitutive_sensitivities import finite_difference_sensitivities
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
+from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
 from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
@@ -184,6 +185,157 @@ def _make_native_material(
     )
 
 
+def _solve_production_nested_sequence(
+    *,
+    library: Path,
+    history: np.ndarray,
+    yield_stress: np.ndarray,
+    hardening: np.ndarray,
+    grid: StructuredGrid2D,
+    kinematics: TwoSubcellDiagnostic2D,
+    mechanical_inverse: object,
+    nonlocal_inverse: object,
+    length_scale: float,
+    coupling_modulus_mpa: float,
+    absolute_tolerance: float,
+) -> dict[str, object]:
+    """Run production-style fixed-point coupling inside each mechanical Newton."""
+    material = _make_native_material(
+        library,
+        kinematics.material_point_count,
+        yield_stress,
+        hardening,
+        coupling_modulus_mpa,
+    )
+    mechanical = np.zeros(2 * grid.interior_shape[0] * grid.interior_shape[1])
+    chi = np.zeros(grid.nx * grid.ny)
+    newton_counts: list[int] = []
+    fixed_point_counts: list[list[int]] = []
+    krylov_counts: list[int] = []
+    tangent_evaluations = 0
+    residual_evaluations = 0
+    started = time.perf_counter()
+
+    for increment, boundary in enumerate(history[1:], start=1):
+        def strain_from_mechanical(
+            value: np.ndarray, boundary_value: np.ndarray = boundary
+        ) -> np.ndarray:
+            full = boundary_value.copy()
+            full[1:-1, 1:-1] += unpack_interior(value, grid)[1:-1, 1:-1]
+            return kinematics.strain_samples(full).reshape(-1, 3)
+
+        def nested_trial(value: np.ndarray, initial_chi: np.ndarray):
+            nonlocal tangent_evaluations, residual_evaluations
+            material.revert()
+            evaluation = evaluate_nonlocal_fixed_point(
+                material,
+                strain_from_mechanical(value),
+                time_increment=1.0,
+                element_shape=grid.pixel_shape,
+                gauss_points_per_element=2,
+                initial_nonlocal_peeq=initial_chi.reshape(grid.pixel_shape),
+                length_scale_mm=length_scale,
+                spacing_x_mm=grid.spacing_x,
+                spacing_y_mm=grid.spacing_y,
+                coupling_modulus_mpa=coupling_modulus_mpa,
+                relaxation=0.5,
+                relaxation_strategy="fixed",
+                relative_tolerance=1.0e-6,
+                maximum_iterations=15,
+                maximum_helmholtz_residual=1.0e-10,
+                element_order="C",
+            )
+            tangent_evaluations += 1
+            residual_evaluations += 1
+            return evaluation
+
+        converged = False
+        increment_fixed_point_counts: list[int] = []
+        for iteration in range(1, 51):
+            evaluation = nested_trial(mechanical, chi)
+            trial = evaluation.constitutive_trial
+            stress = np.asarray(trial.stress_in_plane_mpa).reshape(
+                grid.nx, grid.ny, 2, 3
+            )
+            ru = pack_interior(kinematics.divergence(stress))
+            increment_fixed_point_counts.append(evaluation.iterations)
+            if np.linalg.norm(ru) <= absolute_tolerance:
+                chi = evaluation.nonlocal_peeq.reshape(-1).copy()
+                material.commit()
+                newton_counts.append(iteration)
+                converged = True
+                break
+            tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
+                grid.nx, grid.ny, 2, 3, 3
+            )
+            base_mechanical = mechanical.copy()
+            base_chi = evaluation.nonlocal_peeq.reshape(-1).copy()
+            def mechanical_action(
+                du: np.ndarray, tangent_value: np.ndarray = tangent
+            ) -> np.ndarray:
+                de = kinematics.strain_samples(unpack_interior(du, grid)).reshape(
+                    grid.nx, grid.ny, 2, 3
+                )
+                ds = np.einsum("...ij,...j->...i", tangent_value, de)
+                return pack_interior(kinematics.divergence(ds))
+            operator = LinearOperator(
+                (mechanical.size, mechanical.size), matvec=mechanical_action, dtype=float
+            )
+            correction, info, calls = solve_nonsymmetric_krylov(
+                operator,
+                -ru,
+                preconditioner=LinearOperator(
+                    (mechanical.size, mechanical.size), matvec=mechanical_inverse, dtype=float
+                ),
+                method="gmres",
+                rtol=1.0e-4,
+                maximum_iterations=400,
+                restart=100,
+            )
+            if info != 0:
+                raise RuntimeError(f"production nested GMRES failed: {info}")
+            krylov_counts.append(calls)
+            current_norm = float(np.linalg.norm(ru))
+            step = 1.0
+            while step >= 1.0 / 1024.0:
+                candidate = base_mechanical + step * correction
+                try:
+                    candidate_eval = nested_trial(candidate, base_chi)
+                except (RuntimeError, ValueError):
+                    step *= 0.5
+                    continue
+                candidate_stress = np.asarray(
+                    candidate_eval.constitutive_trial.stress_in_plane_mpa
+                ).reshape(grid.nx, grid.ny, 2, 3)
+                candidate_norm = float(
+                    np.linalg.norm(pack_interior(kinematics.divergence(candidate_stress)))
+                )
+                if candidate_norm < current_norm:
+                    mechanical = candidate
+                    chi = candidate_eval.nonlocal_peeq.reshape(-1).copy()
+                    break
+                step *= 0.5
+            else:
+                raise RuntimeError(f"production nested line search failed at increment {increment}")
+        if not converged:
+            raise RuntimeError(f"production nested increment {increment} did not converge")
+        fixed_point_counts.append(increment_fixed_point_counts)
+
+    return {
+        "method": "production-nested",
+        "elapsed_seconds": time.perf_counter() - started,
+        "newton_iterations": int(sum(newton_counts)),
+        "newton_iterations_per_increment": newton_counts,
+        "fixed_point_iterations_per_newton": fixed_point_counts,
+        "krylov_iterations": krylov_counts,
+        "krylov_total": int(sum(krylov_counts)),
+        "material_tangent_evaluations": tangent_evaluations,
+        "material_residual_evaluations": residual_evaluations,
+        "final_mechanical": mechanical,
+        "final_chi": chi,
+    }
+
+
 def _solve_sequence(
     *,
     library: Path,
@@ -206,6 +358,22 @@ def _solve_sequence(
     fd_strain_step: float,
     fd_chi_step: float,
 ) -> dict[str, object]:
+    if method == "production-nested":
+        if backend != "native":
+            raise RuntimeError("production-nested currently requires the native backend")
+        return _solve_production_nested_sequence(
+            library=library,
+            history=history,
+            yield_stress=yield_stress,
+            hardening=hardening,
+            grid=grid,
+            kinematics=kinematics,
+            mechanical_inverse=mechanical_inverse,
+            nonlocal_inverse=nonlocal_inverse,
+            length_scale=length_scale,
+            coupling_modulus_mpa=coupling_modulus_mpa,
+            absolute_tolerance=absolute_tolerance,
+        )
     if backend == "generic":
         material = _make_material(
             library, kinematics.material_point_count, yield_stress, hardening
@@ -491,7 +659,11 @@ def _solve_sequence(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=("native", "generic"), default="native")
-    parser.add_argument("--method", choices=("monolithic", "staggered", "both"), default="both")
+    parser.add_argument(
+        "--method",
+        choices=("monolithic", "staggered", "production-nested", "both"),
+        default="both",
+    )
     parser.add_argument("--library", type=Path)
     parser.add_argument("--generic-library", type=Path)
     parser.add_argument("--crop-nodes", nargs=4, type=int, default=DEFAULT_CROP)
@@ -590,8 +762,13 @@ def main() -> int:
             )
             if args.method in ("monolithic", "both"):
                 mono = _solve_sequence(**common, method="monolithic")
-            if args.method in ("staggered", "both"):
-                stag = _solve_sequence(**common, method="staggered")
+            if args.method in ("staggered", "production-nested", "both"):
+                staggered_method = (
+                    "production-nested"
+                    if args.method == "production-nested"
+                    else "staggered"
+                )
+                stag = _solve_sequence(**common, method=staggered_method)
             break
         except RuntimeError:
             if not args.adaptive_path_cutback or actual_path_substeps >= args.maximum_path_substeps:
