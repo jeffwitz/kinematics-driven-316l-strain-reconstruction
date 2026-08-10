@@ -251,7 +251,11 @@ def _solve_sequence(
                 state[1]
             ) - source.reshape(-1)
 
-        def linearise(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
+        def linearise(
+            state: tuple[np.ndarray, np.ndarray],
+            *,
+            include_coupling: bool = True,
+        ) -> CoupledLinearisation:
             value, local_chi = state
             trial = evaluate_material(value, local_chi, True)
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
@@ -261,7 +265,14 @@ def _solve_sequence(
                 .mean(axis=2)
             )
             tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3, 3)
-            if backend == "generic":
+            if not include_coupling:
+                # The staggered mechanical solve only consumes C_ee.  Do not
+                # pay for the cross sensitivities that the monolithic method
+                # needs but the staggered method never applies.
+                dsigma_dchi = np.zeros((*tangent.shape[:-2], 3))
+                dp_depsilon = np.zeros((*tangent.shape[:-2], 3))
+                dp_dchi = np.zeros(tangent.shape[:-2])
+            elif backend == "generic":
                 dsigma_dchi = np.asarray(trial.observables["generic_dsigma_dchi"]).reshape(
                     grid.nx, grid.ny, 2, 3
                 )
@@ -382,7 +393,7 @@ def _solve_sequence(
                 ru, source = residual_only((mechanical, chi))
                 ru_norm = float(np.linalg.norm(ru))
                 if ru_norm > absolute_tolerance:
-                    lin = linearise((mechanical, chi))
+                    lin = linearise((mechanical, chi), include_coupling=False)
                     operator = LinearOperator(
                         (mechanical.size, mechanical.size),
                         matvec=lambda v, actions=lin.actions: actions.ruu(v),

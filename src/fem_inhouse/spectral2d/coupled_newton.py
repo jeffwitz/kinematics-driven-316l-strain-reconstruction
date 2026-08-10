@@ -187,11 +187,7 @@ def solve_coupled_newton(
                     raise RuntimeError("coupled residual evaluation failed")
             else:
                 candidate_norm = residual_norm(current_residual)
-                if (
-                    not controls.line_search
-                    or candidate_norm <= current_norm_before_step
-                    or step <= controls.line_search_minimum_step
-                ):
+                if not controls.line_search or candidate_norm <= current_norm_before_step:
                     break
             if not controls.line_search or step <= controls.line_search_minimum_step:
                 raise RuntimeError(
@@ -231,8 +227,6 @@ def solve_coupled_newton(
         # the next Krylov solve.  Reusing the previous Jacobian here would
         # silently apply Newton corrections from the old state.
         current = evaluate(state)
-        if current_residual is not None:
-            current = evaluate(state)
 
     return CoupledNewtonResult(
         mechanical=mechanical,
