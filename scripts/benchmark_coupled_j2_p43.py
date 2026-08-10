@@ -44,6 +44,14 @@ from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 
+class ProductionNestedFailureError(RuntimeError):
+    """Failure carrying a compact nested-Newton diagnostic payload."""
+
+    def __init__(self, message: str, diagnostics: dict[str, object]) -> None:
+        super().__init__(message)
+        self.diagnostics = diagnostics
+
+
 def _load_p43(
     crop: tuple[int, int, int, int],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -228,6 +236,7 @@ def _solve_production_nested_sequence(
         local_chi = initial_chi.copy()
         attempt_krylov: list[int] = []
         last_line_search_failure: str | None = None
+        last_line_search_diagnostic: dict[str, object] | None = None
 
         def strain_from_mechanical(value: np.ndarray) -> np.ndarray:
             full = boundary.copy()
@@ -258,6 +267,21 @@ def _solve_production_nested_sequence(
             tangent_evaluations += 1
             residual_evaluations += 1
             return evaluation
+
+        def fixed_chi_residual(value: np.ndarray, fixed_chi: np.ndarray) -> float:
+            material.revert()
+            material.set_nonlocal_equivalent_plastic_strain(np.repeat(fixed_chi, 2))
+            trial = material.evaluate_in_plane(
+                strain_from_mechanical(value),
+                time_increment=time_increment,
+                consistent_tangent=False,
+            )
+            stress = np.asarray(trial.stress_in_plane_mpa).reshape(
+                grid.nx, grid.ny, 2, 3
+            )
+            residual = pack_interior(kinematics.divergence(stress))
+            material.revert()
+            return float(np.linalg.norm(residual))
 
         increment_fixed_point_counts: list[int] = []
         for iteration in range(1, 51):
@@ -310,6 +334,7 @@ def _solve_production_nested_sequence(
             attempt_krylov.append(calls)
             current_norm = float(np.linalg.norm(ru))
             step = 1.0
+            line_search_curve: list[dict[str, float]] = []
             while step >= 1.0 / 1024.0:
                 candidate = base_mechanical + step * correction
                 try:
@@ -324,18 +349,68 @@ def _solve_production_nested_sequence(
                 candidate_norm = float(
                     np.linalg.norm(pack_interior(kinematics.divergence(candidate_stress)))
                 )
+                fixed_norm = fixed_chi_residual(candidate, base_chi)
+                line_search_curve.append(
+                    {
+                        "alpha": float(step),
+                        "nested_residual_norm": candidate_norm,
+                        "fixed_chi_residual_norm": fixed_norm,
+                    }
+                )
                 if candidate_norm < current_norm:
                     local_mechanical = candidate
                     local_chi = candidate_eval.nonlocal_peeq.reshape(-1).copy()
                     break
                 step *= 0.5
             else:
+                a_direction = mechanical_action(correction)
+                if line_search_curve:
+                    smallest = line_search_curve[-1]
+                    smallest_alpha = smallest["alpha"]
+                    secant_residual = nested_trial(
+                        base_mechanical + smallest_alpha * correction, base_chi
+                    )
+                    secant_stress = np.asarray(
+                        secant_residual.constitutive_trial.stress_in_plane_mpa
+                    ).reshape(grid.nx, grid.ny, 2, 3)
+                    secant_vector = pack_interior(
+                        kinematics.divergence(secant_stress)
+                    )
+                    secant_action = (secant_vector - ru) / smallest_alpha
+                    denominator = float(np.linalg.norm(secant_action))
+                    linearised_norm = float(np.linalg.norm(a_direction))
+                    if denominator > 0.0 and linearised_norm > 0.0:
+                        cosine = float(
+                            np.dot(secant_action, a_direction)
+                            / (denominator * linearised_norm)
+                        )
+                    else:
+                        cosine = float("nan")
+                    secant_diagnostic = {
+                        "alpha": float(smallest_alpha),
+                        "relative_action_error": float(
+                            np.linalg.norm(secant_action - a_direction)
+                            / max(denominator, np.finfo(float).tiny)
+                        ),
+                        "action_cosine": cosine,
+                        "residual_directional_product": float(np.dot(ru, secant_action)),
+                    }
+                else:
+                    secant_diagnostic = {}
+                last_line_search_diagnostic = {
+                    "current_residual_norm": current_norm,
+                    "line_search_curve": line_search_curve,
+                    "secant": secant_diagnostic,
+                }
                 detail = (
                     f"; last candidate failure: {last_line_search_failure}"
                     if last_line_search_failure is not None
                     else ""
                 )
-                raise RuntimeError(f"production nested line search failed{detail}")
+                raise ProductionNestedFailureError(
+                    f"production nested line search failed{detail}",
+                    last_line_search_diagnostic,
+                )
         raise RuntimeError("production nested mechanical Newton did not converge")
 
     segment_duration = 1.0 / (len(history) - 1)
@@ -346,6 +421,7 @@ def _solve_production_nested_sequence(
         step_fraction = 1.0
         segment_cutbacks = 0
         last_failure: str | None = None
+        last_failure_diagnostics: dict[str, object] = {}
         while fraction < 1.0 - 1.0e-14:
             next_fraction = min(1.0, fraction + step_fraction)
             boundary = (
@@ -374,13 +450,23 @@ def _solve_production_nested_sequence(
                 local_cutbacks += 1
                 segment_cutbacks += 1
                 last_failure = str(error)
+                if isinstance(error, ProductionNestedFailureError):
+                    last_failure_diagnostics = error.diagnostics
                 step_fraction *= 0.5
                 if step_fraction < 1.0 / 1024.0:
-                    raise RuntimeError(
+                    diagnostics = {
+                        **last_failure_diagnostics,
+                        "increment": increment,
+                        "fraction": fraction,
+                        "segment_cutbacks": segment_cutbacks,
+                        "time_increment": segment_duration * step_fraction,
+                    }
+                    raise ProductionNestedFailureError(
                         "production nested local cutback failed "
                         f"at increment {increment}, fraction={fraction:.16g}, "
                         f"segment_cutbacks={segment_cutbacks}, "
                         f"last_failure={last_failure}"
+                        , diagnostics,
                     ) from None
                 continue
             fraction = next_fraction
@@ -806,6 +892,7 @@ def main() -> int:
     )
     started = time.perf_counter()
     actual_path_substeps = args.path_substeps
+    failure_diagnostics: dict[str, object] | None = None
     while True:
         trial_history = _refine_history(history, actual_path_substeps)
         try:
@@ -836,6 +923,8 @@ def main() -> int:
                 try:
                     mono = _solve_sequence(**common, method="monolithic")
                 except RuntimeError as error:
+                    if isinstance(error, ProductionNestedFailureError):
+                        failure_diagnostics = error.diagnostics
                     failures.append(f"monolithic: {error}")
             if args.method in ("staggered", "production-nested", "both"):
                 staggered_method = (
@@ -846,12 +935,33 @@ def main() -> int:
                 try:
                     stag = _solve_sequence(**common, method=staggered_method)
                 except RuntimeError as error:
+                    if isinstance(error, ProductionNestedFailureError):
+                        failure_diagnostics = error.diagnostics
                     failures.append(f"{staggered_method}: {error}")
             if failures:
                 raise RuntimeError("; ".join(failures))
             break
-        except RuntimeError:
+        except RuntimeError as error:
+            if isinstance(error, ProductionNestedFailureError):
+                failure_diagnostics = error.diagnostics
             if not args.adaptive_path_cutback or actual_path_substeps >= args.maximum_path_substeps:
+                if failure_diagnostics is not None:
+                    failure_path = args.output.with_suffix(".failure.json")
+                    failure_path.parent.mkdir(parents=True, exist_ok=True)
+                    failure_path.write_text(
+                        json.dumps(
+                            {
+                                "status": "failed",
+                                "backend": args.backend,
+                                "method": args.method,
+                                "crop_nodes": list(crop),
+                                "path_substeps": actual_path_substeps,
+                                "diagnostics": failure_diagnostics,
+                            },
+                            indent=2,
+                        )
+                        + "\n"
+                    )
                 raise
             actual_path_substeps *= 2
             print(f"global DIC cutback: retrying with {actual_path_substeps} subdivisions")
