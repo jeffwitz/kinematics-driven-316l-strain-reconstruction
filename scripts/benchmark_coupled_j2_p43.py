@@ -268,7 +268,13 @@ def _solve_production_nested_sequence(
             residual_evaluations += 1
             return evaluation
 
-        def fixed_chi_residual(value: np.ndarray, fixed_chi: np.ndarray) -> float:
+        def residual_vector(trial: InPlaneConstitutiveTrial) -> np.ndarray:
+            stress = np.asarray(trial.stress_in_plane_mpa).reshape(
+                grid.nx, grid.ny, 2, 3
+            )
+            return pack_interior(kinematics.divergence(stress))
+
+        def fixed_chi_residual(value: np.ndarray, fixed_chi: np.ndarray) -> np.ndarray:
             material.revert()
             material.set_nonlocal_equivalent_plastic_strain(np.repeat(fixed_chi, 2))
             trial = material.evaluate_in_plane(
@@ -276,12 +282,9 @@ def _solve_production_nested_sequence(
                 time_increment=time_increment,
                 consistent_tangent=False,
             )
-            stress = np.asarray(trial.stress_in_plane_mpa).reshape(
-                grid.nx, grid.ny, 2, 3
-            )
-            residual = pack_interior(kinematics.divergence(stress))
+            residual = residual_vector(trial)
             material.revert()
-            return float(np.linalg.norm(residual))
+            return residual
 
         increment_fixed_point_counts: list[int] = []
         for iteration in range(1, 51):
@@ -349,7 +352,7 @@ def _solve_production_nested_sequence(
                 candidate_norm = float(
                     np.linalg.norm(pack_interior(kinematics.divergence(candidate_stress)))
                 )
-                fixed_norm = fixed_chi_residual(candidate, base_chi)
+                fixed_norm = float(np.linalg.norm(fixed_chi_residual(candidate, base_chi)))
                 line_search_curve.append(
                     {
                         "alpha": float(step),
@@ -364,43 +367,64 @@ def _solve_production_nested_sequence(
                 step *= 0.5
             else:
                 a_direction = mechanical_action(correction)
-                if line_search_curve:
-                    smallest = line_search_curve[-1]
-                    smallest_alpha = smallest["alpha"]
-                    secant_residual = nested_trial(
-                        base_mechanical + smallest_alpha * correction, base_chi
-                    )
-                    secant_stress = np.asarray(
-                        secant_residual.constitutive_trial.stress_in_plane_mpa
-                    ).reshape(grid.nx, grid.ny, 2, 3)
-                    secant_vector = pack_interior(
-                        kinematics.divergence(secant_stress)
-                    )
-                    secant_action = (secant_vector - ru) / smallest_alpha
-                    denominator = float(np.linalg.norm(secant_action))
-                    linearised_norm = float(np.linalg.norm(a_direction))
-                    if denominator > 0.0 and linearised_norm > 0.0:
-                        cosine = float(
-                            np.dot(secant_action, a_direction)
-                            / (denominator * linearised_norm)
+                alpha_diagnostics: list[dict[str, object]] = []
+                for diagnostic_alpha in (1.0 / 512.0, 1.0 / 1024.0, 1.0 / 2048.0, 1.0 / 4096.0):
+                    diagnostic_candidate = base_mechanical + diagnostic_alpha * correction
+                    try:
+                        diagnostic_eval = nested_trial(diagnostic_candidate, base_chi)
+                        nested_vector = residual_vector(diagnostic_eval.constitutive_trial)
+                        fixed_vector = fixed_chi_residual(diagnostic_candidate, base_chi)
+                        nested_action = (nested_vector - ru) / diagnostic_alpha
+                        fixed_action = (fixed_vector - ru) / diagnostic_alpha
+                        a_norm = float(np.linalg.norm(a_direction))
+                        nested_norm = float(np.linalg.norm(nested_action))
+                        fixed_norm = float(np.linalg.norm(fixed_action))
+                        alpha_diagnostics.append(
+                            {
+                                "alpha": diagnostic_alpha,
+                                "nested_relative_error_vs_A": float(
+                                    np.linalg.norm(nested_action - a_direction)
+                                    / max(nested_norm, np.finfo(float).tiny)
+                                ),
+                                "fixed_chi_relative_error_vs_A": float(
+                                    np.linalg.norm(fixed_action - a_direction)
+                                    / max(fixed_norm, np.finfo(float).tiny)
+                                ),
+                                "nested_cosine_vs_A": float(
+                                    np.dot(nested_action, a_direction)
+                                    / max(nested_norm * a_norm, np.finfo(float).tiny)
+                                ),
+                                "fixed_chi_cosine_vs_A": float(
+                                    np.dot(fixed_action, a_direction)
+                                    / max(fixed_norm * a_norm, np.finfo(float).tiny)
+                                ),
+                                "nested_R_dot_Jdu": float(np.dot(ru, nested_action)),
+                                "fixed_chi_R_dot_Jdu": float(np.dot(ru, fixed_action)),
+                                "nested_normalized_R_dot_Jdu": float(
+                                    np.dot(ru, nested_action)
+                                    / max(np.linalg.norm(ru) * nested_norm, np.finfo(float).tiny)
+                                ),
+                                "fixed_chi_normalized_R_dot_Jdu": float(
+                                    np.dot(ru, fixed_action)
+                                    / max(np.linalg.norm(ru) * fixed_norm, np.finfo(float).tiny)
+                                ),
+                                "chi_response_per_alpha": float(
+                                    np.linalg.norm(
+                                        diagnostic_eval.nonlocal_peeq.reshape(-1) - base_chi
+                                    )
+                                    / diagnostic_alpha
+                                ),
+                            }
                         )
-                    else:
-                        cosine = float("nan")
-                    secant_diagnostic = {
-                        "alpha": float(smallest_alpha),
-                        "relative_action_error": float(
-                            np.linalg.norm(secant_action - a_direction)
-                            / max(denominator, np.finfo(float).tiny)
-                        ),
-                        "action_cosine": cosine,
-                        "residual_directional_product": float(np.dot(ru, secant_action)),
-                    }
-                else:
-                    secant_diagnostic = {}
+                    except (RuntimeError, ValueError) as error:
+                        alpha_diagnostics.append(
+                            {"alpha": diagnostic_alpha, "failure": str(error)}
+                        )
                 last_line_search_diagnostic = {
                     "current_residual_norm": current_norm,
                     "line_search_curve": line_search_curve,
-                    "secant": secant_diagnostic,
+                    "A_correction_norm": float(np.linalg.norm(a_direction)),
+                    "secant_diagnostics": alpha_diagnostics,
                 }
                 detail = (
                     f"; last candidate failure: {last_line_search_failure}"
