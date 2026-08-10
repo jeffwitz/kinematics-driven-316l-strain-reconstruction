@@ -95,6 +95,14 @@ def main() -> None:
     coupled_material_evaluations = 0
     coupled_coupling_probe_evaluations = 0
     coupled_response_evaluations = 0
+    coupled_chi_derivative_seconds = 0.0
+    coupled_strain_derivative_seconds = 0.0
+    coupled_ruchi_action_seconds = 0.0
+    coupled_g_u_action_seconds = 0.0
+    coupled_g_chi_action_seconds = 0.0
+    coupled_ruchi_action_calls = 0
+    coupled_g_u_action_calls = 0
+    coupled_g_chi_action_calls = 0
 
     def strain_from_mechanical(mechanical: np.ndarray) -> np.ndarray:
         full = boundary.copy()
@@ -144,6 +152,7 @@ def main() -> None:
 
         nonlocal coupled_material_seconds, coupled_material_evaluations
         nonlocal coupled_coupling_probe_evaluations
+        nonlocal coupled_chi_derivative_seconds, coupled_strain_derivative_seconds
         samples = strain_from_mechanical(mechanical)
         point_chi = np.repeat(chi, 2)
         chi_step = min(h_chi, 0.5 * float(np.min(chi)))
@@ -172,11 +181,14 @@ def main() -> None:
             material.revert()
             return stress, source
 
+        chi_derivative_start = time.perf_counter()
         stress_plus, source_plus = stress_source(point_chi + chi_step, samples)
         stress_minus, source_minus = stress_source(point_chi - chi_step, samples)
+        coupled_chi_derivative_seconds += time.perf_counter() - chi_derivative_start
         dsigma_dchi = (stress_plus - stress_minus) / (2.0 * chi_step)
         dp_dchi = (source_plus - source_minus) / (2.0 * chi_step)
 
+        strain_derivative_start = time.perf_counter()
         dp_depsilon = np.empty((point_count, 3), dtype=float)
         for component in range(3):
             strain_plus = samples.copy()
@@ -186,6 +198,9 @@ def main() -> None:
             _, source_plus = stress_source(point_chi, strain_plus)
             _, source_minus = stress_source(point_chi, strain_minus)
             dp_depsilon[:, component] = (source_plus - source_minus) / (2.0 * h_u)
+        coupled_strain_derivative_seconds += (
+            time.perf_counter() - strain_derivative_start
+        )
 
         return dsigma_dchi, dp_depsilon, dp_dchi
 
@@ -212,26 +227,41 @@ def main() -> None:
             return pack_interior(kinematics.divergence(stress_increment))
 
         def ruchi_action(value: np.ndarray) -> np.ndarray:
+            nonlocal coupled_ruchi_action_seconds, coupled_ruchi_action_calls
+            action_start = time.perf_counter()
             point_value = np.repeat(value, 2)
             stress_increment = (dsigma_dchi * point_value[:, None]).reshape(
                 grid.nx, grid.ny, 2, 3
             )
-            return pack_interior(kinematics.divergence(stress_increment))
+            result = pack_interior(kinematics.divergence(stress_increment))
+            coupled_ruchi_action_seconds += time.perf_counter() - action_start
+            coupled_ruchi_action_calls += 1
+            return result
 
         def g_u_action(value: np.ndarray) -> np.ndarray:
+            nonlocal coupled_g_u_action_seconds, coupled_g_u_action_calls
+            action_start = time.perf_counter()
             displacement = unpack_interior(value, grid)
             strain_increment = kinematics.strain_samples(displacement).reshape(-1, 3)
             source_increment = np.einsum(
                 "pi,pi->p", dp_depsilon, strain_increment
             ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
-            return -nonlocal_inverse(source_increment.reshape(-1))
+            result = -nonlocal_inverse(source_increment.reshape(-1))
+            coupled_g_u_action_seconds += time.perf_counter() - action_start
+            coupled_g_u_action_calls += 1
+            return result
 
         def g_chi_action(value: np.ndarray) -> np.ndarray:
+            nonlocal coupled_g_chi_action_seconds, coupled_g_chi_action_calls
+            action_start = time.perf_counter()
             source_increment = (
                 dp_dchi.reshape(grid.nx, grid.ny, 2).mean(axis=2)
                 * value.reshape(grid.pixel_shape)
             )
-            return value - nonlocal_inverse(source_increment.reshape(-1))
+            result = value - nonlocal_inverse(source_increment.reshape(-1))
+            coupled_g_chi_action_seconds += time.perf_counter() - action_start
+            coupled_g_chi_action_calls += 1
+            return result
 
         return CoupledLinearisation(
             mechanical_residual=ru,
@@ -302,6 +332,14 @@ def main() -> None:
         "coupled_material_evaluations": coupled_material_evaluations,
         "coupled_coupling_probe_evaluations": coupled_coupling_probe_evaluations,
         "coupled_response_evaluations": coupled_response_evaluations,
+        "coupled_chi_derivative_seconds": coupled_chi_derivative_seconds,
+        "coupled_strain_derivative_seconds": coupled_strain_derivative_seconds,
+        "coupled_ruchi_action_seconds": coupled_ruchi_action_seconds,
+        "coupled_g_u_action_seconds": coupled_g_u_action_seconds,
+        "coupled_g_chi_action_seconds": coupled_g_chi_action_seconds,
+        "coupled_ruchi_action_calls": coupled_ruchi_action_calls,
+        "coupled_g_u_action_calls": coupled_g_u_action_calls,
+        "coupled_g_chi_action_calls": coupled_g_chi_action_calls,
         "minimum_chi": float(np.min(result.nonlocal_field)),
         "maximum_chi": float(np.max(result.nonlocal_field)),
         "partitioned_iterations": partitioned.iterations,
