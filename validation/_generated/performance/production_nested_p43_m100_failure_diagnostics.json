@@ -69,6 +69,48 @@
       }
     ],
     "A_correction_norm": 1.1941638696453463e-10,
+    "repeatability": {
+      "samples": 5,
+      "max_difference_vs_first": 0.0,
+      "rms_difference_vs_first": 0.0
+    },
+    "controlled_amplitude_diagnostics": [
+      {
+        "max_strain_amplitude": 1e-05,
+        "nested_relative_error_vs_A": 0.197355736437405,
+        "fixed_chi_relative_error_vs_A": 0.19782209101881337,
+        "nested_cosine_vs_A": 0.9836086518392899,
+        "fixed_chi_cosine_vs_A": 0.9835319525460757
+      },
+      {
+        "max_strain_amplitude": 1e-06,
+        "nested_relative_error_vs_A": 0.0315056343045883,
+        "fixed_chi_relative_error_vs_A": 0.03151245117756103,
+        "nested_cosine_vs_A": 0.9995238487154889,
+        "fixed_chi_cosine_vs_A": 0.9995236479427817
+      },
+      {
+        "max_strain_amplitude": 1e-07,
+        "nested_relative_error_vs_A": 0.002320903272276307,
+        "fixed_chi_relative_error_vs_A": 0.0023208313936356026,
+        "nested_cosine_vs_A": 0.9999973081113318,
+        "fixed_chi_cosine_vs_A": 0.9999973083022956
+      },
+      {
+        "max_strain_amplitude": 1e-08,
+        "nested_relative_error_vs_A": 0.001544671582218575,
+        "fixed_chi_relative_error_vs_A": 0.0015445256589390974,
+        "nested_cosine_vs_A": 0.9999988130489201,
+        "fixed_chi_cosine_vs_A": 0.9999988133235148
+      },
+      {
+        "max_strain_amplitude": 1e-09,
+        "nested_relative_error_vs_A": 0.0006828605144220065,
+        "fixed_chi_relative_error_vs_A": 0.0006827423603233131,
+        "nested_cosine_vs_A": 0.9999997730136063,
+        "fixed_chi_cosine_vs_A": 0.9999997731442043
+      }
+    ],
     "secant_diagnostics": [
       {
         "alpha": 0.001953125,
