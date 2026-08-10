@@ -1,0 +1,127 @@
+{
+  "status": "failed",
+  "backend": "native",
+  "method": "production-nested",
+  "crop_nodes": [
+    1520,
+    1620,
+    985,
+    1085
+  ],
+  "path_substeps": 1,
+  "diagnostics": {
+    "current_residual_norm": 1.194162939319903e-10,
+    "line_search_curve": [
+      {
+        "alpha": 1.0,
+        "nested_residual_norm": 1.9953440381266108e-10,
+        "fixed_chi_residual_norm": 1.995345155407422e-10
+      },
+      {
+        "alpha": 0.5,
+        "nested_residual_norm": 1.7400551337085238e-10,
+        "fixed_chi_residual_norm": 1.740056022131897e-10
+      },
+      {
+        "alpha": 0.25,
+        "nested_residual_norm": 1.5708771618716142e-10,
+        "fixed_chi_residual_norm": 1.5708779121819326e-10
+      },
+      {
+        "alpha": 0.125,
+        "nested_residual_norm": 1.4539369077554037e-10,
+        "fixed_chi_residual_norm": 1.4539376061924214e-10
+      },
+      {
+        "alpha": 0.0625,
+        "nested_residual_norm": 1.3873251316637827e-10,
+        "fixed_chi_residual_norm": 1.3873254127400635e-10
+      },
+      {
+        "alpha": 0.03125,
+        "nested_residual_norm": 1.3090680260891708e-10,
+        "fixed_chi_residual_norm": 1.3090683156726056e-10
+      },
+      {
+        "alpha": 0.015625,
+        "nested_residual_norm": 1.2597762470891184e-10,
+        "fixed_chi_residual_norm": 1.2597765529376088e-10
+      },
+      {
+        "alpha": 0.0078125,
+        "nested_residual_norm": 1.194610959900376e-10,
+        "fixed_chi_residual_norm": 1.1946113791364947e-10
+      },
+      {
+        "alpha": 0.00390625,
+        "nested_residual_norm": 1.201414019901541e-10,
+        "fixed_chi_residual_norm": 1.2014140144190453e-10
+      },
+      {
+        "alpha": 0.001953125,
+        "nested_residual_norm": 1.1944677211892904e-10,
+        "fixed_chi_residual_norm": 1.194467823791293e-10
+      },
+      {
+        "alpha": 0.0009765625,
+        "nested_residual_norm": 1.1992730336649188e-10,
+        "fixed_chi_residual_norm": 1.1992733404513296e-10
+      }
+    ],
+    "A_correction_norm": 1.1941638696453463e-10,
+    "secant_diagnostics": [
+      {
+        "alpha": 0.001953125,
+        "nested_relative_error_vs_A": 0.9990337340326362,
+        "fixed_chi_relative_error_vs_A": 0.9990337347840478,
+        "nested_cosine_vs_A": 0.23583593955492355,
+        "fixed_chi_cosine_vs_A": 0.23583576109593074,
+        "nested_R_dot_Jdu": -8.140283635297012e-19,
+        "fixed_chi_R_dot_Jdu": -8.140277588903485e-19,
+        "nested_normalized_R_dot_Jdu": -0.23583573579076872,
+        "fixed_chi_normalized_R_dot_Jdu": -0.2358355573168993,
+        "chi_response_per_alpha": 3.1652845897916686e-14
+      },
+      {
+        "alpha": 0.0009765625,
+        "nested_relative_error_vs_A": 0.9995573250942541,
+        "fixed_chi_relative_error_vs_A": 0.9995573275301112,
+        "nested_cosine_vs_A": 0.14631184701913885,
+        "fixed_chi_cosine_vs_A": 0.14631110377779738,
+        "nested_R_dot_Jdu": -6.825536512896671e-19,
+        "fixed_chi_R_dot_Jdu": -6.825504379332679e-19,
+        "nested_normalized_R_dot_Jdu": -0.14631173610614234,
+        "fixed_chi_normalized_R_dot_Jdu": -0.1463109928909282,
+        "chi_response_per_alpha": 4.9095463088790615e-14
+      },
+      {
+        "alpha": 0.00048828125,
+        "nested_relative_error_vs_A": 0.9997658064893888,
+        "fixed_chi_relative_error_vs_A": 0.9997658089093697,
+        "nested_cosine_vs_A": 0.09810908923732707,
+        "fixed_chi_cosine_vs_A": 0.09810807866405796,
+        "nested_R_dot_Jdu": -5.789479184033159e-19,
+        "fixed_chi_R_dot_Jdu": -5.789418981458102e-19,
+        "nested_normalized_R_dot_Jdu": -0.09810893555590221,
+        "fixed_chi_normalized_R_dot_Jdu": -0.09810792498563281,
+        "chi_response_per_alpha": 7.879799607220088e-14
+      },
+      {
+        "alpha": 0.000244140625,
+        "nested_relative_error_vs_A": 0.9999259384084683,
+        "fixed_chi_relative_error_vs_A": 0.9999259424635698,
+        "nested_cosine_vs_A": 0.03503120197792123,
+        "fixed_chi_cosine_vs_A": 0.03502936463691542,
+        "nested_R_dot_Jdu": -2.2893775334284946e-19,
+        "fixed_chi_R_dot_Jdu": -2.289258916961422e-19,
+        "nested_normalized_R_dot_Jdu": -0.0350310128990143,
+        "fixed_chi_normalized_R_dot_Jdu": -0.035029175573957745,
+        "chi_response_per_alpha": 1.4938305555481178e-13
+      }
+    ],
+    "increment": 8,
+    "fraction": 0.0,
+    "segment_cutbacks": 11,
+    "time_increment": 6.103515625e-05
+  }
+}
