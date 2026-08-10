@@ -40,42 +40,13 @@ The distinction matters. Selecting zero changes only the generalized Jacobian
 passed to the local Newton solve. The value of `abs(dg)`, the residual, and the
 committed state update are unchanged.
 
-## P43 M200 qualification
+## Numerical qualification
 
-The test case is P43 M200 EBSD, crop `[1520:1720] × [985:1185]`, eight
-increments, the StructuralPlaneStress backend, four MFront threads, and
-single-threaded BLAS/FFTW. The numbers below are single qualification runs;
-they document work and convergence, not a repeated performance benchmark.
-
-| Convention | Newton | Newton per increment | Substepped points | Composite-FD trajectories | Elapsed |
-|---|---:|---|---:|---:|---:|
-| historical `dg=0 → -1` | 58 | `[6,6,7,7,7,7,8,10]` | 978 | 5868 | 305.02 s |
-| canonical `dg=0 → 0` | 56 | `[6,6,7,7,7,7,8,8]` | 0 | 0 | 139.28 s |
-
-The archived local replay contained 380 isolated failed full-step
-integrations. The historical convention failed all 380; the zero convention
-rescued all 380. The local tolerance sweep also showed that, when both
-conventions converge, their solutions approach the same root as the tolerance
-is tightened (the difference fell from about `1e-7` to `1e-13`).
-
-The elapsed value above is the post-purge M200 replay recorded in
-`validation/_generated/performance/srix_p43_m200_semismooth_canonical.json`.
-The earlier 130.50 s run used the same numerical convention and is retained
-only as a historical single-run comparison.
-
-By contrast, a compact `|dg|` regularisation with `delta = 1e-5` changed the
-function itself and retained a field difference of order `1e-4`. It is therefore
-not the production solution.
-
-## Why the old and new full-field fields differ
-
-The zero convention removes the need for selective substepping. The historical
-and canonical runs therefore use different incremental paths. A controlled
-same-partition comparison agrees to approximately `6e-11`, whereas forcing the
-canonical convention to use the one-step path produces differences of order
-`1e-2` in local history variables. The previously observed full-field
-differences of order `1e-4` are consequently attributed to the different
-sub-increment partitions, not to a change in the constitutive root.
+The convention has been verified on the qualified P43 M200 EBSD workflow. The
+same SRIX residual and state update converge to the same local constitutive root
+when the local tolerance is tightened; the selected generalized Jacobian only
+changes the Newton path. The production implementation therefore has no
+calibration knob for this choice.
 
 ## References
 

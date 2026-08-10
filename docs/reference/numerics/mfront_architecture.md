@@ -1,109 +1,68 @@
 # MFront backend architecture
 
-The MFront backend is split into layers with unchanged public compatibility
-through fem_inhouse.core.mfront.
+This page defines the stable implementation boundaries of the MFront/MGIS
+material layer. Application code should select a registered backend through
+the configuration and factory layers; the modules below are maintainer
+interfaces.
 
-~~~text
-             ┌─────────────┐
-             │ MGIS runtime│
-             └──────┬──────┘
-                    │
-          ┌─────────┴─────────┐
-          │                   │
-      raw 3D bridge       GPS adapter
-          │                   │
-    condensation       specialised or generic GPS
-                              │
-                       substepping / FD tangent
-~~~
+## Module responsibilities
 
-The responsibilities are deliberately separate:
+| Module | Responsibility |
+|---|---|
+| `mfront_runtime` | Load MGIS behaviours, inspect variables and properties, apply parameters, and manage native material workers. |
+| `mfront_state` | Represent committed snapshots and provide transaction primitives. |
+| `mfront_native` | Native two-dimensional and plane-stress bridges. |
+| `mfront_3d` | Three-dimensional material bridge, material/global rotations, and global committed strain. |
+| `mfront_condensation` | External transverse closure, Schur complement, predictors, and block batching. |
+| `mfront_gps.adapter` | Native structural plane-stress adapter for MFront behaviours. |
+| `mfront_gps.substepping` | Selective constitutive substepping and trajectory integration. |
+| `mfront_gps.composite_tangent` | Derivative of a composed substepped integration map. |
+| `mfront_gps.diagnostics` | Optional shadow and validation diagnostics. |
+| `mfront.py` | Compatibility facade preserving historical imports. |
 
-- mfront_runtime.py loads MGIS behaviours, applies parameters, inspects
-  variable layouts, and provides Kelvin conversion helpers.
-- mfront_state.py owns generic immutable snapshots and public timing records.
-- mfront_native.py contains the native 2D bridge.
-- mfront_3d.py contains the raw 3D bridge and explicit global/crystal
-  rotations.
-- mfront_condensation.py contains external plane-stress closure, Schur
-  condensation, predictors, and block batching.
-- mfront_gps/adapter.py adapts the GPS behaviour to the PlaneStressMaterialBatch
-  contract.
-- mfront_gps/substepping.py owns the GPS substep policy and failure cache.
-- mfront_gps/composite_tangent.py differentiates the composed substepped
-  application when required.
-- mfront_gps/diagnostics.py contains the non-production shadow tangent.
+## Frame contracts
 
-The registered `mfront-structural-plane-stress` backend uses the same GPS
-adapter, substepper and composite-tangent layer as the specialised SRIX GPS
-backend. Only the MFront behaviour loaded by the adapter changes. The generic
-behaviour transforms the `StandardElasticity` residual/Jacobian block and is
-therefore narrower in scope than the raw 3D bridge, which can call any
-compatible behaviour unchanged.
+The raw three-dimensional bridge receives the imposed gradient in the
+structural/global frame, rotates it into the material frame for MGIS, and
+rotates stresses and tangent operators back. Its committed global strain is a
+separate state value and must not be inferred from the material-frame MGIS
+gradient.
 
-The constitutive behaviour, the substepping strategy, and the derivative of
-the composed integration algorithm are three distinct layers. In particular,
-when the driver composes several constitutive maps,
+The structural plane-stress bridge also receives a global/structural gradient.
+The selected MFront behaviour performs its own structural closure. The host
+must not rotate the gradient a second time.
 
-$$
-D\Phi_{\mathrm{last}}
-\neq
-D(\Phi_n\circ\cdots\circ\Phi_1),
-$$
+All tensor rotations use the repository Kelvin conventions. A tangent changes
+frame on both its input and output sides; it is therefore transformed as a
+fourth-order operator, not as a stress vector.
 
-so the composite tangent belongs to the GPS integration layer rather than to
-the MFront constitutive law.
+## Transaction contract
 
-The raw 3D bridge stores MGIS gradients in the material convention while
-retaining committed_global_strain separately. The GPS bridge passes global
-gradients to a behaviour that owns its crystal rotation. These conventions
-are intentionally not hidden behind a boolean rotation flag.
+Material evaluation is trial-only. A successful evaluation updates the trial
+state and may be followed by `commit`; it never commits implicitly. A rejected
+trial is discarded with `revert` or restored from a complete snapshot.
 
-mfront.py is now a compatibility façade. Existing imports remain valid,
-including the diagnostic private helpers used by validation scripts.
+A committed snapshot contains every quantity needed to reconstruct the physical
+state, including MGIS state arrays, global committed strain, and nonlocal values
+when present. Snapshots are immutable records from the caller's perspective.
+Restoration must not mutate `s0` behind the transaction layer.
 
-> **You probably do not need to know this.** Users selecting a registered
-> backend do not need to manipulate MGIS state managers, Kelvin rotations,
-> snapshots, Schur blocks, or substep caches directly. These modules document
-> implementation boundaries for maintainers.
+The required invariants are:
 
-## Common mistakes
+- evaluating a trial does not alter the committed state;
+- reverting twice is idempotent;
+- committing without a valid trial is rejected;
+- taking a snapshot while a trial is active is rejected;
+- raw 3D and structural plane-stress bridges retain their distinct frame
+  contracts.
 
-- Do not rotate the GPS input gradient externally.
-- Do not use the raw in-plane block of a 3D tangent as the plane-stress tangent.
-- Do not disable composite FD merely to save time: it is sparse and qualified.
-- Do not use `equivalent_plastic_strain` for SRIX crystal results.
-- Do not treat a homogeneous orientation as a polycrystal.
-- Do not enable the shadow tangent in production.
+## Constitutive and host layers
 
-## Qualification checkpoint
+The MFront behaviour supplies the one-step constitutive response and tangent.
+The host may optionally replace one increment by a sequence of constitutive
+substeps. If that happens, the tangent required by the global Newton solve is
+the tangent of the composed map. Substepping and its composite tangent belong
+to the host adapter; they are not part of the constitutive law.
 
-The extraction was replayed on the registered P43 M100 EBSD case with the
-qualified runtime settings (four MFront threads, one FFTW thread, one Krylov
-BLAS thread). GPS with composite FD retained 58 Newton iterations, the
-increment sequence [6, 6, 7, 7, 7, 8, 8, 9], 192 FD points, 1152 trajectories,
-and a final residual of 5.34e-9. The measured elapsed time was 44.98 s.
-
-The corresponding artifacts are
-validation/_generated/performance/mfront_refactor_m100_gps_fd.json and
-validation/_generated/performance/mfront_refactor_m100_gps_fd.fields.npz.
-
-## Known coupling, recorded rather than fixed
-
-`GPSSubsteppingMixin` and `CompositeTangentMixin` are extracted from the
-adapter but not decoupled from it. Both reach into adapter attributes --
-`_manager`, `_failing_cache`, `_maximum_substeps`, `_last_substep_mask` and
-others -- and both carry a `# mypy: ignore-errors` header for that reason. A
-reader cannot take either file on its own and learn its contract: the contract
-is the adapter's internals.
-
-That is a large improvement on three thousand lines in one module, and it is
-not the end state. The end state is an explicit interface -- a
-`GPSIntegrationContext` protocol, or an integrator object handed the operations
-it needs -- so that the mixins depend on a named surface instead of on whatever
-the adapter happens to expose.
-
-It is **not** being done now: the regression risk of rewiring the
-sub-stepping and the composite tangent outweighs the readability gain while the
-qualification numbers are fresh. It is written here so the split is understood
-as a stage rather than as finished work.
+This separation lets the same GPS adapter serve the specialised SRIX
+behaviour and the registered generic `StructuralPlaneStress3D` behaviours.
