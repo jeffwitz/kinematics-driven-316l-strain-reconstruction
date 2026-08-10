@@ -359,7 +359,7 @@ localIterations.setEntryName("LocalIterations");
     const auto dflow = smooth
         ? flow_slope * (dpositive * drive_abs_derivative * drive_sign +
                         f * direction_derivative)
-        : flow_slope;
+        : flow_slope * dpositive;
     const auto dflow_hardening = flow_slope * dpositive;
     const auto sgn = drive_sign;
     // elasticity
