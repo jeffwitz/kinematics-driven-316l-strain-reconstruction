@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+from scipy.sparse.linalg import LinearOperator
 
 from fem_inhouse.core.constitutive_sensitivities import (
     finite_difference_sensitivities,
@@ -38,6 +39,7 @@ from fem_inhouse.spectral2d.coupled_newton import (
 from fem_inhouse.spectral2d.green import B0Green2D, project_isotropic_plane_stress_tangent
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
+from fem_inhouse.spectral2d.krylov import solve_nonsymmetric_krylov
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
@@ -558,6 +560,125 @@ def main() -> None:
         evaluate_residual=residual,
     )
     coupled_elapsed = time.perf_counter() - coupled_start
+
+    # Honest staggered reference: every outer non-local iteration resolves the
+    # mechanical equilibrium again at fixed chi.  Intermediate constitutive
+    # trials are reverted; only the final converged trial is committed.
+    if generic_mode:
+        staggered_material = GenericStructuralMicromorphicBatch(
+            args.generic_library, point_count
+        )
+    else:
+        staggered_material = MFrontNativePlaneStressBatch(
+            args.library,
+            np.full(point_count, 250.0),
+            np.full(point_count, 380.0),
+            np.full(point_count, 0.245),
+            behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+            micromorphic_coupling_modulus_mpa=2_000.0,
+        )
+
+    def staggered_response(
+        trial_material: object, mechanical: np.ndarray, chi: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        trial_material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
+        trial = trial_material.evaluate_in_plane(
+            strain_from_mechanical(mechanical),
+            time_increment=args.time_increment,
+            consistent_tangent=True,
+        )
+        stress = np.asarray(trial.stress_in_plane_mpa).reshape(
+            grid.nx, grid.ny, 2, 3
+        )
+        residual = pack_interior(kinematics.divergence(stress))
+        source = np.asarray(
+            trial.observables["equivalent_plastic_strain"]
+        ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
+        tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
+            grid.nx, grid.ny, 2, 3, 3
+        )
+        trial_material.revert()
+        return residual, source.reshape(-1), tangent
+
+    staggered_start = time.perf_counter()
+    staggered_mechanical = initial_mechanical.copy()
+    staggered_nonlocal = initial_nonlocal.copy()
+    staggered_outer_iterations = 0
+    staggered_mechanical_iterations = 0
+    staggered_krylov_iterations = 0
+    staggered_mechanical_residual = float("inf")
+    staggered_nonlocal_residual = float("inf")
+    for outer in range(20):
+        staggered_outer_iterations = outer + 1
+        for _ in range(8):
+            ru_st, source_st, tangent_st = staggered_response(
+                staggered_material, staggered_mechanical, staggered_nonlocal
+            )
+            staggered_mechanical_residual = float(np.linalg.norm(ru_st))
+            if staggered_mechanical_residual <= 1.0e-10:
+                break
+
+            def mechanical_matvec(
+                value: np.ndarray, tangent_reference: np.ndarray = tangent_st
+            ) -> np.ndarray:
+                displacement = unpack_interior(value, grid)
+                strain_increment = kinematics.strain_samples(displacement).reshape(
+                    grid.nx, grid.ny, 2, 3
+                )
+                stress_increment = np.einsum(
+                    "...ij,...j->...i", tangent_reference, strain_increment
+                )
+                return pack_interior(kinematics.divergence(stress_increment))
+
+            mechanical_operator = LinearOperator(
+                (initial_mechanical.size, initial_mechanical.size),
+                matvec=mechanical_matvec,
+                dtype=np.float64,
+            )
+            correction, info, calls = solve_nonsymmetric_krylov(
+                mechanical_operator,
+                -ru_st,
+                preconditioner=LinearOperator(
+                    (initial_mechanical.size, initial_mechanical.size),
+                    matvec=mechanical_inverse,
+                    dtype=np.float64,
+                ),
+                method="gmres",
+                rtol=args.krylov_relative_tolerance,
+                maximum_iterations=200,
+                restart=100,
+            )
+            if info != 0:
+                raise RuntimeError(f"staggered GMRES failed with info={info}")
+            staggered_mechanical += correction
+            staggered_mechanical_iterations += 1
+            staggered_krylov_iterations += calls
+
+        _, source_st, _ = staggered_response(
+            staggered_material, staggered_mechanical, staggered_nonlocal
+        )
+        updated_nonlocal = nonlocal_inverse(source_st)
+        staggered_nonlocal_residual = float(
+            np.linalg.norm(updated_nonlocal - staggered_nonlocal)
+        )
+        staggered_nonlocal = updated_nonlocal
+        if (
+            staggered_mechanical_residual <= 1.0e-10
+            and staggered_nonlocal_residual <= 1.0e-10
+        ):
+            break
+
+    # Commit the final staggered constitutive trial only.
+    staggered_material.set_nonlocal_equivalent_plastic_strain(
+        np.repeat(staggered_nonlocal, 2)
+    )
+    staggered_material.evaluate_in_plane(
+        strain_from_mechanical(staggered_mechanical),
+        time_increment=args.time_increment,
+        consistent_tangent=False,
+    )
+    staggered_material.commit()
+    staggered_elapsed = time.perf_counter() - staggered_start
     partitioned_material = MFrontNativePlaneStressBatch(
         args.library,
         np.full(point_count, 250.0),
@@ -622,6 +743,19 @@ def main() -> None:
         "partitioned_relative_residual": partitioned.relative_residual,
         "coupled_vs_partitioned_chi_linf": float(np.max(np.abs(chi_difference))),
         "coupled_vs_partitioned_chi_l2": float(np.linalg.norm(chi_difference)),
+        "staggered_elapsed_seconds": staggered_elapsed,
+        "staggered_outer_iterations": staggered_outer_iterations,
+        "staggered_mechanical_iterations": staggered_mechanical_iterations,
+        "staggered_krylov_iterations": staggered_krylov_iterations,
+        "staggered_mechanical_residual": staggered_mechanical_residual,
+        "staggered_nonlocal_residual": staggered_nonlocal_residual,
+        "staggered_converged": (
+            staggered_mechanical_residual <= 1.0e-10
+            and staggered_nonlocal_residual <= 1.0e-10
+        ),
+        "coupled_vs_staggered_chi_linf": float(
+            np.max(np.abs(staggered_nonlocal - result.nonlocal_field))
+        ),
     }, indent=2))
 
 

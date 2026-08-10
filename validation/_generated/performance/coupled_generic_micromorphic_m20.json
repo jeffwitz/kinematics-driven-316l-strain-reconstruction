@@ -2,50 +2,39 @@
   "case": "coupled micromorphic J2 M20",
   "grid": [20, 20],
   "time_increment": 1.0,
+  "krylov_relative_tolerance": 0.0001,
   "generic_library": "validation-only generated StructuralPlaneStress probe",
   "compilation_included": false,
   "nonlocal_residual_form": "H_chi_minus_p",
-  "generic_structural": {
+  "b0": "projected virgin tangent",
+  "monolithic_generic": {
     "converged": true,
     "newton_iterations": 2,
-    "krylov_iterations": [1, 24],
-    "elapsed_seconds": 0.1255631980020553,
-    "material_seconds": 0.06815808801911771,
+    "krylov_iterations": [1, 1],
+    "elapsed_seconds": 0.10218965797685087,
+    "material_seconds": 0.07360797200817615,
     "material_evaluations": 3,
-    "coupling_derivative_seconds": 0.000005061039701104164,
     "coupling_probe_evaluations": 0,
-    "final_residual_norm": 4.8547149951803555e-12,
-    "partitioned_reference_seconds": 0.0799728250131011,
-    "coupled_over_partitioned": 1.5700733090457364,
-    "chi_linf_vs_partitioned": 8.147542536474095e-12,
-    "chi_l2_vs_partitioned": 1.6295059112813558e-10,
+    "final_residual_norm": 3.848497488018429e-12,
+    "chi_linf_vs_staggered": 1.6148540837868097e-14,
     "b0_lambda": 118269.23076923155,
     "b0_mu": 78846.15384615255,
     "b0_projection_error": 4.520799728454212e-16
   },
-  "native_fd_reference": {
+  "staggered_reference": {
     "converged": true,
-    "newton_iterations": 2,
-    "krylov_iterations": [22, 42],
-    "elapsed_seconds": 0.1323149999952875,
-    "material_seconds": 0.05670222401386127,
-    "material_evaluations": 13,
-    "coupling_derivative_seconds": 0.04260888299904764,
-    "coupling_probe_evaluations": 10,
-    "final_residual_norm": 6.265562107095503e-12,
-    "partitioned_reference_seconds": 0.05811862996779382,
-    "coupled_over_partitioned": 2.27663659774171,
-    "chi_linf_vs_partitioned": 4.698362358890318e-12,
-    "chi_l2_vs_partitioned": 9.396695925710721e-11,
-    "b0_lambda": 67582.41758241701,
-    "b0_mu": 78846.15384615275,
-    "b0_projection_error": 1.3111379841986256e-15
+    "outer_iterations": 6,
+    "mechanical_iterations": 0,
+    "krylov_iterations": 0,
+    "elapsed_seconds": 0.3095781470183283,
+    "mechanical_residual": 3.4728421326204155e-12,
+    "nonlocal_residual": 2.7246195750972166e-11,
+    "note": "The affine M20 boundary field is already mechanically equilibrated; this case stresses the non-local outer iteration but not staggered mechanical corrections."
   },
-  "interpretation": {
-    "generic_speedup_vs_native_coupled": 1.0537893417643925,
-    "generic_coupling_fd_removed": true,
-    "direct_helmholtz_action": true,
-    "fused_matvec": true,
-    "qualification": "same M20 discrete solution within approximately 1e-11 in chi; validation-only generated behavior, not a registered production backend"
+  "comparison": {
+    "monolithic_over_staggered": 0.329996610172082,
+    "staggered_over_monolithic": 3.029836674048279,
+    "same_discrete_solution": true,
+    "chi_linf": 1.6148540837868097e-14
   }
 }
