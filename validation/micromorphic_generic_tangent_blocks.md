@@ -87,6 +87,12 @@ This probe answers one question and deliberately no others.
 plane-stress closure is the next step, and keeping them apart here is what
 makes this result interpretable.
 
+The same source has since been compiled under `PlaneStress` by
+`scripts/probe_micromorphic_generic_plane_stress.sh`. The four named blocks
+and the `5 x 5` MGIS tangent are available there as well. That probe only
+checks the interface and one integration; it does not yet qualify the
+production plane-stress response or its field-level coupling.
+
 **It abandons the brick.** The production law is built on
 `@Brick StandardElastoViscoPlasticity` with a `UserDefined` isotropic
 hardening. `ImplicitGenericBehaviour` does not offer that brick, so the return
