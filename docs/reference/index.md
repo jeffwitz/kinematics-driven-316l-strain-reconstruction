@@ -54,6 +54,7 @@ argue for the scientific model.
 - {doc}`evidence_registry`
 - {doc}`claims_matrix`
 - {doc}`architecture_decisions`
+- {doc}`../adr/0010-nonlocal-coupling-reference-strategy`
 
 ```{toctree}
 :hidden:
@@ -98,4 +99,5 @@ numerics/transform_backends
 evidence_registry
 claims_matrix
 architecture_decisions
+../adr/index
 ```

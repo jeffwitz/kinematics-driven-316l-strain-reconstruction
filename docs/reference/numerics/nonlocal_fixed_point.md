@@ -23,3 +23,41 @@ Optional bounded Aitken relaxation changes the convergence path, not the fixed
 point. Its use, bounds, accepted/rejected updates and residual history are
 diagnostics. The present global tangent is partitioned, not monolithic in
 $(u,\chi)$.
+
+## Architectural status
+
+This is the canonical partitioned nonlocal coupling strategy. Production
+solvers and robustness references reuse this implementation rather than
+reproducing a simplified fixed-point loop.
+
+The state hierarchy is:
+
+```text
+committed increment state
+        ↓
+mechanical Newton trial
+        ↓
+repeated constitutive/nonlocal trials
+```
+
+Every trial is evaluated from the committed state. `evaluate` and `revert`
+belong to trial management; only acceptance of the complete global increment
+permits `commit`.
+
+### What is not equivalent
+
+The following is not the reference algorithm:
+
+```text
+mechanical correction → one Helmholtz update → mechanical correction
+```
+
+The reference instead performs:
+
+```text
+mechanical Newton evaluation → converged constitutive/nonlocal fixed point
+```
+
+A simplified loop may be retained as an explicitly named experimental
+candidate, but it must not be called production or reference staggered
+coupling without a solution-equivalence qualification.

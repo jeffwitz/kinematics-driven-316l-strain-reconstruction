@@ -4,6 +4,25 @@ La validation est hiérarchique : les tests fermés du noyau ne remplacent pas l
 comparaison Abaqus, et la comparaison Abaqus ne remplace pas la reproduction
 des champs expérimentaux.
 
+## Qualification of coupled solvers
+
+Coupled solver qualification follows this order:
+
+0. **Material point:** qualify the constitutive behaviour independently.
+1. **Small coupled pilot:** verify formulation, Jacobian, transactions and
+   solution identity on a homogeneous or controlled heterogeneous case.
+2. **Real P43 M20:** run the DIC path with the real local material maps.
+3. **P43 M100:** qualify the robustness reference before evaluating a candidate.
+4. **Scaling and performance:** compare timings only after both methods
+   converge to the same discrete solution with comparable criteria and
+   physical parameters.
+
+Performance from a candidate solver is not qualification evidence when the
+robustness reference has not first converged on the same case. The current
+partitioned reference is the nested nonlocal fixed point documented in
+{doc}`reference/numerics/nonlocal_fixed_point`; the monolithic `(u, chi)` path
+is a candidate under qualification.
+
 ## Niveau mathématique
 
 La suite automatique contrôle actuellement :

@@ -22,3 +22,10 @@ Describe the case-study requirement addressed by this change.
 
 List missing Abaqus/DIC references or other claims that this change does not
 validate.
+
+## Numerical-method changes
+
+- [ ] Existing qualified reference path identified
+- [ ] No production robustness logic duplicated in benchmark/prototype code
+- [ ] Transaction and cutback semantics preserved or differences documented
+- [ ] Candidate compared against the reference before performance claims

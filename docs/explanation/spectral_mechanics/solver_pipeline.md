@@ -163,3 +163,57 @@ specified in {doc}`../../reference/numerics/newton_gmres_contract`; the
 full-Dirichlet kinematics are derived in
 {doc}`full_dirichlet_formulation`; and the modal $B_0^{-1}$ action is derived
 in {doc}`dtt_green_operator`.
+
+## Nonlocal coupling strategies
+
+The spectral solver supports two conceptually different organisations of the
+same local/nonlocal problem.
+
+### Partitioned robustness reference
+
+```text
+load increment
+    ↓
+mechanical Newton
+    ↓
+strain
+    ↓
+fully converged nonlocal fixed point
+   ↙                 ↘
+MFront trials       Helmholtz
+   ↘                 ↙
+          converged chi
+    ↓
+stress and fixed-chi tangent
+    ↓
+mechanical residual and correction
+```
+
+This is the `production-nested` strategy. The nonlocal fixed point is complete
+before the mechanical residual and tangent are accepted.
+
+### Monolithic candidate
+
+```text
+load increment
+    ↓
+Newton on (u, chi)
+    ↓
+generic constitutive tangent blocks
+    ↓
+[ Ru ]
+[ H chi - p ]
+    ↓
+block GMRES
+```
+
+The monolithic method is a candidate algorithm under qualification. It may
+replace the coupling algorithm, but it must preserve or explicitly document
+its own robustness strategy: transactions, admissibility, line-search,
+cutback and convergence definitions.
+
+The two methods can solve the same discrete equations while following
+different trial paths. Therefore a performance comparison is meaningful only
+after both paths converge to the same fields under the same physical
+parameters and comparable tolerances. The production-nested method is the
+robustness reference; it is not required to be the fastest method.

@@ -20,3 +20,23 @@ MGIS variable names, types, sizes and offsets are validated from behaviour
 metadata during adapter construction. Missing native variables are errors
 unless the selected behaviour explicitly declares an analytical completion
 strategy.
+
+## Nested coupling rule
+
+A nested nonlocal fixed point may perform an arbitrary number of MFront trial
+integrations. Every trial belongs to the current global increment and must be
+revertible to the last committed state.
+
+Neither a successful nonlocal iteration nor a successful mechanical Newton
+iteration is a material commit. Only acceptance of the complete global load
+increment permits `commit()`.
+
+The following events must restore the accepted state before a retry:
+
+- rejected line search;
+- failed Newton or GMRES solve;
+- failed nonlocal fixed point;
+- constitutive inadmissibility;
+- global cutback.
+
+This transaction contract is shared by J2, SRIX and Méric–Cailletaud.

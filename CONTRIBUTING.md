@@ -34,6 +34,23 @@ The author of the formula must not be its only reviewer. Missing Abaqus or DIC
 reference data must be reported as a blocker, never replaced by a synthetic
 claim of scientific parity.
 
+## Numerical reference implementations
+
+Before implementing a new nonlinear or coupling path, identify the existing
+qualified strategy that performs the same physical operation. Reuse that
+implementation whenever possible. If a prototype intentionally replaces part
+of the algorithm, document the difference and do not label it production or
+reference until solution equivalence has been demonstrated.
+
+Before merging such a change, check:
+
+- [ ] the current robustness reference is identified;
+- [ ] its implementation is reused rather than copied;
+- [ ] commit/revert semantics are preserved or differences are documented;
+- [ ] physical parameters and units are identical;
+- [ ] convergence criteria and loading/cutback policies are comparable;
+- [ ] the candidate is compared with the reference on a discriminating case.
+
 ## Scope and legal status
 
 General-purpose elements or material plugins are out of scope. The repository

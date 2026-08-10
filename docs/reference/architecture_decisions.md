@@ -98,3 +98,16 @@ artefacts, grid contract and metrological guard instead of being reimplemented.
 
 **Consequence:** archived observed-EVM results stay comparable with future
 candidates, which a second operator would have broken.
+
+## ADR 0010 — Preserve the production nonlocal coupling strategy as the robustness reference
+
+The canonical partitioned nonlocal method is the nested fixed point executed
+inside every mechanical Newton evaluation. It reuses
+`evaluate_nonlocal_fixed_point()` and preserves MFront transactions,
+relaxation/Aitken, convergence criteria, line-search and cutback semantics.
+
+The method is the robustness reference for candidate monolithic or Schur
+couplings. A simplified alternation may be useful experimentally, but must be
+labelled as such and cannot silently replace the reference.
+
+See {doc}`../adr/0010-nonlocal-coupling-reference-strategy` for the decision.

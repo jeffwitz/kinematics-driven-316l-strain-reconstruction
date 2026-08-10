@@ -42,7 +42,6 @@ exclude_patterns = [
     "_build",
     "Thumbs.db",
     ".DS_Store",
-    "adr/*.md",
     "from_dic_to_reconstruction.md",
     "legacy_data_contract.md",
     "mfront.md",
