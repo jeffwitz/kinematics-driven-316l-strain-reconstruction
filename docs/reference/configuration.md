@@ -71,7 +71,7 @@ Supported backend values are:
 | `mfront` | compatibility alias for native MFront plane stress |
 | `mfront-native-plane-stress` | explicit native MFront plane stress |
 | `mfront-3d-condensed-plane-stress` | 3D law with the plane-stress closure solved outside it, in Python; works with any 3D behaviour and is the numerical reference |
-| `mfront-native-generalised-plane-stress` | 3D law whose own local Newton carries the closure; needs a GPS variant of the behaviour |
+| `mfront-native-generalised-plane-stress` | legacy specialised GPS behaviour; use `mfront-structural-plane-stress` for the registered generic V1 route |
 | `mfront-structural-plane-stress` | generated structural plane-stress closure for the V1 `Implicit`/`StandardElasticity` 3D contract |
 | `python` | historical analytical/tabulated J2 regression implementation |
 | any registered identifier | process-local constitutive plugin |
@@ -112,7 +112,7 @@ options did something.
 
 | Key | Default | Meaning |
 |---|---:|---|
-| `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of points the local Newton had to sub-step. Recommended `true` for the qualified SRIX + EBSD workflow; otherwise a sub-stepped point returns its last sub-step's tangent. On P43 M100 it takes GPS from 85 Newton iterations to 58, against 57 for the reference |
+| `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of points the local Newton had to sub-step. Recommended `true` for the qualified SRIX + EBSD workflow; otherwise a sub-stepped point returns its last sub-step's tangent |
 | `gps_composite_fd_step` | `1.0e-6` | absolute engineering-strain perturbation used by the central finite difference. A numerical tolerance, not a relative increment scale |
 
 ### SRIX nonsmooth Jacobian convention

@@ -4,14 +4,19 @@
 
 ## Choose the adapter
 
-Use native `PlaneStress` for a behaviour that supplies the required axial
-state and condensed tangent. Use `Tridimensional` plus the condensation
-adapter for a general six-component law, including future crystal plasticity.
+Use native `PlaneStress` for a behaviour that directly supplies the required
+two-dimensional contract. Use `mfront-3d-condensed-plane-stress` as the
+independent reference for a general six-component law. For a small-strain
+`Implicit`/`StandardElasticity`-compatible three-dimensional behaviour, use
+`mfront-structural-plane-stress`; this is the registered route used by the
+qualified crystal-plasticity behaviours.
 
-The global solver no longer needs a new conditional branch for each law. A law
-with the existing Ludwik J2 field contract can be added to `MFRONT_BEHAVIOURS`.
-A law with a different state, such as crystal plasticity, must register a
-constitutive plugin that returns a `PlaneStressMaterialBatch`.
+The global solver does not need a new conditional branch for each supported
+law. Add an `MFrontBehaviourSpec` to the catalogue, including the raw 3D
+behaviour and, when the V1 structural contract is satisfied, its generated
+structural variant. A separate constitutive plugin is only required when the
+law's state or output contract cannot be represented by the registered
+adapters.
 
 ## Describe the MFront contract
 
@@ -25,13 +30,13 @@ Create an `MFrontBehaviourSpec` containing:
 
 The catalogue is deliberately declarative. It lets the application reject an
 unsupported hypothesis or a missing nonlocal field before starting a costly FEM
-solve. The built-in entries are `ludwik_j2` and `micromorphic_ludwik_j2`, whose
-behaviour names are exactly those the solver used before the catalogue existed.
+solve. The built-in entries include the J2, SRIX and Méric behaviours; their
+identifiers and compiled MFront names are kept explicit in the catalogue.
 
-## Register a constitutive plugin
+## Register a constitutive plugin when needed
 
-For a law whose state contract differs from J2, register one builder during
-application start-up:
+For a law whose state or output contract is not covered by the registered
+MFront adapters, register one builder during application start-up:
 
 ```python
 from fem_inhouse.core.constitutive_plugins import register_constitutive_plugin
@@ -94,10 +99,12 @@ not accumulate plasticity.
 Declare a symmetric matrix capability only after measuring tangent symmetry.
 Otherwise retain full CSR and PARDISO `mtype=11`.
 
-For crystal plasticity, start from the `Tridimensional` bridge with local
-plane-stress condensation. Native `PlaneStress` is an optional optimisation,
-not a prerequisite. Keep orientation assignment in the constitutive plugin so
-that EBSD-to-Gauss-point conventions are tested independently of Newton.
+For crystal plasticity satisfying the structural V1 contract, add the raw
+three-dimensional behaviour and its generated structural variant to the
+catalogue, then select `mfront-structural-plane-stress`. Keep orientation
+assignment in the standard MFront adapter so that EBSD-to-Gauss-point
+conventions are tested independently of Newton. Use
+`mfront-3d-condensed-plane-stress` as the independent constitutive reference.
 
 See {doc}`../reference/numerics/mfront_transaction`,
 {doc}`../reference/numerics/three_dimensional_condensation` and

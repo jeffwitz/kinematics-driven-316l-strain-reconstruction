@@ -36,8 +36,9 @@ cubic stiffnesses `C11_mpa`, `C12_mpa`, `C44_mpa` — the last three as a group 
 not at all, since two of the three describe no material. Anything else is
 refused before the first solve, as is an unknown `parameter_set`.
 
-Selecting nothing applies the default, which is the historical set, so an
-unconfigured run reproduces every archived result.
+Selecting nothing applies the registered historical parameter set. Reproducing
+a documented result also requires its backend, numerical options and software
+version; the parameter default alone is not a complete campaign specification.
 
 ## The registered sets
 

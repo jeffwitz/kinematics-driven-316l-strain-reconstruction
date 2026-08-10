@@ -96,8 +96,9 @@ from statistics alone.
   must be declared; if averaged, the averaging must be a proper mean of
   rotations, not a component-wise mean of matrices or of Euler angles.
 - **Grain identifier.** Carried alongside the orientation so a result can be
-  aggregated per grain. `FEMResult` does not yet carry it; adding it is part of
-  the implementation this contract precedes.
+  aggregated per grain. The current `FEMResult` contract does not include a
+  grain identifier; grain-level aggregation therefore remains an analysis
+  operation outside the solver result object.
 
 ## Cubic symmetry
 

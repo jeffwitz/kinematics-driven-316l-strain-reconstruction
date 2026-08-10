@@ -106,24 +106,25 @@ replaced by an exact zero.
 
 ## Three-dimensional constitutive condensation
 
-The default backend remains the MFront behaviour compiled with the native
-`PlaneStress` hypothesis. A second, experimental backend compiles the same
-J2/Ludwik law with the `Tridimensional` hypothesis and imposes plane stress in
-the MGIS adapter.
-
-At every Gauss point it solves for
+The constitutive layer supports three distinct routes. Native `PlaneStress` is
+used for behaviours that directly provide the required two-dimensional
+contract. `mfront-3d-condensed-plane-stress` is the independent reference for
+small-strain three-dimensional behaviours: it solves locally for
 `[epsilon_33, gamma_13, gamma_23]` such that
-`[sigma_33, sigma_13, sigma_23] = 0`. The local iterations always restart from
-the last globally committed material state. The tangent passed to the 2D
-solver is the Schur complement of the transverse block of the six-component
-algorithmic tangent. The mesh, displacement unknowns, element formulation,
-global equations, and Newton algorithm are unchanged.
+`[sigma_33, sigma_13, sigma_23] = 0`, then passes the corresponding Schur
+tangent to the two-dimensional solver. The registered
+`mfront-structural-plane-stress` backend applies the same three-traction
+closure inside an `Implicit`/`StandardElasticity`-compatible MFront behaviour
+and retains its complete three-dimensional constitutive state.
 
-The global nonlinear solver depends on a common transactional plane-stress
-material protocol rather than J2- or MFront-specific variables. This
-architecture is the prerequisite for substituting a small-strain 3D crystal
-plasticity behaviour. It does not itself validate crystal plasticity, finite
-strain, or multiplicative kinematics.
+The local iterations always restart from the last globally committed material
+state. The mesh, displacement unknowns, element formulation, global equations
+and Newton algorithm are unchanged by the constitutive route. The structural
+backend is qualified for the current small-strain crystal-plasticity
+behaviours; finite-strain and multiplicative kinematics are outside this
+contract. See
+{doc}`reference/numerics/mfront_structural_plane_stress` and
+{doc}`reference/configuration` for the detailed contract and configuration.
 
 ## Historical and reconstructed equivalent strain
 
