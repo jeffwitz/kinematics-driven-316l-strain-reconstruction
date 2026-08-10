@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
+from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
     make_dct_helmholtz_inverse,
@@ -88,10 +89,13 @@ def main() -> None:
     h_u = args.strain_step * max(grid.spacing_x, grid.spacing_y)
     h_chi = args.chi_step
 
-    def residual(mechanical: np.ndarray, chi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def strain_from_mechanical(mechanical: np.ndarray) -> np.ndarray:
         full = boundary.copy()
         full[1:-1, 1:-1] += unpack_interior(mechanical, grid)[1:-1, 1:-1]
-        samples = kinematics.strain_samples(full).reshape(-1, 3)
+        return kinematics.strain_samples(full).reshape(-1, 3)
+
+    def residual(mechanical: np.ndarray, chi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        samples = strain_from_mechanical(mechanical)
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
         trial = material.evaluate_in_plane(
             samples,
@@ -157,6 +161,34 @@ def main() -> None:
         evaluate,
         config=CoupledNewtonConfig(maximum_iterations=8),
     )
+    partitioned_material = MFrontNativePlaneStressBatch(
+        args.library,
+        np.full(point_count, 250.0),
+        np.full(point_count, 380.0),
+        np.full(point_count, 0.245),
+        behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
+        micromorphic_coupling_modulus_mpa=2_000.0,
+    )
+    partitioned = evaluate_nonlocal_fixed_point(
+        partitioned_material,
+        strain_from_mechanical(result.mechanical),
+        time_increment=args.time_increment,
+        element_shape=grid.pixel_shape,
+        gauss_points_per_element=2,
+        initial_nonlocal_peeq=initial_nonlocal.reshape(grid.pixel_shape),
+        length_scale_mm=args.length_scale,
+        spacing_x_mm=grid.spacing_x,
+        spacing_y_mm=grid.spacing_y,
+        coupling_modulus_mpa=2_000.0,
+        relaxation=0.5,
+        relaxation_strategy="aitken",
+        minimum_relaxation=0.05,
+        maximum_relaxation=0.8,
+        relative_tolerance=1.0e-10,
+        maximum_iterations=50,
+        maximum_helmholtz_residual=1.0e-10,
+    )
+    chi_difference = partitioned.nonlocal_peeq.reshape(-1) - result.nonlocal_field
     print(json.dumps({
         "grid": [args.nx, args.ny],
         "converged": result.converged,
@@ -166,6 +198,10 @@ def main() -> None:
         "krylov_iterations": list(result.krylov_iterations),
         "minimum_chi": float(np.min(result.nonlocal_field)),
         "maximum_chi": float(np.max(result.nonlocal_field)),
+        "partitioned_iterations": partitioned.iterations,
+        "partitioned_relative_residual": partitioned.relative_residual,
+        "coupled_vs_partitioned_chi_linf": float(np.max(np.abs(chi_difference))),
+        "coupled_vs_partitioned_chi_l2": float(np.linalg.norm(chi_difference)),
     }, indent=2))
 
 
