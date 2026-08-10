@@ -731,6 +731,17 @@ def _solve_sequence(
                 state[1]
             ) - source.reshape(-1)
 
+        def source_only(state: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+            trial = evaluate_material(state[0], state[1], False)
+            source = (
+                np.asarray(trial.observables["equivalent_plastic_strain"])
+                .reshape(grid.nx, grid.ny, 2)
+                .mean(axis=2)
+                .copy()
+            )
+            material.revert()
+            return source.reshape(-1)
+
         def linearise(
             state: tuple[np.ndarray, np.ndarray],
             *,
@@ -874,7 +885,7 @@ def _solve_sequence(
                 outer += 1
                 mechanical_converged = False
                 for _ in range(50):
-                    ru, source = residual_only((mechanical, chi))
+                    ru, _ = residual_only((mechanical, chi))
                     ru_norm = float(np.linalg.norm(ru))
                     if ru_norm <= absolute_tolerance:
                         mechanical_converged = True
@@ -929,6 +940,7 @@ def _solve_sequence(
                     raise RuntimeError(
                         f"staggered increment {increment} mechanical Newton did not converge"
                     )
+                source = source_only((mechanical, chi))
                 filtered_chi = np.maximum(nonlocal_inverse(source), 0.0)
                 updated_chi = (
                     (1.0 - staggered_relaxation) * chi
