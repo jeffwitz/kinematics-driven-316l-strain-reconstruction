@@ -54,7 +54,11 @@ class GenericStructuralMicromorphicBatch:
     """
 
     def __init__(
-        self, library: Path, point_count: int, yield_stress: np.ndarray | None = None
+        self,
+        library: Path,
+        point_count: int,
+        yield_stress: np.ndarray | None = None,
+        hardening_coefficient: np.ndarray | None = None,
     ) -> None:
         import mgis.behaviour as mgis
 
@@ -73,7 +77,11 @@ class GenericStructuralMicromorphicBatch:
             "YoungModulus": 205.0e3,
             "PoissonRatio": 0.3,
             "InitialYieldStress": 250.0 if yield_stress is None else yield_stress,
-            "HardeningCoefficient": 380.0,
+            "HardeningCoefficient": (
+                380.0
+                if hardening_coefficient is None
+                else hardening_coefficient
+            ),
             "HardeningExponent": 0.245,
             "MicromorphicCouplingModulus": 2.0e3,
         }

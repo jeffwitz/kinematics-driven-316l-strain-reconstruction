@@ -35,6 +35,7 @@
 @ModellingHypothesis Tridimensional;
 @Algorithm NewtonRaphson;
 @Epsilon 1.e-14;
+@IterMax 100;
 @Theta 1;
 
 @MaterialProperty stress young;

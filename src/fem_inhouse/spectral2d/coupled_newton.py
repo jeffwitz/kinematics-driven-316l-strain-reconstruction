@@ -43,6 +43,10 @@ class CoupledNewtonConfig:
     krylov_maximum_iterations: int = 500
     krylov_restart: int = 100
     evaluate_initial_residual: bool = True
+    line_search: bool = False
+    line_search_reduction: float = 0.5
+    line_search_minimum_step: float = 1.0 / 64.0
+    enforce_nonnegative_nonlocal: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,17 +160,44 @@ def solve_coupled_newton(
         if info != 0:
             raise RuntimeError(f"coupled GMRES failed with info={info}")
         split = current.actions.mechanical_size
-        mechanical += correction[:split]
-        nonlocal_field += correction[split:]
-        state = (mechanical, nonlocal_field)
-        current_residual = (
-            evaluate_residual(state)
-            if evaluate_residual is not None
-            else None
-        )
-        current = (
-            evaluate(state) if current_residual is None else current
-        )
+        old_mechanical = mechanical.copy()
+        old_nonlocal_field = nonlocal_field.copy()
+        step = 1.0
+        current_norm_before_step = norm(current)
+        current_residual = None
+        while True:
+            mechanical[:] = old_mechanical + step * correction[:split]
+            candidate_nonlocal = old_nonlocal_field + step * correction[split:]
+            if controls.enforce_nonnegative_nonlocal:
+                candidate_nonlocal = np.maximum(candidate_nonlocal, 0.0)
+            nonlocal_field[:] = candidate_nonlocal
+            state = (mechanical, nonlocal_field)
+            try:
+                current_residual = (
+                    evaluate_residual(state)
+                    if evaluate_residual is not None
+                    else None
+                )
+            except RuntimeError:
+                current_residual = None
+            if current_residual is None:
+                if evaluate_residual is None:
+                    break
+                if not controls.line_search:
+                    raise RuntimeError("coupled residual evaluation failed")
+            else:
+                candidate_norm = residual_norm(current_residual)
+                if (
+                    not controls.line_search
+                    or candidate_norm <= current_norm_before_step
+                    or step <= controls.line_search_minimum_step
+                ):
+                    break
+            if not controls.line_search or step <= controls.line_search_minimum_step:
+                raise RuntimeError(
+                    f"coupled line search failed at step={step:.3e}"
+                )
+            step *= controls.line_search_reduction
         current_norm = (
             norm(current)
             if current_residual is None
@@ -195,6 +226,11 @@ def solve_coupled_newton(
                 ),
                 krylov_iterations=tuple(krylov_iterations),
             )
+        # A residual-only check is sufficient for convergence, but a
+        # non-converged state needs a fresh constitutive linearisation before
+        # the next Krylov solve.  Reusing the previous Jacobian here would
+        # silently apply Newton corrections from the old state.
+        current = evaluate(state)
         if current_residual is not None:
             current = evaluate(state)
 
