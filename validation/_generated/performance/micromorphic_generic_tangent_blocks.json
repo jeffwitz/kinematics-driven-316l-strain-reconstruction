@@ -1,12 +1,5 @@
 {
   "behaviour": "MicromorphicJ2GenericBlocksProbe",
-  "cost_10000_points_ms": {
-    "host_finite_difference_route_estimated": 1436.34,
-    "integration_no_tangent": 159.59,
-    "integration_plus_four_blocks": 177.82,
-    "note": "FD route estimated as nine no-tangent integrations, one base plus eight probes"
-  },
-  "execution_commit": "34b4dfe1f7587d7b7da73fff9b1a9502aa2e5290",
   "material": {
     "HardeningCoefficient": 500.0,
     "HardeningExponent": 0.245,

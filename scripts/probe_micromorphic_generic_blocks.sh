@@ -11,8 +11,12 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 work="${1:-${TMPDIR:-/tmp}/micromorphic_generic_blocks}"
 mkdir -p "$work"
 
+# The TFEL environment script references optional variables while exporting
+# paths, so it must be sourced outside nounset mode.
+set +u
 # shellcheck disable=SC1090
 source "${TFEL_ENV:-$HOME/.local/share/tfel/env/env.sh}"
+set -u
 
 cd "$work"
 mfront --obuild --interface=generic \

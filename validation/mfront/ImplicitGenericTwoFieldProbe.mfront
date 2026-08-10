@@ -1,0 +1,80 @@
+@DSL ImplicitGenericBehaviour;
+@Behaviour ImplicitGenericTwoFieldProbe;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-14;
+@Theta 1.;
+
+@MaterialProperty stress lambda;
+@MaterialProperty stress mu;
+@MaterialProperty stress coupling;
+
+@Gradient StrainStensor eto;
+@ThermodynamicForce StressStensor sig;
+eto.setGlossaryName("Strain");
+sig.setGlossaryName("Stress");
+
+@Gradient strain phi;
+@ThermodynamicForce stress pre;
+phi.setEntryName("CoupledStrain");
+pre.setEntryName("CoupledStress");
+
+@StateVariable Stensor eel;
+@StateVariable real xel;
+
+@LocalVariable Stensor id2;
+@LocalVariable Stensor4 id4;
+@LocalVariable Stensor4 k4;
+@LocalVariable Stensor4 De;
+
+@TangentOperatorBlocks{dsig_ddeto, dsig_ddphi, dpre_ddeto, dpre_ddphi};
+
+@InitLocalVariables {
+  id2 = Stensor::Id();
+  id4 = Stensor4::Id();
+  k4 = Stensor4::K();
+  De = lambda * (id2 ^ id2) + 2. * mu * k4;
+}
+
+@ComputeThermodynamicForces {
+  sig = De * eel + coupling * xel * id2;
+  pre = coupling * trace(eel) + coupling * xel;
+}
+
+@Integrator {
+  feel = deel - deto;
+  fxel = dxel - dphi;
+
+  dfeel_ddeel = id4;
+  dfeel_ddxel = Stensor(0.);
+  dfxel_ddeel = Stensor(0.);
+  dfxel_ddxel = 1.;
+}
+
+@ComputeFinalThermodynamicForces {
+  sig = De * eel + coupling * xel * id2;
+  pre = coupling * trace(eel) + coupling * xel;
+}
+
+@TangentOperator {
+  dfeel_ddeto = -id4;
+  dfxel_ddeto = Stensor(0.);
+  dfeel_ddphi = Stensor(0.);
+  dfxel_ddphi = -1.;
+
+  auto ddeel_ddeto = Stensor4{};
+  auto dxel_ddeto = Stensor{};
+  auto ddeel_ddphi = Stensor{};
+  auto dxel_ddphi = real{};
+  getIntegrationVariablesDerivatives_eto(ddeel_ddeto, dxel_ddeto);
+  getIntegrationVariablesDerivatives_phi(ddeel_ddphi, dxel_ddphi);
+
+  const Stensor4 dsig_ddeel = De;
+  const Stensor dsig_ddxel = coupling * id2;
+  const Stensor dpre_ddeel = coupling * id2;
+  const real dpre_ddxel = coupling;
+
+  dsig_ddeto = dsig_ddeel * ddeel_ddeto + (dsig_ddxel ^ dxel_ddeto);
+  dsig_ddphi = dsig_ddeel * ddeel_ddphi + (dsig_ddxel * dxel_ddphi);
+  dpre_ddeto = (dpre_ddeel | ddeel_ddeto) + dpre_ddxel * dxel_ddeto;
+  dpre_ddphi = (dpre_ddeel | ddeel_ddphi) + dpre_ddxel * dxel_ddphi;
+}

@@ -106,11 +106,15 @@ The installed headers were checked directly under
 `/home/jeff/.local/include/MGIS/Behaviour`. `State` stores gradients,
 thermodynamic forces, material properties and state-variable arrays, while
 `MaterialDataManager` exposes the consistent tangent operator and the
-transactional state operations. Neither public interface contains a local
-implicit residual, its Jacobian, or derivatives of an arbitrary observable.
+transactional state operations. The public API does not expose the local
+implicit residual or its Jacobian, but that is not required when the law is
+written as an `ImplicitGenericBehaviour`: MFront performs the local implicit
+solve and MGIS returns the requested tangent blocks.
 
-This is a deliberate boundary of the current prototype, not an omission in
-the Python adapter. A future export must therefore be an explicit MFront/TFEL
-contract, rather than an inference from the MGIS tangent or from the names of
-SRIX/Méric state variables. The generic Python algebra is ready to consume
-that contract as soon as it is available.
+The remaining boundary is the choice of observable. An arbitrary state
+observable cannot be differentiated by MGIS merely because it is present in an
+internal-variable array. It must be declared as a second generic force, as in
+the micromorphic probe, or be handled by the finite-difference oracle. This is
+why the generic block mechanism is now demonstrated for J2, while SRIX and
+Méric still require their own `ImplicitGenericBehaviour` reformulations before
+the production FD probes can be removed.
