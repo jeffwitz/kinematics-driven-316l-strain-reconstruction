@@ -214,6 +214,8 @@ def _solve_production_nested_sequence(
     krylov_counts: list[int] = []
     tangent_evaluations = 0
     residual_evaluations = 0
+    local_cutbacks = 0
+    accepted_subincrements = 0
     started = time.perf_counter()
 
     def solve_attempt(
@@ -360,6 +362,7 @@ def _solve_production_nested_sequence(
                 material.revert()
                 mechanical = saved_mechanical
                 chi = saved_chi
+                local_cutbacks += 1
                 step_fraction *= 0.5
                 if step_fraction < 1.0 / 1024.0:
                     raise RuntimeError(
@@ -367,6 +370,7 @@ def _solve_production_nested_sequence(
                     ) from None
                 continue
             fraction = next_fraction
+            accepted_subincrements += 1
             newton_counts.append(iteration_count)
             fixed_point_counts.append(fp_counts)
             krylov_counts.extend(attempt_krylov)
@@ -382,6 +386,8 @@ def _solve_production_nested_sequence(
         "krylov_total": int(sum(krylov_counts)),
         "material_tangent_evaluations": tangent_evaluations,
         "material_residual_evaluations": residual_evaluations,
+        "local_cutbacks": local_cutbacks,
+        "accepted_subincrements": accepted_subincrements,
         "final_mechanical": mechanical,
         "final_chi": chi,
     }
@@ -791,6 +797,7 @@ def main() -> int:
         try:
             mono = None
             stag = None
+            failures: list[str] = []
             common = dict(
                 library=library,
                 history=trial_history,
@@ -812,14 +819,22 @@ def main() -> int:
                 fd_chi_step=args.fd_chi_step,
             )
             if args.method in ("monolithic", "both"):
-                mono = _solve_sequence(**common, method="monolithic")
+                try:
+                    mono = _solve_sequence(**common, method="monolithic")
+                except RuntimeError as error:
+                    failures.append(f"monolithic: {error}")
             if args.method in ("staggered", "production-nested", "both"):
                 staggered_method = (
                     "production-nested"
                     if args.method == "production-nested"
                     else "staggered"
                 )
-                stag = _solve_sequence(**common, method=staggered_method)
+                try:
+                    stag = _solve_sequence(**common, method=staggered_method)
+                except RuntimeError as error:
+                    failures.append(f"{staggered_method}: {error}")
+            if failures:
+                raise RuntimeError("; ".join(failures))
             break
         except RuntimeError:
             if not args.adaptive_path_cutback or actual_path_substeps >= args.maximum_path_substeps:
