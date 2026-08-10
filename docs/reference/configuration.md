@@ -122,7 +122,7 @@ user-facing smoothing or subgradient parameter is accepted. At exactly zero
 slip increment, the local Newton Jacobian selects the symmetric Clarke element
 `d|dg|/ddg = 0`, while the residual and committed state update remain the
 original SRIX expressions. See
-{doc}`../numerics/srix_semismooth_jacobian` for the mathematical justification
+{doc}`numerics/srix_semismooth_jacobian` for the mathematical justification
 and P43 M200 qualification.
 
 ### Diagnostic options
