@@ -15,10 +15,69 @@ from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from scipy.fft import dctn, idctn
 from scipy.sparse.linalg import LinearOperator
+
+from fem_inhouse.spectral2d.transforms import TransformPlan2D
 
 FloatArray = NDArray[np.float64]
 VectorAction = Callable[[FloatArray], FloatArray]
+
+
+def make_dst_b0_inverse(transform_plan: TransformPlan2D, green_operator: object) -> VectorAction:
+    """Create a flat-vector action for the DST-I/$B_0^{-1}$ inverse."""
+
+    interior_shape = tuple(transform_plan.diagnostics.interior_shape)
+    expected_size = int(np.prod(interior_shape)) * 2
+
+    def apply(value: FloatArray) -> FloatArray:
+        vector = np.asarray(value, dtype=np.float64)
+        if vector.shape != (expected_size,):
+            raise ValueError(
+                f"mechanical vector has shape {vector.shape}, expected {(expected_size,)}"
+            )
+        physical = vector.reshape((*interior_shape, 2))
+        transformed = np.asarray(transform_plan.forward_displacement(physical))
+        reference = np.asarray(green_operator.apply(transformed))
+        result = np.asarray(transform_plan.inverse_displacement(reference))
+        return result.reshape(-1)
+
+    return apply
+
+
+def make_dct_helmholtz_inverse(
+    shape: tuple[int, int],
+    *,
+    length_scale: float,
+    spacing_x: float,
+    spacing_y: float,
+) -> VectorAction:
+    """Create a flat-vector action for $(I-l^2 L_N)^{-1}$ by DCT-II."""
+
+    if min(shape) < 1 or length_scale < 0.0 or spacing_x <= 0.0 or spacing_y <= 0.0:
+        raise ValueError("invalid Helmholtz inverse geometry or length scale")
+    nx, ny = shape
+    wave_x = np.arange(nx, dtype=np.float64)
+    wave_y = np.arange(ny, dtype=np.float64)
+    eigenvalues_x = (2.0 - 2.0 * np.cos(np.pi * wave_x / nx)) / spacing_x**2
+    eigenvalues_y = (2.0 - 2.0 * np.cos(np.pi * wave_y / ny)) / spacing_y**2
+    denominator = 1.0 + length_scale**2 * (
+        eigenvalues_x[:, np.newaxis] + eigenvalues_y[np.newaxis, :]
+    )
+
+    def apply(value: FloatArray) -> FloatArray:
+        vector = np.asarray(value, dtype=np.float64)
+        expected_size = nx * ny
+        if vector.shape != (expected_size,):
+            raise ValueError(
+                f"non-local vector has shape {vector.shape}, expected {(expected_size,)}"
+            )
+        field = vector.reshape(shape)
+        transformed = dctn(field, type=2, norm="ortho")
+        filtered = idctn(transformed / denominator, type=2, norm="ortho")
+        return np.asarray(filtered, dtype=np.float64).reshape(-1)
+
+    return apply
 
 
 @dataclass(frozen=True, slots=True)
