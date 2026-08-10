@@ -1,0 +1,13 @@
+{
+  "case": "coupled micromorphic J2 M20",
+  "backend": "generic StructuralPlaneStress validation probe",
+  "residual_form": "H_chi_minus_p",
+  "b0": "projected virgin tangent",
+  "runs": [
+    {"krylov_relative_tolerance": 0.0001, "newton_iterations": 2, "krylov_iterations": [1, 1], "elapsed_seconds": 0.10894356697099283, "final_residual_norm": 3.848497488018429e-12},
+    {"krylov_relative_tolerance": 0.000001, "newton_iterations": 2, "krylov_iterations": [1, 5], "elapsed_seconds": 0.11492217204067856, "final_residual_norm": 4.735745345877157e-12},
+    {"krylov_relative_tolerance": 0.00000001, "newton_iterations": 2, "krylov_iterations": [1, 15], "elapsed_seconds": 0.12589177704649046, "final_residual_norm": 4.8532068187980714e-12},
+    {"krylov_relative_tolerance": 0.0000000001, "newton_iterations": 2, "krylov_iterations": [1, 24], "elapsed_seconds": 0.1328667280031368, "final_residual_norm": 4.8547149951803555e-12}
+  ],
+  "note": "Single M20 runs; compilation excluded. The 1e-4 case converged with two Newton iterations and two total Krylov iterations."
+}

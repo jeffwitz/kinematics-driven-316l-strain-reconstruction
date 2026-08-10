@@ -186,6 +186,9 @@ def main() -> None:
     parser.add_argument("--strain-step", type=float, default=1.0e-7)
     parser.add_argument("--chi-step", type=float, default=1.0e-7)
     parser.add_argument(
+        "--krylov-relative-tolerance", type=float, default=1.0e-10
+    )
+    parser.add_argument(
         "--central-strain-coupling",
         action="store_true",
         help="use central instead of forward finite differences for dp/depsilon",
@@ -548,7 +551,10 @@ def main() -> None:
         initial_mechanical,
         initial_nonlocal,
         evaluate,
-        config=CoupledNewtonConfig(maximum_iterations=8),
+        config=CoupledNewtonConfig(
+            maximum_iterations=8,
+            krylov_relative_tolerance=args.krylov_relative_tolerance,
+        ),
         evaluate_residual=residual,
     )
     coupled_elapsed = time.perf_counter() - coupled_start
