@@ -11,12 +11,11 @@
     "converged": true,
     "newton_iterations": 2,
     "krylov_iterations": [1, 1],
-    "elapsed_seconds": 0.10218965797685087,
-    "material_seconds": 0.07360797200817615,
-    "material_evaluations": 3,
+    "elapsed_seconds": 0.1519196050358005,
+    "material_seconds": 0.059247929020784795,
+    "material_evaluations_with_tangent": 2,
     "coupling_probe_evaluations": 0,
     "final_residual_norm": 3.848497488018429e-12,
-    "chi_linf_vs_staggered": 1.6148540837868097e-14,
     "b0_lambda": 118269.23076923155,
     "b0_mu": 78846.15384615255,
     "b0_projection_error": 4.520799728454212e-16
@@ -26,14 +25,15 @@
     "outer_iterations": 6,
     "mechanical_iterations": 0,
     "krylov_iterations": 0,
-    "elapsed_seconds": 0.3095781470183283,
+    "elapsed_seconds": 0.15947125101229176,
     "mechanical_residual": 3.4728421326204155e-12,
     "nonlocal_residual": 2.7246195750972166e-11,
+    "tangent_evaluations_when_mechanics_was_converged": 0,
     "note": "The affine M20 boundary field is already mechanically equilibrated; this case stresses the non-local outer iteration but not staggered mechanical corrections."
   },
   "comparison": {
-    "monolithic_over_staggered": 0.329996610172082,
-    "staggered_over_monolithic": 3.029836674048279,
+    "monolithic_over_staggered": 0.952649472261289,
+    "staggered_over_monolithic": 1.049703698855806,
     "same_discrete_solution": true,
     "chi_linf": 1.6148540837868097e-14
   }

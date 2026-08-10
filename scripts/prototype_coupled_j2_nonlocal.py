@@ -366,6 +366,30 @@ def main() -> None:
         assert cached_response is not None
         return cached_response
 
+    def residual_only(
+        state: tuple[np.ndarray, np.ndarray]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Evaluate only stress/source for convergence checks."""
+
+        mechanical, chi = state
+        samples = strain_from_mechanical(mechanical)
+        material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
+        trial = material.evaluate_in_plane(
+            samples,
+            time_increment=args.time_increment,
+            consistent_tangent=False,
+        )
+        stress = np.asarray(trial.stress_in_plane_mpa).reshape(
+            grid.nx, grid.ny, 2, 3
+        )
+        source = np.asarray(
+            trial.observables["equivalent_plastic_strain"]
+        ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
+        material.revert()
+        return pack_interior(kinematics.divergence(stress)), (
+            nonlocal_operator(chi) - source.reshape(-1)
+        )
+
     def residual(
         state: tuple[np.ndarray, np.ndarray]
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -557,7 +581,7 @@ def main() -> None:
             maximum_iterations=8,
             krylov_relative_tolerance=args.krylov_relative_tolerance,
         ),
-        evaluate_residual=residual,
+        evaluate_residual=residual_only,
     )
     coupled_elapsed = time.perf_counter() - coupled_start
 
@@ -579,13 +603,17 @@ def main() -> None:
         )
 
     def staggered_response(
-        trial_material: object, mechanical: np.ndarray, chi: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        trial_material: object,
+        mechanical: np.ndarray,
+        chi: np.ndarray,
+        *,
+        consistent_tangent: bool,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
         trial_material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
         trial = trial_material.evaluate_in_plane(
             strain_from_mechanical(mechanical),
             time_increment=args.time_increment,
-            consistent_tangent=True,
+            consistent_tangent=consistent_tangent,
         )
         stress = np.asarray(trial.stress_in_plane_mpa).reshape(
             grid.nx, grid.ny, 2, 3
@@ -594,8 +622,12 @@ def main() -> None:
         source = np.asarray(
             trial.observables["equivalent_plastic_strain"]
         ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
-        tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
-            grid.nx, grid.ny, 2, 3, 3
+        tangent = (
+            None
+            if not consistent_tangent
+            else np.asarray(trial.tangent_in_plane_mpa).reshape(
+                grid.nx, grid.ny, 2, 3, 3
+            )
         )
         trial_material.revert()
         return residual, source.reshape(-1), tangent
@@ -612,11 +644,21 @@ def main() -> None:
         staggered_outer_iterations = outer + 1
         for _ in range(8):
             ru_st, source_st, tangent_st = staggered_response(
-                staggered_material, staggered_mechanical, staggered_nonlocal
+                staggered_material,
+                staggered_mechanical,
+                staggered_nonlocal,
+                consistent_tangent=False,
             )
             staggered_mechanical_residual = float(np.linalg.norm(ru_st))
             if staggered_mechanical_residual <= 1.0e-10:
                 break
+            _, source_st, tangent_st = staggered_response(
+                staggered_material,
+                staggered_mechanical,
+                staggered_nonlocal,
+                consistent_tangent=True,
+            )
+            assert tangent_st is not None
 
             def mechanical_matvec(
                 value: np.ndarray, tangent_reference: np.ndarray = tangent_st
@@ -654,9 +696,6 @@ def main() -> None:
             staggered_mechanical_iterations += 1
             staggered_krylov_iterations += calls
 
-        _, source_st, _ = staggered_response(
-            staggered_material, staggered_mechanical, staggered_nonlocal
-        )
         updated_nonlocal = nonlocal_inverse(source_st)
         staggered_nonlocal_residual = float(
             np.linalg.norm(updated_nonlocal - staggered_nonlocal)
