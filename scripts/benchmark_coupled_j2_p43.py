@@ -906,7 +906,11 @@ def _solve_sequence(
                     accepted = False
                     while step >= 1.0 / 1024.0:
                         candidate = base_mechanical + step * correction
-                        candidate_ru, _ = residual_only((candidate, chi))
+                        try:
+                            candidate_ru, _ = residual_only((candidate, chi))
+                        except (RuntimeError, ValueError):
+                            step *= 0.5
+                            continue
                         candidate_norm = float(np.linalg.norm(candidate_ru))
                         if candidate_norm < ru_norm:
                             mechanical = candidate
