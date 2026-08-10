@@ -5402,3 +5402,55 @@ façade ; les modules de mise en œuvre et le registre `MFRONT_BEHAVIOURS` y son
 maintenant listés. Enfin, la page d'accueil débutant était rangée sous
 « Extend » : elle ouvre désormais l'index des how-to et la racine propose un
 parcours qui commence par elle.
+
+### 2026-08-10 — `sign(0)=0` : correction de sous-gradient, pas variante de loi
+
+Le lissage Charbonnier et la régularisation compacte `δ` ont rempli leur rôle
+de diagnostic, mais le résultat qui compte est le contrôle `sign(0)=0`. Il est
+maintenant qualifié, et la conclusion est nette : **ce n'est pas une
+modification de la loi.**
+
+Fait structurel d'abord, lisible dans la source : `dg_abs_derivative` n'est
+consommé qu'aux lignes 303, 304 et 312 de `Fcc316LForestRubinSrix.mfront`,
+toutes écrivant `dfg_ddg`. Il n'atteint ni `feel`, ni `fg`, ni
+`@UpdateAuxiliaryStateVariables`. Ce qui entre dans le résidu,
+`dg_abs_regularized`, vaut exactement `abs(dg)` dès que `δ = 0`, quelle que
+soit la valeur du sous-gradient.
+
+**Un seuil préenregistré a été dépassé et n'a pas été déplacé.** H1 exigeait un
+accord ≤`1e-11` entre les deux conventions ; le mesuré est `6,1e-11`. Le seuil
+était mal spécifié : je l'avais posé en supposant erreur-solution ≈
+tolérance-résidu, ce qui ignore le conditionnement du Jacobien local, très
+mauvais à ces états de cusp. Cette explication ne valait rien tant qu'elle ne
+risquait rien, donc elle a été testée par une prédiction falsifiable — un
+balayage de `epsilon`, non préenregistré.
+
+Le balayage est le résultat décisif de la campagne. L'écart `sign(0)=0` suit la
+tolérance proportionnellement, sans plancher : `9,94e-08` à `1e-10`,
+`1,33e-09`, `1,45e-11`, `1,24e-13` à `1e-16`. L'écart de `δ=1e-5` vaut
+`1,355e-04` aux quatre tolérances, à quatre chiffres significatifs. Même racine
+d'un côté, racine différente de l'autre.
+
+L'origine des écarts de champs M200 est également fermée, au point matériel.
+Sur les 380 états, en reproduisant la séquence de sous-pas du pont :
+convention changée à partition égale → `6e-11` ; partition retirée à convention
+égale → jusqu'à `1,5e-2`. Huit ordres de grandeur. Les `1e-4` de la campagne
+sont cet effet dilué en L2 sur un maillage où la plupart des points n'ont
+jamais sous-pas. À noter : l'historique s'en sort avec deux divisions sur 378
+des 380 points — l'échec est net, pas profond.
+
+Le contrôle du test de non-régression a d'abord échoué, et c'était utile :
+`δ` agit sur l'incrément par pas, pas sur le glissement cumulé, donc un chemin
+en huit gros pas ne l'active jamais et les deux variantes coïncidaient à
+`2,7e-14`. Le test aurait passé pour la mauvaise raison. Il utilise maintenant
+64 pas de `0,004`, où `δ` vaut `8,6e-4` contre `4,3e-11` pour le sous-gradient.
+
+**Le défaut n'a pas été basculé.** Le passage de `-1.` à `0.` est une ligne et
+supprimerait 978 points sous-pas, mais si la racine est inchangée les
+*partitions* ne le sont pas : un rejeu sous défaut basculé ne reproduirait les
+champs archivés qu'à `~1e-4`, et toutes les comparaisons existantes
+acquerraient silencieusement ce plancher. C'est une décision sur le contrat de
+reproductibilité de l'archive, pas une question numérique.
+
+Neuf erreurs de lint dans les scripts de la session concurrente ont été
+réparées mécaniquement pour rendre le gate vert.
