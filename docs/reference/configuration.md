@@ -131,6 +131,8 @@ M200 workflow.
 |---|---:|---|
 | `srix_smoothing_epsilon` | `0.0` | stress scale of the regularisation, MPa. **`0.0` selects the historical non-smooth constitutive branch**, not a small-regularisation approximation. The inactive-system Jacobian was corrected in commit `51ace9e`, so the Newton path need not be bit-for-bit identical to older archived binaries. Any positive value changes the constitutive response and invalidates comparison with archived campaigns |
 | `srix_smoothing_exponent` | `11.0` | exponent of the generalized Charbonnier norm. Higher is closer to the sharp bracket. Without a positive `srix_smoothing_epsilon` it has no effect |
+| `srix_slip_smoothing_delta` | `0.0` | experimental compact C2 width for `abs(dg)` and its derivative, in strain units. It does not smooth the Macaulay bracket. `0.0` selects the historical `abs/sign` branch; positive values change the constitutive response and must be reported with the results |
+| `srix_slip_zero_derivative` | `-1.0` | diagnostic only: subgradient used at exactly `dg=0` when `srix_slip_smoothing_delta=0`. `-1` preserves the historical branch; `0` is the semismooth control. Do not use it as a production calibration parameter |
 
 ### Diagnostic options
 

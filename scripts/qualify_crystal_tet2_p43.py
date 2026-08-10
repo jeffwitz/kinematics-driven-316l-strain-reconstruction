@@ -208,6 +208,19 @@ def main() -> int:
         help="experimental SRIX generalized Charbonnier exponent",
     )
     parser.add_argument(
+        "--srix-slip-smoothing-delta",
+        type=float,
+        default=None,
+        help="experimental compact C2 smoothing width for SRIX abs(dg), in strain units",
+    )
+    parser.add_argument(
+        "--srix-slip-zero-derivative",
+        type=float,
+        choices=(-1.0, 0.0, 1.0),
+        default=None,
+        help="diagnostic SRIX subgradient at exactly dg=0; 0 selects the semismooth control",
+    )
+    parser.add_argument(
         "--gps-condensed-tangent",
         action="store_true",
         help="for the native GPS backend, enable the law's CondensedTangent "
@@ -403,6 +416,16 @@ def main() -> int:
             **(
                 {"srix_smoothing_exponent": arguments.srix_smoothing_exponent}
                 if arguments.srix_smoothing_exponent is not None
+                else {}
+            ),
+            **(
+                {"srix_slip_smoothing_delta": arguments.srix_slip_smoothing_delta}
+                if arguments.srix_slip_smoothing_delta is not None
+                else {}
+            ),
+            **(
+                {"srix_slip_zero_derivative": arguments.srix_slip_zero_derivative}
+                if arguments.srix_slip_zero_derivative is not None
                 else {}
             ),
             **(
@@ -638,6 +661,8 @@ def main() -> int:
         "behaviour": arguments.behaviour,
         "srix_smoothing_epsilon_mpa": arguments.srix_smoothing_epsilon,
         "srix_smoothing_exponent": arguments.srix_smoothing_exponent,
+        "srix_slip_smoothing_delta": arguments.srix_slip_smoothing_delta,
+        "srix_slip_zero_derivative": arguments.srix_slip_zero_derivative,
         "mfront_threads": arguments.mfront_threads,
         "maximum_newton_iterations": arguments.maximum_newton_iterations,
         "local_transverse_predictor": arguments.local_transverse_predictor,

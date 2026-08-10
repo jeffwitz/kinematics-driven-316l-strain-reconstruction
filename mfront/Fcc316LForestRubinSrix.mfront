@@ -121,6 +121,16 @@ srixSmoothingEpsilon.setEntryName("SrixSmoothingEpsilon");
 @Parameter real srixSmoothingExponent = 11.;
 srixSmoothingExponent.setEntryName("SrixSmoothingExponent");
 
+//! Compact C2 regularisation width for abs(dg) and its derivative.
+//! Zero selects the historical abs/sign branch.
+@Parameter strain srixSlipSmoothingDelta = 0.;
+srixSlipSmoothingDelta.setEntryName("SrixSlipSmoothingDelta");
+
+//! Subgradient value used only by the delta=0 branch at exactly dg=0.
+//! The historical value is -1; zero is the semismooth control experiment.
+@Parameter real srixSlipZeroDerivative = -1.;
+srixSlipZeroDerivative.setEntryName("SrixSlipZeroDerivative");
+
 @Parameter stress tau0 = 40.;
 @Parameter stress Q = 10.;
 @Parameter real b = 3.;
@@ -190,8 +200,27 @@ a.setEntryName("BackStrain");
   const auto ndeq = (2 / (3 * deq)) * de;
 
   real exp_bp[Nss];
+  real dg_abs_regularized[Nss];
+  real dg_abs_derivative[Nss];
   for (size_type i = 0; i != Nss; ++i) {
-    const auto p_ = p[i] + theta * abs(dg[i]);
+    const auto dg_abs = abs(dg[i]);
+    const auto slip_smooth = srixSlipSmoothingDelta > strain(0);
+    const auto slip_delta = srixSlipSmoothingDelta;
+    const auto slip_t = slip_smooth ? dg_abs / slip_delta : 0;
+    dg_abs_regularized[i] =
+        slip_smooth && dg_abs < slip_delta
+            ? slip_delta * (3 * power<2>(slip_t) - 3 * power<3>(slip_t) +
+                            power<4>(slip_t))
+            : dg_abs;
+    dg_abs_derivative[i] =
+        slip_smooth && dg_abs < slip_delta
+            ? 6 * dg[i] / slip_delta -
+                  9 * dg[i] * dg_abs / power<2>(slip_delta) +
+                  4 * power<3>(dg[i]) / power<3>(slip_delta)
+            : (dg[i] > strain(0) ? 1
+                                  : (dg[i] < strain(0) ? -1
+                                                        : srixSlipZeroDerivative));
+    const auto p_ = p[i] + theta * dg_abs_regularized[i];
     exp_bp[i] = exp(-b * p_);
   }
   for (size_type i = 0; i != Nss; ++i) {
@@ -201,7 +230,8 @@ a.setEntryName("BackStrain");
       r += Q * m(i, j) * (1 - exp_bp[j]);
     }
     const auto da =  //
-        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+        (dg[i] - d * a[i] * dg_abs_regularized[i]) /
+        (1 + theta * d * dg_abs_regularized[i]);
     const auto x = C * (a[i] + theta * da);
     // Optional Charbonnier regularisation of the signed Macaulay flow.
     // For epsilon=0 this is exactly the historical branch. For epsilon>0,
@@ -270,13 +300,16 @@ a.setEntryName("BackStrain");
     // avoid, so the Deq route is carried explicitly below as -(f sgn / R) dDeq.
     const auto damplitude = f * sgn / R;
     dfg_ddeel(i) = -dflow * theta * (ss.mus[i] | D) - damplitude * ndeq;
-    const auto sgn_gi = dg(i) > 0 ? 1 : -1;
+    const auto dN = 1 - d * a[i] * dg_abs_derivative[i];
+    const auto dD = theta * d * dg_abs_derivative[i];
+    const auto N = dg[i] - d * a[i] * dg_abs_regularized[i];
+    const auto back_denominator = 1 + theta * d * dg_abs_regularized[i];
     const auto dda_ddg =
-        (1 - d * a[i] * sgn_gi) / (power<2>(1 + theta * d * abs(dg[i])));
+        (dN * back_denominator - N * dD) / power<2>(back_denominator);
     dfg_ddg(i, i) += dflow * C * theta * dda_ddg;
     for (size_type j = 0; j != Nss; ++j) {
-      const auto sgn_gj = dg(j) > 0 ? 1 : -1;
-      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj;
+      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] *
+                      dg_abs_derivative[j];
       dfg_ddg(i, j) += dflow_hardening * dr * sgn - damplitude * (ndeq | ss.mus[j]);
     }
   }
@@ -287,9 +320,19 @@ a.setEntryName("BackStrain");
   using size_type = unsigned short;
   for (size_type i = 0; i != Nss; ++i) {
     // Same implicit hardening update as Meric-Cailletaud: Dp_s = |Dg_s|.
-    p[i] += abs(dg[i]);
+    const auto dg_abs = abs(dg[i]);
+    const auto slip_smooth = srixSlipSmoothingDelta > strain(0);
+    const auto slip_delta = srixSlipSmoothingDelta;
+    const auto slip_t = slip_smooth ? dg_abs / slip_delta : 0;
+    const auto dg_abs_regularized =
+        slip_smooth && dg_abs < slip_delta
+            ? slip_delta * (3 * power<2>(slip_t) - 3 * power<3>(slip_t) +
+                            power<4>(slip_t))
+            : dg_abs;
+    p[i] += dg_abs_regularized;
     const auto da =  //
-        (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
+        (dg[i] - d * a[i] * dg_abs_regularized) /
+        (1 + theta * d * dg_abs_regularized);
     a[i] += da;
   }
 }
