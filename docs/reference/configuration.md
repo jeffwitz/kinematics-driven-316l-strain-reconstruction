@@ -123,12 +123,13 @@ any law other than Forest-Rubin SRIX.
 
 The SRIX flow rule is built on Macaulay brackets, which are not differentiable
 where they switch. These two keys optionally replace them by a generalized
-Charbonnier norm, trading an exactly reproduced constitutive law for a smoother
-one that a local Newton finds easier.
+Charbonnier norm. This is an experimental constitutive modification: it does
+not preserve the sharp law and has not been shown to improve the qualified
+M200 workflow.
 
 | Key | Default | Meaning |
 |---|---:|---|
-| `srix_smoothing_epsilon` | `0.0` | stress scale of the regularisation, MPa. **`0.0` selects the historical non-smooth law exactly**, not an approximation of it, so the default path is bit-for-bit the qualified law. Any positive value changes the constitutive response and invalidates comparison with archived campaigns |
+| `srix_smoothing_epsilon` | `0.0` | stress scale of the regularisation, MPa. **`0.0` selects the historical non-smooth constitutive branch**, not a small-regularisation approximation. The inactive-system Jacobian was corrected in commit `51ace9e`, so the Newton path need not be bit-for-bit identical to older archived binaries. Any positive value changes the constitutive response and invalidates comparison with archived campaigns |
 | `srix_smoothing_exponent` | `11.0` | exponent of the generalized Charbonnier norm. Higher is closer to the sharp bracket. Without a positive `srix_smoothing_epsilon` it has no effect |
 
 ### Diagnostic options
@@ -138,7 +139,7 @@ explicitly requests them. They exist to explain a run, not to produce one.
 
 | Key | Default | Meaning |
 |---|---:|---|
-| `gps_failure_diagnostics` | `false` | record, per isolated GPS integration failure, the state that produced it. Costs an extra isolation pass on failing points; only the GPS and structural backends act on it |
+| `gps_failure_diagnostics` | `false` | record, per already-isolated GPS integration failure, the state that produced it. It adds diagnostic state copies to the existing bisection probes; only the GPS and structural backends act on it |
 | `gps_shadow_tangent` | `false` | replace the Newton matrix by the reference Schur evaluated at the GPS state; useful for diagnosis, not production. Rejected by the condensed backend |
 | `gps_shadow_tangent_scope` | `"all"` | diagnostic scope for the shadow tangent |
 

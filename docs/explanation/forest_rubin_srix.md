@@ -169,10 +169,12 @@ the rounded corner hugs the sharp one: `n = 11`, the default, is close; small
 
 **`ε = 0` is not a small-ε limit, it is a different branch.** The law tests
 `ε > 0` and takes the historical `abs` and `max` expressions when it is not, so
-the default configuration integrates exactly the law described above, with no
-regularisation error to account for. That also means any positive `ε` changes
-the constitutive response, and results obtained with one cannot be compared
-against the archived campaigns. Both parameters are exposed as
+the default configuration uses the original non-smooth constitutive branch,
+with no Charbonnier regularisation. The inactive-system derivative in that
+branch was corrected in commit `51ace9e`; consequently the Newton path need
+not be bit-for-bit identical to older archived binaries. Any positive `ε`
+changes the constitutive response, and results obtained with one cannot be
+compared against the archived campaigns. Both parameters are exposed as
 `srix_smoothing_epsilon` and `srix_smoothing_exponent` in
 {doc}`../reference/configuration`.
 

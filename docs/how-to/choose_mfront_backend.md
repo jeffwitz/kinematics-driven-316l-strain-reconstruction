@@ -21,10 +21,12 @@ SRIX GPS variant carries this closure in its constitutive Newton. The generic st
 backend applies the same closure through the reusable `StructuralPlaneStress3D`
 transformation, while the condensed route performs it in the Python bridge.
 
-## Why there are two ways to do plane stress on a 3D law
+## Why there are two broad ways to do plane stress on a 3D law
 
-Both routes compute the same thing -- they agree to `1e-11` at a material point
--- so the choice is not about accuracy. It is about what each one lets you do.
+The repository contains three implementations of two broad mechanisms. All
+three compute the same physical closure -- they agree to `1e-11` at a material
+point -- so the choice is not about accuracy. It is about what each one lets
+you do.
 
 **Condensed 3D works with any law.** The bridge iterates the transverse strain
 and hands the behaviour a complete six-component gradient. The law is never
@@ -65,9 +67,10 @@ alongside the absolute times below, which come from a later commit on the same
 case — comparing across the two sets measures the intervening work, not the
 backends.
 
-Sub-stepping is rare and local -- two points out of four hundred on the small
-window, `0.071 %` of the batch at M100 -- so the repair is cheap because it is
-applied to those points only.
+Sub-stepping is local. In the comparison campaign it affected `192` points on
+the M100 crop (about `1.92 %` of its `10,000` constitutive points); on the
+smaller M20 crop it affected `19` points. The repair remains cheap because it
+is applied only to those points.
 
 The condensed backend accepts the key and ignores it — it has no local Newton
 to sub-step, so there is nothing to repair. Switching a configuration from GPS
