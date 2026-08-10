@@ -9,7 +9,6 @@ from pathlib import Path
 
 import numpy as np
 
-
 HISTORY = np.array(
     [(i / 12.0) * 0.02 * np.array([1.0, -0.4, 0.0]) for i in range(1, 13)]
 )
@@ -19,7 +18,12 @@ def relative_error(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.linalg.norm(a - b) / max(np.linalg.norm(b), 1.0e-30))
 
 
-def make_batch(library: str, delta: float, zero_derivative: float, angles: tuple[float, float, float] | None):
+def make_batch(
+    library: str,
+    delta: float,
+    zero_derivative: float,
+    angles: tuple[float, float, float] | None,
+):
     from fem_inhouse.core.crystal_orientation import rotation_from_euler_bunge_deg
     from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
 
@@ -54,10 +58,16 @@ def check_history(batch, step: float) -> dict[str, object]:
         returned = np.asarray(base.tangent_in_plane_mpa)[0]
         fd = np.zeros((3, 3))
         for column in range(3):
-            plus = strain.copy(); minus = strain.copy()
-            plus[0, column] += step; minus[0, column] -= step
-            stress_plus = np.asarray(batch.evaluate(plus, time_increment=1.0 / 12.0).stress_in_plane_mpa)[0]
-            stress_minus = np.asarray(batch.evaluate(minus, time_increment=1.0 / 12.0).stress_in_plane_mpa)[0]
+            plus = strain.copy()
+            minus = strain.copy()
+            plus[0, column] += step
+            minus[0, column] -= step
+            stress_plus = np.asarray(
+                batch.evaluate(plus, time_increment=1.0 / 12.0).stress_in_plane_mpa
+            )[0]
+            stress_minus = np.asarray(
+                batch.evaluate(minus, time_increment=1.0 / 12.0).stress_in_plane_mpa
+            )[0]
             fd[:, column] = (stress_plus - stress_minus) / (2.0 * step)
         errors.append(relative_error(returned, fd))
         transverse.append(float(np.max(np.abs(base.plane_stress_residual_mpa))))
@@ -72,7 +82,9 @@ def check_history(batch, step: float) -> dict[str, object]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--library", default=os.environ.get("MFRONT_BEHAVIOUR_LIBRARY"), required=False)
+    parser.add_argument(
+        "--library", default=os.environ.get("MFRONT_BEHAVIOUR_LIBRARY"), required=False
+    )
     parser.add_argument("--delta", type=float, default=1.0e-5)
     parser.add_argument("--zero-derivative", type=float, default=-1.0)
     parser.add_argument("--output", type=Path, required=True)
@@ -88,7 +100,12 @@ def main() -> None:
     for name, angles in {"identity": None, "bunge_35_20_15": (35.0, 20.0, 15.0)}.items():
         report["cases"][name] = {}
         for step in report["steps"]:
-            batch = make_batch(str(Path(args.library).resolve()), args.delta, args.zero_derivative, angles)
+            batch = make_batch(
+                str(Path(args.library).resolve()),
+                args.delta,
+                args.zero_derivative,
+                angles,
+            )
             report["cases"][name][str(step)] = check_history(batch, step)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))

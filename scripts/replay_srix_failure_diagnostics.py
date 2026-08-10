@@ -83,7 +83,7 @@ def replay(
             statuses.append(int(status))
         statuses_array = np.asarray(statuses, dtype=int)
         results["candidates"][str(delta)] = {
-            "records": int(len(statuses)),
+            "records": len(statuses),
             "failed_trials": int(np.sum(statuses_array != 1)),
             "rescued_trials": int(np.sum(statuses_array == 1)),
             "status_histogram": {
