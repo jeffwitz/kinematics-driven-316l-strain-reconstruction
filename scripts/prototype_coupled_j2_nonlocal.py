@@ -90,6 +90,11 @@ def main() -> None:
     initial_nonlocal = np.full(grid.nx * grid.ny, 1.0e-3)
     h_u = args.strain_step * max(grid.spacing_x, grid.spacing_y)
     h_chi = args.chi_step
+    coupled_material_seconds = 0.0
+    coupled_coupling_derivative_seconds = 0.0
+    coupled_material_evaluations = 0
+    coupled_coupling_probe_evaluations = 0
+    coupled_response_evaluations = 0
 
     def strain_from_mechanical(mechanical: np.ndarray) -> np.ndarray:
         full = boundary.copy()
@@ -99,13 +104,19 @@ def main() -> None:
     def response(
         mechanical: np.ndarray, chi: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        nonlocal coupled_material_seconds, coupled_material_evaluations
+        nonlocal coupled_response_evaluations
         samples = strain_from_mechanical(mechanical)
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
+        material_start = time.perf_counter()
         trial = material.evaluate_in_plane(
             samples,
             time_increment=args.time_increment,
             consistent_tangent=True,
         )
+        coupled_material_seconds += time.perf_counter() - material_start
+        coupled_material_evaluations += 1
+        coupled_response_evaluations += 1
         stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
         source = np.asarray(trial.observables["equivalent_plastic_strain"]).reshape(
             grid.nx, grid.ny, 2
@@ -131,6 +142,8 @@ def main() -> None:
         TET2 and Helmholtz transfer operators in the block actions.
         """
 
+        nonlocal coupled_material_seconds, coupled_material_evaluations
+        nonlocal coupled_coupling_probe_evaluations
         samples = strain_from_mechanical(mechanical)
         point_chi = np.repeat(chi, 2)
         chi_step = min(h_chi, 0.5 * float(np.min(chi)))
@@ -140,12 +153,18 @@ def main() -> None:
         def stress_source(
             chi_values: np.ndarray, strain_values: np.ndarray
         ) -> tuple[np.ndarray, np.ndarray]:
+            nonlocal coupled_material_seconds, coupled_material_evaluations
+            nonlocal coupled_coupling_probe_evaluations
             material.set_nonlocal_equivalent_plastic_strain(chi_values)
+            material_start = time.perf_counter()
             trial = material.evaluate_in_plane(
                 strain_values,
                 time_increment=args.time_increment,
                 consistent_tangent=False,
             )
+            coupled_material_seconds += time.perf_counter() - material_start
+            coupled_material_evaluations += 1
+            coupled_coupling_probe_evaluations += 1
             stress = np.asarray(trial.stress_in_plane_mpa).copy()
             source = np.asarray(
                 trial.observables["equivalent_plastic_strain"]
@@ -171,12 +190,17 @@ def main() -> None:
         return dsigma_dchi, dp_depsilon, dp_dchi
 
     def evaluate(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
+        nonlocal coupled_coupling_derivative_seconds
         mechanical, chi = state
         ru, g, tangent = response(mechanical, chi)
         nu = mechanical.size
         nc = chi.size
+        coupling_derivative_start = time.perf_counter()
         dsigma_dchi, dp_depsilon, dp_dchi = local_coupling_derivatives(
             mechanical, chi
+        )
+        coupled_coupling_derivative_seconds += (
+            time.perf_counter() - coupling_derivative_start
         )
 
         def ruu_action(value: np.ndarray) -> np.ndarray:
@@ -273,6 +297,11 @@ def main() -> None:
         "partitioned_elapsed_seconds": partitioned_elapsed,
         "coupled_minus_partitioned_seconds": coupled_elapsed - partitioned_elapsed,
         "coupled_over_partitioned": coupled_elapsed / partitioned_elapsed,
+        "coupled_material_seconds": coupled_material_seconds,
+        "coupled_coupling_derivative_seconds": coupled_coupling_derivative_seconds,
+        "coupled_material_evaluations": coupled_material_evaluations,
+        "coupled_coupling_probe_evaluations": coupled_coupling_probe_evaluations,
+        "coupled_response_evaluations": coupled_response_evaluations,
         "minimum_chi": float(np.min(result.nonlocal_field)),
         "maximum_chi": float(np.max(result.nonlocal_field)),
         "partitioned_iterations": partitioned.iterations,
