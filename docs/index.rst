@@ -94,6 +94,33 @@ Recommended journeys
 
 .. toctree::
    :hidden:
+   :caption: Start here
+
+   tutorials/first_reconstruction
+   how-to/install
+   how-to/run_316l_crystal_plasticity
+   how-to/choose_mfront_backend
+
+.. toctree::
+   :hidden:
+   :caption: Spectral solver
+
+   explanation/spectral_mechanics/solver_pipeline
+   explanation/spectral_mechanics/full_dirichlet_formulation
+   explanation/spectral_mechanics/dtt_green_operator
+   explanation/spectral_mechanics/tet2_newton_gmres
+
+.. toctree::
+   :hidden:
+   :caption: MFront and constitutive models
+
+   how-to/use_srix_crystal_law
+   reference/configuration
+   reference/numerics/mfront_structural_plane_stress
+   reference/numerics/three_dimensional_condensation
+
+.. toctree::
+   :hidden:
    :caption: Explanation
 
    explanation/index

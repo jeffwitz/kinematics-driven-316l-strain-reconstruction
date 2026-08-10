@@ -105,12 +105,12 @@ html_theme_options = {
     "collapse_navigation": False,
     "includehidden": True,
     "logo_only": False,
-    "navigation_depth": 2,
+    "navigation_depth": 3,
     "prev_next_buttons_location": "bottom",
     "sticky_navigation": True,
     "style_external_links": True,
     "style_nav_header_background": "#17324d",
-    "titles_only": True,
+    "titles_only": False,
 }
 html_context = {
     "display_github": True,
