@@ -57,64 +57,27 @@ provide a local system with any dimension. Its observable can be accumulated
 slip, a slip-family measure, or another explicitly declared scalar/vector;
 the sensitivity engine only consumes the derivatives of that observable.
 
-## Current integration boundary
-
-**Superseded on 2026-08-10. Read this section with the correction below.**
-
-The installed MGIS 5.1 interface exposes gradients, thermodynamic forces,
-internal and external state variables, and the consistent tangent operator,
-but it does not expose the converged local residual/Jacobian or derivatives of
-arbitrary observables. Consequently, the current Python pilot cannot obtain
-this contract from an arbitrary MFront behaviour without an additional
-MFront/TFEL export hook.
-
-### Correction: no export hook is needed
-
-The statement about MGIS is accurate. The conclusion drawn from it is not.
-
-The host never needed `F_z` and `F_q`. It needs `dy/dq`, and MFront already
-performs that solve internally: the `ImplicitGenericBehaviour` DSL accepts
-several gradient/force pairs, `@TangentOperatorBlocks` names the cross
-derivatives wanted, and `getIntegrationVariablesDerivatives_*` obtains them
-from the converged implicit Jacobian without refactorising it. MGIS then
-publishes them through `tangent_operator_blocks`, which is public API.
-
-Demonstrated on the micromorphic J2 law in
-`validation/micromorphic_generic_tangent_blocks.md`: all four blocks match
-central finite differences, and the complete coupled linearisation costs 11 %
-over a bare integration against roughly `9×` for the finite-difference route.
-
-The generic Python algebra in `implicit_sensitivities` is not wasted — it
-remains the right consumer for any law that cannot express its observable as a
-declared force, and the finite-difference adapter remains the oracle that
-qualifies either route. But the MFront-facing step described below is narrower
-than it appeared: it is a behaviour rewrite, not a request upstream.
-
-The finite-difference probes remain the validation fallback. They must not be
-presented as the generic implementation. ~~The next MFront-facing step is to
-export these blocks from the generated local integration context, or to add a
-small DSL contract allowing a behaviour to declare the observable and its
-partial derivatives.~~ The next MFront-facing step is to rewrite the behaviour
-under `ImplicitGenericBehaviour` and declare the blocks; the DSL contract this
-paragraph asked for already exists. It must still be exercised on both SRIX and
-Méric–Cailletaud before replacing the probes in the coupled driver, and the
-J2 demonstration is tridimensional while production is plane stress.
-
-## Verified MGIS boundary
+## Current implementation boundary
 
 The installed headers were checked directly under
 `/home/jeff/.local/include/MGIS/Behaviour`. `State` stores gradients,
 thermodynamic forces, material properties and state-variable arrays, while
 `MaterialDataManager` exposes the consistent tangent operator and the
 transactional state operations. The public API does not expose the local
-implicit residual or its Jacobian, but that is not required when the law is
-written as an `ImplicitGenericBehaviour`: MFront performs the local implicit
-solve and MGIS returns the requested tangent blocks.
+implicit residual or its Jacobian. This is sufficient: when the law is written
+as an `ImplicitGenericBehaviour`, MFront performs the local implicit solve and
+MGIS returns the requested tangent blocks.
 
 The remaining boundary is the choice of observable. An arbitrary state
 observable cannot be differentiated by MGIS merely because it is present in an
 internal-variable array. It must be declared as a second generic force, as in
-the micromorphic probe, or be handled by the finite-difference oracle. This is
-why the generic block mechanism is now demonstrated for J2, while SRIX and
-Méric still require their own `ImplicitGenericBehaviour` reformulations before
-the production FD probes can be removed.
+the micromorphic probe, or be handled by the finite-difference oracle. The
+micromorphic J2 probe demonstrates the four blocks in three dimensions, and
+the independent two-field probe demonstrates that the same interface compiles
+directly under `PlaneStress`, returning a `5 x 5` operator partitioned as
+`4x4`, `4x1`, `1x4` and `1x1`.
+
+The remaining work is constitutive reformulation and qualification of the
+production plane-stress law, followed by the same exercise for SRIX and
+Méric–Cailletaud. Only then can the production finite-difference probes be
+removed.

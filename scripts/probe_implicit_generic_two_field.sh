@@ -23,7 +23,7 @@ library = os.environ["LIBRARY"]
 behaviour = mgis.load(
     library,
     "ImplicitGenericTwoFieldProbe",
-    mgis.Hypothesis.Tridimensional,
+    mgis.Hypothesis.PlaneStress,
 )
 blocks = list(behaviour.tangent_operator_blocks)
 expected = ["dsig_ddeto", "dsig_ddphi", "dpre_ddeto", "dpre_ddphi"]
@@ -38,7 +38,7 @@ for state in (data.s0, data.s1):
     mgis.setMaterialProperty(state, "mu", 50.0)
     mgis.setMaterialProperty(state, "coupling", 7.0)
     mgis.setExternalStateVariable(state, "Temperature", 293.15)
-data.s1.gradients[0] = np.array([1.0e-3, -2.0e-4, 3.0e-4, 4.0e-4, -5.0e-4, 6.0e-4, 2.0e-3])
+data.s1.gradients[0] = np.array([1.0e-3, -2.0e-4, 3.0e-4, 0.0, 2.0e-3])
 mgis.integrate(
     data,
     mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
@@ -48,12 +48,12 @@ mgis.integrate(
 )
 
 values = np.asarray(data.K)
-if values.size != 7 * 7:
+if values.size != 5 * 5:
     raise SystemExit(f"unexpected tangent storage size: {values.size}")
-matrix = values.reshape(7, 7)
-block_sizes = [matrix[:6, :6].size, matrix[:6, 6:].size,
-               matrix[6:, :6].size, matrix[6:, 6:].size]
-if block_sizes != [36, 6, 6, 1]:
+matrix = values.reshape(5, 5)
+block_sizes = [matrix[:4, :4].size, matrix[:4, 4:].size,
+               matrix[4:, :4].size, matrix[4:, 4:].size]
+if block_sizes != [16, 4, 4, 1]:
     raise SystemExit(f"unexpected block sizes: {block_sizes}")
 print(f"ImplicitGenericBehaviour probe: passed (blocks={block_names!r})")
 print(f"block_sizes={block_sizes}")
