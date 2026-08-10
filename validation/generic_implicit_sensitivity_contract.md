@@ -59,6 +59,8 @@ the sensitivity engine only consumes the derivatives of that observable.
 
 ## Current integration boundary
 
+**Superseded on 2026-08-10. Read this section with the correction below.**
+
 The installed MGIS 5.1 interface exposes gradients, thermodynamic forces,
 internal and external state variables, and the consistent tangent operator,
 but it does not expose the converged local residual/Jacobian or derivatives of
@@ -66,12 +68,37 @@ arbitrary observables. Consequently, the current Python pilot cannot obtain
 this contract from an arbitrary MFront behaviour without an additional
 MFront/TFEL export hook.
 
+### Correction: no export hook is needed
+
+The statement about MGIS is accurate. The conclusion drawn from it is not.
+
+The host never needed `F_z` and `F_q`. It needs `dy/dq`, and MFront already
+performs that solve internally: the `ImplicitGenericBehaviour` DSL accepts
+several gradient/force pairs, `@TangentOperatorBlocks` names the cross
+derivatives wanted, and `getIntegrationVariablesDerivatives_*` obtains them
+from the converged implicit Jacobian without refactorising it. MGIS then
+publishes them through `tangent_operator_blocks`, which is public API.
+
+Demonstrated on the micromorphic J2 law in
+`validation/micromorphic_generic_tangent_blocks.md`: all four blocks match
+central finite differences, and the complete coupled linearisation costs 11 %
+over a bare integration against roughly `9×` for the finite-difference route.
+
+The generic Python algebra in `implicit_sensitivities` is not wasted — it
+remains the right consumer for any law that cannot express its observable as a
+declared force, and the finite-difference adapter remains the oracle that
+qualifies either route. But the MFront-facing step described below is narrower
+than it appeared: it is a behaviour rewrite, not a request upstream.
+
 The finite-difference probes remain the validation fallback. They must not be
-presented as the generic implementation. The next MFront-facing step is to
+presented as the generic implementation. ~~The next MFront-facing step is to
 export these blocks from the generated local integration context, or to add a
 small DSL contract allowing a behaviour to declare the observable and its
-partial derivatives. That contract must be exercised on both SRIX and
-Méric–Cailletaud before replacing the probes in the coupled driver.
+partial derivatives.~~ The next MFront-facing step is to rewrite the behaviour
+under `ImplicitGenericBehaviour` and declare the blocks; the DSL contract this
+paragraph asked for already exists. It must still be exercised on both SRIX and
+Méric–Cailletaud before replacing the probes in the coupled driver, and the
+J2 demonstration is tridimensional while production is plane stress.
 
 ## Verified MGIS boundary
 

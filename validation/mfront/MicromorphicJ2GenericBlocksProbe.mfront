@@ -1,0 +1,177 @@
+@DSL ImplicitGenericBehaviour;
+@Behaviour MicromorphicJ2GenericBlocksProbe;
+@Author Adil case-study contributors;
+@Date 10 / 08 / 2026;
+@Description {
+  Feasibility probe: can the four coupled tangent blocks of the micromorphic
+  J2 law be produced by MFront itself, instead of by eight host-side finite
+  difference probes?
+
+  The coupled Newton needs dsig/deps, dsig/dchi, dp/deps and dp/dchi at every
+  material point. The host currently obtains the last three by finite
+  differences around the converged point, which costs eight extra integrations
+  per call.
+
+  This probe declares the micromorphic field chi as a SECOND GRADIENT and the
+  equivalent plastic strain as its conjugate THERMODYNAMIC FORCE, then asks
+  for the four blocks through @TangentOperatorBlocks. The pairing is an
+  interface device, not a physical statement: p is not the energetic conjugate
+  of chi, it is the observable the coupled solver needs differentiated. MFront
+  does not require the pairing to be energetic, and the blocks it returns are
+  the derivatives actually requested.
+
+  The derivatives of the local unknowns are obtained from the converged
+  implicit Jacobian through getIntegrationVariablesDerivatives_*, so no local
+  system is refactorised and no residual is exported to the host. The
+  architecture follows the TFEL reference test PoroPlasticity.mfront, which
+  couples two gradients and two forces the same way.
+
+  Tridimensional only, and deliberately so: the plane-stress closure is
+  already qualified separately and adding it here would confound two
+  questions. This probe answers one -- whether the block mechanism reproduces
+  the finite-difference derivatives -- and nothing else.
+}
+
+@ModellingHypothesis Tridimensional;
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-14;
+@Theta 1;
+
+@MaterialProperty stress young;
+young.setGlossaryName("YoungModulus");
+@MaterialProperty real nu;
+nu.setGlossaryName("PoissonRatio");
+
+@MaterialProperty stress sy0;
+sy0.setEntryName("InitialYieldStress");
+@MaterialProperty stress K;
+K.setEntryName("HardeningCoefficient");
+@MaterialProperty real ludwik_n;
+ludwik_n.setEntryName("HardeningExponent");
+@MaterialProperty stress Hchi;
+Hchi.setEntryName("MicromorphicCouplingModulus");
+
+//! Regularisation point of the Ludwik power, as in the production law.
+@Parameter real p0 = 1.e-6;
+p0.setEntryName("FirstPositivePlasticStrain");
+
+// Gradient 1 / force 1: the mechanical pair.
+@Gradient StrainStensor eto;
+@ThermodynamicForce StressStensor sig;
+eto.setGlossaryName("Strain");
+sig.setGlossaryName("Stress");
+
+// Gradient 2 / force 2: the micromorphic field and the observable the coupled
+// solver differentiates. See the description above on why this pairing is an
+// interface device rather than an energetic conjugacy.
+@Gradient strain chi;
+@ThermodynamicForce strain pobs;
+chi.setEntryName("NonlocalEquivalentPlasticStrain");
+pobs.setEntryName("EquivalentPlasticStrainOutput");
+
+@StateVariable StrainStensor eel;
+eel.setGlossaryName("ElasticStrain");
+@StateVariable strain p;
+p.setGlossaryName("EquivalentPlasticStrain");
+
+@LocalVariable bool plastic;
+@LocalVariable Stensor4 De;
+@LocalVariable Stensor4 k4;
+@LocalVariable stress lambda;
+@LocalVariable stress mu;
+
+@InitLocalVariables {
+  lambda = computeLambda(young, nu);
+  mu = computeMu(young, nu);
+  k4 = Stensor4::K();
+  De = lambda * Stensor4::IxI() + 2 * mu * Stensor4::Id();
+}
+
+@Predictor {
+  // The elastic guess must be set explicitly. Under `Implicit` the
+  // StandardElasticity brick does it; here nothing does, and the default
+  // deel = 0 leaves sig at the committed stress. On the first plastic
+  // increment of a virgin point that stress is zero, so the flow direction
+  // 3 dev(sig) / (2 seq) divides by zero and the local Newton dies before its
+  // first iteration -- which is exactly how this probe failed at every
+  // amplitude above yield while every elastic step succeeded.
+  deel = deto;
+  // Elastic prediction, with chi at its end-of-step value: the micromorphic
+  // term shifts the yield surface, so the predictor must see it. Gradient
+  // increments belong here and not in @InitLocalVariables, which MFront warns
+  // about because they are not guaranteed to be set at that point.
+  const auto sigel = De * (eel + deto);
+  const auto Rel = p <= p0
+                       ? sy0 + K * p * pow(p0, ludwik_n - 1) + Hchi * (p - chi - dchi)
+                       : sy0 + K * pow(p, ludwik_n) + Hchi * (p - chi - dchi);
+  plastic = sigmaeq(sigel) - Rel > stress(0);
+}
+
+@ComputeThermodynamicForces {
+  sig = De * eel;
+  pobs = p;
+}
+
+@Integrator {
+  if (!plastic) {
+    feel = deel - deto;
+    fp = dp;
+    dfeel_ddeel = Stensor4::Id();
+    dfp_ddp = 1;
+    return true;
+  }
+  const auto seq = sigmaeq(sig);
+  const auto n = 3 * deviator(sig) / (2 * seq);
+  const auto p_ = p + theta * dp;
+  const auto chi_ = chi + theta * dchi;
+  // Ludwik with the same origin regularisation as the production law.
+  const auto Rp = p_ <= p0
+                      ? sy0 + K * p_ * pow(p0, ludwik_n - 1) + Hchi * (p_ - chi_)
+                      : sy0 + K * pow(p_, ludwik_n) + Hchi * (p_ - chi_);
+  const auto dR_dp = p_ < p0 ? K * pow(p0, ludwik_n - 1) + Hchi
+                             : K * ludwik_n * pow(p_, ludwik_n - 1) + Hchi;
+
+  feel = deel - deto + dp * n;
+  // Normalised by the Young modulus so both residual rows carry the same
+  // order of magnitude, as the production brick does.
+  fp = (seq - Rp) / young;
+
+  const auto dn_dsig = (3 * k4 / 2 - (n ^ n)) / seq;
+  dfeel_ddeel = Stensor4::Id() + dp * (dn_dsig * De) * theta;
+  dfeel_ddp = n;
+  dfp_ddeel = theta * (n | De) / young;
+  dfp_ddp = -theta * dR_dp / young;
+}
+
+@ComputeFinalThermodynamicForces {
+  sig = De * eel;
+  pobs = p;
+}
+
+@TangentOperatorBlocks{dsig_ddeto, dsig_ddchi, dpobs_ddeto, dpobs_ddchi};
+
+@TangentOperator {
+  static_cast<void>(smt);
+  // Derivatives of the local residuals with respect to each gradient. These
+  // are the right-hand sides; TFEL applies the converged implicit Jacobian.
+  dfeel_ddeto = -Stensor4::Id();
+  dfp_ddeto = Stensor(0);
+  auto ddeel_ddeto = Stensor4{};
+  auto ddp_ddeto = Stensor{};
+  getIntegrationVariablesDerivatives_eto(ddeel_ddeto, ddp_ddeto);
+
+  dfeel_ddchi = Stensor(0);
+  // fp = (seq - R)/young and R carries -Hchi*chi, hence +Hchi/young. In the
+  // elastic branch fp = dp does not see chi at all.
+  dfp_ddchi = plastic ? theta * Hchi / young : real(0);
+  auto ddeel_ddchi = Stensor{};
+  auto ddp_ddchi = real{};
+  getIntegrationVariablesDerivatives_chi(ddeel_ddchi, ddp_ddchi);
+
+  dsig_ddeto = De * ddeel_ddeto;
+  dsig_ddchi = De * ddeel_ddchi;
+  // The observable is the state variable p itself, so its sensitivities are
+  // exactly those of the corresponding integration unknown.
+  dpobs_ddeto = ddp_ddeto;
+  dpobs_ddchi = ddp_ddchi;
+}

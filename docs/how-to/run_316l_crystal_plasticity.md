@@ -57,3 +57,50 @@ Check the following before interpreting slip maps:
 For backend selection see {doc}`choose_mfront_backend`; for the material law
 see {doc}`use_srix_crystal_law`; for the structural closure see
 {doc}`../reference/numerics/mfront_structural_plane_stress`.
+
+## A one-element check before you touch a real case
+
+If the toolchain is right, this runs as written and prints three finite
+stresses. It needs no data files, and it is executed verbatim by the test
+suite, so it cannot drift from the API.
+
+```python
+import numpy as np
+from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
+
+batch = create_plane_stress_material_batch(
+    "mfront-structural-plane-stress",
+    np.full((1, 1), 250.0),          # yield stress map, MPa
+    np.full((1, 1), 500.0),          # hardening coefficient map, MPa
+    0.245,                            # hardening exponent
+    young_modulus_mpa=205000.0,
+    poisson_ratio=0.3,
+    hardening_mode="ludwik",
+    plastic_strain_max=0.2,
+    plastic_table_points=1000,
+    first_positive_plastic_strain=1e-6,
+    mfront_library="build/mfront/src/libBehaviour.so",
+    mfront_threads=1,
+    mfront_behaviour_id="fcc_forest_rubin_srix",
+    constitutive_options={
+        "gps_composite_fd_tangent": True,
+        "paired_parameter_set": "316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+        "crystal_orientation": {
+            "mode": "homogeneous",
+            "euler_bunge_deg": [35.0, 20.0, 15.0],
+        },
+    },
+)
+
+for step in range(1, 9):
+    strain = (step / 8) * 0.02 * np.array([1.0, -0.4, 0.0])
+    trial = batch.evaluate(np.atleast_2d(strain), time_increment=1.0 / 8)
+    batch.commit()
+
+print(trial.stress_in_plane_mpa[0])       # sigma_xx, sigma_yy, sigma_xy in MPa
+```
+
+The yield-stress and hardening maps are required by the factory signature but
+are not used by the crystal law, whose hardening comes from the registered
+parameter set. `mode: homogeneous` puts one orientation everywhere, which is
+the right starting point before wiring EBSD.

@@ -626,26 +626,45 @@ class TestTimeConvergence:
             assert errors[-1] < 1e-3, (key, errors)
 
     def test_a_coarse_reversal_misses_the_reverse_yield_point(self) -> None:
-        """A finding, recorded rather than tuned away.
+        """A finding, recorded rather than tuned away -- and its threshold moved.
 
-        Below about twenty increments over the whole path, the reversal produces
-        **no reverse slip at all**: the total slip is exactly what the forward
-        branch left, and the back strain stays at its forward value instead of
-        relaxing. That is a qualitative failure, not a large error, and it is
-        why the specification asks for monotonicity on the last refinements
-        rather than on all of them.
+        Below a certain number of increments over the whole path, the reversal
+        produces essentially **no reverse slip**: the total slip is what the
+        forward branch left, and the back strain stays at its forward value
+        instead of relaxing. That is a qualitative failure, not a large error,
+        and it is why the specification asks for monotonicity on the last
+        refinements rather than on all of them.
 
-        A campaign that reverses its loading must therefore check its increment
+        The threshold used to be twenty increments, with exact equality against
+        the forward branch. Making the symmetric Clarke element canonical at
+        zero slip increment (`d|dg|/ddg = 0`) **halved it**. Measured total
+        slip against `0.0204501740` for forward-only loading:
+
+        ==============  ==============  =====================
+        increments      total slip      gap to forward-only
+        ==============  ==============  =====================
+        10              0.0204799594    2.98e-05
+        20              0.0171293670    3.32e-03
+        40              0.0171415951    3.31e-03
+        80              0.0171555376    3.30e-03
+        ==============  ==============  =====================
+
+        Twenty increments now resolve the reversal, and agree with eighty to
+        `1e-4`. Ten still miss it, but no longer exactly: the gap is `0.15 %`
+        of the forward slip rather than zero, so this asserts a tight relative
+        bound instead of equality.
+
+        A campaign that reverses its loading must still check its increment
         count against this, not assume that fewer increments merely cost
-        accuracy.
+        accuracy. The margin is simply wider than it was.
         """
 
-        coarse = self._reversed(20)
+        coarse = self._reversed(10)
         resolved = self._reversed(80)
         forward_only = self._monotonic(10)
 
         assert np.abs(coarse["slip"]).sum() == pytest.approx(
-            np.abs(forward_only["slip"]).sum(), rel=1e-12
+            np.abs(forward_only["slip"]).sum(), rel=2e-3
         )
         assert np.abs(resolved["slip"]).sum() < 0.95 * np.abs(coarse["slip"]).sum()
         assert np.abs(resolved["back"]).max() < 0.2 * np.abs(coarse["back"]).max()

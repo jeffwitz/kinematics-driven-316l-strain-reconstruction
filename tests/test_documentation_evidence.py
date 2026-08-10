@@ -161,12 +161,15 @@ def test_the_onboarding_page_offers_the_recommended_backend() -> None:
     """The short path must not send a newcomer to the slower route.
 
     Cheap to check and easy to lose: the SRIX how-to said "the 3D behaviour is
-    condensed" and offered only that backend long after the GPS route had been
-    qualified, so every new reader was pointed at the wrong one.
+    condensed" and offered only that backend long after the closure-carrying
+    route had been qualified, so every new reader was pointed at the wrong one.
+    The recommended backend has since moved from the specialised GPS behaviour
+    to the generic structural one; this test tracks the current recommendation
+    rather than any particular name's permanence.
     """
 
     page = (HOW_TO / "run_316l_crystal_plasticity.md").read_text(encoding="utf-8")
-    assert "mfront-native-generalised-plane-stress" in page
+    assert "mfront-structural-plane-stress" in page
     assert "gps_composite_fd_tangent" in page
     # And it must still name the reference, or the reader cannot check anything.
     assert "mfront-3d-condensed-plane-stress" in page

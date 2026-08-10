@@ -1,0 +1,605 @@
+{
+  "behaviour": "MicromorphicJ2GenericBlocksProbe",
+  "cost_10000_points_ms": {
+    "host_finite_difference_route_estimated": 1436.34,
+    "integration_no_tangent": 159.59,
+    "integration_plus_four_blocks": 177.82,
+    "note": "FD route estimated as nine no-tangent integrations, one base plus eight probes"
+  },
+  "execution_commit": "34b4dfe1f7587d7b7da73fff9b1a9502aa2e5290",
+  "material": {
+    "HardeningCoefficient": 500.0,
+    "HardeningExponent": 0.245,
+    "InitialYieldStress": 250.0,
+    "MicromorphicCouplingModulus": 3000.0,
+    "PoissonRatio": 0.3,
+    "YoungModulus": 205000.0
+  },
+  "sweeps": [
+    {
+      "amplitude": 0.02,
+      "chi_scale": 0.01,
+      "finite_difference_step": 1e-06,
+      "plastic_steps": 12,
+      "records": [
+        {
+          "dp_dchi": {
+            "finite_difference": 0.009888965365274695,
+            "returned": 0.009888965365715123
+          },
+          "equivalent_plastic_strain": 0.00025204148941027196,
+          "relative_error": {
+            "dp_dchi": 4.4537238459631454e-11,
+            "dp_deto": 1.1652130061756948e-07,
+            "dsig_dchi": 5.726396767913352e-11,
+            "dsig_deto": 4.741895068789633e-08
+          },
+          "step": 1,
+          "von_mises_stress": 318.5486983768402
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01176877020218469,
+            "returned": 0.011768770202135802
+          },
+          "equivalent_plastic_strain": 0.001660923901035315,
+          "relative_error": {
+            "dp_dchi": 4.154042959467683e-12,
+            "dp_deto": 1.2501698148191306e-08,
+            "dsig_dchi": 2.4293516103131626e-11,
+            "dsig_deto": 9.29238511558242e-09
+          },
+          "step": 2,
+          "von_mises_stress": 359.42584100436255
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012047919277242275,
+            "returned": 0.01204791927746204
+          },
+          "equivalent_plastic_strain": 0.0031566403671937603,
+          "relative_error": {
+            "dp_dchi": 1.8240923865809733e-11,
+            "dp_deto": 1.1458873160162417e-08,
+            "dsig_dchi": 4.4372896256014974e-11,
+            "dsig_deto": 8.700373832841823e-09
+          },
+          "step": 3,
+          "von_mises_stress": 379.46057863799047
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012166613078991306,
+            "returned": 0.012166613078234577
+          },
+          "equivalent_plastic_strain": 0.004675053385190672,
+          "relative_error": {
+            "dp_dchi": 6.219723956001078e-11,
+            "dp_deto": 1.0968974143080996e-08,
+            "dsig_dchi": 4.021531217512988e-11,
+            "dsig_deto": 8.514245985277633e-09
+          },
+          "step": 4,
+          "von_mises_stress": 394.0475604582548
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01223380192462431,
+            "returned": 0.012233801924617068
+          },
+          "equivalent_plastic_strain": 0.006204637524779607,
+          "relative_error": {
+            "dp_dchi": 5.920048858748855e-13,
+            "dp_deto": 1.0605341407720835e-08,
+            "dsig_dchi": 2.760678371640275e-11,
+            "dsig_deto": 8.378133646834472e-09
+          },
+          "step": 5,
+          "von_mises_stress": 405.9531859637868
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012277576681447161,
+            "returned": 0.012277576681719698
+          },
+          "equivalent_plastic_strain": 0.0077410121257067204,
+          "relative_error": {
+            "dp_dchi": 2.2197963670805125e-11,
+            "dp_deto": 1.0309652153119315e-08,
+            "dsig_dchi": 3.3365996459550554e-11,
+            "dsig_deto": 8.2626212435617e-09
+          },
+          "step": 6,
+          "von_mises_stress": 416.2289262121322
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012308608098032803,
+            "returned": 0.012308608097577105
+          },
+          "equivalent_plastic_strain": 0.009282003364322373,
+          "relative_error": {
+            "dp_dchi": 3.7022706038071876e-11,
+            "dp_deto": 1.0059159207526145e-08,
+            "dsig_dchi": 4.158192013491078e-11,
+            "dsig_deto": 8.159923816965453e-09
+          },
+          "step": 7,
+          "von_mises_stress": 425.3965547532491
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012331883647055675,
+            "returned": 0.012331883647288619
+          },
+          "equivalent_plastic_strain": 0.010826361700819728,
+          "relative_error": {
+            "dp_dchi": 1.8889561334793376e-11,
+            "dp_deto": 9.841716603812155e-09,
+            "dsig_dchi": 3.934933784427634e-11,
+            "dsig_deto": 8.066199358068881e-09
+          },
+          "step": 8,
+          "von_mises_stress": 433.7559932578454
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012350063046014104,
+            "returned": 0.012350063046043917
+          },
+          "equivalent_plastic_strain": 0.012373297541270435,
+          "relative_error": {
+            "dp_dchi": 2.4139923453880125e-12,
+            "dp_deto": 9.64543517840005e-09,
+            "dsig_dchi": 5.807502505972449e-11,
+            "dsig_deto": 7.979470419088878e-09
+          },
+          "step": 9,
+          "von_mises_stress": 441.49676456375164
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01236470133832851,
+            "returned": 0.012364701338800913
+          },
+          "equivalent_plastic_strain": 0.013922277612092547,
+          "relative_error": {
+            "dp_dchi": 3.820580485519569e-11,
+            "dp_deto": 9.46934390555384e-09,
+            "dsig_dchi": 1.1738026019611305e-10,
+            "dsig_deto": 7.898271335726172e-09
+          },
+          "step": 10,
+          "von_mises_stress": 448.7468680374278
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01237677178019675,
+            "returned": 0.012376771779703923
+          },
+          "equivalent_plastic_strain": 0.015472923494076647,
+          "relative_error": {
+            "dp_dchi": 3.981864371904874e-11,
+            "dp_deto": 9.306063917248158e-09,
+            "dsig_dchi": 3.5496433429647384e-11,
+            "dsig_deto": 7.821696091981398e-09
+          },
+          "step": 11,
+          "von_mises_stress": 455.5971340156871
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01238691636762379,
+            "returned": 0.01238691636791894
+          },
+          "equivalent_plastic_strain": 0.01702495617984605,
+          "relative_error": {
+            "dp_dchi": 2.382750580451889e-11,
+            "dp_deto": 9.157894740001193e-09,
+            "dsig_dchi": 1.3878485931525676e-10,
+            "dsig_deto": 7.749096616038698e-09
+          },
+          "step": 12,
+          "von_mises_stress": 462.11453144029406
+        }
+      ],
+      "steps": 12,
+      "worst_relative_error_on_plastic_steps": {
+        "dp_dchi": 6.219723956001078e-11,
+        "dp_deto": 1.1652130061756948e-07,
+        "dsig_dchi": 1.3878485931525676e-10,
+        "dsig_deto": 4.741895068789633e-08
+      }
+    },
+    {
+      "amplitude": 0.02,
+      "chi_scale": 0.01,
+      "finite_difference_step": 1e-07,
+      "plastic_steps": 12,
+      "records": [
+        {
+          "dp_dchi": {
+            "finite_difference": 0.009888965365708376,
+            "returned": 0.009888965365715123
+          },
+          "equivalent_plastic_strain": 0.00025204148941027196,
+          "relative_error": {
+            "dp_dchi": 6.822088407213814e-13,
+            "dp_deto": 1.1651874469654615e-09,
+            "dsig_dchi": 5.1283584571472135e-11,
+            "dsig_deto": 4.743516506910161e-10
+          },
+          "step": 1,
+          "von_mises_stress": 318.5486983768402
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.011768770200992068,
+            "returned": 0.011768770202135802
+          },
+          "equivalent_plastic_strain": 0.001660923901035315,
+          "relative_error": {
+            "dp_dchi": 9.718385126065794e-11,
+            "dp_deto": 1.2450511524011174e-10,
+            "dsig_dchi": 1.656976102143552e-10,
+            "dsig_deto": 9.285505341623414e-11
+          },
+          "step": 2,
+          "von_mises_stress": 359.42584100436255
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012047919278976998,
+            "returned": 0.01204791927746204
+          },
+          "equivalent_plastic_strain": 0.0031566403671937603,
+          "relative_error": {
+            "dp_dchi": 1.2574439308725566e-10,
+            "dp_deto": 1.183056330623654e-10,
+            "dsig_dchi": 6.65593363339905e-10,
+            "dsig_deto": 8.730820682966141e-11
+          },
+          "step": 3,
+          "von_mises_stress": 379.46057863799047
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012166613077256583,
+            "returned": 0.012166613078234577
+          },
+          "equivalent_plastic_strain": 0.004675053385190672,
+          "relative_error": {
+            "dp_dchi": 8.038340016721807e-11,
+            "dp_deto": 1.1388346925748276e-10,
+            "dsig_dchi": 1.7440530343538593e-10,
+            "dsig_deto": 8.555950796261993e-11
+          },
+          "step": 4,
+          "von_mises_stress": 394.0475604582548
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012233801927226395,
+            "returned": 0.012233801924617068
+          },
+          "equivalent_plastic_strain": 0.006204637524779607,
+          "relative_error": {
+            "dp_dchi": 2.1328837102310284e-10,
+            "dp_deto": 1.084809000944233e-10,
+            "dsig_dchi": 5.401260382267936e-10,
+            "dsig_deto": 8.362441772142018e-11
+          },
+          "step": 5,
+          "von_mises_stress": 405.9531859637868
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01227757668101348,
+            "returned": 0.012277576681719698
+          },
+          "equivalent_plastic_strain": 0.0077410121257067204,
+          "relative_error": {
+            "dp_dchi": 5.752096594327226e-11,
+            "dp_deto": 1.102579086889974e-10,
+            "dsig_dchi": 4.0967542654311824e-11,
+            "dsig_deto": 8.354098587337423e-11
+          },
+          "step": 6,
+          "von_mises_stress": 416.2289262121322
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012308608099767526,
+            "returned": 0.012308608097577105
+          },
+          "equivalent_plastic_strain": 0.009282003364322373,
+          "relative_error": {
+            "dp_dchi": 1.7795850169033144e-10,
+            "dp_deto": 1.0489885817117436e-10,
+            "dsig_dchi": 4.004121333820563e-10,
+            "dsig_deto": 8.120094416930336e-11
+          },
+          "step": 7,
+          "von_mises_stress": 425.3965547532491
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012331883647923036,
+            "returned": 0.012331883647288619
+          },
+          "equivalent_plastic_strain": 0.010826361700819728,
+          "relative_error": {
+            "dp_dchi": 5.144533337943551e-11,
+            "dp_deto": 1.0915839220688902e-10,
+            "dsig_dchi": 4.902496848543359e-10,
+            "dsig_deto": 8.084858036854142e-11
+          },
+          "step": 8,
+          "von_mises_stress": 433.7559932578454
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012350063046881465,
+            "returned": 0.012350063046043917
+          },
+          "equivalent_plastic_strain": 0.012373297541270435,
+          "relative_error": {
+            "dp_dchi": 6.781736879810966e-11,
+            "dp_deto": 1.0678735969651061e-10,
+            "dsig_dchi": 2.7651458984058786e-10,
+            "dsig_deto": 8.05786960993874e-11
+          },
+          "step": 9,
+          "von_mises_stress": 441.49676456375164
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012364701337461148,
+            "returned": 0.012364701338800913
+          },
+          "equivalent_plastic_strain": 0.013922277612092547,
+          "relative_error": {
+            "dp_dchi": 1.0835402067935872e-10,
+            "dp_deto": 8.511957379977249e-11,
+            "dsig_dchi": 2.699862812676241e-10,
+            "dsig_deto": 7.902487679031543e-11
+          },
+          "step": 10,
+          "von_mises_stress": 448.7468680374278
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012376771777594664,
+            "returned": 0.012376771779703923
+          },
+          "equivalent_plastic_strain": 0.015472923494076647,
+          "relative_error": {
+            "dp_dchi": 1.7042076770583379e-10,
+            "dp_deto": 9.054972349734846e-11,
+            "dsig_dchi": 4.812511746813839e-10,
+            "dsig_deto": 7.819956773246439e-11
+          },
+          "step": 11,
+          "von_mises_stress": 455.5971340156871
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012386916371093237,
+            "returned": 0.01238691636791894
+          },
+          "equivalent_plastic_strain": 0.01702495617984605,
+          "relative_error": {
+            "dp_dchi": 2.5626213459482755e-10,
+            "dp_deto": 1.1108444165014194e-10,
+            "dsig_dchi": 3.508342896837995e-10,
+            "dsig_deto": 7.733893477738865e-11
+          },
+          "step": 12,
+          "von_mises_stress": 462.11453144029406
+        }
+      ],
+      "steps": 12,
+      "worst_relative_error_on_plastic_steps": {
+        "dp_dchi": 2.5626213459482755e-10,
+        "dp_deto": 1.1651874469654615e-09,
+        "dsig_dchi": 6.65593363339905e-10,
+        "dsig_deto": 4.743516506910161e-10
+      }
+    },
+    {
+      "amplitude": 0.02,
+      "chi_scale": 0.01,
+      "finite_difference_step": 1e-08,
+      "plastic_steps": 12,
+      "records": [
+        {
+          "dp_dchi": {
+            "finite_difference": 0.009888965370858337,
+            "returned": 0.009888965365715123
+          },
+          "equivalent_plastic_strain": 0.00025204148941027196,
+          "relative_error": {
+            "dp_dchi": 5.200962675897868e-10,
+            "dp_deto": 1.0857839619864723e-11,
+            "dsig_dchi": 1.0956851428927424e-09,
+            "dsig_deto": 1.2119030507629197e-11
+          },
+          "step": 1,
+          "von_mises_stress": 318.5486983768402
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.011768770214002494,
+            "returned": 0.011768770202135802
+          },
+          "equivalent_plastic_strain": 0.001660923901035315,
+          "relative_error": {
+            "dp_dchi": 1.0083204482124203e-09,
+            "dp_deto": 6.094830889790101e-11,
+            "dsig_dchi": 1.2875281561754366e-09,
+            "dsig_deto": 2.789360786583469e-11
+          },
+          "step": 2,
+          "von_mises_stress": 359.42584100436255
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012047919281145403,
+            "returned": 0.01204791927746204
+          },
+          "equivalent_plastic_strain": 0.0031566403671937603,
+          "relative_error": {
+            "dp_dchi": 3.0572603922027926e-10,
+            "dp_deto": 5.5287495934943323e-11,
+            "dsig_dchi": 1.1872905926309187e-09,
+            "dsig_deto": 2.5705324755012677e-11
+          },
+          "step": 3,
+          "von_mises_stress": 379.46057863799047
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012166613072919774,
+            "returned": 0.012166613078234577
+          },
+          "equivalent_plastic_strain": 0.004675053385190672,
+          "relative_error": {
+            "dp_dchi": 4.3683499966317104e-10,
+            "dp_deto": 6.028715411736823e-11,
+            "dsig_dchi": 4.715947769413887e-09,
+            "dsig_deto": 3.3251644895685004e-11
+          },
+          "step": 4,
+          "von_mises_stress": 394.0475604582548
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012233801905542352,
+            "returned": 0.012233801924617068
+          },
+          "equivalent_plastic_strain": 0.006204637524779607,
+          "relative_error": {
+            "dp_dchi": 1.559181349551781e-09,
+            "dp_deto": 7.238740856854999e-11,
+            "dsig_dchi": 3.3375847016902123e-09,
+            "dsig_deto": 1.9030295584443205e-11
+          },
+          "step": 5,
+          "von_mises_stress": 405.9531859637868
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012277576741728802,
+            "returned": 0.012277576681719698
+          },
+          "equivalent_plastic_strain": 0.0077410121257067204,
+          "relative_error": {
+            "dp_dchi": 4.887699327921602e-09,
+            "dp_deto": 6.376065967700323e-11,
+            "dsig_dchi": 9.242387715398555e-09,
+            "dsig_deto": 3.9340936281371884e-11
+          },
+          "step": 6,
+          "von_mises_stress": 416.2289262121322
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012308608039052205,
+            "returned": 0.012308608097577105
+          },
+          "equivalent_plastic_strain": 0.009282003364322373,
+          "relative_error": {
+            "dp_dchi": 4.754794369775602e-09,
+            "dp_deto": 7.620048987481966e-11,
+            "dsig_dchi": 4.17598229601505e-09,
+            "dsig_deto": 4.711957610159362e-11
+          },
+          "step": 7,
+          "von_mises_stress": 425.3965547532491
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01233188360455495,
+            "returned": 0.012331883647288619
+          },
+          "equivalent_plastic_strain": 0.010826361700819728,
+          "relative_error": {
+            "dp_dchi": 3.4652994144521525e-09,
+            "dp_deto": 8.583343247828411e-11,
+            "dsig_dchi": 1.495282936266697e-09,
+            "dsig_deto": 4.6729766515996394e-11
+          },
+          "step": 8,
+          "von_mises_stress": 433.7559932578454
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012350063072902318,
+            "returned": 0.012350063046043917
+          },
+          "equivalent_plastic_strain": 0.012373297541270435,
+          "relative_error": {
+            "dp_dchi": 2.1747581985158666e-09,
+            "dp_deto": 1.3070266298368313e-10,
+            "dsig_dchi": 1.202282563119493e-09,
+            "dsig_deto": 4.1162152193597336e-11
+          },
+          "step": 9,
+          "von_mises_stress": 441.49676456375164
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012364701276745826,
+            "returned": 0.012364701338800913
+          },
+          "equivalent_plastic_strain": 0.013922277612092547,
+          "relative_error": {
+            "dp_dchi": 5.018729152827008e-09,
+            "dp_deto": 9.255467160664159e-11,
+            "dsig_dchi": 7.197337350534397e-09,
+            "dsig_deto": 6.409088686893504e-11
+          },
+          "step": 10,
+          "von_mises_stress": 448.7468680374278
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.012376771742900194,
+            "returned": 0.012376771779703923
+          },
+          "equivalent_plastic_strain": 0.015472923494076647,
+          "relative_error": {
+            "dp_dchi": 2.9736129284848285e-09,
+            "dp_deto": 2.181255206576406e-10,
+            "dsig_dchi": 4.912638356882947e-09,
+            "dsig_deto": 1.356736470625135e-10
+          },
+          "step": 11,
+          "von_mises_stress": 455.5971340156871
+        },
+        {
+          "dp_dchi": {
+            "finite_difference": 0.01238691649252388,
+            "returned": 0.01238691636791894
+          },
+          "equivalent_plastic_strain": 0.01702495617984605,
+          "relative_error": {
+            "dp_dchi": 1.0059399449724694e-08,
+            "dp_deto": 1.7152685826928726e-10,
+            "dsig_dchi": 4.064649166864279e-09,
+            "dsig_deto": 7.795669844083247e-11
+          },
+          "step": 12,
+          "von_mises_stress": 462.11453144029406
+        }
+      ],
+      "steps": 12,
+      "worst_relative_error_on_plastic_steps": {
+        "dp_dchi": 1.0059399449724694e-08,
+        "dp_deto": 2.181255206576406e-10,
+        "dsig_dchi": 9.242387715398555e-09,
+        "dsig_deto": 1.356736470625135e-10
+      }
+    }
+  ]
+}

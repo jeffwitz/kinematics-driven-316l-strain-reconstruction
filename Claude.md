@@ -5454,3 +5454,61 @@ reproductibilité de l'archive, pas une question numérique.
 
 Neuf erreurs de lint dans les scripts de la session concurrente ont été
 réparées mécaniquement pour rendre le gate vert.
+
+### 2026-08-10 — MFront livre lui-même les quatre blocs tangents couplés
+
+Le contrat `generic_implicit_sensitivity_contract.md` concluait qu'un export
+TFEL supplémentaire était nécessaire, MGIS n'exposant ni le résidu local ni son
+Jacobien. **Le constat sur MGIS est exact, la conséquence était fausse.** L'hôte
+n'a jamais eu besoin de `F_z` et `F_q` : il a besoin des dérivées, et MFront
+les calcule déjà en interne.
+
+Cinq faits vérifiés sur cette machine, aucun supposé : le DSL
+`ImplicitGenericBehaviour` existe ; `PoroPlasticity.mfront` de TFEL 5.1.0
+couple deux gradients et deux forces ; `@TangentOperatorBlocks` nomme les
+dérivées croisées voulues ; `getIntegrationVariablesDerivatives_*` les tire du
+Jacobien implicite convergé ; MGIS publie `tangent_operator_blocks`.
+
+`validation/mfront/MicromorphicJ2GenericBlocksProbe.mfront` applique ce patron
+au J2/Ludwik micromorphique : paire mécanique `(eto, sig)` et seconde paire
+`(chi, pobs)` où `pobs` est la déformation plastique équivalente. L'appariement
+est un **dispositif d'interface, pas une conjugaison énergétique** — MFront ne
+l'exige pas, et rend exactement les quatre blocs demandés.
+
+Les quatre blocs coïncident avec des différences finies centrées : les deux en
+`eto` chutent d'un facteur 100 exact entre `h=1e-6` et `1e-7`, l'`O(h²)` d'une
+différence centrée, puis plafonnent sur le bruit de soustraction ; les deux en
+`chi` sont déjà au plancher à `1e-6`, donc bornés à `~1e-10`. Coût sur 10 000
+points : `177,82 ms` avec les quatre blocs contre `159,59 ms` sans tangent,
+soit **11 %**, là où la route par différences finies coûte `9×`.
+
+Un piège, consigné parce qu'il a coûté trois tentatives. Sous `Implicit`, la
+brique `StandardElasticity` pose `deel = deto` avant le Newton local. Sous
+`ImplicitGenericBehaviour` **rien ne le fait**, et le défaut `deel = 0` laisse
+`sig` à la contrainte engagée — nulle au premier incrément plastique d'un point
+vierge, donc `3 dev(sig)/(2 seq)` divise par zéro. Le symptôme trompe : tous les
+pas élastiques passent, tous les pas au-delà de la limite échouent à n'importe
+quelle amplitude, ce qui ressemble à un résidu faux. Isolé par bissection — un
+Jacobien numérique échouait à l'identique, écartant la linéarisation, et une
+variante à un seul gradient aussi, écartant le mécanisme à deux gradients.
+
+Reste avant production, et c'est délibérément hors de cette sonde : elle est
+tridimensionnelle alors que la loi de production est en contraintes planes ;
+elle abandonne la brique `StandardElastoViscoPlasticity`, donc le retour radial
+est écrit à la main et devra être qualifié contre le comportement actuel ; et
+elle est J2, SRIX n'ayant pas été essayé.
+
+**Trois tests étaient rouges dans `main` à mon arrivée**, tous dus à
+`c461fa6`, qui a rendu `sign(0)=0` canonique, supprimé le paramètre et mon test
+de non-régression. Deux étaient mes tests d'accueil, périmés par la réécriture
+de la page : le backend recommandé est passé au structurel et le bloc Python
+vérifié avait disparu. Bloc restauré et de nouveau exécuté par la suite.
+
+Le troisième était le leur, et il apprend quelque chose. `sign(0)=0` **divise
+par deux** le nombre d'incréments nécessaires pour capter le renversement :
+somme des glissements `0,02048` à 10 incréments contre `0,01713` à 20, `0,01714`
+à 40 et `0,01716` à 80. Le seuil du constat passe de vingt à dix, et à dix
+l'écart n'est plus exactement nul mais `1,46e-3`. Mon propre travail de
+qualification ne couvrait que des états de chargement monotone : le basculement
+du défaut n'est donc pas neutre au renversement, il y est favorable, ce que
+personne n'avait mesuré.
