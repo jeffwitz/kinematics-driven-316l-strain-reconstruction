@@ -8,32 +8,37 @@
     "elasticity": "homogeneous"
   },
   "krylov_relative_tolerance": 0.0001,
+  "coupled_relative_tolerance": 0.0,
+  "coupled_absolute_tolerance": 1.0e-10,
   "compilation_included": false,
   "monolithic_generic": {
     "converged": true,
-    "newton_iterations": 4,
-    "krylov_iterations": [28, 26, 28, 23],
-    "total_krylov_iterations": 105,
-    "elapsed_seconds": 0.35045516496757045,
-    "material_seconds": 0.19553082791389897,
-    "material_tangent_seconds": 0.09431245597079396,
-    "material_residual_seconds": 0.10121837194310501,
-    "material_tangent_evaluations": 4,
+    "newton_iterations": 5,
+    "krylov_iterations": [28, 26, 28, 23, 24],
+    "total_krylov_iterations": 129,
+    "elapsed_seconds": 0.4188615099992603,
+    "material_seconds": 0.22282534994883463,
+    "material_tangent_seconds": 0.11585900199133903,
+    "material_residual_seconds": 0.1069663479574956,
+    "material_tangent_evaluations": 5,
     "material_residual_only_evaluations": 5,
-    "final_residual_norm": 7.647870044607598e-07
+    "final_residual_norm": 7.120403706754454e-11,
+    "final_mechanical_residual_norm": 7.120403706754454e-11,
+    "final_nonlocal_residual_norm": 2.0356085631186126e-16
   },
   "staggered_reference": {
     "converged": true,
     "outer_iterations": 15,
     "mechanical_newton_iterations": 38,
     "mechanical_krylov_iterations": 654,
-    "elapsed_seconds": 2.6156284490134567,
+    "elapsed_seconds": 2.624477450037375,
     "mechanical_residual": 3.244188721998531e-11,
     "nonlocal_residual": 9.284352335238289e-11
   },
   "comparison": {
-    "staggered_over_monolithic": 7.462305636517177,
-    "monolithic_over_staggered": 0.13400683981719576,
-    "chi_linf": 1.0719364632039152e-11
+    "staggered_over_monolithic": 6.264821871875856,
+    "monolithic_over_staggered": 0.15962120133501564,
+    "chi_linf": 6.172220720634947e-12,
+    "mechanical_linf": 9.970163583616909e-12
   }
 }

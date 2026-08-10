@@ -55,6 +55,8 @@ class CoupledNewtonResult:
     iterations: int
     initial_residual_norm: float
     final_residual_norm: float
+    final_mechanical_residual_norm: float
+    final_nonlocal_residual_norm: float
     krylov_iterations: tuple[int, ...]
 
 
@@ -119,6 +121,16 @@ def solve_coupled_newton(
             iterations=0,
             initial_residual_norm=initial_norm,
             final_residual_norm=initial_norm,
+            final_mechanical_residual_norm=(
+                float(np.linalg.norm(initial_residual[0]))
+                if initial_residual is not None
+                else float(np.linalg.norm(initial.mechanical_residual))
+            ),
+            final_nonlocal_residual_norm=(
+                float(np.linalg.norm(initial_residual[1]))
+                if initial_residual is not None
+                else float(np.linalg.norm(initial.nonlocal_residual))
+            ),
             krylov_iterations=(),
         )
 
@@ -171,6 +183,16 @@ def solve_coupled_newton(
                 iterations=iteration,
                 initial_residual_norm=initial_norm,
                 final_residual_norm=current_norm,
+                final_mechanical_residual_norm=float(
+                    np.linalg.norm(current_residual[0])
+                    if current_residual is not None
+                    else np.linalg.norm(current.mechanical_residual)
+                ),
+                final_nonlocal_residual_norm=float(
+                    np.linalg.norm(current_residual[1])
+                    if current_residual is not None
+                    else np.linalg.norm(current.nonlocal_residual)
+                ),
                 krylov_iterations=tuple(krylov_iterations),
             )
         if current_residual is not None:
@@ -183,5 +205,7 @@ def solve_coupled_newton(
         iterations=controls.maximum_iterations,
         initial_residual_norm=initial_norm,
         final_residual_norm=norm(current),
+        final_mechanical_residual_norm=float(np.linalg.norm(current.mechanical_residual)),
+        final_nonlocal_residual_norm=float(np.linalg.norm(current.nonlocal_residual)),
         krylov_iterations=tuple(krylov_iterations),
     )

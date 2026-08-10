@@ -196,6 +196,8 @@ def main() -> None:
     parser.add_argument(
         "--krylov-relative-tolerance", type=float, default=1.0e-10
     )
+    parser.add_argument("--coupled-relative-tolerance", type=float, default=1.0e-8)
+    parser.add_argument("--coupled-absolute-tolerance", type=float, default=1.0e-10)
     parser.add_argument(
         "--heterogeneous-inclusion",
         action="store_true",
@@ -614,6 +616,9 @@ def main() -> None:
         config=CoupledNewtonConfig(
             maximum_iterations=8,
             krylov_relative_tolerance=args.krylov_relative_tolerance,
+            relative_tolerance=args.coupled_relative_tolerance,
+            absolute_tolerance=args.coupled_absolute_tolerance,
+            evaluate_initial_residual=False,
         ),
         evaluate_residual=residual_only,
     )
@@ -788,6 +793,8 @@ def main() -> None:
         "newton_iterations": result.iterations,
         "initial_residual_norm": result.initial_residual_norm,
         "final_residual_norm": result.final_residual_norm,
+        "final_mechanical_residual_norm": result.final_mechanical_residual_norm,
+        "final_nonlocal_residual_norm": result.final_nonlocal_residual_norm,
         "krylov_iterations": list(result.krylov_iterations),
         "coupled_elapsed_seconds": coupled_elapsed,
         "partitioned_elapsed_seconds": partitioned_elapsed,
@@ -832,6 +839,9 @@ def main() -> None:
         ),
         "coupled_vs_staggered_chi_linf": float(
             np.max(np.abs(staggered_nonlocal - result.nonlocal_field))
+        ),
+        "coupled_vs_staggered_mechanical_linf": float(
+            np.max(np.abs(staggered_mechanical - result.mechanical))
         ),
         "heterogeneous_inclusion": args.heterogeneous_inclusion,
     }, indent=2))
