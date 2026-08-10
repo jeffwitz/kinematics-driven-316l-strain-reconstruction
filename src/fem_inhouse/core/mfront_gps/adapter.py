@@ -133,6 +133,7 @@ class MFrontNativeGeneralisedPlaneStressBatch(
         shadow_tangent_scope: str = "all",
         composite_fd_tangent: bool = False,
         composite_fd_step: float = 1.0e-6,
+        failure_diagnostics: bool = False,
         shadow_behaviour_name: str = "Fcc316LForestRubinSrix",
         shadow_behaviour_id: str = "fcc_forest_rubin_srix",
         backend_label: str = "mfront-native-generalised-plane-stress",
@@ -186,6 +187,8 @@ class MFrontNativeGeneralisedPlaneStressBatch(
             raise ValueError("composite_fd_step must be finite and positive")
         self._composite_fd_enabled = bool(composite_fd_tangent)
         self._composite_fd_step = float(composite_fd_step)
+        self._failure_diagnostics_enabled = bool(failure_diagnostics)
+        self._failure_diagnostic_records: list[dict[str, object]] = []
         self._composite_fd_materials: dict[int, MFrontNativeGeneralisedPlaneStressBatch] = {}
         self._composite_fd_counters = CompositeTangentCounters()
         self._rotations = (
@@ -513,6 +516,18 @@ class MFrontNativeGeneralisedPlaneStressBatch(
     def last_local_failure(self) -> dict[str, object] | None:
         return None if self._last_local_failure is None else dict(self._last_local_failure)
 
+    @property
+    def failure_diagnostic_records(self) -> list[dict[str, object]]:
+        """Snapshots of isolated single-point integrations that failed.
+
+        This is deliberately opt-in and diagnostic-only.  Records contain the
+        committed and trial MGIS rows at the failed attempt; they allow a
+        post-processing script to reconstruct SRIX overstress, ``dg`` and
+        active/sign branches without changing the constitutive source.
+        """
+
+        return [dict(record) for record in self._failure_diagnostic_records]
+
     def _set_parameters(self) -> None:
         _apply_behaviour_parameters(
             self._mgis, self._behaviour, self._parameters, self._behaviour_name
@@ -605,6 +620,43 @@ class MFrontNativeGeneralisedPlaneStressBatch(
                     integration_type,
                     float(time_increment),
                 )
+                )
+        if (
+            status != 1
+            and self._failure_diagnostics_enabled
+            and span is not None
+            and span[1] - span[0] == 1
+            and len(self._failure_diagnostic_records) < 4096
+        ):
+            point = span[0]
+            self._failure_diagnostic_records.append(
+                {
+                    "point": int(point),
+                    "span": (int(span[0]), int(span[1])),
+                    "status": int(status),
+                    "time_increment": float(time_increment),
+                    "target_in_plane_kelvin": np.asarray(
+                        in_plane_kelvin[point], dtype=float
+                    ).copy(),
+                    "s0_gradient": np.asarray(
+                        self._manager.s0.gradients[point], dtype=float
+                    ).copy(),
+                    "s0_thermodynamic_forces": np.asarray(
+                        self._manager.s0.thermodynamic_forces[point], dtype=float
+                    ).copy(),
+                    "s0_internal_state_variables": np.asarray(
+                        self._manager.s0.internal_state_variables[point], dtype=float
+                    ).copy(),
+                    "s1_gradient": np.asarray(
+                        self._manager.s1.gradients[point], dtype=float
+                    ).copy(),
+                    "s1_thermodynamic_forces": np.asarray(
+                        self._manager.s1.thermodynamic_forces[point], dtype=float
+                    ).copy(),
+                    "s1_internal_state_variables": np.asarray(
+                        self._manager.s1.internal_state_variables[point], dtype=float
+                    ).copy(),
+                }
             )
         if status == 1:
             # The closure variables are OUTPUTS now, and they hold the TOTAL

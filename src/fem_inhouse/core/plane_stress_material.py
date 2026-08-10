@@ -495,6 +495,7 @@ def _create_fcc_single_crystal_batch(
     # it is off by default because it costs a full extra 3D integration.
     shadow_tangent = bool(options.pop("gps_shadow_tangent", False))
     shadow_tangent_scope = str(options.pop("gps_shadow_tangent_scope", "all"))
+    failure_diagnostics = bool(options.pop("gps_failure_diagnostics", False))
     composite_fd_tangent = bool(options.pop("gps_composite_fd_tangent", False))
     composite_fd_step = float(options.pop("gps_composite_fd_step", 1.0e-6))
     srix_smoothing_epsilon = options.pop("srix_smoothing_epsilon", None)
@@ -601,6 +602,7 @@ def _create_fcc_single_crystal_batch(
             shadow_tangent_scope=shadow_tangent_scope,
             composite_fd_tangent=composite_fd_tangent,
             composite_fd_step=composite_fd_step,
+            failure_diagnostics=failure_diagnostics,
             **local_options,
         )
     if shadow_tangent:

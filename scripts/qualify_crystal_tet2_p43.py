@@ -191,6 +191,11 @@ def main() -> int:
         "sub-stepped points by finite differences on the composite trajectory",
     )
     parser.add_argument(
+        "--gps-failure-diagnostics",
+        action="store_true",
+        help="capture isolated failed GPS point states for post-processing; diagnostic only",
+    )
+    parser.add_argument(
         "--srix-smoothing-epsilon",
         type=float,
         default=None,
@@ -410,6 +415,11 @@ def main() -> int:
                 if arguments.gps_composite_fd_tangent
                 else {}
             ),
+            **(
+                {"gps_failure_diagnostics": True}
+                if arguments.gps_failure_diagnostics
+                else {}
+            ),
         },
     )
     if (
@@ -579,6 +589,35 @@ def main() -> int:
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     field_path = arguments.output.with_suffix(".fields.npz")
     np.savez_compressed(field_path, **fields)  # type: ignore[arg-type]
+    failure_records = getattr(material, "failure_diagnostic_records", [])
+    failure_path: Path | None = None
+    if failure_records:
+        failure_path = arguments.output.with_suffix(".failure_diagnostics.npz")
+        np.savez_compressed(
+            failure_path,
+            point=np.asarray([item["point"] for item in failure_records], dtype=np.int64),
+            status=np.asarray([item["status"] for item in failure_records], dtype=np.int64),
+            time_increment=np.asarray(
+                [item["time_increment"] for item in failure_records], dtype=float
+            ),
+            target_in_plane_kelvin=np.stack(
+                [item["target_in_plane_kelvin"] for item in failure_records]
+            ),
+            s0_gradient=np.stack([item["s0_gradient"] for item in failure_records]),
+            s0_thermodynamic_forces=np.stack(
+                [item["s0_thermodynamic_forces"] for item in failure_records]
+            ),
+            s0_internal_state_variables=np.stack(
+                [item["s0_internal_state_variables"] for item in failure_records]
+            ),
+            s1_gradient=np.stack([item["s1_gradient"] for item in failure_records]),
+            s1_thermodynamic_forces=np.stack(
+                [item["s1_thermodynamic_forces"] for item in failure_records]
+            ),
+            s1_internal_state_variables=np.stack(
+                [item["s1_internal_state_variables"] for item in failure_records]
+            ),
+        )
     diagnostics = result.diagnostics
     accepted_increment_count = (
         sum(
@@ -676,6 +715,8 @@ def main() -> int:
         "progress_file": str(progress_path),
         "git_worktree": git_worktree,
         "field_file": str(field_path),
+        "failure_diagnostic_file": None if failure_path is None else str(failure_path),
+        "failure_diagnostic_records": len(failure_records),
         "field_sha256": {name: _hash(values) for name, values in fields.items()},
         "slip_observables": {
             name: {
