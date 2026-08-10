@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 import numpy as np
@@ -223,12 +224,14 @@ def main() -> None:
             ),
         )
 
+    coupled_start = time.perf_counter()
     result = solve_coupled_newton(
         initial_mechanical,
         initial_nonlocal,
         evaluate,
         config=CoupledNewtonConfig(maximum_iterations=8),
     )
+    coupled_elapsed = time.perf_counter() - coupled_start
     partitioned_material = MFrontNativePlaneStressBatch(
         args.library,
         np.full(point_count, 250.0),
@@ -237,6 +240,7 @@ def main() -> None:
         behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
         micromorphic_coupling_modulus_mpa=2_000.0,
     )
+    partitioned_start = time.perf_counter()
     partitioned = evaluate_nonlocal_fixed_point(
         partitioned_material,
         strain_from_mechanical(result.mechanical),
@@ -256,6 +260,7 @@ def main() -> None:
         maximum_iterations=50,
         maximum_helmholtz_residual=1.0e-10,
     )
+    partitioned_elapsed = time.perf_counter() - partitioned_start
     chi_difference = partitioned.nonlocal_peeq.reshape(-1) - result.nonlocal_field
     print(json.dumps({
         "grid": [args.nx, args.ny],
@@ -264,6 +269,10 @@ def main() -> None:
         "initial_residual_norm": result.initial_residual_norm,
         "final_residual_norm": result.final_residual_norm,
         "krylov_iterations": list(result.krylov_iterations),
+        "coupled_elapsed_seconds": coupled_elapsed,
+        "partitioned_elapsed_seconds": partitioned_elapsed,
+        "coupled_minus_partitioned_seconds": coupled_elapsed - partitioned_elapsed,
+        "coupled_over_partitioned": coupled_elapsed / partitioned_elapsed,
         "minimum_chi": float(np.min(result.nonlocal_field)),
         "maximum_chi": float(np.max(result.nonlocal_field)),
         "partitioned_iterations": partitioned.iterations,
