@@ -51,6 +51,11 @@ def main() -> None:
     parser.add_argument("--time-increment", type=float, default=1.0)
     parser.add_argument("--strain-step", type=float, default=1.0e-7)
     parser.add_argument("--chi-step", type=float, default=1.0e-7)
+    parser.add_argument(
+        "--central-strain-coupling",
+        action="store_true",
+        help="use central instead of forward finite differences for dp/depsilon",
+    )
     args = parser.parse_args()
     if args.library is None:
         parser.error("--library or MFRONT_BEHAVIOUR_LIBRARY is required")
@@ -111,7 +116,7 @@ def main() -> None:
 
     def response(
         mechanical: np.ndarray, chi: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         nonlocal coupled_material_seconds, coupled_material_evaluations
         nonlocal coupled_response_evaluations
         samples = strain_from_mechanical(mechanical)
@@ -129,6 +134,9 @@ def main() -> None:
         source = np.asarray(trial.observables["equivalent_plastic_strain"]).reshape(
             grid.nx, grid.ny, 2
         ).mean(axis=2)
+        source_point = np.asarray(
+            trial.observables["equivalent_plastic_strain"]
+        ).copy()
         nodal_force = kinematics.divergence(stress)
         mechanical_residual = pack_interior(nodal_force)
         filtered = nonlocal_inverse(source.reshape(-1)).reshape(grid.pixel_shape)
@@ -137,10 +145,33 @@ def main() -> None:
             grid.nx, grid.ny, 2, 3, 3
         )
         material.revert()
-        return mechanical_residual, nonlocal_residual.reshape(-1), tangent
+        return mechanical_residual, nonlocal_residual.reshape(-1), tangent, source_point
+
+    cached_state: tuple[np.ndarray, np.ndarray] | None = None
+    cached_response: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
+
+    def response_for_state(
+        state: tuple[np.ndarray, np.ndarray]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        nonlocal cached_state, cached_response
+        if (
+            cached_state is None
+            or not np.array_equal(state[0], cached_state[0])
+            or not np.array_equal(state[1], cached_state[1])
+        ):
+            cached_state = (state[0].copy(), state[1].copy())
+            cached_response = response(*state)
+        assert cached_response is not None
+        return cached_response
+
+    def residual(
+        state: tuple[np.ndarray, np.ndarray]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        current_response = response_for_state(state)
+        return current_response[0], current_response[1]
 
     def local_coupling_derivatives(
-        mechanical: np.ndarray, chi: np.ndarray
+        mechanical: np.ndarray, chi: np.ndarray, base_source: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return pointwise derivatives needed by the off-diagonal blocks.
 
@@ -192,12 +223,15 @@ def main() -> None:
         dp_depsilon = np.empty((point_count, 3), dtype=float)
         for component in range(3):
             strain_plus = samples.copy()
-            strain_minus = samples.copy()
             strain_plus[:, component] += h_u
-            strain_minus[:, component] -= h_u
             _, source_plus = stress_source(point_chi, strain_plus)
-            _, source_minus = stress_source(point_chi, strain_minus)
-            dp_depsilon[:, component] = (source_plus - source_minus) / (2.0 * h_u)
+            if args.central_strain_coupling:
+                strain_minus = samples.copy()
+                strain_minus[:, component] -= h_u
+                _, source_minus = stress_source(point_chi, strain_minus)
+                dp_depsilon[:, component] = (source_plus - source_minus) / (2.0 * h_u)
+            else:
+                dp_depsilon[:, component] = (source_plus - base_source) / h_u
         coupled_strain_derivative_seconds += (
             time.perf_counter() - strain_derivative_start
         )
@@ -207,12 +241,12 @@ def main() -> None:
     def evaluate(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
         nonlocal coupled_coupling_derivative_seconds
         mechanical, chi = state
-        ru, g, tangent = response(mechanical, chi)
+        ru, g, tangent, base_source = response_for_state(state)
         nu = mechanical.size
         nc = chi.size
         coupling_derivative_start = time.perf_counter()
         dsigma_dchi, dp_depsilon, dp_dchi = local_coupling_derivatives(
-            mechanical, chi
+            mechanical, chi, base_source
         )
         coupled_coupling_derivative_seconds += (
             time.perf_counter() - coupling_derivative_start
@@ -284,6 +318,7 @@ def main() -> None:
         initial_nonlocal,
         evaluate,
         config=CoupledNewtonConfig(maximum_iterations=8),
+        evaluate_residual=residual,
     )
     coupled_elapsed = time.perf_counter() - coupled_start
     partitioned_material = MFrontNativePlaneStressBatch(

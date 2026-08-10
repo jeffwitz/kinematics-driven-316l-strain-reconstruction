@@ -20,6 +20,7 @@ from fem_inhouse.spectral2d.krylov import solve_nonsymmetric_krylov
 
 FloatArray = NDArray[np.float64]
 CoupledState = tuple[FloatArray, FloatArray]
+CoupledResidual = Callable[[CoupledState], tuple[FloatArray, FloatArray]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,14 +63,18 @@ def solve_coupled_newton(
     evaluate: Callable[[CoupledState], CoupledLinearisation],
     *,
     config: CoupledNewtonConfig | None = None,
+    evaluate_residual: CoupledResidual | None = None,
 ) -> CoupledNewtonResult:
     """Solve a coupled residual with matrix-free Newton--Krylov steps.
 
     ``evaluate`` must return residuals and a linearisation at the supplied
-    state.  It is responsible for starting from a valid committed material
-    state and for providing consistent trial data.  This first driver has no
-    line search or cutback policy by design; those policies remain outside the
-    experimental comparison until the block formulation is qualified.
+    state.  ``evaluate_residual`` may provide a cheaper residual-only path;
+    when supplied, the full linearisation is built only for a state that still
+    needs a Newton correction.  This avoids constructing a Jacobian after
+    convergence.  Both callbacks are responsible for starting from a valid
+    committed material state.  This first driver has no line search or cutback
+    policy by design; those policies remain outside the experimental
+    comparison until the block formulation is qualified.
     """
 
     controls = CoupledNewtonConfig() if config is None else config
@@ -80,18 +85,30 @@ def solve_coupled_newton(
     if not np.isfinite(mechanical).all() or not np.isfinite(nonlocal_field).all():
         raise ValueError("initial state must be finite")
 
-    def norm(linearisation: CoupledLinearisation) -> float:
+    def residual_norm(residual: tuple[FloatArray, FloatArray]) -> float:
         return float(
             max(
-                np.linalg.norm(linearisation.mechanical_residual),
-                np.linalg.norm(linearisation.nonlocal_residual),
+                np.linalg.norm(residual[0]),
+                np.linalg.norm(residual[1]),
             )
         )
 
-    initial = evaluate((mechanical, nonlocal_field))
-    initial_norm = norm(initial)
+    def norm(linearisation: CoupledLinearisation) -> float:
+        return residual_norm(
+            (linearisation.mechanical_residual, linearisation.nonlocal_residual)
+        )
+
+    state = (mechanical, nonlocal_field)
+    initial_residual = (
+        evaluate_residual(state)
+        if evaluate_residual is not None
+        else None
+    )
+    initial = evaluate(state) if initial_residual is None else None
+    initial_norm = (
+        norm(initial) if initial_residual is None else residual_norm(initial_residual)
+    )
     residual_scale = max(initial_norm, 1.0)
-    current = initial
     krylov_iterations: list[int] = []
     if initial_norm <= controls.absolute_tolerance:
         return CoupledNewtonResult(
@@ -103,6 +120,10 @@ def solve_coupled_newton(
             final_residual_norm=initial_norm,
             krylov_iterations=(),
         )
+
+    current = initial
+    if current is None:
+        current = evaluate(state)
 
     for iteration in range(1, controls.maximum_iterations + 1):
         rhs = -np.concatenate(
@@ -124,8 +145,20 @@ def solve_coupled_newton(
         split = current.actions.mechanical_size
         mechanical += correction[:split]
         nonlocal_field += correction[split:]
-        current = evaluate((mechanical, nonlocal_field))
-        current_norm = norm(current)
+        state = (mechanical, nonlocal_field)
+        current_residual = (
+            evaluate_residual(state)
+            if evaluate_residual is not None
+            else None
+        )
+        current = (
+            evaluate(state) if current_residual is None else current
+        )
+        current_norm = (
+            norm(current)
+            if current_residual is None
+            else residual_norm(current_residual)
+        )
         if current_norm <= max(
             controls.absolute_tolerance,
             controls.relative_tolerance * residual_scale,
@@ -139,6 +172,8 @@ def solve_coupled_newton(
                 final_residual_norm=current_norm,
                 krylov_iterations=tuple(krylov_iterations),
             )
+        if current_residual is not None:
+            current = evaluate(state)
 
     return CoupledNewtonResult(
         mechanical=mechanical,
