@@ -61,6 +61,19 @@ def _load_p43(
     )
 
 
+def _refine_history(history: np.ndarray, subdivisions: int) -> np.ndarray:
+    """Refine every prescribed DIC segment by a global cutback factor."""
+    if subdivisions < 1:
+        raise ValueError("subdivisions must be positive")
+    if subdivisions == 1:
+        return history
+    refined = [history[0]]
+    for start, stop in pairwise(history):
+        for fraction in np.linspace(1.0 / subdivisions, 1.0, subdivisions):
+            refined.append((1.0 - fraction) * start + fraction * stop)
+    return np.asarray(refined)
+
+
 class _ChunkedGenericMaterial:
     """Integrate P43 in small MGIS batches to isolate local failures."""
 
@@ -464,6 +477,12 @@ def main() -> int:
     parser.add_argument("--crop-nodes", nargs=4, type=int, default=DEFAULT_CROP)
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--path-substeps", type=int, default=1)
+    parser.add_argument(
+        "--adaptive-path-cutback",
+        action="store_true",
+        help="retry the complete solve with doubled global DIC subdivisions",
+    )
+    parser.add_argument("--maximum-path-substeps", type=int, default=16)
     parser.add_argument("--length-scale", type=float, default=0.8)
     parser.add_argument("--krylov-relative-tolerance", type=float, default=1.0e-4)
     parser.add_argument("--absolute-tolerance", type=float, default=1.0e-10)
@@ -478,14 +497,8 @@ def main() -> int:
         raise SystemExit("P43 crop must be square and increments must be <= 8")
     history, yield_stress, hardening, _ = _load_p43(crop)
     history = history[: args.increments + 1]
-    if args.path_substeps > 1:
-        refined = [history[0]]
-        for start, stop in pairwise(history):
-            for fraction in np.linspace(
-                1.0 / args.path_substeps, 1.0, args.path_substeps
-            ):
-                refined.append((1.0 - fraction) * start + fraction * stop)
-        history = np.asarray(refined)
+    if args.path_substeps < 1 or args.maximum_path_substeps < args.path_substeps:
+        raise SystemExit("path subdivision limits are inconsistent")
     grid = StructuredGrid2D(mesh, mesh, mesh * PIXEL_SIZE_MM, mesh * PIXEL_SIZE_MM)
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
@@ -515,40 +528,50 @@ def main() -> int:
         spacing_y=grid.spacing_y,
     )
     started = time.perf_counter()
-    mono = _solve_sequence(
-        library=library,
-        history=history,
-        yield_stress=yield_stress,
-        hardening=hardening,
-        grid=grid,
-        kinematics=kinematics,
-        green=green,
-        mechanical_inverse=mechanical_inverse,
-        nonlocal_inverse=nonlocal_inverse,
-        nonlocal_operator=nonlocal_operator,
-        length_scale=args.length_scale,
-        krylov_tolerance=args.krylov_relative_tolerance,
-        absolute_tolerance=args.absolute_tolerance,
-        method="monolithic",
-        backend=args.backend,
-    )
-    stag = _solve_sequence(
-        library=library,
-        history=history,
-        yield_stress=yield_stress,
-        hardening=hardening,
-        grid=grid,
-        kinematics=kinematics,
-        green=green,
-        mechanical_inverse=mechanical_inverse,
-        nonlocal_inverse=nonlocal_inverse,
-        nonlocal_operator=nonlocal_operator,
-        length_scale=args.length_scale,
-        krylov_tolerance=args.krylov_relative_tolerance,
-        absolute_tolerance=args.absolute_tolerance,
-        method="staggered",
-        backend=args.backend,
-    )
+    actual_path_substeps = args.path_substeps
+    while True:
+        trial_history = _refine_history(history, actual_path_substeps)
+        try:
+            mono = _solve_sequence(
+                library=library,
+                history=trial_history,
+                yield_stress=yield_stress,
+                hardening=hardening,
+                grid=grid,
+                kinematics=kinematics,
+                green=green,
+                mechanical_inverse=mechanical_inverse,
+                nonlocal_inverse=nonlocal_inverse,
+                nonlocal_operator=nonlocal_operator,
+                length_scale=args.length_scale,
+                krylov_tolerance=args.krylov_relative_tolerance,
+                absolute_tolerance=args.absolute_tolerance,
+                method="monolithic",
+                backend=args.backend,
+            )
+            stag = _solve_sequence(
+                library=library,
+                history=trial_history,
+                yield_stress=yield_stress,
+                hardening=hardening,
+                grid=grid,
+                kinematics=kinematics,
+                green=green,
+                mechanical_inverse=mechanical_inverse,
+                nonlocal_inverse=nonlocal_inverse,
+                nonlocal_operator=nonlocal_operator,
+                length_scale=args.length_scale,
+                krylov_tolerance=args.krylov_relative_tolerance,
+                absolute_tolerance=args.absolute_tolerance,
+                method="staggered",
+                backend=args.backend,
+            )
+            break
+        except RuntimeError:
+            if not args.adaptive_path_cutback or actual_path_substeps >= args.maximum_path_substeps:
+                raise
+            actual_path_substeps *= 2
+            print(f"global DIC cutback: retrying with {actual_path_substeps} subdivisions")
     total = time.perf_counter() - started
     report = {
         "status": f"completed_coupled_{args.backend}_j2_p43",
@@ -556,8 +579,8 @@ def main() -> int:
         "crop_nodes": list(crop),
         "mesh": [mesh, mesh],
         "increments": args.increments,
-        "path_substeps": args.path_substeps,
-        "effective_increments": len(history) - 1,
+        "path_substeps": actual_path_substeps,
+        "effective_increments": len(_refine_history(history, actual_path_substeps)) - 1,
         "pixel_size_mm": PIXEL_SIZE_MM,
         "length_scale": args.length_scale,
         "krylov_relative_tolerance": args.krylov_relative_tolerance,
