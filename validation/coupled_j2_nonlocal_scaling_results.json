@@ -1,6 +1,6 @@
 {
   "description": "Experimental coupled versus partitioned J2 micromorphic pilot scaling",
-  "commit": "6d36b9418542df808af581a03c6d865d54d1f4f8",
+  "commit": "6cc33d415ba0249af2af53de4003fc693afc6130",
   "command": "source /home/jeff/.local/share/tfel/env/env.sh && PYTHONPATH=src:$PYTHONPATH .venv/bin/python scripts/prototype_coupled_j2_nonlocal.py --library build/mfront/src/libBehaviour.so",
   "repetitions": 3,
   "results": [
@@ -29,6 +29,21 @@
       "krylov_iterations": [14, 79],
       "partitioned_iterations": 14,
       "coupled_vs_partitioned_chi_linf": 4.698376236678126e-12
+    },
+    {
+      "grid": [100, 100],
+      "coupled_elapsed_seconds_median": 4.642042132967617,
+      "partitioned_elapsed_seconds_median": 1.6780919220182113,
+      "difference_seconds_median": 2.545522458345154,
+      "coupled_over_partitioned_median": 2.5168023077676778,
+      "coupled_coupling_derivative_seconds_median": 2.730924327832415,
+      "coupled_chi_derivative_seconds_median": 0.689352607994806,
+      "coupled_strain_derivative_seconds_median": 2.0415717200376093,
+      "coupled_off_diagonal_action_seconds_median": 0.4711045726834855,
+      "newton_iterations": 2,
+      "krylov_iterations": [15, 88],
+      "partitioned_iterations": 14,
+      "coupled_vs_partitioned_chi_linf": 4.698403992253741e-12
     }
   ],
   "interpretation": "The coupled pilot is numerically equivalent to the partitioned fixed point on these grids. The measured overhead is not a production benchmark: the current prototype performs 24 additional constitutive probe evaluations per coupled linearisation."
