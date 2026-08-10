@@ -227,6 +227,7 @@ def _solve_production_nested_sequence(
         local_mechanical = initial_mechanical.copy()
         local_chi = initial_chi.copy()
         attempt_krylov: list[int] = []
+        last_line_search_failure: str | None = None
 
         def strain_from_mechanical(value: np.ndarray) -> np.ndarray:
             full = boundary.copy()
@@ -313,7 +314,8 @@ def _solve_production_nested_sequence(
                 candidate = base_mechanical + step * correction
                 try:
                     candidate_eval = nested_trial(candidate, base_chi)
-                except (RuntimeError, ValueError):
+                except (RuntimeError, ValueError) as error:
+                    last_line_search_failure = str(error)
                     step *= 0.5
                     continue
                 candidate_stress = np.asarray(
@@ -328,7 +330,12 @@ def _solve_production_nested_sequence(
                     break
                 step *= 0.5
             else:
-                raise RuntimeError("production nested line search failed")
+                detail = (
+                    f"; last candidate failure: {last_line_search_failure}"
+                    if last_line_search_failure is not None
+                    else ""
+                )
+                raise RuntimeError(f"production nested line search failed{detail}")
         raise RuntimeError("production nested mechanical Newton did not converge")
 
     segment_duration = 1.0 / (len(history) - 1)
@@ -337,6 +344,8 @@ def _solve_production_nested_sequence(
     ):
         fraction = 0.0
         step_fraction = 1.0
+        segment_cutbacks = 0
+        last_failure: str | None = None
         while fraction < 1.0 - 1.0e-14:
             next_fraction = min(1.0, fraction + step_fraction)
             boundary = (
@@ -358,15 +367,20 @@ def _solve_production_nested_sequence(
                     saved_mechanical,
                     saved_chi,
                 )
-            except (RuntimeError, ValueError):
+            except (RuntimeError, ValueError) as error:
                 material.revert()
                 mechanical = saved_mechanical
                 chi = saved_chi
                 local_cutbacks += 1
+                segment_cutbacks += 1
+                last_failure = str(error)
                 step_fraction *= 0.5
                 if step_fraction < 1.0 / 1024.0:
                     raise RuntimeError(
-                        f"production nested local cutback failed at increment {increment}"
+                        "production nested local cutback failed "
+                        f"at increment {increment}, fraction={fraction:.16g}, "
+                        f"segment_cutbacks={segment_cutbacks}, "
+                        f"last_failure={last_failure}"
                     ) from None
                 continue
             fraction = next_fraction
