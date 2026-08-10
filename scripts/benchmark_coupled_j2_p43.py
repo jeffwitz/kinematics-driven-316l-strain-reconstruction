@@ -199,7 +199,7 @@ def _solve_production_nested_sequence(
     coupling_modulus_mpa: float,
     absolute_tolerance: float,
 ) -> dict[str, object]:
-    """Run production-style fixed-point coupling inside each mechanical Newton."""
+    """Run production-style coupling with local cutback and regrowth."""
     material = _make_native_material(
         library,
         kinematics.material_point_count,
@@ -216,11 +216,18 @@ def _solve_production_nested_sequence(
     residual_evaluations = 0
     started = time.perf_counter()
 
-    for increment, boundary in enumerate(history[1:], start=1):
-        def strain_from_mechanical(
-            value: np.ndarray, boundary_value: np.ndarray = boundary
-        ) -> np.ndarray:
-            full = boundary_value.copy()
+    def solve_attempt(
+        boundary: np.ndarray,
+        time_increment: float,
+        initial_mechanical: np.ndarray,
+        initial_chi: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, int, list[int], list[int]]:
+        local_mechanical = initial_mechanical.copy()
+        local_chi = initial_chi.copy()
+        attempt_krylov: list[int] = []
+
+        def strain_from_mechanical(value: np.ndarray) -> np.ndarray:
+            full = boundary.copy()
             full[1:-1, 1:-1] += unpack_interior(value, grid)[1:-1, 1:-1]
             return kinematics.strain_samples(full).reshape(-1, 3)
 
@@ -230,7 +237,7 @@ def _solve_production_nested_sequence(
             evaluation = evaluate_nonlocal_fixed_point(
                 material,
                 strain_from_mechanical(value),
-                time_increment=1.0,
+                time_increment=time_increment,
                 element_shape=grid.pixel_shape,
                 gauss_points_per_element=2,
                 initial_nonlocal_peeq=initial_chi.reshape(grid.pixel_shape),
@@ -249,10 +256,9 @@ def _solve_production_nested_sequence(
             residual_evaluations += 1
             return evaluation
 
-        converged = False
         increment_fixed_point_counts: list[int] = []
         for iteration in range(1, 51):
-            evaluation = nested_trial(mechanical, chi)
+            evaluation = nested_trial(local_mechanical, local_chi)
             trial = evaluation.constitutive_trial
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(
                 grid.nx, grid.ny, 2, 3
@@ -260,15 +266,19 @@ def _solve_production_nested_sequence(
             ru = pack_interior(kinematics.divergence(stress))
             increment_fixed_point_counts.append(evaluation.iterations)
             if np.linalg.norm(ru) <= absolute_tolerance:
-                chi = evaluation.nonlocal_peeq.reshape(-1).copy()
+                local_chi = evaluation.nonlocal_peeq.reshape(-1).copy()
                 material.commit()
-                newton_counts.append(iteration)
-                converged = True
-                break
+                return (
+                    local_mechanical,
+                    local_chi,
+                    iteration,
+                    increment_fixed_point_counts,
+                    attempt_krylov,
+                )
             tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
                 grid.nx, grid.ny, 2, 3, 3
             )
-            base_mechanical = mechanical.copy()
+            base_mechanical = local_mechanical.copy()
             base_chi = evaluation.nonlocal_peeq.reshape(-1).copy()
             def mechanical_action(
                 du: np.ndarray, tangent_value: np.ndarray = tangent
@@ -294,7 +304,7 @@ def _solve_production_nested_sequence(
             )
             if info != 0:
                 raise RuntimeError(f"production nested GMRES failed: {info}")
-            krylov_counts.append(calls)
+            attempt_krylov.append(calls)
             current_norm = float(np.linalg.norm(ru))
             step = 1.0
             while step >= 1.0 / 1024.0:
@@ -311,15 +321,56 @@ def _solve_production_nested_sequence(
                     np.linalg.norm(pack_interior(kinematics.divergence(candidate_stress)))
                 )
                 if candidate_norm < current_norm:
-                    mechanical = candidate
-                    chi = candidate_eval.nonlocal_peeq.reshape(-1).copy()
+                    local_mechanical = candidate
+                    local_chi = candidate_eval.nonlocal_peeq.reshape(-1).copy()
                     break
                 step *= 0.5
             else:
-                raise RuntimeError(f"production nested line search failed at increment {increment}")
-        if not converged:
-            raise RuntimeError(f"production nested increment {increment} did not converge")
-        fixed_point_counts.append(increment_fixed_point_counts)
+                raise RuntimeError("production nested line search failed")
+        raise RuntimeError("production nested mechanical Newton did not converge")
+
+    segment_duration = 1.0 / (len(history) - 1)
+    for increment, (start_boundary, target_boundary) in enumerate(
+        pairwise(history), start=1
+    ):
+        fraction = 0.0
+        step_fraction = 1.0
+        while fraction < 1.0 - 1.0e-14:
+            next_fraction = min(1.0, fraction + step_fraction)
+            boundary = (
+                (1.0 - next_fraction) * start_boundary
+                + next_fraction * target_boundary
+            )
+            saved_mechanical = mechanical.copy()
+            saved_chi = chi.copy()
+            try:
+                (
+                    mechanical,
+                    chi,
+                    iteration_count,
+                    fp_counts,
+                    attempt_krylov,
+                ) = solve_attempt(
+                    boundary,
+                    segment_duration * (next_fraction - fraction),
+                    saved_mechanical,
+                    saved_chi,
+                )
+            except (RuntimeError, ValueError):
+                material.revert()
+                mechanical = saved_mechanical
+                chi = saved_chi
+                step_fraction *= 0.5
+                if step_fraction < 1.0 / 1024.0:
+                    raise RuntimeError(
+                        f"production nested local cutback failed at increment {increment}"
+                    ) from None
+                continue
+            fraction = next_fraction
+            newton_counts.append(iteration_count)
+            fixed_point_counts.append(fp_counts)
+            krylov_counts.extend(attempt_krylov)
+            step_fraction = min(1.0 - fraction, 1.5 * step_fraction)
 
     return {
         "method": "production-nested",
