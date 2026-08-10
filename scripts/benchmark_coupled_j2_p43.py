@@ -724,6 +724,7 @@ def _solve_sequence(
                 np.asarray(trial.observables["equivalent_plastic_strain"])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
+                .copy()
             )
             material.revert()
             return pack_interior(kinematics.divergence(stress)), nonlocal_operator(
