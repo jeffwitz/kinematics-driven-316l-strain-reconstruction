@@ -9,6 +9,7 @@ another MFront law without knowing its internal variables.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -26,6 +27,8 @@ class ConstitutiveFiniteDifferenceSensitivity:
     stress_parameter: FloatArray
     observable_strain: FloatArray
     observable_parameter: FloatArray
+    parameter_seconds: float
+    strain_seconds: float
 
 
 def finite_difference_sensitivities(
@@ -101,6 +104,7 @@ def finite_difference_sensitivities(
 
     stress_parameter = np.empty((*stress_0.shape, parameter_count))
     observable_parameter = np.empty((*observable_0.shape, parameter_count))
+    parameter_start = time.perf_counter()
     for component in range(parameter_count):
         plus = parameter_values.copy()
         plus[:, component] += parameter_step_values[:, component]
@@ -130,6 +134,8 @@ def finite_difference_sensitivities(
             ) / denominator.reshape((-1,) + (1,) * (observable_0.ndim - 1))
 
     observable_strain = np.empty((*observable_0.shape, strain_values.shape[1]))
+    parameter_seconds = time.perf_counter() - parameter_start
+    strain_start = time.perf_counter()
     for component in range(strain_values.shape[1]):
         plus_strain = strain_values.copy()
         plus_strain[:, component] += strain_step
@@ -156,4 +162,6 @@ def finite_difference_sensitivities(
         observable_parameter=observable_parameter[..., 0]
         if scalar_parameter
         else observable_parameter,
+        parameter_seconds=parameter_seconds,
+        strain_seconds=time.perf_counter() - strain_start,
     )

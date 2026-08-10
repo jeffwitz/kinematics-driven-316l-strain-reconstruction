@@ -226,9 +226,14 @@ def main() -> None:
             material.revert()
             return stress, source
 
+        def constitutive_response(
+            strain_values: np.ndarray, chi_values: np.ndarray
+        ) -> tuple[np.ndarray, np.ndarray]:
+            return stress_source(chi_values, strain_values)
+
         parameter = point_chi
         sensitivity = finite_difference_sensitivities(
-            stress_source,
+            constitutive_response,
             samples,
             parameter,
             base_stress=base_stress,
@@ -238,6 +243,8 @@ def main() -> None:
             central_parameter=True,
             forward_strain=not args.central_strain_coupling,
         )
+        coupled_chi_derivative_seconds += sensitivity.parameter_seconds
+        coupled_strain_derivative_seconds += sensitivity.strain_seconds
         return (
             sensitivity.stress_parameter,
             sensitivity.observable_strain,
