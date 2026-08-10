@@ -5383,3 +5383,22 @@ le même nombre d'itérations.
 
 Neuf erreurs `mypy` subsistent sous `src/`, toutes antérieures et hors de ce
 chantier, qui n'a touché aucune ligne de calcul.
+
+Complément du même jour. Deux jeux de temps M100 coexistaient dans la doc sans
+se nommer : `62,38 / 74,05 / 58,38 s` sous `2defce9`, et
+`56,72 / 51,65 / 54,56 s` sous `c8af766`. Ils ne se contredisent pas, ils ne
+mesurent pas la même chose — le premier est le seul à comparer
+`gps_composite_fd_tangent` à lui-même (avec et sans), le second est le seul à
+couvrir les trois backends au même commit. La page de choix les étiquette
+désormais comme tels et avertit explicitement de ne pas lire les valeurs
+absolues en travers des deux jeux, ce qui mesurerait le travail intercalaire et
+non les backends. Le comparatif courant retenu est celui de `c8af766` : environ
+`10 %` d'écart entre les trois routes, accord `1,2e-16` en déplacement entre la
+loi GPS écrite à la main et la fermeture structurelle générique, mêmes `192`
+points sous-pas. Le choix ne se joue donc pas sur le coût.
+
+`reference/api.md` nommait la façade `core.mfront` sans dire de quoi elle est la
+façade ; les modules de mise en œuvre et le registre `MFRONT_BEHAVIOURS` y sont
+maintenant listés. Enfin, la page d'accueil débutant était rangée sous
+« Extend » : elle ouvre désormais l'index des how-to et la racine propose un
+parcours qui commence par elle.

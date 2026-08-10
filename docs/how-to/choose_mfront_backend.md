@@ -44,8 +44,8 @@ When a GPS point must sub-step an increment, the last sub-step does not by
 itself provide the derivative of the composed trajectory. The composite FD
 tangent reconstructs that derivative for the affected points only.
 
-It is not a refinement, it is what makes the route worth taking. On P43 M100
-EBSD, eight increments, four threads:
+It is not a refinement, it is what makes the route worth taking. Switching the
+option off and changing nothing else, on P43 M100 EBSD at eight increments:
 
 | | time | Newton |
 |---|---:|---:|
@@ -57,13 +57,13 @@ The finite difference touched `192` points and `1152` trajectories for `2.15 s`
 of its own cost, with a converged residual of `5.3e-09`. Without it the GPS
 route is *slower* than the reference; with it, it is faster.
 
-Those three runs are archived under
-`validation/_generated/performance/` as `srix_p43_m100_condensed_runtime_blas1`,
-`gps_composite_fd_m100_runtime_blas1` and `gps_fd_m100_runtime_blas1`, all at
-eight increments with `mfront_threads: 4` and BLAS pinned to one thread.
-Reproduce them with `scripts/benchmark_gps_tangent_variants.py` before quoting
-them on different hardware — they are a ratio between routes on one machine,
-not a portable figure.
+That experiment is the only archived one that measures the option against
+itself, and it was run under `2defce9`: `srix_p43_m100_condensed_runtime_blas1`,
+`gps_composite_fd_m100_runtime_blas1` and `gps_fd_m100_runtime_blas1` under
+`validation/_generated/performance/`. Read its three times as one ratio, not
+alongside the absolute times below, which come from a later commit on the same
+case — comparing across the two sets measures the intervening work, not the
+backends.
 
 Sub-stepping is rare and local -- two points out of four hundred on the small
 window, `0.071 %` of the batch at M100 -- so the repair is cheap because it is
@@ -74,24 +74,31 @@ to sub-step, so there is nothing to repair. Switching a configuration from GPS
 to condensed therefore silently drops the option rather than failing, so read
 `constitutive_backend` before crediting it with anything.
 
-## What the generic structural route costs
+## What each route costs, all three together
 
-The reusable `mfront-structural-plane-stress` closure is not a third numerical
-answer: on P43 M20 EBSD it reproduces the hand-written GPS law to `9e-17` on
-displacement and `2e-12` on in-plane stress, and needs the same 45 Newton
-iterations. It costs a little more time than the specialised law and less than
-the Python reference:
+The current comparison, all three backends on the same case and the same
+commit — P43 M100 EBSD, eight increments, four MFront threads, BLAS/FFTW/OpenMP
+pinned to one thread each, executed under `c8af766` and archived as
+`p43_m100_backend_comparison_latest.json`:
 
 | Backend | time | Newton |
 |---|---:|---:|
-| `mfront-3d-condensed-plane-stress` | `2.89 s` | 46 |
-| `mfront-native-generalised-plane-stress` | `2.10 s` | 45 |
-| `mfront-structural-plane-stress` | `2.35 s` | 45 |
+| `mfront-3d-condensed-plane-stress` | `56.72 s` | 57 |
+| `mfront-native-generalised-plane-stress` | `51.65 s` | 58 |
+| `mfront-structural-plane-stress` | `54.56 s` | 58 |
 
-P43 M20 EBSD, eight increments, four MFront threads, archived as
-`p43_m20_backend_comparison_latest.json`. Prefer the generic route when you
-want the GPS closure for a 3D law you have not hand-written a GPS variant for,
-and it fits the demonstrated V1 contract.
+The spread is about `10 %`; the routes are not separated by cost, so choose on
+what each one lets you do.
+
+They are also not three numerical answers. Against the hand-written GPS run,
+the generic structural closure agrees to `1.2e-16` on displacement and
+`4.8e-12` on in-plane stress, both backends sub-stepping the same `192` points.
+Prefer the generic route when you want the GPS closure for a 3D law you have
+not hand-written a GPS variant for, and it fits the demonstrated V1 contract.
+
+The same three-way comparison exists at M20 as
+`p43_m20_backend_comparison_latest.json`, if you want a case that runs in
+seconds.
 
 ## Qualified production route
 

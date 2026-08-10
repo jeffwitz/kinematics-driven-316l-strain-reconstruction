@@ -10,7 +10,8 @@ are grouped as follows:
 | `fem_inhouse.config` | typed mesh, material, solver and nonlocal configuration |
 | `fem_inhouse.results` | result fields and solver diagnostics |
 | `fem_inhouse.core.tensor_reconstruction` | engineering, Kelvin and complete-tensor conversion |
-| `fem_inhouse.core.mfront` | compatibility façade for MFront/MGIS material bridges |
+| `fem_inhouse.core.mfront` | compatibility façade re-exporting the MFront/MGIS material bridges under their historical import path |
+| `fem_inhouse.core.mfront_behaviours` | `MFRONT_BEHAVIOURS`, the registry of declarative behaviour entries selected by `mfront_behaviour_id` |
 | `fem_inhouse.core.plane_stress_material` | common constitutive protocol and backend factory |
 | `fem_inhouse.postprocessing.helmholtz` | element-centred Helmholtz filter |
 | `fem_inhouse.postprocessing.metrics` | field, overlap and diffusivity metrics |
@@ -23,6 +24,14 @@ individual signatures.
 Application code should normally select a registered backend through the
 configuration and factory layer rather than instantiate low-level MFront
 adapters directly.
+
+The implementation behind that façade is split by role —
+`mfront_runtime` (MGIS loading and Kelvin conversion), `mfront_native`,
+`mfront_3d`, `mfront_condensation` (the Python plane-stress closure) and the
+`mfront_gps` package (the generalised plane-stress bridge, its sub-stepping and
+composite tangent). Import from `fem_inhouse.core.mfront` unless you need one
+of those specifically; the split is an internal arrangement and the façade is
+what stays stable.
 
 ## Stability
 
