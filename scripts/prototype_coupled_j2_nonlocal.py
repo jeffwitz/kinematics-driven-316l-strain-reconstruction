@@ -27,6 +27,7 @@ from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
     make_dct_helmholtz_inverse,
+    make_dct_helmholtz_operator,
     make_dst_b0_inverse,
 )
 from fem_inhouse.spectral2d.coupled_newton import (
@@ -34,7 +35,7 @@ from fem_inhouse.spectral2d.coupled_newton import (
     CoupledNewtonConfig,
     solve_coupled_newton,
 )
-from fem_inhouse.spectral2d.green import B0Green2D
+from fem_inhouse.spectral2d.green import B0Green2D, project_isotropic_plane_stress_tangent
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
@@ -210,14 +211,35 @@ def main() -> None:
             behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
             micromorphic_coupling_modulus_mpa=2_000.0,
         )
+    # Calibrate the elastic spectral preconditioner from the actual virgin
+    # plane-stress tangent instead of the unit test values used by the first
+    # coupled pilot.
+    virgin_trial = material.evaluate_in_plane(
+        np.zeros((point_count, 3)),
+        time_increment=args.time_increment,
+        consistent_tangent=True,
+    )
+    virgin_tangent = np.asarray(virgin_trial.tangent_in_plane_mpa).reshape(
+        grid.nx, grid.ny, 2, 3, 3
+    )
+    material.revert()
+    lambda_0, mu_0, b0_projection_error = project_isotropic_plane_stress_tangent(
+        virgin_tangent.mean(axis=(0, 1, 2))
+    )
     plan = create_full_dirichlet_dsti_plan(grid, SpectralTransformConfig())
     green = B0Green2D(
         kinematics_reference_symbols(kinematics, plan),
-        lambda_0=1.0,
-        mu_0=1.0,
+        lambda_0=lambda_0,
+        mu_0=mu_0,
     )
     mechanical_inverse = make_dst_b0_inverse(plan, green)
     nonlocal_inverse = make_dct_helmholtz_inverse(
+        grid.pixel_shape,
+        length_scale=args.length_scale,
+        spacing_x=grid.spacing_x,
+        spacing_y=grid.spacing_y,
+    )
+    nonlocal_operator = make_dct_helmholtz_operator(
         grid.pixel_shape,
         length_scale=args.length_scale,
         spacing_x=grid.spacing_x,
@@ -284,8 +306,10 @@ def main() -> None:
         ).copy()
         nodal_force = kinematics.divergence(stress)
         mechanical_residual = pack_interior(nodal_force)
-        filtered = nonlocal_inverse(source.reshape(-1)).reshape(grid.pixel_shape)
-        nonlocal_residual = chi.reshape(grid.pixel_shape) - filtered
+        # Equivalent residual after left multiplication by the invertible
+        # Helmholtz operator: H chi - p = 0.  H^{-1} remains the spectral
+        # preconditioner, but is no longer applied to every residual/matvec.
+        nonlocal_residual = nonlocal_operator(chi) - source.reshape(-1)
         tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
             grid.nx, grid.ny, 2, 3, 3
         )
@@ -459,7 +483,7 @@ def main() -> None:
             source_increment = np.einsum(
                 "pi,pi->p", dp_depsilon, strain_increment
             ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
-            result = -nonlocal_inverse(source_increment.reshape(-1))
+            result = -source_increment.reshape(-1)
             coupled_g_u_action_seconds += time.perf_counter() - action_start
             coupled_g_u_action_calls += 1
             return result
@@ -471,10 +495,37 @@ def main() -> None:
                 dp_dchi.reshape(grid.nx, grid.ny, 2).mean(axis=2)
                 * value.reshape(grid.pixel_shape)
             )
-            result = value - nonlocal_inverse(source_increment.reshape(-1))
+            result = nonlocal_operator(value) - source_increment.reshape(-1)
             coupled_g_chi_action_seconds += time.perf_counter() - action_start
             coupled_g_chi_action_calls += 1
             return result
+
+        def combined_action(
+            displacement_value: np.ndarray, chi_value: np.ndarray
+        ) -> tuple[np.ndarray, np.ndarray]:
+            """Apply all four blocks while sharing the strain increment."""
+
+            displacement = unpack_interior(displacement_value, grid)
+            strain_increment = kinematics.strain_samples(displacement).reshape(
+                grid.nx, grid.ny, 2, 3
+            )
+            chi_increment = chi_value.reshape(grid.nx, grid.ny, 1, 1)
+            stress_increment = np.einsum(
+                "...ij,...j->...i", tangent, strain_increment
+            ) + dsigma_dchi.reshape(grid.nx, grid.ny, 2, 3) * chi_increment
+            source_increment = (
+                np.einsum(
+                    "...i,...i->...",
+                    dp_depsilon.reshape(grid.nx, grid.ny, 2, 3),
+                    strain_increment,
+                )
+                + dp_dchi.reshape(grid.nx, grid.ny, 2) * chi_value.reshape(
+                    grid.nx, grid.ny, 1
+                )
+            ).mean(axis=2)
+            upper = pack_interior(kinematics.divergence(stress_increment))
+            lower = nonlocal_operator(chi_value) - source_increment.reshape(-1)
+            return upper, lower
 
         return CoupledLinearisation(
             mechanical_residual=ru,
@@ -488,6 +539,7 @@ def main() -> None:
                 g_chi=g_chi_action,
                 mechanical_inverse=mechanical_inverse,
                 nonlocal_inverse=nonlocal_inverse,
+                combined=combined_action,
             ),
         )
 
@@ -541,6 +593,10 @@ def main() -> None:
         "partitioned_elapsed_seconds": partitioned_elapsed,
         "coupled_minus_partitioned_seconds": coupled_elapsed - partitioned_elapsed,
         "coupled_over_partitioned": coupled_elapsed / partitioned_elapsed,
+        "b0_lambda": lambda_0,
+        "b0_mu": mu_0,
+        "b0_projection_error": b0_projection_error,
+        "nonlocal_residual_form": "H_chi_minus_p",
         "coupled_material_seconds": coupled_material_seconds,
         "coupled_coupling_derivative_seconds": coupled_coupling_derivative_seconds,
         "coupled_material_evaluations": coupled_material_evaluations,

@@ -4,6 +4,7 @@ import numpy as np
 
 from fem_inhouse.spectral2d.coupled_blocks import (
     make_dct_helmholtz_inverse,
+    make_dct_helmholtz_operator,
     make_dst_b0_inverse,
 )
 from fem_inhouse.spectral2d.green import B0Green2D
@@ -19,6 +20,17 @@ def test_dct_helmholtz_inverse_preserves_constant_field() -> None:
     )
     values = np.full(20, 3.25)
     np.testing.assert_allclose(inverse(values), values, rtol=0.0, atol=1.0e-13)
+
+
+def test_dct_helmholtz_operator_is_inverse_of_the_dct_solver() -> None:
+    operator = make_dct_helmholtz_operator(
+        (5, 4), length_scale=0.7, spacing_x=1.0, spacing_y=1.0
+    )
+    inverse = make_dct_helmholtz_inverse(
+        (5, 4), length_scale=0.7, spacing_x=1.0, spacing_y=1.0
+    )
+    values = np.linspace(-2.0, 3.0, 20)
+    np.testing.assert_allclose(operator(inverse(values)), values, rtol=0.0, atol=1.0e-12)
 
 
 def test_dst_b0_inverse_has_the_expected_flat_vector_contract() -> None:

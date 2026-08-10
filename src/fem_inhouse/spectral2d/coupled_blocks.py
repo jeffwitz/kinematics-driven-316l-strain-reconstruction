@@ -22,6 +22,7 @@ from fem_inhouse.spectral2d.transforms import TransformPlan2D
 
 FloatArray = NDArray[np.float64]
 VectorAction = Callable[[FloatArray], FloatArray]
+CoupledAction = Callable[[FloatArray, FloatArray], tuple[FloatArray, FloatArray]]
 
 
 def make_dst_b0_inverse(transform_plan: TransformPlan2D, green_operator: object) -> VectorAction:
@@ -80,6 +81,55 @@ def make_dct_helmholtz_inverse(
     return apply
 
 
+def make_dct_helmholtz_operator(
+    shape: tuple[int, int],
+    *,
+    length_scale: float,
+    spacing_x: float,
+    spacing_y: float,
+) -> VectorAction:
+    """Create the Neumann Helmholtz action ``H = I-l^2 Delta``.
+
+    The coupled formulation uses ``H chi - p = 0`` rather than applying
+    ``H^-1`` to the residual.  The inverse remains the preconditioner; this
+    direct action avoids a DCT/IDCT pair in every lower-block matvec.
+    """
+
+    if min(shape) < 1 or length_scale < 0.0 or spacing_x <= 0.0 or spacing_y <= 0.0:
+        raise ValueError("invalid Helmholtz operator geometry or length scale")
+    nx, ny = shape
+    def apply(value: FloatArray) -> FloatArray:
+        vector = np.asarray(value, dtype=np.float64)
+        expected_size = nx * ny
+        if vector.shape != (expected_size,):
+            raise ValueError(
+                f"non-local vector has shape {vector.shape}, expected {(expected_size,)}"
+            )
+        field = vector.reshape(shape)
+        laplacian = np.zeros_like(field)
+        if nx == 1:
+            laplacian[:, :] = 0.0
+        else:
+            laplacian[0, :] += (field[0, :] - field[1, :]) / spacing_x**2
+            laplacian[-1, :] += (field[-1, :] - field[-2, :]) / spacing_x**2
+            if nx > 2:
+                laplacian[1:-1, :] += (
+                    2.0 * field[1:-1, :] - field[:-2, :] - field[2:, :]
+                ) / spacing_x**2
+        if ny == 1:
+            laplacian[:, :] += 0.0
+        else:
+            laplacian[:, 0] += (field[:, 0] - field[:, 1]) / spacing_y**2
+            laplacian[:, -1] += (field[:, -1] - field[:, -2]) / spacing_y**2
+            if ny > 2:
+                laplacian[:, 1:-1] += (
+                    2.0 * field[:, 1:-1] - field[:, :-2] - field[:, 2:]
+                ) / spacing_y**2
+        return (field + length_scale**2 * laplacian).reshape(-1)
+
+    return apply
+
+
 @dataclass(frozen=True, slots=True)
 class CoupledBlockActions:
     """Matrix-free actions for the four blocks of a coupled linearisation."""
@@ -92,6 +142,7 @@ class CoupledBlockActions:
     g_chi: VectorAction
     mechanical_inverse: VectorAction
     nonlocal_inverse: VectorAction
+    combined: CoupledAction | None = None
 
     def __post_init__(self) -> None:
         if self.mechanical_size < 1 or self.nonlocal_size < 1:
@@ -121,6 +172,14 @@ class CoupledBlockActions:
                 raise ValueError(f"vector has shape {vector.shape}, expected {(nu + nc,)}")
             du = vector[:nu]
             dchi = vector[nu:]
+            if self.combined is not None:
+                upper, lower = self.combined(du, dchi)
+                return np.concatenate(
+                    (
+                        self._checked(upper, nu, "combined R_u action"),
+                        self._checked(lower, nc, "combined non-local action"),
+                    )
+                )
             upper = self._checked(self.ruu(du), nu, "R_u action")
             upper += self._checked(self.ruchi(dchi), nu, "R_chi action")
             lower = self._checked(self.g_u(du), nc, "G_u action")
