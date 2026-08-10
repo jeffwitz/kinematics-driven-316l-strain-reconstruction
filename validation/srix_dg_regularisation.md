@@ -37,6 +37,13 @@ the unregularised run. Relative to that run, the maximum relative field
 changes were `1.11e-8` for displacement, `4.16e-5` for stress, and about
 `1.0e-4` for signed slip. The larger candidates changed the fields more.
 
+The independent `sign(0)=0` M20 control also removed all 23 substeps and gave
+46 Newton iterations. Relative to the historical M20 run, its field changes
+were `1.08e-8` displacement, `3.85e-5` stress, `2.90e-5` reactions, and
+`9.86e-5` signed slip. The field change therefore appears when the
+substepping path disappears; it is not evidence that the constitutive
+residual itself was changed by the subgradient choice.
+
 ## M200 result
 
 The single qualifying run used P43 M200 EBSD, crop `[1520:1720] x [985:1185]`,
@@ -102,6 +109,7 @@ The replay and screening artefacts are:
 - `validation/_generated/performance/srix_dg_regularisation_zero_derivative_replay.json`
 - `validation/_generated/performance/srix_dg_regularisation_sweep.json`
 - `validation/_generated/performance/srix_dg_regularisation_m20_delta_*.json`
+- `validation/_generated/performance/srix_dg_regularisation_m20_zero_derivative.json`
 - `validation/_generated/performance/srix_dg_regularisation_m200.json`
 - `validation/_generated/performance/srix_dg_regularisation_tangent.json`
 
