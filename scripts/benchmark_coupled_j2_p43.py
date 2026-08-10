@@ -867,11 +867,17 @@ def _solve_sequence(
         else:
             outer = 0
             mechanical_solves = 0
+            chi_residual = float("inf")
+            mechanical_converged = False
             while outer < 30:
                 outer += 1
-                ru, source = residual_only((mechanical, chi))
-                ru_norm = float(np.linalg.norm(ru))
-                if ru_norm > absolute_tolerance:
+                mechanical_converged = False
+                for _ in range(50):
+                    ru, source = residual_only((mechanical, chi))
+                    ru_norm = float(np.linalg.norm(ru))
+                    if ru_norm <= absolute_tolerance:
+                        mechanical_converged = True
+                        break
                     lin = linearise((mechanical, chi), include_coupling=False)
                     operator = LinearOperator(
                         (mechanical.size, mechanical.size),
@@ -892,21 +898,45 @@ def _solve_sequence(
                         restart=100,
                     )
                     if info != 0:
-                        raise RuntimeError(f"staggered increment {increment} GMRES failed: {info}")
-                    mechanical += correction
+                        raise RuntimeError(
+                            f"staggered increment {increment} GMRES failed: {info}"
+                        )
+                    base_mechanical = mechanical.copy()
+                    step = 1.0
+                    accepted = False
+                    while step >= 1.0 / 1024.0:
+                        candidate = base_mechanical + step * correction
+                        candidate_ru, _ = residual_only((candidate, chi))
+                        candidate_norm = float(np.linalg.norm(candidate_ru))
+                        if candidate_norm < ru_norm:
+                            mechanical = candidate
+                            accepted = True
+                            break
+                        step *= 0.5
+                    if not accepted:
+                        raise RuntimeError(
+                            f"staggered increment {increment} mechanical line search failed"
+                        )
                     mechanical_solves += 1
+                    total_newton += 1
                     krylov_counts.append(calls)
-                    continue
+                if not mechanical_converged:
+                    raise RuntimeError(
+                        f"staggered increment {increment} mechanical Newton did not converge"
+                    )
                 filtered_chi = np.maximum(nonlocal_inverse(source), 0.0)
                 updated_chi = (
                     (1.0 - staggered_relaxation) * chi
                     + staggered_relaxation * filtered_chi
                 )
-                chi_residual = float(np.linalg.norm(updated_chi - chi))
+                chi_residual = float(
+                    np.linalg.norm(updated_chi - chi)
+                    / max(np.linalg.norm(updated_chi), 1.0e-30)
+                )
                 chi = updated_chi
-                if chi_residual <= absolute_tolerance:
+                if chi_residual <= 1.0e-6:
                     break
-            if outer >= 30:
+            if not mechanical_converged or chi_residual > 1.0e-6:
                 raise RuntimeError(f"staggered increment {increment} did not converge")
             outer_counts.append(outer)
             mechanical_counts.append(mechanical_solves)
