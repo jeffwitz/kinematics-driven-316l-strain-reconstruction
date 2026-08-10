@@ -94,7 +94,9 @@ def main() -> None:
         full[1:-1, 1:-1] += unpack_interior(mechanical, grid)[1:-1, 1:-1]
         return kinematics.strain_samples(full).reshape(-1, 3)
 
-    def residual(mechanical: np.ndarray, chi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def response(
+        mechanical: np.ndarray, chi: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         samples = strain_from_mechanical(mechanical)
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
         trial = material.evaluate_in_plane(
@@ -110,26 +112,32 @@ def main() -> None:
         mechanical_residual = pack_interior(nodal_force)
         filtered = nonlocal_inverse(source.reshape(-1)).reshape(grid.pixel_shape)
         nonlocal_residual = chi.reshape(grid.pixel_shape) - filtered
+        tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
+            grid.nx, grid.ny, 2, 3, 3
+        )
         material.revert()
-        return mechanical_residual, nonlocal_residual.reshape(-1)
+        return mechanical_residual, nonlocal_residual.reshape(-1), tangent
+
+    def residual(mechanical: np.ndarray, chi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        mechanical_residual, nonlocal_residual, _ = response(mechanical, chi)
+        return mechanical_residual, nonlocal_residual
 
     def evaluate(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
         mechanical, chi = state
-        ru, g = residual(mechanical, chi)
+        ru, g, tangent = response(mechanical, chi)
         nu = mechanical.size
         nc = chi.size
-        ruu = np.empty((nu, nu))
         ruchi = np.empty((nu, nc))
         gu = np.empty((nc, nu))
         gchi = np.empty((nc, nc))
+
         for column in range(nu):
             plus = mechanical.copy()
             minus = mechanical.copy()
             plus[column] += h_u
             minus[column] -= h_u
-            rp, gp = residual(plus, chi)
-            rm, gm = residual(minus, chi)
-            ruu[:, column] = (rp - rm) / (2.0 * h_u)
+            _, gp = residual(plus, chi)
+            _, gm = residual(minus, chi)
             gu[:, column] = (gp - gm) / (2.0 * h_u)
         for column in range(nc):
             plus = chi.copy()
@@ -140,13 +148,22 @@ def main() -> None:
             rm, gm = residual(mechanical, minus)
             ruchi[:, column] = (rp - rm) / (2.0 * h_chi)
             gchi[:, column] = (gp - gm) / (2.0 * h_chi)
+
+        def ruu_action(value: np.ndarray) -> np.ndarray:
+            displacement = unpack_interior(value, grid)
+            strain_increment = kinematics.strain_samples(displacement).reshape(-1, 3)
+            stress_increment = np.einsum(
+                "...ij,...j->...i", tangent, strain_increment.reshape(grid.nx, grid.ny, 2, 3)
+            )
+            return pack_interior(kinematics.divergence(stress_increment))
+
         return CoupledLinearisation(
             mechanical_residual=ru,
             nonlocal_residual=g,
             actions=CoupledBlockActions(
                 mechanical_size=nu,
                 nonlocal_size=nc,
-                ruu=lambda value: ruu @ value,
+                ruu=ruu_action,
                 ruchi=lambda value: ruchi @ value,
                 g_u=lambda value: gu @ value,
                 g_chi=lambda value: gchi @ value,
