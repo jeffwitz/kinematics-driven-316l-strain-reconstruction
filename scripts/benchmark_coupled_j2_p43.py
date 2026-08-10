@@ -1120,6 +1120,15 @@ def main() -> int:
         ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    solution_path = args.output.with_suffix(".solution.npz")
+    solution_arrays: dict[str, np.ndarray] = {}
+    for label, result in (("monolithic", mono), ("staggered", stag)):
+        if result is not None:
+            solution_arrays[f"{label}_mechanical"] = result["final_mechanical"]
+            solution_arrays[f"{label}_chi"] = result["final_chi"]
+    if solution_arrays:
+        np.savez_compressed(solution_path, **solution_arrays)
+        report["solution_archive"] = str(solution_path)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
     return 0
