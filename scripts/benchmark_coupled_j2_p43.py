@@ -583,6 +583,23 @@ def _solve_production_nested_sequence(
             krylov_counts.extend(attempt_krylov)
             step_fraction = min(1.0 - fraction, 1.5 * step_fraction)
 
+    material.revert()
+    material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
+    final_full = history[-1].copy()
+    final_full[1:-1, 1:-1] += unpack_interior(mechanical, grid)[1:-1, 1:-1]
+    final_trial = material.evaluate_in_plane(
+        kinematics.strain_samples(final_full).reshape(-1, 3),
+        time_increment=1.0,
+        consistent_tangent=False,
+    )
+    final_stress = np.asarray(final_trial.stress_in_plane_mpa).reshape(
+        grid.nx, grid.ny, 2, 3
+    )
+    final_peeq = np.asarray(
+        final_trial.observables["equivalent_plastic_strain"]
+    ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
+    material.revert()
+
     return {
         "method": "production-nested",
         "elapsed_seconds": time.perf_counter() - started,
@@ -597,6 +614,8 @@ def _solve_production_nested_sequence(
         "accepted_subincrements": accepted_subincrements,
         "final_mechanical": mechanical,
         "final_chi": chi,
+        "final_stress": final_stress,
+        "final_peeq": final_peeq,
     }
 
 
@@ -1126,6 +1145,9 @@ def main() -> int:
         if result is not None:
             solution_arrays[f"{label}_mechanical"] = result["final_mechanical"]
             solution_arrays[f"{label}_chi"] = result["final_chi"]
+            if "final_stress" in result:
+                solution_arrays[f"{label}_stress"] = result["final_stress"]
+                solution_arrays[f"{label}_peeq"] = result["final_peeq"]
     if solution_arrays:
         np.savez_compressed(solution_path, **solution_arrays)
         report["solution_archive"] = str(solution_path)
