@@ -1,0 +1,39 @@
+{
+  "case": "coupled micromorphic J2 M20 central soft inclusion",
+  "grid": [20, 20],
+  "inclusion": {
+    "geometry": "central square, one third of each pixel dimension",
+    "matrix_yield_stress_mpa": 250.0,
+    "inclusion_yield_stress_mpa": 200.0,
+    "elasticity": "homogeneous"
+  },
+  "krylov_relative_tolerance": 0.0001,
+  "compilation_included": false,
+  "monolithic_generic": {
+    "converged": true,
+    "newton_iterations": 4,
+    "krylov_iterations": [28, 26, 28, 23],
+    "total_krylov_iterations": 105,
+    "elapsed_seconds": 0.35045516496757045,
+    "material_seconds": 0.19553082791389897,
+    "material_tangent_seconds": 0.09431245597079396,
+    "material_residual_seconds": 0.10121837194310501,
+    "material_tangent_evaluations": 4,
+    "material_residual_only_evaluations": 5,
+    "final_residual_norm": 7.647870044607598e-07
+  },
+  "staggered_reference": {
+    "converged": true,
+    "outer_iterations": 15,
+    "mechanical_newton_iterations": 38,
+    "mechanical_krylov_iterations": 654,
+    "elapsed_seconds": 2.6156284490134567,
+    "mechanical_residual": 3.244188721998531e-11,
+    "nonlocal_residual": 9.284352335238289e-11
+  },
+  "comparison": {
+    "staggered_over_monolithic": 7.462305636517177,
+    "monolithic_over_staggered": 0.13400683981719576,
+    "chi_linf": 1.0719364632039152e-11
+  }
+}

@@ -42,6 +42,7 @@ class CoupledNewtonConfig:
     krylov_relative_tolerance: float = 1.0e-10
     krylov_maximum_iterations: int = 500
     krylov_restart: int = 100
+    evaluate_initial_residual: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,7 +102,7 @@ def solve_coupled_newton(
     state = (mechanical, nonlocal_field)
     initial_residual = (
         evaluate_residual(state)
-        if evaluate_residual is not None
+        if evaluate_residual is not None and controls.evaluate_initial_residual
         else None
     )
     initial = evaluate(state) if initial_residual is None else None

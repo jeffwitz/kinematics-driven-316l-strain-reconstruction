@@ -53,7 +53,9 @@ class GenericStructuralMicromorphicBatch:
     production bridge.
     """
 
-    def __init__(self, library: Path, point_count: int) -> None:
+    def __init__(
+        self, library: Path, point_count: int, yield_stress: np.ndarray | None = None
+    ) -> None:
         import mgis.behaviour as mgis
 
         self._mgis = mgis
@@ -70,14 +72,18 @@ class GenericStructuralMicromorphicBatch:
         properties = {
             "YoungModulus": 205.0e3,
             "PoissonRatio": 0.3,
-            "InitialYieldStress": 250.0,
+            "InitialYieldStress": 250.0 if yield_stress is None else yield_stress,
             "HardeningCoefficient": 380.0,
             "HardeningExponent": 0.245,
             "MicromorphicCouplingModulus": 2.0e3,
         }
+        storage_mode = mgis.MaterialStateManagerStorageMode.ExternalStorage
         for state in (self._manager.s0, self._manager.s1):
             for name, value in properties.items():
-                mgis.setMaterialProperty(state, name, value)
+                if np.isscalar(value):
+                    mgis.setMaterialProperty(state, name, float(value))
+                else:
+                    mgis.setMaterialProperty(state, name, value, storage_mode)
             mgis.setExternalStateVariable(state, "Temperature", 293.15)
         self._chi = np.zeros(point_count)
         self._has_trial = False
@@ -191,6 +197,11 @@ def main() -> None:
         "--krylov-relative-tolerance", type=float, default=1.0e-10
     )
     parser.add_argument(
+        "--heterogeneous-inclusion",
+        action="store_true",
+        help="lower the central inclusion yield stress to 80 percent",
+    )
+    parser.add_argument(
         "--central-strain-coupling",
         action="store_true",
         help="use central instead of forward finite differences for dp/depsilon",
@@ -204,13 +215,19 @@ def main() -> None:
     grid = StructuredGrid2D(args.nx, args.ny, float(args.nx), float(args.ny))
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
+    yield_pixel = np.full(grid.pixel_shape, 250.0)
+    if args.heterogeneous_inclusion:
+        yield_pixel[grid.nx // 3 : 2 * grid.nx // 3, grid.ny // 3 : 2 * grid.ny // 3] = 200.0
+    yield_points = np.repeat(yield_pixel.reshape(-1), 2)
     generic_mode = args.generic_library is not None
     if generic_mode:
-        material = GenericStructuralMicromorphicBatch(args.generic_library, point_count)
+        material = GenericStructuralMicromorphicBatch(
+            args.generic_library, point_count, yield_stress=yield_points
+        )
     else:
         material = MFrontNativePlaneStressBatch(
             args.library,
-            np.full(point_count, 250.0),
+            yield_points,
             np.full(point_count, 380.0),
             np.full(point_count, 0.245),
             behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
@@ -260,8 +277,12 @@ def main() -> None:
     h_u = args.strain_step * max(grid.spacing_x, grid.spacing_y)
     h_chi = args.chi_step
     coupled_material_seconds = 0.0
+    coupled_material_tangent_seconds = 0.0
+    coupled_material_residual_seconds = 0.0
     coupled_coupling_derivative_seconds = 0.0
     coupled_material_evaluations = 0
+    coupled_tangent_evaluations = 0
+    coupled_residual_only_evaluations = 0
     coupled_coupling_probe_evaluations = 0
     coupled_response_evaluations = 0
     coupled_chi_derivative_seconds = 0.0
@@ -289,6 +310,7 @@ def main() -> None:
         tuple[np.ndarray, np.ndarray, np.ndarray] | None,
     ]:
         nonlocal coupled_material_seconds, coupled_material_evaluations
+        nonlocal coupled_material_tangent_seconds, coupled_tangent_evaluations
         nonlocal coupled_response_evaluations
         samples = strain_from_mechanical(mechanical)
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
@@ -298,8 +320,11 @@ def main() -> None:
             time_increment=args.time_increment,
             consistent_tangent=True,
         )
-        coupled_material_seconds += time.perf_counter() - material_start
+        elapsed_material = time.perf_counter() - material_start
+        coupled_material_seconds += elapsed_material
+        coupled_material_tangent_seconds += elapsed_material
         coupled_material_evaluations += 1
+        coupled_tangent_evaluations += 1
         coupled_response_evaluations += 1
         stress_point = np.asarray(trial.stress_in_plane_mpa).copy()
         stress = stress_point.reshape(grid.nx, grid.ny, 2, 3)
@@ -374,11 +399,19 @@ def main() -> None:
         mechanical, chi = state
         samples = strain_from_mechanical(mechanical)
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
+        material_start = time.perf_counter()
         trial = material.evaluate_in_plane(
             samples,
             time_increment=args.time_increment,
             consistent_tangent=False,
         )
+        elapsed_material = time.perf_counter() - material_start
+        nonlocal coupled_material_seconds, coupled_material_residual_seconds
+        nonlocal coupled_material_evaluations, coupled_residual_only_evaluations
+        coupled_material_seconds += elapsed_material
+        coupled_material_residual_seconds += elapsed_material
+        coupled_material_evaluations += 1
+        coupled_residual_only_evaluations += 1
         stress = np.asarray(trial.stress_in_plane_mpa).reshape(
             grid.nx, grid.ny, 2, 3
         )
@@ -413,6 +446,7 @@ def main() -> None:
         """
 
         nonlocal coupled_material_seconds, coupled_material_evaluations
+        nonlocal coupled_material_residual_seconds, coupled_residual_only_evaluations
         nonlocal coupled_coupling_probe_evaluations
         nonlocal coupled_chi_derivative_seconds, coupled_strain_derivative_seconds
         if generic_couplings is not None:
@@ -590,12 +624,12 @@ def main() -> None:
     # trials are reverted; only the final converged trial is committed.
     if generic_mode:
         staggered_material = GenericStructuralMicromorphicBatch(
-            args.generic_library, point_count
+            args.generic_library, point_count, yield_stress=yield_points
         )
     else:
         staggered_material = MFrontNativePlaneStressBatch(
             args.library,
-            np.full(point_count, 250.0),
+            yield_points,
             np.full(point_count, 380.0),
             np.full(point_count, 0.245),
             behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
@@ -720,7 +754,7 @@ def main() -> None:
     staggered_elapsed = time.perf_counter() - staggered_start
     partitioned_material = MFrontNativePlaneStressBatch(
         args.library,
-        np.full(point_count, 250.0),
+        yield_points,
         np.full(point_count, 380.0),
         np.full(point_count, 0.245),
         behaviour_name="PixelMicromorphicLudwikJ2Plasticity",
@@ -764,8 +798,12 @@ def main() -> None:
         "b0_projection_error": b0_projection_error,
         "nonlocal_residual_form": "H_chi_minus_p",
         "coupled_material_seconds": coupled_material_seconds,
+        "coupled_material_tangent_seconds": coupled_material_tangent_seconds,
+        "coupled_material_residual_seconds": coupled_material_residual_seconds,
         "coupled_coupling_derivative_seconds": coupled_coupling_derivative_seconds,
         "coupled_material_evaluations": coupled_material_evaluations,
+        "coupled_tangent_evaluations": coupled_tangent_evaluations,
+        "coupled_residual_only_evaluations": coupled_residual_only_evaluations,
         "coupled_coupling_probe_evaluations": coupled_coupling_probe_evaluations,
         "coupled_response_evaluations": coupled_response_evaluations,
         "coupled_chi_derivative_seconds": coupled_chi_derivative_seconds,
@@ -795,6 +833,7 @@ def main() -> None:
         "coupled_vs_staggered_chi_linf": float(
             np.max(np.abs(staggered_nonlocal - result.nonlocal_field))
         ),
+        "heterogeneous_inclusion": args.heterogeneous_inclusion,
     }, indent=2))
 
 
