@@ -9,11 +9,27 @@ from fem_inhouse.core.nonlocal_criteria import (
 )
 from fem_inhouse.core.nonlocal_plasticity import (
     NonlocalCouplingConvergenceError,
+    _element_average,
+    _gauss_values,
     _mixed_relative_maximum_norm,
     classify_fixed_point_history,
     evaluate_nonlocal_fixed_point,
 )
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial
+
+
+@pytest.mark.parametrize("order", ["C", "F"])
+def test_element_layout_round_trip_preserves_non_symmetric_cells(order: str) -> None:
+    field = np.array([[0.0, 1.0, 2.0], [10.0, 11.0, 12.0]])
+    point_values = _gauss_values(field, 2, element_order=order)
+    recovered = _element_average(
+        point_values,
+        element_shape=field.shape,
+        gauss_points_per_element=2,
+        name="test_field",
+        element_order=order,
+    )
+    np.testing.assert_array_equal(recovered, field)
 
 
 class _FakeNonlocalBatch:

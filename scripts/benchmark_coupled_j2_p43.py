@@ -203,6 +203,8 @@ def _solve_sequence(
     method: str,
     backend: str,
     staggered_relaxation: float,
+    fd_strain_step: float,
+    fd_chi_step: float,
 ) -> dict[str, object]:
     if backend == "generic":
         material = _make_material(
@@ -331,8 +333,8 @@ def _solve_sequence(
                     point_chi,
                     base_stress=np.asarray(trial.stress_in_plane_mpa),
                     base_observable=np.asarray(trial.observables["equivalent_plastic_strain"]),
-                    strain_step=1.0e-7 * max(grid.spacing_x, grid.spacing_y),
-                    parameter_step=1.0e-7,
+                    strain_step=fd_strain_step,
+                    parameter_step=fd_chi_step,
                     central_parameter=False,
                     forward_strain=False,
                 )
@@ -506,6 +508,8 @@ def main() -> int:
     parser.add_argument("--krylov-relative-tolerance", type=float, default=1.0e-4)
     parser.add_argument("--absolute-tolerance", type=float, default=1.0e-10)
     parser.add_argument("--staggered-relaxation", type=float, default=1.0)
+    parser.add_argument("--fd-strain-step", type=float, default=1.0e-7)
+    parser.add_argument("--fd-chi-step", type=float, default=1.0e-7)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     library = args.generic_library if args.backend == "generic" else args.library
@@ -521,6 +525,10 @@ def main() -> int:
         raise SystemExit("path subdivision limits are inconsistent")
     if not 0.0 < args.staggered_relaxation <= 1.0:
         raise SystemExit("staggered relaxation must lie in (0, 1]")
+    if not np.isfinite(args.fd_strain_step) or args.fd_strain_step <= 0:
+        raise SystemExit("fd strain step must be finite and positive")
+    if not np.isfinite(args.fd_chi_step) or args.fd_chi_step <= 0:
+        raise SystemExit("fd chi step must be finite and positive")
     grid = StructuredGrid2D(mesh, mesh, mesh * PIXEL_SIZE_MM, mesh * PIXEL_SIZE_MM)
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
@@ -577,6 +585,8 @@ def main() -> int:
                 absolute_tolerance=args.absolute_tolerance,
                 backend=args.backend,
                 staggered_relaxation=args.staggered_relaxation,
+                fd_strain_step=args.fd_strain_step,
+                fd_chi_step=args.fd_chi_step,
             )
             if args.method in ("monolithic", "both"):
                 mono = _solve_sequence(**common, method="monolithic")
@@ -603,6 +613,8 @@ def main() -> int:
         "krylov_relative_tolerance": args.krylov_relative_tolerance,
         "absolute_tolerance": args.absolute_tolerance,
         "staggered_relaxation": args.staggered_relaxation,
+        "fd_strain_step": args.fd_strain_step,
+        "fd_chi_step": args.fd_chi_step,
         "b0_lambda": lambda_0,
         "b0_mu": mu_0,
         "b0_projection_error": projection_error,

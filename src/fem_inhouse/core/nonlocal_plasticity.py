@@ -162,6 +162,7 @@ def _element_average(
     element_shape: tuple[int, int],
     gauss_points_per_element: int,
     name: str,
+    element_order: Literal["C", "F"] = "F",
     out: FloatArray | None = None,
 ) -> FloatArray:
     values = np.asarray(point_values, dtype=np.float64)
@@ -173,16 +174,16 @@ def _element_average(
         )
     if not np.isfinite(values).all():
         raise NonlocalCouplingConvergenceError(f"{name} contains non-finite values")
-    destination = (
-        np.empty(element_shape, dtype=np.float64, order="F") if out is None else out
-    )
+    destination = np.empty(element_shape, dtype=np.float64) if out is None else out
     if destination.shape != element_shape:
         raise ValueError(f"out must have shape {element_shape}")
-    np.mean(
-        values.reshape(element_count, gauss_points_per_element),
+    if element_order not in {"C", "F"}:
+        raise ValueError("element_order must be 'C' or 'F'")
+    averaged = np.mean(
+        values.reshape(element_count, gauss_points_per_element, order="C"),
         axis=1,
-        out=destination.ravel(order="F"),
     )
+    np.copyto(destination, averaged.reshape(element_shape, order=element_order))
     return destination
 
 
@@ -190,14 +191,17 @@ def _gauss_values(
     element_values: FloatArray,
     gauss_points_per_element: int,
     *,
+    element_order: Literal["C", "F"] = "F",
     out: FloatArray | None = None,
 ) -> FloatArray:
-    flattened = element_values.ravel(order="F")
+    if element_order not in {"C", "F"}:
+        raise ValueError("element_order must be 'C' or 'F'")
+    flattened = element_values.ravel(order=element_order)
     expected_shape = (flattened.size * gauss_points_per_element,)
     destination = np.empty(expected_shape, dtype=np.float64) if out is None else out
     if destination.shape != expected_shape:
         raise ValueError(f"out must have shape {expected_shape}")
-    destination.reshape(flattened.size, gauss_points_per_element)[:, :] = flattened[:, None]
+    np.copyto(destination, np.repeat(flattened, gauss_points_per_element))
     return destination
 
 
@@ -276,6 +280,7 @@ def evaluate_nonlocal_fixed_point(
     maximum_helmholtz_residual: float,
     workspace: NonlocalFixedPointWorkspace | None = None,
     criterion: ScalarNonlocalCriterion | None = None,
+    element_order: Literal["C", "F"] = "F",
 ) -> NonlocalCouplingEvaluation:
     """Solve the staggered ``p``--``chi`` fixed point from one committed state.
 
@@ -289,6 +294,8 @@ def evaluate_nonlocal_fixed_point(
     active_criterion: ScalarNonlocalCriterion = (
         EquivalentPlasticStrainHelmholtzCriterion() if criterion is None else criterion
     )
+    if element_order not in {"C", "F"}:
+        raise ValueError("element_order must be 'C' or 'F'")
     if not active_criterion.supports_material(material_batch):
         raise TypeError(
             f"material batch does not support nonlocal criterion "
@@ -363,6 +370,7 @@ def evaluate_nonlocal_fixed_point(
             _gauss_values(
                 chi,
                 gauss_points_per_element,
+                element_order=element_order,
                 out=buffers.gauss_nonlocal_peeq,
             ),
         )
@@ -378,6 +386,7 @@ def evaluate_nonlocal_fixed_point(
             element_shape=element_shape,
             gauss_points_per_element=gauss_points_per_element,
             name=active_criterion.source_name,
+            element_order=element_order,
             out=buffers.local_element_peeq,
         )
         if active_criterion.requires_nonnegative_field and np.any(local_peeq < -1e-14):
@@ -582,6 +591,7 @@ def evaluate_nonlocal_fixed_point(
         _gauss_values(
             chi,
             gauss_points_per_element,
+            element_order=element_order,
             out=buffers.gauss_nonlocal_peeq,
         ),
     )
@@ -597,6 +607,7 @@ def evaluate_nonlocal_fixed_point(
         element_shape=element_shape,
         gauss_points_per_element=gauss_points_per_element,
         name=active_criterion.source_name,
+        element_order=element_order,
         out=buffers.local_element_peeq,
     )
     yield_radius = _element_average(
@@ -604,6 +615,7 @@ def evaluate_nonlocal_fixed_point(
         element_shape=element_shape,
         gauss_points_per_element=gauss_points_per_element,
         name="yield_surface_radius_mpa",
+        element_order=element_order,
         out=buffers.next_chi,
     )
     if np.any(yield_radius <= 0):
