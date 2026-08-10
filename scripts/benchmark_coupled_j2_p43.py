@@ -914,12 +914,18 @@ def _solve_sequence(
             final_nonlocal_residual_norm = chi_residual
 
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
-        material.evaluate_in_plane(
+        final_trial = material.evaluate_in_plane(
             strain_from_mechanical(mechanical), time_increment=1.0, consistent_tangent=False
         )
         material.commit()
 
     elapsed = time.perf_counter() - started
+    final_stress = np.asarray(final_trial.stress_in_plane_mpa).reshape(
+        grid.nx, grid.ny, 2, 3
+    )
+    final_peeq = np.asarray(
+        final_trial.observables["equivalent_plastic_strain"]
+    ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
     return {
         "method": method,
         "elapsed_seconds": elapsed,
@@ -936,6 +942,8 @@ def _solve_sequence(
         "final_nonlocal_residual_norm": final_nonlocal_residual_norm,
         "final_mechanical": mechanical,
         "final_chi": chi,
+        "final_stress": final_stress,
+        "final_peeq": final_peeq,
     }
 
 
