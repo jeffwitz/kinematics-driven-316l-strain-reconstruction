@@ -47,4 +47,49 @@
     }
   ],
   "interpretation": "The coupled pilot is numerically equivalent to the partitioned fixed point on these grids. The measured overhead is not a production benchmark: the current prototype performs 24 additional constitutive probe evaluations per coupled linearisation."
+  ,
+  "forward_difference_cached_results": {
+    "commit": "4cc2d306f9cecdf82780a0749e0460483690bbdd",
+    "strain_difference": "forward",
+    "repetitions": 3,
+    "results": [
+      {
+        "grid": [20, 20],
+        "coupled_elapsed_seconds_median": 0.1718272179714404,
+        "partitioned_elapsed_seconds_median": 0.058027931954711676,
+        "difference_seconds_median": 0.11379928601672873,
+        "coupled_over_partitioned_median": 2.961112212400473,
+        "coupled_coupling_probe_evaluations": 10,
+        "coupled_coupling_derivative_seconds_median": 0.03875560296000913,
+        "newton_iterations": 2,
+        "krylov_iterations": [13, 73],
+        "coupled_vs_partitioned_chi_linf": 4.698366695699008e-12
+      },
+      {
+        "grid": [50, 50],
+        "coupled_elapsed_seconds_median": 0.600390937004704,
+        "partitioned_elapsed_seconds_median": 0.3264012059662491,
+        "difference_seconds_median": 0.27400899201165885,
+        "coupled_over_partitioned_median": 1.8425015411285608,
+        "coupled_coupling_probe_evaluations": 10,
+        "coupled_coupling_derivative_seconds_median": 0.2337113410467282,
+        "newton_iterations": 2,
+        "krylov_iterations": [14, 79],
+        "coupled_vs_partitioned_chi_linf": 4.698376236678126e-12
+      },
+      {
+        "grid": [100, 100],
+        "coupled_elapsed_seconds_median": 2.2807009679963812,
+        "partitioned_elapsed_seconds_median": 1.3174137719906867,
+        "difference_seconds_median": 0.9444494460476562,
+        "coupled_over_partitioned_median": 1.7013052634048447,
+        "coupled_coupling_probe_evaluations": 10,
+        "coupled_coupling_derivative_seconds_median": 0.992720304930117,
+        "newton_iterations": 2,
+        "krylov_iterations": [15, 88],
+        "coupled_vs_partitioned_chi_linf": 4.698404859615479e-12
+      }
+    ],
+    "interpretation": "Reusing the central response and replacing the three strain derivatives by forward differences removes the post-convergence linearisation and reduces the coupling probes from 24 to 10."
+  }
 }
