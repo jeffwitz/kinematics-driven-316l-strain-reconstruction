@@ -1,68 +1,46 @@
-# SRIX monolithique en contrainte plane généralisée
+# Monolithic structural plane stress for SRIX
 
-Statut : **réalisé sans modification de TFEL/MFront** (2026-08-08). Ce
-document décrit la voie suivie et l'état des alternatives.
+The registered SRIX structural behaviour applies a three-component structural
+plane-stress closure inside the MFront implicit constitutive solve. The host
+passes the imposed gradient in the structural/global frame and supplies the
+orientation as per-point material properties. It does not perform a second
+rotation or a separate transverse closure.
 
-## La formulation retenue — la fermeture dans les rangées transverses du résidu
+## Local problem
 
-Le comportement `Fcc316LForestRubinSrixGps`
-(`mfront/Fcc316LForestRubinSrixGps.mfront`) est un `@DSL Implicit` sous
-l'hypothèse `Tridimensional`, sur MFront 5.1.0 **non modifié**. Son système
-local garde les 18 inconnues SRIX (`deel[6] + dg[12]`).
+The local SRIX system retains six elastic-strain components and twelve signed
+slip increments. The in-plane elastic rows retain their kinematic meaning. The
+three transverse rows impose
 
-Le résidu cinématique est assemblé dans le repère **global** :
+$$
+\sigma_{zz}=\sigma_{xz}=\sigma_{yz}=0
+$$
 
-```text
-rot(deel + sum dg m) - deto = 0
-```
+in the structural frame. The relaxed transverse strains are local constitutive
+outputs; they are not additional FEM unknowns.
 
-Ses trois rangées **dans le plan** sont la cinématique. Ses trois rangées
-**transverses** ne sont pas des équations de ce problème — la surface libre
-laisse la déformation totale transverse indéterminée — elles portent donc la
-condition de contrainte plane à la place :
+The generic formulation is described in
+{doc}`../../reference/numerics/mfront_structural_plane_stress`. The SRIX
+behaviour is one registered instance of that contract; its constitutive flow
+rule remains entirely separate from the closure.
 
-```text
-(Q^T sigma Q)_zz = 0
-(Q^T sigma Q)_xz = 0
-(Q^T sigma Q)_yz = 0
-```
+## Tangent and host integration
 
-dans le repère structural, normalisées par un module de référence. Les
-déformations transverses `ezz`, `eyz`, `exz` sont des **sorties**, reconstruites
-dans `@UpdateAuxiliaryStateVariables` comme `eel + sum(g m)` lues en repère
-global, et repliées dans le gradient par le pont. La rotation
-`Q_global_to_material` est passée à la loi comme **neuf propriétés matériau par
-point** ; le pont est passif (pas de rotation d'entrée, pas de fermeture
-Python).
+The MFront behaviour returns the tangent of the one-step constrained map. If a
+material point is integrated through several host substeps, the host may
+replace that one-step tangent with the tangent of the composed algorithmic map.
+This distinction is essential for a global Newton solve and is independent of
+the SRIX constitutive equations.
 
-Avantages structurels : pas de point selle, pas d'inconnues supplémentaires,
-tout le bloc élastique du Jacobien est constant (assemblé une fois dans
-`@InitLocalVariables`), et la contrainte plane est effectivement dans le
-Newton constitutif — le « un unique Newton MFront » du cahier des charges.
+The external three-dimensional condensation backend is retained as an
+independent reference. Agreement is expected when both routes start from the
+same committed state, use the same orientation and branch, and integrate the
+same increment.
 
-Qualification ponctuelle acceptée : fermeture `2-4e-14 MPa`, tangente par
-différences finies `1,2-1,6e-7`, accord avec la référence condensée
-`1e-11` (les critères A1/A2 d'accord avec la référence ont été restaurés le
-2026-08-08 ; l'interprétation « deux branches » qui les avait suspendus était
-un artefact d'un bug de bookkeeping de déformation, corrigé en `6bfaf86`).
-P43 20×20 : matériau `1,2-1,7×` la référence ; P43 100×100 : parité
-(`1,02×` matériau) avec une pénalité d'itérations globales (`85` contre `57`)
-mesurée mais non expliquée — le backend condensé reste le backend de
-production par défaut.
+## Validity domain
 
-## L'alternative générateur — parkée
-
-Le prototype du fork `jeffwitz/tfel-generalised-plane-stress` (hypothèse
-`GENERALISEDPLANESTRESS` dans le générateur MFront) est **parker** : la voie
-UMat atteint l'objectif sur MFront non modifié, et le prototype du fork
-aurait imposé la fermeture dans le repère de la loi — incompatible avec la
-condition structurale pour les cristaux tournés (le DSL ne connaît pas la
-rotation). Ce document remplace l'ancienne lecture selon laquelle le
-monolithique exigeait une évolution du générateur.
-
-## Backend de référence
-
-`mfront-3d-condensed-plane-stress` (la condensation Python) reste la
-référence numérique et le backend par défaut. La voie UMat est qualifiée au
-point matériel et crédible, mais pas consolidée au niveau problème global
-tant que la pénalité d'itérations n'est pas expliquée.
+The registered route is qualified for small-strain, `Implicit`,
+`Tridimensional`, standard-elasticity-compatible crystal behaviours with the
+repository's structural orientation contract. It is not a general finite-
+strain plane-stress formulation and does not resolve through-thickness
+heterogeneity or warping.
