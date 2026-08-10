@@ -81,23 +81,65 @@ Supported backend values are:
 routes. The local plane-stress controls below are used only by the condensed
 3D backend.
 
+### Selecting the law and its orientations
+
+`constitutive_options` is forwarded unchanged to the selected backend, which
+rejects any key it does not know. The crystal backends accept the following,
+whichever plane-stress route is chosen.
+
+| Key | Default | Meaning |
+|---|---:|---|
+| `crystal_orientation` | identity | mapping with a `mode` of `homogeneous` (one Bunge Euler triple, degrees) or `ebsd` (one triple per point, shaped `(nx, ny, 3)`). Absent, every point keeps the identity rotation, which is a single-crystal aligned with the global frame and almost never what a real case wants |
+| `parameter_set` | `null` | named entry of the SRIX parameter registry, e.g. `316l_srix_transposed_from_nasri2018_rate_1e-3`. Only behaviours declaring a registry accept it; Méric-Cailletaud rejects it and asks for `paired_parameter_set` |
+| `parameters` | `null` | explicit parameter overrides, for a set that is not registered. Mutually exclusive with `paired_parameter_set` |
+| `paired_parameter_set` | `null` | a matched SRIX / Méric-Cailletaud pair, for comparing the two flow rules on parameters that mean the same thing. Cannot be combined with `parameter_set` or `parameters` |
+| `condensation_block_size` | `2500` | condensed backend only; number of points condensed per block. A memory-versus-overhead knob, not a numerical one |
+
+The 316L parameter sets are **transposed from published work, not identified on
+this material**. See {doc}`../how-to/use_srix_crystal_law` before presenting a
+number obtained with them.
+
 ### Production options for the generalised plane-stress backend
 
-Accepted by `mfront-native-generalised-plane-stress` and
-`mfront-structural-plane-stress`; the condensed backend refuses them, so a
-configuration cannot carry one without effect.
+Read by `mfront-native-generalised-plane-stress` and
+`mfront-structural-plane-stress`. **The condensed backend accepts these keys
+and then ignores them**: it has no local Newton to sub-step, so there is no
+tangent to repair. A `gps_*` key left in a configuration switched to
+`mfront-3d-condensed-plane-stress` is silently inert — the one exception is
+`gps_shadow_tangent`, which is rejected with an error. Check
+`constitutive_backend` before reading a result as evidence that one of these
+options did something.
 
 | Key | Default | Meaning |
 |---|---:|---|
 | `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of points the local Newton had to sub-step. Recommended `true` for the qualified SRIX + EBSD workflow; otherwise a sub-stepped point returns its last sub-step's tangent. On P43 M100 it takes GPS from 85 Newton iterations to 58, against 57 for the reference |
 | `gps_composite_fd_step` | `1.0e-6` | absolute engineering-strain perturbation used by the central finite difference. A numerical tolerance, not a relative increment scale |
 
-The following options are diagnostic only and must remain disabled in
-production unless a validation experiment explicitly requests them:
+### Optional smoothing of the SRIX flow rule
+
+Accepted by every crystal backend, condensed included, because they set MFront
+behaviour parameters rather than steering the host bridge. Both are refused for
+any law other than Forest-Rubin SRIX.
+
+The SRIX flow rule is built on Macaulay brackets, which are not differentiable
+where they switch. These two keys optionally replace them by a generalized
+Charbonnier norm, trading an exactly reproduced constitutive law for a smoother
+one that a local Newton finds easier.
 
 | Key | Default | Meaning |
 |---|---:|---|
-| `gps_shadow_tangent` | `false` | replace the Newton matrix by the reference Schur evaluated at the GPS state; useful for diagnosis, not production |
+| `srix_smoothing_epsilon` | `0.0` | stress scale of the regularisation, MPa. **`0.0` selects the historical non-smooth law exactly**, not an approximation of it, so the default path is bit-for-bit the qualified law. Any positive value changes the constitutive response and invalidates comparison with archived campaigns |
+| `srix_smoothing_exponent` | `11.0` | exponent of the generalized Charbonnier norm. Higher is closer to the sharp bracket. Without a positive `srix_smoothing_epsilon` it has no effect |
+
+### Diagnostic options
+
+These must remain disabled in production unless a validation experiment
+explicitly requests them. They exist to explain a run, not to produce one.
+
+| Key | Default | Meaning |
+|---|---:|---|
+| `gps_failure_diagnostics` | `false` | record, per isolated GPS integration failure, the state that produced it. Costs an extra isolation pass on failing points; only the GPS and structural backends act on it |
+| `gps_shadow_tangent` | `false` | replace the Newton matrix by the reference Schur evaluated at the GPS state; useful for diagnosis, not production. Rejected by the condensed backend |
 | `gps_shadow_tangent_scope` | `"all"` | diagnostic scope for the shadow tangent |
 
 ## NonlocalPlasticityConfig

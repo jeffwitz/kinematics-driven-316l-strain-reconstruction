@@ -1,4 +1,8 @@
-# Deprecated location
+---
+orphan: true
+nosearch: true
+---
+# This page has moved
 
-This page has moved to {doc}`choose_mfront_backend`.
-The old path is retained so historical links keep working.
+See {doc}`choose_mfront_backend`. The old path is kept so historical links
+keep working.

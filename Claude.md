@@ -5325,3 +5325,61 @@ laws, not yet a same-state raw-3D Schur qualification; the production
 behaviours remain unchanged. The validation generator currently uses an
 18x18 auxiliary Jacobian buffer, which must be replaced by a dimension-safe
 reusable mechanism before industrialisation.
+
+### 2026-08-10 — Chantier documentaire : couche débutant et options non documentées
+
+La couche d'accueil manquante est créée :
+`docs/how-to/run_316l_crystal_plasticity.md` donne un chemin court pour
+quelqu'un qui n'a jamais utilisé MFront, avec un unique choix de backend et un
+bloc Python exécuté verbatim par un test. La page de choix de backend
+dupliquée est réconciliée : `choose_an_mfront_backend.md` devient une souche de
+redirection, `choose_mfront_backend.md` porte le contenu.
+
+**Deux défauts réels trouvés en vérifiant la doc contre le code, pas en la
+relisant.**
+
+Le premier est une affirmation fausse que j'avais écrite moi-même :
+`configuration.md` et la page de choix promettaient que le backend condensé
+*refuse* les options `gps_*`, « de sorte qu'une configuration ne peut pas en
+porter une sans effet ». Mesuré : seul `gps_shadow_tangent` est refusé.
+`gps_composite_fd_tangent`, `gps_composite_fd_step` et `gps_failure_diagnostics`
+sont acceptés puis **silencieusement ignorés**. Les deux pages disent maintenant
+ce que le code fait. Poser le garde manquant côté code changerait le
+comportement de configurations existantes, y compris d'archives rejouables :
+c'est une décision à prendre, pas un effet de bord de la doc.
+
+Le second est un test rouge dans `main`, sans rapport avec mon travail :
+`test_structural_plane_stress_same_state_schur` lance son script de
+qualification en sous-processus sans la racine du dépôt sur `PYTHONPATH`, alors
+que le script importe `scripts.diagnose_gps_tangent_blocks`. Sous pytest la
+racine vient de `pythonpath = ["."]`, dont un sous-processus n'hérite pas. Le
+test passe l'environnement explicitement et repasse au vert.
+
+Douze clés de `constitutive_options` sont désormais documentées, contre cinq
+avant : les quatre clés de sélection de loi et d'orientation
+(`crystal_orientation`, `parameter_set`, `parameters`, `paired_parameter_set`),
+`condensation_block_size`, et les trois arrivées avec les campagnes récentes
+(`srix_smoothing_epsilon`, `srix_smoothing_exponent`, `gps_failure_diagnostics`).
+Le lissage Charbonnier est décrit dans `explanation/forest_rubin_srix.md` sous
+sa forme réellement implémentée — une norme généralisée d'exposant `n = 11` par
+défaut, et non la forme racine carrée que décrit encore le commentaire du
+`.mfront`. Le point qui compte : `epsilon = 0` n'est pas une limite mais une
+**branche distincte**, donc la configuration par défaut intègre exactement la
+loi historique, sans erreur de régularisation à défalquer.
+
+Pour que cette dérive ne se reproduise pas par simple vigilance,
+`test_every_accepted_constitutive_option_is_documented` confronte les clés que
+`plane_stress_material.py` consomme à celles que la référence cite. Contrôle
+négatif effectué : une clé fictive est bien détectée.
+
+Les temps M100 cités (`62,38` / `74,05` / `58,38 s` pour condensé / GPS /
+GPS+FD, à 57 / 85 / 58 itérations de Newton) sont tracés jusqu'à leurs trois
+artefacts `*_runtime_blas1`, tous à huit incréments, `mfront_threads: 4` et
+BLAS mono-fil, exécutés sous `2defce9`. Ils remplacent la campagne
+`gps_tangent_variants_m100`, dont la variante `gps_composite` n'avait pas
+convergé. Le comparatif M20 à trois backends est ajouté : le backend structurel
+générique reproduit la loi GPS écrite à la main à `9e-17` en déplacement pour
+le même nombre d'itérations.
+
+Neuf erreurs `mypy` subsistent sous `src/`, toutes antérieures et hors de ce
+chantier, qui n'a touché aucune ligne de calcul.

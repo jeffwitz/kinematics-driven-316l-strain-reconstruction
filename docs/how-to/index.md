@@ -22,6 +22,7 @@
 ## Extend
 
 - {doc}`add_mfront_behaviour`
+- {doc}`run_316l_crystal_plasticity`
 - {doc}`choose_mfront_backend`
 - {doc}`use_srix_crystal_law`
 - {doc}`use_reduced_integration`
@@ -49,8 +50,8 @@ inspect_p0043_evm_fields
 characterise_dic_measurement_chain
 transfer_candidates
 add_mfront_behaviour
+run_316l_crystal_plasticity
 choose_mfront_backend
-choose_an_mfront_backend
 use_srix_crystal_law
 use_reduced_integration
 add_nonlocal_criterion

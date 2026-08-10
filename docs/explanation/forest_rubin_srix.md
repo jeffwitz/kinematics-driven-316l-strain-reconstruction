@@ -148,6 +148,34 @@ inactive system corrupts the Jacobian by exactly the number of inactive
 systems, and the local Newton then fails **non-monotonically** in the step
 size: converging at `1e-3`, failing at `5e-4`. The law guards this explicitly.
 
+### An optional smooth replacement for the bracket
+
+Because the two non-differentiable points of the flow rule — the absolute value
+on the driving force and the positive part on the overstress — are the ones the
+local Newton has to cross, the law can optionally round them off. With
+`srixSmoothingEpsilon = ε > 0` and `srixSmoothingExponent = n`, writing
+`‖v‖ₙ = (|v|ⁿ + εⁿ)^(1/n)`:
+
+$$
+|τ - x| \;\longrightarrow\; \|τ - x\|_n - ε,
+\qquad
+\langle f \rangle \;\longrightarrow\; \tfrac{1}{2}\left(f + \|f\|_n\right),
+$$
+
+and the sign of the driving force becomes `(τ - x) / ‖τ - x‖ₙ`, which is
+continuous through zero instead of jumping. The exponent controls how tightly
+the rounded corner hugs the sharp one: `n = 11`, the default, is close; small
+`n` is smoother and further from the law.
+
+**`ε = 0` is not a small-ε limit, it is a different branch.** The law tests
+`ε > 0` and takes the historical `abs` and `max` expressions when it is not, so
+the default configuration integrates exactly the law described above, with no
+regularisation error to account for. That also means any positive `ε` changes
+the constitutive response, and results obtained with one cannot be compared
+against the archived campaigns. Both parameters are exposed as
+`srix_smoothing_epsilon` and `srix_smoothing_exponent` in
+{doc}`../reference/configuration`.
+
 **The overflow guard must not be copied.** Méric-Cailletaud rejects any step
 whose overstress exceeds `1.1 K`, protecting its Norton power from overflow.
 SRIX is linear in `f` and needs no such guard; carrying it over would discard

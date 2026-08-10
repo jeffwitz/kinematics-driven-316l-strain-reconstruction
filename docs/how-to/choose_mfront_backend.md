@@ -21,11 +21,77 @@ SRIX GPS variant carries this closure in its constitutive Newton. The generic st
 backend applies the same closure through the reusable `StructuralPlaneStress3D`
 transformation, while the condensed route performs it in the Python bridge.
 
+## Why there are two ways to do plane stress on a 3D law
+
+Both routes compute the same thing -- they agree to `1e-11` at a material point
+-- so the choice is not about accuracy. It is about what each one lets you do.
+
+**Condensed 3D works with any law.** The bridge iterates the transverse strain
+and hands the behaviour a complete six-component gradient. The law is never
+modified and does not know plane stress exists, so a new constitutive model
+becomes usable the day it compiles. That is why it stays the reference. It
+costs roughly `6.6` full integrations per material point per global Newton
+iteration, and the closure lives in Python, so it cannot leave this repository.
+
+**Generalised plane stress travels.** The closure is part of the law, so any
+code able to call an MFront/MGIS behaviour obtains plane stress without writing
+a closure loop, and the logic cannot drift between hosts. It costs one law
+written for it per behaviour.
+
+## Why `gps_composite_fd_tangent: true`
+
 When a GPS point must sub-step an increment, the last sub-step does not by
 itself provide the derivative of the composed trajectory. The composite FD
-tangent reconstructs that derivative for the affected points only. It is
-therefore enabled in the qualified SRIX workflow, with a measured and limited
-cost.
+tangent reconstructs that derivative for the affected points only.
+
+It is not a refinement, it is what makes the route worth taking. On P43 M100
+EBSD, eight increments, four threads:
+
+| | time | Newton |
+|---|---:|---:|
+| condensed reference | `62.38 s` | 57 |
+| GPS, tangent as the DSL returns it | `74.05 s` | 85 |
+| **GPS + composite FD** | **`58.38 s`** | **58** |
+
+The finite difference touched `192` points and `1152` trajectories for `2.15 s`
+of its own cost, with a converged residual of `5.3e-09`. Without it the GPS
+route is *slower* than the reference; with it, it is faster.
+
+Those three runs are archived under
+`validation/_generated/performance/` as `srix_p43_m100_condensed_runtime_blas1`,
+`gps_composite_fd_m100_runtime_blas1` and `gps_fd_m100_runtime_blas1`, all at
+eight increments with `mfront_threads: 4` and BLAS pinned to one thread.
+Reproduce them with `scripts/benchmark_gps_tangent_variants.py` before quoting
+them on different hardware — they are a ratio between routes on one machine,
+not a portable figure.
+
+Sub-stepping is rare and local -- two points out of four hundred on the small
+window, `0.071 %` of the batch at M100 -- so the repair is cheap because it is
+applied to those points only.
+
+The condensed backend accepts the key and ignores it — it has no local Newton
+to sub-step, so there is nothing to repair. Switching a configuration from GPS
+to condensed therefore silently drops the option rather than failing, so read
+`constitutive_backend` before crediting it with anything.
+
+## What the generic structural route costs
+
+The reusable `mfront-structural-plane-stress` closure is not a third numerical
+answer: on P43 M20 EBSD it reproduces the hand-written GPS law to `9e-17` on
+displacement and `2e-12` on in-plane stress, and needs the same 45 Newton
+iterations. It costs a little more time than the specialised law and less than
+the Python reference:
+
+| Backend | time | Newton |
+|---|---:|---:|
+| `mfront-3d-condensed-plane-stress` | `2.89 s` | 46 |
+| `mfront-native-generalised-plane-stress` | `2.10 s` | 45 |
+| `mfront-structural-plane-stress` | `2.35 s` | 45 |
+
+P43 M20 EBSD, eight increments, four MFront threads, archived as
+`p43_m20_backend_comparison_latest.json`. Prefer the generic route when you
+want the GPS closure for a 3D law you have not hand-written a GPS variant for,
+and it fits the demonstrated V1 contract.
 
 ## Qualified production route
 
@@ -77,6 +143,16 @@ It is currently qualified for the small-strain, `Implicit`,
 `StandardElasticity`-compatible SRIX workflow. See
 {doc}`../reference/numerics/mfront_structural_plane_stress` for the
 formulation and its demonstrated scope.
+
+## Checking what you actually ran
+
+The solver diagnostics record the backend and, for GPS, the sub-stepping and
+composite-FD counters. A run reporting `native_substep_points = 0` never needed
+sub-stepping and would behave identically with the option off. A run reporting
+`composite_fd_points` greater than zero used the repair on that many points.
+
+If you have never used MFront and want a working configuration before reading
+any of this, start at {doc}`run_316l_crystal_plasticity`.
 
 For the details of `R`, the 316L parameters, orientations and per-system
 outputs, see {doc}`use_srix_crystal_law`. The reference formulation is detailed

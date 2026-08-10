@@ -14,8 +14,8 @@ import json
 from pathlib import Path
 
 import numpy as np
-
 from diagnose_gps_direct_sensitivity import _MUS
+
 from fem_inhouse.core.crystal_parameter_pairs import get_paired_crystal_parameter_set
 from fem_inhouse.core.fcc_interaction_matrix import build_interaction_matrix
 
@@ -24,7 +24,6 @@ def analyse(path: Path, parameter_set: str) -> dict[str, object]:
     data = np.load(path)
     pair = get_paired_crystal_parameter_set(parameter_set)
     backbone = pair.backbone
-    r = pair.srix.overstress_modulus_mpa
     tau0 = backbone.tau0_mpa
     q_hard = backbone.q_mpa
     b = backbone.b
@@ -57,8 +56,8 @@ def analyse(path: Path, parameter_set: str) -> dict[str, object]:
     signs = np.signbit(dg)
     result: dict[str, object] = {
         "input": str(path),
-        "records": int(len(stress)),
-        "unique_points": int(len(np.unique(data["point"]))),
+        "records": len(stress),
+        "unique_points": len(np.unique(data["point"])),
         "parameter_set": parameter_set,
         "overstress_mpa": overstress.tolist(),
         "active_mask": active.tolist(),
@@ -66,7 +65,10 @@ def analyse(path: Path, parameter_set: str) -> dict[str, object]:
         "dg_sign_negative": signs.tolist(),
         "local_iterations": {
             "available": False,
-            "reason": "The generated local counter is only promoted on a successful integration; failed MGIS trials leave it at zero.",
+            "reason": (
+                "The generated local counter is only promoted on a successful "
+                "integration; failed MGIS trials leave it at zero."
+            ),
         },
         "summary": {
             "min_overstress_mpa": float(np.min(overstress)),
@@ -87,7 +89,10 @@ def analyse(path: Path, parameter_set: str) -> dict[str, object]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=Path)
-    parser.add_argument("--parameter-set", default="316l_guilhem2013_nasri2018_meric_srix_rate_1e-3")
+    parser.add_argument(
+        "--parameter-set",
+        default="316l_guilhem2013_nasri2018_meric_srix_rate_1e-3",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     result = analyse(args.input, args.parameter_set)

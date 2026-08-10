@@ -58,18 +58,102 @@ _SQRT_TWO = np.sqrt(2.0)
 #: from the generated Fcc316LForestRubinSrixGpsSlipSystems.ixx (the compiled
 #: truth; do not recompute from Miller indices).
 _MUS: tuple[tuple[float, ...], ...] = (
-    (0.0, 0.408248290463863035, -0.408248290463863035, 0.288675134594812895, -0.288675134594812895, 0.0),
-    (0.408248290463863035, 0.0, -0.408248290463863035, 0.288675134594812895, 0.0, -0.288675134594812895),
-    (0.408248290463863035, -0.408248290463863035, 0.0, 0.0, 0.288675134594812895, -0.288675134594812895),
-    (0.0, 0.408248290463863035, -0.408248290463863035, 0.288675134594812895, 0.288675134594812895, 0.0),
-    (0.408248290463863035, 0.0, -0.408248290463863035, 0.288675134594812895, 0.0, 0.288675134594812895),
-    (0.408248290463863035, -0.408248290463863035, -0.0, 0.0, -0.288675134594812895, 0.288675134594812895),
-    (0.0, -0.408248290463863035, 0.408248290463863035, 0.288675134594812895, -0.288675134594812895, 0.0),
-    (0.408248290463863035, -0.0, -0.408248290463863035, -0.288675134594812895, 0.0, -0.288675134594812895),
-    (0.408248290463863035, -0.408248290463863035, -0.0, 0.0, -0.288675134594812895, -0.288675134594812895),
-    (0.0, -0.408248290463863035, 0.408248290463863035, 0.288675134594812895, 0.288675134594812895, 0.0),
-    (0.408248290463863035, -0.0, -0.408248290463863035, -0.288675134594812895, 0.0, 0.288675134594812895),
-    (0.408248290463863035, -0.408248290463863035, 0.0, 0.0, 0.288675134594812895, 0.288675134594812895),
+    (
+        0.0,
+        0.408248290463863035,
+        -0.408248290463863035,
+        0.288675134594812895,
+        -0.288675134594812895,
+        0.0,
+    ),
+    (
+        0.408248290463863035,
+        0.0,
+        -0.408248290463863035,
+        0.288675134594812895,
+        0.0,
+        -0.288675134594812895,
+    ),
+    (
+        0.408248290463863035,
+        -0.408248290463863035,
+        0.0,
+        0.0,
+        0.288675134594812895,
+        -0.288675134594812895,
+    ),
+    (
+        0.0,
+        0.408248290463863035,
+        -0.408248290463863035,
+        0.288675134594812895,
+        0.288675134594812895,
+        0.0,
+    ),
+    (
+        0.408248290463863035,
+        0.0,
+        -0.408248290463863035,
+        0.288675134594812895,
+        0.0,
+        0.288675134594812895,
+    ),
+    (
+        0.408248290463863035,
+        -0.408248290463863035,
+        -0.0,
+        0.0,
+        -0.288675134594812895,
+        0.288675134594812895,
+    ),
+    (
+        0.0,
+        -0.408248290463863035,
+        0.408248290463863035,
+        0.288675134594812895,
+        -0.288675134594812895,
+        0.0,
+    ),
+    (
+        0.408248290463863035,
+        -0.0,
+        -0.408248290463863035,
+        -0.288675134594812895,
+        0.0,
+        -0.288675134594812895,
+    ),
+    (
+        0.408248290463863035,
+        -0.408248290463863035,
+        -0.0,
+        0.0,
+        -0.288675134594812895,
+        -0.288675134594812895,
+    ),
+    (
+        0.0,
+        -0.408248290463863035,
+        0.408248290463863035,
+        0.288675134594812895,
+        0.288675134594812895,
+        0.0,
+    ),
+    (
+        0.408248290463863035,
+        -0.0,
+        -0.408248290463863035,
+        -0.288675134594812895,
+        0.0,
+        0.288675134594812895,
+    ),
+    (
+        0.408248290463863035,
+        -0.408248290463863035,
+        0.0,
+        0.0,
+        0.288675134594812895,
+        0.288675134594812895,
+    ),
 )
 
 
@@ -204,7 +288,6 @@ class GpsLocalSystem:
         gps_plastic = np.zeros(6, dtype=float)
         if deq >= self.deqeps:
             flow_slope = deq / self.r
-            ndeq = (2.0 / (3.0 * deq)) * de
             exp_bp = np.exp(-self.b * (self.p + theta * np.abs(dg)))
             for i in range(12):
                 tau = _kelvin_dot(sig, self.mus[i])
@@ -217,7 +300,6 @@ class GpsLocalSystem:
                 x_back = self.c_hard * (self.a[i] + theta * da)
                 overstress = abs(tau - x_back) - r_hard
                 f = max(overstress, 0.0)
-                dflow = flow_slope if overstress > 0.0 else 0.0
                 sgn = 1.0 if tau - x_back > 0.0 else -1.0
                 gps_plastic = gps_plastic + dg[i] * self.mus[i]
                 fg[i] -= flow_slope * f * sgn
@@ -529,21 +611,19 @@ def main() -> int:
     )
     arguments = parser.parse_args()
 
-    from fem_inhouse.core.fcc_interaction_matrix import build_interaction_matrix
     from fem_inhouse.core.crystal_parameter_pairs import resolve_paired_crystal_parameters
+    from fem_inhouse.core.fcc_interaction_matrix import build_interaction_matrix
 
     grid, yield_stress, coefficient, boundary = _load_case(arguments)
-    material_gps, recording_gps, result_gps = _run_backend(
+    material_gps, recording_gps, _result_gps = _run_backend(
         GPS, arguments, grid, yield_stress, coefficient, boundary
     )
-    material_ref, recording_ref, result_ref = _run_backend(
+    material_ref, recording_ref, _result_ref = _run_backend(
         REFERENCE, arguments, grid, yield_stress, coefficient, boundary
     )
     increment = arguments.checkpoint_increment
     calls_gps = _checkpoint_calls(recording_gps, increment)
-    calls_ref = _checkpoint_calls(recording_ref, increment)
     strain_gps = np.asarray(calls_gps[0]["strain"], dtype=float)
-    strain_ref = np.asarray(calls_ref[0]["strain"], dtype=float)
     dt = float(calls_gps[0]["time_increment"])
     snapshot_gps = recording_gps.committed_snapshots[increment - 2]
     snapshot_ref = recording_ref.committed_snapshots[increment - 2]
@@ -634,8 +714,8 @@ def main() -> int:
         from scripts.diagnose_gps_tangent_blocks import (
             _assert_same_physical_committed_state,
             _make_transplanted_snapshot,
-            _schur_plane_stress,
             _raw_3d_tangent,
+            _schur_plane_stress,
         )
         ref_on_gps_snapshot = _make_transplanted_snapshot(
             material_ref,

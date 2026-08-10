@@ -21,10 +21,18 @@ def test_generic_structural_plane_stress_matches_live_raw_schur(tmp_path: Path) 
         f".venv/bin/python scripts/qualify_structural_plane_stress_same_state_schur.py "
         f"--output {output}"
     )
+    # The qualification script imports `scripts.diagnose_gps_tangent_blocks`,
+    # and `scripts` is a repository package rather than an installed one. Under
+    # pytest the root is on the path because `pythonpath = ["."]`, but a
+    # subprocess inherits none of that: running the script puts `scripts/` on
+    # sys.path, not the root, so the import fails. Pass the root explicitly.
+    environment = os.environ.copy()
+    existing = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = f"{root}{os.pathsep}{existing}" if existing else str(root)
     subprocess.run(
         ["bash", "-lc", command],
         cwd=root,
-        env=os.environ.copy(),
+        env=environment,
         check=True,
     )
     report = json.loads(output.read_text(encoding="utf-8"))
