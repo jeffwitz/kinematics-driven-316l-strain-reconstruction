@@ -472,6 +472,7 @@ def _solve_sequence(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=("native", "generic"), default="native")
+    parser.add_argument("--method", choices=("monolithic", "staggered", "both"), default="both")
     parser.add_argument("--library", type=Path)
     parser.add_argument("--generic-library", type=Path)
     parser.add_argument("--crop-nodes", nargs=4, type=int, default=DEFAULT_CROP)
@@ -532,7 +533,9 @@ def main() -> int:
     while True:
         trial_history = _refine_history(history, actual_path_substeps)
         try:
-            mono = _solve_sequence(
+            mono = None
+            stag = None
+            common = dict(
                 library=library,
                 history=trial_history,
                 yield_stress=yield_stress,
@@ -546,26 +549,12 @@ def main() -> int:
                 length_scale=args.length_scale,
                 krylov_tolerance=args.krylov_relative_tolerance,
                 absolute_tolerance=args.absolute_tolerance,
-                method="monolithic",
                 backend=args.backend,
             )
-            stag = _solve_sequence(
-                library=library,
-                history=trial_history,
-                yield_stress=yield_stress,
-                hardening=hardening,
-                grid=grid,
-                kinematics=kinematics,
-                green=green,
-                mechanical_inverse=mechanical_inverse,
-                nonlocal_inverse=nonlocal_inverse,
-                nonlocal_operator=nonlocal_operator,
-                length_scale=args.length_scale,
-                krylov_tolerance=args.krylov_relative_tolerance,
-                absolute_tolerance=args.absolute_tolerance,
-                method="staggered",
-                backend=args.backend,
-            )
+            if args.method in ("monolithic", "both"):
+                mono = _solve_sequence(**common, method="monolithic")
+            if args.method in ("staggered", "both"):
+                stag = _solve_sequence(**common, method="staggered")
             break
         except RuntimeError:
             if not args.adaptive_path_cutback or actual_path_substeps >= args.maximum_path_substeps:
@@ -589,16 +578,31 @@ def main() -> int:
         "b0_mu": mu_0,
         "b0_projection_error": projection_error,
         "total_elapsed_seconds": total,
-        "monolithic": {k: v for k, v in mono.items() if k not in {"final_mechanical", "final_chi"}},
-        "staggered": {k: v for k, v in stag.items() if k not in {"final_mechanical", "final_chi"}},
-        "comparison": {
-            "time_ratio_staggered_over_monolithic": stag["elapsed_seconds"]
-            / mono["elapsed_seconds"],
-            "mechanical_linf": float(
-                np.max(np.abs(mono["final_mechanical"] - stag["final_mechanical"]))
-            ),
-            "chi_linf": float(np.max(np.abs(mono["final_chi"] - stag["final_chi"]))),
-        },
+        "method": args.method,
+        "monolithic": (
+            None
+            if mono is None
+            else {k: v for k, v in mono.items() if k not in {"final_mechanical", "final_chi"}}
+        ),
+        "staggered": (
+            None
+            if stag is None
+            else {k: v for k, v in stag.items() if k not in {"final_mechanical", "final_chi"}}
+        ),
+        "comparison": (
+            None
+            if mono is None or stag is None
+            else {
+                "time_ratio_staggered_over_monolithic": stag["elapsed_seconds"]
+                / mono["elapsed_seconds"],
+                "mechanical_linf": float(
+                    np.max(np.abs(mono["final_mechanical"] - stag["final_mechanical"]))
+                ),
+                "chi_linf": float(
+                    np.max(np.abs(mono["final_chi"] - stag["final_chi"]))
+                ),
+            }
+        ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
