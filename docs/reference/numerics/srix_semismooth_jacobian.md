@@ -50,13 +50,18 @@ they document work and convergence, not a repeated performance benchmark.
 | Convention | Newton | Newton per increment | Substepped points | Composite-FD trajectories | Elapsed |
 |---|---:|---|---:|---:|---:|
 | historical `dg=0 → -1` | 58 | `[6,6,7,7,7,7,8,10]` | 978 | 5868 | 305.02 s |
-| canonical `dg=0 → 0` | 56 | `[6,6,7,7,7,7,8,8]` | 0 | 0 | 130.50 s |
+| canonical `dg=0 → 0` | 56 | `[6,6,7,7,7,7,8,8]` | 0 | 0 | 139.28 s |
 
 The archived local replay contained 380 isolated failed full-step
 integrations. The historical convention failed all 380; the zero convention
 rescued all 380. The local tolerance sweep also showed that, when both
 conventions converge, their solutions approach the same root as the tolerance
 is tightened (the difference fell from about `1e-7` to `1e-13`).
+
+The elapsed value above is the post-purge M200 replay recorded in
+`validation/_generated/performance/srix_p43_m200_semismooth_canonical.json`.
+The earlier 130.50 s run used the same numerical convention and is retained
+only as a historical single-run comparison.
 
 By contrast, a compact `|dg|` regularisation with `delta = 1e-5` changed the
 function itself and retained a field difference of order `1e-4`. It is therefore
