@@ -18,6 +18,9 @@ from pathlib import Path
 
 import numpy as np
 
+from fem_inhouse.core.constitutive_sensitivities import (
+    finite_difference_sensitivities,
+)
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
 from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
 from fem_inhouse.spectral2d.coupled_blocks import (
@@ -116,7 +119,7 @@ def main() -> None:
 
     def response(
         mechanical: np.ndarray, chi: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         nonlocal coupled_material_seconds, coupled_material_evaluations
         nonlocal coupled_response_evaluations
         samples = strain_from_mechanical(mechanical)
@@ -130,7 +133,8 @@ def main() -> None:
         coupled_material_seconds += time.perf_counter() - material_start
         coupled_material_evaluations += 1
         coupled_response_evaluations += 1
-        stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
+        stress_point = np.asarray(trial.stress_in_plane_mpa).copy()
+        stress = stress_point.reshape(grid.nx, grid.ny, 2, 3)
         source = np.asarray(trial.observables["equivalent_plastic_strain"]).reshape(
             grid.nx, grid.ny, 2
         ).mean(axis=2)
@@ -145,14 +149,20 @@ def main() -> None:
             grid.nx, grid.ny, 2, 3, 3
         )
         material.revert()
-        return mechanical_residual, nonlocal_residual.reshape(-1), tangent, source_point
+        return (
+            mechanical_residual,
+            nonlocal_residual.reshape(-1),
+            tangent,
+            source_point,
+            stress_point,
+        )
 
     cached_state: tuple[np.ndarray, np.ndarray] | None = None
-    cached_response: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
+    cached_response: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
 
     def response_for_state(
         state: tuple[np.ndarray, np.ndarray]
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         nonlocal cached_state, cached_response
         if (
             cached_state is None
@@ -171,14 +181,18 @@ def main() -> None:
         return current_response[0], current_response[1]
 
     def local_coupling_derivatives(
-        mechanical: np.ndarray, chi: np.ndarray, base_source: np.ndarray
+        mechanical: np.ndarray,
+        chi: np.ndarray,
+        base_source: np.ndarray,
+        base_stress: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Return pointwise derivatives needed by the off-diagonal blocks.
+        """Return generic pointwise FD sensitivities for the current law.
 
-        The constitutive response is evaluated at the current trial state and
-        reverted after every call.  Keeping these derivatives local avoids
-        assembling dense global coupling matrices while retaining the exact
-        TET2 and Helmholtz transfer operators in the block actions.
+        The adapter only sees stress and the selected scalar observable.  It
+        therefore remains usable for crystal laws whose local unknowns and
+        state-variable layout differ completely from J2.  The generic local
+        implicit-block contract is validated separately and can replace this
+        oracle once MFront exports ``F_z, F_q, y_z, y_q``.
         """
 
         nonlocal coupled_material_seconds, coupled_material_evaluations
@@ -212,41 +226,33 @@ def main() -> None:
             material.revert()
             return stress, source
 
-        chi_derivative_start = time.perf_counter()
-        stress_plus, source_plus = stress_source(point_chi + chi_step, samples)
-        stress_minus, source_minus = stress_source(point_chi - chi_step, samples)
-        coupled_chi_derivative_seconds += time.perf_counter() - chi_derivative_start
-        dsigma_dchi = (stress_plus - stress_minus) / (2.0 * chi_step)
-        dp_dchi = (source_plus - source_minus) / (2.0 * chi_step)
-
-        strain_derivative_start = time.perf_counter()
-        dp_depsilon = np.empty((point_count, 3), dtype=float)
-        for component in range(3):
-            strain_plus = samples.copy()
-            strain_plus[:, component] += h_u
-            _, source_plus = stress_source(point_chi, strain_plus)
-            if args.central_strain_coupling:
-                strain_minus = samples.copy()
-                strain_minus[:, component] -= h_u
-                _, source_minus = stress_source(point_chi, strain_minus)
-                dp_depsilon[:, component] = (source_plus - source_minus) / (2.0 * h_u)
-            else:
-                dp_depsilon[:, component] = (source_plus - base_source) / h_u
-        coupled_strain_derivative_seconds += (
-            time.perf_counter() - strain_derivative_start
+        parameter = point_chi
+        sensitivity = finite_difference_sensitivities(
+            stress_source,
+            samples,
+            parameter,
+            base_stress=base_stress,
+            base_observable=base_source,
+            strain_step=h_u,
+            parameter_step=chi_step,
+            central_parameter=True,
+            forward_strain=not args.central_strain_coupling,
         )
-
-        return dsigma_dchi, dp_depsilon, dp_dchi
+        return (
+            sensitivity.stress_parameter,
+            sensitivity.observable_strain,
+            sensitivity.observable_parameter,
+        )
 
     def evaluate(state: tuple[np.ndarray, np.ndarray]) -> CoupledLinearisation:
         nonlocal coupled_coupling_derivative_seconds
         mechanical, chi = state
-        ru, g, tangent, base_source = response_for_state(state)
+        ru, g, tangent, base_source, base_stress = response_for_state(state)
         nu = mechanical.size
         nc = chi.size
         coupling_derivative_start = time.perf_counter()
         dsigma_dchi, dp_depsilon, dp_dchi = local_coupling_derivatives(
-            mechanical, chi, base_source
+            mechanical, chi, base_source, base_stress
         )
         coupled_coupling_derivative_seconds += (
             time.perf_counter() - coupling_derivative_start

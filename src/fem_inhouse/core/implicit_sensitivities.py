@@ -16,10 +16,39 @@ Jacobian and the partial derivatives of its residuals and observables.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 FloatArray = NDArray[np.float64]
+
+
+@dataclass(frozen=True, slots=True)
+class ImplicitSensitivityBlocks:
+    """Law-independent blocks exported by a local implicit integrator.
+
+    The trailing dimensions are ``F_z: (n,n)``, ``F_q: (n,m)``,
+    ``y_z: (r,n)`` and optionally ``y_q: (r,m)``.  Leading dimensions may
+    batch material points.  ``z`` and ``y`` deliberately have no constitutive
+    meaning here: a crystal law may expose slips, hardening variables and
+    stresses while a scalar J2 law exposes a different local system.
+    """
+
+    local_jacobian: ArrayLike
+    residual_parameter_derivatives: ArrayLike
+    observable_state_derivatives: ArrayLike
+    observable_parameter_derivatives: ArrayLike | None = None
+
+    def solve(self) -> FloatArray:
+        """Return observable sensitivities using the exported local blocks."""
+
+        return solve_implicit_sensitivities(
+            self.local_jacobian,
+            self.residual_parameter_derivatives,
+            self.observable_state_derivatives,
+            self.observable_parameter_derivatives,
+        )
 
 
 def solve_implicit_sensitivities(
