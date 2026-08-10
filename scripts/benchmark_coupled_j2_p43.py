@@ -1116,12 +1116,22 @@ def main() -> int:
         "monolithic": (
             None
             if mono is None
-            else {k: v for k, v in mono.items() if k not in {"final_mechanical", "final_chi"}}
+            else {
+                k: v
+                for k, v in mono.items()
+                if k
+                not in {"final_mechanical", "final_chi", "final_stress", "final_peeq"}
+            }
         ),
         "staggered": (
             None
             if stag is None
-            else {k: v for k, v in stag.items() if k not in {"final_mechanical", "final_chi"}}
+            else {
+                k: v
+                for k, v in stag.items()
+                if k
+                not in {"final_mechanical", "final_chi", "final_stress", "final_peeq"}
+            }
         ),
         "comparison": (
             None
