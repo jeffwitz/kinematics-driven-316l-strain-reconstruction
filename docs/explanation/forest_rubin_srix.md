@@ -148,35 +148,15 @@ inactive system corrupts the Jacobian by exactly the number of inactive
 systems, and the local Newton then fails **non-monotonically** in the step
 size: converging at `1e-3`, failing at `5e-4`. The law guards this explicitly.
 
-### An optional smooth replacement for the bracket
+### Semismooth linearisation at zero slip
 
-Because the two non-differentiable points of the flow rule — the absolute value
-on the driving force and the positive part on the overstress — are the ones the
-local Newton has to cross, the law can optionally round them off. With
-`srixSmoothingEpsilon = ε > 0` and `srixSmoothingExponent = n`, writing
-`‖v‖ₙ = (|v|ⁿ + εⁿ)^(1/n)`:
-
-$$
-|τ - x| \;\longrightarrow\; \|τ - x\|_n - ε,
-\qquad
-\langle f \rangle \;\longrightarrow\; \tfrac{1}{2}\left(f + \|f\|_n\right),
-$$
-
-and the sign of the driving force becomes `(τ - x) / ‖τ - x‖ₙ`, which is
-continuous through zero instead of jumping. The exponent controls how tightly
-the rounded corner hugs the sharp one: `n = 11`, the default, is close; small
-`n` is smoother and further from the law.
-
-**`ε = 0` is not a small-ε limit, it is a different branch.** The law tests
-`ε > 0` and takes the historical `abs` and `max` expressions when it is not, so
-the default configuration uses the original non-smooth constitutive branch,
-with no Charbonnier regularisation. The inactive-system derivative in that
-branch was corrected in commit `51ace9e`; consequently the Newton path need
-not be bit-for-bit identical to older archived binaries. Any positive `ε`
-changes the constitutive response, and results obtained with one cannot be
-compared against the archived campaigns. Both parameters are exposed as
-`srix_smoothing_epsilon` and `srix_smoothing_exponent` in
-{doc}`../reference/configuration`.
+The production law retains the sharp absolute value in the hardening and
+backstrain updates. At `dg = 0`, its classical derivative is undefined; the
+local Newton linearisation selects the symmetric Clarke generalized derivative
+`d|dg|/ddg = 0`. This is a choice of generalized Jacobian, not a smoothing of
+the constitutive law. The residual and committed state update are unchanged.
+The rationale and qualification are documented in
+{doc}`../reference/numerics/srix_semismooth_jacobian`.
 
 **The overflow guard must not be copied.** Méric-Cailletaud rejects any step
 whose overstress exceeds `1.1 K`, protecting its Norton power from overflow.

@@ -196,31 +196,6 @@ def main() -> int:
         help="capture isolated failed GPS point states for post-processing; diagnostic only",
     )
     parser.add_argument(
-        "--srix-smoothing-epsilon",
-        type=float,
-        default=None,
-        help="experimental SRIX Charbonnier stress scale in MPa; zero preserves the historical law",
-    )
-    parser.add_argument(
-        "--srix-smoothing-exponent",
-        type=float,
-        default=None,
-        help="experimental SRIX generalized Charbonnier exponent",
-    )
-    parser.add_argument(
-        "--srix-slip-smoothing-delta",
-        type=float,
-        default=None,
-        help="experimental compact C2 smoothing width for SRIX abs(dg), in strain units",
-    )
-    parser.add_argument(
-        "--srix-slip-zero-derivative",
-        type=float,
-        choices=(-1.0, 0.0, 1.0),
-        default=None,
-        help="diagnostic SRIX subgradient at exactly dg=0; 0 selects the semismooth control",
-    )
-    parser.add_argument(
         "--gps-condensed-tangent",
         action="store_true",
         help="for the native GPS backend, enable the law's CondensedTangent "
@@ -408,26 +383,6 @@ def main() -> int:
                 **orientation_configuration,
             },
             "paired_parameter_set": arguments.paired_parameter_set,
-            **(
-                {"srix_smoothing_epsilon": arguments.srix_smoothing_epsilon}
-                if arguments.srix_smoothing_epsilon is not None
-                else {}
-            ),
-            **(
-                {"srix_smoothing_exponent": arguments.srix_smoothing_exponent}
-                if arguments.srix_smoothing_exponent is not None
-                else {}
-            ),
-            **(
-                {"srix_slip_smoothing_delta": arguments.srix_slip_smoothing_delta}
-                if arguments.srix_slip_smoothing_delta is not None
-                else {}
-            ),
-            **(
-                {"srix_slip_zero_derivative": arguments.srix_slip_zero_derivative}
-                if arguments.srix_slip_zero_derivative is not None
-                else {}
-            ),
             **(
                 {"gps_shadow_tangent": True}
                 if arguments.gps_shadow_tangent
@@ -659,10 +614,6 @@ def main() -> int:
         "accepted_increments": accepted_increment_count,
         "tolerance": arguments.tolerance,
         "behaviour": arguments.behaviour,
-        "srix_smoothing_epsilon_mpa": arguments.srix_smoothing_epsilon,
-        "srix_smoothing_exponent": arguments.srix_smoothing_exponent,
-        "srix_slip_smoothing_delta": arguments.srix_slip_smoothing_delta,
-        "srix_slip_zero_derivative": arguments.srix_slip_zero_derivative,
         "mfront_threads": arguments.mfront_threads,
         "maximum_newton_iterations": arguments.maximum_newton_iterations,
         "local_transverse_predictor": arguments.local_transverse_predictor,

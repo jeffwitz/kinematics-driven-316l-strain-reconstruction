@@ -498,10 +498,6 @@ def _create_fcc_single_crystal_batch(
     failure_diagnostics = bool(options.pop("gps_failure_diagnostics", False))
     composite_fd_tangent = bool(options.pop("gps_composite_fd_tangent", False))
     composite_fd_step = float(options.pop("gps_composite_fd_step", 1.0e-6))
-    srix_smoothing_epsilon = options.pop("srix_smoothing_epsilon", None)
-    srix_smoothing_exponent = options.pop("srix_smoothing_exponent", None)
-    srix_slip_smoothing_delta = options.pop("srix_slip_smoothing_delta", None)
-    srix_slip_zero_derivative = options.pop("srix_slip_zero_derivative", None)
     if paired_parameter_set is not None and (
         parameter_set is not None or explicit_parameters is not None
     ):
@@ -554,40 +550,6 @@ def _create_fcc_single_crystal_batch(
         )
     else:
         overrides = None
-
-    if srix_smoothing_epsilon is not None:
-        if behaviour.crystal_flow_rule != "forest_rubin_srix":
-            raise ValueError(
-                "srix_smoothing_epsilon is only valid for the Forest-Rubin SRIX law"
-            )
-        overrides = dict(overrides or {})
-        overrides["SrixSmoothingEpsilon"] = float(srix_smoothing_epsilon)
-    if srix_smoothing_exponent is not None:
-        if behaviour.crystal_flow_rule != "forest_rubin_srix":
-            raise ValueError(
-                "srix_smoothing_exponent is only valid for the Forest-Rubin SRIX law"
-            )
-        overrides = dict(overrides or {})
-        overrides["SrixSmoothingExponent"] = float(srix_smoothing_exponent)
-    if srix_slip_smoothing_delta is not None:
-        if behaviour.crystal_flow_rule != "forest_rubin_srix":
-            raise ValueError(
-                "srix_slip_smoothing_delta is only valid for the Forest-Rubin SRIX law"
-            )
-        if float(srix_slip_smoothing_delta) < 0.0:
-            raise ValueError("srix_slip_smoothing_delta must be non-negative")
-        overrides = dict(overrides or {})
-        overrides["SrixSlipSmoothingDelta"] = float(srix_slip_smoothing_delta)
-    if srix_slip_zero_derivative is not None:
-        if behaviour.crystal_flow_rule != "forest_rubin_srix":
-            raise ValueError(
-                "srix_slip_zero_derivative is only valid for the Forest-Rubin SRIX law"
-            )
-        value = float(srix_slip_zero_derivative)
-        if value not in {-1.0, 0.0, 1.0}:
-            raise ValueError("srix_slip_zero_derivative must be -1, 0, or 1")
-        overrides = dict(overrides or {})
-        overrides["SrixSlipZeroDerivative"] = value
 
     local_options = dict(local_plane_stress_options or {})
     if backend in {

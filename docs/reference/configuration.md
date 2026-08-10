@@ -115,24 +115,15 @@ options did something.
 | `gps_composite_fd_tangent` | `false` | rebuild, by finite differences along the composite trajectory, the tangent of points the local Newton had to sub-step. Recommended `true` for the qualified SRIX + EBSD workflow; otherwise a sub-stepped point returns its last sub-step's tangent. On P43 M100 it takes GPS from 85 Newton iterations to 58, against 57 for the reference |
 | `gps_composite_fd_step` | `1.0e-6` | absolute engineering-strain perturbation used by the central finite difference. A numerical tolerance, not a relative increment scale |
 
-### Optional smoothing of the SRIX flow rule
+### SRIX nonsmooth Jacobian convention
 
-Accepted by every crystal backend, condensed included, because they set MFront
-behaviour parameters rather than steering the host bridge. Both are refused for
-any law other than Forest-Rubin SRIX.
-
-The SRIX flow rule is built on Macaulay brackets, which are not differentiable
-where they switch. These two keys optionally replace them by a generalized
-Charbonnier norm. This is an experimental constitutive modification: it does
-not preserve the sharp law and has not been shown to improve the qualified
-M200 workflow.
-
-| Key | Default | Meaning |
-|---|---:|---|
-| `srix_smoothing_epsilon` | `0.0` | stress scale of the regularisation, MPa. **`0.0` selects the historical non-smooth constitutive branch**, not a small-regularisation approximation. The inactive-system Jacobian was corrected in commit `51ace9e`, so the Newton path need not be bit-for-bit identical to older archived binaries. Any positive value changes the constitutive response and invalidates comparison with archived campaigns |
-| `srix_smoothing_exponent` | `11.0` | exponent of the generalized Charbonnier norm. Higher is closer to the sharp bracket. Without a positive `srix_smoothing_epsilon` it has no effect |
-| `srix_slip_smoothing_delta` | `0.0` | experimental compact C2 width for `abs(dg)` and its derivative, in strain units. It does not smooth the Macaulay bracket. `0.0` selects the historical `abs/sign` branch; positive values change the constitutive response and must be reported with the results |
-| `srix_slip_zero_derivative` | `-1.0` | element of the Clarke subdifferential `[-1, +1]` used for `d\|dg\|/ddg` at exactly `dg=0`, where the function has no derivative. `-1` is the historical left branch of `dg > 0 ? 1 : -1`; `0` is the symmetric choice. **Not a calibration parameter and not a constitutive variant**: it reaches the Jacobian only, never the residual, so it changes how the local Newton finds the root, not which root it finds. Qualified in `validation/srix_semismooth_subgradient_results.md`, where `0` rescues 380/380 archived failures and agrees with `-1` to `1.24e-13` once the local tolerance is tightened |
+SRIX uses the sharp Macaulay and absolute-value expressions in production; no
+user-facing smoothing or subgradient parameter is accepted. At exactly zero
+slip increment, the local Newton Jacobian selects the symmetric Clarke element
+`d|dg|/ddg = 0`, while the residual and committed state update remain the
+original SRIX expressions. See
+{doc}`../numerics/srix_semismooth_jacobian` for the mathematical justification
+and P43 M200 qualification.
 
 ### Diagnostic options
 
