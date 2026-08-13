@@ -48,3 +48,14 @@ not qualified yet: it requires constitutive cross-tangent blocks for
 (sigma_{,chi}), (Gamma_{,arepsilon}), and (Gamma_{,chi}). Until those
 blocks are exposed coherently, SRIX non-local validation must use the nested
 reference path.
+
+The current SRIX `@DSL Implicit` behaviour stores the twelve slip increments
+as an array of local integration variables. TFEL's
+`getIntegrationVariablesDerivatives_*` interface does not accept that array as
+an output block, nor does it provide an overload for expanding the array into
+the twelve scalar sensitivities. Consequently, changing the behaviour to
+`ImplicitGenericBehaviour` is not a mechanical annotation change: it requires
+an explicit generic local system, including the plane-stress closure, or a
+scalar accumulated-slip integration variable with its own residual. A partial
+conversion would produce an invalid cross tangent, so no such fallback is used
+in production.
