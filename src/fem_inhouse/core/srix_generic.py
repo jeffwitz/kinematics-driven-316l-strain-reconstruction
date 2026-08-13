@@ -16,6 +16,7 @@ from fem_inhouse.core.mfront_runtime import (
     _KELVIN_TO_ENGINEERING_STRESS_SCALE,
     MFrontIntegrationError,
     MFrontUnavailableError,
+    _apply_behaviour_parameters,
     _broadcast_point_property,
     _load_mgis,
     _variable_offset,
@@ -59,6 +60,7 @@ class SrixGeneric3DMaterialPointBatch:
         temperature_k: float = 293.15,
         behaviour_name: str = "Fcc316LForestRubinSrixGeneric3D",
         rotation_global_to_material: ArrayLike | None = None,
+        behaviour_parameters: dict[str, float] | None = None,
     ) -> None:
         if isinstance(point_count, bool) or not isinstance(point_count, int) or point_count < 1:
             raise ValueError("point_count must be a positive integer")
@@ -72,6 +74,19 @@ class SrixGeneric3DMaterialPointBatch:
         behaviour = mgis.load(
             str(library.resolve()), behaviour_name, mgis.Hypothesis.Tridimensional
         )
+        if behaviour_parameters:
+            available_parameters = {
+                getattr(parameter, "name", str(parameter))
+                for parameter in behaviour.parameters
+            }
+            filtered_parameters = {
+                name: value
+                for name, value in behaviour_parameters.items()
+                if name in available_parameters
+            }
+        else:
+            filtered_parameters = None
+        _apply_behaviour_parameters(mgis, behaviour, filtered_parameters, behaviour_name)
         _variable_offset(
             mgis,
             behaviour.gradients,
@@ -294,6 +309,9 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         self._trial_chi = np.zeros(bridge.point_count)
         self._latest_plane_trial: SrixGenericPlaneStressTrial | None = None
         self._has_trial = False
+        self._evaluate_calls = 0
+        self._maximum_residual = 0.0
+        self._maximum_iterations_observed = 0
 
     @property
     def point_count(self) -> int:
@@ -306,6 +324,31 @@ class SrixGeneric3DCondensedPlaneStressBatch:
     @property
     def completion_strategy(self) -> str:
         return "srix_generic_3d_local_condensation"
+
+    @property
+    def linear_system_matrix_type(self) -> LinearSystemMatrixType:
+        return "nonsymmetric"
+
+    @property
+    def statistics(self):
+        from fem_inhouse.core.plane_stress_material import PlaneStressBatchStatistics
+
+        return PlaneStressBatchStatistics(
+            maximum_gauss_point_plane_stress_residual_mpa=self._maximum_residual,
+            maximum_local_plane_stress_iterations=self._maximum_iterations_observed,
+            mean_local_plane_stress_iterations=float(self._maximum_iterations_observed),
+        )
+
+    @property
+    def timing_statistics(self):
+        from fem_inhouse.core.mfront_state import MFrontTimingStatistics
+
+        return MFrontTimingStatistics(
+            evaluate_calls=self._evaluate_calls,
+            material_point_integrations=self._evaluate_calls * self.point_count,
+            material_point_integrations_with_tangent=self._evaluate_calls * self.point_count,
+            material_block_integration_calls=self._evaluate_calls,
+        )
 
     @property
     def committed_nonlocal_equivalent_plastic_strain(self) -> FloatArray:
@@ -328,6 +371,7 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         *,
         time_increment: float,
     ) -> SrixGenericPlaneStressTrial:
+        self._evaluate_calls += 1
         in_plane = np.asarray(in_plane_strain, dtype=float)
         if in_plane.shape != (self.point_count, 3):
             raise ValueError(f"in_plane_strain must have shape {(self.point_count, 3)}")
@@ -335,10 +379,16 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         total[:, _PLANE] = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
         total[:, _TRANSVERSE] = self._committed_transverse
         final: SrixGeneric3DTrial | None = None
-        for _ in range(self._maximum_iterations):
+        for iteration in range(1, self._maximum_iterations + 1):
             final = self._bridge.evaluate(total, chi, time_increment=time_increment)
             residual = final.stress_kelvin_mpa[:, _TRANSVERSE]
+            self._maximum_residual = max(
+                self._maximum_residual, float(np.max(np.abs(residual)))
+            )
             if np.max(np.abs(residual)) <= self._tolerance:
+                self._maximum_iterations_observed = max(
+                    self._maximum_iterations_observed, iteration
+                )
                 break
             cbb = np.take(
                 np.take(final.stress_strain_tangent, _TRANSVERSE, axis=-2),
@@ -372,6 +422,9 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             accumulated_slip_strain_ps * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
         )
         self._trial_transverse = total[:, _TRANSVERSE].copy()
+        self._maximum_iterations_observed = max(
+            self._maximum_iterations_observed, iteration
+        )
         self._has_trial = True
         return SrixGenericPlaneStressTrial(
             stress_in_plane_mpa=(
@@ -413,6 +466,22 @@ class SrixGeneric3DCondensedPlaneStressBatch:
                 trial.tangent_in_plane_mpa if consistent_tangent else None
             ),
             observables={"accumulated_slip": trial.accumulated_slip},
+        )
+
+    def evaluate_in_plane_response(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        response_level: str,
+        consistent_tangent: bool = True,
+    ):
+        if response_level not in {"residual", "tangent", "complete"}:
+            raise ValueError("invalid response_level")
+        return self.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=consistent_tangent and response_level != "residual",
         )
 
     def complete_trial(self, trial):

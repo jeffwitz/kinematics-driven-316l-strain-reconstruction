@@ -480,7 +480,10 @@ def _create_fcc_single_crystal_batch(
     # Crystal laws may expose a scalar non-local field even though their
     # constitutive source is not J2 PEEQ.  The selected criterion decides which
     # observable drives Helmholtz; the bridge only carries the external scalar.
-    if nonlocal_coupling_modulus_mpa is not None and backend != "mfront-3d-condensed-plane-stress":
+    if nonlocal_coupling_modulus_mpa is not None and backend not in {
+        "mfront-3d-condensed-plane-stress",
+        "mfront-srix-generic-plane-stress",
+    }:
         raise ValueError(
             "SRIX scalar non-local coupling is currently available only through "
             "the qualified 3D condensed plane-stress bridge"
@@ -663,6 +666,7 @@ def create_plane_stress_material_batch(
         "mfront",
         "mfront-native-plane-stress",
         "mfront-3d-condensed-plane-stress",
+        "mfront-srix-generic-plane-stress",
         "mfront-native-generalised-plane-stress",
         "mfront-structural-plane-stress",
     }:
@@ -679,6 +683,73 @@ def create_plane_stress_material_batch(
             "micromorphic_ludwik_j2" if nonlocal_coupling_modulus_mpa is not None else "ludwik_j2"
         )
         behaviour = MFRONT_BEHAVIOURS.get(selected_behaviour_id)
+        if backend == "mfront-srix-generic-plane-stress":
+            if selected_behaviour_id != "fcc_forest_rubin_srix_generic_validation":
+                raise ValueError(
+                    "mfront-srix-generic-plane-stress requires the validation "
+                    "behaviour id 'fcc_forest_rubin_srix_generic_validation'"
+                )
+            if nonlocal_coupling_modulus_mpa is None:
+                coupling = 0.0
+            else:
+                coupling = nonlocal_coupling_modulus_mpa
+            from fem_inhouse.core.crystal_orientation import (
+                HomogeneousOrientationProvider,
+                orientation_provider_from_mapping,
+            )
+            from fem_inhouse.core.mfront import (
+                SrixGeneric3DCondensedPlaneStressBatch,
+                SrixGeneric3DMaterialPointBatch,
+            )
+            from fem_inhouse.core.srix_parameters import resolve_srix_parameters
+
+            options = dict(constitutive_options or {})
+            orientation_configuration = options.pop("crystal_orientation", None)
+            parameter_set = options.pop("parameter_set", None)
+            explicit_parameters = options.pop("parameters", None)
+            if options:
+                raise ValueError(
+                    "unsupported constitutive_options for the validation Generic SRIX "
+                    f"backend: {', '.join(sorted(options))}"
+                )
+            overrides, _ = resolve_srix_parameters(
+                parameter_set=parameter_set,
+                explicit=explicit_parameters,
+            )
+            provider = (
+                HomogeneousOrientationProvider.identity()
+                if orientation_configuration is None
+                else orientation_provider_from_mapping(dict(orientation_configuration))
+            )
+            local_options = dict(local_plane_stress_options or {})
+            allowed = {
+                "local_tolerance_mpa",
+                "local_relative_tolerance",
+                "maximum_local_iterations",
+                "maximum_cbb_condition_number",
+                "local_condition_check_mode",
+            }
+            unsupported = set(local_options) - allowed
+            if unsupported:
+                raise ValueError(
+                    "unsupported local_plane_stress_options for Generic SRIX: "
+                    f"{', '.join(sorted(unsupported))}"
+                )
+            bridge = SrixGeneric3DMaterialPointBatch(
+                mfront_library,
+                point_count=int(np.asarray(initial_yield_stress_mpa).size),
+                micromorphic_coupling_modulus_mpa=coupling,
+                behaviour_name=behaviour.behaviour_name("condensed_3d"),
+                rotation_global_to_material=provider.rotations_global_to_material(
+                    int(np.asarray(initial_yield_stress_mpa).size)
+                ),
+                behaviour_parameters=overrides,
+            )
+            return SrixGeneric3DCondensedPlaneStressBatch(
+                bridge,
+                local_tolerance_mpa=local_options.get("local_tolerance_mpa", 1.0e-8),
+                maximum_local_iterations=local_options.get("maximum_local_iterations", 15),
+            )
         if behaviour.bridge_profile == "fcc_single_crystal_v1":
             return _create_fcc_single_crystal_batch(
                 backend,

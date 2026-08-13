@@ -130,6 +130,12 @@ so the eventual factory registration does not require a solver-specific
 special case. It can also reconstruct the common complete constitutive trial
 for downstream diagnostics.
 
+The validation backend is selectable as
+`mfront-srix-generic-plane-stress` only together with the explicit behaviour
+identifier `fcc_forest_rubin_srix_generic_validation` and the library produced
+by `scripts/build_srix_generic_behaviour.sh`. This opt-in path does not change
+the historical `fcc_forest_rubin_srix` backend or its defaults.
+
 Build the validation library reproducibly with
 `scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
 validation-only and must not replace the production SRIX library implicitly.

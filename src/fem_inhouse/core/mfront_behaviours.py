@@ -217,6 +217,23 @@ MFRONT_BEHAVIOURS.register(
 )
 MFRONT_BEHAVIOURS.register(
     MFrontBehaviourSpec(
+        identifier="fcc_forest_rubin_srix_generic_validation",
+        native_plane_stress_behaviour=None,
+        tridimensional_behaviour="Fcc316LForestRubinSrixGeneric3D",
+        material_properties=(
+            MFrontVariableSpec("coupling_modulus_mpa", "MicromorphicCouplingModulus"),
+        ),
+        internal_state_variables=(),
+        linear_system_matrix_type="nonsymmetric",
+        requires_rotation_matrix=True,
+        bridge_profile="fcc_srix_generic_validation_v1",
+        paired_material_family="fcc_316l_guilhem_nasri_v1",
+        crystal_flow_rule="forest_rubin_srix",
+        parameter_registry="srix",
+    )
+)
+MFRONT_BEHAVIOURS.register(
+    MFrontBehaviourSpec(
         identifier="fcc_forest_rubin_srix",
         native_plane_stress_behaviour=None,
         tridimensional_behaviour="Fcc316LForestRubinSrix",

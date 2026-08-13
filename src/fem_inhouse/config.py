@@ -12,6 +12,7 @@ BUILTIN_CONSTITUTIVE_BACKENDS = frozenset(
         "mfront",
         "mfront-native-plane-stress",
         "mfront-3d-condensed-plane-stress",
+        "mfront-srix-generic-plane-stress",
     }
 )
 
