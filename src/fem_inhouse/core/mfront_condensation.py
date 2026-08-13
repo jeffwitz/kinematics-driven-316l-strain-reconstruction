@@ -595,9 +595,7 @@ class MFront3DCondensedPlaneStressBatch:
         time_increment: float,
     ) -> NDArray:
         trial = self.evaluate_in_plane(
-            in_plane_strain,
-            time_increment=time_increment,
-            consistent_tangent=False,
+            in_plane_strain, time_increment=time_increment, consistent_tangent=False
         )
         return trial.observables["equivalent_plastic_strain"]
 
@@ -607,14 +605,27 @@ class MFront3DCondensedPlaneStressBatch:
         *,
         time_increment: float,
     ) -> tuple[NDArray, NDArray]:
-        trial = self.evaluate_in_plane(
+        trial = self.evaluate_in_plane_response(
             in_plane_strain,
             time_increment=time_increment,
+            response_level="complete",
             consistent_tangent=False,
         )
-        return (
-            trial.observables["equivalent_plastic_strain"],
-            trial.observables["yield_surface_radius_mpa"],
+        if "equivalent_plastic_strain" in trial.observables:
+            return (
+                trial.observables["equivalent_plastic_strain"],
+                trial.observables["yield_surface_radius_mpa"],
+            )
+        # Crystal plasticity has no scalar J2 yield radius.  The generic
+        # non-local criterion uses the positive accumulated-slip source and a
+        # strictly positive safety sentinel; SRIX admissibility is handled by
+        # its local integration/plane-stress transaction.
+        if "accumulated_slip" in trial.observables:
+            source = np.asarray(trial.observables["accumulated_slip"], dtype=float)
+            return source, np.ones_like(source)
+        raise MFrontUnavailableError(
+            "the behaviour exposes neither equivalent_plastic_strain nor "
+            "accumulated_slip for non-local coupling"
         )
 
     def complete_trial(self, trial: InPlaneConstitutiveTrial) -> ConstitutiveTrial:

@@ -477,11 +477,13 @@ def _create_fcc_single_crystal_batch(
             "crystal and has no native plane-stress hypothesis; use "
             "'mfront-3d-condensed-plane-stress'"
         )
-    if nonlocal_coupling_modulus_mpa is not None:
+    # Crystal laws may expose a scalar non-local field even though their
+    # constitutive source is not J2 PEEQ.  The selected criterion decides which
+    # observable drives Helmholtz; the bridge only carries the external scalar.
+    if nonlocal_coupling_modulus_mpa is not None and backend != "mfront-3d-condensed-plane-stress":
         raise ValueError(
-            f"MFront behaviour {behaviour.identifier!r} exposes twelve slips and no "
-            "scalar equivalent plastic strain, so it cannot drive the micromorphic "
-            "coupling, which is defined on a J2 PEEQ"
+            "SRIX scalar non-local coupling is currently available only through "
+            "the qualified 3D condensed plane-stress bridge"
         )
 
     options = dict(constitutive_options or {})
@@ -552,6 +554,16 @@ def _create_fcc_single_crystal_batch(
         overrides = None
 
     local_options = dict(local_plane_stress_options or {})
+    crystal_material_properties: dict[str, Any] = {}
+    if any(
+        variable.canonical_name == "coupling_modulus_mpa"
+        for variable in behaviour.material_properties
+    ) and nonlocal_coupling_modulus_mpa is None:
+        # The SRIX micromorphic extension keeps Hchi as a required MFront
+        # property.  Supplying zero makes the ordinary local SRIX path exactly
+        # the historical law while allowing the same behaviour to be reused by
+        # the non-local criterion.
+        crystal_material_properties["MicromorphicCouplingModulus"] = np.zeros(point_count)
     if backend in {
         "mfront-native-generalised-plane-stress",
         "mfront-structural-plane-stress",
@@ -609,6 +621,7 @@ def _create_fcc_single_crystal_batch(
         thread_count=mfront_threads,
         behaviour_name=behaviour.behaviour_name("condensed_3d"),
         behaviour_parameters=overrides,
+        material_property_values=crystal_material_properties,
         **local_options,
     )
 

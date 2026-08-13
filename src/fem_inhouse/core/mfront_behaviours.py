@@ -220,7 +220,15 @@ MFRONT_BEHAVIOURS.register(
         identifier="fcc_forest_rubin_srix",
         native_plane_stress_behaviour=None,
         tridimensional_behaviour="Fcc316LForestRubinSrix",
-        material_properties=(),
+        material_properties=(
+            MFrontVariableSpec("coupling_modulus_mpa", "MicromorphicCouplingModulus"),
+        ),
+        external_state_variables=(
+            MFrontVariableSpec(
+                "nonlocal_equivalent_plastic_strain",
+                "NonlocalEquivalentPlasticStrain",
+            ),
+        ),
         structural_plane_stress_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
         internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
         linear_system_matrix_type="nonsymmetric",

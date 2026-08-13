@@ -208,16 +208,38 @@ class MFront3DMaterialPointBatch:
             material_values[name] = _broadcast_point_property(
                 value, resolved_point_count, name=name
             )
+        # Micromorphic crystal extensions keep their coupling modulus as a
+        # required MFront property so the same compiled law supports local and
+        # non-local runs.  A direct local material-point user must still obtain
+        # the historical law without having to know that implementation detail.
+        if behaviour_spec is not None:
+            for variable in behaviour_spec.material_properties:
+                if (
+                    variable.canonical_name == "coupling_modulus_mpa"
+                    and variable.entry_name not in material_values
+                ):
+                    material_values[variable.entry_name] = np.zeros(resolved_point_count)
         nonlocal_values_s0: NDArray | None = None
         nonlocal_values_s1: NDArray | None = None
         committed_nonlocal_values: NDArray | None = None
         trial_nonlocal_values: NDArray | None = None
-        if micromorphic_coupling_modulus_mpa is not None:
-            coupling = _broadcast_point_property(
-                micromorphic_coupling_modulus_mpa,
-                resolved_point_count,
-                name="micromorphic_coupling_modulus_mpa",
-                nonnegative=True,
+        declares_nonlocal_field = bool(
+            behaviour_spec is not None
+            and any(
+                variable.canonical_name == "nonlocal_equivalent_plastic_strain"
+                for variable in behaviour_spec.external_state_variables
+            )
+        )
+        if micromorphic_coupling_modulus_mpa is not None or declares_nonlocal_field:
+            coupling = (
+                _broadcast_point_property(
+                    micromorphic_coupling_modulus_mpa,
+                    resolved_point_count,
+                    name="micromorphic_coupling_modulus_mpa",
+                    nonnegative=True,
+                )
+                if micromorphic_coupling_modulus_mpa is not None
+                else np.zeros(resolved_point_count)
             )
             _variable_offset(
                 mgis,

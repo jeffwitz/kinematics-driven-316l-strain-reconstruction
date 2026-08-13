@@ -118,6 +118,15 @@ R.setEntryName("SrixOverstressModulus");
 @Parameter real d = 1500.;
 @Parameter stress C = 40000.;
 
+// Scalar micromorphic extension used by the generic non-local solver.  The
+// local SRIX parameters above remain unchanged; Hchi only couples the scalar
+// accumulated slip source to the externally supplied non-local field.
+@MaterialProperty stress Hchi;
+Hchi.setEntryName("MicromorphicCouplingModulus");
+
+@ExternalStateVariable strain chi;
+chi.setEntryName("NonlocalEquivalentPlasticStrain");
+
 /*!
  * Equivalent strain increment below which the step is treated as producing no
  * slip at all. Guards the rate-independent flow rule against a vanishing or
@@ -183,6 +192,7 @@ a.setEntryName("BackStrain");
   real exp_bp[Nss];
   real dg_abs[Nss];
   real dg_abs_derivative[Nss];
+  real gamma_trial = 0;
   for (size_type i = 0; i != Nss; ++i) {
     dg_abs[i] = abs(dg[i]);
     // |dg| is nonsmooth at dg=0.  Its Clarke generalized derivative is
@@ -192,6 +202,7 @@ a.setEntryName("BackStrain");
     dg_abs_derivative[i] = dg[i] > strain(0) ? 1
         : (dg[i] < strain(0) ? -1 : 0);
     const auto p_ = p[i] + theta * dg_abs[i];
+    gamma_trial += p_;
     exp_bp[i] = exp(-b * p_);
   }
   for (size_type i = 0; i != Nss; ++i) {
@@ -199,6 +210,14 @@ a.setEntryName("BackStrain");
     auto r = tau0;
     for (size_type j = 0; j != Nss; ++j) {
       r += Q * m(i, j) * (1 - exp_bp[j]);
+    }
+    // The scalar source is the accumulated positive slip Gamma=sum_s p_s.
+    // Apply the same scalar micromorphic hardening to every system.  This is a
+    // numerical transposition of the qualified J2 architecture, not a new
+    // identified SRIX parameterisation; Hchi is therefore supplied explicitly
+    // by the caller and is kept separate from the local SRIX hardening.
+    if (Hchi != stress(0)) {
+      r += Hchi * (gamma_trial - chi);
     }
     const auto da = (dg[i] - d * a[i] * dg_abs[i]) /
                     (1 + theta * d * dg_abs[i]);
@@ -245,7 +264,9 @@ a.setEntryName("BackStrain");
     for (size_type j = 0; j != Nss; ++j) {
       const auto dr = Q * m(i, j) * theta * b * exp_bp[j] *
                       dg_abs_derivative[j];
-      dfg_ddg(i, j) += dflow_hardening * dr * sgn - damplitude * (ndeq | ss.mus[j]);
+      const auto dmicromorphic = Hchi * dg_abs_derivative[j];
+      dfg_ddg(i, j) += dflow_hardening * (dr + dmicromorphic) * sgn
+                       - damplitude * (ndeq | ss.mus[j]);
     }
   }
   }  // end of the Deq >= deqeps branch

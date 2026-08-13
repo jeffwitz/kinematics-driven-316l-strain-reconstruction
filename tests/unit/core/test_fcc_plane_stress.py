@@ -127,7 +127,7 @@ def _rotation_about_z(degrees: float) -> np.ndarray:
 def test_the_factory_builds_a_crystal_batch() -> None:
     batch = _batch()
 
-    assert batch.backend_name == "mfront-3d-condensed-plane-stress"
+    assert batch.backend_name == "mfront-3d-condensed-plane-stress-micromorphic"
     # A crystal tangent is not symmetric, so the global solver must not assume it.
     assert batch.linear_system_matrix_type == "nonsymmetric"
 
@@ -141,31 +141,26 @@ def test_a_crystal_has_no_native_plane_stress_hypothesis() -> None:
         _batch(backend="mfront-native-plane-stress")
 
 
-def test_the_micromorphic_coupling_refuses_a_crystal() -> None:
-    """It is defined on a J2 PEEQ, which a crystal does not have.
+def test_the_micromorphic_coupling_uses_crystal_accumulated_slip() -> None:
+    """SRIX uses Gamma=sum of the twelve accumulated positive slips."""
 
-    Refusing is the point: accepting would mean inventing a scalar equivalent
-    plastic strain out of twelve slips and coupling to a quantity that means
-    something else.
-    """
-
-    with pytest.raises(ValueError, match="twelve slips"):
-        create_plane_stress_material_batch(
-            "mfront-3d-condensed-plane-stress",
-            np.full(1, 124.0),
-            np.full(1, 380.0),
-            0.245,
-            young_modulus_mpa=205_000.0,
-            poisson_ratio=0.3,
-            hardening_mode="ludwik",
-            plastic_strain_max=0.2,
-            plastic_table_points=1000,
-            first_positive_plastic_strain=1e-6,
-            mfront_library=_library(),
-            mfront_threads=1,
-            mfront_behaviour_id=SRIX,
-            nonlocal_coupling_modulus_mpa=200.0,
-        )
+    batch = create_plane_stress_material_batch(
+        "mfront-3d-condensed-plane-stress",
+        np.full(1, 124.0),
+        np.full(1, 380.0),
+        0.245,
+        young_modulus_mpa=205_000.0,
+        poisson_ratio=0.3,
+        hardening_mode="ludwik",
+        plastic_strain_max=0.2,
+        plastic_table_points=1000,
+        first_positive_plastic_strain=1e-6,
+        mfront_library=_library(),
+        mfront_threads=1,
+        mfront_behaviour_id=SRIX,
+        nonlocal_coupling_modulus_mpa=200.0,
+    )
+    assert batch.backend_name == "mfront-3d-condensed-plane-stress-micromorphic"
 
 
 def test_the_j2_elastic_constants_are_not_imposed_on_a_crystal() -> None:
