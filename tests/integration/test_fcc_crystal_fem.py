@@ -170,6 +170,44 @@ def test_srix_scalar_nonlocal_source_runs_through_the_solver() -> None:
 
 
 @pytest.mark.mfront
+def test_generic_srix_scalar_nonlocal_source_runs_through_the_solver() -> None:
+    case = reduced_biaxial_case(nx=3, ny=3)
+    solver = replace(
+        case.config.solver,
+        constitutive_backend="mfront-srix-generic-plane-stress",
+        mfront_library=_generic_library(),
+        mfront_behaviour_id=SRIX_GENERIC,
+        increments=4,
+        max_newton_iterations=20,
+        residual_tolerance=1e-6,
+        minimum_step_divisor=32,
+        mfront_threads=1,
+    )
+    nonlocal_config = replace(
+        case.config.nonlocal_plasticity,
+        enabled=True,
+        length_scale_mm=0.05888,
+        coupling_modulus_mpa=100.0,
+        criterion="accumulated_slip_helmholtz",
+        relative_tolerance=1e-6,
+        maximum_iterations=15,
+    )
+    result = run_case_study(
+        replace(case.config, solver=solver, nonlocal_plasticity=nonlocal_config),
+        displacement_x_mm=case.displacement_x_mm,
+        displacement_y_mm=case.displacement_y_mm,
+        yield_stress_mpa=case.yield_stress_mpa,
+        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+    )
+    assert result.cumulated_slip is not None
+    assert result.nonlocal_equivalent_plastic_strain is not None
+    assert result.diagnostics.converged_increments == 4
+    assert result.diagnostics.nonlocal_coupling_failures == 0
+    assert result.diagnostics.total_nonlocal_iterations > 0
+    assert result.diagnostics.maximum_gauss_point_plane_stress_residual_mpa < 1e-6
+
+
+@pytest.mark.mfront
 def test_srix_scalar_nonlocal_source_accepts_a_spatial_orientation_map() -> None:
     """The scalar coupling survives the first heterogeneous EBSD-like map."""
 

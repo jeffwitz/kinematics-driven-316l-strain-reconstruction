@@ -1655,6 +1655,9 @@ def run_fem(
         crystal_fields["ACTIVE_SLIP_SYSTEMS"] = tg(
             gm(np.count_nonzero(np.abs(slips) > 1e-12, axis=2).astype(float))
         )
+    elif "accumulated_slip" in observables:
+        accumulated = np.asarray(observables["accumulated_slip"]).reshape(n_e, N_GP)
+        crystal_fields["CUMULATED_SLIP"] = tg(gm(accumulated))
 
     return dict(
         U=U,
