@@ -173,6 +173,94 @@ def test_validation_generic_srix_backend_is_opt_in() -> None:
     batch.commit()
 
 
+@pytest.mark.mfront
+def test_generic_srix_plane_stress_cross_blocks_at_nonzero_coupling() -> None:
+    """Validate the condensed chi blocks away from the zero-coupling limit."""
+
+    orientation = rotation_from_euler_bunge_deg(31.0, 47.0, 13.0)
+    in_plane = np.array([[2.0e-3, -7.0e-4, 3.5e-4]])
+    chi = 2.0e-4
+    chi_step = 1.0e-7
+    strain_step = 1.0e-7
+
+    def make_batch():
+        return create_plane_stress_material_batch(
+            "mfront-srix-generic-plane-stress",
+            np.full(1, 124.0),
+            np.full(1, 380.0),
+            0.245,
+            young_modulus_mpa=205_000.0,
+            poisson_ratio=0.3,
+            hardening_mode="ludwik",
+            plastic_strain_max=0.2,
+            plastic_table_points=1000,
+            first_positive_plastic_strain=1e-6,
+            mfront_library=_generic_library(),
+            mfront_threads=1,
+            mfront_behaviour_id=SRIX_GENERIC,
+            nonlocal_coupling_modulus_mpa=5168.0,
+            constitutive_options={
+                "crystal_orientation": {
+                    "mode": "homogeneous",
+                    "matrix": orientation,
+                }
+            },
+        )
+
+    reference = make_batch().evaluate(in_plane, chi, time_increment=1.0)
+
+    def response(strain: np.ndarray, chi_value: float):
+        return make_batch().evaluate(strain, chi_value, time_increment=1.0)
+
+    stress_plus = response(in_plane, chi + chi_step).stress_in_plane_mpa
+    stress_minus = response(in_plane, chi - chi_step).stress_in_plane_mpa
+    gamma_plus = response(in_plane, chi + chi_step).accumulated_slip
+    gamma_minus = response(in_plane, chi - chi_step).accumulated_slip
+    stress_chi_fd = (stress_plus - stress_minus) / (2.0 * chi_step)
+    gamma_chi_fd = (gamma_plus - gamma_minus) / (2.0 * chi_step)
+
+    stress_strain_fd = np.zeros_like(reference.tangent_in_plane_mpa)
+    gamma_strain_fd = np.zeros_like(reference.accumulated_slip_strain_tangent)
+    for component in range(3):
+        plus = in_plane.copy()
+        minus = in_plane.copy()
+        plus[0, component] += strain_step
+        minus[0, component] -= strain_step
+        stress_strain_fd[:, :, component] = (
+            response(plus, chi).stress_in_plane_mpa
+            - response(minus, chi).stress_in_plane_mpa
+        ) / (2.0 * strain_step)
+        gamma_strain_fd[:, :, component] = (
+            response(plus, chi).accumulated_slip
+            - response(minus, chi).accumulated_slip
+        ) / (2.0 * strain_step)
+
+    np.testing.assert_allclose(
+        reference.stress_chi_tangent_mpa,
+        stress_chi_fd,
+        rtol=3e-5,
+        atol=2e-3,
+    )
+    np.testing.assert_allclose(
+        reference.accumulated_slip_chi_tangent,
+        gamma_chi_fd,
+        rtol=3e-5,
+        atol=2e-6,
+    )
+    np.testing.assert_allclose(
+        reference.tangent_in_plane_mpa,
+        stress_strain_fd,
+        rtol=3e-5,
+        atol=2e-2,
+    )
+    np.testing.assert_allclose(
+        reference.accumulated_slip_strain_tangent,
+        gamma_strain_fd,
+        rtol=3e-5,
+        atol=2e-6,
+    )
+
+
 def test_meric_cailletaud_is_available_through_the_same_path() -> None:
     assert _batch(MERIC_CAILLETAUD).point_count == 1
 
