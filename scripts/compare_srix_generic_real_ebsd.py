@@ -23,6 +23,11 @@ import numpy as np
 from fem_inhouse.examples import reduced_biaxial_case
 from fem_inhouse.solver import run_case_study
 
+try:
+    from scripts.benchmark_tri2_j2_krylov import _load_case
+except ModuleNotFoundError:  # Direct script execution.
+    from benchmark_tri2_j2_krylov import _load_case  # type: ignore[no-redef]
+
 DEFAULT_EBSD = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5")
 
 
@@ -57,6 +62,11 @@ def _run(
     angles: np.ndarray,
     increments: int,
     tolerance: float,
+    boundary_history: np.ndarray,
+    displacement_x: np.ndarray,
+    displacement_y: np.ndarray,
+    yield_stress: np.ndarray,
+    hardening: np.ndarray,
 ):
     solver = replace(
         case.config.solver,
@@ -87,10 +97,11 @@ def _run(
     started = time.perf_counter()
     result = run_case_study(
         replace(case.config, solver=solver, nonlocal_plasticity=nonlocal_config),
-        displacement_x_mm=case.displacement_x_mm,
-        displacement_y_mm=case.displacement_y_mm,
-        yield_stress_mpa=case.yield_stress_mpa,
-        hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        displacement_x_mm=displacement_x,
+        displacement_y_mm=displacement_y,
+        yield_stress_mpa=yield_stress,
+        hardening_coefficient_mpa=hardening,
+        boundary_displacement_history_mm=boundary_history,
     )
     return result, time.perf_counter() - started
 
@@ -129,31 +140,44 @@ def main() -> int:
         )
     crop = tuple(args.crop_nodes)
     angles, provenance = _load_angles(args.ebsd_orientation_h5, crop)
-    case = reduced_biaxial_case(nx=angles.shape[0], ny=angles.shape[1])
-    legacy_runs = [
-        _run(
-            case,
-            backend="mfront-3d-condensed-plane-stress",
-            library=legacy_library,
-            behaviour="fcc_forest_rubin_srix",
-            angles=angles,
-            increments=args.increments,
-            tolerance=args.tolerance,
+    mesh = angles.shape[0]
+    case = reduced_biaxial_case(nx=mesh, ny=mesh)
+    _, _history, yield_stress, hardening, boundary = _load_case(mesh, crop)
+    def runs(backend, library, behaviour):
+        return [
+            _run(
+                case,
+                backend=backend,
+                library=library,
+                behaviour=behaviour,
+                angles=angles,
+                increments=args.increments,
+                tolerance=args.tolerance,
+                boundary_history=np.stack(
+                    [fraction * boundary for fraction in np.linspace(0.0, 1.0, args.increments + 1)]
+                ),
+                displacement_x=boundary[..., 0],
+                displacement_y=boundary[..., 1],
+                yield_stress=yield_stress.reshape(mesh, mesh),
+                hardening=hardening.reshape(mesh, mesh),
+            )
+            for _ in range(args.repeats)
+        ]
+
+    try:
+        legacy_runs = runs(
+            "mfront-3d-condensed-plane-stress", legacy_library, "fcc_forest_rubin_srix"
         )
-        for _ in range(args.repeats)
-    ]
-    generic_runs = [
-        _run(
-            case,
-            backend="mfront-srix-generic-plane-stress",
-            library=generic_library,
-            behaviour="fcc_forest_rubin_srix_generic_validation",
-            angles=angles,
-            increments=args.increments,
-            tolerance=args.tolerance,
+    except Exception as error:
+        raise SystemExit(f"legacy backend failed on P43 crop: {error}") from error
+    try:
+        generic_runs = runs(
+            "mfront-srix-generic-plane-stress",
+            generic_library,
+            "fcc_forest_rubin_srix_generic_validation",
         )
-        for _ in range(args.repeats)
-    ]
+    except Exception as error:
+        raise SystemExit(f"Generic backend failed on P43 crop: {error}") from error
     legacy, legacy_times = legacy_runs[-1][0], [run[1] for run in legacy_runs]
     generic, generic_times = generic_runs[-1][0], [run[1] for run in generic_runs]
     legacy_median, legacy_mad = _median_mad(legacy_times)
