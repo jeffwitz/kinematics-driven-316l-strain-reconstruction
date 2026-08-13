@@ -5512,3 +5512,78 @@ l'écart n'est plus exactement nul mais `1,46e-3`. Mon propre travail de
 qualification ne couvrait que des états de chargement monotone : le basculement
 du défaut n'est donc pas neutre au renversement, il y est favorable, ce que
 personne n'avait mesuré.
+
+### 2026-08-13 — Reprise après 78 commits de la session concurrente
+
+Relevé d'état, sans modification du code : la session concurrente écrivait dans
+l'arbre pendant ce relevé (`srix_generic.py`, `plane_stress_material.py`,
+`compare_srix_generic_real_ebsd_material.py` non committés, ajout du pool de
+threads MGIS au pont Generic).
+
+**Ce qui a avancé.** L'architecture `ImplicitGenericBehaviour` que la sonde J2
+du 10 août avait établie a été portée jusqu'à SRIX. Le verrou identifié —
+`getIntegrationVariablesDerivatives_*` n'accepte pas le tableau `g[Nss]` des
+douze incréments de glissement comme bloc de sortie — a été contourné par une
+variable d'intégration scalaire `chilocal` contrainte par
+`chilocal + dchilocal = chi + dchi` : les douze résidus de glissement dépendent
+de `chilocal + theta*dchilocal`, donc la dérivée gradient-vers-tableau est
+remplacée par la dérivée de la contrainte scalaire. Les quatre blocs 3D passent
+un contrôle par différences finies centrées à `3,02e-9`, et la condensation
+contraintes planes (élimination des composantes Kelvin transverses `zz, xz, yz`)
+à `7,45e-10`. Deux erreurs de transcription avaient été trouvées et corrigées au
+passage : contribution plastique ajoutée deux fois à `feel`, et cisaillements
+Kelvin du tenseur élastique posés à `G` au lieu de `2G`.
+
+Le backend `mfront-srix-generic-plane-stress` est enregistré en opt-in strict
+(identifiant `fcc_forest_rubin_srix_generic_validation` + bibliothèque dédiée).
+Sur le crop EBSD P43 réel `(1610:1613, 1075:1078)`, écart Generic/historique de
+`9,1e-16` en contrainte et `1,4e-16` en glissement cumulé au point matériel ;
+`3,4e-7` en déplacement à travers le solveur global imbriqué.
+
+Côté solveur, ADR 0010 fige la stratégie imbriquée comme **référence de
+robustesse** et classe le monolithique `(u, chi)` en candidat sous
+qualification. Sur P43 M100 J2 à `1e-6`, imbriqué `49,3 s`, monolithique
+`51,0 s`, étagé vrai `54,9 s` : le monolithique n'est pas encore un gain.
+
+**Ce qui est cassé, et depuis quand.** Suite complète : **61 échecs, 1453
+passés, 1 ignoré**. Cause unique, introduite par `f013d25` (13 août 16h27) :
+
+```
+@MaterialProperty stress Hchi;
+Hchi.setEntryName("MicromorphicCouplingModulus");
+```
+
+ajouté à `mfront/Fcc316LForestRubinSrix.mfront`. Une `@MaterialProperty` MGIS
+n'a pas de valeur par défaut : toute construction qui ne la fournit pas meurt à
+`buildEvaluators`. Seul `mfront_3d.py` a été mis à jour. Restent découverts :
+
+- les 59 tests MGIS directs de `test_forest_rubin_srix.py`,
+  `test_srix_canonical.py` et `test_srix_symmetry_and_plane_stress.py` ;
+- la route structurelle : `Fcc316LForestRubinSrixStructuralPlaneStress` est
+  **générée** depuis la même source et hérite donc de la propriété (vérifié :
+  `mps = [MicromorphicCouplingModulus, Q11..Q33]`), mais sa fiche de catalogue
+  déclare `material_properties=()` et `MFrontNativeGeneralisedPlaneStressBatch`
+  n'accepte aucune propriété matériau. D'où l'échec du bloc Python d'accueil et
+  de `qualify_structural_plane_stress_same_state_schur.py`.
+
+Le garde-fou de `plane_stress_material.py:563` fournit bien des zéros, mais il
+teste la fiche *avant* la bascule structurelle et `crystal_material_properties`
+n'est transmis qu'à la fabrique condensée 3D.
+
+Correctif minimal établi par mesure directe — poser
+`MicromorphicCouplingModulus = 0` restaure l'intégration à l'identique
+(`126,7897 MPa` sur le plateau canonique) :
+
+1. déclarer la propriété sur la fiche `..._structural_plane_stress` et
+   transmettre `crystal_material_properties` à la fabrique GPS **après** la
+   bascule — le comportement GPS `Fcc316LForestRubinSrixGps` a sa propre source,
+   ne déclare que `Q11..Q33`, et lui passer la propriété échouerait ;
+2. faire poser la propriété à `mfront_gps/adapter.py` avec la même précaution de
+   durée de vie que les tampons `Q` (`ExternalStorage` garde un pointeur) ;
+3. fournir `0.0` dans les trois fichiers de tests MGIS directs.
+
+Non appliqué : la session concurrente édite ces fichiers en ce moment.
+
+Lint : deux `E501` dans `scripts/generate_srix_generic_3d.py` (lignes 29 et 48).
+
+`Claude.md` n'avait pas été mis à jour depuis `7a2ca21`, soit 78 commits.
