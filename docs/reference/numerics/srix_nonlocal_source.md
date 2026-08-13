@@ -32,3 +32,19 @@ The initial implementation is available through the 3-D condensed
 plane-stress bridge. The generic solver remains responsible for Helmholtz,
 transactions, Newton, staggered coupling, and globalisation; SRIX supplies the
 constitutive response and the scalar source.
+
+## Qualification status
+
+The scalar source is qualified through the production nested path on a small
+heterogeneous orientation map. With four prescribed increments, the case
+converged after three constitutive cutbacks; all accepted subincrements
+converged, the non-local coupling had no unrecovered failure, and the maximum
+plane-stress residual was below (10^{-6}) MPa. The corresponding automated
+coverage is in `tests/integration/test_fcc_crystal_fem.py`.
+
+This is a numerical transposition of the J2 scalar architecture, not a
+physical identification of a non-local SRIX law. The monolithic SRIX path is
+not qualified yet: it requires constitutive cross-tangent blocks for
+(sigma_{,chi}), (Gamma_{,arepsilon}), and (Gamma_{,chi}). Until those
+blocks are exposed coherently, SRIX non-local validation must use the nested
+reference path.
