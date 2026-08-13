@@ -17,12 +17,21 @@ from fem_inhouse.examples import reduced_biaxial_case
 from fem_inhouse.solver import run_case_study
 
 SRIX = "fcc_forest_rubin_srix"
+SRIX_GENERIC = "fcc_forest_rubin_srix_generic_validation"
 
 
 def _library() -> str:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     if library is None:
         pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+    return library
+
+
+def _generic_library() -> str:
+    library = os.environ.get("SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY")
+    if library is None:
+        pytest.skip("SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY is not set")
     pytest.importorskip("mgis.behaviour")
     return library
 
@@ -69,6 +78,51 @@ def test_a_small_crystal_case_assembles_and_converges() -> None:
     assert np.isfinite(result.displacement_mm).all()
     assert np.isfinite(result.stress_mpa).all()
     assert np.abs(result.displacement_mm).max() > 0.0
+
+
+@pytest.mark.mfront
+def test_generic_srix_matches_historical_srix_on_homogeneous_case() -> None:
+    case = reduced_biaxial_case(nx=3, ny=3)
+    common = dict(increments=8, residual_tolerance=1e-6, mfront_threads=1)
+    historical = replace(
+        case.config.solver,
+        constitutive_backend="mfront-3d-condensed-plane-stress",
+        mfront_library=_library(),
+        mfront_behaviour_id=SRIX,
+        **common,
+    )
+    generic = replace(
+        case.config.solver,
+        constitutive_backend="mfront-srix-generic-plane-stress",
+        mfront_library=_generic_library(),
+        mfront_behaviour_id=SRIX_GENERIC,
+        **common,
+    )
+    results = [
+        run_case_study(
+            replace(case.config, solver=solver),
+            displacement_x_mm=case.displacement_x_mm,
+            displacement_y_mm=case.displacement_y_mm,
+            yield_stress_mpa=case.yield_stress_mpa,
+            hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        )
+        for solver in (historical, generic)
+    ]
+    historical_result, generic_result = results
+    np.testing.assert_allclose(
+        generic_result.displacement_mm, historical_result.displacement_mm, rtol=1e-10, atol=1e-14
+    )
+    np.testing.assert_allclose(
+        generic_result.stress_mpa, historical_result.stress_mpa, rtol=1e-10, atol=1e-8
+    )
+    np.testing.assert_allclose(
+        generic_result.equivalent_plastic_strain,
+        historical_result.equivalent_plastic_strain,
+        rtol=1e-10,
+        atol=1e-14,
+    )
+    assert generic_result.diagnostics is not None
+    assert generic_result.diagnostics.maximum_gauss_point_plane_stress_residual_mpa < 1e-6
 
 
 @pytest.mark.mfront

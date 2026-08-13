@@ -382,10 +382,10 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         for iteration in range(1, self._maximum_iterations + 1):
             final = self._bridge.evaluate(total, chi, time_increment=time_increment)
             residual = final.stress_kelvin_mpa[:, _TRANSVERSE]
-            self._maximum_residual = max(
-                self._maximum_residual, float(np.max(np.abs(residual)))
-            )
             if np.max(np.abs(residual)) <= self._tolerance:
+                self._maximum_residual = max(
+                    self._maximum_residual, float(np.max(np.abs(residual)))
+                )
                 self._maximum_iterations_observed = max(
                     self._maximum_iterations_observed, iteration
                 )
@@ -506,9 +506,7 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             full_strain_tensor=total_tensor,
             elastic_strain_tensor=elastic_tensor,
             plastic_strain_tensor=total_tensor - elastic_tensor,
-            plane_stress_residual_mpa=np.max(
-                np.abs(latest.transverse_stress_mpa), axis=1
-            ),
+            plane_stress_residual_mpa=latest.transverse_stress_mpa,
         )
 
     def commit(self) -> None:
