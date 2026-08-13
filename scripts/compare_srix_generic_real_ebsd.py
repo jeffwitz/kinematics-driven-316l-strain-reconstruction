@@ -62,6 +62,7 @@ def _run(
     angles: np.ndarray,
     increments: int,
     tolerance: float,
+    coupling_modulus_mpa: float,
     boundary_history: np.ndarray,
     displacement_x: np.ndarray,
     displacement_y: np.ndarray,
@@ -89,7 +90,7 @@ def _run(
         case.config.nonlocal_plasticity,
         enabled=True,
         length_scale_mm=0.05888,
-        coupling_modulus_mpa=100.0,
+        coupling_modulus_mpa=coupling_modulus_mpa,
         criterion="accumulated_slip_helmholtz",
         relative_tolerance=1e-6,
         maximum_iterations=15,
@@ -126,6 +127,7 @@ def main() -> int:
     )
     parser.add_argument("--increments", type=int, default=4)
     parser.add_argument("--tolerance", type=float, default=1e-6)
+    parser.add_argument("--coupling-modulus-mpa", type=float, default=5168.0)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -153,6 +155,7 @@ def main() -> int:
                 angles=angles,
                 increments=args.increments,
                 tolerance=args.tolerance,
+                coupling_modulus_mpa=args.coupling_modulus_mpa,
                 boundary_history=np.stack(
                     [fraction * boundary for fraction in np.linspace(0.0, 1.0, args.increments + 1)]
                 ),
@@ -188,6 +191,7 @@ def main() -> int:
         "provenance": provenance,
         "increments": args.increments,
         "tolerance": args.tolerance,
+        "coupling_modulus_mpa": args.coupling_modulus_mpa,
         "repeats": args.repeats,
         "legacy": {
             "elapsed_seconds_last": legacy_times[-1],
