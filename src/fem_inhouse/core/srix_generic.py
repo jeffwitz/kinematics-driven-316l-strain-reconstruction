@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from fem_inhouse.core.crystal_orientation import mgis_rotation_argument, validate_rotations
 from fem_inhouse.core.linear_solver import LinearSystemMatrixType
 from fem_inhouse.core.mfront_runtime import (
     MFrontIntegrationError,
@@ -36,10 +37,10 @@ class SrixGeneric3DTrial:
 class SrixGeneric3DMaterialPointBatch:
     """Transactional 3-D bridge for the tangent-enabled SRIX GenericBehaviour.
 
-    This is deliberately a raw 3-D constitutive bridge. Plane-stress closure,
-    rotations and global non-local coupling remain outside this first adapter;
-    keeping those layers separate makes the GenericBehaviour contract
-    independently testable against the historical SRIX law.
+    This is deliberately a raw 3-D constitutive bridge. Plane-stress closure
+    and global non-local coupling remain outside this first adapter; keeping
+    those layers separate makes the GenericBehaviour contract independently
+    testable against the historical SRIX law.
     """
 
     def __init__(
@@ -50,6 +51,7 @@ class SrixGeneric3DMaterialPointBatch:
         micromorphic_coupling_modulus_mpa: ArrayLike,
         temperature_k: float = 293.15,
         behaviour_name: str = "Fcc316LForestRubinSrixGeneric3D",
+        rotation_global_to_material: ArrayLike | None = None,
     ) -> None:
         if isinstance(point_count, bool) or not isinstance(point_count, int) or point_count < 1:
             raise ValueError("point_count must be a positive integer")
@@ -114,6 +116,14 @@ class SrixGeneric3DMaterialPointBatch:
         self._manager = manager
         self._point_count = point_count
         self._has_trial_state = False
+        self._rotations = (
+            None
+            if rotation_global_to_material is None
+            else validate_rotations(rotation_global_to_material, point_count=point_count)
+        )
+        self._mgis_rotations = (
+            None if self._rotations is None else mgis_rotation_argument(self._rotations)
+        )
 
     @property
     def point_count(self) -> int:
@@ -130,6 +140,10 @@ class SrixGeneric3DMaterialPointBatch:
     @property
     def linear_system_matrix_type(self) -> LinearSystemMatrixType:
         return "nonsymmetric"
+
+    @property
+    def rotations_global_to_material(self) -> FloatArray | None:
+        return None if self._rotations is None else self._rotations.copy()
 
     def evaluate(
         self,
@@ -150,8 +164,15 @@ class SrixGeneric3DMaterialPointBatch:
             self._mgis.revert(self._manager)
             self._has_trial_state = False
         gradients = self._manager.s1.gradients
-        gradients[:, :6] = strain
-        gradients[:, 6] = chi_values
+        global_gradients = np.column_stack((strain, chi_values))
+        if self._mgis_rotations is None:
+            gradients[:, :] = global_gradients
+        else:
+            material_gradients = np.ascontiguousarray(global_gradients.reshape(-1).copy())
+            self._mgis.rotateGradients(
+                material_gradients, self._behaviour, self._mgis_rotations
+            )
+            gradients[:, :] = material_gradients.reshape(self._point_count, 7)
         status = self._mgis.integrate(
             self._manager,
             self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
@@ -167,6 +188,17 @@ class SrixGeneric3DMaterialPointBatch:
         self._has_trial_state = True
         forces = np.asarray(self._manager.s1.thermodynamic_forces, dtype=float).copy()
         tangent = np.asarray(self._manager.K, dtype=float).copy()
+        if self._mgis_rotations is not None:
+            flat_forces = np.ascontiguousarray(forces.reshape(-1))
+            self._mgis.rotateThermodynamicForces(
+                flat_forces, self._behaviour, self._mgis_rotations
+            )
+            forces = flat_forces.reshape(self._point_count, 7)
+            flat_tangent = np.ascontiguousarray(tangent.reshape(-1))
+            self._mgis.rotateTangentOperatorBlocks(
+                flat_tangent, self._behaviour, self._mgis_rotations
+            )
+            tangent = flat_tangent.reshape(self._point_count, 49)
         if tangent.shape[-1] != 49:
             raise ValueError(f"expected 49 Generic tangent entries, got {tangent.shape}")
         blocks = tangent.reshape(self._point_count, 7, 7)

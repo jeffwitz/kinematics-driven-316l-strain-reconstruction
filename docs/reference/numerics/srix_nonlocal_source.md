@@ -117,6 +117,6 @@ The raw MGIS constitutive layer is now exposed as
 input `(epsilon, chi)` and returns `(sigma, Gamma)` together with all four
 three-dimensional tangent blocks, while preserving trial/revert/commit
 semantics. `scripts/probe_srix_generic_bridge.sh` checks this contract. The
-adapter is intentionally restricted to the material-frame 3-D layer for now;
-crystal rotations and the plane-stress closure remain separate integration
-steps.
+adapter supports the repository's `Q_global_to_material` orientation
+convention and rotates stresses and tensor tangent blocks back to the global
+frame. The plane-stress closure remains a separate integration step.

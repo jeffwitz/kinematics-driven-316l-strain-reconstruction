@@ -20,6 +20,7 @@ import os
 import numpy as np
 
 from fem_inhouse.core.mfront import SrixGeneric3DMaterialPointBatch
+from fem_inhouse.core.crystal_orientation import rotation_from_euler_bunge_deg
 
 material = SrixGeneric3DMaterialPointBatch(
     os.environ["LIBRARY"],
@@ -43,7 +44,21 @@ assert np.isfinite(trial.stress_kelvin_mpa).all()
 material.revert()
 trial = material.evaluate(strain, np.array([2.0e-4, 1.0e-4]), time_increment=1.0)
 material.commit()
+rotated = SrixGeneric3DMaterialPointBatch(
+    os.environ["LIBRARY"],
+    point_count=2,
+    micromorphic_coupling_modulus_mpa=100.0,
+    rotation_global_to_material=np.stack(
+        [np.eye(3), rotation_from_euler_bunge_deg(17.0, 31.0, 43.0)]
+    ),
+)
+rotated_trial = rotated.evaluate(
+    strain, np.array([2.0e-4, 1.0e-4]), time_increment=1.0
+)
+assert np.isfinite(rotated_trial.stress_kelvin_mpa).all()
+assert np.isfinite(rotated_trial.stress_strain_tangent).all()
 print("SRIX Generic 3-D bridge: passed")
 print(f"stress_norm={np.linalg.norm(trial.stress_kelvin_mpa):.6e}")
 print(f"source_norm={np.linalg.norm(trial.accumulated_slip):.6e}")
+print(f"rotated_stress_norm={np.linalg.norm(rotated_trial.stress_kelvin_mpa):.6e}")
 PY
