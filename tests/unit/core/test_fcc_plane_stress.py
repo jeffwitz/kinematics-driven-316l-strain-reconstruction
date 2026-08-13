@@ -178,7 +178,7 @@ def test_generic_srix_plane_stress_cross_blocks_at_nonzero_coupling() -> None:
     """Validate the condensed chi blocks away from the zero-coupling limit."""
 
     orientation = rotation_from_euler_bunge_deg(31.0, 47.0, 13.0)
-    in_plane = np.array([[2.0e-3, -7.0e-4, 3.5e-4]])
+    in_plane = np.array([[3.0e-3, -9.0e-4, 3.0e-4]])
     chi = 2.0e-4
     chi_step = 1.0e-7
     strain_step = 1.0e-7
@@ -198,7 +198,7 @@ def test_generic_srix_plane_stress_cross_blocks_at_nonzero_coupling() -> None:
             mfront_library=_generic_library(),
             mfront_threads=1,
             mfront_behaviour_id=SRIX_GENERIC,
-            nonlocal_coupling_modulus_mpa=5168.0,
+            nonlocal_coupling_modulus_mpa=100.0,
             constitutive_options={
                 "crystal_orientation": {
                     "mode": "homogeneous",
@@ -216,8 +216,8 @@ def test_generic_srix_plane_stress_cross_blocks_at_nonzero_coupling() -> None:
     stress_minus = response(in_plane, chi - chi_step).stress_in_plane_mpa
     gamma_plus = response(in_plane, chi + chi_step).accumulated_slip
     gamma_minus = response(in_plane, chi - chi_step).accumulated_slip
-    stress_chi_fd = (stress_plus - stress_minus) / (2.0 * chi_step)
-    gamma_chi_fd = (gamma_plus - gamma_minus) / (2.0 * chi_step)
+    stress_chi_fd = (stress_plus - stress_minus)[:, :, None] / (2.0 * chi_step)
+    gamma_chi_fd = (gamma_plus - gamma_minus)[:, None, None] / (2.0 * chi_step)
 
     stress_strain_fd = np.zeros_like(reference.tangent_in_plane_mpa)
     gamma_strain_fd = np.zeros_like(reference.accumulated_slip_strain_tangent)
