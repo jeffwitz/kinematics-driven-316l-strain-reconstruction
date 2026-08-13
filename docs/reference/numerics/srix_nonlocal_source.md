@@ -120,3 +120,6 @@ semantics. `scripts/probe_srix_generic_bridge.sh` checks this contract. The
 adapter supports the repository's `Q_global_to_material` orientation
 convention and rotates stresses and tensor tangent blocks back to the global
 frame. The plane-stress closure remains a separate integration step.
+The validation-only `SrixGeneric3DCondensedPlaneStressBatch` now layers that
+closure on the raw bridge and reaches a transverse-stress residual of
+`1.3e-15` in its smoke test; it is not registered as a production backend yet.

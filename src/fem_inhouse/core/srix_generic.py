@@ -10,7 +10,10 @@ from numpy.typing import ArrayLike, NDArray
 
 from fem_inhouse.core.crystal_orientation import mgis_rotation_argument, validate_rotations
 from fem_inhouse.core.linear_solver import LinearSystemMatrixType
+from fem_inhouse.core.mfront_condensation import condense_kelvin_tangent_blocks
 from fem_inhouse.core.mfront_runtime import (
+    _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
+    _KELVIN_TO_ENGINEERING_STRESS_SCALE,
     MFrontIntegrationError,
     _broadcast_point_property,
     _load_mgis,
@@ -18,6 +21,8 @@ from fem_inhouse.core.mfront_runtime import (
 )
 
 FloatArray = NDArray[np.float64]
+_PLANE = np.array([0, 1, 3])
+_TRANSVERSE = np.array([2, 4, 5])
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,16 +206,19 @@ class SrixGeneric3DMaterialPointBatch:
             tangent = flat_tangent.reshape(self._point_count, 49)
         if tangent.shape[-1] != 49:
             raise ValueError(f"expected 49 Generic tangent entries, got {tangent.shape}")
-        blocks = tangent.reshape(self._point_count, 7, 7)
+        stress_strain = tangent[:, :36].reshape(self._point_count, 6, 6)
+        stress_chi = tangent[:, 36:42].reshape(self._point_count, 6, 1)
+        accumulated_slip_strain = tangent[:, 42:48].reshape(self._point_count, 1, 6)
+        accumulated_slip_chi = tangent[:, 48:].reshape(self._point_count, 1, 1)
         return SrixGeneric3DTrial(
             total_strain_kelvin=strain.copy(),
             chi=chi_values.copy(),
             stress_kelvin_mpa=forces[:, :6].copy(),
             accumulated_slip=forces[:, 6].copy(),
-            stress_strain_tangent=blocks[:, :6, :6].copy(),
-            stress_chi_tangent=blocks[:, :6, 6:7].copy(),
-            accumulated_slip_strain_tangent=blocks[:, 6:7, :6].copy(),
-            accumulated_slip_chi_tangent=blocks[:, 6:7, 6:7].copy(),
+            stress_strain_tangent=stress_strain.copy(),
+            stress_chi_tangent=stress_chi.copy(),
+            accumulated_slip_strain_tangent=accumulated_slip_strain.copy(),
+            accumulated_slip_chi_tangent=accumulated_slip_chi.copy(),
         )
 
     def commit(self) -> None:
@@ -222,3 +230,112 @@ class SrixGeneric3DMaterialPointBatch:
     def revert(self) -> None:
         self._mgis.revert(self._manager)
         self._has_trial_state = False
+
+
+@dataclass(frozen=True, slots=True)
+class SrixGenericPlaneStressTrial:
+    """Local plane-stress response of the Generic SRIX bridge."""
+
+    stress_in_plane_mpa: FloatArray
+    accumulated_slip: FloatArray
+    tangent_in_plane_mpa: FloatArray
+    transverse_strain_kelvin: FloatArray
+    transverse_stress_mpa: FloatArray
+
+
+class SrixGeneric3DCondensedPlaneStressBatch:
+    """Plane-stress closure layered on ``SrixGeneric3DMaterialPointBatch``."""
+
+    def __init__(
+        self,
+        bridge: SrixGeneric3DMaterialPointBatch,
+        *,
+        local_tolerance_mpa: float = 1e-8,
+        maximum_local_iterations: int = 15,
+    ) -> None:
+        if local_tolerance_mpa <= 0 or not np.isfinite(local_tolerance_mpa):
+            raise ValueError("local_tolerance_mpa must be finite and positive")
+        if maximum_local_iterations < 1:
+            raise ValueError("maximum_local_iterations must be positive")
+        self._bridge = bridge
+        self._tolerance = float(local_tolerance_mpa)
+        self._maximum_iterations = int(maximum_local_iterations)
+        self._committed_transverse = np.zeros((bridge.point_count, 3))
+        self._trial_transverse: FloatArray | None = None
+        self._has_trial = False
+
+    @property
+    def point_count(self) -> int:
+        return self._bridge.point_count
+
+    @property
+    def backend_name(self) -> str:
+        return "srix-generic-3d-condensed-plane-stress"
+
+    def evaluate(
+        self,
+        in_plane_strain: ArrayLike,
+        chi: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> SrixGenericPlaneStressTrial:
+        in_plane = np.asarray(in_plane_strain, dtype=float)
+        if in_plane.shape != (self.point_count, 3):
+            raise ValueError(f"in_plane_strain must have shape {(self.point_count, 3)}")
+        total = np.zeros((self.point_count, 6))
+        total[:, _PLANE] = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+        total[:, _TRANSVERSE] = self._committed_transverse
+        final: SrixGeneric3DTrial | None = None
+        for _ in range(self._maximum_iterations):
+            final = self._bridge.evaluate(total, chi, time_increment=time_increment)
+            residual = final.stress_kelvin_mpa[:, _TRANSVERSE]
+            if np.max(np.abs(residual)) <= self._tolerance:
+                break
+            cbb = np.take(
+                np.take(final.stress_strain_tangent, _TRANSVERSE, axis=-2),
+                _TRANSVERSE,
+                axis=-1,
+            )
+            correction = np.linalg.solve(cbb, -residual[..., None])[..., 0]
+            total[:, _TRANSVERSE] += correction
+        else:
+            self.revert()
+            raise RuntimeError("SRIX Generic plane-stress closure did not converge")
+        assert final is not None
+        c_ps, _, _, _, _ = condense_kelvin_tangent_blocks(
+            final.stress_strain_tangent,
+            final.stress_chi_tangent,
+            final.accumulated_slip_strain_tangent,
+            final.accumulated_slip_chi_tangent,
+            check_condition=False,
+        )
+        tangent = (
+            c_ps
+            * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
+            * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+        )
+        self._trial_transverse = total[:, _TRANSVERSE].copy()
+        self._has_trial = True
+        return SrixGenericPlaneStressTrial(
+            stress_in_plane_mpa=(
+                final.stress_kelvin_mpa[:, _PLANE]
+                * _KELVIN_TO_ENGINEERING_STRESS_SCALE
+            ),
+            accumulated_slip=final.accumulated_slip.copy(),
+            tangent_in_plane_mpa=tangent,
+            transverse_strain_kelvin=self._trial_transverse.copy(),
+            transverse_stress_mpa=residual.copy(),
+        )
+
+    def commit(self) -> None:
+        if not self._has_trial or self._trial_transverse is None:
+            raise RuntimeError("no successful Generic plane-stress trial to commit")
+        self._bridge.commit()
+        self._committed_transverse[:] = self._trial_transverse
+        self._trial_transverse = None
+        self._has_trial = False
+
+    def revert(self) -> None:
+        self._bridge.revert()
+        self._trial_transverse = None
+        self._has_trial = False

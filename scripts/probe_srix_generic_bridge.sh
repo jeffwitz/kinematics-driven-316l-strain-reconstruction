@@ -19,7 +19,10 @@ import os
 
 import numpy as np
 
-from fem_inhouse.core.mfront import SrixGeneric3DMaterialPointBatch
+from fem_inhouse.core.mfront import (
+    SrixGeneric3DCondensedPlaneStressBatch,
+    SrixGeneric3DMaterialPointBatch,
+)
 from fem_inhouse.core.crystal_orientation import rotation_from_euler_bunge_deg
 
 material = SrixGeneric3DMaterialPointBatch(
@@ -57,8 +60,20 @@ rotated_trial = rotated.evaluate(
 )
 assert np.isfinite(rotated_trial.stress_kelvin_mpa).all()
 assert np.isfinite(rotated_trial.stress_strain_tangent).all()
+condensed_bridge = SrixGeneric3DMaterialPointBatch(
+    os.environ["LIBRARY"],
+    point_count=2,
+    micromorphic_coupling_modulus_mpa=100.0,
+)
+condensed = SrixGeneric3DCondensedPlaneStressBatch(condensed_bridge)
+in_plane = 0.1 * strain[:, [0, 1, 3]]
+plane_trial = condensed.evaluate(in_plane, np.array([2.0e-4, 1.0e-4]), time_increment=1.0)
+assert plane_trial.tangent_in_plane_mpa.shape == (2, 3, 3)
+assert np.max(np.abs(plane_trial.transverse_stress_mpa)) < 1.0e-8
+condensed.commit()
 print("SRIX Generic 3-D bridge: passed")
 print(f"stress_norm={np.linalg.norm(trial.stress_kelvin_mpa):.6e}")
 print(f"source_norm={np.linalg.norm(trial.accumulated_slip):.6e}")
 print(f"rotated_stress_norm={np.linalg.norm(rotated_trial.stress_kelvin_mpa):.6e}")
+print(f"plane_stress_residual={np.max(np.abs(plane_trial.transverse_stress_mpa)):.6e}")
 PY
