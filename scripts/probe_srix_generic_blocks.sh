@@ -54,5 +54,5 @@ if np.asarray(data.K).shape != (1, 49):
     raise SystemExit(f"unexpected SRIX generic tangent storage: {np.asarray(data.K).shape}")
 print(f"SRIX generic 3-D tangent-block probe: passed (blocks={blocks!r})")
 print("The probe validates the generic block interface and elastic integration;")
-print("plastic equivalence against the historical SRIX behaviour remains required.")
+print("plastic equivalence is checked by compare_srix_generic_legacy.sh.")
 PY
