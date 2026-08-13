@@ -9,8 +9,8 @@ source /home/jeff/.local/share/tfel/env/env.sh
 set -u
 
 # HCHI activates the scalar micromorphic term. CHISCALE drives a non-zero
-# field; the comparison follows the legacy external-state-variable convention
-# in which chi is the value at the beginning of each increment.
+# field; for legacy equivalence chi is held fixed within each constitutive
+# increment so both formulations evaluate the same local law.
 "$root/.venv/bin/python" "$root/scripts/generate_srix_generic_3d.py" \
   "$root/mfront/Fcc316LForestRubinSrix.mfront" \
   "$work/Fcc316LForestRubinSrixGeneric3D.mfront"
@@ -46,8 +46,10 @@ print("step,legacy_status,generic_status,relative_stress_error,max_stress_error_
 for step in range(1, 7):
     strain = np.array([0.003 * step / 8, -0.0009 * step / 8, 0, 0, 0, 0.0])
     chi = chi_scale * step / 8
+    mgis.setExternalStateVariable(ld.s0, "NonlocalEquivalentPlasticStrain", chi)
     mgis.setExternalStateVariable(ld.s1, "NonlocalEquivalentPlasticStrain", chi)
     ld.s1.gradients[0] = strain
+    gd.s0.gradients[0, 6] = chi
     gd.s1.gradients[0] = np.concatenate((strain, [chi]))
     ls = mgis.integrate(
         ld, mgis.IntegrationType.IntegrationWithConsistentTangentOperator, 1 / 8, 0, 1

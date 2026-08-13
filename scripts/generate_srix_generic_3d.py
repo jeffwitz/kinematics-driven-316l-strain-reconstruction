@@ -82,11 +82,11 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
   using size_type = unsigned short;
   const auto& ss = Fcc316LForestRubinSrixGeneric3DSlipSystems<real>::getSlipSystems();
   const auto& m = ss.him;
-  // The legacy SRIX law declares chi as an external state variable. In the
-  // Implicit/Generic integrator convention, that is the value at the start of
-  // the increment; dchi is its prescribed increment. Preserve that contract
-  // while routing the array-valued slip residuals through the scalar proxy.
-  fchilocal = chilocal + dchilocal - chi;
+  // Route the current total Generic gradient through the scalar proxy. This
+  // keeps the array-valued slip residuals independent of the direct
+  // gradient-to-array tangent limitation while retaining dchi in the global
+  // coupled derivative.
+  fchilocal = chilocal + dchilocal - chi - dchi;
   dfchilocal_ddchilocal = 1.;
   feel = deel - deto;
   dfeel_ddeel = Stensor4::Id();

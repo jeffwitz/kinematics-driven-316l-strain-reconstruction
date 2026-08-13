@@ -79,25 +79,27 @@ error of (3.94\times10^{-14}). A pure Kelvin shear test also agrees exactly
 ((0.244) MPa for a (10^{-6}) strain component). Reproduce the comparison
 with `scripts/compare_srix_generic_legacy.sh`.
 
-This equivalence result qualifies the local mechanical response and its
-strain tangent only. It does not qualify the three cross-coupling blocks.
+This equivalence result qualifies the local mechanical response. The scalar
+lifting formulation also exposes the cross-coupling through the converged
+local Jacobian.
 The generic validation formulation now uses a scalar local lifting variable,
 `chilocal`, constrained by
 
 \[
 \texttt{chilocal}+\Delta\texttt{chilocal}
-  = \texttt{chi}.
+  = \texttt{chi}+\Delta\texttt{chi}.
 \]
 
 The twelve slip residuals depend on `chilocal + theta*dchilocal`, so the
 gradient-to-array derivative is replaced by the scalar constraint derivative.
-This preserves the legacy external-state-variable convention: `chi` is the
-value at the beginning of the increment and `dchi` is its prescribed
-increment. The formulation compiles and reproduces the legacy plastic
-response with a non-zero micromorphic coupling on changing-chi increments.
-The comparison script accepts `HCHI` and `CHISCALE` to exercise that path.
+This includes the current `dchi` increment in the local proxy. The formulation
+compiles and reproduces the legacy plastic response with non-zero coupling
+when chi is held fixed over each local constitutive increment. The comparison
+script accepts `HCHI` and `CHISCALE` to exercise that path.
 
-The cross-tangent blocks still require independent finite-difference
-qualification, including increments where chi changes. The Generic formulation
-must not be promoted to the monolithic bridge until those checks pass; it
-remains a validation-only constitutive backend for now.
+The four 3-D tangent blocks now pass an independent central finite-difference
+check, including a changing-chi history, with a maximum block-relative error
+of `3.02e-9`. Reproduce it with
+`scripts/validate_srix_generic_tangent_blocks.sh`. This qualifies the local
+3-D Generic formulation only; plane-stress condensation of all four blocks is
+still required before promotion to the monolithic bridge.
