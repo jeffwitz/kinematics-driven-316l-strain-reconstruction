@@ -199,6 +199,7 @@ def main() -> int:
         "repeats": args.repeats,
     }
     _write_report(args.output, report)
+    print("P43 legacy backend: starting", flush=True)
     try:
         legacy_runs = runs(
             "mfront-3d-condensed-plane-stress", legacy_library, "fcc_forest_rubin_srix"
@@ -222,6 +223,11 @@ def main() -> int:
     }
     report["status"] = "legacy_completed"
     _write_report(args.output, report)
+    print(
+        f"P43 legacy backend: completed ({legacy_median:.3f} s median)",
+        flush=True,
+    )
+    print("P43 Generic backend: starting", flush=True)
     try:
         generic_runs = runs(
             "mfront-srix-generic-plane-stress",
@@ -261,6 +267,10 @@ def main() -> int:
     })
     rendered = json.dumps(report, indent=2, sort_keys=True)
     _write_report(args.output, report)
+    print(
+        f"P43 Generic backend: completed ({generic_median:.3f} s median)",
+        flush=True,
+    )
     print(rendered)
     return 0
 
