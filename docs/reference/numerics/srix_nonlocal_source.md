@@ -111,3 +111,12 @@ with relative error `7.45e-10`; the maximum transverse-stress residual is
 operation is exposed as `condense_kelvin_tangent_blocks` in
 `fem_inhouse.core.mfront`; this validates the condensation mathematics, but it
 is not yet the production monolithic bridge.
+
+The raw MGIS constitutive layer is now exposed as
+`SrixGeneric3DMaterialPointBatch`. It accepts the seven-field GenericBehaviour
+input `(epsilon, chi)` and returns `(sigma, Gamma)` together with all four
+three-dimensional tangent blocks, while preserving trial/revert/commit
+semantics. `scripts/probe_srix_generic_bridge.sh` checks this contract. The
+adapter is intentionally restricted to the material-frame 3-D layer for now;
+crystal rotations and the plane-stress closure remain separate integration
+steps.

@@ -38,6 +38,7 @@ from fem_inhouse.core.mfront_state import (
     MFrontMaterialStateSnapshot,
     MFrontTimingStatistics,
 )
+from fem_inhouse.core.srix_generic import SrixGeneric3DMaterialPointBatch, SrixGeneric3DTrial
 
 _SQRT_TWO = np.sqrt(2.0)
 _ENGINEERING_TO_KELVIN_STRAIN_SCALE = _mfront_runtime._ENGINEERING_TO_KELVIN_STRAIN_SCALE
@@ -68,6 +69,8 @@ __all__ = [
     "MFrontNativePlaneStressBatch",
     "MFrontTimingStatistics",
     "MFrontUnavailableError",
+    "SrixGeneric3DMaterialPointBatch",
+    "SrixGeneric3DTrial",
     "condense_kelvin_tangent_blocks",
     "condense_kelvin_tangent_to_engineering",
     "engineering_strain_to_kelvin",
