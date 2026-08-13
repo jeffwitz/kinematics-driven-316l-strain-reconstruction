@@ -18,8 +18,43 @@ def generate(source: str) -> str:
         "Fcc316LMericCailletaudSlipSystems",
         "Fcc316LMericCailletaudGeneric3DSlipSystems",
     )
+    text = text.replace(
+        "@Parameter stress C = 40000.;",
+        "@Parameter stress C = 40000.;\n\n"
+        '@MaterialProperty stress Hchi;\nHchi.setEntryName("MicromorphicCouplingModulus");',
+    )
     text = re.sub(r"\bD\b", "Ce", text)
     text = re.sub(r"@Brick StandardElasticity\{.*?\n\};\n", "", text, flags=re.S)
+    text = text.replace(
+        "  real exp_bp[Nss];\n  for (size_type i = 0; i != Nss; ++i) {",
+        "  real exp_bp[Nss];\n  real gamma_trial = 0.;\n"
+        "  for (size_type i = 0; i != Nss; ++i) {\n"
+        "    gamma_trial += p[i] + theta * abs(dg[i]);",
+        1,
+    )
+    text = text.replace(
+        "      r += Q * m(i, j) * (1 - exp_bp[j]);\n    }\n    const auto da =",
+        "      r += Q * m(i, j) * (1 - exp_bp[j]);\n"
+        "    }\n"
+        "    r += Hchi * (gamma_trial - (chilocal + theta * dchilocal));\n"
+        "    const auto da =",
+        1,
+    )
+    text = text.replace(
+        "    const auto dv = n * v / (max(f, seps));\n    fg[i] -= dt * v * sgn;",
+        "    const auto dv = n * v / (max(f, seps));\n"
+        "    dfg_ddchilocal(i) = -dt * dv * theta * Hchi * sgn;\n"
+        "    fg[i] -= dt * v * sgn;",
+        1,
+    )
+    text = text.replace(
+        "      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj;\n"
+        "      dfg_ddg(i, j) += dt * dv * dr * sgn;",
+        "      const auto dr = Q * m(i, j) * theta * b * exp_bp[j] * sgn_gj\n"
+        "                       + theta * Hchi * sgn_gj;\n"
+        "      dfg_ddg(i, j) += dt * dv * dr * sgn;",
+        1,
+    )
     text = text.replace(
         "@StateVariable strain g[Nss];\n"
         'g.setEntryName("ViscoplasticSlip");',
@@ -36,6 +71,8 @@ pobs.setEntryName(\"AccumulatedSlipOutput\");
 g.setEntryName(\"ViscoplasticSlip\");
 @StateVariable strain Gamma;
 Gamma.setEntryName(\"AccumulatedSlip\");
+@IntegrationVariable strain chilocal;
+chilocal.setEntryName(\"LocalNonlocalEquivalentPlasticStrain\");
 @LocalVariable Stensor4 Ce;""",
     )
     text = text.replace(
@@ -44,6 +81,7 @@ Gamma.setEntryName(\"AccumulatedSlip\");
   deel = deto;
   for (unsigned short i=0; i!=Nss; ++i) { dg[i] = 0; }
   dGamma = 0;
+  dchilocal = 0;
 }
 
 @ComputeThermodynamicForces {
@@ -71,6 +109,8 @@ Gamma.setEntryName(\"AccumulatedSlip\");
   dfeel_ddeel = Stensor4::Id();
   fGamma = dGamma;
   dfGamma_ddGamma = 1.;
+  fchilocal = chilocal + dchilocal - chi - dchi;
+  dfchilocal_ddchilocal = 1.;
   for (unsigned short i=0; i!=Nss; ++i) {
     fGamma -= abs(dg[i]);
     dfGamma_ddg(i) = -(dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));
@@ -83,6 +123,7 @@ Gamma.setEntryName(\"AccumulatedSlip\");
         """@TangentOperator {
   dfeel_ddeto = -Stensor4::Id();
   dfeel_ddchi = Stensor(0.);
+  dfchilocal_ddchi = -1.;
   dsig_ddchi = Stensor(0.);
   dpobs_ddchi = 0.;
   auto ddeel_ddeto = Stensor4{};
@@ -91,6 +132,13 @@ Gamma.setEntryName(\"AccumulatedSlip\");
   getIntegrationVariablesDerivatives_eto(ddeel_ddeto, dgs_ddeto, dGamma_ddeto);
   dsig_ddeto = Ce * ddeel_ddeto;
   dpobs_ddeto = dGamma_ddeto;
+  auto ddeel_ddchi = Stensor{};
+  auto dgs_ddchi = tfel::math::tvector<Nss, tfel::math::derivative_type<strain, strain>>{};
+  auto dGamma_ddchi = real{};
+  auto dchilocal_ddchi = real{};
+  getIntegrationVariablesDerivatives_chi(ddeel_ddchi, dgs_ddchi, dGamma_ddchi, dchilocal_ddchi);
+  dsig_ddchi = Ce * ddeel_ddchi;
+  dpobs_ddchi = dGamma_ddchi;
 }
 
 @UpdateAuxiliaryStateVariables {""",

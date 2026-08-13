@@ -31,6 +31,8 @@ def main() -> None:
     for data in (legacy, generic):
         for state in (data.s0, data.s1):
             mgis.setExternalStateVariable(state, "Temperature", 293.15)
+    for state in (generic.s0, generic.s1):
+        mgis.setMaterialProperty(state, "MicromorphicCouplingModulus", 0.0)
 
     max_stress_error = 0.0
     max_gamma_error = 0.0
