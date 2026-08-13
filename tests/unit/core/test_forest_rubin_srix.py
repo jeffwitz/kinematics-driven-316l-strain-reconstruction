@@ -66,7 +66,28 @@ def _manager(behaviour_name: str, points: int = 1) -> Any:
     data = mgis.MaterialDataManager(behaviour, points)
     for state in (data.s0, data.s1):
         mgis.setExternalStateVariable(state, "Temperature", 293.15)
+        _set_local_coupling(mgis, behaviour, state)
     return mgis, data
+
+
+def _set_local_coupling(mgis: Any, behaviour: Any, state: Any) -> None:
+    """Neutralise the scalar micromorphic extension when the law declares it.
+
+    MGIS gives neither `@MaterialProperty` nor `@ExternalStateVariable` a
+    default: once the non-local extension added `Hchi` and the external field,
+    every direct-MGIS test here died inside `buildEvaluators` on the first
+    integration rather than at construction, which is what kept the omission
+    invisible. Both zeros are documented values, not arbitrary filler -- at
+    `Hchi = 0` the law reduces exactly to the historical local SRIX response,
+    the only response these tests are about.
+    """
+
+    for variable in behaviour.mps:
+        if variable.name == "MicromorphicCouplingModulus":
+            mgis.setMaterialProperty(state, variable.name, 0.0)
+    for variable in behaviour.esvs:
+        if variable.name == "NonlocalEquivalentPlasticStrain":
+            mgis.setExternalStateVariable(state, variable.name, 0.0)
 
 
 def _integrate(mgis: Any, data: Any, strain: np.ndarray, time_increment: float) -> bool:

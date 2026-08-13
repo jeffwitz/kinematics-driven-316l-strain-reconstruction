@@ -5587,3 +5587,52 @@ Non appliqué : la session concurrente édite ces fichiers en ce moment.
 Lint : deux `E501` dans `scripts/generate_srix_generic_3d.py` (lignes 29 et 48).
 
 `Claude.md` n'avait pas été mis à jour depuis `7a2ca21`, soit 78 commits.
+
+### 2026-08-14 — Réparation de la régression `MicromorphicCouplingModulus`
+
+Toujours d'actualité au moment de reprendre : **61 échecs, 1454 passés**, cause
+inchangée. La session concurrente avait committé son travail entre-temps
+(arbre propre) sans toucher à ce point.
+
+Le diagnostic de la veille était juste mais **incomplet d'une moitié**. `f013d25`
+n'a pas ajouté une, mais **deux** entrées d'interface à
+`mfront/Fcc316LForestRubinSrix.mfront` :
+
+```
+@MaterialProperty stress Hchi;        → MicromorphicCouplingModulus
+@ExternalStateVariable strain chi;    → NonlocalEquivalentPlasticStrain
+```
+
+MGIS ne donne de valeur par défaut **ni aux propriétés matériau ni aux
+variables d'état externes**. N'avoir corrigé que la première a fait passer les
+tests d'un échec à l'autre, au même endroit — `buildEvaluators` — avec un nom
+différent. C'est le seul intérêt de la note : la symétrie des deux mécanismes
+n'était pas dans mon relevé initial.
+
+Le défaut de conception derrière : ces deux manques ne se manifestent **pas à la
+construction** mais à la première intégration, ce qui les rend invisibles
+jusqu'au premier pas plastique.
+
+Trois corrections :
+
+1. `mfront_behaviours.py` — la fiche `..._structural_plane_stress` déclare
+   maintenant les deux entrées. Son comportement est **généré** depuis la même
+   source SRIX par `generate_structural_plane_stress.sh` et en hérite ; le
+   catalogue le disait muet.
+2. `mfront_gps/adapter.py` — pose les deux à zéro, avec la même précaution de
+   durée de vie que les tampons `Q` (`ExternalStorage` garde un pointeur).
+   Piloté par les **métadonnées compilées** et non par la fiche : c'est la
+   synchronisation manuelle fiche/générateur qui avait échoué. Zéro n'est pas
+   un bouche-trou, c'est la valeur documentée à laquelle la loi redonne
+   exactement la réponse locale historique, et ce backend est local — le
+   couplage non local y est refusé en amont.
+3. Les cinq points de construction MGIS directs des trois fichiers de tests
+   SRIX, via un helper local par fichier.
+
+Vérifié : **1515 passés, 1 ignoré**, zéro échec. Ruff propre après réparation de
+deux `E501` dans `scripts/generate_srix_generic_3d.py` — sortie du générateur
+vérifiée octet pour octet identique avant/après. Doc `-W` verte.
+
+Restent 16 erreurs mypy, toutes antérieures et inchangées par ces corrections
+(mesuré des deux côtés du diff) ; l'essentiel est dans `coupled_newton.py`, en
+cours côté session concurrente.

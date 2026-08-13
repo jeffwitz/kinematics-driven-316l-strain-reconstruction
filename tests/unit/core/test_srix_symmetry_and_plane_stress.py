@@ -101,6 +101,17 @@ def _run(
     data = mgis.MaterialDataManager(behaviour, 1)
     for state in (data.s0, data.s1):
         mgis.setExternalStateVariable(state, "Temperature", 293.15)
+        # MGIS gives neither material properties nor external state variables a
+        # default, so the scalar micromorphic extension fails inside
+        # `buildEvaluators` on the first integration when it is declared and
+        # left unsupplied. At `Hchi = 0` the law reduces exactly to the
+        # historical local SRIX response tested here.
+        for variable in behaviour.mps:
+            if variable.name == "MicromorphicCouplingModulus":
+                mgis.setMaterialProperty(state, variable.name, 0.0)
+        for variable in behaviour.esvs:
+            if variable.name == "NonlocalEquivalentPlasticStrain":
+                mgis.setExternalStateVariable(state, variable.name, 0.0)
     argument = mgis_rotation_argument(np.asarray(rotation, dtype=float)[None, :, :])
     for index in range(steps):
         value = axial * (index + 1) / steps

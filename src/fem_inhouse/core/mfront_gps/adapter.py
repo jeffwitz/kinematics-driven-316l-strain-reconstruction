@@ -235,6 +235,42 @@ class MFrontNativeGeneralisedPlaneStressBatch(
                 self._property_buffers[name] = values
                 self._mgis.setMaterialProperty(self._manager.s0, name, values, storage_mode)
                 self._mgis.setMaterialProperty(self._manager.s1, name, values, storage_mode)
+        # Micromorphic crystal extensions keep their coupling modulus as an
+        # MFront `@MaterialProperty` and their non-local field as an
+        # `@ExternalStateVariable`, so one compiled law serves both the local
+        # and the non-local runs. MGIS gives neither a default, so a behaviour
+        # that declares them and never receives them dies inside
+        # `buildEvaluators` on the first integration -- not at construction,
+        # which is what made the omission invisible until a plastic step. This
+        # backend is a local one: `create_plane_stress_material_batch` rejects
+        # a non-local coupling for it upstream, and both zeros reproduce the
+        # historical local law exactly.
+        # Driven by the COMPILED metadata rather than by the catalogue entry:
+        # the structural closure is generated from the same source as the
+        # condensed behaviour and inherits whatever that source declares, so
+        # reading the behaviour is what keeps this in step with the generator.
+        for variable in self._behaviour.mps:
+            if variable.name != "MicromorphicCouplingModulus":
+                continue
+            values = np.zeros(point_count, dtype=float)
+            self._property_buffers[variable.name] = values
+            self._mgis.setMaterialProperty(
+                self._manager.s0, variable.name, values, storage_mode
+            )
+            self._mgis.setMaterialProperty(
+                self._manager.s1, variable.name, values, storage_mode
+            )
+        for variable in self._behaviour.esvs:
+            if variable.name != "NonlocalEquivalentPlasticStrain":
+                continue
+            values = np.zeros(point_count, dtype=float)
+            self._property_buffers[variable.name] = values
+            self._mgis.setExternalStateVariable(
+                self._manager.s0, variable.name, values, storage_mode
+            )
+            self._mgis.setExternalStateVariable(
+                self._manager.s1, variable.name, values, storage_mode
+            )
         temperature_values = np.ascontiguousarray(
             np.full(point_count, self._temperature, dtype=float)
         )

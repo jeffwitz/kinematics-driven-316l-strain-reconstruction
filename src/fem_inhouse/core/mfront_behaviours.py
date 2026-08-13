@@ -281,7 +281,20 @@ MFRONT_BEHAVIOURS.register(
         identifier="fcc_forest_rubin_srix_structural_plane_stress",
         native_plane_stress_behaviour=None,
         tridimensional_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
-        material_properties=(),
+        # The closure variant is GENERATED from mfront/Fcc316LForestRubinSrix
+        # by scripts/generate_structural_plane_stress.sh, so it inherits the
+        # scalar micromorphic extension of its source. The catalogue has to say
+        # so: a reader comparing this entry with the condensed one above would
+        # otherwise conclude the generated law has no such interface.
+        material_properties=(
+            MFrontVariableSpec("coupling_modulus_mpa", "MicromorphicCouplingModulus"),
+        ),
+        external_state_variables=(
+            MFrontVariableSpec(
+                "nonlocal_equivalent_plastic_strain",
+                "NonlocalEquivalentPlasticStrain",
+            ),
+        ),
         structural_plane_stress_behaviour="Fcc316LForestRubinSrixStructuralPlaneStress",
         internal_state_variables=_fcc_internal("PlasticSlip", "EquivalentPlasticSlip"),
         linear_system_matrix_type="nonsymmetric",

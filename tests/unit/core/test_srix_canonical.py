@@ -86,7 +86,26 @@ def _manager(*, parameters: dict[str, float] | None = None, points: int = 1) -> 
     data = mgis.MaterialDataManager(behaviour, points)
     for state in (data.s0, data.s1):
         mgis.setExternalStateVariable(state, "Temperature", 293.15)
+        _set_local_coupling(mgis, behaviour, state)
     return mgis, data
+
+
+def _set_local_coupling(mgis: Any, behaviour: Any, state: Any) -> None:
+    """Neutralise the scalar micromorphic extension when the law declares it.
+
+    MGIS gives neither `@MaterialProperty` nor `@ExternalStateVariable` a
+    default, so a declared-but-unsupplied one fails inside `buildEvaluators` on
+    the first integration rather than at construction. At `Hchi = 0` the law
+    reduces exactly to the historical local SRIX response -- the only response
+    this file is about.
+    """
+
+    for variable in behaviour.mps:
+        if variable.name == "MicromorphicCouplingModulus":
+            mgis.setMaterialProperty(state, variable.name, 0.0)
+    for variable in behaviour.esvs:
+        if variable.name == "NonlocalEquivalentPlasticStrain":
+            mgis.setExternalStateVariable(state, variable.name, 0.0)
 
 
 def _no_hardening(overstress: float, tau0: float) -> dict[str, float]:
@@ -788,6 +807,7 @@ def _plateau_through(mgis: Any, behaviour: Any) -> float:
     data = mgis.MaterialDataManager(behaviour, 1)
     for state in (data.s0, data.s1):
         mgis.setExternalStateVariable(state, "Temperature", 293.15)
+        _set_local_coupling(mgis, behaviour, state)
     for index in range(60):
         data.s1.gradients[:, :] = _uniaxial_001(0.03 * (index + 1) / 60)
         mgis.integrate(

@@ -26,7 +26,8 @@ def generate(source: str) -> str:
     text = re.sub(r"\bD\b", "Ce", text)
     text = re.sub(r"@Brick StandardElasticity\{.*?\n\};\n", "", text, flags=re.S)
     text = text.replace(
-        "@ExternalStateVariable strain chi;\nchi.setEntryName(\"NonlocalEquivalentPlasticStrain\");",
+        "@ExternalStateVariable strain chi;\n"
+        "chi.setEntryName(\"NonlocalEquivalentPlasticStrain\");",
         """@Gradient StrainStensor eto;
 eto.setGlossaryName(\"Strain\");
 @ThermodynamicForce StressStensor sig;
@@ -45,7 +46,9 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
     )
     text = text.replace(
         "@StateVariable strain Gamma;\nGamma.setEntryName(\"AccumulatedSlip\");",
-        "@StateVariable strain Gamma;\nGamma.setEntryName(\"AccumulatedSlip\");\n@IntegrationVariable strain chilocal;\nchilocal.setEntryName(\"LocalNonlocalEquivalentPlasticStrain\");",
+        "@StateVariable strain Gamma;\nGamma.setEntryName(\"AccumulatedSlip\");\n"
+        "@IntegrationVariable strain chilocal;\n"
+        "chilocal.setEntryName(\"LocalNonlocalEquivalentPlasticStrain\");",
         1,
     )
     text = text.replace(
