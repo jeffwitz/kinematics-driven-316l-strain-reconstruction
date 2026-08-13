@@ -64,6 +64,7 @@ def _run(
     tolerance: float,
     coupling_modulus_mpa: float,
     mfront_threads: int,
+    minimum_step_divisor: int,
     boundary_history: np.ndarray,
     displacement_x: np.ndarray,
     displacement_y: np.ndarray,
@@ -84,7 +85,7 @@ def _run(
         increments=increments,
         residual_tolerance=tolerance,
         max_newton_iterations=40,
-        minimum_step_divisor=32,
+        minimum_step_divisor=minimum_step_divisor,
         mfront_threads=mfront_threads,
     )
     nonlocal_config = replace(
@@ -120,6 +121,13 @@ def _median_mad(values: list[float]) -> tuple[float, float]:
     return median, mad
 
 
+def _write_report(path: Path | None, report: dict[str, object]) -> None:
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ebsd-orientation-h5", type=Path, default=DEFAULT_EBSD)
@@ -130,11 +138,15 @@ def main() -> int:
     parser.add_argument("--tolerance", type=float, default=1e-6)
     parser.add_argument("--coupling-modulus-mpa", type=float, default=5168.0)
     parser.add_argument("--mfront-threads", type=int, default=4)
+    parser.add_argument("--minimum-step-divisor", type=int, default=1024)
+    parser.add_argument("--target-load-fraction", type=float, default=1.0)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.repeats < 1:
         raise SystemExit("--repeats must be positive")
+    if not 0.0 < args.target_load_fraction <= 1.0:
+        raise SystemExit("--target-load-fraction must lie in (0, 1]")
 
     legacy_library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     generic_library = os.environ.get("SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY")
@@ -159,23 +171,57 @@ def main() -> int:
                 tolerance=args.tolerance,
                 coupling_modulus_mpa=args.coupling_modulus_mpa,
                 mfront_threads=args.mfront_threads,
+                minimum_step_divisor=args.minimum_step_divisor,
                 boundary_history=np.stack(
-                    [fraction * boundary for fraction in np.linspace(0.0, 1.0, args.increments + 1)]
+                    [
+                        fraction * boundary
+                        for fraction in np.linspace(
+                            0.0, args.target_load_fraction, args.increments + 1
+                        )
+                    ]
                 ),
-                displacement_x=boundary[..., 0],
-                displacement_y=boundary[..., 1],
+                displacement_x=args.target_load_fraction * boundary[..., 0],
+                displacement_y=args.target_load_fraction * boundary[..., 1],
                 yield_stress=yield_stress.reshape(mesh, mesh),
                 hardening=hardening.reshape(mesh, mesh),
             )
             for _ in range(args.repeats)
         ]
 
+    report: dict[str, object] = {
+        "status": "running",
+        "provenance": provenance,
+        "increments": args.increments,
+        "target_load_fraction": args.target_load_fraction,
+        "tolerance": args.tolerance,
+        "coupling_modulus_mpa": args.coupling_modulus_mpa,
+        "minimum_step_divisor": args.minimum_step_divisor,
+        "repeats": args.repeats,
+    }
+    _write_report(args.output, report)
     try:
         legacy_runs = runs(
             "mfront-3d-condensed-plane-stress", legacy_library, "fcc_forest_rubin_srix"
         )
     except Exception as error:
+        report.update(status="legacy_failed", failure_reason=str(error))
+        _write_report(args.output, report)
         raise SystemExit(f"legacy backend failed on P43 crop: {error}") from error
+    legacy, legacy_times = legacy_runs[-1][0], [run[1] for run in legacy_runs]
+    legacy_median, legacy_mad = _median_mad(legacy_times)
+    report["legacy"] = {
+        "elapsed_seconds_last": legacy_times[-1],
+        "elapsed_seconds_samples": legacy_times,
+        "elapsed_seconds_median": legacy_median,
+        "elapsed_seconds_mad": legacy_mad,
+        "converged_increments": legacy.diagnostics.converged_increments,
+        "cutbacks": legacy.diagnostics.cutbacks,
+        "maximum_plane_stress_residual_mpa": (
+            legacy.diagnostics.maximum_gauss_point_plane_stress_residual_mpa
+        ),
+    }
+    report["status"] = "legacy_completed"
+    _write_report(args.output, report)
     try:
         generic_runs = runs(
             "mfront-srix-generic-plane-stress",
@@ -183,30 +229,14 @@ def main() -> int:
             "fcc_forest_rubin_srix_generic_validation",
         )
     except Exception as error:
+        report.update(status="generic_failed", failure_reason=str(error))
+        _write_report(args.output, report)
         raise SystemExit(f"Generic backend failed on P43 crop: {error}") from error
-    legacy, legacy_times = legacy_runs[-1][0], [run[1] for run in legacy_runs]
     generic, generic_times = generic_runs[-1][0], [run[1] for run in generic_runs]
-    legacy_median, legacy_mad = _median_mad(legacy_times)
     generic_median, generic_mad = _median_mad(generic_times)
 
-    report = {
+    report.update({
         "status": "ok",
-        "provenance": provenance,
-        "increments": args.increments,
-        "tolerance": args.tolerance,
-        "coupling_modulus_mpa": args.coupling_modulus_mpa,
-        "repeats": args.repeats,
-        "legacy": {
-            "elapsed_seconds_last": legacy_times[-1],
-            "elapsed_seconds_samples": legacy_times,
-            "elapsed_seconds_median": legacy_median,
-            "elapsed_seconds_mad": legacy_mad,
-            "converged_increments": legacy.diagnostics.converged_increments,
-            "cutbacks": legacy.diagnostics.cutbacks,
-            "maximum_plane_stress_residual_mpa": (
-                legacy.diagnostics.maximum_gauss_point_plane_stress_residual_mpa
-            ),
-        },
         "generic": {
             "elapsed_seconds_last": generic_times[-1],
             "elapsed_seconds_samples": generic_times,
@@ -228,11 +258,9 @@ def main() -> int:
             ),
         },
         "timing_ratio_generic_over_legacy_median": generic_median / legacy_median,
-    }
+    })
     rendered = json.dumps(report, indent=2, sort_keys=True)
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(rendered + "\n", encoding="utf-8")
+    _write_report(args.output, report)
     print(rendered)
     return 0
 
