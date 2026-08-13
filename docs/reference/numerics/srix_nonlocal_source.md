@@ -78,3 +78,13 @@ formulations agree over six plastic subincrements to a maximum relative stress
 error of (3.94\times10^{-14}). A pure Kelvin shear test also agrees exactly
 ((0.244) MPa for a (10^{-6}) strain component). Reproduce the comparison
 with `scripts/compare_srix_generic_legacy.sh`.
+
+This equivalence result qualifies the local mechanical response and its
+strain tangent only. It does not qualify the three cross-coupling blocks.
+The current TFEL code generation exposes the derivative accessor for the
+array-valued slip residuals as non-assignable in `@TangentOperator`; attempting
+to inject `dfg_ddchi` therefore fails at compilation. The Generic formulation
+must not be promoted to the monolithic bridge until the local system exposes
+these derivatives and they pass independent finite-difference checks. The
+validation-only Generic probe therefore remains an interface/legacy-equivalence
+artifact, not a production constitutive backend.
