@@ -187,6 +187,15 @@ Generic. The same Generic batch took `0.892 s` with one thread, so the
 four-thread path provides a measured `2.87x` speed-up. Stress, accumulated
 slip, and tangent remained equivalent to relative errors below `2.2e-15`.
 
+The first nominal P43 M100 load step was also replayed at its correct target
+fraction `1/8` with the qualified `Hchi=5168 MPa` coupling. Both nested solves
+accepted two substeps after one cutback. Legacy took `211.2 s`; Generic took
+`148.4 s`, a ratio of `0.703`. Relative differences were `1.9e-12` in
+displacement, `9.7e-10` in stress, `5.1e-9` in accumulated slip, and `4.8e-10`
+in the non-local field. The prior diagnostic that used one increment to reach
+the full load was invalid: it applied an increment eight times larger than the
+first P43 step.
+
 Build the validation library reproducibly with
 `scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
 validation-only and must not replace the production SRIX library implicitly.

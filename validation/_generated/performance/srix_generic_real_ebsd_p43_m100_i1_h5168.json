@@ -1,0 +1,57 @@
+{
+  "coupling_modulus_mpa": 5168.0,
+  "generic": {
+    "converged_increments": 2,
+    "cutbacks": 1,
+    "elapsed_seconds_last": 148.37493701797212,
+    "elapsed_seconds_mad": 0.0,
+    "elapsed_seconds_median": 148.37493701797212,
+    "elapsed_seconds_samples": [
+      148.37493701797212
+    ],
+    "maximum_plane_stress_residual_mpa": 2.4479704641291824e-09
+  },
+  "increments": 1,
+  "legacy": {
+    "converged_increments": 2,
+    "cutbacks": 1,
+    "elapsed_seconds_last": 211.18558936502086,
+    "elapsed_seconds_mad": 0.0,
+    "elapsed_seconds_median": 211.18558936502086,
+    "elapsed_seconds_samples": [
+      211.18558936502086
+    ],
+    "maximum_plane_stress_residual_mpa": 2.4973108025960755e-08
+  },
+  "minimum_step_divisor": 1024,
+  "provenance": {
+    "angles_sha256": "6962756992b350fbc13033547e289925b937375d4a666346296a707ebea2fd6d",
+    "angles_shape": [
+      100,
+      100,
+      3
+    ],
+    "crop_nodes": [
+      1570,
+      1670,
+      1035,
+      1135
+    ],
+    "source_file": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "source_shape": [
+      3600,
+      3100
+    ]
+  },
+  "relative_errors": {
+    "accumulated_slip": 5.077008297165796e-09,
+    "displacement": 1.939230714518723e-12,
+    "nonlocal_source": 4.758541732172304e-10,
+    "stress": 9.733251610149665e-10
+  },
+  "repeats": 1,
+  "status": "ok",
+  "target_load_fraction": 0.125,
+  "timing_ratio_generic_over_legacy_median": 0.7025807843427966,
+  "tolerance": 1e-06
+}
