@@ -155,6 +155,15 @@ displacement, stress, accumulated slip, and the non-local source. This is a
 constitutive/interface comparison, not yet a production monolithic SRIX
 qualification or a P43 performance claim.
 
+The same crop was also run through the global nested solver three times. Both
+backends converged all four increments without cutbacks. The median elapsed
+times were `2.264 s` for the historical backend and `2.297 s` for Generic, a
+Generic/legacy ratio of `1.015`. The relative differences were `3.4e-7` for
+displacement, `7.5e-7` for stress, `9.2e-7` for accumulated slip, and `1.6e-8`
+for the non-local source. This confirms that the constitutive equivalence is
+preserved by the global nested path at the development tolerance; it is not a
+qualification of the monolithic SRIX solver.
+
 For a constitutive-only timing and equivalence check that does not require the
 global MKL/PyPardiso solver, use
 `scripts/compare_srix_generic_real_ebsd_material.py`. On the registered 3x3

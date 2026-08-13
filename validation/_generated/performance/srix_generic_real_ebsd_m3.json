@@ -1,0 +1,58 @@
+{
+  "generic": {
+    "converged_increments": 4,
+    "cutbacks": 0,
+    "elapsed_seconds_last": 2.4097496829926968,
+    "elapsed_seconds_mad": 0.11245713999960572,
+    "elapsed_seconds_median": 2.297292542993091,
+    "elapsed_seconds_samples": [
+      2.142406533996109,
+      2.297292542993091,
+      2.4097496829926968
+    ],
+    "maximum_plane_stress_residual_mpa": 4.279537259459142e-09
+  },
+  "increments": 4,
+  "legacy": {
+    "converged_increments": 4,
+    "cutbacks": 0,
+    "elapsed_seconds_last": 2.206108234997373,
+    "elapsed_seconds_mad": 0.057491476996801794,
+    "elapsed_seconds_median": 2.263599711994175,
+    "elapsed_seconds_samples": [
+      2.950366851990111,
+      2.263599711994175,
+      2.206108234997373
+    ],
+    "maximum_plane_stress_residual_mpa": 3.0149335492975305e-08
+  },
+  "provenance": {
+    "angles_sha256": "2983ec2329c98ba1eb72af83bee5686416c2ca47515aa5cc236cd25bf9895ce6",
+    "angles_shape": [
+      3,
+      3,
+      3
+    ],
+    "crop_nodes": [
+      1610,
+      1613,
+      1075,
+      1078
+    ],
+    "source_file": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "source_shape": [
+      3600,
+      3100
+    ]
+  },
+  "relative_errors": {
+    "accumulated_slip": 9.219490053083406e-07,
+    "displacement": 3.355118200345854e-07,
+    "nonlocal_source": 1.563424038695692e-08,
+    "stress": 7.457803774659972e-07
+  },
+  "repeats": 3,
+  "status": "ok",
+  "timing_ratio_generic_over_legacy_median": 1.0148846241764333,
+  "tolerance": 1e-06
+}
