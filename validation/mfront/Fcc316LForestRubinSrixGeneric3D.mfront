@@ -125,6 +125,8 @@ pobs.setEntryName("AccumulatedSlipOutput");
 @StateVariable StrainStensor eel;
 @StateVariable strain Gamma;
 Gamma.setEntryName("AccumulatedSlip");
+@IntegrationVariable strain chilocal;
+chilocal.setEntryName("LocalNonlocalEquivalentPlasticStrain");
 
 /*!
  * Equivalent strain increment below which the step is treated as producing no
@@ -177,6 +179,12 @@ a.setEntryName("BackStrain");
   using size_type = unsigned short;
   const auto& ss = Fcc316LForestRubinSrixGeneric3DSlipSystems<real>::getSlipSystems();
   const auto& m = ss.him;
+  // The legacy SRIX law declares chi as an external state variable. In the
+  // Implicit/Generic integrator convention, that is the value at the start of
+  // the increment; dchi is its prescribed increment. Preserve that contract
+  // while routing the array-valued slip residuals through the scalar proxy.
+  fchilocal = chilocal + dchilocal - chi;
+  dfchilocal_ddchilocal = 1.;
   feel = deel - deto;
   dfeel_ddeel = Stensor4::Id();
   for (size_type i=0; i!=Nss; ++i) {
@@ -261,7 +269,7 @@ a.setEntryName("BackStrain");
     // identified SRIX parameterisation; Hchi is therefore supplied explicitly
     // by the caller and is kept separate from the local SRIX hardening.
     if (Hchi != stress(0)) {
-      r += Hchi * (gamma_trial - chi);
+      r += Hchi * (gamma_trial - (chilocal + theta * dchilocal));
     }
     const auto da = (dg[i] - d * a[i] * dg_abs[i]) /
                     (1 + theta * d * dg_abs[i]);
@@ -287,6 +295,7 @@ a.setEntryName("BackStrain");
     const auto dflow = flow_slope * dpositive;
     const auto dflow_hardening = flow_slope * dpositive;
     const auto sgn = drive_sign;
+    dfg_ddchilocal(i) = -theta * dflow_hardening * Hchi * sgn;
     // elasticity
     // rate-independent plasticity
     fg[i] -= flow_slope * f * sgn;
@@ -315,6 +324,7 @@ a.setEntryName("BackStrain");
 }
 
 @TangentOperator {
+  dfchilocal_ddchi = -1.;
   dfeel_ddeto = -Stensor4::Id();
   dfeel_ddchi = Stensor(0.);
   dfGamma_ddeto = Stensor(0.);

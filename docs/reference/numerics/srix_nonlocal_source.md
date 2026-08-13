@@ -81,10 +81,23 @@ with `scripts/compare_srix_generic_legacy.sh`.
 
 This equivalence result qualifies the local mechanical response and its
 strain tangent only. It does not qualify the three cross-coupling blocks.
-The current TFEL code generation exposes the derivative accessor for the
-array-valued slip residuals as non-assignable in `@TangentOperator`; attempting
-to inject `dfg_ddchi` therefore fails at compilation. The Generic formulation
-must not be promoted to the monolithic bridge until the local system exposes
-these derivatives and they pass independent finite-difference checks. The
-validation-only Generic probe therefore remains an interface/legacy-equivalence
-artifact, not a production constitutive backend.
+The generic validation formulation now uses a scalar local lifting variable,
+`chilocal`, constrained by
+
+\[
+\texttt{chilocal}+\Delta\texttt{chilocal}
+  = \texttt{chi}.
+\]
+
+The twelve slip residuals depend on `chilocal + theta*dchilocal`, so the
+gradient-to-array derivative is replaced by the scalar constraint derivative.
+This preserves the legacy external-state-variable convention: `chi` is the
+value at the beginning of the increment and `dchi` is its prescribed
+increment. The formulation compiles and reproduces the legacy plastic
+response with a non-zero micromorphic coupling on changing-chi increments.
+The comparison script accepts `HCHI` and `CHISCALE` to exercise that path.
+
+The cross-tangent blocks still require independent finite-difference
+qualification, including increments where chi changes. The Generic formulation
+must not be promoted to the monolithic bridge until those checks pass; it
+remains a validation-only constitutive backend for now.

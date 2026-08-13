@@ -44,6 +44,11 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
         "@AuxiliaryStateVariable strain a[Nss];\n\n@LocalVariable Stensor4 Ce;",
     )
     text = text.replace(
+        "@StateVariable strain Gamma;\nGamma.setEntryName(\"AccumulatedSlip\");",
+        "@StateVariable strain Gamma;\nGamma.setEntryName(\"AccumulatedSlip\");\n@IntegrationVariable strain chilocal;\nchilocal.setEntryName(\"LocalNonlocalEquivalentPlasticStrain\");",
+        1,
+    )
+    text = text.replace(
         "@Integrator {",
         """@Predictor {
   deel = deto;
@@ -77,6 +82,12 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
   using size_type = unsigned short;
   const auto& ss = Fcc316LForestRubinSrixGeneric3DSlipSystems<real>::getSlipSystems();
   const auto& m = ss.him;
+  // The legacy SRIX law declares chi as an external state variable. In the
+  // Implicit/Generic integrator convention, that is the value at the start of
+  // the increment; dchi is its prescribed increment. Preserve that contract
+  // while routing the array-valued slip residuals through the scalar proxy.
+  fchilocal = chilocal + dchilocal - chi;
+  dfchilocal_ddchilocal = 1.;
   feel = deel - deto;
   dfeel_ddeel = Stensor4::Id();
   for (size_type i=0; i!=Nss; ++i) {
@@ -100,6 +111,7 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
 }
 
 @TangentOperator {
+  dfchilocal_ddchi = -1.;
   dfeel_ddeto = -Stensor4::Id();
   dfeel_ddchi = Stensor(0.);
   dfGamma_ddeto = Stensor(0.);
@@ -139,6 +151,16 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
         "    dfGamma_ddg(i) = -theta * (dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));",
         "    fGamma -= abs(dg[i]);\n"
         "    dfGamma_ddg(i) = -(dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));",
+    )
+    text = text.replace(
+        "    const auto sgn = drive_sign;\n",
+        "    const auto sgn = drive_sign;\n"
+        "    dfg_ddchilocal(i) = -theta * dflow_hardening * Hchi * sgn;\n",
+        1,
+    )
+    text = text.replace(
+        "gamma_trial - chi",
+        "gamma_trial - (chilocal + theta * dchilocal)",
     )
     return text
 

@@ -8,6 +8,9 @@ set +u
 source /home/jeff/.local/share/tfel/env/env.sh
 set -u
 
+# HCHI activates the scalar micromorphic term. CHISCALE drives a non-zero
+# field; the comparison follows the legacy external-state-variable convention
+# in which chi is the value at the beginning of each increment.
 "$root/.venv/bin/python" "$root/scripts/generate_srix_generic_3d.py" \
   "$root/mfront/Fcc316LForestRubinSrix.mfront" \
   "$work/Fcc316LForestRubinSrixGeneric3D.mfront"
@@ -15,6 +18,8 @@ set -u
 
 LEGACY="$root/build/mfront/src/libBehaviour.so" \
 GENERIC="$work/src/libBehaviour.so" \
+HCHI="${HCHI:-0}" \
+CHISCALE="${CHISCALE:-2e-4}" \
 "$root/.venv/bin/python" - <<'PY'
 import os
 
@@ -25,11 +30,13 @@ legacy = mgis.load(os.environ["LEGACY"], "Fcc316LForestRubinSrix", mgis.Hypothes
 generic = mgis.load(
     os.environ["GENERIC"], "Fcc316LForestRubinSrixGeneric3D", mgis.Hypothesis.Tridimensional
 )
+coupling = float(os.environ["HCHI"])
+chi_scale = float(os.environ["CHISCALE"])
 ld = mgis.MaterialDataManager(legacy, 1)
 gd = mgis.MaterialDataManager(generic, 1)
 for data, behaviour in ((ld, legacy), (gd, generic)):
     for state in (data.s0, data.s1):
-        mgis.setMaterialProperty(state, "MicromorphicCouplingModulus", 0.0)
+        mgis.setMaterialProperty(state, "MicromorphicCouplingModulus", coupling)
         for variable in behaviour.external_state_variables:
             mgis.setExternalStateVariable(
                 state, variable.name, 293.15 if variable.name == "Temperature" else 0.0
@@ -38,8 +45,10 @@ for data, behaviour in ((ld, legacy), (gd, generic)):
 print("step,legacy_status,generic_status,relative_stress_error,max_stress_error_mpa")
 for step in range(1, 7):
     strain = np.array([0.003 * step / 8, -0.0009 * step / 8, 0, 0, 0, 0.0])
+    chi = chi_scale * step / 8
+    mgis.setExternalStateVariable(ld.s1, "NonlocalEquivalentPlasticStrain", chi)
     ld.s1.gradients[0] = strain
-    gd.s1.gradients[0] = np.concatenate((strain, [0.0]))
+    gd.s1.gradients[0] = np.concatenate((strain, [chi]))
     ls = mgis.integrate(
         ld, mgis.IntegrationType.IntegrationWithConsistentTangentOperator, 1 / 8, 0, 1
     )
