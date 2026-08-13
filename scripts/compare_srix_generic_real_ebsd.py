@@ -63,6 +63,7 @@ def _run(
     increments: int,
     tolerance: float,
     coupling_modulus_mpa: float,
+    mfront_threads: int,
     boundary_history: np.ndarray,
     displacement_x: np.ndarray,
     displacement_y: np.ndarray,
@@ -82,9 +83,9 @@ def _run(
         },
         increments=increments,
         residual_tolerance=tolerance,
-        max_newton_iterations=20,
+        max_newton_iterations=40,
         minimum_step_divisor=32,
-        mfront_threads=1,
+        mfront_threads=mfront_threads,
     )
     nonlocal_config = replace(
         case.config.nonlocal_plasticity,
@@ -128,6 +129,7 @@ def main() -> int:
     parser.add_argument("--increments", type=int, default=4)
     parser.add_argument("--tolerance", type=float, default=1e-6)
     parser.add_argument("--coupling-modulus-mpa", type=float, default=5168.0)
+    parser.add_argument("--mfront-threads", type=int, default=4)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -156,6 +158,7 @@ def main() -> int:
                 increments=args.increments,
                 tolerance=args.tolerance,
                 coupling_modulus_mpa=args.coupling_modulus_mpa,
+                mfront_threads=args.mfront_threads,
                 boundary_history=np.stack(
                     [fraction * boundary for fraction in np.linspace(0.0, 1.0, args.increments + 1)]
                 ),
