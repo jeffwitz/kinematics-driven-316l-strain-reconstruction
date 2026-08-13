@@ -24,6 +24,7 @@ from fem_inhouse.core.constitutive_sensitivities import finite_difference_sensit
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
 from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
 from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
+from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
     make_dct_helmholtz_inverse,
@@ -173,6 +174,31 @@ def _make_material(
         library,
         yield_stress=np.repeat(yield_stress, 2),
         hardening=np.repeat(hardening, 2),
+    )
+
+
+def _make_srix_material(
+    library: Path,
+    point_count: int,
+    coupling_modulus_mpa: float,
+):
+    """Build the Generic SRIX material through the common batch factory."""
+
+    return create_plane_stress_material_batch(
+        "mfront-srix-generic-plane-stress",
+        np.full(point_count, 124.0),
+        np.full(point_count, 380.0),
+        0.245,
+        young_modulus_mpa=205_000.0,
+        poisson_ratio=0.3,
+        hardening_mode="ludwik",
+        plastic_strain_max=0.2,
+        plastic_table_points=1000,
+        first_positive_plastic_strain=1e-6,
+        mfront_library=library,
+        mfront_threads=4,
+        mfront_behaviour_id="fcc_forest_rubin_srix_generic_validation",
+        nonlocal_coupling_modulus_mpa=coupling_modulus_mpa,
     )
 
 
@@ -596,7 +622,9 @@ def _solve_production_nested_sequence(
         grid.nx, grid.ny, 2, 3
     )
     final_peeq = np.asarray(
-        final_trial.observables["equivalent_plastic_strain"]
+        final_trial.observables[
+            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+        ]
     ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
     material.revert()
 
@@ -640,6 +668,7 @@ def _solve_sequence(
     staggered_relaxation: float,
     fd_strain_step: float,
     fd_chi_step: float,
+    material_model: str = "j2",
 ) -> dict[str, object]:
     if method == "production-nested":
         if backend != "native":
@@ -657,7 +686,11 @@ def _solve_sequence(
             coupling_modulus_mpa=coupling_modulus_mpa,
             absolute_tolerance=absolute_tolerance,
         )
-    if backend == "generic":
+    if material_model == "srix":
+        material = _make_srix_material(
+            library, kinematics.material_point_count, coupling_modulus_mpa
+        )
+    elif backend == "generic":
         material = _make_material(
             library, kinematics.material_point_count, yield_stress, hardening
         )
@@ -721,7 +754,7 @@ def _solve_sequence(
             trial = evaluate_material(state[0], state[1], False)
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             source = (
-                np.asarray(trial.observables["equivalent_plastic_strain"])
+                np.asarray(trial.observables["nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
                 .copy()
@@ -734,7 +767,7 @@ def _solve_sequence(
         def source_only(state: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
             trial = evaluate_material(state[0], state[1], False)
             source = (
-                np.asarray(trial.observables["equivalent_plastic_strain"])
+                np.asarray(trial.observables["nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
                 .copy()
@@ -751,7 +784,7 @@ def _solve_sequence(
             trial = evaluate_material(value, local_chi, True)
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             source = (
-                np.asarray(trial.observables["equivalent_plastic_strain"])
+                np.asarray(trial.observables["nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
             )
@@ -763,6 +796,16 @@ def _solve_sequence(
                 dsigma_dchi = np.zeros((*tangent.shape[:-2], 3))
                 dp_depsilon = np.zeros((*tangent.shape[:-2], 3))
                 dp_dchi = np.zeros(tangent.shape[:-2])
+            elif material_model == "srix":
+                dsigma_dchi = np.asarray(trial.observables["generic_dsigma_dchi"]).reshape(
+                    grid.nx, grid.ny, 2, 3
+                )
+                dp_depsilon = np.asarray(trial.observables["generic_dq_depsilon"]).reshape(
+                    grid.nx, grid.ny, 2, 3
+                )
+                dp_dchi = np.asarray(trial.observables["generic_dq_dchi"]).reshape(
+                    grid.nx, grid.ny, 2
+                )
             elif backend == "generic":
                 dsigma_dchi = np.asarray(trial.observables["generic_dsigma_dchi"]).reshape(
                     grid.nx, grid.ny, 2, 3
@@ -786,7 +829,11 @@ def _solve_sequence(
                         consistent_tangent=False,
                     )
                     stress_probe = np.asarray(probe.stress_in_plane_mpa)
-                    source_probe = np.asarray(probe.observables["equivalent_plastic_strain"])
+                    source_probe = np.asarray(
+                        probe.observables[
+                            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+                        ]
+                    )
                     material.revert()
                     return stress_probe, source_probe
 
@@ -795,7 +842,11 @@ def _solve_sequence(
                     strain_from_mechanical(value),
                     point_chi,
                     base_stress=np.asarray(trial.stress_in_plane_mpa),
-                    base_observable=np.asarray(trial.observables["equivalent_plastic_strain"]),
+                    base_observable=np.asarray(
+                        trial.observables[
+                            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+                        ]
+                    ),
                     strain_step=fd_strain_step,
                     parameter_step=fd_chi_step,
                     central_parameter=False,
@@ -971,7 +1022,9 @@ def _solve_sequence(
         grid.nx, grid.ny, 2, 3
     )
     final_peeq = np.asarray(
-        final_trial.observables["equivalent_plastic_strain"]
+        final_trial.observables[
+            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+        ]
     ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
     return {
         "method": method,
@@ -997,6 +1050,7 @@ def _solve_sequence(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=("native", "generic"), default="native")
+    parser.add_argument("--material", choices=("j2", "srix"), default="j2")
     parser.add_argument(
         "--method",
         choices=("monolithic", "staggered", "production-nested", "both"),
@@ -1027,6 +1081,8 @@ def main() -> int:
     parser.add_argument("--fd-chi-step", type=float, default=1.0e-7)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.material == "srix" and args.backend != "generic":
+        raise SystemExit("SRIX requires --backend generic")
     library = args.generic_library if args.backend == "generic" else args.library
     if library is None:
         parser.error("--library is required for native or --generic-library for generic")
@@ -1047,7 +1103,11 @@ def main() -> int:
     grid = StructuredGrid2D(mesh, mesh, mesh * PIXEL_SIZE_MM, mesh * PIXEL_SIZE_MM)
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
-    if args.backend == "generic":
+    if args.material == "srix":
+        virgin = _make_srix_material(
+            library, point_count, args.coupling_modulus_mpa
+        )
+    elif args.backend == "generic":
         virgin = _make_material(library, point_count, yield_stress, hardening)
     else:
         virgin = _make_native_material(
@@ -1104,6 +1164,7 @@ def main() -> int:
                 staggered_relaxation=args.staggered_relaxation,
                 fd_strain_step=args.fd_strain_step,
                 fd_chi_step=args.fd_chi_step,
+                material_model=args.material,
             )
             if args.method in ("monolithic", "both"):
                 try:
@@ -1153,7 +1214,7 @@ def main() -> int:
             print(f"global DIC cutback: retrying with {actual_path_substeps} subdivisions")
     total = time.perf_counter() - started
     report = {
-        "status": f"completed_coupled_{args.backend}_j2_p43",
+        "status": f"completed_coupled_{args.backend}_{args.material}_p43",
         "backend": args.backend,
         "crop_nodes": list(crop),
         "mesh": [mesh, mesh],
@@ -1173,6 +1234,7 @@ def main() -> int:
         "b0_projection_error": projection_error,
         "total_elapsed_seconds": total,
         "method": args.method,
+        "material": args.material,
         "monolithic": (
             None
             if mono is None
