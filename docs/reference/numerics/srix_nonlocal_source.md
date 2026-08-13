@@ -69,3 +69,10 @@ contract and one elastic integration. It is deliberately not loaded by the
 production bridge yet. The next required check is constitutive equivalence of
 the generic formulation against the historical SRIX behaviour on plastic
 paths, followed by plane-stress condensation of all four blocks.
+
+The first controlled comparison is not accepted as equivalent: elastic steps
+agree to about (4\times10^{-14}) relative stress error, but the relative
+stress discrepancy reaches (1.53\times10^{-2}) by the sixth plastic
+subincrement. Reproduce it with
+`scripts/compare_srix_generic_legacy.sh`. The generic formulation remains
+validation-only until this plastic discrepancy is explained and removed.
