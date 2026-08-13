@@ -265,6 +265,8 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         self._maximum_iterations = int(maximum_local_iterations)
         self._committed_transverse = np.zeros((bridge.point_count, 3))
         self._trial_transverse: FloatArray | None = None
+        self._committed_chi = np.zeros(bridge.point_count)
+        self._trial_chi = np.zeros(bridge.point_count)
         self._has_trial = False
 
     @property
@@ -274,6 +276,24 @@ class SrixGeneric3DCondensedPlaneStressBatch:
     @property
     def backend_name(self) -> str:
         return "srix-generic-3d-condensed-plane-stress"
+
+    @property
+    def completion_strategy(self) -> str:
+        return "srix_generic_3d_local_condensation"
+
+    @property
+    def committed_nonlocal_equivalent_plastic_strain(self) -> FloatArray:
+        return self._committed_chi.copy()
+
+    def set_nonlocal_equivalent_plastic_strain(self, values: ArrayLike) -> None:
+        values_array = np.asarray(values, dtype=float).reshape(-1)
+        if values_array.shape != (self.point_count,):
+            raise ValueError(f"chi must have shape {(self.point_count,)}")
+        if not np.isfinite(values_array).all() or np.any(values_array < 0):
+            raise ValueError("chi must be finite and non-negative")
+        if self._has_trial:
+            self.revert()
+        self._trial_chi[:] = values_array
 
     def evaluate(
         self,
@@ -341,15 +361,41 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             transverse_stress_mpa=residual.copy(),
         )
 
+    def evaluate_in_plane(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        consistent_tangent: bool = True,
+    ):
+        """Expose the common material protocol using the current trial chi."""
+
+        from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
+
+        trial = self.evaluate(
+            in_plane_strain,
+            self._trial_chi,
+            time_increment=time_increment,
+        )
+        return InPlaneConstitutiveTrial(
+            stress_in_plane_mpa=trial.stress_in_plane_mpa,
+            tangent_in_plane_mpa=(
+                trial.tangent_in_plane_mpa if consistent_tangent else None
+            ),
+            observables={"accumulated_slip": trial.accumulated_slip},
+        )
+
     def commit(self) -> None:
         if not self._has_trial or self._trial_transverse is None:
             raise RuntimeError("no successful Generic plane-stress trial to commit")
         self._bridge.commit()
         self._committed_transverse[:] = self._trial_transverse
+        self._committed_chi[:] = self._trial_chi
         self._trial_transverse = None
         self._has_trial = False
 
     def revert(self) -> None:
         self._bridge.revert()
         self._trial_transverse = None
+        self._trial_chi[:] = self._committed_chi
         self._has_trial = False

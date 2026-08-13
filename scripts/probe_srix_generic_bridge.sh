@@ -71,6 +71,22 @@ plane_trial = condensed.evaluate(in_plane, np.array([2.0e-4, 1.0e-4]), time_incr
 assert plane_trial.tangent_in_plane_mpa.shape == (2, 3, 3)
 assert np.max(np.abs(plane_trial.transverse_stress_mpa)) < 1.0e-8
 condensed.commit()
+chi_value = np.array([2.0e-4, 1.0e-4])
+protocol_bridge = SrixGeneric3DMaterialPointBatch(
+    os.environ["LIBRARY"],
+    point_count=2,
+    micromorphic_coupling_modulus_mpa=100.0,
+)
+protocol_adapter = SrixGeneric3DCondensedPlaneStressBatch(protocol_bridge)
+protocol_adapter.set_nonlocal_equivalent_plastic_strain(chi_value)
+protocol_trial = protocol_adapter.evaluate_in_plane(
+    in_plane,
+    time_increment=1.0,
+    consistent_tangent=True,
+)
+assert protocol_trial.tangent_in_plane_mpa is not None
+assert "accumulated_slip" in protocol_trial.observables
+protocol_adapter.commit()
 
 
 def response(in_plane_value, chi_value):
@@ -84,7 +100,6 @@ def response(in_plane_value, chi_value):
     return result
 
 
-chi_value = np.array([2.0e-4, 1.0e-4])
 fd_mechanical = np.zeros((2, 3, 3))
 fd_stress_chi = np.zeros((2, 3, 1))
 fd_source_strain = np.zeros((2, 1, 3))
