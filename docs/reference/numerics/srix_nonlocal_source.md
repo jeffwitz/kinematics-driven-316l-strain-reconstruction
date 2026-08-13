@@ -128,3 +128,7 @@ production backend yet. It now also exposes the common material-protocol
 operations `set_nonlocal_equivalent_plastic_strain` and `evaluate_in_plane`,
 so the eventual factory registration does not require a solver-specific
 special case.
+
+Build the validation library reproducibly with
+`scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
+validation-only and must not replace the production SRIX library implicitly.
