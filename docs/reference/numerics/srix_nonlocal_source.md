@@ -100,6 +100,12 @@ script accepts `HCHI` and `CHISCALE` to exercise that path.
 The four 3-D tangent blocks now pass an independent central finite-difference
 check, including a changing-chi history, with a maximum block-relative error
 of `3.02e-9`. Reproduce it with
-`scripts/validate_srix_generic_tangent_blocks.sh`. This qualifies the local
-3-D Generic formulation only; plane-stress condensation of all four blocks is
-still required before promotion to the monolithic bridge.
+`scripts/validate_srix_generic_tangent_blocks.sh`.
+
+The plane-stress closure has also been validated externally by eliminating
+the transverse Kelvin components `(zz, xz, yz)` from the complete 3-D tangent.
+All four condensed blocks pass an independent central finite-difference check
+with relative error `7.45e-10`; the maximum transverse-stress residual is
+`2.3e-14` in the one-point qualification. Reproduce it with
+`scripts/validate_srix_generic_plane_stress_blocks.sh`. This validates the
+condensation mathematics, but it is not yet the production monolithic bridge.
