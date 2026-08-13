@@ -180,6 +180,13 @@ The stress, accumulated-slip, and in-plane-tangent relative differences were
 measurement is evidence for constitutive equivalence and a preliminary timing
 signal only; it must not be extrapolated to global solver performance.
 
+The Generic bridge uses the configured MGIS thread pool. On the real P43 M100
+orientation crop (10,000 points), three repeated four-thread constitutive
+evaluations gave median times of `0.404 s` for legacy and `0.311 s` for
+Generic. The same Generic batch took `0.892 s` with one thread, so the
+four-thread path provides a measured `2.87x` speed-up. Stress, accumulated
+slip, and tangent remained equivalent to relative errors below `2.2e-15`.
+
 Build the validation library reproducibly with
 `scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
 validation-only and must not replace the production SRIX library implicitly.

@@ -19,6 +19,7 @@ from fem_inhouse.core.mfront_runtime import (
     _apply_behaviour_parameters,
     _broadcast_point_property,
     _load_mgis,
+    _load_mgis_root,
     _variable_offset,
 )
 
@@ -61,11 +62,14 @@ class SrixGeneric3DMaterialPointBatch:
         behaviour_name: str = "Fcc316LForestRubinSrixGeneric3D",
         rotation_global_to_material: ArrayLike | None = None,
         behaviour_parameters: dict[str, float] | None = None,
+        thread_count: int = 1,
     ) -> None:
         if isinstance(point_count, bool) or not isinstance(point_count, int) or point_count < 1:
             raise ValueError("point_count must be a positive integer")
         if not np.isfinite(temperature_k) or temperature_k <= 0:
             raise ValueError("temperature_k must be finite and positive")
+        if isinstance(thread_count, bool) or not isinstance(thread_count, int) or thread_count < 1:
+            raise ValueError("thread_count must be a positive integer")
         library = Path(library_path)
         if not library.is_file():
             raise FileNotFoundError(f"MFront behaviour library not found: {library}")
@@ -154,6 +158,10 @@ class SrixGeneric3DMaterialPointBatch:
         self._manager = manager
         self._point_count = point_count
         self._elastic_offset = elastic_offset
+        self._thread_count = thread_count
+        self._thread_pool = (
+            _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
+        )
         self._has_trial_state = False
         self._rotations = (
             None
@@ -167,6 +175,10 @@ class SrixGeneric3DMaterialPointBatch:
     @property
     def point_count(self) -> int:
         return self._point_count
+
+    @property
+    def thread_count(self) -> int:
+        return self._thread_count
 
     @property
     def backend_name(self) -> str:
@@ -212,13 +224,24 @@ class SrixGeneric3DMaterialPointBatch:
                 material_gradients, self._behaviour, self._mgis_rotations
             )
             gradients[:, :] = material_gradients.reshape(self._point_count, 7)
-        status = self._mgis.integrate(
-            self._manager,
-            self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator,
-            float(time_increment),
-            0,
-            self._point_count,
+        integration_type = (
+            self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
         )
+        if self._thread_pool is None:
+            status = self._mgis.integrate(
+                self._manager,
+                integration_type,
+                float(time_increment),
+                0,
+                self._point_count,
+            )
+        else:
+            status = self._mgis.integrate(
+                self._thread_pool,
+                self._manager,
+                integration_type,
+                float(time_increment),
+            )
         if status != 1:
             self.revert()
             raise MFrontIntegrationError(
@@ -316,6 +339,10 @@ class SrixGeneric3DCondensedPlaneStressBatch:
     @property
     def point_count(self) -> int:
         return self._bridge.point_count
+
+    @property
+    def thread_count(self) -> int:
+        return self._bridge.thread_count
 
     @property
     def backend_name(self) -> str:

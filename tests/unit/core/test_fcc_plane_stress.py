@@ -156,10 +156,11 @@ def test_validation_generic_srix_backend_is_opt_in() -> None:
         plastic_table_points=1000,
         first_positive_plastic_strain=1e-6,
         mfront_library=_generic_library(),
-        mfront_threads=1,
+        mfront_threads=2,
         mfront_behaviour_id=SRIX_GENERIC,
         nonlocal_coupling_modulus_mpa=100.0,
     )
+    assert batch.thread_count == 2
     batch.set_nonlocal_equivalent_plastic_strain(np.array([2e-4, 1e-4]))
     trial = batch.evaluate_in_plane(
         np.array([[2e-4, -6e-5, 1e-5], [1.5e-4, -4e-5, -2e-5]]),

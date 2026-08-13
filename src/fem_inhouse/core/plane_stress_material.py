@@ -744,6 +744,7 @@ def create_plane_stress_material_batch(
                     int(np.asarray(initial_yield_stress_mpa).size)
                 ),
                 behaviour_parameters=overrides,
+                thread_count=mfront_threads,
             )
             return SrixGeneric3DCondensedPlaneStressBatch(
                 bridge,

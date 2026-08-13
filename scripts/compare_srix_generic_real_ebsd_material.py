@@ -41,7 +41,7 @@ def _angles(path: Path, crop: tuple[int, int, int, int]) -> tuple[np.ndarray, di
 
 
 def _material(
-    *, backend: str, library: str, behaviour: str, angles: np.ndarray
+    *, backend: str, library: str, behaviour: str, angles: np.ndarray, thread_count: int
 ):
     points = angles.shape[0] * angles.shape[1]
     return create_plane_stress_material_batch(
@@ -56,7 +56,7 @@ def _material(
         plastic_table_points=1000,
         first_positive_plastic_strain=1e-6,
         mfront_library=library,
-        mfront_threads=1,
+        mfront_threads=thread_count,
         mfront_behaviour_id=behaviour,
         nonlocal_coupling_modulus_mpa=100.0,
         constitutive_options={
@@ -102,6 +102,8 @@ def main() -> int:
     parser.add_argument("--ebsd-orientation-h5", type=Path, default=DEFAULT_EBSD)
     parser.add_argument("--crop-nodes", nargs=4, type=int, default=(1610, 1613, 1075, 1078))
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--mfront-threads", type=int, default=4)
+    parser.add_argument("--strain-scale", type=float, default=1.0)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.repeats < 1:
@@ -115,19 +117,22 @@ def main() -> int:
 
     angles, provenance = _angles(args.ebsd_orientation_h5, tuple(args.crop_nodes))
     points = angles.shape[0] * angles.shape[1]
-    strain = np.tile(np.array([4.0e-3, -1.2e-3, 8.0e-4]), (points, 1))
+    base_strain = args.strain_scale * np.array([4.0e-3, -1.2e-3, 8.0e-4])
+    strain = np.tile(base_strain, (points, 1))
     chi = np.linspace(0.0, 8.0e-4, points)
     legacy = _material(
         backend="mfront-3d-condensed-plane-stress",
         library=legacy_library,
         behaviour="fcc_forest_rubin_srix",
         angles=angles,
+        thread_count=args.mfront_threads,
     )
     generic = _material(
         backend="mfront-srix-generic-plane-stress",
         library=generic_library,
         behaviour="fcc_forest_rubin_srix_generic_validation",
         angles=angles,
+        thread_count=args.mfront_threads,
     )
     legacy_trial, legacy_times, legacy_source = _evaluate(legacy, strain, chi, args.repeats)
     generic_trial, generic_times, generic_source = _evaluate(generic, strain, chi, args.repeats)
@@ -137,9 +142,11 @@ def main() -> int:
         "status": "ok",
         "provenance": provenance,
         "points": points,
-        "strain": [4.0e-3, -1.2e-3, 8.0e-4],
+        "strain": base_strain.tolist(),
+        "strain_scale": args.strain_scale,
         "chi_range": [float(chi.min()), float(chi.max())],
         "repeats": args.repeats,
+        "mfront_threads": args.mfront_threads,
         "legacy": {
             "times_seconds": legacy_times,
             "median_seconds": legacy_median,
