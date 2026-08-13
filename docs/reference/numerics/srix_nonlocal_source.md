@@ -155,6 +155,22 @@ displacement, stress, accumulated slip, and the non-local source. This is a
 constitutive/interface comparison, not yet a production monolithic SRIX
 qualification or a P43 performance claim.
 
+For a constitutive-only timing and equivalence check that does not require the
+global MKL/PyPardiso solver, use
+`scripts/compare_srix_generic_real_ebsd_material.py`. On the registered 3x3
+crop, five repeated evaluations at a controlled plastic strain gave the
+following stored result:
+
+| quantity | legacy | Generic |
+| --- | ---: | ---: |
+| median batch time | 9.19 ms | 7.19 ms |
+| maximum plane-stress residual | 1.21e-13 MPa | 4.15e-14 MPa |
+
+The stress, accumulated-slip, and in-plane-tangent relative differences were
+`9.1e-16`, `1.4e-16`, and `8.0e-16`, respectively. This small material-point
+measurement is evidence for constitutive equivalence and a preliminary timing
+signal only; it must not be extrapolated to global solver performance.
+
 Build the validation library reproducibly with
 `scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
 validation-only and must not replace the production SRIX library implicitly.

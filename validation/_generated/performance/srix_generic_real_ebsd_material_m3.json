@@ -1,0 +1,61 @@
+{
+  "chi_range": [
+    0.0,
+    0.0008
+  ],
+  "generic": {
+    "median_seconds": 0.007189802010543644,
+    "plane_stress_residual_max_mpa": 4.1457444129861626e-14,
+    "times_seconds": [
+      0.007588745967950672,
+      0.007411953993141651,
+      0.006891378958243877,
+      0.007189802010543644,
+      0.006733281014021486
+    ]
+  },
+  "legacy": {
+    "median_seconds": 0.009193719015456736,
+    "plane_stress_residual_max_mpa": 1.2079226507921703e-13,
+    "times_seconds": [
+      0.01081763202091679,
+      0.009212944016326219,
+      0.009193719015456736,
+      0.00857681396882981,
+      0.007929985004011542
+    ]
+  },
+  "points": 9,
+  "provenance": {
+    "angles_sha256": "2983ec2329c98ba1eb72af83bee5686416c2ca47515aa5cc236cd25bf9895ce6",
+    "angles_shape": [
+      3,
+      3,
+      3
+    ],
+    "crop_nodes": [
+      1610,
+      1613,
+      1075,
+      1078
+    ],
+    "source_file": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "source_shape": [
+      3600,
+      3100
+    ]
+  },
+  "relative_errors": {
+    "accumulated_slip": 1.3700338941408726e-16,
+    "stress": 9.07433650454544e-16,
+    "tangent": 7.95467291123962e-16
+  },
+  "repeats": 5,
+  "status": "ok",
+  "strain": [
+    0.004,
+    -0.0012,
+    0.0008
+  ],
+  "timing_ratio_generic_over_legacy": 0.7820341255215598
+}
