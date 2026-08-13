@@ -15,6 +15,7 @@ from fem_inhouse.core.mfront_3d import (
 from fem_inhouse.core.mfront_condensation import (
     MFront3DCondensedPlaneStressBatch,
     MFront3DCondensedPlaneStressBlockBatch,
+    condense_kelvin_tangent_blocks,
     condense_kelvin_tangent_to_engineering,
 )
 from fem_inhouse.core.mfront_gps import MFrontNativeGeneralisedPlaneStressBatch
@@ -67,6 +68,7 @@ __all__ = [
     "MFrontNativePlaneStressBatch",
     "MFrontTimingStatistics",
     "MFrontUnavailableError",
+    "condense_kelvin_tangent_blocks",
     "condense_kelvin_tangent_to_engineering",
     "engineering_strain_to_kelvin",
     "kelvin_strain_to_engineering",

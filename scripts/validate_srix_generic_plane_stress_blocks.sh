@@ -21,6 +21,8 @@ import os
 import mgis.behaviour as mgis
 import numpy as np
 
+from fem_inhouse.core.mfront_condensation import condense_kelvin_tangent_blocks
+
 behaviour = mgis.load(
     os.environ["LIBRARY"],
     "Fcc316LForestRubinSrixGeneric3D",
@@ -80,14 +82,9 @@ def closed_response(in_plane_value, chi_value, initial=None):
         raise RuntimeError("3-D Generic plane-stress closure did not converge")
     forces, tangent = evaluate(total, chi_value)
     c_ee, s_chi, gamma_eps, gamma_chi = blocks(tangent)
-    cbb = c_ee[np.ix_(transverse, transverse)]
-    cbb_inv = np.linalg.inv(cbb)
-    cab = c_ee[np.ix_(plane, transverse)]
-    cba = c_ee[np.ix_(transverse, plane)]
-    c_ps = c_ee[np.ix_(plane, plane)] - cab @ cbb_inv @ cba
-    s_chi_ps = s_chi[plane] - cab @ cbb_inv @ s_chi[transverse]
-    gamma_eps_ps = gamma_eps[:, plane] - gamma_eps[:, transverse] @ cbb_inv @ cba
-    gamma_chi_ps = gamma_chi - gamma_eps[:, transverse] @ cbb_inv @ s_chi[transverse]
+    c_ps, s_chi_ps, gamma_eps_ps, gamma_chi_ps, _ = condense_kelvin_tangent_blocks(
+        c_ee, s_chi, gamma_eps, gamma_chi
+    )
     return (
         forces[plane].copy(),
         forces[6].copy(),

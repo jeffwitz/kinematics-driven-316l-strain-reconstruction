@@ -74,6 +74,66 @@ def condense_kelvin_tangent_to_engineering(
     return condensed_engineering, condition
 
 
+def condense_kelvin_tangent_blocks(
+    stress_strain: ArrayLike,
+    stress_chi: ArrayLike,
+    source_strain: ArrayLike,
+    source_chi: ArrayLike,
+    *,
+    check_condition: bool = True,
+) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray | None]:
+    """Condense a four-block 3-D tangent through plane stress.
+
+    The inputs describe the local map ``(strain, chi) -> (stress, source)``
+    in Kelvin components.  The transverse strain components ``(zz, xz, yz)``
+    are eliminated by the plane-stress constraints.  The returned blocks are
+    ordered as ``Cps, stress_chi_ps, source_strain_ps, source_chi_ps`` and use
+    the same Kelvin in-plane convention as the existing tangent helper.
+
+    This is deliberately independent of MGIS and of the constitutive law: it
+    is the reusable algebraic layer needed by a future GenericBehaviour
+    bridge.
+    """
+
+    c_ee = np.asarray(stress_strain, dtype=float)
+    s_chi = np.asarray(stress_chi, dtype=float)
+    q_eps = np.asarray(source_strain, dtype=float)
+    q_chi = np.asarray(source_chi, dtype=float)
+    if c_ee.shape[-2:] != (6, 6):
+        raise ValueError("stress_strain must have trailing shape (6, 6)")
+    if s_chi.shape[-2:] != (6, 1):
+        raise ValueError("stress_chi must have trailing shape (6, 1)")
+    if q_eps.shape[-2:] != (1, 6):
+        raise ValueError("source_strain must have trailing shape (1, 6)")
+    if q_chi.shape[-2:] != (1, 1):
+        raise ValueError("source_chi must have trailing shape (1, 1)")
+    batch_shape = np.broadcast_shapes(
+        c_ee.shape[:-2], s_chi.shape[:-2], q_eps.shape[:-2], q_chi.shape[:-2]
+    )
+    c_ee = np.broadcast_to(c_ee, (*batch_shape, 6, 6))
+    s_chi = np.broadcast_to(s_chi, (*batch_shape, 6, 1))
+    q_eps = np.broadcast_to(q_eps, (*batch_shape, 1, 6))
+    q_chi = np.broadcast_to(q_chi, (*batch_shape, 1, 1))
+    if not all(np.isfinite(values).all() for values in (c_ee, s_chi, q_eps, q_chi)):
+        raise ValueError("four-block tangent inputs must be finite")
+    caa = c_ee[..., _PLANE_STRESS_COMPONENTS, :][..., _PLANE_STRESS_COMPONENTS]
+    cab = c_ee[..., _PLANE_STRESS_COMPONENTS, :][..., _TRANSVERSE_COMPONENTS_3D]
+    cba = c_ee[..., _TRANSVERSE_COMPONENTS_3D, :][..., _PLANE_STRESS_COMPONENTS]
+    cbb = c_ee[..., _TRANSVERSE_COMPONENTS_3D, :][..., _TRANSVERSE_COMPONENTS_3D]
+    s_chi_a = s_chi[..., _PLANE_STRESS_COMPONENTS, :]
+    s_chi_b = s_chi[..., _TRANSVERSE_COMPONENTS_3D, :]
+    q_eps_a = q_eps[..., :, _PLANE_STRESS_COMPONENTS]
+    q_eps_b = q_eps[..., :, _TRANSVERSE_COMPONENTS_3D]
+    cbb_inv_cba = np.linalg.solve(cbb, cba)
+    cbb_inv_s_chi_b = np.linalg.solve(cbb, s_chi_b)
+    c_ps = caa - cab @ cbb_inv_cba
+    s_chi_ps = s_chi_a - cab @ cbb_inv_s_chi_b
+    q_eps_ps = q_eps_a - q_eps_b @ cbb_inv_cba
+    q_chi_ps = q_chi - q_eps_b @ cbb_inv_s_chi_b
+    condition = np.linalg.cond(cbb) if check_condition else None
+    return c_ps, s_chi_ps, q_eps_ps, q_chi_ps, condition
+
+
 #: Retained so that existing imports of the private name keep working.
 _MFront3DMaterialPointBatch = MFront3DMaterialPointBatch
 

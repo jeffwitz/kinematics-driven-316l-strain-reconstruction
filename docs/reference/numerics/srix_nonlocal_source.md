@@ -107,5 +107,7 @@ the transverse Kelvin components `(zz, xz, yz)` from the complete 3-D tangent.
 All four condensed blocks pass an independent central finite-difference check
 with relative error `7.45e-10`; the maximum transverse-stress residual is
 `2.3e-14` in the one-point qualification. Reproduce it with
-`scripts/validate_srix_generic_plane_stress_blocks.sh`. This validates the
-condensation mathematics, but it is not yet the production monolithic bridge.
+`scripts/validate_srix_generic_plane_stress_blocks.sh`. The reusable algebraic
+operation is exposed as `condense_kelvin_tangent_blocks` in
+`fem_inhouse.core.mfront`; this validates the condensation mathematics, but it
+is not yet the production monolithic bridge.

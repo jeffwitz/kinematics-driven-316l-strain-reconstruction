@@ -12,6 +12,7 @@ from fem_inhouse.core.mfront import (
     MFront3DCondensedPlaneStressBlockBatch,
     MFrontMaterialPointBatch,
     MFrontNativePlaneStressBatch,
+    condense_kelvin_tangent_blocks,
     condense_kelvin_tangent_to_engineering,
     engineering_strain_to_kelvin,
     kelvin_strain_to_engineering,
@@ -80,6 +81,45 @@ def test_schur_complement_recovers_isotropic_plane_stress_elasticity() -> None:
     )
     np.testing.assert_allclose(condensed, np.broadcast_to(expected, condensed.shape))
     np.testing.assert_allclose(condition, 1.75)
+
+
+def test_four_block_schur_complement_condenses_all_outputs() -> None:
+    c_ee = np.diag([10.0, 11.0, 12.0, 13.0, 14.0, 15.0])
+    c_ee[0, 2] = 1.5
+    c_ee[2, 0] = 0.5
+    stress_chi = np.arange(1.0, 7.0)[:, None]
+    source_strain = np.arange(2.0, 8.0)[None, :]
+    source_chi = np.array([[3.0]])
+
+    c_ps, stress_chi_ps, source_strain_ps, source_chi_ps, condition = (
+        condense_kelvin_tangent_blocks(
+            c_ee, stress_chi, source_strain, source_chi
+        )
+    )
+    transverse = np.array([2, 4, 5])
+    plane = np.array([0, 1, 3])
+    cbb = c_ee[np.ix_(transverse, transverse)]
+    cab = c_ee[np.ix_(plane, transverse)]
+    cba = c_ee[np.ix_(transverse, plane)]
+    solve = np.linalg.solve
+    np.testing.assert_allclose(c_ps, c_ee[np.ix_(plane, plane)] - cab @ solve(cbb, cba))
+    np.testing.assert_allclose(
+        stress_chi_ps,
+        stress_chi[plane] - cab @ solve(cbb, stress_chi[transverse]),
+    )
+    np.testing.assert_allclose(
+        source_strain_ps,
+        source_strain[:, plane] - source_strain[:, transverse] @ solve(cbb, cba),
+    )
+    np.testing.assert_allclose(
+        source_chi_ps,
+        source_chi - source_strain[:, transverse] @ solve(cbb, stress_chi[transverse]),
+    )
+    assert condition is not None
+    assert c_ps.shape == (3, 3)
+    assert stress_chi_ps.shape == (3, 1)
+    assert source_strain_ps.shape == (1, 3)
+    assert source_chi_ps.shape == (1, 1)
 
 
 @pytest.mark.parametrize(
