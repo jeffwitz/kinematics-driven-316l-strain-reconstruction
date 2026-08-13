@@ -239,6 +239,9 @@ class SrixGenericPlaneStressTrial:
     stress_in_plane_mpa: FloatArray
     accumulated_slip: FloatArray
     tangent_in_plane_mpa: FloatArray
+    stress_chi_tangent_mpa: FloatArray
+    accumulated_slip_strain_tangent: FloatArray
+    accumulated_slip_chi_tangent: FloatArray
     transverse_strain_kelvin: FloatArray
     transverse_stress_mpa: FloatArray
 
@@ -302,17 +305,25 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             self.revert()
             raise RuntimeError("SRIX Generic plane-stress closure did not converge")
         assert final is not None
-        c_ps, _, _, _, _ = condense_kelvin_tangent_blocks(
+        c_ps, stress_chi_ps, accumulated_slip_strain_ps, accumulated_slip_chi_ps, _ = (
+            condense_kelvin_tangent_blocks(
             final.stress_strain_tangent,
             final.stress_chi_tangent,
             final.accumulated_slip_strain_tangent,
             final.accumulated_slip_chi_tangent,
             check_condition=False,
+            )
         )
         tangent = (
             c_ps
             * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
             * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+        )
+        stress_chi_tangent = stress_chi_ps * _KELVIN_TO_ENGINEERING_STRESS_SCALE[
+            None, :, None
+        ]
+        accumulated_slip_strain_tangent = (
+            accumulated_slip_strain_ps * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
         )
         self._trial_transverse = total[:, _TRANSVERSE].copy()
         self._has_trial = True
@@ -323,6 +334,9 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             ),
             accumulated_slip=final.accumulated_slip.copy(),
             tangent_in_plane_mpa=tangent,
+            stress_chi_tangent_mpa=stress_chi_tangent,
+            accumulated_slip_strain_tangent=accumulated_slip_strain_tangent,
+            accumulated_slip_chi_tangent=accumulated_slip_chi_ps.copy(),
             transverse_strain_kelvin=self._trial_transverse.copy(),
             transverse_stress_mpa=residual.copy(),
         )

@@ -122,4 +122,6 @@ convention and rotates stresses and tensor tangent blocks back to the global
 frame. The plane-stress closure remains a separate integration step.
 The validation-only `SrixGeneric3DCondensedPlaneStressBatch` now layers that
 closure on the raw bridge and reaches a transverse-stress residual of
-`1.3e-15` in its smoke test; it is not registered as a production backend yet.
+`1.3e-15` in its smoke test. Its four condensed blocks also agree with a
+central finite-difference replay to `5.9e-14`. It is not registered as a
+production backend yet.

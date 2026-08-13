@@ -71,9 +71,59 @@ plane_trial = condensed.evaluate(in_plane, np.array([2.0e-4, 1.0e-4]), time_incr
 assert plane_trial.tangent_in_plane_mpa.shape == (2, 3, 3)
 assert np.max(np.abs(plane_trial.transverse_stress_mpa)) < 1.0e-8
 condensed.commit()
+
+
+def response(in_plane_value, chi_value):
+    bridge = SrixGeneric3DMaterialPointBatch(
+        os.environ["LIBRARY"],
+        point_count=2,
+        micromorphic_coupling_modulus_mpa=100.0,
+    )
+    adapter = SrixGeneric3DCondensedPlaneStressBatch(bridge)
+    result = adapter.evaluate(in_plane_value, chi_value, time_increment=1.0)
+    return result
+
+
+chi_value = np.array([2.0e-4, 1.0e-4])
+fd_mechanical = np.zeros((2, 3, 3))
+fd_stress_chi = np.zeros((2, 3, 1))
+fd_source_strain = np.zeros((2, 1, 3))
+fd_source_chi = np.zeros((2, 1, 1))
+for column in range(4):
+    h = 1.0e-7
+    plus_in_plane = in_plane.copy()
+    minus_in_plane = in_plane.copy()
+    plus_chi = chi_value.copy()
+    minus_chi = chi_value.copy()
+    if column < 3:
+        plus_in_plane[:, column] += h
+        minus_in_plane[:, column] -= h
+    else:
+        plus_chi += h
+        minus_chi -= h
+    plus = response(plus_in_plane, plus_chi)
+    minus = response(minus_in_plane, minus_chi)
+    if column < 3:
+        fd_mechanical[:, :, column] = (plus.stress_in_plane_mpa - minus.stress_in_plane_mpa) / (2.0 * h)
+        fd_source_strain[:, :, column] = (plus.accumulated_slip - minus.accumulated_slip)[:, None] / (2.0 * h)
+    else:
+        fd_stress_chi[:, :, 0] = (plus.stress_in_plane_mpa - minus.stress_in_plane_mpa) / (2.0 * h)
+        fd_source_chi[:, :, 0] = (plus.accumulated_slip - minus.accumulated_slip)[:, None] / (2.0 * h)
+
+def relative_error(reference, value):
+    return np.linalg.norm(reference - value) / max(np.linalg.norm(reference), 1.0e-30)
+
+errors = [
+    relative_error(fd_mechanical, plane_trial.tangent_in_plane_mpa),
+    relative_error(fd_stress_chi, plane_trial.stress_chi_tangent_mpa),
+    relative_error(fd_source_strain, plane_trial.accumulated_slip_strain_tangent),
+    relative_error(fd_source_chi, plane_trial.accumulated_slip_chi_tangent),
+]
+assert max(errors) < 1.0e-5, errors
 print("SRIX Generic 3-D bridge: passed")
 print(f"stress_norm={np.linalg.norm(trial.stress_kelvin_mpa):.6e}")
 print(f"source_norm={np.linalg.norm(trial.accumulated_slip):.6e}")
 print(f"rotated_stress_norm={np.linalg.norm(rotated_trial.stress_kelvin_mpa):.6e}")
 print(f"plane_stress_residual={np.max(np.abs(plane_trial.transverse_stress_mpa)):.6e}")
+print(f"plane_stress_four_block_fd_error={max(errors):.6e}")
 PY
