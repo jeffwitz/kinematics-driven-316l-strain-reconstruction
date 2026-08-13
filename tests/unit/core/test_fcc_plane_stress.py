@@ -72,6 +72,7 @@ def analytical_global_stress(
 
 SRIX = "fcc_forest_rubin_srix"
 MERIC_CAILLETAUD = "fcc_meric_cailletaud"
+SRIX_GENERIC = "fcc_forest_rubin_srix_generic_validation"
 
 #: Every out-of-plane stress the condensation must annihilate, in MPa.
 PLANE_STRESS_TOLERANCE_MPA = 1e-8
@@ -81,6 +82,14 @@ def _library() -> str:
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     if not library:
         pytest.skip("MFRONT_BEHAVIOUR_LIBRARY is not set")
+    pytest.importorskip("mgis.behaviour")
+    return library
+
+
+def _generic_library() -> str:
+    library = os.environ.get("SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY")
+    if not library:
+        pytest.skip("SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY is not set")
     pytest.importorskip("mgis.behaviour")
     return library
 
@@ -132,6 +141,35 @@ def test_the_factory_builds_a_crystal_batch() -> None:
     assert batch.backend_name == "mfront-3d-condensed-plane-stress-micromorphic"
     # A crystal tangent is not symmetric, so the global solver must not assume it.
     assert batch.linear_system_matrix_type == "nonsymmetric"
+
+
+def test_validation_generic_srix_backend_is_opt_in() -> None:
+    batch = create_plane_stress_material_batch(
+        "mfront-srix-generic-plane-stress",
+        np.full(2, 124.0),
+        np.full(2, 380.0),
+        0.245,
+        young_modulus_mpa=205_000.0,
+        poisson_ratio=0.3,
+        hardening_mode="ludwik",
+        plastic_strain_max=0.2,
+        plastic_table_points=1000,
+        first_positive_plastic_strain=1e-6,
+        mfront_library=_generic_library(),
+        mfront_threads=1,
+        mfront_behaviour_id=SRIX_GENERIC,
+        nonlocal_coupling_modulus_mpa=100.0,
+    )
+    batch.set_nonlocal_equivalent_plastic_strain(np.array([2e-4, 1e-4]))
+    trial = batch.evaluate_in_plane(
+        np.array([[2e-4, -6e-5, 1e-5], [1.5e-4, -4e-5, -2e-5]]),
+        time_increment=1.0,
+    )
+    assert trial.tangent_in_plane_mpa is not None
+    assert "accumulated_slip" in trial.observables
+    complete = batch.complete_trial(trial)
+    assert complete.full_stress_tensor_mpa.shape == (2, 3, 3)
+    batch.commit()
 
 
 def test_meric_cailletaud_is_available_through_the_same_path() -> None:
