@@ -67,6 +67,15 @@ class NonlocalPlaneStressMaterialBatch(Protocol):
         consistent_tangent: bool = True,
     ) -> InPlaneConstitutiveTrial: ...
 
+    def evaluate_in_plane_response(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        response_level: Literal["residual", "tangent", "complete"],
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial: ...
+
 
 @dataclass(frozen=True, slots=True)
 class NonlocalFixedPointIteration:
@@ -596,11 +605,20 @@ def evaluate_nonlocal_fixed_point(
         ),
     )
     started = time.perf_counter()
-    trial = material_batch.evaluate_in_plane(
-        strain,
-        time_increment=time_increment,
-        consistent_tangent=True,
-    )
+    response = getattr(material_batch, "evaluate_in_plane_response", None)
+    if response is None:  # compatibility with lightweight test doubles
+        trial = material_batch.evaluate_in_plane(
+            strain,
+            time_increment=time_increment,
+            consistent_tangent=True,
+        )
+    else:
+        trial = response(
+            strain,
+            time_increment=time_increment,
+            response_level="complete",
+            consistent_tangent=True,
+        )
     mfront_with_tangent_seconds += time.perf_counter() - started
     local_peeq = _element_average(
         active_criterion.source_from_trial(trial),

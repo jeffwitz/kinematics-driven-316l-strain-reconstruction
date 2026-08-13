@@ -91,6 +91,7 @@ def _batch(
     points: int = 1,
     orientation: np.ndarray | None = None,
     backend: str = "mfront-3d-condensed-plane-stress",
+    nonlocal_coupling_modulus_mpa: float | None = None,
 ):
     options = {}
     if orientation is not None:
@@ -109,6 +110,7 @@ def _batch(
         mfront_library=_library(),
         mfront_threads=1,
         mfront_behaviour_id=behaviour_id,
+        nonlocal_coupling_modulus_mpa=nonlocal_coupling_modulus_mpa,
         constitutive_options=options or None,
     )
 
@@ -161,6 +163,21 @@ def test_the_micromorphic_coupling_uses_crystal_accumulated_slip() -> None:
         nonlocal_coupling_modulus_mpa=200.0,
     )
     assert batch.backend_name == "mfront-3d-condensed-plane-stress-micromorphic"
+
+
+@pytest.mark.mfront
+def test_srix_scalar_micromorphic_extension_accepts_a_path_cutback() -> None:
+    """The stiff exploratory coupling is advanced through accepted substeps."""
+
+    batch = _batch(nonlocal_coupling_modulus_mpa=5168.0)
+    target = np.array([1.5e-3, -3.0e-4, 3.0e-4])
+    for fraction in (0.5, 1.0):
+        trial = batch.evaluate_nonlocal_state(
+            (fraction * target)[None, :],
+            time_increment=1.0,
+        )
+        assert trial[0][0] >= 0.0
+        batch.commit()
 
 
 def test_the_j2_elastic_constants_are_not_imposed_on_a_crystal() -> None:
