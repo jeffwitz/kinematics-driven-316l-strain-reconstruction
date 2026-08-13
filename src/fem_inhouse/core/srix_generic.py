@@ -15,6 +15,7 @@ from fem_inhouse.core.mfront_runtime import (
     _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
     _KELVIN_TO_ENGINEERING_STRESS_SCALE,
     MFrontIntegrationError,
+    MFrontUnavailableError,
     _broadcast_point_property,
     _load_mgis,
     _variable_offset,
@@ -32,6 +33,7 @@ class SrixGeneric3DTrial:
     total_strain_kelvin: FloatArray
     chi: FloatArray
     stress_kelvin_mpa: FloatArray
+    elastic_strain_kelvin: FloatArray
     accumulated_slip: FloatArray
     stress_strain_tangent: FloatArray
     stress_chi_tangent: FloatArray
@@ -98,6 +100,22 @@ class SrixGeneric3DMaterialPointBatch:
             mgis.Hypothesis.Tridimensional,
             expected_size=1,
         )
+        try:
+            elastic_offset = _variable_offset(
+                mgis,
+                behaviour.isvs,
+                "ElasticStrain",
+                mgis.Hypothesis.Tridimensional,
+                expected_size=6,
+            )
+        except MFrontUnavailableError:
+            elastic_offset = _variable_offset(
+                mgis,
+                behaviour.isvs,
+                "eel",
+                mgis.Hypothesis.Tridimensional,
+                expected_size=6,
+            )
         coupling = _broadcast_point_property(
             micromorphic_coupling_modulus_mpa,
             point_count,
@@ -120,6 +138,7 @@ class SrixGeneric3DMaterialPointBatch:
         self._behaviour = behaviour
         self._manager = manager
         self._point_count = point_count
+        self._elastic_offset = elastic_offset
         self._has_trial_state = False
         self._rotations = (
             None
@@ -192,6 +211,8 @@ class SrixGeneric3DMaterialPointBatch:
             )
         self._has_trial_state = True
         forces = np.asarray(self._manager.s1.thermodynamic_forces, dtype=float).copy()
+        state = np.asarray(self._manager.s1.internal_state_variables, dtype=float)
+        elastic_strain = state[:, self._elastic_offset : self._elastic_offset + 6].copy()
         tangent = np.asarray(self._manager.K, dtype=float).copy()
         if self._mgis_rotations is not None:
             flat_forces = np.ascontiguousarray(forces.reshape(-1))
@@ -214,6 +235,7 @@ class SrixGeneric3DMaterialPointBatch:
             total_strain_kelvin=strain.copy(),
             chi=chi_values.copy(),
             stress_kelvin_mpa=forces[:, :6].copy(),
+            elastic_strain_kelvin=elastic_strain,
             accumulated_slip=forces[:, 6].copy(),
             stress_strain_tangent=stress_strain.copy(),
             stress_chi_tangent=stress_chi.copy(),
@@ -244,6 +266,9 @@ class SrixGenericPlaneStressTrial:
     accumulated_slip_chi_tangent: FloatArray
     transverse_strain_kelvin: FloatArray
     transverse_stress_mpa: FloatArray
+    total_strain_kelvin: FloatArray
+    elastic_strain_kelvin: FloatArray
+    full_stress_kelvin_mpa: FloatArray
 
 
 class SrixGeneric3DCondensedPlaneStressBatch:
@@ -267,6 +292,7 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         self._trial_transverse: FloatArray | None = None
         self._committed_chi = np.zeros(bridge.point_count)
         self._trial_chi = np.zeros(bridge.point_count)
+        self._latest_plane_trial: SrixGenericPlaneStressTrial | None = None
         self._has_trial = False
 
     @property
@@ -359,6 +385,9 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             accumulated_slip_chi_tangent=accumulated_slip_chi_ps.copy(),
             transverse_strain_kelvin=self._trial_transverse.copy(),
             transverse_stress_mpa=residual.copy(),
+            total_strain_kelvin=total.copy(),
+            elastic_strain_kelvin=final.elastic_strain_kelvin.copy(),
+            full_stress_kelvin_mpa=final.stress_kelvin_mpa.copy(),
         )
 
     def evaluate_in_plane(
@@ -377,12 +406,40 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             self._trial_chi,
             time_increment=time_increment,
         )
+        self._latest_plane_trial = trial
         return InPlaneConstitutiveTrial(
             stress_in_plane_mpa=trial.stress_in_plane_mpa,
             tangent_in_plane_mpa=(
                 trial.tangent_in_plane_mpa if consistent_tangent else None
             ),
             observables={"accumulated_slip": trial.accumulated_slip},
+        )
+
+    def complete_trial(self, trial):
+        """Reconstruct the common complete trial from the latest Generic state."""
+
+        from fem_inhouse.core.plane_stress_material import ConstitutiveTrial
+        from fem_inhouse.core.tensor_reconstruction import kelvin_3d_to_tensor
+
+        if self._latest_plane_trial is None:
+            raise TypeError("Generic plane-stress trial is not available")
+        latest = self._latest_plane_trial
+        stress_tensor = kelvin_3d_to_tensor(latest.full_stress_kelvin_mpa, quantity="stress")
+        total_tensor = kelvin_3d_to_tensor(latest.total_strain_kelvin, quantity="strain")
+        elastic_tensor = kelvin_3d_to_tensor(
+            latest.elastic_strain_kelvin, quantity="strain"
+        )
+        return ConstitutiveTrial(
+            stress_in_plane_mpa=latest.stress_in_plane_mpa,
+            tangent_in_plane_mpa=latest.tangent_in_plane_mpa,
+            observables={"accumulated_slip": latest.accumulated_slip},
+            full_stress_tensor_mpa=stress_tensor,
+            full_strain_tensor=total_tensor,
+            elastic_strain_tensor=elastic_tensor,
+            plastic_strain_tensor=total_tensor - elastic_tensor,
+            plane_stress_residual_mpa=np.max(
+                np.abs(latest.transverse_stress_mpa), axis=1
+            ),
         )
 
     def commit(self) -> None:
@@ -392,10 +449,12 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         self._committed_transverse[:] = self._trial_transverse
         self._committed_chi[:] = self._trial_chi
         self._trial_transverse = None
+        self._latest_plane_trial = None
         self._has_trial = False
 
     def revert(self) -> None:
         self._bridge.revert()
         self._trial_transverse = None
         self._trial_chi[:] = self._committed_chi
+        self._latest_plane_trial = None
         self._has_trial = False

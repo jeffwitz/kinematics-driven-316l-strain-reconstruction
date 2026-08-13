@@ -86,6 +86,8 @@ protocol_trial = protocol_adapter.evaluate_in_plane(
 )
 assert protocol_trial.tangent_in_plane_mpa is not None
 assert "accumulated_slip" in protocol_trial.observables
+protocol_complete = protocol_adapter.complete_trial(protocol_trial)
+assert protocol_complete.full_stress_tensor_mpa.shape == (2, 3, 3)
 protocol_adapter.commit()
 
 

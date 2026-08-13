@@ -127,7 +127,8 @@ central finite-difference replay to `5.9e-14`. It is not registered as a
 production backend yet. It now also exposes the common material-protocol
 operations `set_nonlocal_equivalent_plastic_strain` and `evaluate_in_plane`,
 so the eventual factory registration does not require a solver-specific
-special case.
+special case. It can also reconstruct the common complete constitutive trial
+for downstream diagnostics.
 
 Build the validation library reproducibly with
 `scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
