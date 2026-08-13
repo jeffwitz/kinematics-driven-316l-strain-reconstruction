@@ -168,6 +168,10 @@ def test_validation_generic_srix_backend_is_opt_in() -> None:
     )
     assert trial.tangent_in_plane_mpa is not None
     assert "accumulated_slip" in trial.observables
+    assert trial.observables["nonlocal_source"].shape == (2,)
+    assert trial.observables["generic_dsigma_dchi"].shape == (2, 3, 1)
+    assert trial.observables["generic_dq_depsilon"].shape == (2, 1, 3)
+    assert trial.observables["generic_dq_dchi"].shape == (2, 1, 1)
     complete = batch.complete_trial(trial)
     assert complete.full_stress_tensor_mpa.shape == (2, 3, 3)
     batch.commit()

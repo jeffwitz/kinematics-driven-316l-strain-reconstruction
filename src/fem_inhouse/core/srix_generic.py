@@ -494,6 +494,10 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             ),
             observables={
                 "accumulated_slip": trial.accumulated_slip,
+                "nonlocal_source": trial.accumulated_slip,
+                "generic_dsigma_dchi": trial.stress_chi_tangent_mpa,
+                "generic_dq_depsilon": trial.accumulated_slip_strain_tangent,
+                "generic_dq_dchi": trial.accumulated_slip_chi_tangent,
                 "yield_surface_radius_mpa": np.ones(self.point_count),
             },
         )
@@ -531,7 +535,13 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         return ConstitutiveTrial(
             stress_in_plane_mpa=latest.stress_in_plane_mpa,
             tangent_in_plane_mpa=latest.tangent_in_plane_mpa,
-            observables={"accumulated_slip": latest.accumulated_slip},
+            observables={
+                "accumulated_slip": latest.accumulated_slip,
+                "nonlocal_source": latest.accumulated_slip,
+                "generic_dsigma_dchi": latest.stress_chi_tangent_mpa,
+                "generic_dq_depsilon": latest.accumulated_slip_strain_tangent,
+                "generic_dq_dchi": latest.accumulated_slip_chi_tangent,
+            },
             full_stress_tensor_mpa=stress_tensor,
             full_strain_tensor=total_tensor,
             elastic_strain_tensor=elastic_tensor,
