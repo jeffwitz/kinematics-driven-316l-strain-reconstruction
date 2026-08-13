@@ -308,6 +308,72 @@ def test_generic_srix_scalar_nonlocal_source_accepts_a_spatial_orientation_map()
 
 
 @pytest.mark.mfront
+def test_generic_srix_realises_the_same_heterogeneous_nonlocal_solution_as_legacy() -> None:
+    """The validation bridge must preserve the legacy heterogeneous solution."""
+
+    case = reduced_biaxial_case(nx=3, ny=3)
+    angles = np.zeros((3, 3, 3), dtype=float)
+    angles[0, :, :] = np.array([17.0, 31.0, 43.0])
+    angles[1, :, :] = np.array([35.0, 20.0, 15.0])
+    angles[2, :, :] = np.array([62.0, 11.0, 78.0])
+    options = {
+        "crystal_orientation": {
+            "mode": "ebsd",
+            "euler_bunge_deg": angles.tolist(),
+        }
+    }
+    nonlocal_config = replace(
+        case.config.nonlocal_plasticity,
+        enabled=True,
+        length_scale_mm=0.05888,
+        coupling_modulus_mpa=100.0,
+        criterion="accumulated_slip_helmholtz",
+        relative_tolerance=1e-6,
+        maximum_iterations=15,
+    )
+    solvers = [
+        replace(
+            case.config.solver,
+            constitutive_backend=backend,
+            mfront_library=library,
+            mfront_behaviour_id=behaviour,
+            constitutive_options=options,
+            increments=4,
+            max_newton_iterations=20,
+            residual_tolerance=1e-6,
+            minimum_step_divisor=32,
+            mfront_threads=1,
+        )
+        for backend, library, behaviour in (
+            ("mfront-3d-condensed-plane-stress", _library(), SRIX),
+            ("mfront-srix-generic-plane-stress", _generic_library(), SRIX_GENERIC),
+        )
+    ]
+    results = [
+        run_case_study(
+            replace(case.config, solver=solver, nonlocal_plasticity=nonlocal_config),
+            displacement_x_mm=case.displacement_x_mm,
+            displacement_y_mm=case.displacement_y_mm,
+            yield_stress_mpa=case.yield_stress_mpa,
+            hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        )
+        for solver in solvers
+    ]
+    legacy, generic = results
+    assert legacy.diagnostics.converged_increments == 4
+    assert generic.diagnostics.converged_increments == 4
+    assert generic.diagnostics.maximum_gauss_point_plane_stress_residual_mpa < 1e-6
+    np.testing.assert_allclose(generic.displacement_mm, legacy.displacement_mm, rtol=1e-5)
+    np.testing.assert_allclose(generic.stress_mpa, legacy.stress_mpa, rtol=2e-5, atol=1e-8)
+    np.testing.assert_allclose(generic.cumulated_slip, legacy.cumulated_slip, rtol=1e-5)
+    np.testing.assert_allclose(
+        generic.nonlocal_equivalent_plastic_strain,
+        legacy.nonlocal_equivalent_plastic_strain,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.mfront
 def test_the_out_of_plane_stresses_are_driven_to_zero() -> None:
     """The plane-stress condition, imposed in the global frame.
 
