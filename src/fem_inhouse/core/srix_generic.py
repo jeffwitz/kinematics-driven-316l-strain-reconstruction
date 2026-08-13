@@ -581,3 +581,23 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         self._trial_chi[:] = self._committed_chi
         self._latest_plane_trial = None
         self._has_trial = False
+
+
+class MericGeneric3DMaterialPointBatch(SrixGeneric3DMaterialPointBatch):
+    """Méric counterpart using the same scalar GenericBehaviour bridge."""
+
+    def __init__(self, library_path: str | Path, **kwargs) -> None:
+        kwargs.setdefault("behaviour_name", "Fcc316LMericCailletaudGeneric3D")
+        super().__init__(library_path, **kwargs)
+
+    @property
+    def backend_name(self) -> str:
+        return "meric-generic-3d"
+
+
+class MericGeneric3DCondensedPlaneStressBatch(SrixGeneric3DCondensedPlaneStressBatch):
+    """Plane-stress closure for the Generic Méric scalar source."""
+
+    @property
+    def backend_name(self) -> str:
+        return "meric-generic-3d-condensed-plane-stress"
