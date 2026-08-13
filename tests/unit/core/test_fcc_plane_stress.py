@@ -198,7 +198,7 @@ def test_generic_srix_plane_stress_cross_blocks_at_nonzero_coupling() -> None:
             mfront_library=_generic_library(),
             mfront_threads=1,
             mfront_behaviour_id=SRIX_GENERIC,
-            nonlocal_coupling_modulus_mpa=100.0,
+            nonlocal_coupling_modulus_mpa=5168.0,
             constitutive_options={
                 "crystal_orientation": {
                     "mode": "homogeneous",
