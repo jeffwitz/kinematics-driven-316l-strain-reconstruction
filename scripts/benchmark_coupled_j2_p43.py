@@ -23,8 +23,14 @@ from scipy.sparse.linalg import LinearOperator
 from fem_inhouse.core.constitutive_sensitivities import finite_difference_sensitivities
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
 from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
-from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
-from fem_inhouse.core.plane_stress_material import create_plane_stress_material_batch
+from fem_inhouse.core.plane_stress_material import (
+    InPlaneConstitutiveTrial,
+    create_plane_stress_material_batch,
+)
+from fem_inhouse.core.srix_generic import (
+    MericGeneric3DCondensedPlaneStressBatch,
+    MericGeneric3DMaterialPointBatch,
+)
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
     make_dct_helmholtz_inverse,
@@ -200,6 +206,16 @@ def _make_srix_material(
         mfront_behaviour_id="fcc_forest_rubin_srix_generic_validation",
         nonlocal_coupling_modulus_mpa=coupling_modulus_mpa,
     )
+
+
+def _make_meric_material(library: Path, point_count: int, coupling_modulus_mpa: float):
+    bridge = MericGeneric3DMaterialPointBatch(
+        library,
+        point_count=point_count,
+        micromorphic_coupling_modulus_mpa=coupling_modulus_mpa,
+        thread_count=4,
+    )
+    return MericGeneric3DCondensedPlaneStressBatch(bridge)
 
 
 def _make_native_material(
@@ -623,7 +639,7 @@ def _solve_production_nested_sequence(
     )
     final_peeq = np.asarray(
         final_trial.observables[
-            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+            "equivalent_plastic_strain"
         ]
     ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
     material.revert()
@@ -670,6 +686,9 @@ def _solve_sequence(
     fd_chi_step: float,
     material_model: str = "j2",
 ) -> dict[str, object]:
+    requested_material_model = material_model
+    material_model = "srix" if material_model == "meric" else material_model
+    source_key = "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
     if method == "production-nested":
         if backend != "native":
             raise RuntimeError("production-nested currently requires the native backend")
@@ -686,7 +705,11 @@ def _solve_sequence(
             coupling_modulus_mpa=coupling_modulus_mpa,
             absolute_tolerance=absolute_tolerance,
         )
-    if material_model == "srix":
+    if requested_material_model == "meric":
+        material = _make_meric_material(
+            library, kinematics.material_point_count, coupling_modulus_mpa
+        )
+    elif material_model == "srix":
         material = _make_srix_material(
             library, kinematics.material_point_count, coupling_modulus_mpa
         )
@@ -754,7 +777,7 @@ def _solve_sequence(
             trial = evaluate_material(state[0], state[1], False)
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             source = (
-                np.asarray(trial.observables["nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"])
+                np.asarray(trial.observables[source_key])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
                 .copy()
@@ -767,7 +790,7 @@ def _solve_sequence(
         def source_only(state: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
             trial = evaluate_material(state[0], state[1], False)
             source = (
-                np.asarray(trial.observables["nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"])
+                np.asarray(trial.observables[source_key])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
                 .copy()
@@ -784,7 +807,7 @@ def _solve_sequence(
             trial = evaluate_material(value, local_chi, True)
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             source = (
-                np.asarray(trial.observables["nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"])
+                np.asarray(trial.observables[source_key])
                 .reshape(grid.nx, grid.ny, 2)
                 .mean(axis=2)
             )
@@ -831,7 +854,7 @@ def _solve_sequence(
                     stress_probe = np.asarray(probe.stress_in_plane_mpa)
                     source_probe = np.asarray(
                         probe.observables[
-                            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+                            source_key
                         ]
                     )
                     material.revert()
@@ -844,7 +867,7 @@ def _solve_sequence(
                     base_stress=np.asarray(trial.stress_in_plane_mpa),
                     base_observable=np.asarray(
                         trial.observables[
-                            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+                            source_key
                         ]
                     ),
                     strain_step=fd_strain_step,
@@ -1050,7 +1073,7 @@ def _solve_sequence(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=("native", "generic"), default="native")
-    parser.add_argument("--material", choices=("j2", "srix"), default="j2")
+    parser.add_argument("--material", choices=("j2", "srix", "meric"), default="j2")
     parser.add_argument(
         "--method",
         choices=("monolithic", "staggered", "production-nested", "both"),
@@ -1083,6 +1106,10 @@ def main() -> int:
     args = parser.parse_args()
     if args.material == "srix" and args.backend != "generic":
         raise SystemExit("SRIX requires --backend generic")
+    if args.material == "meric" and args.backend != "generic":
+        raise SystemExit("Méric requires --backend generic")
+    if args.material == "meric" and args.method == "production-nested":
+        raise SystemExit("Méric production-nested is not wired yet")
     library = args.generic_library if args.backend == "generic" else args.library
     if library is None:
         parser.error("--library is required for native or --generic-library for generic")
@@ -1107,6 +1134,8 @@ def main() -> int:
         virgin = _make_srix_material(
             library, point_count, args.coupling_modulus_mpa
         )
+    elif args.material == "meric":
+        virgin = _make_meric_material(library, point_count, args.coupling_modulus_mpa)
     elif args.backend == "generic":
         virgin = _make_material(library, point_count, yield_stress, hardening)
     else:
