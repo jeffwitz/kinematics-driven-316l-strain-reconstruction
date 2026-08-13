@@ -69,7 +69,8 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
   Ce(0,0) = 197000.; Ce(1,1) = 197000.; Ce(2,2) = 197000.;
   Ce(0,1) = 125000.; Ce(0,2) = 125000.; Ce(1,0) = 125000.;
   Ce(1,2) = 125000.; Ce(2,0) = 125000.; Ce(2,1) = 125000.;
-  Ce(3,3) = 122000.; Ce(4,4) = 122000.; Ce(5,5) = 122000.;
+  // Stensor uses sqrt(2) shear components, hence the diagonal entries are 2G.
+  Ce(3,3) = 244000.; Ce(4,4) = 244000.; Ce(5,5) = 244000.;
 }
 
 @Integrator {
@@ -126,6 +127,19 @@ Gamma.setEntryName(\"AccumulatedSlip\");""",
     if text.count(duplicate) > 1:
         head, tail = text.rsplit(duplicate, 1)
         text = head + tail
+    duplicate_mechanical_terms = (
+        "    feel += dg[i] * ss.mus[i];\n"
+        "    dfeel_ddg(i) = ss.mus[i];\n"
+    )
+    if text.count(duplicate_mechanical_terms) > 1:
+        head, tail = text.rsplit(duplicate_mechanical_terms, 1)
+        text = head + tail
+    text = text.replace(
+        "    fGamma -= theta * abs(dg[i]);\n"
+        "    dfGamma_ddg(i) = -theta * (dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));",
+        "    fGamma -= abs(dg[i]);\n"
+        "    dfGamma_ddg(i) = -(dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));",
+    )
     return text
 
 

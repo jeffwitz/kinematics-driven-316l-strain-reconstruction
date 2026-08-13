@@ -169,7 +169,8 @@ a.setEntryName("BackStrain");
   Ce(0,0) = 197000.; Ce(1,1) = 197000.; Ce(2,2) = 197000.;
   Ce(0,1) = 125000.; Ce(0,2) = 125000.; Ce(1,0) = 125000.;
   Ce(1,2) = 125000.; Ce(2,0) = 125000.; Ce(2,1) = 125000.;
-  Ce(3,3) = 122000.; Ce(4,4) = 122000.; Ce(5,5) = 122000.;
+  // Stensor uses sqrt(2) shear components, hence the diagonal entries are 2G.
+  Ce(3,3) = 244000.; Ce(4,4) = 244000.; Ce(5,5) = 244000.;
 }
 
 @Integrator {
@@ -187,8 +188,8 @@ a.setEntryName("BackStrain");
   fGamma = dGamma;
   dfGamma_ddGamma = 1.;
   for (size_type i=0; i!=Nss; ++i) {
-    fGamma -= theta * abs(dg[i]);
-    dfGamma_ddg(i) = -theta * (dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));
+    fGamma -= abs(dg[i]);
+    dfGamma_ddg(i) = -(dg[i] > 0 ? 1 : (dg[i] < 0 ? -1 : 0));
   }
 
 
@@ -287,8 +288,6 @@ a.setEntryName("BackStrain");
     const auto dflow_hardening = flow_slope * dpositive;
     const auto sgn = drive_sign;
     // elasticity
-    feel += dg[i] * ss.mus[i];
-    dfeel_ddg(i) = ss.mus[i];
     // rate-independent plasticity
     fg[i] -= flow_slope * f * sgn;
     // Two distinct routes carry the strain increment into this residual: f

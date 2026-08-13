@@ -70,9 +70,11 @@ production bridge yet. The next required check is constitutive equivalence of
 the generic formulation against the historical SRIX behaviour on plastic
 paths, followed by plane-stress condensation of all four blocks.
 
-The first controlled comparison is not accepted as equivalent: elastic steps
-agree to about (4\times10^{-14}) relative stress error, but the relative
-stress discrepancy reaches (1.53\times10^{-2}) by the sixth plastic
-subincrement. Reproduce it with
-`scripts/compare_srix_generic_legacy.sh`. The generic formulation remains
-validation-only until this plastic discrepancy is explained and removed.
+The first comparison exposed and corrected two transcription errors: the
+mechanical plastic-slip contribution had been added twice to `feel`, and the
+Kelvin shear entries of the manually constructed elastic tensor had been set
+to (G) instead of (2G). With both corrections, the historical and Generic
+formulations agree over six plastic subincrements to a maximum relative stress
+error of (3.94\times10^{-14}). A pure Kelvin shear test also agrees exactly
+((0.244) MPa for a (10^{-6}) strain component). Reproduce the comparison
+with `scripts/compare_srix_generic_legacy.sh`.
