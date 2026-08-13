@@ -100,6 +100,13 @@ def _relative_error(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.linalg.norm(a - b) / denominator)
 
 
+def _median_mad(values: list[float]) -> tuple[float, float]:
+    samples = np.asarray(values, dtype=float)
+    median = float(np.median(samples))
+    mad = float(np.median(np.abs(samples - median)))
+    return median, mad
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ebsd-orientation-h5", type=Path, default=DEFAULT_EBSD)
@@ -108,8 +115,11 @@ def main() -> int:
     )
     parser.add_argument("--increments", type=int, default=4)
     parser.add_argument("--tolerance", type=float, default=1e-6)
+    parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.repeats < 1:
+        raise SystemExit("--repeats must be positive")
 
     legacy_library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY")
     generic_library = os.environ.get("SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY")
@@ -120,32 +130,46 @@ def main() -> int:
     crop = tuple(args.crop_nodes)
     angles, provenance = _load_angles(args.ebsd_orientation_h5, crop)
     case = reduced_biaxial_case(nx=angles.shape[0], ny=angles.shape[1])
-    legacy, legacy_time = _run(
-        case,
-        backend="mfront-3d-condensed-plane-stress",
-        library=legacy_library,
-        behaviour="fcc_forest_rubin_srix",
-        angles=angles,
-        increments=args.increments,
-        tolerance=args.tolerance,
-    )
-    generic, generic_time = _run(
-        case,
-        backend="mfront-srix-generic-plane-stress",
-        library=generic_library,
-        behaviour="fcc_forest_rubin_srix_generic_validation",
-        angles=angles,
-        increments=args.increments,
-        tolerance=args.tolerance,
-    )
+    legacy_runs = [
+        _run(
+            case,
+            backend="mfront-3d-condensed-plane-stress",
+            library=legacy_library,
+            behaviour="fcc_forest_rubin_srix",
+            angles=angles,
+            increments=args.increments,
+            tolerance=args.tolerance,
+        )
+        for _ in range(args.repeats)
+    ]
+    generic_runs = [
+        _run(
+            case,
+            backend="mfront-srix-generic-plane-stress",
+            library=generic_library,
+            behaviour="fcc_forest_rubin_srix_generic_validation",
+            angles=angles,
+            increments=args.increments,
+            tolerance=args.tolerance,
+        )
+        for _ in range(args.repeats)
+    ]
+    legacy, legacy_times = legacy_runs[-1][0], [run[1] for run in legacy_runs]
+    generic, generic_times = generic_runs[-1][0], [run[1] for run in generic_runs]
+    legacy_median, legacy_mad = _median_mad(legacy_times)
+    generic_median, generic_mad = _median_mad(generic_times)
 
     report = {
         "status": "ok",
         "provenance": provenance,
         "increments": args.increments,
         "tolerance": args.tolerance,
+        "repeats": args.repeats,
         "legacy": {
-            "elapsed_seconds": legacy_time,
+            "elapsed_seconds_last": legacy_times[-1],
+            "elapsed_seconds_samples": legacy_times,
+            "elapsed_seconds_median": legacy_median,
+            "elapsed_seconds_mad": legacy_mad,
             "converged_increments": legacy.diagnostics.converged_increments,
             "cutbacks": legacy.diagnostics.cutbacks,
             "maximum_plane_stress_residual_mpa": (
@@ -153,7 +177,10 @@ def main() -> int:
             ),
         },
         "generic": {
-            "elapsed_seconds": generic_time,
+            "elapsed_seconds_last": generic_times[-1],
+            "elapsed_seconds_samples": generic_times,
+            "elapsed_seconds_median": generic_median,
+            "elapsed_seconds_mad": generic_mad,
             "converged_increments": generic.diagnostics.converged_increments,
             "cutbacks": generic.diagnostics.cutbacks,
             "maximum_plane_stress_residual_mpa": (
@@ -169,6 +196,7 @@ def main() -> int:
                 legacy.nonlocal_equivalent_plastic_strain,
             ),
         },
+        "timing_ratio_generic_over_legacy_median": generic_median / legacy_median,
     }
     rendered = json.dumps(report, indent=2, sort_keys=True)
     if args.output:
