@@ -88,6 +88,8 @@ assert protocol_trial.tangent_in_plane_mpa is not None
 assert "accumulated_slip" in protocol_trial.observables
 protocol_complete = protocol_adapter.complete_trial(protocol_trial)
 assert protocol_complete.full_stress_tensor_mpa.shape == (2, 3, 3)
+assert protocol_adapter.statistics.maximum_local_plane_stress_iterations >= 1
+assert protocol_adapter.timing_statistics.evaluate_calls >= 1
 protocol_adapter.commit()
 
 

@@ -136,6 +136,25 @@ identifier `fcc_forest_rubin_srix_generic_validation` and the library produced
 by `scripts/build_srix_generic_behaviour.sh`. This opt-in path does not change
 the historical `fcc_forest_rubin_srix` backend or its defaults.
 
+The validation backend can also be compared with the historical backend on a
+real, co-registered EBSD crop rather than on a synthetic orientation pattern:
+
+```bash
+PYTHONPATH=src \
+MFRONT_BEHAVIOUR_LIBRARY=build/mfront/src/libBehaviour.so \
+SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY=build/srix-generic/src/libBehaviour.so \
+python scripts/compare_srix_generic_real_ebsd.py \
+  --ebsd-orientation-h5 /path/to/CP_dataset.h5 \
+  --output validation/_generated/performance/srix_generic_real_ebsd.json
+```
+
+The default crop is the small P43 EBSD crop `(1610:1613, 1075:1078)` and the
+default tolerance is `1e-6`. The report records the source hash, crop hash,
+backend times, cutbacks, plane-stress residuals, and relative differences in
+displacement, stress, accumulated slip, and the non-local source. This is a
+constitutive/interface comparison, not yet a production monolithic SRIX
+qualification or a P43 performance claim.
+
 Build the validation library reproducibly with
 `scripts/build_srix_generic_behaviour.sh`. The resulting behaviour is
 validation-only and must not replace the production SRIX library implicitly.

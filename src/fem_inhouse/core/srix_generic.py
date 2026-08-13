@@ -465,7 +465,10 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             tangent_in_plane_mpa=(
                 trial.tangent_in_plane_mpa if consistent_tangent else None
             ),
-            observables={"accumulated_slip": trial.accumulated_slip},
+            observables={
+                "accumulated_slip": trial.accumulated_slip,
+                "yield_surface_radius_mpa": np.ones(self.point_count),
+            },
         )
 
     def evaluate_in_plane_response(
@@ -507,6 +510,22 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             elastic_strain_tensor=elastic_tensor,
             plastic_strain_tensor=total_tensor - elastic_tensor,
             plane_stress_residual_mpa=latest.transverse_stress_mpa,
+        )
+
+    def evaluate_nonlocal_state(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+    ) -> tuple[FloatArray, FloatArray]:
+        trial = self.evaluate_in_plane(
+            in_plane_strain,
+            time_increment=time_increment,
+            consistent_tangent=False,
+        )
+        return (
+            np.asarray(trial.observables["accumulated_slip"], dtype=float),
+            np.asarray(trial.observables["yield_surface_radius_mpa"], dtype=float),
         )
 
     def commit(self) -> None:
