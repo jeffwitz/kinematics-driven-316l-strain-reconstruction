@@ -39,6 +39,7 @@ argue for the scientific model.
 - {doc}`numerics/mfront_structural_plane_stress`
 - {doc}`numerics/srix_semismooth_jacobian`
 - {doc}`numerics/nonlocal_fixed_point`
+- {doc}`numerics/srix_nonlocal_source`
 - {doc}`numerics/sparse_solver`
 - {doc}`numerics/spectral_notation`
 - {doc}`numerics/full_dirichlet_dst1`
@@ -87,6 +88,7 @@ numerics/three_dimensional_condensation
 numerics/mfront_structural_plane_stress
 numerics/srix_semismooth_jacobian
 numerics/nonlocal_fixed_point
+numerics/srix_nonlocal_source
 numerics/sparse_solver
 numerics/spectral_notation
 numerics/full_dirichlet_dst1
