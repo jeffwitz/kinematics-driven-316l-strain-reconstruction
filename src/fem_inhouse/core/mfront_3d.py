@@ -231,6 +231,17 @@ class MFront3DMaterialPointBatch:
             )
         )
         if micromorphic_coupling_modulus_mpa is not None or declares_nonlocal_field:
+            # Two callers reach this batch by two different channels: the J2
+            # route passes `micromorphic_coupling_modulus_mpa`, the crystal
+            # factory passes the entry through `material_property_values`.
+            # The zero fallback used to overwrite the second channel
+            # unconditionally, so every non-local CRYSTAL run integrated with
+            # Hchi = 0 -- the coupling was requested, accepted, reported in the
+            # manifest, and silently discarded here. Preferring an already
+            # supplied value keeps both channels meaningful and keeps zero as
+            # the value for a law that declares the property but is driven
+            # locally.
+            supplied = material_values.get("MicromorphicCouplingModulus")
             coupling = (
                 _broadcast_point_property(
                     micromorphic_coupling_modulus_mpa,
@@ -239,6 +250,8 @@ class MFront3DMaterialPointBatch:
                     nonnegative=True,
                 )
                 if micromorphic_coupling_modulus_mpa is not None
+                else supplied
+                if supplied is not None
                 else np.zeros(resolved_point_count)
             )
             _variable_offset(

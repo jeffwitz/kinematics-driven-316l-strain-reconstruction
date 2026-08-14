@@ -44,7 +44,17 @@ def relative_tangent_asymmetry(tangent: ArrayLike) -> float:
 
 
 class ConstitutiveIntegrationError(RuntimeError):
-    """A constitutive trial failed and must not be committed."""
+    """A constitutive trial failed and must not be committed.
+
+    Raisers attach a `diagnostics` mapping describing what the point looked
+    like when it failed; the failure-diagnostic archives read it back. It is
+    declared here rather than set ad hoc on the instance so that a consumer can
+    rely on it existing.
+    """
+
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+        self.diagnostics: dict[str, Any] = {}
 
 
 class LocalPlaneStressConvergenceError(ConstitutiveIntegrationError):
@@ -561,12 +571,22 @@ def _create_fcc_single_crystal_batch(
     if any(
         variable.canonical_name == "coupling_modulus_mpa"
         for variable in behaviour.material_properties
-    ) and nonlocal_coupling_modulus_mpa is None:
+    ):
         # The SRIX micromorphic extension keeps Hchi as a required MFront
-        # property.  Supplying zero makes the ordinary local SRIX path exactly
-        # the historical law while allowing the same behaviour to be reused by
-        # the non-local criterion.
-        crystal_material_properties["MicromorphicCouplingModulus"] = np.zeros(point_count)
+        # property, so the caller's request has to be carried here explicitly:
+        # this factory does not forward `micromorphic_coupling_modulus_mpa` to
+        # the condensed batch, and that batch defaults an unsupplied property
+        # to zero. Populating the dictionary only in the local case therefore
+        # left every non-local crystal run with Hchi = 0 -- a silently inert
+        # coupling that made the Generic/legacy equivalence test pass because
+        # BOTH sides were uncoupled.
+        #
+        # Zero remains the local value: it is what reduces the law exactly to
+        # the historical response.
+        crystal_material_properties["MicromorphicCouplingModulus"] = np.full(
+            point_count,
+            0.0 if nonlocal_coupling_modulus_mpa is None else float(nonlocal_coupling_modulus_mpa),
+        )
     if backend in {
         "mfront-native-generalised-plane-stress",
         "mfront-structural-plane-stress",

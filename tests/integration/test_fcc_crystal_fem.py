@@ -7,6 +7,7 @@ needed to establish that the crystal law goes through the whole solver.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import replace
 
 import numpy as np
@@ -371,6 +372,79 @@ def test_generic_srix_realises_the_same_heterogeneous_nonlocal_solution_as_legac
         legacy.nonlocal_equivalent_plastic_strain,
         rtol=1e-5,
     )
+
+
+@pytest.mark.mfront
+@pytest.mark.parametrize(
+    ("backend", "behaviour_id", "library_factory"),
+    [
+        ("mfront-3d-condensed-plane-stress", SRIX, _library),
+        ("mfront-srix-generic-plane-stress", SRIX_GENERIC, _generic_library),
+    ],
+)
+def test_the_requested_coupling_modulus_actually_reaches_the_law(
+    backend: str, behaviour_id: str, library_factory: Callable[[], str]
+) -> None:
+    """Asking for a non-local coupling must change the solution.
+
+    The equivalence test above compares two backends against each other, which
+    says nothing about whether either of them is coupled at all. It passed for
+    a year of commits while BOTH sides ran with Hchi = 0: the crystal factory
+    put the requested modulus in `material_property_values`, and the condensed
+    batch overwrote it with zeros on its way to MGIS. The request was accepted,
+    recorded in the manifest, and discarded.
+
+    An agreement test cannot catch that; only a sensitivity test can. This one
+    asserts the one thing a silently inert coupling cannot fake -- that turning
+    the modulus on moves the answer.
+    """
+
+    case = reduced_biaxial_case(nx=3, ny=3)
+    angles = np.zeros((3, 3, 3), dtype=float)
+    angles[0, :, :] = np.array([17.0, 31.0, 43.0])
+    angles[1, :, :] = np.array([35.0, 20.0, 15.0])
+    angles[2, :, :] = np.array([62.0, 11.0, 78.0])
+    options = {
+        "crystal_orientation": {"mode": "ebsd", "euler_bunge_deg": angles.tolist()}
+    }
+    solver = replace(
+        case.config.solver,
+        constitutive_backend=backend,
+        mfront_library=library_factory(),
+        mfront_behaviour_id=behaviour_id,
+        constitutive_options=options,
+        increments=4,
+        max_newton_iterations=20,
+        residual_tolerance=1e-6,
+        minimum_step_divisor=32,
+        mfront_threads=1,
+    )
+
+    def solve(coupling_modulus_mpa: float) -> np.ndarray:
+        nonlocal_config = replace(
+            case.config.nonlocal_plasticity,
+            enabled=True,
+            length_scale_mm=0.05888,
+            coupling_modulus_mpa=coupling_modulus_mpa,
+            criterion="accumulated_slip_helmholtz",
+            relative_tolerance=1e-6,
+            maximum_iterations=15,
+        )
+        return run_case_study(
+            replace(case.config, solver=solver, nonlocal_plasticity=nonlocal_config),
+            displacement_x_mm=case.displacement_x_mm,
+            displacement_y_mm=case.displacement_y_mm,
+            yield_stress_mpa=case.yield_stress_mpa,
+            hardening_coefficient_mpa=case.hardening_coefficient_mpa,
+        ).displacement_mm
+
+    uncoupled = solve(0.0)
+    coupled = solve(100.0)
+    relative = float(np.abs(coupled - uncoupled).max() / np.abs(uncoupled).max())
+    # Measured at 5.4e-3 on this case for both backends. The bound is loose on
+    # purpose: the point is that the effect exists and is far above solver
+    # noise, not that it has a particular value.
+    assert relative > 1e-4, f"the coupling modulus left the solution unchanged ({relative:.3e})"
 
 
 @pytest.mark.mfront
