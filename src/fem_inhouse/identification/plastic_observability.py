@@ -373,6 +373,15 @@ class DirectionObservabilityOperator(PlasticObservabilityOperator):
     def gp(self, state: PlasticObservabilityState, plastic: ArrayLike) -> FloatArray:
         return state.linearisation.direction_residual_action(self._plastic(plastic))
 
+    def projected_direction(
+        self, state: PlasticObservabilityState, direction: ArrayLike
+    ) -> FloatArray:
+        """Return the physical tangent perturbation ``P_n direction``."""
+        value = self._plastic(direction).reshape(-1, 3)
+        return state.linearisation.trial.project_direction(value).reshape(
+            self.direction_shape
+        )
+
     def gp_transpose(self, state: PlasticObservabilityState, dual: ArrayLike) -> FloatArray:
         field = self._displacement_field(dual)
         return state.linearisation.direction_residual_transpose_action(field)

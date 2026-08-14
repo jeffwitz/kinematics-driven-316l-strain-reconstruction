@@ -37,6 +37,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--rank", type=int, default=4)
     parser.add_argument("--state-count", type=int, default=40)
+    parser.add_argument("--null-regularisation", type=float, default=1.0e-10)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -84,7 +85,9 @@ def main() -> None:
     )
     eigenvalues, modes = operator.generalized_modes(
         min(args.rank, operator.direction_size - 1),
-        metric=DirectionMetric(operator.states),
+        metric=DirectionMetric(
+            operator.states, null_regularisation=args.null_regularisation
+        ),
     )
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.mkdir(parents=True, exist_ok=True)
@@ -99,7 +102,8 @@ def main() -> None:
     )
     for j in range(len(eigenvalues)):
         mode = modes[:, j].reshape(operator.direction_shape)
-        components = mode.mean(axis=-2)
+        projected = operator.projected_direction(operator.states[0], mode)
+        components = projected.mean(axis=-2)
         magnitude = np.linalg.norm(components, axis=-1)
         induced = operator.sensitivity(operator.states[0], mode)
         measured = operator.transfer.apply(induced)
@@ -128,6 +132,7 @@ def main() -> None:
         "eigenvalues": eigenvalues.tolist(),
         "adjoint_checks": operator.adjoint_errors(),
         "direction_shape": list(operator.direction_shape),
+        "null_regularisation": args.null_regularisation,
         "interpretation": "instantaneous mechanically observable J2 flow-direction perturbations",
     }
     (output / "report.json").write_text(
