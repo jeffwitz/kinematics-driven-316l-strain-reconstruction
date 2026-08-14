@@ -1,0 +1,22 @@
+{
+  "j2": {
+    "chi_max": 8.350914772821665e-06,
+    "chi_source_l2_relative": 0.9776877406696945,
+    "local_max": 0.0004455878766860518,
+    "nonlocal_source_max": 0.00041650823827575704,
+    "source_delta_abs_max": 3.177100982720165e-05,
+    "source_delta_l2_relative": 0.05139531482020297
+  },
+  "meric": {
+    "chi_max": 2.615113159131053e-08,
+    "chi_source_l2_relative": 0.9986177237199265,
+    "local_max": 1.8705629031851236e-05,
+    "nonlocal_source_max": 1.7300820394046378e-05,
+    "source_delta_abs_max": 1.4048086378048579e-06,
+    "source_delta_l2_relative": 0.07510084987854411
+  },
+  "parameters": {
+    "coupling_modulus_mpa": 5168.0,
+    "length_scale_mm": 0.05888
+  }
+}
