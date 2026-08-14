@@ -15,6 +15,7 @@ from fem_inhouse.measurement import image_flow_to_canonical
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
 from fem_inhouse.workflows.experimental_mechanical_oracle import (
+    ExperimentalOracleIncrementResult,
     ExperimentalOracleObjectiveWeights,
     ExperimentalOracleOptimizationConfig,
     solve_experimental_mechanical_oracle_history,
@@ -90,6 +91,21 @@ def main() -> None:
         spatial_plastic_increment=3.0e-4,
         temporal_plastic_increment=0.0,
     )
+
+    def progress(index: int, increment: ExperimentalOracleIncrementResult) -> None:
+        print(
+            json.dumps(
+                {
+                    "event": "reduced_oracle_increment",
+                    "increment": index,
+                    "converged": increment.converged,
+                    "equilibrium_rms": increment.equilibrium_rms,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+
     result = solve_experimental_mechanical_oracle_history(
         material=material,
         kinematics=kinematics,
@@ -99,6 +115,7 @@ def main() -> None:
         solution_method="reduced",
         weights=weights,
         config=config,
+        progress_callback=progress,
         plastic_basis=basis,
     )
     output = args.output if args.output.is_absolute() else ROOT / args.output
