@@ -101,9 +101,7 @@ def solve_coupled_newton(
         )
 
     def norm(linearisation: CoupledLinearisation) -> float:
-        return residual_norm(
-            (linearisation.mechanical_residual, linearisation.nonlocal_residual)
-        )
+        return residual_norm((linearisation.mechanical_residual, linearisation.nonlocal_residual))
 
     state = (mechanical, nonlocal_field)
     initial_residual = (
@@ -112,9 +110,7 @@ def solve_coupled_newton(
         else None
     )
     initial = evaluate(state) if initial_residual is None else None
-    initial_norm = (
-        norm(initial) if initial_residual is None else residual_norm(initial_residual)
-    )
+    initial_norm = norm(initial) if initial_residual is None else residual_norm(initial_residual)
     residual_scale = max(initial_norm, 1.0)
     krylov_iterations: list[int] = []
     if initial_norm <= controls.absolute_tolerance:
@@ -143,9 +139,7 @@ def solve_coupled_newton(
         current = evaluate(state)
 
     for iteration in range(1, controls.maximum_iterations + 1):
-        rhs = -np.concatenate(
-            (current.mechanical_residual, current.nonlocal_residual)
-        )
+        rhs = -np.concatenate((current.mechanical_residual, current.nonlocal_residual))
         correction, info, calls = solve_nonsymmetric_krylov(
             current.actions.operator(),
             rhs,
@@ -165,6 +159,7 @@ def solve_coupled_newton(
         step = 1.0
         current_norm_before_step = norm(current)
         current_residual = None
+        best_candidate_norm = float("inf")
         while True:
             mechanical[:] = old_mechanical + step * correction[:split]
             candidate_nonlocal = old_nonlocal_field + step * correction[split:]
@@ -174,9 +169,7 @@ def solve_coupled_newton(
             state = (mechanical, nonlocal_field)
             try:
                 current_residual = (
-                    evaluate_residual(state)
-                    if evaluate_residual is not None
-                    else None
+                    evaluate_residual(state) if evaluate_residual is not None else None
                 )
             except RuntimeError:
                 current_residual = None
@@ -187,17 +180,18 @@ def solve_coupled_newton(
                     raise RuntimeError("coupled residual evaluation failed")
             else:
                 candidate_norm = residual_norm(current_residual)
+                best_candidate_norm = min(best_candidate_norm, candidate_norm)
                 if not controls.line_search or candidate_norm <= current_norm_before_step:
                     break
             if not controls.line_search or step <= controls.line_search_minimum_step:
                 raise RuntimeError(
-                    f"coupled line search failed at step={step:.3e}"
+                    "coupled line search failed at "
+                    f"step={step:.3e}, current_norm={current_norm_before_step:.6e}, "
+                    f"best_candidate_norm={best_candidate_norm:.6e}"
                 )
             step *= controls.line_search_reduction
         current_norm = (
-            norm(current)
-            if current_residual is None
-            else residual_norm(current_residual)
+            norm(current) if current_residual is None else residual_norm(current_residual)
         )
         if current_norm <= max(
             controls.absolute_tolerance,

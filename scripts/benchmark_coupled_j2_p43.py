@@ -10,26 +10,34 @@ from the production crystal-plasticity drivers.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import time
 from itertools import pairwise
 from pathlib import Path
 
+import h5py
 import numpy as np
 from benchmark_tri2_j2_krylov import DATA_ROOT, DEFAULT_CROP, PIXEL_SIZE_MM
 from prototype_coupled_j2_nonlocal import GenericStructuralMicromorphicBatch
 from scipy.sparse.linalg import LinearOperator
 
 from fem_inhouse.core.constitutive_sensitivities import finite_difference_sensitivities
+from fem_inhouse.core.crystal_orientation import PixelOrientationProvider
+from fem_inhouse.core.crystal_parameter_pairs import (
+    PAIRED_PARAMETER_SET,
+    resolve_paired_crystal_parameters,
+)
 from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
 from fem_inhouse.core.nonlocal_plasticity import evaluate_nonlocal_fixed_point
 from fem_inhouse.core.plane_stress_material import (
     InPlaneConstitutiveTrial,
-    create_plane_stress_material_batch,
 )
 from fem_inhouse.core.srix_generic import (
     MericGeneric3DCondensedPlaneStressBatch,
     MericGeneric3DMaterialPointBatch,
+    SrixGeneric3DCondensedPlaneStressBatch,
+    SrixGeneric3DMaterialPointBatch,
 )
 from fem_inhouse.spectral2d.coupled_blocks import (
     CoupledBlockActions,
@@ -47,6 +55,11 @@ from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
 from fem_inhouse.spectral2d.krylov import solve_nonsymmetric_krylov
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
+from fem_inhouse.spectral2d.step_control import (
+    AdaptiveLoadStepController,
+    AdaptiveStepConfig,
+    LoadStepObservation,
+)
 from fem_inhouse.spectral2d.transform_factory import create_full_dirichlet_dsti_plan
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
@@ -57,6 +70,9 @@ class ProductionNestedFailureError(RuntimeError):
     def __init__(self, message: str, diagnostics: dict[str, object]) -> None:
         super().__init__(message)
         self.diagnostics = diagnostics
+
+
+DEFAULT_EBSD_ORIENTATION_H5 = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5")
 
 
 def _load_p43(
@@ -88,6 +104,67 @@ def _refine_history(history: np.ndarray, subdivisions: int) -> np.ndarray:
         for fraction in np.linspace(1.0 / subdivisions, 1.0, subdivisions):
             refined.append((1.0 - fraction) * start + fraction * stop)
     return np.asarray(refined)
+
+
+def _history_at_time_fractions(
+    history: np.ndarray, fractions: np.ndarray
+) -> np.ndarray:
+    """Interpolate the prescribed DIC history at explicit normalized times."""
+    values = np.asarray(fractions, dtype=float)
+    if values.ndim != 1 or values.size < 2:
+        raise ValueError("time fractions must be a one-dimensional sequence")
+    if not np.isfinite(values).all() or values[0] != 0.0 or values[-1] != 1.0:
+        raise ValueError("time fractions must be finite and span exactly [0, 1]")
+    if np.any(np.diff(values) <= 0.0):
+        raise ValueError("time fractions must be strictly increasing")
+    original = np.linspace(0.0, 1.0, len(history))
+    for knot in original:
+        if not np.any(np.isclose(values, knot, rtol=0.0, atol=1.0e-14)):
+            raise ValueError(f"time fractions must preserve DIC knot {knot:.16g}")
+    positions = values * (len(history) - 1)
+    left = np.minimum(np.floor(positions).astype(int), len(history) - 2)
+    local = positions - left
+    local[values == 1.0] = 1.0
+    return (1.0 - local).reshape((-1,) + (1,) * (history.ndim - 1)) * history[
+        left
+    ] + local.reshape((-1,) + (1,) * (history.ndim - 1)) * history[left + 1]
+
+
+def _time_increment(history: np.ndarray, total_duration: float = 1.0) -> float:
+    """Return the uniform duration of one transition in ``history``."""
+    if history.ndim < 1 or history.shape[0] < 2:
+        raise ValueError("history must contain at least two states")
+    if not np.isfinite(total_duration) or total_duration <= 0.0:
+        raise ValueError("total_duration must be finite and positive")
+    return total_duration / float(history.shape[0] - 1)
+
+
+def _load_ebsd_rotations(
+    path: Path, crop: tuple[int, int, int, int], *, states_per_pixel: int
+) -> tuple[np.ndarray, dict[str, object]]:
+    """Load the co-registered P43 Bunge map and replicate it over cell states."""
+    x0, x1, y0, y1 = crop
+    with h5py.File(path, "r") as handle:
+        angles = np.stack(
+            [
+                np.asarray(handle[f"orientation/{name}"][x0:x1, y0:y1], dtype=float)
+                for name in ("phi1", "Phi", "phi2")
+            ],
+            axis=-1,
+        )
+    expected_shape = (x1 - x0, y1 - y0, 3)
+    if angles.shape != expected_shape or not np.isfinite(angles).all():
+        raise ValueError(f"invalid EBSD angle crop: expected {expected_shape}, got {angles.shape}")
+    provider = PixelOrientationProvider.from_euler_bunge_deg(angles)
+    point_count = (x1 - x0) * (y1 - y0) * states_per_pixel
+    rotations = provider.rotations_global_to_material(point_count)
+    return rotations, {
+        "mode": "ebsd",
+        "source_file": str(path.resolve()),
+        "angles_sha256": hashlib.sha256(np.ascontiguousarray(angles).tobytes()).hexdigest(),
+        "unique_orientations": int(np.unique(angles.reshape(-1, 3), axis=0).shape[0]),
+        "states_per_pixel": states_per_pixel,
+    }
 
 
 class _ChunkedGenericMaterial:
@@ -187,35 +264,53 @@ def _make_srix_material(
     library: Path,
     point_count: int,
     coupling_modulus_mpa: float,
+    rotations_global_to_material: np.ndarray,
 ):
-    """Build the Generic SRIX material through the common batch factory."""
-
-    return create_plane_stress_material_batch(
-        "mfront-srix-generic-plane-stress",
-        np.full(point_count, 124.0),
-        np.full(point_count, 380.0),
-        0.245,
-        young_modulus_mpa=205_000.0,
-        poisson_ratio=0.3,
-        hardening_mode="ludwik",
-        plastic_strain_max=0.2,
-        plastic_table_points=1000,
-        first_positive_plastic_strain=1e-6,
-        mfront_library=library,
-        mfront_threads=4,
-        mfront_behaviour_id="fcc_forest_rubin_srix_generic_validation",
-        nonlocal_coupling_modulus_mpa=coupling_modulus_mpa,
+    return _make_crystal_material(
+        "srix", library, point_count, coupling_modulus_mpa, rotations_global_to_material
     )
 
 
-def _make_meric_material(library: Path, point_count: int, coupling_modulus_mpa: float):
-    bridge = MericGeneric3DMaterialPointBatch(
+def _make_meric_material(
+    library: Path,
+    point_count: int,
+    coupling_modulus_mpa: float,
+    rotations_global_to_material: np.ndarray,
+):
+    return _make_crystal_material(
+        "meric", library, point_count, coupling_modulus_mpa, rotations_global_to_material
+    )
+
+
+def _make_crystal_material(
+    model: str,
+    library: Path,
+    point_count: int,
+    coupling_modulus_mpa: float,
+    rotations_global_to_material: np.ndarray,
+):
+    law = "forest_rubin_srix" if model == "srix" else "meric_cailletaud"
+    parameters, _ = resolve_paired_crystal_parameters(
+        paired_parameter_set=PAIRED_PARAMETER_SET,
+        law=law,
+    )
+    bridge_type = (
+        SrixGeneric3DMaterialPointBatch if model == "srix" else MericGeneric3DMaterialPointBatch
+    )
+    condensed_type = (
+        SrixGeneric3DCondensedPlaneStressBatch
+        if model == "srix"
+        else MericGeneric3DCondensedPlaneStressBatch
+    )
+    bridge = bridge_type(
         library,
         point_count=point_count,
         micromorphic_coupling_modulus_mpa=coupling_modulus_mpa,
+        rotation_global_to_material=rotations_global_to_material,
+        behaviour_parameters=parameters,
         thread_count=4,
     )
-    return MericGeneric3DCondensedPlaneStressBatch(bridge)
+    return condensed_type(bridge)
 
 
 def _make_native_material(
@@ -235,6 +330,47 @@ def _make_native_material(
     )
 
 
+def _make_coupled_material(
+    *,
+    library: Path,
+    backend: str,
+    material_model: str,
+    point_count: int,
+    yield_stress: np.ndarray,
+    hardening: np.ndarray,
+    coupling_modulus_mpa: float,
+    crystal_rotations: np.ndarray | None,
+):
+    """Build one transactional material shared by all accepted subincrements."""
+    if material_model == "meric":
+        if crystal_rotations is None:
+            raise RuntimeError("Méric requires an explicit crystal orientation field")
+        return _make_meric_material(
+            library,
+            point_count,
+            coupling_modulus_mpa,
+            crystal_rotations,
+        )
+    if material_model == "srix":
+        if crystal_rotations is None:
+            raise RuntimeError("SRIX requires an explicit crystal orientation field")
+        return _make_srix_material(
+            library,
+            point_count,
+            coupling_modulus_mpa,
+            crystal_rotations,
+        )
+    if backend == "generic":
+        return _make_material(library, point_count, yield_stress, hardening)
+    return _make_native_material(
+        library,
+        point_count,
+        yield_stress,
+        hardening,
+        coupling_modulus_mpa,
+    )
+
+
 def _solve_production_nested_sequence(
     *,
     library: Path,
@@ -248,6 +384,8 @@ def _solve_production_nested_sequence(
     length_scale: float,
     coupling_modulus_mpa: float,
     absolute_tolerance: float,
+    total_duration: float = 1.0,
+    time_increments: np.ndarray | None = None,
 ) -> dict[str, object]:
     """Run production-style coupling with local cutback and regrowth."""
     material = _make_native_material(
@@ -311,9 +449,7 @@ def _solve_production_nested_sequence(
             return evaluation
 
         def residual_vector(trial: InPlaneConstitutiveTrial) -> np.ndarray:
-            stress = np.asarray(trial.stress_in_plane_mpa).reshape(
-                grid.nx, grid.ny, 2, 3
-            )
+            stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             return pack_interior(kinematics.divergence(stress))
 
         def fixed_chi_residual(value: np.ndarray, fixed_chi: np.ndarray) -> np.ndarray:
@@ -332,9 +468,7 @@ def _solve_production_nested_sequence(
         for iteration in range(1, 51):
             evaluation = nested_trial(local_mechanical, local_chi)
             trial = evaluation.constitutive_trial
-            stress = np.asarray(trial.stress_in_plane_mpa).reshape(
-                grid.nx, grid.ny, 2, 3
-            )
+            stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             ru = pack_interior(kinematics.divergence(stress))
             increment_fixed_point_counts.append(evaluation.iterations)
             if np.linalg.norm(ru) <= absolute_tolerance:
@@ -347,11 +481,10 @@ def _solve_production_nested_sequence(
                     increment_fixed_point_counts,
                     attempt_krylov,
                 )
-            tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(
-                grid.nx, grid.ny, 2, 3, 3
-            )
+            tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3, 3)
             base_mechanical = local_mechanical.copy()
             base_chi = evaluation.nonlocal_peeq.reshape(-1).copy()
+
             def mechanical_action(
                 du: np.ndarray, tangent_value: np.ndarray = tangent
             ) -> np.ndarray:
@@ -360,6 +493,7 @@ def _solve_production_nested_sequence(
                 )
                 ds = np.einsum("...ij,...j->...i", tangent_value, de)
                 return pack_interior(kinematics.divergence(ds))
+
             operator = LinearOperator(
                 (mechanical.size, mechanical.size), matvec=mechanical_action, dtype=float
             )
@@ -441,12 +575,8 @@ def _solve_production_nested_sequence(
                     for target_strain in (1.0e-5, 1.0e-6, 1.0e-7, 1.0e-8, 1.0e-9):
                         scaled_correction = correction * (target_strain / strain_max)
                         try:
-                            plus_eval = nested_trial(
-                                base_mechanical + scaled_correction, base_chi
-                            )
-                            minus_eval = nested_trial(
-                                base_mechanical - scaled_correction, base_chi
-                            )
+                            plus_eval = nested_trial(base_mechanical + scaled_correction, base_chi)
+                            minus_eval = nested_trial(base_mechanical - scaled_correction, base_chi)
                             nested_central = (
                                 residual_vector(plus_eval.constitutive_trial)
                                 - residual_vector(minus_eval.constitutive_trial)
@@ -540,9 +670,7 @@ def _solve_production_nested_sequence(
                             }
                         )
                     except (RuntimeError, ValueError) as error:
-                        alpha_diagnostics.append(
-                            {"alpha": diagnostic_alpha, "failure": str(error)}
-                        )
+                        alpha_diagnostics.append({"alpha": diagnostic_alpha, "failure": str(error)})
                 last_line_search_diagnostic = {
                     "current_residual_norm": current_norm,
                     "line_search_curve": line_search_curve,
@@ -562,9 +690,16 @@ def _solve_production_nested_sequence(
                 )
         raise RuntimeError("production nested mechanical Newton did not converge")
 
-    segment_duration = 1.0 / (len(history) - 1)
-    for increment, (start_boundary, target_boundary) in enumerate(
-        pairwise(history), start=1
+    if time_increments is None:
+        segment_durations = np.full(
+            len(history) - 1, _time_increment(history, total_duration)
+        )
+    else:
+        segment_durations = np.asarray(time_increments, dtype=float)
+        if segment_durations.shape != (len(history) - 1,):
+            raise ValueError("time_increments must match the history transitions")
+    for increment, ((start_boundary, target_boundary), segment_duration) in enumerate(
+        zip(pairwise(history), segment_durations, strict=True), start=1
     ):
         fraction = 0.0
         step_fraction = 1.0
@@ -573,10 +708,7 @@ def _solve_production_nested_sequence(
         last_failure_diagnostics: dict[str, object] = {}
         while fraction < 1.0 - 1.0e-14:
             next_fraction = min(1.0, fraction + step_fraction)
-            boundary = (
-                (1.0 - next_fraction) * start_boundary
-                + next_fraction * target_boundary
-            )
+            boundary = (1.0 - next_fraction) * start_boundary + next_fraction * target_boundary
             saved_mechanical = mechanical.copy()
             saved_chi = chi.copy()
             try:
@@ -614,8 +746,8 @@ def _solve_production_nested_sequence(
                         "production nested local cutback failed "
                         f"at increment {increment}, fraction={fraction:.16g}, "
                         f"segment_cutbacks={segment_cutbacks}, "
-                        f"last_failure={last_failure}"
-                        , diagnostics,
+                        f"last_failure={last_failure}",
+                        diagnostics,
                     ) from None
                 continue
             fraction = next_fraction
@@ -631,17 +763,15 @@ def _solve_production_nested_sequence(
     final_full[1:-1, 1:-1] += unpack_interior(mechanical, grid)[1:-1, 1:-1]
     final_trial = material.evaluate_in_plane(
         kinematics.strain_samples(final_full).reshape(-1, 3),
-        time_increment=1.0,
+        time_increment=float(segment_durations[-1]),
         consistent_tangent=False,
     )
-    final_stress = np.asarray(final_trial.stress_in_plane_mpa).reshape(
-        grid.nx, grid.ny, 2, 3
+    final_stress = np.asarray(final_trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
+    final_peeq = (
+        np.asarray(final_trial.observables["equivalent_plastic_strain"])
+        .reshape(grid.nx, grid.ny, 2)
+        .mean(axis=2)
     )
-    final_peeq = np.asarray(
-        final_trial.observables[
-            "equivalent_plastic_strain"
-        ]
-    ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
     material.revert()
 
     return {
@@ -686,6 +816,13 @@ def _solve_sequence(
     fd_strain_step: float,
     fd_chi_step: float,
     material_model: str = "j2",
+    crystal_rotations: np.ndarray | None = None,
+    total_duration: float = 1.0,
+    time_increments: np.ndarray | None = None,
+    progress_path: Path | None = None,
+    material_instance: object | None = None,
+    initial_mechanical: np.ndarray | None = None,
+    initial_chi: np.ndarray | None = None,
 ) -> dict[str, object]:
     requested_material_model = material_model
     material_model = "srix" if material_model == "meric" else material_model
@@ -705,29 +842,34 @@ def _solve_sequence(
             length_scale=length_scale,
             coupling_modulus_mpa=coupling_modulus_mpa,
             absolute_tolerance=absolute_tolerance,
+            total_duration=total_duration,
+            time_increments=time_increments,
         )
-    if requested_material_model == "meric":
-        material = _make_meric_material(
-            library, kinematics.material_point_count, coupling_modulus_mpa
+    material = (
+        _make_coupled_material(
+            library=library,
+            backend=backend,
+            material_model=requested_material_model,
+            point_count=kinematics.material_point_count,
+            yield_stress=yield_stress,
+            hardening=hardening,
+            coupling_modulus_mpa=coupling_modulus_mpa,
+            crystal_rotations=crystal_rotations,
         )
-    elif material_model == "srix":
-        material = _make_srix_material(
-            library, kinematics.material_point_count, coupling_modulus_mpa
-        )
-    elif backend == "generic":
-        material = _make_material(
-            library, kinematics.material_point_count, yield_stress, hardening
-        )
-    else:
-        material = _make_native_material(
-            library,
-            kinematics.material_point_count,
-            yield_stress,
-            hardening,
-            coupling_modulus_mpa,
-        )
-    mechanical = np.zeros(2 * grid.interior_shape[0] * grid.interior_shape[1])
-    chi = np.zeros(grid.nx * grid.ny)
+        if material_instance is None
+        else material_instance
+    )
+    mechanical_size = 2 * grid.interior_shape[0] * grid.interior_shape[1]
+    mechanical = (
+        np.zeros(mechanical_size)
+        if initial_mechanical is None
+        else np.asarray(initial_mechanical, dtype=float).reshape(mechanical_size).copy()
+    )
+    chi = (
+        np.zeros(grid.nx * grid.ny)
+        if initial_chi is None
+        else np.asarray(initial_chi, dtype=float).reshape(grid.nx * grid.ny).copy()
+    )
     total_newton = 0
     krylov_counts: list[int] = []
     outer_counts: list[int] = []
@@ -739,9 +881,27 @@ def _solve_sequence(
     final_mechanical_residual_norm = float("nan")
     final_nonlocal_residual_norm = float("nan")
     started = time.perf_counter()
+    if time_increments is None:
+        increment_durations = np.full(
+            len(history) - 1, _time_increment(history, total_duration)
+        )
+    else:
+        increment_durations = np.asarray(time_increments, dtype=float)
+        if increment_durations.shape != (len(history) - 1,):
+            raise ValueError("time_increments must match the history transitions")
+        if not np.isfinite(increment_durations).all() or np.any(
+            increment_durations <= 0.0
+        ):
+            raise ValueError("time_increments must be finite and positive")
+        if not np.isclose(increment_durations.sum(), total_duration):
+            raise ValueError("time_increments must sum to total_duration")
+    if progress_path is not None:
+        progress_path.parent.mkdir(parents=True, exist_ok=True)
+        progress_path.write_text("", encoding="utf-8")
 
     for increment in range(1, len(history)):
         boundary = history[increment]
+        time_increment = float(increment_durations[increment - 1])
 
         def strain_from_mechanical(
             value: np.ndarray, boundary_value: np.ndarray = boundary
@@ -750,21 +910,26 @@ def _solve_sequence(
             full[1:-1, 1:-1] += unpack_interior(value, grid)[1:-1, 1:-1]
             return kinematics.strain_samples(full).reshape(-1, 3)
 
-        def evaluate_material(value: np.ndarray, local_chi: np.ndarray, tangent: bool):
+        def evaluate_material(
+            value: np.ndarray,
+            local_chi: np.ndarray,
+            tangent: bool,
+            _time_increment: float = time_increment,
+        ):
             nonlocal material_tangent_seconds, material_residual_seconds
             nonlocal tangent_evaluations, residual_evaluations
             start = time.perf_counter()
             try:
-                material.set_nonlocal_equivalent_plastic_strain(
-                    np.repeat(local_chi, 2)
-                )
+                material.set_nonlocal_equivalent_plastic_strain(np.repeat(local_chi, 2))
                 trial = material.evaluate_in_plane(
                     strain_from_mechanical(value),
-                    time_increment=1.0,
+                    time_increment=_time_increment,
                     consistent_tangent=tangent,
                 )
             except (RuntimeError, ValueError) as error:
-                raise RuntimeError("constitutive trial is inadmissible") from error
+                raise RuntimeError(
+                    f"constitutive trial is inadmissible: {error}"
+                ) from error
             elapsed = time.perf_counter() - start
             if tangent:
                 material_tangent_seconds += elapsed
@@ -803,14 +968,13 @@ def _solve_sequence(
             state: tuple[np.ndarray, np.ndarray],
             *,
             include_coupling: bool = True,
+            _time_increment: float = time_increment,
         ) -> CoupledLinearisation:
             value, local_chi = state
             trial = evaluate_material(value, local_chi, True)
             stress = np.asarray(trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
             source = (
-                np.asarray(trial.observables[source_key])
-                .reshape(grid.nx, grid.ny, 2)
-                .mean(axis=2)
+                np.asarray(trial.observables[source_key]).reshape(grid.nx, grid.ny, 2).mean(axis=2)
             )
             tangent = np.asarray(trial.tangent_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3, 3)
             if not include_coupling:
@@ -849,15 +1013,11 @@ def _solve_sequence(
                     material.set_nonlocal_equivalent_plastic_strain(chi_values)
                     probe = material.evaluate_in_plane(
                         strain_values,
-                        time_increment=1.0,
+                        time_increment=_time_increment,
                         consistent_tangent=False,
                     )
                     stress_probe = np.asarray(probe.stress_in_plane_mpa)
-                    source_probe = np.asarray(
-                        probe.observables[
-                            source_key
-                        ]
-                    )
+                    source_probe = np.asarray(probe.observables[source_key])
                     material.revert()
                     return stress_probe, source_probe
 
@@ -866,11 +1026,7 @@ def _solve_sequence(
                     strain_from_mechanical(value),
                     point_chi,
                     base_stress=np.asarray(trial.stress_in_plane_mpa),
-                    base_observable=np.asarray(
-                        trial.observables[
-                            source_key
-                        ]
-                    ),
+                    base_observable=np.asarray(trial.observables[source_key]),
                     strain_step=fd_strain_step,
                     parameter_step=fd_chi_step,
                     central_parameter=False,
@@ -985,9 +1141,7 @@ def _solve_sequence(
                         restart=100,
                     )
                     if info != 0:
-                        raise RuntimeError(
-                            f"staggered increment {increment} GMRES failed: {info}"
-                        )
+                        raise RuntimeError(f"staggered increment {increment} GMRES failed: {info}")
                     base_mechanical = mechanical.copy()
                     step = 1.0
                     accepted = False
@@ -1018,12 +1172,10 @@ def _solve_sequence(
                 source = source_only((mechanical, chi))
                 filtered_chi = np.maximum(nonlocal_inverse(source), 0.0)
                 updated_chi = (
-                    (1.0 - staggered_relaxation) * chi
-                    + staggered_relaxation * filtered_chi
-                )
+                    1.0 - staggered_relaxation
+                ) * chi + staggered_relaxation * filtered_chi
                 chi_residual = float(
-                    np.linalg.norm(updated_chi - chi)
-                    / max(np.linalg.norm(updated_chi), 1.0e-30)
+                    np.linalg.norm(updated_chi - chi) / max(np.linalg.norm(updated_chi), 1.0e-30)
                 )
                 chi = updated_chi
                 if chi_residual <= 1.0e-6:
@@ -1037,19 +1189,39 @@ def _solve_sequence(
 
         material.set_nonlocal_equivalent_plastic_strain(np.repeat(chi, 2))
         final_trial = material.evaluate_in_plane(
-            strain_from_mechanical(mechanical), time_increment=1.0, consistent_tangent=False
+            strain_from_mechanical(mechanical),
+            time_increment=time_increment,
+            consistent_tangent=False,
         )
         material.commit()
+        if progress_path is not None:
+            with progress_path.open("a", encoding="utf-8") as stream:
+                stream.write(
+                    json.dumps(
+                        {
+                            "increment": increment,
+                            "total_increments": len(history) - 1,
+                            "elapsed_seconds": time.perf_counter() - started,
+                            "newton_total": total_newton,
+                            "krylov_total": int(sum(krylov_counts)),
+                            "mechanical_residual_norm": final_mechanical_residual_norm,
+                            "nonlocal_residual_norm": final_nonlocal_residual_norm,
+                        }
+                    )
+                    + "\n"
+                )
 
     elapsed = time.perf_counter() - started
-    final_stress = np.asarray(final_trial.stress_in_plane_mpa).reshape(
-        grid.nx, grid.ny, 2, 3
+    final_stress = np.asarray(final_trial.stress_in_plane_mpa).reshape(grid.nx, grid.ny, 2, 3)
+    final_peeq = (
+        np.asarray(
+            final_trial.observables[
+                "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
+            ]
+        )
+        .reshape(grid.nx, grid.ny, 2)
+        .mean(axis=2)
     )
-    final_peeq = np.asarray(
-        final_trial.observables[
-            "nonlocal_source" if material_model == "srix" else "equivalent_plastic_strain"
-        ]
-    ).reshape(grid.nx, grid.ny, 2).mean(axis=2)
     return {
         "method": method,
         "elapsed_seconds": elapsed,
@@ -1072,6 +1244,188 @@ def _solve_sequence(
     }
 
 
+def _solve_sequence_with_local_cutback(
+    *,
+    history: np.ndarray,
+    total_duration: float = 1.0,
+    progress_path: Path | None = None,
+    **solver_kwargs: object,
+) -> dict[str, object]:
+    """Advance one shared material transaction with selective path cutbacks."""
+    grid = solver_kwargs["grid"]
+    kinematics = solver_kwargs["kinematics"]
+    assert isinstance(grid, StructuredGrid2D)
+    assert isinstance(kinematics, TwoSubcellDiagnostic2D)
+    segment_count = len(history) - 1
+    segment_duration = total_duration / float(segment_count)
+    step_config = AdaptiveStepConfig(
+        initial_increment_fraction=1.0,
+        minimum_increment_fraction=1.0 / 1024.0,
+        maximum_increment_fraction=1.0,
+        increment_growth_factor=1.5,
+        increment_cutback_factor=0.5,
+        target_newton_iterations_min=50,
+        target_newton_iterations_max=50,
+        maximum_cutbacks_per_step=20,
+    )
+    material = _make_coupled_material(
+        library=solver_kwargs["library"],
+        backend=solver_kwargs["backend"],
+        material_model=solver_kwargs["material_model"],
+        point_count=kinematics.material_point_count,
+        yield_stress=solver_kwargs["yield_stress"],
+        hardening=solver_kwargs["hardening"],
+        coupling_modulus_mpa=solver_kwargs["coupling_modulus_mpa"],
+        crystal_rotations=solver_kwargs.get("crystal_rotations"),
+    )
+    mechanical = np.zeros(2 * grid.interior_shape[0] * grid.interior_shape[1])
+    chi = np.zeros(grid.nx * grid.ny)
+    accepted_fractions = [0.0]
+    accepted_time_increments: list[float] = []
+    rejected_attempts: list[dict[str, object]] = []
+    accumulated_newton = 0
+    accumulated_krylov: list[int] = []
+    accumulated_outer: list[int] = []
+    accumulated_mechanical: list[int] = []
+    accumulated_tangent_evaluations = 0
+    accumulated_residual_evaluations = 0
+    accumulated_tangent_seconds = 0.0
+    accumulated_residual_seconds = 0.0
+    last_result: dict[str, object] | None = None
+    attempt_index = 0
+    started = time.perf_counter()
+    if progress_path is not None:
+        progress_path.parent.mkdir(parents=True, exist_ok=True)
+        progress_path.write_text("", encoding="utf-8")
+
+    def record(payload: dict[str, object]) -> None:
+        if progress_path is None:
+            return
+        with progress_path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(payload) + "\n")
+
+    for segment_index, (segment_start, segment_stop) in enumerate(pairwise(history), start=1):
+        controller = AdaptiveLoadStepController(step_config)
+        local_fraction = 0.0
+        accepted_boundary = np.asarray(segment_start).copy()
+        while local_fraction < 1.0 - 1.0e-14:
+            attempt_index += 1
+            next_fraction = controller.propose(local_fraction)
+            attempt_boundary = (1.0 - next_fraction) * segment_start + next_fraction * segment_stop
+            attempt_duration = segment_duration * (next_fraction - local_fraction)
+            global_start = (segment_index - 1 + local_fraction) / segment_count
+            global_end = (segment_index - 1 + next_fraction) / segment_count
+            attempt_history = np.stack((accepted_boundary, attempt_boundary))
+            record(
+                {
+                    "event": "attempt_started",
+                    "attempt": attempt_index,
+                    "dic_segment": segment_index,
+                    "start_fraction": global_start,
+                    "end_fraction": global_end,
+                    "time_increment": attempt_duration,
+                    "elapsed_seconds": time.perf_counter() - started,
+                }
+            )
+            try:
+                result = _solve_sequence(
+                    **solver_kwargs,
+                    history=attempt_history,
+                    total_duration=attempt_duration,
+                    progress_path=None,
+                    material_instance=material,
+                    initial_mechanical=mechanical,
+                    initial_chi=chi,
+                )
+            except (RuntimeError, ValueError) as error:
+                material.revert()
+                try:
+                    decision = controller.reject(type(error).__name__)
+                except RuntimeError as controller_error:
+                    raise RuntimeError(
+                        "local coupled cutback exhausted at "
+                        f"DIC segment {segment_index}, fraction={local_fraction:.16g}; "
+                        f"last failure: {error}"
+                    ) from controller_error
+                failure = {
+                    "event": "rejected",
+                    "attempt": attempt_index,
+                    "dic_segment": segment_index,
+                    "start_fraction": global_start,
+                    "end_fraction": global_end,
+                    "time_increment": attempt_duration,
+                    "reason": str(error),
+                    "cutbacks_for_step": decision.cutbacks_for_current_step,
+                    "next_segment_fraction": decision.next_increment_fraction,
+                    "elapsed_seconds": time.perf_counter() - started,
+                }
+                rejected_attempts.append(failure)
+                record(failure)
+                continue
+
+            mechanical = np.asarray(result["final_mechanical"]).copy()
+            chi = np.asarray(result["final_chi"]).copy()
+            accepted_boundary = attempt_boundary.copy()
+            local_fraction = next_fraction
+            accepted_fractions.append(global_end)
+            accepted_time_increments.append(attempt_duration)
+            accumulated_newton += int(result["newton_iterations"])
+            accumulated_krylov.extend(result["krylov_iterations"])
+            accumulated_outer.extend(result["outer_iterations"])
+            accumulated_mechanical.extend(result["mechanical_iterations"])
+            accumulated_tangent_evaluations += int(result["material_tangent_evaluations"])
+            accumulated_residual_evaluations += int(result["material_residual_evaluations"])
+            accumulated_tangent_seconds += float(result["material_tangent_seconds"])
+            accumulated_residual_seconds += float(result["material_residual_seconds"])
+            last_result = result
+            decision = controller.accept(
+                LoadStepObservation(
+                    converged=True,
+                    newton_iterations=int(result["newton_iterations"]),
+                )
+            )
+            record(
+                {
+                    "event": "accepted",
+                    "attempt": attempt_index,
+                    "accepted_subincrement": len(accepted_time_increments),
+                    "dic_segment": segment_index,
+                    "start_fraction": global_start,
+                    "end_fraction": global_end,
+                    "time_increment": attempt_duration,
+                    "next_segment_fraction": decision.next_increment_fraction,
+                    "newton_total": accumulated_newton,
+                    "krylov_total": int(sum(accumulated_krylov)),
+                    "mechanical_residual_norm": result["final_mechanical_residual_norm"],
+                    "nonlocal_residual_norm": result["final_nonlocal_residual_norm"],
+                    "elapsed_seconds": time.perf_counter() - started,
+                }
+            )
+
+    if last_result is None:
+        raise RuntimeError("adaptive coupled path accepted no increment")
+    last_result.update(
+        {
+            "elapsed_seconds": time.perf_counter() - started,
+            "newton_iterations": accumulated_newton,
+            "krylov_iterations": accumulated_krylov,
+            "krylov_total": int(sum(accumulated_krylov)),
+            "outer_iterations": accumulated_outer,
+            "mechanical_iterations": accumulated_mechanical,
+            "material_tangent_evaluations": accumulated_tangent_evaluations,
+            "material_residual_evaluations": accumulated_residual_evaluations,
+            "material_tangent_seconds": accumulated_tangent_seconds,
+            "material_residual_seconds": accumulated_residual_seconds,
+            "local_cutbacks": len(rejected_attempts),
+            "accepted_subincrements": len(accepted_time_increments),
+            "accepted_time_fractions": accepted_fractions,
+            "accepted_time_increments": accepted_time_increments,
+            "rejected_attempts": rejected_attempts,
+        }
+    )
+    return last_result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=("native", "generic"), default="native")
@@ -1083,13 +1437,39 @@ def main() -> int:
     )
     parser.add_argument("--library", type=Path)
     parser.add_argument("--generic-library", type=Path)
+    parser.add_argument(
+        "--ebsd-orientation-h5",
+        type=Path,
+        default=DEFAULT_EBSD_ORIENTATION_H5,
+        help="co-registered P43 EBSD orientation dataset used by both crystal laws",
+    )
+    parser.add_argument(
+        "--total-duration-seconds",
+        type=float,
+        help=(
+            "physical duration of the prescribed history; when omitted, crystal runs "
+            "use normalized unit pseudo-time and are not rate-comparison qualified"
+        ),
+    )
     parser.add_argument("--crop-nodes", nargs=4, type=int, default=DEFAULT_CROP)
     parser.add_argument("--increments", type=int, default=8)
     parser.add_argument("--path-substeps", type=int, default=1)
     parser.add_argument(
+        "--time-fractions",
+        nargs="+",
+        type=float,
+        help=(
+            "explicit normalized accepted path, including 0, 1 and every DIC knot; "
+            "used to replay local/nonlocal crystal runs on the identical time grid"
+        ),
+    )
+    parser.add_argument(
         "--adaptive-path-cutback",
         action="store_true",
-        help="retry the complete solve with doubled global DIC subdivisions",
+        help=(
+            "cut back only the failed DIC segment transactionally, then regrow "
+            "the accepted step while preserving every original DIC state"
+        ),
     )
     parser.add_argument("--maximum-path-substeps", type=int, default=16)
     parser.add_argument("--length-scale", type=float, default=0.05888)
@@ -1123,29 +1503,78 @@ def main() -> int:
     history = history[: args.increments + 1]
     if args.path_substeps < 1 or args.maximum_path_substeps < args.path_substeps:
         raise SystemExit("path subdivision limits are inconsistent")
+    if args.time_fractions is not None and args.adaptive_path_cutback:
+        raise SystemExit("explicit time fractions and adaptive path cutback are exclusive")
     if not 0.0 < args.staggered_relaxation <= 1.0:
         raise SystemExit("staggered relaxation must lie in (0, 1]")
     if not np.isfinite(args.fd_strain_step) or args.fd_strain_step <= 0:
         raise SystemExit("fd strain step must be finite and positive")
     if not np.isfinite(args.fd_chi_step) or args.fd_chi_step <= 0:
         raise SystemExit("fd chi step must be finite and positive")
+    if args.total_duration_seconds is not None and (
+        not np.isfinite(args.total_duration_seconds) or args.total_duration_seconds <= 0
+    ):
+        raise SystemExit("total duration must be finite and positive")
+    total_duration = 1.0 if args.total_duration_seconds is None else args.total_duration_seconds
     grid = StructuredGrid2D(mesh, mesh, mesh * PIXEL_SIZE_MM, mesh * PIXEL_SIZE_MM)
     kinematics = TwoSubcellDiagnostic2D(grid)
     point_count = kinematics.material_point_count
+    crystal_rotations = None
+    orientation_provenance: dict[str, object] | None = None
+    paired_parameter_manifest: dict[str, object] | None = None
+    if args.material in {"srix", "meric"}:
+        crystal_rotations, orientation_provenance = _load_ebsd_rotations(
+            args.ebsd_orientation_h5,
+            crop,
+            states_per_pixel=point_count // (mesh * mesh),
+        )
+        law = "forest_rubin_srix" if args.material == "srix" else "meric_cailletaud"
+        _, paired_parameter_manifest = resolve_paired_crystal_parameters(
+            paired_parameter_set=PAIRED_PARAMETER_SET,
+            law=law,
+        )
     if args.material == "srix":
+        assert crystal_rotations is not None
         virgin = _make_srix_material(
-            library, point_count, args.coupling_modulus_mpa
+            library,
+            point_count,
+            args.coupling_modulus_mpa,
+            crystal_rotations,
         )
     elif args.material == "meric":
-        virgin = _make_meric_material(library, point_count, args.coupling_modulus_mpa)
+        assert crystal_rotations is not None
+        virgin = _make_meric_material(
+            library,
+            point_count,
+            args.coupling_modulus_mpa,
+            crystal_rotations,
+        )
     elif args.backend == "generic":
         virgin = _make_material(library, point_count, yield_stress, hardening)
     else:
         virgin = _make_native_material(
             library, point_count, yield_stress, hardening, args.coupling_modulus_mpa
         )
+    explicit_fractions = (
+        None if args.time_fractions is None else np.asarray(args.time_fractions, dtype=float)
+    )
+    if explicit_fractions is not None:
+        try:
+            prescribed_history = _history_at_time_fractions(history, explicit_fractions)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
+        prescribed_time_increments = np.diff(explicit_fractions) * total_duration
+    else:
+        prescribed_history = None
+        prescribed_time_increments = None
     virgin_trial = virgin.evaluate_in_plane(
-        np.zeros((point_count, 3)), time_increment=1.0, consistent_tangent=True
+        np.zeros((point_count, 3)),
+        time_increment=(
+            float(prescribed_time_increments[0])
+            if prescribed_time_increments is not None
+            else _time_increment(history, total_duration)
+        ),
+        consistent_tangent=True,
     )
     tangent = np.asarray(virgin_trial.tangent_in_plane_mpa).reshape(mesh, mesh, 2, 3, 3)
     virgin.revert()
@@ -1171,7 +1600,11 @@ def main() -> int:
     actual_path_substeps = args.path_substeps
     failure_diagnostics: dict[str, object] | None = None
     while True:
-        trial_history = _refine_history(history, actual_path_substeps)
+        trial_history = (
+            prescribed_history
+            if prescribed_history is not None
+            else _refine_history(history, actual_path_substeps)
+        )
         try:
             mono = None
             stag = None
@@ -1196,22 +1629,43 @@ def main() -> int:
                 fd_strain_step=args.fd_strain_step,
                 fd_chi_step=args.fd_chi_step,
                 material_model=args.material,
+                crystal_rotations=crystal_rotations,
+                total_duration=total_duration,
+                time_increments=prescribed_time_increments,
             )
             if args.method in ("monolithic", "both"):
                 try:
-                    mono = _solve_sequence(**common, method="monolithic")
+                    coupled_solver = (
+                        _solve_sequence_with_local_cutback
+                        if args.adaptive_path_cutback
+                        else _solve_sequence
+                    )
+                    mono = coupled_solver(
+                        **common,
+                        method="monolithic",
+                        progress_path=args.output.with_suffix(".monolithic.progress.jsonl"),
+                    )
                 except RuntimeError as error:
                     if isinstance(error, ProductionNestedFailureError):
                         failure_diagnostics = error.diagnostics
                     failures.append(f"monolithic: {error}")
             if args.method in ("staggered", "production-nested", "both"):
                 staggered_method = (
-                    "production-nested"
-                    if args.method == "production-nested"
-                    else "staggered"
+                    "production-nested" if args.method == "production-nested" else "staggered"
                 )
                 try:
-                    stag = _solve_sequence(**common, method=staggered_method)
+                    staggered_solver = (
+                        _solve_sequence_with_local_cutback
+                        if args.adaptive_path_cutback and staggered_method != "production-nested"
+                        else _solve_sequence
+                    )
+                    stag = staggered_solver(
+                        **common,
+                        method=staggered_method,
+                        progress_path=args.output.with_suffix(
+                            f".{staggered_method}.progress.jsonl"
+                        ),
+                    )
                 except RuntimeError as error:
                     if isinstance(error, ProductionNestedFailureError):
                         failure_diagnostics = error.diagnostics
@@ -1222,28 +1676,41 @@ def main() -> int:
         except RuntimeError as error:
             if isinstance(error, ProductionNestedFailureError):
                 failure_diagnostics = error.diagnostics
-            if not args.adaptive_path_cutback or actual_path_substeps >= args.maximum_path_substeps:
-                if failure_diagnostics is not None:
-                    failure_path = args.output.with_suffix(".failure.json")
-                    failure_path.parent.mkdir(parents=True, exist_ok=True)
-                    failure_path.write_text(
-                        json.dumps(
-                            {
-                                "status": "failed",
-                                "backend": args.backend,
-                                "method": args.method,
-                                "crop_nodes": list(crop),
-                                "path_substeps": actual_path_substeps,
-                                "diagnostics": failure_diagnostics,
-                            },
-                            indent=2,
-                        )
-                        + "\n"
+            if failure_diagnostics is not None:
+                failure_path = args.output.with_suffix(".failure.json")
+                failure_path.parent.mkdir(parents=True, exist_ok=True)
+                failure_path.write_text(
+                    json.dumps(
+                        {
+                            "status": "failed",
+                            "backend": args.backend,
+                            "method": args.method,
+                            "crop_nodes": list(crop),
+                            "path_substeps": actual_path_substeps,
+                            "diagnostics": failure_diagnostics,
+                        },
+                        indent=2,
                     )
-                raise
-            actual_path_substeps *= 2
-            print(f"global DIC cutback: retrying with {actual_path_substeps} subdivisions")
+                    + "\n"
+                )
+            raise
     total = time.perf_counter() - started
+    archive_result = mono if mono is not None else stag
+    default_fractions = (
+        explicit_fractions
+        if explicit_fractions is not None
+        else np.linspace(0.0, 1.0, len(trial_history))
+    )
+    accepted_time_fractions = np.asarray(
+        default_fractions
+        if archive_result is None
+        else archive_result.get("accepted_time_fractions", default_fractions),
+        dtype=float,
+    )
+    accepted_time_increments = np.diff(accepted_time_fractions) * total_duration
+    time_path_sha256 = hashlib.sha256(
+        np.ascontiguousarray(accepted_time_fractions).tobytes()
+    ).hexdigest()
     report = {
         "status": f"completed_coupled_{args.backend}_{args.material}_p43",
         "backend": args.backend,
@@ -1251,7 +1718,7 @@ def main() -> int:
         "mesh": [mesh, mesh],
         "increments": args.increments,
         "path_substeps": actual_path_substeps,
-        "effective_increments": len(_refine_history(history, actual_path_substeps)) - 1,
+        "effective_increments": len(accepted_time_fractions) - 1,
         "pixel_size_mm": PIXEL_SIZE_MM,
         "length_scale": args.length_scale,
         "coupling_modulus_mpa": args.coupling_modulus_mpa,
@@ -1266,6 +1733,51 @@ def main() -> int:
         "total_elapsed_seconds": total,
         "method": args.method,
         "material": args.material,
+        "time_history": {
+            "kind": (
+                "prescribed_normalized_pseudo_time"
+                if explicit_fractions is not None and args.total_duration_seconds is None
+                else (
+                    "prescribed_physical_time"
+                    if explicit_fractions is not None
+                    else (
+                        "adaptive_normalized_pseudo_time"
+                        if args.adaptive_path_cutback
+                        and args.total_duration_seconds is None
+                        else (
+                            "adaptive_physical_time"
+                            if args.adaptive_path_cutback
+                            else (
+                                "normalized_pseudo_time"
+                                if args.total_duration_seconds is None
+                                else "physical_time"
+                            )
+                        )
+                    )
+                )
+            ),
+            "total_duration": total_duration,
+            "minimum_time_increment": float(np.min(accepted_time_increments)),
+            "maximum_time_increment": float(np.max(accepted_time_increments)),
+            "accepted_time_fractions": accepted_time_fractions.tolist(),
+            "path_sha256": time_path_sha256,
+            "physical_time_history": args.total_duration_seconds is not None,
+        },
+        "orientation": orientation_provenance,
+        "paired_parameter_manifest": paired_parameter_manifest,
+        "comparison_contract": (
+            None
+            if args.material == "j2"
+            else {
+                "same_elasticity": True,
+                "same_slip_systems": True,
+                "same_interaction_matrix": True,
+                "same_hardening": True,
+                "same_orientation_field": True,
+                "physical_time_history": args.total_duration_seconds is not None,
+                "scientific_rate_comparison_qualified": False,
+            }
+        ),
         "monolithic": (
             None
             if mono is None
@@ -1273,7 +1785,13 @@ def main() -> int:
                 k: v
                 for k, v in mono.items()
                 if k
-                not in {"final_mechanical", "final_chi", "final_stress", "final_peeq"}
+                not in {
+                    "final_mechanical",
+                    "final_chi",
+                    "final_stress",
+                    "final_peeq",
+                    "final_source",
+                }
             }
         ),
         "staggered": (
@@ -1283,7 +1801,13 @@ def main() -> int:
                 k: v
                 for k, v in stag.items()
                 if k
-                not in {"final_mechanical", "final_chi", "final_stress", "final_peeq"}
+                not in {
+                    "final_mechanical",
+                    "final_chi",
+                    "final_stress",
+                    "final_peeq",
+                    "final_source",
+                }
             }
         ),
         "comparison": (
@@ -1295,9 +1819,7 @@ def main() -> int:
                 "mechanical_linf": float(
                     np.max(np.abs(mono["final_mechanical"] - stag["final_mechanical"]))
                 ),
-                "chi_linf": float(
-                    np.max(np.abs(mono["final_chi"] - stag["final_chi"]))
-                ),
+                "chi_linf": float(np.max(np.abs(mono["final_chi"] - stag["final_chi"]))),
             }
         ),
     }
@@ -1313,6 +1835,31 @@ def main() -> int:
                 solution_arrays[f"{label}_peeq"] = result["final_peeq"]
                 solution_arrays[f"{label}_source"] = result["final_source"]
     if solution_arrays:
+        solution_arrays.update(
+            {
+                "metadata_material": np.asarray(args.material),
+                "metadata_coupling_modulus_mpa": np.asarray(args.coupling_modulus_mpa),
+                "metadata_length_scale_mm": np.asarray(args.length_scale),
+                "metadata_effective_increments": np.asarray(len(accepted_time_fractions) - 1),
+                "metadata_time_increment": np.asarray(
+                    accepted_time_increments[0]
+                    if np.allclose(accepted_time_increments, accepted_time_increments[0])
+                    else np.nan
+                ),
+                "metadata_time_history_kind": np.asarray(report["time_history"]["kind"]),
+                "metadata_total_duration": np.asarray(total_duration),
+                "metadata_time_path_sha256": np.asarray(time_path_sha256),
+                "metadata_accepted_time_fractions": accepted_time_fractions,
+                "metadata_physical_time_history": np.asarray(
+                    args.total_duration_seconds is not None
+                ),
+                "metadata_orientation_sha256": np.asarray(
+                    ""
+                    if orientation_provenance is None
+                    else orientation_provenance["angles_sha256"]
+                ),
+            }
+        )
         np.savez_compressed(solution_path, **solution_arrays)
         report["solution_archive"] = str(solution_path)
     args.output.write_text(json.dumps(report, indent=2) + "\n")

@@ -85,11 +85,6 @@ a.setEntryName("BackStrain");
         (dg[i] - d * a[i] * abs(dg[i])) / (1 + theta * d * abs(dg[i]));
     const auto x = C * (a[i] + theta * da);
     const auto f = max(abs(tau - x) - r, stress(0));
-    // Guards the Norton power against overflow; specific to the rate-dependent
-    // flow rule and deliberately absent from the SRIX law, which is linear in f.
-    if (f > 1.1 * K) {
-      return false;
-    }
     const auto sgn = tau - x > 0 ? 1 : -1;
     // elasticity
     feel += dg[i] * ss.mus[i];

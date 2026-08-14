@@ -10,6 +10,56 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def _archive_metadata(path: Path) -> dict[str, object]:
+    """Read scalar provenance needed to reject incomparable crystal archives."""
+    names = {
+        "material",
+        "coupling_modulus_mpa",
+        "length_scale_mm",
+        "effective_increments",
+        "time_increment",
+        "time_history_kind",
+        "total_duration",
+        "time_path_sha256",
+        "physical_time_history",
+        "orientation_sha256",
+    }
+    with np.load(path) as arrays:
+        missing = [f"metadata_{name}" for name in names if f"metadata_{name}" not in arrays]
+        if missing:
+            raise ValueError(f"{path}: missing archive provenance {missing}")
+        return {name: np.asarray(arrays[f"metadata_{name}"]).item() for name in names}
+
+
+def _validate_crystal_pair(
+    local_path: Path, nonlocal_path: Path, expected_material: str
+) -> dict[str, object]:
+    """Require the same orientation/time contract and the intended Hchi pair."""
+    local = _archive_metadata(local_path)
+    coupled = _archive_metadata(nonlocal_path)
+    if local["material"] != expected_material or coupled["material"] != expected_material:
+        raise ValueError(f"expected two {expected_material} archives")
+    if not np.isclose(float(local["coupling_modulus_mpa"]), 0.0):
+        raise ValueError(f"{local_path}: local archive must use Hchi=0")
+    if not np.isclose(float(coupled["coupling_modulus_mpa"]), 5168.0):
+        raise ValueError(f"{nonlocal_path}: non-local archive must use Hchi=5168 MPa")
+    if not np.isclose(float(coupled["length_scale_mm"]), 0.05888):
+        raise ValueError(f"{nonlocal_path}: expected ell=0.05888 mm")
+    shared = (
+        "time_path_sha256",
+        "time_history_kind",
+        "physical_time_history",
+        "total_duration",
+        "orientation_sha256",
+    )
+    for name in shared:
+        if local[name] != coupled[name]:
+            raise ValueError(f"{name} differs between {local_path} and {nonlocal_path}")
+    if not str(local["orientation_sha256"]):
+        raise ValueError("crystal archives must contain a non-empty EBSD orientation digest")
+    return coupled
+
+
 def _field(
     path: Path, key: str, shape: tuple[int, int] | None = None, fallback: str | None = None
 ) -> np.ndarray:
@@ -38,7 +88,7 @@ def _limits(*arrays: np.ndarray) -> tuple[float, float]:
 
 def _plot_one(
     local_path: Path, nonlocal_path: Path, label: str, output: Path, source_name: str
-) -> dict[str, float]:
+) -> dict[str, object]:
     local = _field(local_path, "monolithic_source", fallback="monolithic_peeq")
     coupled_source = _field(nonlocal_path, "monolithic_source", fallback="monolithic_peeq")
     chi = _field(nonlocal_path, "monolithic_chi", local.shape)
@@ -94,12 +144,10 @@ def _plot_one(
         axis.set_ylabel("y pixel")
         figure.colorbar(image, ax=axis, shrink=0.85)
 
-    figure.suptitle(
-        f"P43 M100 — final DIC increment — scalar non-local coupling — {label}"
-    )
+    figure.suptitle(f"P43 M100 — final DIC increment — scalar non-local coupling — {label}")
     figure.savefig(output, dpi=220)
     plt.close(figure)
-    summary = {
+    summary: dict[str, object] = {
         "local_max": float(local.max()),
         "nonlocal_source_max": float(coupled_source.max()),
         "chi_max": float(chi.max()),
@@ -134,6 +182,8 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    meric_contract = _validate_crystal_pair(args.meric_local, args.meric_nonlocal, "meric")
+    srix_contract = _validate_crystal_pair(args.srix_local, args.srix_nonlocal, "srix")
     summary = {
         "j2": _plot_one(
             args.j2_local,
@@ -157,6 +207,10 @@ def main() -> int:
             "Gamma",
         ),
     }
+    assert isinstance(summary["meric"], dict)
+    assert isinstance(summary["srix"], dict)
+    summary["meric"]["archive_contract"] = meric_contract
+    summary["srix"]["archive_contract"] = srix_contract
     import json
 
     summary["parameters"] = {"length_scale_mm": 0.05888, "coupling_modulus_mpa": 5168.0}

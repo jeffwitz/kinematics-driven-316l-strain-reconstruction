@@ -664,17 +664,18 @@ def test_the_transposition_is_not_exact_away_from_001(
     assert relative < 0.20
 
 
-def test_the_rate_independent_law_takes_larger_steps() -> None:
-    """The practical reason to prefer SRIX for our increment-hungry campaigns.
+def test_both_laws_leave_step_control_to_the_global_solver() -> None:
+    """Neither constitutive law imposes an artificial ``1.1 K`` cutoff.
 
-    Meric-Cailletaud rejects a step whose overstress exceeds 1.1 K, a guard its
-    Norton power needs and the linear SRIX flow does not.
+    The Norton power only overflows at vastly larger overstress ratios.  Load
+    admissibility is therefore governed by local convergence and by the shared
+    line-search/cutback controller, not by a non-physical material threshold.
     """
 
     mgis, data = _manager(SRIX)
     assert _integrate(mgis, data, _isochoric_axial((1.0, 0.0, 0.0), 5.0e-2)[None, :], 1.0)
 
     mgis, viscous = _manager(MERIC_CAILLETAUD)
-    assert not _integrate(
+    assert _integrate(
         mgis, viscous, _isochoric_axial((1.0, 0.0, 0.0), 5.0e-2)[None, :], 1.0
     )

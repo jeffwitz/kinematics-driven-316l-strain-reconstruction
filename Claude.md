@@ -4493,9 +4493,10 @@ intégration sont qualifiées ; aucun paramètre 316L n'est identifié.
   le plancher de troncature des différences finies elles-mêmes
 - Deux pièges de jacobien trouvés **par la mesure**, pas par relecture : le
   crochet de Macaulay ne se dérive pas tout seul ici (la pente `Δε̄/R` est
-  constante, contrairement à `n·v/f`), et le garde-fou `f > 1.1 K` de MC ne doit
-  pas être recopié. Sans lui, SRIX encaisse `5 %` de déformation en un seul
-  incrément là où MC refuse à `1 %`
+  constante, contrairement à `n·v/f`), et l'ancien garde-fou numérique
+  `f > 1.1 K` de MC ne doit pas être recopié. Ce seuil n'était pas une partie de
+  la loi de Norton et a depuis été supprimé : la robustesse des pas appartient
+  à la line-search et au cutback sélectif communs.
 - `R = 18,7819100705 MPa` par l'équation (16), pour `K=12`, `n=11`,
   `1e-3 s⁻¹`. **Transposition analytique, pas identification** : la vitesse de
   référence est un argument obligatoire sans défaut, car celle de notre essai

@@ -160,6 +160,7 @@ class SrixGeneric3DMaterialPointBatch:
             )
         self._mgis = mgis
         self._behaviour = behaviour
+        self._behaviour_name = behaviour_name
         self._manager = manager
         self._point_count = point_count
         self._elastic_offset = elastic_offset
@@ -250,7 +251,7 @@ class SrixGeneric3DMaterialPointBatch:
         if status != 1:
             self.revert()
             raise MFrontIntegrationError(
-                f"SRIX Generic 3-D integration failed with status {status}"
+                f"{self._behaviour_name} 3-D integration failed with status {status}"
             )
         self._has_trial_state = True
         forces = np.asarray(self._manager.s1.thermodynamic_forces, dtype=float).copy()

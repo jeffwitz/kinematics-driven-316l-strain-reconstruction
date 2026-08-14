@@ -19,3 +19,10 @@ def test_meric_and_srix_have_the_same_fcc_structure_contract() -> None:
         12.3,
         1.6,
     )
+
+
+def test_meric_norton_law_has_no_artificial_overstress_cutoff() -> None:
+    source = Path("mfront/Fcc316LMericCailletaud.mfront").read_text(encoding="utf-8")
+
+    assert "f > 1.1 * K" not in source
+    assert "pow(f / K, n)" in source
