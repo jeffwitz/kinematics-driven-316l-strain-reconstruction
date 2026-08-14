@@ -20,32 +20,36 @@ FloatArray = NDArray[np.float64]
 
 @dataclass(frozen=True, slots=True)
 class PlasticMetric:
-    """Initial explicit plastic metric.
+    """Mesh-normalized amplitude/spatial metric for plastic perturbations.
 
-    The first implementation uses a dimensionless amplitude metric. Spatial
-    regularisation is intentionally not hidden in this default; it must be
-    calibrated from the oracle before being enabled.
+    ``reference_scale`` is the documented RMS plastic-increment scale. The
+    amplitude term is normalized by the number of plastic unknowns, so its
+    quadratic form is a mean-square relative perturbation.
     """
 
     amplitude_weight: float = 1.0
     spatial_weight: float = 0.0
+    reference_scale: float = 1.0
 
     def __post_init__(self) -> None:
         if not np.isfinite(self.amplitude_weight) or self.amplitude_weight <= 0.0:
             raise ValueError("amplitude_weight must be finite and positive")
         if not np.isfinite(self.spatial_weight) or self.spatial_weight < 0.0:
             raise ValueError("spatial_weight must be finite and non-negative")
+        if not np.isfinite(self.reference_scale) or self.reference_scale <= 0.0:
+            raise ValueError("reference_scale must be finite and positive")
 
     def action(self, plastic: ArrayLike) -> FloatArray:
         values = np.asarray(plastic, dtype=np.float64)
-        result = self.amplitude_weight * values
+        normalization = values.size * self.reference_scale**2
+        result = self.amplitude_weight * values / normalization
         if self.spatial_weight == 0.0:
             return result
         for axis in (0, 1):
             difference = np.diff(values, axis=axis)
             if difference.size == 0:
                 continue
-            contribution = difference / difference.size
+            contribution = difference / (difference.size * self.reference_scale**2)
             lower = [slice(None)] * values.ndim
             upper = [slice(None)] * values.ndim
             lower[axis] = slice(0, -1)

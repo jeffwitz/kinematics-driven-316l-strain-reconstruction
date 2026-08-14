@@ -77,7 +77,11 @@ def test_generalized_modes_are_sorted_and_metric_normalized() -> None:
     assert eigenvalues.shape == (2,)
     assert modes.shape == (operator.plastic_size, 2)
     assert eigenvalues[0] >= eigenvalues[1] >= -1.0e-10
-    metric_modes = modes.T @ modes
+    metric_modes = modes.T @ np.stack(
+        [PlasticMetric().action(modes[:, index].reshape(operator.plastic_shape)).ravel()
+         for index in range(2)],
+        axis=1,
+    )
     np.testing.assert_allclose(metric_modes, np.eye(2), rtol=1.0e-7, atol=1.0e-7)
 
 

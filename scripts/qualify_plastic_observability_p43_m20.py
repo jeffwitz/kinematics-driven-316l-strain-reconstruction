@@ -46,6 +46,7 @@ def main() -> None:
     parser.add_argument("--rank", type=int, default=2)
     parser.add_argument("--state-count", type=int, default=5)
     parser.add_argument("--spatial-weight", type=float, default=0.0)
+    parser.add_argument("--reference-scale", type=float, default=1.0)
     args = parser.parse_args()
 
     fields = np.load(args.fields, allow_pickle=False)
@@ -104,7 +105,10 @@ def main() -> None:
         gmres_rtol=1.0e-9,
         gmres_maxiter=2000,
     )
-    metric = PlasticMetric(spatial_weight=args.spatial_weight)
+    metric = PlasticMetric(
+        spatial_weight=args.spatial_weight,
+        reference_scale=args.reference_scale,
+    )
     eigenvalues, modes = operator.generalized_modes(args.rank, metric=metric)
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.mkdir(parents=True, exist_ok=True)
@@ -124,6 +128,7 @@ def main() -> None:
             "type": "amplitude_plus_neighbour_differences",
             "amplitude_weight": 1.0,
             "spatial_weight": args.spatial_weight,
+            "reference_scale": args.reference_scale,
         },
         "eigenvalues": eigenvalues.tolist(),
         "sqrt_eigenvalues": np.sqrt(np.maximum(eigenvalues, 0.0)).tolist(),
