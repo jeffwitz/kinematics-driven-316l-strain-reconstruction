@@ -17,6 +17,7 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.optimize import LinearConstraint, minimize
 from scipy.sparse.linalg import LinearOperator, gmres
 
+from fem_inhouse.core.constitutive import von_mises
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch, DrivenJ2Trial
 from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
@@ -229,6 +230,40 @@ class ExperimentalMechanicalOracleLinearisation:
         """Apply ``G_p^T`` without assembling the global operator."""
 
         return self.jacobian_transpose_action(mechanical_dual)[1]
+
+    def direction_residual_action(self, direction_increment: ArrayLike) -> FloatArray:
+        """Apply the residual sensitivity to a tangent flow-direction field."""
+        direction = np.asarray(direction_increment, dtype=np.float64)
+        expected = (*self.plastic_increment_shape, 3)
+        if direction.shape != expected:
+            raise ValueError(f"direction_increment must have shape {expected}")
+        stress_increment = self.trial.stress_direction_action(direction.reshape(-1, 3))
+        return self.kinematics.divergence_from_sample_stress(
+            stress_increment.reshape((*self.plastic_increment_shape, 3))
+        )
+
+    def direction_residual_transpose_action(self, mechanical_dual: ArrayLike) -> FloatArray:
+        """Apply the transpose of the flow-direction residual sensitivity."""
+        dual = np.asarray(mechanical_dual, dtype=np.float64)
+        if dual.shape != self.displacement_shape:
+            raise ValueError(f"mechanical_dual must have shape {self.displacement_shape}")
+        dual_strain = self.kinematics.strain_samples(dual).reshape(-1, 3)
+        stress = self.trial.stress_in_plane_mpa
+        q = von_mises(stress)
+        safe = np.where(q > 0.0, q, 1.0)
+        tangent = self.trial.tangent_in_plane_mpa
+        if tangent is None:
+            raise RuntimeError("oracle linearisation requires the strain tangent")
+        flow = np.asarray(self.trial.observables["flow_direction"], dtype=np.float64)
+        tangent_dual = np.einsum("pji,pj->pi", tangent, dual_strain)
+        projected_dual = tangent_dual - stress * (
+            np.einsum("pi,pi->p", flow, tangent_dual) / safe
+        )[:, None]
+        projected_dual[q <= 0.0] = 0.0
+        result = self.trial.observables["equivalent_plastic_increment"][:, None] * projected_dual
+        return (
+            self.kinematics.sample_quadrature_weight * result
+        ).reshape((*self.plastic_increment_shape, 3))
 
     def jacobian_action(
         self,

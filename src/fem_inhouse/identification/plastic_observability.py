@@ -309,3 +309,54 @@ class PlasticObservabilityOperator:
             "gp_relative_error": float(gp_error / gp_scale),
             "observation_relative_error": float(observation_error / observation_scale),
         }
+
+
+class DirectionObservabilityOperator(PlasticObservabilityOperator):
+    """Observability operator for signed perturbations of the J2 flow direction.
+
+    The input is a three-component raw direction field per material point. The
+    constitutive linearisation projects it onto ``sigma.T delta_n = 0`` before
+    applying the mechanical residual operator. Unlike amplitude increments,
+    these variables are signed and have no ``Delta p >= 0`` constraint.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.direction_shape = (*self.plastic_shape, 3)
+        self.direction_size = int(np.prod(self.direction_shape))
+        self.plastic_size = self.direction_size
+
+    def _plastic(self, value: ArrayLike) -> FloatArray:
+        result = np.asarray(value, dtype=np.float64)
+        if result.shape == self.direction_shape:
+            return result
+        if result.size == self.direction_size:
+            return result.reshape(self.direction_shape)
+        raise ValueError(f"direction value must have shape {self.direction_shape}")
+
+    def gp(self, state: PlasticObservabilityState, plastic: ArrayLike) -> FloatArray:
+        return state.linearisation.direction_residual_action(self._plastic(plastic))
+
+    def gp_transpose(self, state: PlasticObservabilityState, dual: ArrayLike) -> FloatArray:
+        field = self._displacement_field(dual)
+        return state.linearisation.direction_residual_transpose_action(field)
+
+    def adjoint_errors(self, *, seed: int = 20260814) -> dict[str, float]:
+        rng = np.random.default_rng(seed)
+        state = self.states[0]
+        direction = rng.normal(size=self.direction_shape)
+        dual = rng.normal(size=self.displacement_shape)
+        gp_value = self.gp(state, direction)
+        gp_error = abs(np.vdot(gp_value, dual) - np.vdot(direction, self.gp_transpose(state, dual)))
+        observed = self.observation(state, direction)
+        observation_dual = rng.normal(size=observed.shape)
+        observation_error = abs(
+            np.vdot(observed, observation_dual)
+            - np.vdot(direction, self.observation_transpose(state, observation_dual))
+        )
+        return {
+            "gp_relative_error": float(gp_error / max(abs(np.vdot(gp_value, dual)), 1.0e-30)),
+            "observation_relative_error": float(
+                observation_error / max(abs(np.vdot(observed, observation_dual)), 1.0e-30)
+            ),
+        }

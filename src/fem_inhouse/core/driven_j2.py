@@ -35,6 +35,29 @@ class DrivenJ2Trial(ConstitutiveTrial):
     local_residual_norm_mpa: FloatArray
     local_iterations: FloatArray
 
+    def stress_direction_action(self, raw_direction: ArrayLike) -> FloatArray:
+        """Return ``d sigma / d c`` for a tangent flow-direction perturbation.
+
+        The raw perturbation is projected with ``sigma.T delta_n = 0`` so it
+        changes the flow direction without changing the J2 plastic work at
+        first order.
+        """
+        raw = np.asarray(raw_direction, dtype=np.float64)
+        expected = self.stress_in_plane_mpa.shape
+        if raw.shape != expected:
+            raise ValueError(f"raw_direction must have shape {expected}")
+        stress = self.stress_in_plane_mpa
+        q = von_mises(stress)
+        direction = np.asarray(self.observables["flow_direction"], dtype=np.float64)
+        safe = np.where(q > 0.0, q, 1.0)
+        tangent_direction = raw - direction * (
+            np.einsum("pi,pi->p", stress, raw) / safe
+        )[:, None]
+        tangent_direction[q <= 0.0] = 0.0
+        return -self.observables["equivalent_plastic_increment"][:, None] * np.einsum(
+            "pij,pj->pi", self.tangent_in_plane_mpa, tangent_direction
+        )
+
 
 @runtime_checkable
 class DrivenJ2MaterialProtocol(Protocol):
