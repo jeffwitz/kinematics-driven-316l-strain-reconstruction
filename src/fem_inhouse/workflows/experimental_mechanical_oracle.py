@@ -1348,7 +1348,10 @@ def solve_experimental_mechanical_oracle_history(
 
     for index in range(measured.shape[0] - 1):
         initial_displacement = np.asarray(
-            initial_history[index + 1], dtype=np.float64
+            accepted_displacements[-1]
+            if solution_method == "reduced"
+            else initial_history[index + 1],
+            dtype=np.float64,
         )
         if displacement_warm_start is not None:
             initial_displacement = np.asarray(
