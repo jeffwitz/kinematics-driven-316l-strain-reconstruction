@@ -323,19 +323,31 @@ class DrivenJ2PlaneStressBatch:
         """Retry the same local problem through a non-committed Delta-p homotopy."""
         stress = trial_stress.copy()
         result: tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray] | None = None
-        for scale in np.linspace(0.0, 1.0, 17):
+        scale = 0.0
+        step = 0.25
+        attempts = 0
+        while scale < 1.0 - 1.0e-14:
+            target = min(1.0, scale + step)
             try:
                 result = self._solve_stress(
                     trial_stress,
-                    scale * increment,
+                    target * increment,
                     initial_stress=stress,
                 )
             except ConstitutiveIntegrationError as error:
                 diagnostics = getattr(error, "diagnostics", {})
-                diagnostics["continuation_scale"] = float(scale)
+                diagnostics["continuation_scale"] = float(target)
+                diagnostics["continuation_step"] = float(step)
                 error.diagnostics = diagnostics
-                raise
+                step *= 0.5
+                attempts += 1
+                if step < 2.0**-12 or attempts > 64:
+                    raise
+                continue
             stress = result[0]
+            scale = target
+            attempts = 0
+            step = min(0.25, 1.0 - scale) if scale < 1.0 else 0.0
         if result is None:
             raise ConstitutiveIntegrationError("local Delta-p continuation produced no state")
         return result

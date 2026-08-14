@@ -83,6 +83,7 @@ def main() -> None:
     )
     transfer = DICSpectralTransfer.from_sinusoidal_csv(TRANSFER)
     selected = {state - 1 for state in args.states}
+    last_step = max(selected) if selected else len(ludwik) - 1
     displacement = measured[0].copy()
     records: list[dict[str, object]] = []
     replay_failure: dict[str, object] | None = None
@@ -96,7 +97,7 @@ def main() -> None:
         increment: np.ndarray,
         initial: np.ndarray,
         target: np.ndarray,
-    ) -> tuple[np.ndarray, float]:
+    ):
         directional_material.set_direction_coefficients(coefficients)
         try:
             result = solve_fixed_plastic_increment_equilibrium(
@@ -108,11 +109,11 @@ def main() -> None:
                 time_increment=1.0,
                 equilibrium_rms_tolerance=args.equilibrium_tolerance,
             )
-            return result.displacement.copy(), float(result.equilibrium_rms)
+            return result
         finally:
             directional_material.revert()
 
-    for step, increment in enumerate(ludwik):
+    for step, increment in enumerate(ludwik[: last_step + 1]):
         target = measured[step + 1]
         zero = np.zeros(args.rank)
         committed_plastic = baseline_material.committed_plastic_strain
@@ -140,15 +141,36 @@ def main() -> None:
         baseline_eq = float(baseline_result.equilibrium_rms)
 
         if step in selected:
-            directional_zero, directional_zero_eq = solve_candidate(
+            directional_zero_result = solve_candidate(
                 zero, increment, baseline, target
             )
+            directional_zero = directional_zero_result.displacement.copy()
+            directional_zero_eq = float(directional_zero_result.equilibrium_rms)
             zero_difference = directional_zero - baseline
             zero_relative_error = float(
                 np.linalg.norm(zero_difference)
                 / max(np.linalg.norm(baseline), 1.0e-30)
             )
             r0 = observed_residual(baseline, target)
+            baseline_trial = baseline_result.linearisation.trial
+            directional_trial = directional_zero_result.linearisation.trial
+            stress_error = float(
+                np.linalg.norm(
+                    directional_trial.stress_in_plane_mpa
+                    - baseline_trial.stress_in_plane_mpa
+                )
+                / max(np.linalg.norm(baseline_trial.stress_in_plane_mpa), 1.0e-30)
+            )
+            plastic_error = float(
+                np.linalg.norm(
+                    directional_trial.observables["plastic_strain_2d"]
+                    - baseline_trial.observables["plastic_strain_2d"]
+                )
+                / max(
+                    np.linalg.norm(baseline_trial.observables["plastic_strain_2d"]),
+                    1.0e-30,
+                )
+            )
             responses = []
             equilibria = []
             for component in range(args.rank):
@@ -156,14 +178,21 @@ def main() -> None:
                 minus = zero.copy()
                 plus[component] += args.h
                 minus[component] -= args.h
-                u_plus, eq_plus = solve_candidate(plus, increment, baseline, target)
-                u_minus, eq_minus = solve_candidate(minus, increment, baseline, target)
+                plus_result = solve_candidate(plus, increment, baseline, target)
+                minus_result = solve_candidate(minus, increment, baseline, target)
+                u_plus = plus_result.displacement
+                u_minus = minus_result.displacement
                 y = (
                     observed_residual(u_plus, target)
                     - observed_residual(u_minus, target)
                 ) / (2.0 * args.h)
                 responses.append(y)
-                equilibria.append({"plus": eq_plus, "minus": eq_minus})
+                equilibria.append(
+                    {
+                        "plus": float(plus_result.equilibrium_rms),
+                        "minus": float(minus_result.equilibrium_rms),
+                    }
+                )
             response_matrix = np.stack(responses, axis=1)
             flat = response_matrix.reshape(-1, args.rank)
             flat_r0 = r0.ravel()
@@ -173,17 +202,25 @@ def main() -> None:
             inverse = np.linalg.pinv(hessian, rcond=1.0e-12)
             b_gn = -inverse @ g
             delta_j = 0.5 * float(g @ inverse @ g)
+            objective_j0 = 0.5 * float(np.vdot(flat_r0, flat_r0).real) / count
             response_norms = np.linalg.norm(flat, axis=0)
             residual_norm = float(np.linalg.norm(flat_r0))
             rho = (flat.T @ flat_r0) / np.maximum(response_norms * residual_norm, 1.0e-300)
+            single_mode_fraction = (g * g) / np.maximum(
+                2.0 * np.diag(hessian) * objective_j0, 1.0e-300
+            )
             records.append(
                 {
                     "state": step + 1,
-                    "objective_j0": 0.5 * float(np.vdot(flat_r0, flat_r0).real) / count,
+                    "objective_j0": objective_j0,
+                    "single_mode_predicted_fraction": single_mode_fraction.tolist(),
+                    "single_mode_rho_squared": (rho * rho).tolist(),
                     "equilibrium_rms": baseline_eq,
                     "directional_zero_equilibrium_rms": directional_zero_eq,
                     "directional_zero_relative_error": zero_relative_error,
                     "directional_zero_absolute_error": float(np.max(np.abs(zero_difference))),
+                    "directional_zero_stress_relative_error": stress_error,
+                    "directional_zero_plastic_strain_relative_error": plastic_error,
                     "directional_zero_objective": 0.5 * float(
                         np.vdot(observed_residual(directional_zero, target),
                                 observed_residual(directional_zero, target)).real
