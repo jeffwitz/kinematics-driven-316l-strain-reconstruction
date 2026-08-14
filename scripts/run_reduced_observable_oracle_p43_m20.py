@@ -74,8 +74,8 @@ def main() -> None:
         kinematics.material_point_count,
         young_modulus_mpa=205_000.0,
         poisson_ratio=0.30,
-        local_absolute_tolerance_mpa=1.0e-8,
-        local_relative_tolerance=1.0e-10,
+        local_absolute_tolerance_mpa=1.0e-6,
+        local_relative_tolerance=1.0e-8,
         maximum_local_iterations=80,
         maximum_line_search_iterations=32,
     )
