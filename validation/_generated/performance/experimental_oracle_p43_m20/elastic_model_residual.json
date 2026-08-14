@@ -1,0 +1,1408 @@
+{
+  "dic_uncertainty_mm": 9.4e-05,
+  "note": "deviation is the interior part of the measured field that the homogeneous isotropic elastic extension of its own boundary cannot reproduce",
+  "origin_nodes": [
+    1610,
+    1075
+  ],
+  "pixel_size_mm": 0.00184,
+  "records": [
+    {
+      "crop_nodes": [
+        1610,
+        1630,
+        1075,
+        1095
+      ],
+      "deviation_over_displacement_first_five": [
+        0.0005805313204048458,
+        0.0006622460839195659,
+        0.0002668734313538934,
+        0.00034327940167724425,
+        0.00040617835229489685
+      ],
+      "deviation_over_displacement_median": 0.00045123196993930624,
+      "pixels": 20,
+      "pure_noise_whitened_norm": 26.870057685088806,
+      "states": [
+        {
+          "deviation_over_dic_sigma": 0.0,
+          "deviation_over_displacement": 0.0,
+          "deviation_rms_mm": 0.0,
+          "displacement_rms_mm": 0.0,
+          "state": 0,
+          "whitened_norm_over_noise": 0.0
+        },
+        {
+          "deviation_over_dic_sigma": 0.005311773363825622,
+          "deviation_over_displacement": 0.0005805313204048458,
+          "deviation_rms_mm": 4.993066961996085e-07,
+          "displacement_rms_mm": 0.0008600857157050655,
+          "state": 1,
+          "whitened_norm_over_noise": 0.02158460170895922
+        },
+        {
+          "deviation_over_dic_sigma": 0.014273498840238721,
+          "deviation_over_displacement": 0.0006622460839195659,
+          "deviation_rms_mm": 1.3417088909824397e-06,
+          "displacement_rms_mm": 0.002025997470670433,
+          "state": 2,
+          "whitened_norm_over_noise": 0.039571790708747154
+        },
+        {
+          "deviation_over_dic_sigma": 0.009363347407264086,
+          "deviation_over_displacement": 0.0002668734313538934,
+          "deviation_rms_mm": 8.80154656282824e-07,
+          "displacement_rms_mm": 0.0032980227811275657,
+          "state": 3,
+          "whitened_norm_over_noise": 0.03864403724380895
+        },
+        {
+          "deviation_over_dic_sigma": 0.017955407450970105,
+          "deviation_over_displacement": 0.00034327940167724425,
+          "deviation_rms_mm": 1.6878083003911897e-06,
+          "displacement_rms_mm": 0.004916718836448244,
+          "state": 4,
+          "whitened_norm_over_noise": 0.07019978534986739
+        },
+        {
+          "deviation_over_dic_sigma": 0.02820513036394332,
+          "deviation_over_displacement": 0.00040617835229489685,
+          "deviation_rms_mm": 2.6512822542106716e-06,
+          "displacement_rms_mm": 0.0065273844340324825,
+          "state": 5,
+          "whitened_norm_over_noise": 0.09059884497213035
+        },
+        {
+          "deviation_over_dic_sigma": 0.026803854836170198,
+          "deviation_over_displacement": 0.00030529582893708507,
+          "deviation_rms_mm": 2.5195623545999983e-06,
+          "displacement_rms_mm": 0.008252855479133408,
+          "state": 6,
+          "whitened_norm_over_noise": 0.09864060005740488
+        },
+        {
+          "deviation_over_dic_sigma": 0.036818890026351275,
+          "deviation_over_displacement": 0.00035119935301669125,
+          "deviation_rms_mm": 3.4609756624770197e-06,
+          "displacement_rms_mm": 0.009854732455365691,
+          "state": 7,
+          "whitened_norm_over_noise": 0.1146018064901291
+        },
+        {
+          "deviation_over_dic_sigma": 0.03579216260442597,
+          "deviation_over_displacement": 0.0002921902230843501,
+          "deviation_rms_mm": 3.3644632848160412e-06,
+          "displacement_rms_mm": 0.011514633341598088,
+          "state": 8,
+          "whitened_norm_over_noise": 0.12908975432457048
+        },
+        {
+          "deviation_over_dic_sigma": 0.03615310841202608,
+          "deviation_over_displacement": 0.00026321573422064784,
+          "deviation_rms_mm": 3.3983921907304518e-06,
+          "displacement_rms_mm": 0.012911052604027296,
+          "state": 9,
+          "whitened_norm_over_noise": 0.1484657054996795
+        },
+        {
+          "deviation_over_dic_sigma": 0.03971347215321923,
+          "deviation_over_displacement": 0.0002596358890820547,
+          "deviation_rms_mm": 3.733066382402607e-06,
+          "displacement_rms_mm": 0.014378083074727847,
+          "state": 10,
+          "whitened_norm_over_noise": 0.1486061813991868
+        },
+        {
+          "deviation_over_dic_sigma": 0.05039104221764888,
+          "deviation_over_displacement": 0.00030259870579358867,
+          "deviation_rms_mm": 4.7367579684589946e-06,
+          "displacement_rms_mm": 0.015653596257249276,
+          "state": 11,
+          "whitened_norm_over_noise": 0.18171021510290758
+        },
+        {
+          "deviation_over_dic_sigma": 0.05417057631239867,
+          "deviation_over_displacement": 0.00030105396426190293,
+          "deviation_rms_mm": 5.092034173365474e-06,
+          "displacement_rms_mm": 0.016914024652854735,
+          "state": 12,
+          "whitened_norm_over_noise": 0.18269750939309773
+        },
+        {
+          "deviation_over_dic_sigma": 0.056041323377527937,
+          "deviation_over_displacement": 0.00029102872088229204,
+          "deviation_rms_mm": 5.267884397487626e-06,
+          "displacement_rms_mm": 0.01810090901515609,
+          "state": 13,
+          "whitened_norm_over_noise": 0.18848238361392158
+        },
+        {
+          "deviation_over_dic_sigma": 0.07291781571428825,
+          "deviation_over_displacement": 0.0003527444761060299,
+          "deviation_rms_mm": 6.854274677143095e-06,
+          "displacement_rms_mm": 0.01943127431167143,
+          "state": 14,
+          "whitened_norm_over_noise": 0.23822173927718132
+        },
+        {
+          "deviation_over_dic_sigma": 0.07786337504062085,
+          "deviation_over_displacement": 0.00035449500596025825,
+          "deviation_rms_mm": 7.319157253818359e-06,
+          "displacement_rms_mm": 0.020646714708976454,
+          "state": 15,
+          "whitened_norm_over_noise": 0.2488080258789421
+        },
+        {
+          "deviation_over_dic_sigma": 0.09552822592244183,
+          "deviation_over_displacement": 0.0004106547964546653,
+          "deviation_rms_mm": 8.979653236709532e-06,
+          "displacement_rms_mm": 0.021866670776121935,
+          "state": 16,
+          "whitened_norm_over_noise": 0.3105588955617355
+        },
+        {
+          "deviation_over_dic_sigma": 0.1026625616651206,
+          "deviation_over_displacement": 0.00041982000497204383,
+          "deviation_rms_mm": 9.650280796521335e-06,
+          "displacement_rms_mm": 0.022986710214450014,
+          "state": 17,
+          "whitened_norm_over_noise": 0.32729916195410064
+        },
+        {
+          "deviation_over_dic_sigma": 0.10378017088900772,
+          "deviation_over_displacement": 0.00040218860137604135,
+          "deviation_rms_mm": 9.755336063566726e-06,
+          "displacement_rms_mm": 0.024255625420984042,
+          "state": 18,
+          "whitened_norm_over_noise": 0.33929693556536644
+        },
+        {
+          "deviation_over_dic_sigma": 0.1019509926973626,
+          "deviation_over_displacement": 0.000378326608972746,
+          "deviation_rms_mm": 9.583393313552084e-06,
+          "displacement_rms_mm": 0.025331005237970074,
+          "state": 19,
+          "whitened_norm_over_noise": 0.3334521817424018
+        },
+        {
+          "deviation_over_dic_sigma": 0.09738294321762793,
+          "deviation_over_displacement": 0.0003462885891305038,
+          "deviation_rms_mm": 9.153996662457024e-06,
+          "displacement_rms_mm": 0.026434589385234433,
+          "state": 20,
+          "whitened_norm_over_noise": 0.32290400695486504
+        },
+        {
+          "deviation_over_dic_sigma": 0.12211961546440835,
+          "deviation_over_displacement": 0.0004170732056991616,
+          "deviation_rms_mm": 1.1479243853654384e-05,
+          "displacement_rms_mm": 0.027523330908805634,
+          "state": 21,
+          "whitened_norm_over_noise": 0.3784908034945378
+        },
+        {
+          "deviation_over_dic_sigma": 0.15615584179545533,
+          "deviation_over_displacement": 0.0005146331432563005,
+          "deviation_rms_mm": 1.46786491287728e-05,
+          "displacement_rms_mm": 0.02852254916170927,
+          "state": 22,
+          "whitened_norm_over_noise": 0.45757932905589055
+        },
+        {
+          "deviation_over_dic_sigma": 0.16462290565096238,
+          "deviation_over_displacement": 0.0005214178594864249,
+          "deviation_rms_mm": 1.5474553131190463e-05,
+          "displacement_rms_mm": 0.02967783486824226,
+          "state": 23,
+          "whitened_norm_over_noise": 0.48030081876166786
+        },
+        {
+          "deviation_over_dic_sigma": 0.15770630156946508,
+          "deviation_over_displacement": 0.0004819118324895225,
+          "deviation_rms_mm": 1.4824392347529717e-05,
+          "displacement_rms_mm": 0.030761627642442297,
+          "state": 24,
+          "whitened_norm_over_noise": 0.5171042975131925
+        },
+        {
+          "deviation_over_dic_sigma": 0.15538529814837052,
+          "deviation_over_displacement": 0.00045648986108641205,
+          "deviation_rms_mm": 1.4606218025946828e-05,
+          "displacement_rms_mm": 0.03199680709487197,
+          "state": 25,
+          "whitened_norm_over_noise": 0.463877290829226
+        },
+        {
+          "deviation_over_dic_sigma": 0.15667343289958155,
+          "deviation_over_displacement": 0.00044597407879220043,
+          "deviation_rms_mm": 1.4727302692560664e-05,
+          "displacement_rms_mm": 0.03302277731577037,
+          "state": 26,
+          "whitened_norm_over_noise": 0.49385313338730313
+        },
+        {
+          "deviation_over_dic_sigma": 0.23003900797325919,
+          "deviation_over_displacement": 0.0006309698482581601,
+          "deviation_rms_mm": 2.162366674948636e-05,
+          "displacement_rms_mm": 0.03427052308312374,
+          "state": 27,
+          "whitened_norm_over_noise": 0.6264967562754142
+        },
+        {
+          "deviation_over_dic_sigma": 0.23982241250308844,
+          "deviation_over_displacement": 0.0006385193330328916,
+          "deviation_rms_mm": 2.254330677529031e-05,
+          "displacement_rms_mm": 0.035305597824598765,
+          "state": 28,
+          "whitened_norm_over_noise": 0.6756416406918262
+        },
+        {
+          "deviation_over_dic_sigma": 0.26523640981074154,
+          "deviation_over_displacement": 0.0006808342365189158,
+          "deviation_rms_mm": 2.4932222522209705e-05,
+          "displacement_rms_mm": 0.03662010689956983,
+          "state": 29,
+          "whitened_norm_over_noise": 0.7302184993743386
+        },
+        {
+          "deviation_over_dic_sigma": 0.2892850155339506,
+          "deviation_over_displacement": 0.0007229017726470644,
+          "deviation_rms_mm": 2.7192791460191354e-05,
+          "displacement_rms_mm": 0.037616163757102083,
+          "state": 30,
+          "whitened_norm_over_noise": 0.7529005885547468
+        },
+        {
+          "deviation_over_dic_sigma": 0.29785370758202845,
+          "deviation_over_displacement": 0.000719642752037839,
+          "deviation_rms_mm": 2.7998248512710673e-05,
+          "displacement_rms_mm": 0.03890576043936662,
+          "state": 31,
+          "whitened_norm_over_noise": 0.7754736286330381
+        },
+        {
+          "deviation_over_dic_sigma": 0.30710307877788917,
+          "deviation_over_displacement": 0.0007181779752250683,
+          "deviation_rms_mm": 2.8867689405121582e-05,
+          "displacement_rms_mm": 0.04019573197865724,
+          "state": 32,
+          "whitened_norm_over_noise": 0.8216134704168258
+        },
+        {
+          "deviation_over_dic_sigma": 0.316973711941383,
+          "deviation_over_displacement": 0.0007182060928637856,
+          "deviation_rms_mm": 2.9795528922490003e-05,
+          "displacement_rms_mm": 0.0414860430989702,
+          "state": 33,
+          "whitened_norm_over_noise": 0.887591158649029
+        },
+        {
+          "deviation_over_dic_sigma": 0.3628347141864978,
+          "deviation_over_displacement": 0.0008005698588300868,
+          "deviation_rms_mm": 3.4106463133530795e-05,
+          "displacement_rms_mm": 0.042602731988151905,
+          "state": 34,
+          "whitened_norm_over_noise": 0.9734471296545546
+        },
+        {
+          "deviation_over_dic_sigma": 0.4150558187920765,
+          "deviation_over_displacement": 0.0008907153258006471,
+          "deviation_rms_mm": 3.9015246966455185e-05,
+          "displacement_rms_mm": 0.04380215073922201,
+          "state": 35,
+          "whitened_norm_over_noise": 1.0926675270329815
+        },
+        {
+          "deviation_over_dic_sigma": 0.41811723422401487,
+          "deviation_over_displacement": 0.0008742019771677865,
+          "deviation_rms_mm": 3.9303020017057395e-05,
+          "displacement_rms_mm": 0.04495874070702762,
+          "state": 36,
+          "whitened_norm_over_noise": 1.1482003045721099
+        },
+        {
+          "deviation_over_dic_sigma": 0.45352076122962265,
+          "deviation_over_displacement": 0.0009232631578572577,
+          "deviation_rms_mm": 4.263095155558453e-05,
+          "displacement_rms_mm": 0.046174215003362606,
+          "state": 37,
+          "whitened_norm_over_noise": 1.212567162425321
+        },
+        {
+          "deviation_over_dic_sigma": 0.46382298058488425,
+          "deviation_over_displacement": 0.0009222765627299208,
+          "deviation_rms_mm": 4.3599360174979116e-05,
+          "displacement_rms_mm": 0.047273629122620064,
+          "state": 38,
+          "whitened_norm_over_noise": 1.2541368660972154
+        },
+        {
+          "deviation_over_dic_sigma": 0.519127036279825,
+          "deviation_over_displacement": 0.001011019113603693,
+          "deviation_rms_mm": 4.8797941410303554e-05,
+          "displacement_rms_mm": 0.04826609186088221,
+          "state": 39,
+          "whitened_norm_over_noise": 1.4319411858205364
+        },
+        {
+          "deviation_over_dic_sigma": 0.5429255376355533,
+          "deviation_over_displacement": 0.0010408485445939628,
+          "deviation_rms_mm": 5.1035000537742006e-05,
+          "displacement_rms_mm": 0.049032110197791426,
+          "state": 40,
+          "whitened_norm_over_noise": 1.4866785696190241
+        }
+      ],
+      "window_mm": 0.0368
+    },
+    {
+      "crop_nodes": [
+        1610,
+        1650,
+        1075,
+        1115
+      ],
+      "deviation_over_displacement_first_five": [
+        0.0007019057493721988,
+        0.000881083599904815,
+        0.0004584370316281613,
+        0.0003785615631437558,
+        0.0005321925561686432
+      ],
+      "deviation_over_displacement_median": 0.0006208089455875183,
+      "pixels": 40,
+      "pure_noise_whitened_norm": 55.154328932550705,
+      "states": [
+        {
+          "deviation_over_dic_sigma": 0.0,
+          "deviation_over_displacement": 0.0,
+          "deviation_rms_mm": 0.0,
+          "displacement_rms_mm": 0.0,
+          "state": 0,
+          "whitened_norm_over_noise": 0.0
+        },
+        {
+          "deviation_over_dic_sigma": 0.00642336253277477,
+          "deviation_over_displacement": 0.0007019057493721988,
+          "deviation_rms_mm": 6.037960780808283e-07,
+          "displacement_rms_mm": 0.0008602238671230118,
+          "state": 1,
+          "whitened_norm_over_noise": 0.03138791580937275
+        },
+        {
+          "deviation_over_dic_sigma": 0.018979838550655635,
+          "deviation_over_displacement": 0.000881083599904815,
+          "deviation_rms_mm": 1.7841048237616296e-06,
+          "displacement_rms_mm": 0.0020248984590728616,
+          "state": 2,
+          "whitened_norm_over_noise": 0.07924305108692577
+        },
+        {
+          "deviation_over_dic_sigma": 0.016083897396876733,
+          "deviation_over_displacement": 0.0004584370316281613,
+          "deviation_rms_mm": 1.5118863553064127e-06,
+          "displacement_rms_mm": 0.0032979149828644408,
+          "state": 3,
+          "whitened_norm_over_noise": 0.08076150634004184
+        },
+        {
+          "deviation_over_dic_sigma": 0.019801825226298253,
+          "deviation_over_displacement": 0.0003785615631437558,
+          "deviation_rms_mm": 1.8613715712720356e-06,
+          "displacement_rms_mm": 0.004916958699700831,
+          "state": 4,
+          "whitened_norm_over_noise": 0.10194564908392016
+        },
+        {
+          "deviation_over_dic_sigma": 0.036958016741931166,
+          "deviation_over_displacement": 0.0005321925561686432,
+          "deviation_rms_mm": 3.4740535737415294e-06,
+          "displacement_rms_mm": 0.006527813163626172,
+          "state": 5,
+          "whitened_norm_over_noise": 0.14069285888982078
+        },
+        {
+          "deviation_over_dic_sigma": 0.041353910712616675,
+          "deviation_over_displacement": 0.0004709573608395618,
+          "deviation_rms_mm": 3.887267606985967e-06,
+          "displacement_rms_mm": 0.008253969319125302,
+          "state": 6,
+          "whitened_norm_over_noise": 0.17192480791772227
+        },
+        {
+          "deviation_over_dic_sigma": 0.050020556018676214,
+          "deviation_over_displacement": 0.0004771515540643243,
+          "deviation_rms_mm": 4.701932265755564e-06,
+          "displacement_rms_mm": 0.009854169447222845,
+          "state": 7,
+          "whitened_norm_over_noise": 0.20991794280675352
+        },
+        {
+          "deviation_over_dic_sigma": 0.04530572710343826,
+          "deviation_over_displacement": 0.0003698761751348536,
+          "deviation_rms_mm": 4.258738347723197e-06,
+          "displacement_rms_mm": 0.011513956924017877,
+          "state": 8,
+          "whitened_norm_over_noise": 0.19803589207596914
+        },
+        {
+          "deviation_over_dic_sigma": 0.05188031966319363,
+          "deviation_over_displacement": 0.00037774319146119883,
+          "deviation_rms_mm": 4.876750048340201e-06,
+          "displacement_rms_mm": 0.012910226202822594,
+          "state": 9,
+          "whitened_norm_over_noise": 0.22890479522432633
+        },
+        {
+          "deviation_over_dic_sigma": 0.05526755454557551,
+          "deviation_over_displacement": 0.0003613588438647122,
+          "deviation_rms_mm": 5.195150127284098e-06,
+          "displacement_rms_mm": 0.01437670674314281,
+          "state": 10,
+          "whitened_norm_over_noise": 0.24113160489759886
+        },
+        {
+          "deviation_over_dic_sigma": 0.0664419045929847,
+          "deviation_over_displacement": 0.00039901027376003346,
+          "deviation_rms_mm": 6.245539031740561e-06,
+          "displacement_rms_mm": 0.0156525769947885,
+          "state": 11,
+          "whitened_norm_over_noise": 0.2935426091357735
+        },
+        {
+          "deviation_over_dic_sigma": 0.07603560608961984,
+          "deviation_over_displacement": 0.00042253717225367265,
+          "deviation_rms_mm": 7.147346972424265e-06,
+          "displacement_rms_mm": 0.016915309330780757,
+          "state": 12,
+          "whitened_norm_over_noise": 0.3137490224665634
+        },
+        {
+          "deviation_over_dic_sigma": 0.08081328269554429,
+          "deviation_over_displacement": 0.00041964493925158205,
+          "deviation_rms_mm": 7.596448573381163e-06,
+          "displacement_rms_mm": 0.018102085508118097,
+          "state": 13,
+          "whitened_norm_over_noise": 0.3373368303549649
+        },
+        {
+          "deviation_over_dic_sigma": 0.09958509453353291,
+          "deviation_over_displacement": 0.0004817055450297383,
+          "deviation_rms_mm": 9.360998886152093e-06,
+          "displacement_rms_mm": 0.01943303120078094,
+          "state": 14,
+          "whitened_norm_over_noise": 0.41716381346350967
+        },
+        {
+          "deviation_over_dic_sigma": 0.10746655373081536,
+          "deviation_over_displacement": 0.0004892002299802126,
+          "deviation_rms_mm": 1.0101856050696643e-05,
+          "displacement_rms_mm": 0.02064973692082125,
+          "state": 15,
+          "whitened_norm_over_noise": 0.4457490019892339
+        },
+        {
+          "deviation_over_dic_sigma": 0.12381719444158407,
+          "deviation_over_displacement": 0.0005321517819810134,
+          "deviation_rms_mm": 1.1638816277508902e-05,
+          "displacement_rms_mm": 0.021871234244827096,
+          "state": 16,
+          "whitened_norm_over_noise": 0.5155016921771467
+        },
+        {
+          "deviation_over_dic_sigma": 0.13746467410539684,
+          "deviation_over_displacement": 0.0005620279844411732,
+          "deviation_rms_mm": 1.2921679365907303e-05,
+          "displacement_rms_mm": 0.02299116720808019,
+          "state": 17,
+          "whitened_norm_over_noise": 0.5715466106997799
+        },
+        {
+          "deviation_over_dic_sigma": 0.14926813452797583,
+          "deviation_over_displacement": 0.000578318416769885,
+          "deviation_rms_mm": 1.4031204645629727e-05,
+          "displacement_rms_mm": 0.024262074730386454,
+          "state": 18,
+          "whitened_norm_over_noise": 0.6276358007226134
+        },
+        {
+          "deviation_over_dic_sigma": 0.13890942710336604,
+          "deviation_over_displacement": 0.0005153399909115395,
+          "deviation_rms_mm": 1.3057486147716407e-05,
+          "displacement_rms_mm": 0.025337614735895363,
+          "state": 19,
+          "whitened_norm_over_noise": 0.6031175972470627
+        },
+        {
+          "deviation_over_dic_sigma": 0.12849530118104255,
+          "deviation_over_displacement": 0.00045685559414076197,
+          "deviation_rms_mm": 1.2078558311018e-05,
+          "displacement_rms_mm": 0.02643845991146268,
+          "state": 20,
+          "whitened_norm_over_noise": 0.5616030163485864
+        },
+        {
+          "deviation_over_dic_sigma": 0.1634168654390569,
+          "deviation_over_displacement": 0.0005579885647088357,
+          "deviation_rms_mm": 1.5361185351271346e-05,
+          "displacement_rms_mm": 0.027529570179071632,
+          "state": 21,
+          "whitened_norm_over_noise": 0.6777085556623165
+        },
+        {
+          "deviation_over_dic_sigma": 0.2035545889080746,
+          "deviation_over_displacement": 0.0006707030115911257,
+          "deviation_rms_mm": 1.913413135735901e-05,
+          "displacement_rms_mm": 0.028528470912880844,
+          "state": 22,
+          "whitened_norm_over_noise": 0.8110544849272032
+        },
+        {
+          "deviation_over_dic_sigma": 0.22637950093597473,
+          "deviation_over_displacement": 0.0007168159624118522,
+          "deviation_rms_mm": 2.1279673087981622e-05,
+          "displacement_rms_mm": 0.029686382842790574,
+          "state": 23,
+          "whitened_norm_over_noise": 0.9269389461569283
+        },
+        {
+          "deviation_over_dic_sigma": 0.20634177076328977,
+          "deviation_over_displacement": 0.0006302992778783588,
+          "deviation_rms_mm": 1.9396126451749237e-05,
+          "displacement_rms_mm": 0.030772883822805974,
+          "state": 24,
+          "whitened_norm_over_noise": 0.9035190436509486
+        },
+        {
+          "deviation_over_dic_sigma": 0.21930070585455655,
+          "deviation_over_displacement": 0.0006440538995501747,
+          "deviation_rms_mm": 2.0614266350328314e-05,
+          "displacement_rms_mm": 0.032007051528957275,
+          "state": 25,
+          "whitened_norm_over_noise": 0.8835609004960284
+        },
+        {
+          "deviation_over_dic_sigma": 0.2148241878879453,
+          "deviation_over_displacement": 0.0006113186132966776,
+          "deviation_rms_mm": 2.0193473661466858e-05,
+          "displacement_rms_mm": 0.033032649787267006,
+          "state": 26,
+          "whitened_norm_over_noise": 0.881940840778294
+        },
+        {
+          "deviation_over_dic_sigma": 0.32590896891890603,
+          "deviation_over_displacement": 0.0008936173359859939,
+          "deviation_rms_mm": 3.0635443078377164e-05,
+          "displacement_rms_mm": 0.03428250756189149,
+          "state": 27,
+          "whitened_norm_over_noise": 1.2286594505754382
+        },
+        {
+          "deviation_over_dic_sigma": 0.31737106538072946,
+          "deviation_over_displacement": 0.0008445471438033248,
+          "deviation_rms_mm": 2.9832880145788565e-05,
+          "displacement_rms_mm": 0.03532411466272858,
+          "state": 28,
+          "whitened_norm_over_noise": 1.2880979873955423
+        },
+        {
+          "deviation_over_dic_sigma": 0.36782450912163,
+          "deviation_over_displacement": 0.0009436400196724627,
+          "deviation_rms_mm": 3.457550385743322e-05,
+          "displacement_rms_mm": 0.036640565402720385,
+          "state": 29,
+          "whitened_norm_over_noise": 1.4345699722232625
+        },
+        {
+          "deviation_over_dic_sigma": 0.4569296035994992,
+          "deviation_over_displacement": 0.0011410980075905967,
+          "deviation_rms_mm": 4.295138273835292e-05,
+          "displacement_rms_mm": 0.03764039762810893,
+          "state": 30,
+          "whitened_norm_over_noise": 1.6918298979071058
+        },
+        {
+          "deviation_over_dic_sigma": 0.4455584413335505,
+          "deviation_over_displacement": 0.0010758545399945768,
+          "deviation_rms_mm": 4.1882493485353746e-05,
+          "displacement_rms_mm": 0.03892951317151561,
+          "state": 31,
+          "whitened_norm_over_noise": 1.682943537161878
+        },
+        {
+          "deviation_over_dic_sigma": 0.4355025353718898,
+          "deviation_over_displacement": 0.0010178586692945423,
+          "deviation_rms_mm": 4.093723832495764e-05,
+          "displacement_rms_mm": 0.04021898084665372,
+          "state": 32,
+          "whitened_norm_over_noise": 1.6830540027458234
+        },
+        {
+          "deviation_over_dic_sigma": 0.4268541075223596,
+          "deviation_over_displacement": 0.000966646045829396,
+          "deviation_rms_mm": 4.01242861071018e-05,
+          "displacement_rms_mm": 0.041508767640666855,
+          "state": 33,
+          "whitened_norm_over_noise": 1.6921353071252443
+        },
+        {
+          "deviation_over_dic_sigma": 0.48991587983711915,
+          "deviation_over_displacement": 0.001080270647608793,
+          "deviation_rms_mm": 4.60520927046892e-05,
+          "displacement_rms_mm": 0.042630143479901725,
+          "state": 34,
+          "whitened_norm_over_noise": 1.9423213619877098
+        },
+        {
+          "deviation_over_dic_sigma": 0.5403213161336233,
+          "deviation_over_displacement": 0.0011587656278941834,
+          "deviation_rms_mm": 5.079020371656059e-05,
+          "displacement_rms_mm": 0.04383129987110618,
+          "state": 35,
+          "whitened_norm_over_noise": 2.1085545325784985
+        },
+        {
+          "deviation_over_dic_sigma": 0.5671343888996085,
+          "deviation_over_displacement": 0.001185003848419335,
+          "deviation_rms_mm": 5.3310632556563196e-05,
+          "displacement_rms_mm": 0.044987729472502326,
+          "state": 36,
+          "whitened_norm_over_noise": 2.219630451871746
+        },
+        {
+          "deviation_over_dic_sigma": 0.6339795712769026,
+          "deviation_over_displacement": 0.0012897103695782477,
+          "deviation_rms_mm": 5.959407970002884e-05,
+          "displacement_rms_mm": 0.04620733546518425,
+          "state": 37,
+          "whitened_norm_over_noise": 2.441875598647643
+        },
+        {
+          "deviation_over_dic_sigma": 0.6414679418340367,
+          "deviation_over_displacement": 0.0012745022868832757,
+          "deviation_rms_mm": 6.029798653239944e-05,
+          "displacement_rms_mm": 0.04731100693420865,
+          "state": 38,
+          "whitened_norm_over_noise": 2.56085761874939
+        },
+        {
+          "deviation_over_dic_sigma": 0.7110530010780106,
+          "deviation_over_displacement": 0.001383582552233998,
+          "deviation_rms_mm": 6.6838982101333e-05,
+          "displacement_rms_mm": 0.048308633260380165,
+          "state": 39,
+          "whitened_norm_over_noise": 2.8969817790726333
+        },
+        {
+          "deviation_over_dic_sigma": 0.7198703761376849,
+          "deviation_over_displacement": 0.0013789552445784353,
+          "deviation_rms_mm": 6.766781535694238e-05,
+          "displacement_rms_mm": 0.04907179955476316,
+          "state": 40,
+          "whitened_norm_over_noise": 2.9348460796257845
+        }
+      ],
+      "window_mm": 0.0736
+    },
+    {
+      "crop_nodes": [
+        1610,
+        1670,
+        1075,
+        1135
+      ],
+      "deviation_over_displacement_first_five": [
+        0.0011097364377548728,
+        0.0012485423880385241,
+        0.000731365334149512,
+        0.0006040556303472065,
+        0.0006213214667377403
+      ],
+      "deviation_over_displacement_median": 0.0007897612145779834,
+      "pixels": 60,
+      "pure_noise_whitened_norm": 83.43860018001261,
+      "states": [
+        {
+          "deviation_over_dic_sigma": 0.0,
+          "deviation_over_displacement": 0.0,
+          "deviation_rms_mm": 0.0,
+          "displacement_rms_mm": 0.0,
+          "state": 0,
+          "whitened_norm_over_noise": 0.0
+        },
+        {
+          "deviation_over_dic_sigma": 0.010157592712860576,
+          "deviation_over_displacement": 0.0011097364377548728,
+          "deviation_rms_mm": 9.54813715008894e-07,
+          "displacement_rms_mm": 0.0008603968316482376,
+          "state": 1,
+          "whitened_norm_over_noise": 0.05146200183147673
+        },
+        {
+          "deviation_over_dic_sigma": 0.026900938908149975,
+          "deviation_over_displacement": 0.0012485423880385241,
+          "deviation_rms_mm": 2.5286882573660975e-06,
+          "displacement_rms_mm": 0.0020253123014419227,
+          "state": 2,
+          "whitened_norm_over_noise": 0.11723235823563463
+        },
+        {
+          "deviation_over_dic_sigma": 0.025661653410098476,
+          "deviation_over_displacement": 0.000731365334149512,
+          "deviation_rms_mm": 2.4121954205492567e-06,
+          "displacement_rms_mm": 0.0032982085804686705,
+          "state": 3,
+          "whitened_norm_over_noise": 0.15780179126638663
+        },
+        {
+          "deviation_over_dic_sigma": 0.03160705233935364,
+          "deviation_over_displacement": 0.0006040556303472065,
+          "deviation_rms_mm": 2.971062919899242e-06,
+          "displacement_rms_mm": 0.004918525332164353,
+          "state": 4,
+          "whitened_norm_over_noise": 0.17565582142081698
+        },
+        {
+          "deviation_over_dic_sigma": 0.04315473675215061,
+          "deviation_over_displacement": 0.0006213214667377403,
+          "deviation_rms_mm": 4.056545254702157e-06,
+          "displacement_rms_mm": 0.006528899244381692,
+          "state": 5,
+          "whitened_norm_over_noise": 0.23166809150925965
+        },
+        {
+          "deviation_over_dic_sigma": 0.05427052531010169,
+          "deviation_over_displacement": 0.0006179121862093531,
+          "deviation_rms_mm": 5.101429379149558e-06,
+          "displacement_rms_mm": 0.008255913207416752,
+          "state": 6,
+          "whitened_norm_over_noise": 0.2725595584133307
+        },
+        {
+          "deviation_over_dic_sigma": 0.06120127625354342,
+          "deviation_over_displacement": 0.0005837878246787485,
+          "deviation_rms_mm": 5.752919967833081e-06,
+          "displacement_rms_mm": 0.009854470622094328,
+          "state": 7,
+          "whitened_norm_over_noise": 0.34434794315516687
+        },
+        {
+          "deviation_over_dic_sigma": 0.058659684441498626,
+          "deviation_over_displacement": 0.00047887978759955814,
+          "deviation_rms_mm": 5.514010337500871e-06,
+          "displacement_rms_mm": 0.01151439354987293,
+          "state": 8,
+          "whitened_norm_over_noise": 0.34549630464049963
+        },
+        {
+          "deviation_over_dic_sigma": 0.07303052411013052,
+          "deviation_over_displacement": 0.0005316534168870354,
+          "deviation_rms_mm": 6.8648692663522685e-06,
+          "displacement_rms_mm": 0.01291230160157308,
+          "state": 9,
+          "whitened_norm_over_noise": 0.39143417465945274
+        },
+        {
+          "deviation_over_dic_sigma": 0.07357300872661862,
+          "deviation_over_displacement": 0.0004809991417825969,
+          "deviation_rms_mm": 6.91586282030215e-06,
+          "displacement_rms_mm": 0.014378118835455214,
+          "state": 10,
+          "whitened_norm_over_noise": 0.39972333790529024
+        },
+        {
+          "deviation_over_dic_sigma": 0.08848451108464256,
+          "deviation_over_displacement": 0.0005313169576684512,
+          "deviation_rms_mm": 8.3175440419564e-06,
+          "displacement_rms_mm": 0.01565458041929589,
+          "state": 11,
+          "whitened_norm_over_noise": 0.45376445660852066
+        },
+        {
+          "deviation_over_dic_sigma": 0.09703126929459985,
+          "deviation_over_displacement": 0.0005391066962017396,
+          "deviation_rms_mm": 9.120939313692385e-06,
+          "displacement_rms_mm": 0.01691861625528619,
+          "state": 12,
+          "whitened_norm_over_noise": 0.483185438605029
+        },
+        {
+          "deviation_over_dic_sigma": 0.10521054614695019,
+          "deviation_over_displacement": 0.0005462265726308369,
+          "deviation_rms_mm": 9.889791337813318e-06,
+          "displacement_rms_mm": 0.018105657676411247,
+          "state": 13,
+          "whitened_norm_over_noise": 0.5279540812189083
+        },
+        {
+          "deviation_over_dic_sigma": 0.12543164699895754,
+          "deviation_over_displacement": 0.0006065918800001169,
+          "deviation_rms_mm": 1.1790574817902008e-05,
+          "displacement_rms_mm": 0.019437409577424174,
+          "state": 14,
+          "whitened_norm_over_noise": 0.6306264990464987
+        },
+        {
+          "deviation_over_dic_sigma": 0.13716610857550998,
+          "deviation_over_displacement": 0.0006242377606384006,
+          "deviation_rms_mm": 1.2893614206097937e-05,
+          "displacement_rms_mm": 0.020654973183473858,
+          "state": 15,
+          "whitened_norm_over_noise": 0.6892136717076999
+        },
+        {
+          "deviation_over_dic_sigma": 0.15344966468885557,
+          "deviation_over_displacement": 0.0006592990143136097,
+          "deviation_rms_mm": 1.4424268480752424e-05,
+          "displacement_rms_mm": 0.021878189057766756,
+          "state": 16,
+          "whitened_norm_over_noise": 0.76732542913523
+        },
+        {
+          "deviation_over_dic_sigma": 0.17521503283984427,
+          "deviation_over_displacement": 0.0007161602737904232,
+          "deviation_rms_mm": 1.647021308694536e-05,
+          "displacement_rms_mm": 0.022997942904279544,
+          "state": 17,
+          "whitened_norm_over_noise": 0.8791264201323747
+        },
+        {
+          "deviation_over_dic_sigma": 0.19713832643657703,
+          "deviation_over_displacement": 0.000763499004993721,
+          "deviation_rms_mm": 1.853100268503824e-05,
+          "displacement_rms_mm": 0.024271154990163527,
+          "state": 18,
+          "whitened_norm_over_noise": 0.9990353698253228
+        },
+        {
+          "deviation_over_dic_sigma": 0.18696882836688694,
+          "deviation_over_displacement": 0.0006933980309874876,
+          "deviation_rms_mm": 1.7575069866487372e-05,
+          "displacement_rms_mm": 0.02534629329918665,
+          "state": 19,
+          "whitened_norm_over_noise": 0.9504829326690861
+        },
+        {
+          "deviation_over_dic_sigma": 0.16047865088794205,
+          "deviation_over_displacement": 0.0005704343994881758,
+          "deviation_rms_mm": 1.5084993183466553e-05,
+          "displacement_rms_mm": 0.026444746665000594,
+          "state": 20,
+          "whitened_norm_over_noise": 0.8123238425446511
+        },
+        {
+          "deviation_over_dic_sigma": 0.2014276917389517,
+          "deviation_over_displacement": 0.00068752507860815,
+          "deviation_rms_mm": 1.8934203023461458e-05,
+          "displacement_rms_mm": 0.027539654352380174,
+          "state": 21,
+          "whitened_norm_over_noise": 0.9933013087472218
+        },
+        {
+          "deviation_over_dic_sigma": 0.24753400785580496,
+          "deviation_over_displacement": 0.0008153258891088709,
+          "deviation_rms_mm": 2.3268196738445666e-05,
+          "displacement_rms_mm": 0.028538523122180227,
+          "state": 22,
+          "whitened_norm_over_noise": 1.204254419151084
+        },
+        {
+          "deviation_over_dic_sigma": 0.28613935731563805,
+          "deviation_over_displacement": 0.0009055974363734179,
+          "deviation_rms_mm": 2.6897099587669976e-05,
+          "displacement_rms_mm": 0.02970094493131837,
+          "state": 23,
+          "whitened_norm_over_noise": 1.3702765468678828
+        },
+        {
+          "deviation_over_dic_sigma": 0.2628612383469253,
+          "deviation_over_displacement": 0.000802583299298201,
+          "deviation_rms_mm": 2.470895640461098e-05,
+          "displacement_rms_mm": 0.030786781168032167,
+          "state": 24,
+          "whitened_norm_over_noise": 1.3329352294340626
+        },
+        {
+          "deviation_over_dic_sigma": 0.2721161176935514,
+          "deviation_over_displacement": 0.0007988612317003555,
+          "deviation_rms_mm": 2.557891506319383e-05,
+          "displacement_rms_mm": 0.03201922192262324,
+          "state": 25,
+          "whitened_norm_over_noise": 1.305545516717096
+        },
+        {
+          "deviation_over_dic_sigma": 0.2744334731220011,
+          "deviation_over_displacement": 0.0007806611974556113,
+          "deviation_rms_mm": 2.5796746473468103e-05,
+          "displacement_rms_mm": 0.03304474022475661,
+          "state": 26,
+          "whitened_norm_over_noise": 1.3449058076511253
+        },
+        {
+          "deviation_over_dic_sigma": 0.3748036483546499,
+          "deviation_over_displacement": 0.0010273069407104659,
+          "deviation_rms_mm": 3.523154294533709e-05,
+          "displacement_rms_mm": 0.0342950500470401,
+          "state": 27,
+          "whitened_norm_over_noise": 1.7380129650038696
+        },
+        {
+          "deviation_over_dic_sigma": 0.3830347627543214,
+          "deviation_over_displacement": 0.0010187131581317474,
+          "deviation_rms_mm": 3.600526769890621e-05,
+          "displacement_rms_mm": 0.03534387222889856,
+          "state": 28,
+          "whitened_norm_over_noise": 1.821959621114224
+        },
+        {
+          "deviation_over_dic_sigma": 0.42334198845893134,
+          "deviation_over_displacement": 0.0010854771601922332,
+          "deviation_rms_mm": 3.9794146915139544e-05,
+          "displacement_rms_mm": 0.03666051057959817,
+          "state": 29,
+          "whitened_norm_over_noise": 1.9622971755676648
+        },
+        {
+          "deviation_over_dic_sigma": 0.544593540167452,
+          "deviation_over_displacement": 0.0013591432273654116,
+          "deviation_rms_mm": 5.119179277574048e-05,
+          "displacement_rms_mm": 0.037664752135778655,
+          "state": 30,
+          "whitened_norm_over_noise": 2.407573493276725
+        },
+        {
+          "deviation_over_dic_sigma": 0.5335738400289257,
+          "deviation_over_displacement": 0.001287613028062643,
+          "deviation_rms_mm": 5.0155940962719015e-05,
+          "displacement_rms_mm": 0.03895265104468864,
+          "state": 31,
+          "whitened_norm_over_noise": 2.442934082092553
+        },
+        {
+          "deviation_over_dic_sigma": 0.5238935575321692,
+          "deviation_over_displacement": 0.0012237801478083073,
+          "deviation_rms_mm": 4.9245994408023895e-05,
+          "displacement_rms_mm": 0.04024088354123046,
+          "state": 32,
+          "whitened_norm_over_noise": 2.4858450240575625
+        },
+        {
+          "deviation_over_dic_sigma": 0.5156276284868111,
+          "deviation_over_displacement": 0.0011671003086240453,
+          "deviation_rms_mm": 4.8468997077760245e-05,
+          "displacement_rms_mm": 0.041529418439536565,
+          "state": 33,
+          "whitened_norm_over_noise": 2.536003435235569
+        },
+        {
+          "deviation_over_dic_sigma": 0.5595683022132202,
+          "deviation_over_displacement": 0.0012331533444355372,
+          "deviation_rms_mm": 5.25994204080427e-05,
+          "displacement_rms_mm": 0.04265440356253465,
+          "state": 34,
+          "whitened_norm_over_noise": 2.639755819293332
+        },
+        {
+          "deviation_over_dic_sigma": 0.6298551339391856,
+          "deviation_over_displacement": 0.0013499297840642195,
+          "deviation_rms_mm": 5.9206382590283444e-05,
+          "displacement_rms_mm": 0.04385886087499411,
+          "state": 35,
+          "whitened_norm_over_noise": 3.007862124665357
+        },
+        {
+          "deviation_over_dic_sigma": 0.6506961439178677,
+          "deviation_over_displacement": 0.0013587560299380956,
+          "deviation_rms_mm": 6.116543752827956e-05,
+          "displacement_rms_mm": 0.04501576160884911,
+          "state": 36,
+          "whitened_norm_over_noise": 3.0439275302600204
+        },
+        {
+          "deviation_over_dic_sigma": 0.7196550737666623,
+          "deviation_over_displacement": 0.0014630240290342221,
+          "deviation_rms_mm": 6.764757693406625e-05,
+          "displacement_rms_mm": 0.04623818583398255,
+          "state": 37,
+          "whitened_norm_over_noise": 3.311846381708835
+        },
+        {
+          "deviation_over_dic_sigma": 0.7675840596812336,
+          "deviation_over_displacement": 0.0015237932775393178,
+          "deviation_rms_mm": 7.215290161003595e-05,
+          "displacement_rms_mm": 0.0473508465180732,
+          "state": 38,
+          "whitened_norm_over_noise": 3.5248549900896067
+        },
+        {
+          "deviation_over_dic_sigma": 0.8424895109371894,
+          "deviation_over_displacement": 0.0016378503261485074,
+          "deviation_rms_mm": 7.91940140280958e-05,
+          "displacement_rms_mm": 0.04835241216108236,
+          "state": 39,
+          "whitened_norm_over_noise": 3.9141453150068406
+        },
+        {
+          "deviation_over_dic_sigma": 0.8187676633300636,
+          "deviation_over_displacement": 0.0015671891737467122,
+          "deviation_rms_mm": 7.696416035302597e-05,
+          "displacement_rms_mm": 0.04910968097681924,
+          "state": 40,
+          "whitened_norm_over_noise": 3.957451464659102
+        }
+      ],
+      "window_mm": 0.1104
+    },
+    {
+      "crop_nodes": [
+        1610,
+        1710,
+        1075,
+        1175
+      ],
+      "deviation_over_displacement_first_five": [
+        0.00231849683029175,
+        0.0019628548032242818,
+        0.0011629009981593867,
+        0.0011404003754751104,
+        0.0008445119813379581
+      ],
+      "deviation_over_displacement_median": 0.0012506287538799413,
+      "pixels": 100,
+      "pure_noise_whitened_norm": 140.0071426749364,
+      "states": [
+        {
+          "deviation_over_dic_sigma": 0.0,
+          "deviation_over_displacement": 0.0,
+          "deviation_rms_mm": 0.0,
+          "displacement_rms_mm": 0.0,
+          "state": 0,
+          "whitened_norm_over_noise": 0.0
+        },
+        {
+          "deviation_over_dic_sigma": 0.02125579226980768,
+          "deviation_over_displacement": 0.00231849683029175,
+          "deviation_rms_mm": 1.9980444733619216e-06,
+          "displacement_rms_mm": 0.0008617844317304914,
+          "state": 1,
+          "whitened_norm_over_noise": 0.11169065160646133
+        },
+        {
+          "deviation_over_dic_sigma": 0.04237558995528601,
+          "deviation_over_displacement": 0.0019628548032242818,
+          "deviation_rms_mm": 3.983305455796885e-06,
+          "displacement_rms_mm": 0.002029342898544361,
+          "state": 2,
+          "whitened_norm_over_noise": 0.24833931065770004
+        },
+        {
+          "deviation_over_dic_sigma": 0.04082793083317604,
+          "deviation_over_displacement": 0.0011629009981593867,
+          "deviation_rms_mm": 3.837825498318548e-06,
+          "displacement_rms_mm": 0.003300216875205173,
+          "state": 3,
+          "whitened_norm_over_noise": 0.31183741125536957
+        },
+        {
+          "deviation_over_dic_sigma": 0.05975413812582578,
+          "deviation_over_displacement": 0.0011404003754751104,
+          "deviation_rms_mm": 5.616888983827623e-06,
+          "displacement_rms_mm": 0.004925365779090989,
+          "state": 4,
+          "whitened_norm_over_noise": 0.41025311578660956
+        },
+        {
+          "deviation_over_dic_sigma": 0.05869125189198531,
+          "deviation_over_displacement": 0.0008445119813379581,
+          "deviation_rms_mm": 5.516977677846619e-06,
+          "displacement_rms_mm": 0.006532740564682203,
+          "state": 5,
+          "whitened_norm_over_noise": 0.5067880794949436
+        },
+        {
+          "deviation_over_dic_sigma": 0.08143091832065087,
+          "deviation_over_displacement": 0.0009263745045153114,
+          "deviation_rms_mm": 7.654506322141181e-06,
+          "displacement_rms_mm": 0.00826286376064084,
+          "state": 6,
+          "whitened_norm_over_noise": 0.6138465871854997
+        },
+        {
+          "deviation_over_dic_sigma": 0.10000947685377742,
+          "deviation_over_displacement": 0.0009534538495343995,
+          "deviation_rms_mm": 9.400890824255077e-06,
+          "displacement_rms_mm": 0.00985982785516658,
+          "state": 7,
+          "whitened_norm_over_noise": 0.7584347055038465
+        },
+        {
+          "deviation_over_dic_sigma": 0.11671818079693425,
+          "deviation_over_displacement": 0.0009522577720725982,
+          "deviation_rms_mm": 1.0971508994911818e-05,
+          "displacement_rms_mm": 0.01152157463732979,
+          "state": 8,
+          "whitened_norm_over_noise": 0.8340723390537655
+        },
+        {
+          "deviation_over_dic_sigma": 0.12573584535893145,
+          "deviation_over_displacement": 0.0009145762751862388,
+          "deviation_rms_mm": 1.1819169463739556e-05,
+          "displacement_rms_mm": 0.012923109623998034,
+          "state": 9,
+          "whitened_norm_over_noise": 0.9201980702932451
+        },
+        {
+          "deviation_over_dic_sigma": 0.13757067963213898,
+          "deviation_over_displacement": 0.0008986367517723547,
+          "deviation_rms_mm": 1.2931643885421062e-05,
+          "displacement_rms_mm": 0.014390290470444662,
+          "state": 10,
+          "whitened_norm_over_noise": 1.000007055690819
+        },
+        {
+          "deviation_over_dic_sigma": 0.1408525777721997,
+          "deviation_over_displacement": 0.0008450798751536188,
+          "deviation_rms_mm": 1.3240142310586772e-05,
+          "displacement_rms_mm": 0.01566732648577151,
+          "state": 11,
+          "whitened_norm_over_noise": 1.0939686954230785
+        },
+        {
+          "deviation_over_dic_sigma": 0.15052506175119237,
+          "deviation_over_displacement": 0.0008356442365525018,
+          "deviation_rms_mm": 1.4149355804612081e-05,
+          "displacement_rms_mm": 0.016932272354304816,
+          "state": 12,
+          "whitened_norm_over_noise": 1.1712303202073278
+        },
+        {
+          "deviation_over_dic_sigma": 0.16854630259622436,
+          "deviation_over_displacement": 0.0008742945213988735,
+          "deviation_rms_mm": 1.584335244404509e-05,
+          "displacement_rms_mm": 0.01812129900882335,
+          "state": 13,
+          "whitened_norm_over_noise": 1.2837877764336452
+        },
+        {
+          "deviation_over_dic_sigma": 0.19809911528023016,
+          "deviation_over_displacement": 0.0009571177820515636,
+          "deviation_rms_mm": 1.8621316836341634e-05,
+          "displacement_rms_mm": 0.019455616837905986,
+          "state": 14,
+          "whitened_norm_over_noise": 1.4372296923129326
+        },
+        {
+          "deviation_over_dic_sigma": 0.22392419217180473,
+          "deviation_over_displacement": 0.001018066758005224,
+          "deviation_rms_mm": 2.1048874064149644e-05,
+          "displacement_rms_mm": 0.020675337740515474,
+          "state": 15,
+          "whitened_norm_over_noise": 1.5799636779601716
+        },
+        {
+          "deviation_over_dic_sigma": 0.2402703168797192,
+          "deviation_over_displacement": 0.00103126532007534,
+          "deviation_rms_mm": 2.2585409786693603e-05,
+          "displacement_rms_mm": 0.02190067807675682,
+          "state": 16,
+          "whitened_norm_over_noise": 1.7200846024651397
+        },
+        {
+          "deviation_over_dic_sigma": 0.2786756819704313,
+          "deviation_over_displacement": 0.0011378005966219819,
+          "deviation_rms_mm": 2.619551410522054e-05,
+          "displacement_rms_mm": 0.02302293932960876,
+          "state": 17,
+          "whitened_norm_over_noise": 1.8898906513586404
+        },
+        {
+          "deviation_over_dic_sigma": 0.2999688116820279,
+          "deviation_over_displacement": 0.001160415810866278,
+          "deviation_rms_mm": 2.819706829811062e-05,
+          "displacement_rms_mm": 0.024299107297633977,
+          "state": 18,
+          "whitened_norm_over_noise": 2.0365453174704506
+        },
+        {
+          "deviation_over_dic_sigma": 0.3152128085756682,
+          "deviation_over_displacement": 0.0011676751126185017,
+          "deviation_rms_mm": 2.9630004006112807e-05,
+          "displacement_rms_mm": 0.025375212407899805,
+          "state": 19,
+          "whitened_norm_over_noise": 2.1473701069693623
+        },
+        {
+          "deviation_over_dic_sigma": 0.25141722925637133,
+          "deviation_over_displacement": 0.0008928755184697648,
+          "deviation_rms_mm": 2.3633219550098905e-05,
+          "displacement_rms_mm": 0.02646866115290313,
+          "state": 20,
+          "whitened_norm_over_noise": 1.951145907105137
+        },
+        {
+          "deviation_over_dic_sigma": 0.3215871569768576,
+          "deviation_over_displacement": 0.0010962803750531893,
+          "deviation_rms_mm": 3.0229192755824612e-05,
+          "displacement_rms_mm": 0.0275743262797694,
+          "state": 21,
+          "whitened_norm_over_noise": 2.25736637336741
+        },
+        {
+          "deviation_over_dic_sigma": 0.39852773995492924,
+          "deviation_over_displacement": 0.0013109159131020982,
+          "deviation_rms_mm": 3.746160755576335e-05,
+          "displacement_rms_mm": 0.02857666703207204,
+          "state": 22,
+          "whitened_norm_over_noise": 2.6157100139248084
+        },
+        {
+          "deviation_over_dic_sigma": 0.447278329757209,
+          "deviation_over_displacement": 0.0014133601604026476,
+          "deviation_rms_mm": 4.2044162997177644e-05,
+          "displacement_rms_mm": 0.029747663882926923,
+          "state": 23,
+          "whitened_norm_over_noise": 2.889222696957213
+        },
+        {
+          "deviation_over_dic_sigma": 0.4247596407199774,
+          "deviation_over_displacement": 0.001295092353324284,
+          "deviation_rms_mm": 3.992740622767787e-05,
+          "displacement_rms_mm": 0.030829775286056585,
+          "state": 24,
+          "whitened_norm_over_noise": 2.8739599921677175
+        },
+        {
+          "deviation_over_dic_sigma": 0.42056736214941015,
+          "deviation_over_displacement": 0.001233024441279642,
+          "deviation_rms_mm": 3.953333204204455e-05,
+          "displacement_rms_mm": 0.03206208305247912,
+          "state": 25,
+          "whitened_norm_over_noise": 2.779659768179035
+        },
+        {
+          "deviation_over_dic_sigma": 0.44645726364025234,
+          "deviation_over_displacement": 0.0012682330664802403,
+          "deviation_rms_mm": 4.1966982782183716e-05,
+          "displacement_rms_mm": 0.033090907256231504,
+          "state": 26,
+          "whitened_norm_over_noise": 2.9903729319205
+        },
+        {
+          "deviation_over_dic_sigma": 0.558985862384344,
+          "deviation_over_displacement": 0.0015298829145394687,
+          "deviation_rms_mm": 5.2544671064128335e-05,
+          "displacement_rms_mm": 0.034345550607018535,
+          "state": 27,
+          "whitened_norm_over_noise": 3.471030385169297
+        },
+        {
+          "deviation_over_dic_sigma": 0.6312717322991342,
+          "deviation_over_displacement": 0.0016758404631754256,
+          "deviation_rms_mm": 5.9339542836118614e-05,
+          "displacement_rms_mm": 0.03540882568480327,
+          "state": 28,
+          "whitened_norm_over_noise": 3.8296636542354423
+        },
+        {
+          "deviation_over_dic_sigma": 0.6508172039530228,
+          "deviation_over_displacement": 0.0016657956340183889,
+          "deviation_rms_mm": 6.117681717158414e-05,
+          "displacement_rms_mm": 0.03672528365559926,
+          "state": 29,
+          "whitened_norm_over_noise": 3.983911734761849
+        },
+        {
+          "deviation_over_dic_sigma": 0.7662048810565001,
+          "deviation_over_displacement": 0.0019087115767598417,
+          "deviation_rms_mm": 7.2023258819311e-05,
+          "displacement_rms_mm": 0.037733966564804426,
+          "state": 30,
+          "whitened_norm_over_noise": 4.5053875272158885
+        },
+        {
+          "deviation_over_dic_sigma": 0.8037863532025024,
+          "deviation_over_displacement": 0.0019359423380848602,
+          "deviation_rms_mm": 7.555591720103522e-05,
+          "displacement_rms_mm": 0.03902797914724013,
+          "state": 31,
+          "whitened_norm_over_noise": 4.765789266154178
+        },
+        {
+          "deviation_over_dic_sigma": 0.8474090860844421,
+          "deviation_over_displacement": 0.001975493049108494,
+          "deviation_rms_mm": 7.965645409193755e-05,
+          "displacement_rms_mm": 0.04032231554947012,
+          "state": 32,
+          "whitened_norm_over_noise": 5.099611533950116
+        },
+        {
+          "deviation_over_dic_sigma": 0.8961918543537413,
+          "deviation_over_displacement": 0.002024224345676324,
+          "deviation_rms_mm": 8.424203430925167e-05,
+          "displacement_rms_mm": 0.041616945517521244,
+          "state": 33,
+          "whitened_norm_over_noise": 5.49339690574299
+        },
+        {
+          "deviation_over_dic_sigma": 0.8880592081135745,
+          "deviation_over_displacement": 0.0019530716579976611,
+          "deviation_rms_mm": 8.3477565562676e-05,
+          "displacement_rms_mm": 0.04274168089063323,
+          "state": 34,
+          "whitened_norm_over_noise": 5.3902777447875305
+        },
+        {
+          "deviation_over_dic_sigma": 1.0275607651464758,
+          "deviation_over_displacement": 0.0021973868913774245,
+          "deviation_rms_mm": 9.659071192376872e-05,
+          "displacement_rms_mm": 0.04395708024963285,
+          "state": 35,
+          "whitened_norm_over_noise": 6.046822387650194
+        },
+        {
+          "deviation_over_dic_sigma": 0.9883560567100645,
+          "deviation_over_displacement": 0.002059398260688358,
+          "deviation_rms_mm": 9.290546933074607e-05,
+          "displacement_rms_mm": 0.045112920169065415,
+          "state": 36,
+          "whitened_norm_over_noise": 5.946346506372162
+        },
+        {
+          "deviation_over_dic_sigma": 1.1004270731046595,
+          "deviation_over_displacement": 0.0022319285731458045,
+          "deviation_rms_mm": 0.00010344014487183798,
+          "displacement_rms_mm": 0.04634563404779736,
+          "state": 37,
+          "whitened_norm_over_noise": 6.377648423906371
+        },
+        {
+          "deviation_over_dic_sigma": 1.1310500119294646,
+          "deviation_over_displacement": 0.0022397295081009495,
+          "deviation_rms_mm": 0.00010631870112136967,
+          "displacement_rms_mm": 0.04746943804455946,
+          "state": 38,
+          "whitened_norm_over_noise": 6.728520223452622
+        },
+        {
+          "deviation_over_dic_sigma": 1.2542768831052458,
+          "deviation_over_displacement": 0.0024315538679503465,
+          "deviation_rms_mm": 0.00011790202701189309,
+          "displacement_rms_mm": 0.048488346717680327,
+          "state": 39,
+          "whitened_norm_over_noise": 7.378304764298698
+        },
+        {
+          "deviation_over_dic_sigma": 1.2048095887242978,
+          "deviation_over_displacement": 0.0023003540588324755,
+          "deviation_rms_mm": 0.00011325210134008398,
+          "displacement_rms_mm": 0.049232465283002604,
+          "state": 40,
+          "whitened_norm_over_noise": 7.3635147667854195
+        }
+      ],
+      "window_mm": 0.184
+    }
+  ],
+  "schema_version": 1
+}
