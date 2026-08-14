@@ -36,6 +36,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--rank", type=int, default=2)
     parser.add_argument("--prior-weight", type=float, default=0.03)
+    parser.add_argument(
+        "--solution-method", choices=("reduced", "augmented"), default="reduced"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -112,7 +115,7 @@ def main() -> None:
         measured_displacement_history=measured,
         whitener=whitener,
         ludwik_increment_history=ludwik,
-        solution_method="reduced",
+        solution_method=args.solution_method,
         weights=weights,
         config=config,
         progress_callback=progress,
