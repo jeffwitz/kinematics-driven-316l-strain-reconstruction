@@ -14,7 +14,7 @@ from math import isfinite
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.optimize import minimize
+from scipy.optimize import LinearConstraint, minimize
 from scipy.sparse.linalg import LinearOperator, gmres
 
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch, DrivenJ2Trial
@@ -515,6 +515,7 @@ class ExperimentalOracleIncrementProblem:
         displacement_variable_scale: float,
         plastic_increment_variable_scale: float,
         equilibrium_scale: float,
+        plastic_basis: ArrayLike | None = None,
     ) -> None:
         measured = np.asarray(measured_displacement, dtype=np.float64)
         if measured.shape != whitener.field_shape or measured.shape[-1] != 2:
@@ -547,7 +548,21 @@ class ExperimentalOracleIncrementProblem:
         self.plastic_increment_shape = sample_shape
         self.interior_shape = measured[1:-1, 1:-1].shape
         self.displacement_unknown_count = int(np.prod(self.interior_shape))
-        self.plastic_unknown_count = int(np.prod(sample_shape))
+        if plastic_basis is None:
+            self.plastic_basis: FloatArray | None = None
+            self.reduced_plastic_count = int(np.prod(sample_shape))
+        else:
+            basis = np.asarray(plastic_basis, dtype=np.float64)
+            expected_rows = int(np.prod(sample_shape))
+            if basis.ndim != 2 or basis.shape[0] != expected_rows or basis.shape[1] < 1:
+                raise ValueError(
+                    "plastic_basis must have shape (plastic_points, rank)"
+                )
+            if not np.isfinite(basis).all():
+                raise ValueError("plastic_basis must be finite")
+            self.plastic_basis = basis.copy()
+            self.reduced_plastic_count = basis.shape[1]
+        self.plastic_unknown_count = self.reduced_plastic_count
         self.mechanical_constraint_count = self.displacement_unknown_count
         self.constitutive_rejections = 0
         self.last_admissible_variables: FloatArray | None = None
@@ -557,6 +572,10 @@ class ExperimentalOracleIncrementProblem:
     @property
     def variable_count(self) -> int:
         return self.displacement_unknown_count + self.plastic_unknown_count
+
+    @property
+    def reduced(self) -> bool:
+        return self.plastic_basis is not None
 
     def pack_state(
         self,
@@ -571,18 +590,20 @@ class ExperimentalOracleIncrementProblem:
             raise ValueError(
                 f"equivalent_plastic_increment must have shape {self.plastic_increment_shape}"
             )
-        return np.concatenate(
-            (
-                (
-                    (
-                        displacement_values[1:-1, 1:-1]
-                        - self.measured_displacement[1:-1, 1:-1]
-                    )
-                    / self.displacement_variable_scale
-                ).ravel(),
-                (increment / self.plastic_increment_variable_scale).ravel(),
+        displacement_variables = (
+            (displacement_values[1:-1, 1:-1] - self.measured_displacement[1:-1, 1:-1])
+            / self.displacement_variable_scale
+        ).ravel()
+        if self.plastic_basis is None:
+            plastic_variables = (increment / self.plastic_increment_variable_scale).ravel()
+        else:
+            coefficients, *_ = np.linalg.lstsq(
+                self.plastic_basis,
+                (increment - self.ludwik_increment).ravel(),
+                rcond=None,
             )
-        )
+            plastic_variables = coefficients / self.plastic_increment_variable_scale
+        return np.concatenate((displacement_variables, plastic_variables))
 
     def unpack_state(self, variables: ArrayLike) -> tuple[FloatArray, FloatArray]:
         values = np.asarray(variables, dtype=np.float64)
@@ -593,12 +614,16 @@ class ExperimentalOracleIncrementProblem:
             values[: self.displacement_unknown_count].reshape(self.interior_shape)
             * self.displacement_variable_scale
         )
-        increment = (
-            values[self.displacement_unknown_count :].reshape(
-                self.plastic_increment_shape
+        plastic_values = values[self.displacement_unknown_count :]
+        if self.plastic_basis is None:
+            increment = plastic_values.reshape(self.plastic_increment_shape) * (
+                self.plastic_increment_variable_scale
             )
-            * self.plastic_increment_variable_scale
-        )
+        else:
+            coefficient = plastic_values * self.plastic_increment_variable_scale
+            increment = (
+                self.ludwik_increment.ravel() + self.plastic_basis @ coefficient
+            ).reshape(self.plastic_increment_shape)
         return displacement, increment
 
     def objective_and_gradient(
@@ -681,11 +706,19 @@ class ExperimentalOracleIncrementProblem:
         displacement_gradient += equilibrium_u_gradient
         increment_gradient += equilibrium_p_gradient
 
+        if self.plastic_basis is None:
+            plastic_gradient = increment_gradient.ravel() * (
+                self.plastic_increment_variable_scale
+            )
+        else:
+            plastic_gradient = (
+                self.plastic_basis.T @ increment_gradient.ravel()
+            ) * self.plastic_increment_variable_scale
         physical_gradient = np.concatenate(
             (
                 displacement_gradient[1:-1, 1:-1].ravel()
                 * self.displacement_variable_scale,
-                increment_gradient.ravel() * self.plastic_increment_variable_scale,
+                plastic_gradient,
             )
         )
         total = dic_value + prior_value + temporal_value + spatial_value + augmented_value
@@ -793,6 +826,7 @@ def solve_experimental_mechanical_oracle_increment(
     config: ExperimentalOracleOptimizationConfig | None = None,
     time_increment: float = 1.0,
     commit_on_success: bool = True,
+    plastic_basis: ArrayLike | None = None,
 ) -> ExperimentalOracleIncrementResult:
     """Solve and transactionally accept one experimental-oracle increment."""
 
@@ -820,6 +854,7 @@ def solve_experimental_mechanical_oracle_increment(
         displacement_variable_scale=config.displacement_variable_scale,
         plastic_increment_variable_scale=config.plastic_increment_variable_scale,
         equilibrium_scale=provisional_scale,
+        plastic_basis=plastic_basis,
     )
     variables = problem.pack_state(initial_u, initial_p)
     if config.equilibrium_scale is None:
@@ -848,8 +883,25 @@ def solve_experimental_mechanical_oracle_increment(
     )
     previous_equilibrium_rms: float | None = None
     lower_bounds = np.full(problem.variable_count, -np.inf, dtype=np.float64)
-    lower_bounds[problem.displacement_unknown_count :] = 0.0
+    if not problem.reduced:
+        lower_bounds[problem.displacement_unknown_count :] = 0.0
     bounds = list(zip(lower_bounds, np.full(problem.variable_count, np.inf), strict=True))
+    constraints: tuple[LinearConstraint, ...] = ()
+    if problem.reduced:
+        assert problem.plastic_basis is not None
+        constraint_matrix = np.zeros(
+            (problem.plastic_basis.shape[0], problem.variable_count), dtype=np.float64
+        )
+        constraint_matrix[:, problem.displacement_unknown_count :] = (
+            problem.plastic_basis * problem.plastic_increment_variable_scale
+        )
+        constraints = (
+            LinearConstraint(
+                constraint_matrix,
+                -problem.ludwik_increment.ravel(),
+                np.full(problem.plastic_basis.shape[0], np.inf),
+            ),
+        )
     history: list[ExperimentalOracleAugmentedIteration] = []
     final_evaluation: ExperimentalOracleObjectiveEvaluation | None = None
     message = "maximum augmented-Lagrangian iterations reached"
@@ -857,6 +909,22 @@ def solve_experimental_mechanical_oracle_increment(
 
     try:
         for outer in range(1, config.maximum_augmented_iterations + 1):
+            optimisation_kwargs: dict[str, object] = {
+                "method": "SLSQP" if problem.reduced else "L-BFGS-B",
+                "jac": True,
+                "bounds": bounds,
+                "options": {
+                    "maxiter": config.maximum_inner_iterations,
+                    "ftol": config.inner_function_tolerance,
+                    **(
+                        {}
+                        if problem.reduced
+                        else {"gtol": config.inner_gradient_tolerance}
+                    ),
+                },
+            }
+            if problem.reduced:
+                optimisation_kwargs["constraints"] = constraints
             optimisation = minimize(
                 partial(
                     _objective_value_gradient,
@@ -865,14 +933,7 @@ def solve_experimental_mechanical_oracle_increment(
                     penalty=penalty,
                 ),
                 variables,
-                method="L-BFGS-B",
-                jac=True,
-                bounds=bounds,
-                options={
-                    "maxiter": config.maximum_inner_iterations,
-                    "gtol": config.inner_gradient_tolerance,
-                    "ftol": config.inner_function_tolerance,
-                },
+                **optimisation_kwargs,
             )
             variables = np.asarray(optimisation.x, dtype=np.float64)
             final_evaluation = problem.objective_and_gradient(
@@ -964,6 +1025,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
     config: ExperimentalOracleOptimizationConfig | None = None,
     time_increment: float = 1.0,
     commit_on_success: bool = True,
+    plastic_basis: ArrayLike | None = None,
 ) -> ExperimentalOracleIncrementResult:
     """Minimise on the exact mechanical-equilibrium manifold using an adjoint."""
 
@@ -988,14 +1050,14 @@ def solve_experimental_mechanical_oracle_reduced_increment(
         displacement_variable_scale=config.displacement_variable_scale,
         plastic_increment_variable_scale=config.plastic_increment_variable_scale,
         equilibrium_scale=config.equilibrium_scale or 1.0,
+        plastic_basis=plastic_basis,
     )
     if initial_p.shape != problem.plastic_increment_shape:
         raise ValueError(
             "initial_equivalent_plastic_increment has an incompatible shape"
         )
-    plastic_variables = (
-        initial_p / config.plastic_increment_variable_scale
-    ).ravel()
+    initial_state = problem.pack_state(initial_u, initial_p)
+    plastic_variables = initial_state[problem.displacement_unknown_count :]
     last_displacement = initial_u.copy()
     last_variables: FloatArray | None = None
     last_value: float | None = None
@@ -1006,10 +1068,19 @@ def solve_experimental_mechanical_oracle_reduced_increment(
     def reduced_objective(candidate: FloatArray) -> tuple[float, FloatArray]:
         nonlocal last_displacement, last_variables, last_value, last_gradient
         nonlocal last_evaluation, constitutive_rejections
-        increment = (
-            np.asarray(candidate, dtype=np.float64).reshape(problem.plastic_increment_shape)
-            * config.plastic_increment_variable_scale
-        )
+        candidate_values = np.asarray(candidate, dtype=np.float64)
+        if problem.reduced:
+            state_values = np.concatenate(
+                (
+                    np.zeros(problem.displacement_unknown_count, dtype=np.float64),
+                    candidate_values,
+                )
+            )
+            increment = problem.unpack_state(state_values)[1]
+        else:
+            increment = candidate_values.reshape(problem.plastic_increment_shape) * (
+                config.plastic_increment_variable_scale
+            )
         try:
             equilibrium = solve_fixed_plastic_increment_equilibrium(
                 material=material,
@@ -1066,12 +1137,19 @@ def solve_experimental_mechanical_oracle_reduced_increment(
             _, plastic_constraint_gradient = (
                 linearisation.jacobian_transpose_action(dual)
             )
+            if problem.reduced:
+                assert problem.plastic_basis is not None
+                constraint_gradient = (
+                    problem.plastic_basis.T @ plastic_constraint_gradient.ravel()
+                ) * config.plastic_increment_variable_scale
+            else:
+                constraint_gradient = (
+                    plastic_constraint_gradient.ravel()
+                    * config.plastic_increment_variable_scale
+                )
             reduced_gradient = evaluation.gradient[
                 problem.displacement_unknown_count :
-            ] - (
-                plastic_constraint_gradient.ravel()
-                * config.plastic_increment_variable_scale
-            )
+            ] - constraint_gradient
             last_variables = np.asarray(candidate, dtype=np.float64).copy()
             last_value = evaluation.value
             last_gradient = reduced_gradient.copy()
@@ -1091,7 +1169,21 @@ def solve_experimental_mechanical_oracle_reduced_increment(
             gradient = scale * difference if last_gradient is None else last_gradient
             return value, gradient.copy()
 
-    bounds = [(0.0, None)] * plastic_variables.size
+    bounds: list[tuple[float | None, float | None]] = [
+        (None, None)
+    ] * plastic_variables.size
+    constraints: tuple[LinearConstraint, ...] = ()
+    if problem.reduced:
+        assert problem.plastic_basis is not None
+        constraints = (
+            LinearConstraint(
+                problem.plastic_basis * config.plastic_increment_variable_scale,
+                -problem.ludwik_increment.ravel(),
+                np.full(problem.plastic_basis.shape[0], np.inf),
+            ),
+        )
+    else:
+        bounds = [(0.0, None)] * plastic_variables.size
     try:
         history: list[ExperimentalOracleAugmentedIteration] = []
         converged = False
@@ -1099,27 +1191,37 @@ def solve_experimental_mechanical_oracle_reduced_increment(
         final_variables = plastic_variables
         projected_gradient_inf = float("inf")
         for restart in range(1, config.maximum_augmented_iterations + 1):
+            optimisation_kwargs: dict[str, object] = {
+                "method": "SLSQP" if problem.reduced else "L-BFGS-B",
+                "jac": True,
+                "bounds": bounds,
+                "options": {
+                    "maxiter": config.maximum_inner_iterations,
+                    "ftol": config.inner_function_tolerance,
+                    "maxls": 100,
+                    **(
+                        {}
+                        if problem.reduced
+                        else {"gtol": config.inner_gradient_tolerance}
+                    ),
+                },
+            }
+            if problem.reduced:
+                optimisation_kwargs["constraints"] = constraints
             optimisation = minimize(
                 reduced_objective,
                 final_variables,
-                method="L-BFGS-B",
-                jac=True,
-                bounds=bounds,
-                options={
-                    "maxiter": config.maximum_inner_iterations,
-                    "gtol": config.inner_gradient_tolerance,
-                    "ftol": config.inner_function_tolerance,
-                    "maxls": 100,
-                },
+                **optimisation_kwargs,
             )
             final_variables = np.asarray(optimisation.x, dtype=np.float64)
             _, final_gradient = reduced_objective(final_variables)
             if last_evaluation is None:
                 raise RuntimeError("reduced oracle did not produce an admissible state")
             projected_gradient = final_gradient.copy()
-            projected_gradient[
-                (final_variables <= 1.0e-14) & (projected_gradient > 0.0)
-            ] = 0.0
+            if not problem.reduced:
+                projected_gradient[
+                    (final_variables <= 1.0e-14) & (projected_gradient > 0.0)
+                ] = 0.0
             projected_gradient_inf = float(
                 np.max(np.abs(projected_gradient), initial=0.0)
             )
@@ -1142,9 +1244,18 @@ def solve_experimental_mechanical_oracle_reduced_increment(
                 break
         if optimisation is None or last_evaluation is None:
             raise RuntimeError("reduced oracle did not perform an optimisation")
-        increment = final_variables.reshape(problem.plastic_increment_shape) * (
-            config.plastic_increment_variable_scale
-        )
+        if problem.reduced:
+            final_state = np.concatenate(
+                (
+                    np.zeros(problem.displacement_unknown_count, dtype=np.float64),
+                    final_variables,
+                )
+            )
+            increment = problem.unpack_state(final_state)[1]
+        else:
+            increment = final_variables.reshape(problem.plastic_increment_shape) * (
+                config.plastic_increment_variable_scale
+            )
         if converged and commit_on_success:
             material.commit()
         else:
