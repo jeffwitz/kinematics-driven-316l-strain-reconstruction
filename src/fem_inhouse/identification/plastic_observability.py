@@ -8,6 +8,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.sparse.linalg import LinearOperator, eigsh, gmres
 
+from fem_inhouse.core.constitutive import PLANE_STRESS_VON_MISES_METRIC, von_mises
 from fem_inhouse.identification.dic_whitening import DICSpectralTransfer, DICSpectralWhitener
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
@@ -56,6 +57,41 @@ class PlasticMetric:
             upper[axis] = slice(1, None)
             result[tuple(lower)] -= self.spatial_weight * contribution
             result[tuple(upper)] += self.spatial_weight * contribution
+        return result
+
+
+@dataclass(frozen=True, slots=True)
+class DirectionMetric:
+    """J2 metric for raw flow-direction perturbations."""
+
+    states: tuple[PlasticObservabilityState, ...]
+    null_regularisation: float = 1.0e-10
+
+    def __post_init__(self) -> None:
+        if not self.states:
+            raise ValueError("DirectionMetric requires at least one state")
+        if not np.isfinite(self.null_regularisation) or self.null_regularisation <= 0.0:
+            raise ValueError("null_regularisation must be finite and positive")
+
+    def action(self, direction: ArrayLike) -> FloatArray:
+        value = np.asarray(direction, dtype=np.float64)
+        if value.ndim != 4 or value.shape[-1] != 3:
+            raise ValueError("direction must have shape (nx, ny, 2, 3)")
+        inverse_metric = np.linalg.inv(PLANE_STRESS_VON_MISES_METRIC)
+        result = self.null_regularisation * value / value.size
+        total_weight = sum(state.weight for state in self.states)
+        normalisation = total_weight if total_weight > 0.0 else 1.0
+        for state in self.states:
+            trial = state.linearisation.trial
+            stress = trial.stress_in_plane_mpa
+            q = von_mises(stress)
+            safe = np.where(q > 0.0, q, 1.0)
+            flow = np.asarray(trial.observables["flow_direction"], dtype=np.float64)
+            raw = value.reshape(-1, 3)
+            tangent = raw - flow * (np.einsum("pi,pi->p", stress, raw) / safe)[:, None]
+            tangent[q <= 0.0] = 0.0
+            weighted = np.einsum("ij,pj->pi", inverse_metric, tangent)
+            result += (state.weight / normalisation) * weighted.reshape(value.shape) / value.size
         return result
 
 

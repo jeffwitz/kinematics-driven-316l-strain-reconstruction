@@ -13,8 +13,8 @@ import numpy as np
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch
 from fem_inhouse.identification.dic_whitening import DICSpectralTransfer, DICSpectralWhitener
 from fem_inhouse.identification.plastic_observability import (
+    DirectionMetric,
     DirectionObservabilityOperator,
-    PlasticMetric,
     PlasticObservabilityState,
 )
 from fem_inhouse.measurement import image_flow_to_canonical
@@ -83,7 +83,8 @@ def main() -> None:
         gmres_rtol=1.0e-9, gmres_maxiter=2000,
     )
     eigenvalues, modes = operator.generalized_modes(
-        min(args.rank, operator.direction_size - 1), metric=PlasticMetric()
+        min(args.rank, operator.direction_size - 1),
+        metric=DirectionMetric(operator.states),
     )
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.mkdir(parents=True, exist_ok=True)
@@ -94,20 +95,27 @@ def main() -> None:
         state_indices=state_indices,
     )
     figure, axes = plt.subplots(
-        len(eigenvalues), 3, squeeze=False, figsize=(12, 3 * len(eigenvalues))
+        len(eigenvalues), 5, squeeze=False, figsize=(20, 3 * len(eigenvalues))
     )
     for j in range(len(eigenvalues)):
         mode = modes[:, j].reshape(operator.direction_shape)
-        magnitude = np.linalg.norm(mode, axis=-1).mean(axis=-1)
+        components = mode.mean(axis=-2)
+        magnitude = np.linalg.norm(components, axis=-1)
         induced = operator.sensitivity(operator.states[0], mode)
         measured = operator.transfer.apply(induced)
         whitened = operator.whitener.apply(measured)
         axes[j, 0].imshow(magnitude.T, origin="lower", cmap="coolwarm")
-        axes[j, 0].set_title(f"direction mode {j + 1}")
-        axes[j, 1].imshow(np.linalg.norm(induced, axis=-1).T, origin="lower", cmap="viridis")
-        axes[j, 1].set_title("|S_n mode|")
-        axes[j, 2].imshow(np.linalg.norm(whitened, axis=-1).T, origin="lower", cmap="magma")
-        axes[j, 2].set_title("|W_D M_D S_n mode|")
+        axes[j, 0].set_title(f"|direction mode {j + 1}|")
+        axes[j, 1].imshow(components[..., 0].T, origin="lower", cmap="coolwarm")
+        axes[j, 1].set_title("delta n11")
+        axes[j, 2].imshow(components[..., 1].T, origin="lower", cmap="coolwarm")
+        axes[j, 2].set_title("delta n22")
+        axes[j, 3].imshow(components[..., 2].T, origin="lower", cmap="coolwarm")
+        axes[j, 3].set_title("delta n12")
+        axes[j, 4].imshow(
+            np.linalg.norm(whitened, axis=-1).T, origin="lower", cmap="magma"
+        )
+        axes[j, 4].set_title("|W_D M_D S_n mode|")
         for axis in axes[j]:
             axis.set_aspect("equal")
     figure.tight_layout()
