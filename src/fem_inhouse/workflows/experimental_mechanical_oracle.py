@@ -1094,7 +1094,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
                         0.1 * config.equilibrium_rms_tolerance, 1.0e-8
                     ),
                 )
-            except (ConstitutiveIntegrationError, RuntimeError):
+            except (ConstitutiveIntegrationError, RuntimeError, ValueError):
                 material.revert()
                 equilibrium = solve_fixed_plastic_increment_equilibrium(
                     material=material,
