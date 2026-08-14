@@ -69,6 +69,7 @@ class ExperimentalOracleOptimizationConfig:
     sufficient_constraint_reduction: float = 0.5
     displacement_variable_scale: float = 1.0e-3
     plastic_increment_variable_scale: float = 1.0e-3
+    reduced_coefficient_variable_scale: float = 1.0
     equilibrium_scale: float | None = None
     initialise_feasible_multiplier: bool = True
     multiplier_krylov_relative_tolerance: float = 1.0e-6
@@ -86,6 +87,7 @@ class ExperimentalOracleOptimizationConfig:
             "penalty_growth",
             "displacement_variable_scale",
             "plastic_increment_variable_scale",
+            "reduced_coefficient_variable_scale",
             "multiplier_krylov_relative_tolerance",
         ):
             value = getattr(self, name)
@@ -590,6 +592,7 @@ class ExperimentalOracleIncrementProblem:
         displacement_variable_scale: float,
         plastic_increment_variable_scale: float,
         equilibrium_scale: float,
+        reduced_coefficient_variable_scale: float = 1.0,
         plastic_basis: ArrayLike | None = None,
         dic_transfer: DICSpectralTransfer | None = None,
     ) -> None:
@@ -620,6 +623,7 @@ class ExperimentalOracleIncrementProblem:
         self.time_increment = float(time_increment)
         self.displacement_variable_scale = float(displacement_variable_scale)
         self.plastic_increment_variable_scale = float(plastic_increment_variable_scale)
+        self.reduced_coefficient_variable_scale = float(reduced_coefficient_variable_scale)
         self.equilibrium_scale = float(equilibrium_scale)
         self.displacement_shape = measured.shape
         self.plastic_increment_shape = sample_shape
@@ -654,6 +658,14 @@ class ExperimentalOracleIncrementProblem:
     def reduced(self) -> bool:
         return self.plastic_basis is not None
 
+    @property
+    def plastic_variable_scale(self) -> float:
+        return (
+            self.reduced_coefficient_variable_scale
+            if self.reduced
+            else self.plastic_increment_variable_scale
+        )
+
     def pack_state(
         self,
         displacement: ArrayLike,
@@ -679,7 +691,7 @@ class ExperimentalOracleIncrementProblem:
                 (increment - self.ludwik_increment).ravel(),
                 rcond=None,
             )
-            plastic_variables = coefficients / self.plastic_increment_variable_scale
+            plastic_variables = coefficients / self.reduced_coefficient_variable_scale
         return np.concatenate((displacement_variables, plastic_variables))
 
     def unpack_state(self, variables: ArrayLike) -> tuple[FloatArray, FloatArray]:
@@ -697,7 +709,7 @@ class ExperimentalOracleIncrementProblem:
                 self.plastic_increment_variable_scale
             )
         else:
-            coefficient = plastic_values * self.plastic_increment_variable_scale
+            coefficient = plastic_values * self.reduced_coefficient_variable_scale
             increment = (
                 self.ludwik_increment.ravel() + self.plastic_basis @ coefficient
             ).reshape(self.plastic_increment_shape)
@@ -795,7 +807,7 @@ class ExperimentalOracleIncrementProblem:
         else:
             plastic_gradient = (
                 self.plastic_basis.T @ increment_gradient.ravel()
-            ) * self.plastic_increment_variable_scale
+            ) * self.reduced_coefficient_variable_scale
         physical_gradient = np.concatenate(
             (
                 displacement_gradient[1:-1, 1:-1].ravel()
@@ -991,6 +1003,7 @@ def solve_experimental_mechanical_oracle_increment(
         time_increment=time_increment,
         displacement_variable_scale=config.displacement_variable_scale,
         plastic_increment_variable_scale=config.plastic_increment_variable_scale,
+        reduced_coefficient_variable_scale=config.reduced_coefficient_variable_scale,
         equilibrium_scale=provisional_scale,
         plastic_basis=plastic_basis,
     )
@@ -1031,7 +1044,7 @@ def solve_experimental_mechanical_oracle_increment(
             (problem.plastic_basis.shape[0], problem.variable_count), dtype=np.float64
         )
         constraint_matrix[:, problem.displacement_unknown_count :] = (
-            problem.plastic_basis * problem.plastic_increment_variable_scale
+            problem.plastic_basis * problem.reduced_coefficient_variable_scale
         )
         constraints = (
             LinearConstraint(
@@ -1189,6 +1202,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
         time_increment=time_increment,
         displacement_variable_scale=config.displacement_variable_scale,
         plastic_increment_variable_scale=config.plastic_increment_variable_scale,
+        reduced_coefficient_variable_scale=config.reduced_coefficient_variable_scale,
         equilibrium_scale=config.equilibrium_scale or 1.0,
         plastic_basis=plastic_basis,
     )
@@ -1295,7 +1309,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
                 assert problem.plastic_basis is not None
                 constraint_gradient = (
                     problem.plastic_basis.T @ plastic_constraint_gradient.ravel()
-                ) * config.plastic_increment_variable_scale
+                ) * config.reduced_coefficient_variable_scale
             else:
                 constraint_gradient = (
                     plastic_constraint_gradient.ravel()
@@ -1334,7 +1348,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
         assert problem.plastic_basis is not None
         constraints = (
             LinearConstraint(
-                problem.plastic_basis * config.plastic_increment_variable_scale,
+                problem.plastic_basis * config.reduced_coefficient_variable_scale,
                 -problem.ludwik_increment.ravel(),
                 np.full(problem.plastic_basis.shape[0], np.inf),
             ),
