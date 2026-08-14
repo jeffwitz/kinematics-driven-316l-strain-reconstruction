@@ -3,7 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import (
+    DICSpectralTransfer,
+    DICSpectralWhitener,
+)
 
 
 def _correlated_noise(seed: int = 42) -> np.ndarray:
@@ -139,3 +142,27 @@ def test_masked_whitener_has_the_exact_non_self_adjoint_pair() -> None:
     np.testing.assert_allclose(lhs, rhs, rtol=2.0e-13, atol=1.0e-11)
     np.testing.assert_array_equal(whitener.normal_action(left)[0], 0.0)
     np.testing.assert_array_equal(whitener.normal_action(left)[-1], 0.0)
+
+
+def test_spectral_transfer_is_self_adjoint_and_suppresses_short_wavelengths() -> None:
+    transfer = DICSpectralTransfer(
+        wavelengths_pixels=np.array([4.0, 8.0, 16.0, 64.0]),
+        gains=np.array([0.01, 0.1, 0.5, 0.95]),
+    )
+    rng = np.random.default_rng(8)
+    left = rng.standard_normal((32, 32, 2))
+    right = rng.standard_normal((32, 32, 2))
+    np.testing.assert_allclose(
+        np.vdot(transfer.apply(left), right),
+        np.vdot(left, transfer.adjoint(right)),
+        rtol=1.0e-12,
+        atol=1.0e-12,
+    )
+    long_wave = np.ones((32, 32, 2))
+    short_wave = (-1.0) ** (
+        np.arange(32)[:, None, None] + np.arange(32)[None, :, None]
+    )
+    short_wave = np.broadcast_to(short_wave, long_wave.shape)
+    assert np.linalg.norm(transfer.apply(short_wave)) < np.linalg.norm(
+        transfer.apply(long_wave)
+    )

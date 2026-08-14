@@ -1,6 +1,9 @@
 """Joint identification utilities for the micromorphic coupling parameters."""
 
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import (
+    DICSpectralTransfer,
+    DICSpectralWhitener,
+)
 from fem_inhouse.identification.metrics import (
     AmplitudeMetricConfig,
     evaluate_identification_metrics,
@@ -26,6 +29,7 @@ __all__ = [
     "AmplitudeMetricConfig",
     "DICObservationOperator",
     "DICObservationOperatorConfig",
+    "DICSpectralTransfer",
     "DICSpectralWhitener",
     "NonlocalIdentificationPoint",
     "ObservationResult",

@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.sparse.linalg import LinearOperator, eigsh, gmres
 
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import DICSpectralTransfer, DICSpectralWhitener
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
 from fem_inhouse.workflows.experimental_mechanical_oracle import (
@@ -84,6 +84,7 @@ class PlasticObservabilityOperator:
         grid: StructuredGrid2D,
         whitener: DICSpectralWhitener,
         *,
+        transfer: DICSpectralTransfer | None = None,
         gmres_rtol: float = 1.0e-8,
         gmres_maxiter: int = 500,
     ) -> None:
@@ -94,6 +95,7 @@ class PlasticObservabilityOperator:
         self.states = states
         self.grid = grid
         self.whitener = whitener
+        self.transfer = transfer
         self.gmres_rtol = gmres_rtol
         self.gmres_maxiter = gmres_maxiter
         displacement_shape = states[0].linearisation.displacement_shape
@@ -194,7 +196,10 @@ class PlasticObservabilityOperator:
     def observation(self, state: PlasticObservabilityState, plastic: ArrayLike) -> FloatArray:
         """Apply ``O = W_D S_p``."""
 
-        return self.whitener.apply(self.sensitivity(state, plastic))
+        displacement = self.sensitivity(state, plastic)
+        if self.transfer is not None:
+            displacement = self.transfer.apply(displacement)
+        return self.whitener.apply(displacement)
 
     def observation_transpose(
         self, state: PlasticObservabilityState, dual: ArrayLike
@@ -202,6 +207,8 @@ class PlasticObservabilityOperator:
         """Apply ``O.T = -G_p.T K.T^{-1} W_D.T``."""
 
         whitened_dual = self.whitener.adjoint(dual)
+        if self.transfer is not None:
+            whitened_dual = self.transfer.adjoint(whitened_dual)
         mechanical_dual = self.solve_mechanical(state, whitened_dual, transpose=True)
         return -self.gp_transpose(state, mechanical_dual)
 

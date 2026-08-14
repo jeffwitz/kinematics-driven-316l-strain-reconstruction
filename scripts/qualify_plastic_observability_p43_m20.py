@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import (
+    DICSpectralTransfer,
+    DICSpectralWhitener,
+)
 from fem_inhouse.identification.plastic_observability import (
     PlasticMetric,
     PlasticObservabilityOperator,
@@ -31,6 +34,7 @@ NOISE = (
     / "validation/reference_data/dic_uncertainty_propagation_p0043_v1"
     / "centred_repeat_flow_pixels.npy"
 )
+TRANSFER = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
 DEFAULT_FIELDS = (
     ROOT / "validation/_generated/performance/experimental_oracle_p43_m20/fields.npz"
 )
@@ -103,6 +107,7 @@ def main() -> None:
         tuple(PlasticObservabilityState(selected[index]) for index in state_indices),
         grid,
         whitener,
+        transfer=DICSpectralTransfer.from_sinusoidal_csv(TRANSFER),
         gmres_rtol=1.0e-9,
         gmres_maxiter=2000,
     )

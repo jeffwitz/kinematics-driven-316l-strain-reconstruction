@@ -3,11 +3,86 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 FloatArray = NDArray[np.float64]
+
+
+@dataclass(frozen=True, slots=True)
+class DICSpectralTransfer:
+    """Self-adjoint approximation of the measured DIC spatial transfer."""
+
+    wavelengths_pixels: FloatArray
+    gains: FloatArray
+
+    def __post_init__(self) -> None:
+        wavelengths = np.asarray(self.wavelengths_pixels, dtype=np.float64)
+        gains = np.asarray(self.gains, dtype=np.float64)
+        if wavelengths.ndim != 1 or gains.shape != wavelengths.shape:
+            raise ValueError("wavelengths and gains must be one-dimensional and matched")
+        if (
+            wavelengths.size < 2
+            or np.any(wavelengths <= 0.0)
+            or not np.all(np.diff(wavelengths) > 0.0)
+        ):
+            raise ValueError("wavelengths must be strictly increasing and positive")
+        if not np.isfinite(gains).all() or np.any(gains < 0.0):
+            raise ValueError("gains must be finite and non-negative")
+        object.__setattr__(self, "wavelengths_pixels", wavelengths.copy())
+        object.__setattr__(self, "gains", gains.copy())
+
+    @classmethod
+    def from_sinusoidal_csv(cls, path: str | Path) -> DICSpectralTransfer:
+        """Load an isotropic average of the archived horizontal/vertical gains."""
+
+        rows = np.genfromtxt(path, delimiter=",", names=True)
+        wavelengths = np.asarray(rows["wavelength_pixels"], dtype=np.float64)
+        gains = np.asarray(rows["gain"], dtype=np.float64)
+        unique = np.unique(wavelengths)
+        averaged = np.array([np.mean(gains[wavelengths == value]) for value in unique])
+        return cls(unique, averaged)
+
+    def _multiplier(self, shape: tuple[int, int, int]) -> FloatArray:
+        frequencies_x = np.fft.fftfreq(shape[0])[:, None]
+        frequencies_y = np.fft.fftfreq(shape[1])[None, :]
+        frequency = np.sqrt(frequencies_x**2 + frequencies_y**2)
+        wavelength = np.divide(
+            1.0,
+            frequency,
+            out=np.full_like(frequency, np.inf),
+            where=frequency > 0.0,
+        )
+        multiplier = np.interp(
+            np.log(np.maximum(wavelength, self.wavelengths_pixels[0])),
+            np.log(self.wavelengths_pixels),
+            self.gains,
+            left=float(self.gains[0]),
+            right=float(self.gains[-1]),
+        )
+        multiplier[frequency == 0.0] = 1.0
+        return np.broadcast_to(multiplier[..., None], shape)
+
+    def apply(self, values: ArrayLike) -> FloatArray:
+        """Apply the transfer function to a displacement field."""
+
+        field = np.asarray(values, dtype=np.float64)
+        if field.ndim != 3 or not np.isfinite(field).all():
+            raise ValueError("values must be a finite field with shape (nx, ny, components)")
+        transformed = np.fft.fftn(field, axes=(0, 1), norm="ortho")
+        return np.asarray(
+            np.fft.ifftn(
+                transformed * self._multiplier(field.shape), axes=(0, 1), norm="ortho"
+            ).real,
+            dtype=np.float64,
+        )
+
+    def adjoint(self, values: ArrayLike) -> FloatArray:
+        """Apply the exact adjoint (the fitted transfer is real and symmetric)."""
+
+        return self.apply(values)
 
 
 def _opposite_frequency_indices(size: int) -> NDArray[np.int64]:
