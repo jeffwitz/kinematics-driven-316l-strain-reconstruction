@@ -1169,7 +1169,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
             last_gradient = reduced_gradient.copy()
             last_evaluation = evaluation
             return evaluation.value, reduced_gradient
-        except (ConstitutiveIntegrationError, RuntimeError):
+        except (ConstitutiveIntegrationError, RuntimeError, ValueError):
             material.revert()
             constitutive_rejections += 1
             reference = (
