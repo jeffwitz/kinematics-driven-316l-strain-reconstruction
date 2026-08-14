@@ -89,7 +89,9 @@ def _plot_one(
         axis.set_ylabel("y pixel")
         figure.colorbar(image, ax=axis, shrink=0.85)
 
-    figure.suptitle(f"P43 M100 — effect of scalar non-local coupling — {label}")
+    figure.suptitle(
+        f"P43 M100 — final DIC increment — scalar non-local coupling — {label}"
+    )
     figure.savefig(output, dpi=220)
     plt.close(figure)
     summary = {
@@ -101,6 +103,10 @@ def _plot_one(
         "chi_percentile_5": chi_limits[0],
         "chi_percentile_95": chi_limits[1],
         "source_name": source_name,
+        "source_active_fraction_local": float(np.count_nonzero(local > 1.0e-12) / local.size),
+        "source_active_fraction_nonlocal": float(
+            np.count_nonzero(coupled_source > 1.0e-12) / coupled_source.size
+        ),
         "source_delta_l2_relative": float(
             np.linalg.norm(source_delta) / max(np.linalg.norm(local), 1e-30)
         ),
