@@ -1198,11 +1198,13 @@ def solve_experimental_mechanical_oracle_reduced_increment(
                 "options": {
                     "maxiter": config.maximum_inner_iterations,
                     "ftol": config.inner_function_tolerance,
-                    "maxls": 100,
                     **(
-                        {}
-                        if problem.reduced
-                        else {"gtol": config.inner_gradient_tolerance}
+                        {
+                            "maxls": 100,
+                            "gtol": config.inner_gradient_tolerance,
+                        }
+                        if not problem.reduced
+                        else {}
                     ),
                 },
             }

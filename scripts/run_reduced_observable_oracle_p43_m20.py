@@ -17,9 +17,7 @@ from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
 from fem_inhouse.workflows.experimental_mechanical_oracle import (
     ExperimentalOracleObjectiveWeights,
     ExperimentalOracleOptimizationConfig,
-    ExperimentalOracleWarmStartRequest,
     solve_experimental_mechanical_oracle_history,
-    solve_fixed_plastic_increment_equilibrium,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,17 +75,6 @@ def main() -> None:
         poisson_ratio=0.30,
     )
 
-    def warm_start(request: ExperimentalOracleWarmStartRequest) -> np.ndarray:
-        return solve_fixed_plastic_increment_equilibrium(
-            material=request.material,
-            kinematics=request.kinematics,
-            boundary_displacement=request.measured_displacement,
-            equivalent_plastic_increment=request.ludwik_increment,
-            initial_displacement=request.initial_displacement,
-            time_increment=request.time_increment,
-            equilibrium_rms_tolerance=1.0e-6,
-        ).displacement
-
     config = ExperimentalOracleOptimizationConfig(
         equilibrium_rms_tolerance=1.0e-4,
         projected_gradient_tolerance=1.0e-2,
@@ -105,7 +92,6 @@ def main() -> None:
         measured_displacement_history=measured,
         whitener=whitener,
         ludwik_increment_history=ludwik,
-        displacement_warm_start=warm_start,
         solution_method="reduced",
         weights=weights,
         config=config,
