@@ -144,9 +144,14 @@ class SrixGeneric3DMaterialPointBatch:
         manager = mgis.MaterialDataManager(behaviour, point_count)
         storage_mode = mgis.MaterialStateManagerStorageMode.ExternalStorage
         for state in (manager.s0, manager.s1):
-            mgis.setMaterialProperty(
-                state, "MicromorphicCouplingModulus", coupling, storage_mode
-            )
+            if np.all(coupling == coupling[0]):
+                mgis.setMaterialProperty(
+                    state, "MicromorphicCouplingModulus", float(coupling[0])
+                )
+            else:
+                mgis.setMaterialProperty(
+                    state, "MicromorphicCouplingModulus", coupling, storage_mode
+                )
             mgis.setExternalStateVariable(
                 state,
                 "Temperature",
