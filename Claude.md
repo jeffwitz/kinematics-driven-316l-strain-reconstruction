@@ -6207,3 +6207,12 @@ fréquence, pas un mode plastique physique. Avec le même `p_ref` et
 `spatial_weight=100`, les modes deviennent lisses ; ce poids est uniquement un
 test de suppression du Nyquist et ne constitue pas encore une calibration.
 Aucun oracle réduit ne doit être lancé avant cette calibration.
+
+Un premier opérateur `M_D` spectral a été ajouté à partir de la moyenne
+isotrope des gains sinusoïdaux V4. Avec `H_p` amplitude-only, le spectre
+M20 devient environ `[0.142, 0.0604, 0.00948, 0.00253]` pour les quatre
+premiers modes : les damiers ne dominent plus les premiers modes plastiques.
+La réponse blanchie `W_D M_D S_p phi` reste visuellement bruitée, ce qui est
+attendu avec l'inverse du PSD ; cela devra être évalué quantitativement. Cette
+version de `M_D` est une approximation isotrope, pas encore la chaîne DIC
+complète ni une MTF directionnelle validée.

@@ -142,7 +142,7 @@ def main() -> None:
         axes[mode_index, 2].imshow(
             np.linalg.norm(whitened, axis=-1).T, origin="lower", cmap="magma"
         )
-        axes[mode_index, 2].set_title("|W_D S_p phi|")
+        axes[mode_index, 2].set_title("|W_D M_D S_p phi|")
         for axis in axes[mode_index]:
             axis.set_aspect("equal")
         spectrum = np.abs(np.fft.fftn(plastic_map, norm="ortho")) ** 2
@@ -175,6 +175,10 @@ def main() -> None:
             "amplitude_weight": 1.0,
             "spatial_weight": args.spatial_weight,
             "reference_scale": args.reference_scale,
+        },
+        "measurement_transfer": {
+            "path": str(TRANSFER),
+            "model": "isotropic average of horizontal and vertical sinusoidal gains",
         },
         "eigenvalues": eigenvalues.tolist(),
         "sqrt_eigenvalues": np.sqrt(np.maximum(eigenvalues, 0.0)).tolist(),
