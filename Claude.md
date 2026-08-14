@@ -6159,12 +6159,11 @@ vérité physique. Pour chaque état :
 solveurs transposés utilisent explicitement `K.T` et ne supposent pas la
 symétrie du tangent.
 
-Le même module fournit maintenant un premier `PlasticMetric` explicite,
-amplitude-only (`H_p = alpha I`) et `generalized_modes`, qui appelle `eigsh`
-sur les `LinearOperator` de `A_obs` et `H_p`. Cette métrique volontairement
-minimale n'est pas encore une calibration physique de la régularité spatiale;
-elle sert uniquement à valider le pipeline matrix-free et devra être remplacée
-ou complétée après calibration du prior.
+Le même module fournit maintenant un `PlasticMetric` explicite, normalisé par
+un `reference_scale` RMS et pouvant ajouter le terme de différences voisines,
+ainsi que `generalized_modes`, qui appelle `eigsh` sur les `LinearOperator` de
+`A_obs` et `H_p`. La valeur de référence et le poids spatial restent à
+calibrer ; ils ne doivent pas être présentés comme des paramètres physiques.
 
 Suite obligatoire :
 
@@ -6192,3 +6191,12 @@ DC et `H_p=I` provisoire. Les deux premières valeurs propres sont environ
 `4.2e-16` pour `G_p` et `4.0e-10` pour `O`. Ces valeurs ne sont pas encore une
 conclusion physique : la métrique spatiale doit être calibrée avant de fixer le
 rang ou de lancer l'oracle réduit sans prior.
+
+Avec la métrique normalisée par le RMS des incréments plastiques non nuls
+(`p_ref = 2.53965e-4`), le spectre M20 à 10 modes est :
+`[2494.8, 2078.1, 1844.4, 1535.2, 455.1, 435.4, 369.4, 357.2, 340.9,
+332.1]`. Il ne montre pas encore un gap interprétable : la base reste
+instantanée, les états sont seulement `[0,10,20,29,39]` et la métrique spatiale
+n'est pas activée. Le calcul rank-20 a été trop coûteux dans la configuration
+actuelle et n'a produit aucun artefact ; il faut optimiser les applications
+répétées de `O/O.T` avant d'en déduire quoi que ce soit.
