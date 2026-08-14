@@ -50,23 +50,34 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--rank", type=int, default=2)
     parser.add_argument("--state-count", type=int, default=5)
+    parser.add_argument("--state-indices", nargs="+", type=int)
     parser.add_argument("--spatial-weight", type=float, default=0.0)
-    parser.add_argument("--reference-scale", type=float, default=1.0)
+    parser.add_argument("--reference-scale", type=float)
     args = parser.parse_args()
 
     fields = np.load(args.fields, allow_pickle=False)
     displacement_history = np.asarray(fields["oracle_displacement_history"])
     increment_history = np.asarray(fields["oracle_increment_history"])
+    ludwik_history = np.asarray(fields["ludwik_increment_history"])
     node_shape = displacement_history.shape[1:3]
     nx, ny = node_shape[0] - 1, node_shape[1] - 1
     grid = StructuredGrid2D(nx, ny, 0.00184 * nx, 0.00184 * ny)
     kinematics = TwoSubcellDiagnostic2D(grid)
     if increment_history.shape[0] != displacement_history.shape[0] - 1:
         raise ValueError("oracle history and increments have incompatible lengths")
-    state_count = min(args.state_count, increment_history.shape[0])
-    state_indices = np.rint(
-        np.linspace(0, increment_history.shape[0] - 1, state_count)
-    ).astype(int)
+    if args.state_indices is None:
+        state_count = min(args.state_count, increment_history.shape[0])
+        state_indices = np.rint(
+            np.linspace(0, increment_history.shape[0] - 1, state_count)
+        ).astype(int)
+    else:
+        state_indices = np.asarray(args.state_indices, dtype=int)
+    if np.any(state_indices < 0) or np.any(state_indices >= increment_history.shape[0]):
+        raise ValueError("state indices must refer to archived increments")
+    reference_scale = args.reference_scale
+    if reference_scale is None:
+        active_ludwik = ludwik_history[ludwik_history > 0.0]
+        reference_scale = float(np.sqrt(np.mean(active_ludwik**2)))
 
     material = DrivenJ2PlaneStressBatch(
         kinematics.material_point_count,
@@ -113,7 +124,7 @@ def main() -> None:
     )
     metric = PlasticMetric(
         spatial_weight=args.spatial_weight,
-        reference_scale=args.reference_scale,
+        reference_scale=reference_scale,
     )
     eigenvalues, modes = operator.generalized_modes(args.rank, metric=metric)
     output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -174,7 +185,7 @@ def main() -> None:
             "type": "amplitude_plus_neighbour_differences",
             "amplitude_weight": 1.0,
             "spatial_weight": args.spatial_weight,
-            "reference_scale": args.reference_scale,
+            "reference_scale": reference_scale,
         },
         "measurement_transfer": {
             "path": str(TRANSFER),
