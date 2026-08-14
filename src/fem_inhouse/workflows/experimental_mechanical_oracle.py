@@ -348,7 +348,7 @@ def _fixed_displacement_jacobian_action(
     )
 
 
-def solve_fixed_plastic_increment_equilibrium(
+def _solve_fixed_plastic_increment_equilibrium(
     *,
     material: DrivenJ2PlaneStressBatch,
     kinematics: DiscreteKinematics2D,
@@ -474,6 +474,78 @@ def solve_fixed_plastic_increment_equilibrium(
         raise
     material.revert()
     raise RuntimeError("fixed-increment Newton did not converge")
+
+
+def solve_fixed_plastic_increment_equilibrium(
+    *,
+    material: DrivenJ2PlaneStressBatch,
+    kinematics: DiscreteKinematics2D,
+    boundary_displacement: ArrayLike,
+    equivalent_plastic_increment: ArrayLike,
+    initial_displacement: ArrayLike | None = None,
+    time_increment: float = 1.0,
+    equilibrium_rms_tolerance: float = 1.0e-9,
+    maximum_newton_iterations: int = 30,
+    maximum_line_search_iterations: int = 12,
+    krylov_relative_tolerance: float = 1.0e-10,
+    maximum_krylov_iterations: int = 500,
+) -> FixedIncrementEquilibriumResult:
+    """Solve a fixed increment, retrying through a non-committed homotopy."""
+
+    try:
+        return _solve_fixed_plastic_increment_equilibrium(
+            material=material,
+            kinematics=kinematics,
+            boundary_displacement=boundary_displacement,
+            equivalent_plastic_increment=equivalent_plastic_increment,
+            initial_displacement=initial_displacement,
+            time_increment=time_increment,
+            equilibrium_rms_tolerance=equilibrium_rms_tolerance,
+            maximum_newton_iterations=maximum_newton_iterations,
+            maximum_line_search_iterations=maximum_line_search_iterations,
+            krylov_relative_tolerance=krylov_relative_tolerance,
+            maximum_krylov_iterations=maximum_krylov_iterations,
+        )
+    except (ConstitutiveIntegrationError, RuntimeError, ValueError):
+        material.revert()
+
+    target_boundary = np.asarray(boundary_displacement, dtype=np.float64)
+    target_increment = np.asarray(equivalent_plastic_increment, dtype=np.float64)
+    base_displacement = (
+        target_boundary.copy()
+        if initial_displacement is None
+        else np.asarray(initial_displacement, dtype=np.float64).copy()
+    )
+    previous = base_displacement
+    final: FixedIncrementEquilibriumResult | None = None
+    try:
+        for scale in (0.0, 0.25, 0.5, 0.75, 1.0):
+            boundary = base_displacement + scale * (
+                target_boundary - base_displacement
+            )
+            result = _solve_fixed_plastic_increment_equilibrium(
+                material=material,
+                kinematics=kinematics,
+                boundary_displacement=boundary,
+                equivalent_plastic_increment=scale * target_increment,
+                initial_displacement=previous,
+                time_increment=time_increment,
+                equilibrium_rms_tolerance=equilibrium_rms_tolerance,
+                maximum_newton_iterations=maximum_newton_iterations,
+                maximum_line_search_iterations=maximum_line_search_iterations,
+                krylov_relative_tolerance=krylov_relative_tolerance,
+                maximum_krylov_iterations=maximum_krylov_iterations,
+            )
+            final = result
+            previous = result.displacement.copy()
+            if scale < 1.0:
+                material.revert()
+        if final is None:
+            raise RuntimeError("non-committed homotopy produced no state")
+        return final
+    except Exception:
+        material.revert()
+        raise
 
 
 def _quadratic_difference_regularisation(
@@ -771,12 +843,13 @@ def _objective_value_gradient(
             reference = np.zeros_like(candidate)
         difference = np.asarray(candidate, dtype=np.float64) - reference
         barrier_scale = max(abs(problem.last_admissible_value or 0.0), 1.0)
-        value = (problem.last_admissible_value or 0.0) + barrier_scale * (
-            1.0 + 0.5 * float(np.vdot(difference, difference).real)
-        )
         gradient = problem.last_admissible_gradient
         if gradient is None:
-            gradient = barrier_scale * difference
+            gradient = np.zeros_like(difference)
+        value = (problem.last_admissible_value or 0.0) + float(
+            np.vdot(gradient, difference).real
+        ) + barrier_scale * (1.0 + 0.5 * float(np.vdot(difference, difference).real))
+        gradient = gradient + barrier_scale * difference
         return value, gradient.copy()
     return evaluation.value, evaluation.gradient
 
@@ -807,6 +880,21 @@ def _find_admissible_initial_increment(
             continue
         material.revert()
         return candidate, scale
+    try:
+        evaluate_experimental_mechanical_oracle(
+            material,
+            kinematics,
+            displacement,
+            np.zeros_like(initial_increment),
+            time_increment=time_increment,
+        )
+    except (ConstitutiveIntegrationError, ValueError) as error:
+        material.revert()
+        raise ConstitutiveIntegrationError(
+            "zero plastic increment is not constitutively admissible"
+        ) from error
+    material.revert()
+    return np.zeros_like(initial_increment), 0.0
     raise ConstitutiveIntegrationError(
         "no admissible continuation found for the initial plastic increment"
     )
@@ -1089,13 +1177,6 @@ def solve_experimental_mechanical_oracle_reduced_increment(
     initial_p = np.maximum(
         np.asarray(initial_equivalent_plastic_increment, dtype=np.float64), 0.0
     )
-    initial_p, _ = _find_admissible_initial_increment(
-        material=material,
-        kinematics=kinematics,
-        displacement=initial_u,
-        initial_increment=initial_p,
-        time_increment=time_increment,
-    )
     problem = ExperimentalOracleIncrementProblem(
         material=material,
         kinematics=kinematics,
@@ -1236,10 +1317,13 @@ def solve_experimental_mechanical_oracle_reduced_increment(
             )
             difference = np.asarray(candidate, dtype=np.float64) - reference
             scale = max(abs(last_value or 0.0), 1.0)
-            value = (last_value or 0.0) + scale * (
+            gradient = (
+                np.zeros_like(difference) if last_gradient is None else last_gradient
+            )
+            value = (last_value or 0.0) + float(np.vdot(gradient, difference).real) + scale * (
                 1.0 + 0.5 * float(np.vdot(difference, difference).real)
             )
-            gradient = scale * difference if last_gradient is None else last_gradient
+            gradient = gradient + scale * difference
             return value, gradient.copy()
 
     bounds: list[tuple[float | None, float | None]] = [
