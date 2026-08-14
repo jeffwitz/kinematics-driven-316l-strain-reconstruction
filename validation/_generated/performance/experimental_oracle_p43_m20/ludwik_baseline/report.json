@@ -1,0 +1,353 @@
+{
+  "admissible_fraction": 0.999,
+  "failure": null,
+  "fields": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/fields.npz",
+  "maximum_ratio_over_states": 3.508985008044783,
+  "schema_version": 1,
+  "states": [
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 3.154608185811773e-14,
+      "maximum_ratio": 0.0,
+      "plastic_points": 0,
+      "points_at_or_beyond_the_wall": 800,
+      "state": 1
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 6.481223202407087e-14,
+      "maximum_ratio": 0.0,
+      "plastic_points": 0,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 2
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 1.2518921285085526e-13,
+      "maximum_ratio": 0.0,
+      "plastic_points": 0,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 3
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 1.2469689110288387e-13,
+      "maximum_ratio": 0.9345107186587674,
+      "plastic_points": 59,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 4
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 1.618948856025429e-11,
+      "maximum_ratio": 0.6747300652454957,
+      "plastic_points": 331,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 5
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 3.4806634437143556e-10,
+      "maximum_ratio": 0.2925433106542165,
+      "plastic_points": 261,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 6
+    },
+    {
+      "clipped_points": 33,
+      "equilibrium_rms": 2.4037019502037976e-13,
+      "maximum_ratio": 1.3779282364033336,
+      "plastic_points": 405,
+      "points_at_or_beyond_the_wall": 33,
+      "state": 7
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 9.912133655815346e-10,
+      "maximum_ratio": 0.48720570677271485,
+      "plastic_points": 370,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 8
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 3.3963790009449616e-11,
+      "maximum_ratio": 0.22560892075103395,
+      "plastic_points": 91,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 9
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 4.786187622478127e-13,
+      "maximum_ratio": 0.7180870958695497,
+      "plastic_points": 325,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 10
+    },
+    {
+      "clipped_points": 40,
+      "equilibrium_rms": 4.3855081140879327e-13,
+      "maximum_ratio": 1.8752228293590614,
+      "plastic_points": 587,
+      "points_at_or_beyond_the_wall": 39,
+      "state": 11
+    },
+    {
+      "clipped_points": 20,
+      "equilibrium_rms": 4.778597850351359e-13,
+      "maximum_ratio": 1.701096279059867,
+      "plastic_points": 536,
+      "points_at_or_beyond_the_wall": 20,
+      "state": 12
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 4.635767687396727e-13,
+      "maximum_ratio": 0.46304095944617063,
+      "plastic_points": 563,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 13
+    },
+    {
+      "clipped_points": 84,
+      "equilibrium_rms": 5.685431492502464e-13,
+      "maximum_ratio": 1.8971649081219544,
+      "plastic_points": 681,
+      "points_at_or_beyond_the_wall": 84,
+      "state": 14
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 4.947624004137825e-10,
+      "maximum_ratio": 0.9359623198626615,
+      "plastic_points": 691,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 15
+    },
+    {
+      "clipped_points": 79,
+      "equilibrium_rms": 1.1374851276901009e-12,
+      "maximum_ratio": 1.4811005625548073,
+      "plastic_points": 719,
+      "points_at_or_beyond_the_wall": 79,
+      "state": 16
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 9.32879418159273e-13,
+      "maximum_ratio": 0.729784900034133,
+      "plastic_points": 738,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 17
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 7.991983781443147e-12,
+      "maximum_ratio": 0.8740615127886189,
+      "plastic_points": 530,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 18
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 1.037466758097876e-12,
+      "maximum_ratio": 0.3301459759183117,
+      "plastic_points": 152,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 19
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 9.313642119148469e-12,
+      "maximum_ratio": 0.35461903190375066,
+      "plastic_points": 151,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 20
+    },
+    {
+      "clipped_points": 196,
+      "equilibrium_rms": 7.195540915905844e-10,
+      "maximum_ratio": 3.2634390692012163,
+      "plastic_points": 780,
+      "points_at_or_beyond_the_wall": 195,
+      "state": 21
+    },
+    {
+      "clipped_points": 334,
+      "equilibrium_rms": 7.508539699569166e-13,
+      "maximum_ratio": 2.469944053163637,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 332,
+      "state": 22
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 4.151241217086185e-12,
+      "maximum_ratio": 0.5697819743799324,
+      "plastic_points": 776,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 23
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 9.855803976006856e-13,
+      "maximum_ratio": 0.46618950928483566,
+      "plastic_points": 217,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 24
+    },
+    {
+      "clipped_points": 1,
+      "equilibrium_rms": 4.2300123399432185e-11,
+      "maximum_ratio": 1.3186810273930423,
+      "plastic_points": 262,
+      "points_at_or_beyond_the_wall": 1,
+      "state": 25
+    },
+    {
+      "clipped_points": 8,
+      "equilibrium_rms": 3.2131344005868843e-11,
+      "maximum_ratio": 1.3122014375021742,
+      "plastic_points": 418,
+      "points_at_or_beyond_the_wall": 8,
+      "state": 26
+    },
+    {
+      "clipped_points": 566,
+      "equilibrium_rms": 7.82063234024709e-12,
+      "maximum_ratio": 3.508985008044783,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 566,
+      "state": 27
+    },
+    {
+      "clipped_points": 23,
+      "equilibrium_rms": 8.809758098388286e-13,
+      "maximum_ratio": 1.2925902232623856,
+      "plastic_points": 595,
+      "points_at_or_beyond_the_wall": 23,
+      "state": 28
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 8.724920627175932e-13,
+      "maximum_ratio": 0.7472563547714605,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 29
+    },
+    {
+      "clipped_points": 3,
+      "equilibrium_rms": 1.2047518482236536e-11,
+      "maximum_ratio": 1.0900853109532425,
+      "plastic_points": 709,
+      "points_at_or_beyond_the_wall": 3,
+      "state": 30
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 1.1161117927728321e-12,
+      "maximum_ratio": 0.9400444993898458,
+      "plastic_points": 571,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 31
+    },
+    {
+      "clipped_points": 3,
+      "equilibrium_rms": 9.374615459502607e-13,
+      "maximum_ratio": 1.0967065447499484,
+      "plastic_points": 583,
+      "points_at_or_beyond_the_wall": 3,
+      "state": 32
+    },
+    {
+      "clipped_points": 2,
+      "equilibrium_rms": 3.782535996677947e-12,
+      "maximum_ratio": 1.025070657177296,
+      "plastic_points": 602,
+      "points_at_or_beyond_the_wall": 2,
+      "state": 33
+    },
+    {
+      "clipped_points": 125,
+      "equilibrium_rms": 7.034192364282341e-13,
+      "maximum_ratio": 1.5860339615700745,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 124,
+      "state": 34
+    },
+    {
+      "clipped_points": 287,
+      "equilibrium_rms": 8.159900120702941e-12,
+      "maximum_ratio": 1.7541077788163828,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 285,
+      "state": 35
+    },
+    {
+      "clipped_points": 2,
+      "equilibrium_rms": 9.186832825771305e-11,
+      "maximum_ratio": 1.1363527345835438,
+      "plastic_points": 574,
+      "points_at_or_beyond_the_wall": 2,
+      "state": 36
+    },
+    {
+      "clipped_points": 25,
+      "equilibrium_rms": 1.6827789472624597e-12,
+      "maximum_ratio": 1.1665438487909774,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 25,
+      "state": 37
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 6.209364584597898e-12,
+      "maximum_ratio": 0.7000116508983248,
+      "plastic_points": 518,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 38
+    },
+    {
+      "clipped_points": 291,
+      "equilibrium_rms": 6.799567732825217e-11,
+      "maximum_ratio": 2.6104251000362404,
+      "plastic_points": 800,
+      "points_at_or_beyond_the_wall": 291,
+      "state": 39
+    },
+    {
+      "clipped_points": 0,
+      "equilibrium_rms": 1.0198688502961929e-11,
+      "maximum_ratio": 0.7466303679022541,
+      "plastic_points": 796,
+      "points_at_or_beyond_the_wall": 0,
+      "state": 40
+    }
+  ],
+  "states_completed": 40,
+  "states_requested": 40,
+  "states_with_a_point_at_or_beyond_the_wall": [
+    1,
+    7,
+    11,
+    12,
+    14,
+    16,
+    21,
+    22,
+    25,
+    26,
+    27,
+    28,
+    30,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    39
+  ]
+}

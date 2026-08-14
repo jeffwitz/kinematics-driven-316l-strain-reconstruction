@@ -85,7 +85,31 @@ states 10 and 20 — `J0 = 0.00904244`, `dJ/J0 = 4.3831e-3`, `rho =
 [-0.07328, 0.06314]`. The new solver is not a different answer, it is the same
 answer obtained unconditionally.
 
-## Where the overshoot actually comes from
+## Correction: the baseline trajectory does cross the wall
+
+The section below measured the archived history against the bound using the
+**oracle's** displacement trajectory, because no Ludwik displacement history was
+archived. That pairs one solution's increments with another solution's states,
+and the conclusion it produced -- that the prescribed history is admissible --
+does not survive a proper replay.
+
+`scripts/replay_ludwik_baseline_history_p43.py` replays the baseline on its own
+trajectory and archives the displacements that were missing. Result:
+
+| | oracle trajectory | Ludwik baseline, replayed |
+|---|---:|---:|
+| states with a point at or beyond the wall | `0` of 40 | **`20` of 40** |
+| worst `Delta p / Delta p_max` | `0.871` | **`3.509`** |
+
+So the overshoot is not confined to the perturbed states the directional probe
+visits: the baseline trajectory itself exceeds the admissible bound at half its
+states, state 21 among them. That is why clipping the baseline replay alone was
+enough to complete all four diagnostic states.
+
+The reading below stands where it describes the mechanism and the bound, and is
+superseded where it locates the overshoot.
+
+## Where the overshoot appears on the oracle trajectory
 
 `scripts/diagnose_admissible_delta_p_wall.py` walks the archived oracle history
 against the bound. Artefact:
@@ -104,28 +128,39 @@ for the perturbed one.
 ## The recommendation, and what it is worth
 
 Project `Delta p` onto `[0, 0.999 Delta p_max)` of the state actually being
-integrated, inside the probe rather than inside the material. With that
-projection the directional replay completes all four requested states:
+integrated, inside the caller rather than inside the material. This is now an
+option of the diagnostic, `--admissible-fraction`, off by default, so the table
+below is reproducible:
+
+```bash
+python scripts/diagnose_directional_residual_p43_m20.py \
+    --admissible-fraction 0.999 --output <directory>
+```
+
+Only the baseline replay is clipped. The directional prototype prescribes its
+own signed direction basis, so the associated-J2 bound does not describe its
+admissible set, and clipping it there would change the very sensitivity the
+probe measures. With that projection the replay completes all four states:
 
 | state | `J0` | `dJ_gn / J0` | `max abs(rho)` |
 |---:|---:|---:|---:|
-| 10 | `0.00904244` | `4.3831e-3` | `0.05598` |
-| 20 | `0.04272129` | `6.0452e-3` | `0.07328` |
-| 30 | `0.23204890` | `4.8671e-3` | `0.05837` |
-| 40 | `0.90470059` | `4.5543e-3` | `0.06745` |
+| 10 | `0.00904239` | `4.3829e-3` | `0.05596` |
+| 20 | `0.04271986` | `6.0295e-3` | `0.07254` |
+| 30 | `0.23205044` | `4.8898e-3` | `0.05865` |
+| 40 | `0.90470925` | `4.5573e-3` | `0.06629` |
 
-States 10 and 20 are unchanged to the last digit, so the projection acts only
-where the unprojected run had no answer at all. The directional gain stays
-below `0.61 %` at every state: the negative result now rests on four states
-instead of two.
+States 10 and 20 reproduce the unprojected run to five significant figures --
+`0.00904239` against `0.00904244` — the small difference being where the clip
+is evaluated, on the initial guess rather than on the converged strain. The
+directional gain stays below `0.61 %` at every state, so the negative result
+now rests on four states instead of two.
 
-Two things this table does not say. The projection engaged 3221 times with a
-worst requested ratio of `6.64`, so it is doing real work at some probe points,
-not rounding repair — those points are genuinely far outside the admissible
-set, and reporting how far is more useful than silently clipping. And `J0` at
-state 40 is `0.905`: with the DIC whitening, a model at the noise level scores
-`0.5`, so by state 40 the misfit has risen to about `1.35` times the noise RMS
-rather than sitting below it as it does at state 10.
+Two things this table does not say. The projection is doing real work, not
+rounding repair: the baseline trajectory crosses the bound at half its states,
+by up to a factor of `3.51`, so reporting how far is more useful than silently
+clipping. And `J0` at state 40 is `0.905`: with the DIC whitening, a model at
+the noise level scores `0.5`, so by state 40 the misfit has risen to about
+`1.35` times the noise RMS rather than sitting below it as it does at state 10.
 
 The projection is therefore **not** wired into `DrivenJ2PlaneStressBatch`. The
 material reports the bound and refuses the inadmissible request; deciding what

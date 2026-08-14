@@ -42,6 +42,20 @@ def main() -> None:
     parser.add_argument("--rank", type=int, default=2)
     parser.add_argument("--h", type=float, default=1.0e-3)
     parser.add_argument("--equilibrium-tolerance", type=float, default=1.0e-9)
+    parser.add_argument(
+        "--admissible-fraction",
+        type=float,
+        default=None,
+        help=(
+            "project Delta p onto [0, fraction * Delta p_max) of the state being "
+            "integrated. Off by default. The prescribed history is admissible for its "
+            "own trajectory, but the probe moves the flow direction and therefore the "
+            "bound, so a Delta p that was admissible for the unperturbed state need "
+            "not be for the perturbed one. 0.999 completes all four states; the "
+            "projection engages where the unprojected run has no solution at all, and "
+            "reproduces states 10 and 20 bit for bit."
+        ),
+    )
     parser.add_argument("--states", type=int, nargs="+", default=[10, 20, 30, 40])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -113,6 +127,23 @@ def main() -> None:
         finally:
             directional_material.revert()
 
+    def admissible(material, increment: np.ndarray, displacement_field: np.ndarray):
+        """Clip Delta p to the admissible set of the baseline state being integrated.
+
+        Only the baseline replay is clipped. The directional prototype prescribes
+        its own signed direction basis, so the associated-J2 bound does not
+        describe its admissible set, and clipping it there would silently change
+        the very sensitivity the probe measures.
+        """
+
+        if args.admissible_fraction is None:
+            return increment
+        strain = np.asarray(kinematics.strain(displacement_field)).reshape(-1, 3)
+        bound = material.maximum_admissible_equivalent_plastic_increment(strain)
+        return np.minimum(
+            increment, (args.admissible_fraction * bound).reshape(np.shape(increment))
+        )
+
     for step, increment in enumerate(ludwik[: last_step + 1]):
         target = measured[step + 1]
         zero = np.zeros(args.rank)
@@ -124,7 +155,9 @@ def main() -> None:
                 material=baseline_material,
                 kinematics=kinematics,
                 boundary_displacement=target,
-                equivalent_plastic_increment=increment,
+                equivalent_plastic_increment=admissible(
+                    baseline_material, increment, displacement
+                ),
                 initial_displacement=displacement,
                 time_increment=1.0,
                 equilibrium_rms_tolerance=args.equilibrium_tolerance,
