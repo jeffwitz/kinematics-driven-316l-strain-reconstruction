@@ -89,6 +89,41 @@ class DrivenJ2MaterialProtocol(Protocol):
     def revert(self) -> None: ...
 
 
+#: Common eigenbasis of the plane-stress elasticity and the von Mises metric.
+#:
+#: In ``(S11, S22, S12)`` engineering-shear coordinates, ``C`` and ``M`` are
+#: simultaneously diagonalised by the orthonormal rows below: the hydrostatic
+#: in-plane mode, the deviatoric in-plane mode, and the shear mode. ``M`` has
+#: the fixed eigenvalues 1/2, 3/2 and 3; the eigenvalues of ``C`` depend on
+#: ``(E, nu)`` only. This is what collapses the 3x3 local system to a scalar.
+_SQRT_HALF = float(np.sqrt(0.5))
+_MODAL_BASIS = np.array(
+    [
+        [_SQRT_HALF, _SQRT_HALF, 0.0],
+        [_SQRT_HALF, -_SQRT_HALF, 0.0],
+        [0.0, 0.0, 1.0],
+    ]
+)
+_MODAL_METRIC_EIGENVALUES = np.array([0.5, 1.5, 3.0])
+
+#: Iteration cap of the scalar return. Bisection alone halves the bracket each
+#: time, so this covers a bracket spanning every order of magnitude float64 can
+#: hold; the Newton steps make the usual count a handful.
+_SCALAR_RETURN_MAXIMUM_ITERATIONS = 100
+
+
+def _modal_elasticity_eigenvalues(young_modulus_mpa: float, poisson_ratio: float) -> FloatArray:
+    """Eigenvalues of the plane-stress elasticity in :data:`_MODAL_BASIS`."""
+
+    return np.array(
+        [
+            young_modulus_mpa / (1.0 - poisson_ratio),
+            young_modulus_mpa / (1.0 + poisson_ratio),
+            young_modulus_mpa / (2.0 * (1.0 + poisson_ratio)),
+        ]
+    )
+
+
 def _flow_geometry(
     stress: FloatArray,
     *,
@@ -155,6 +190,13 @@ class DrivenJ2PlaneStressBatch:
         self._maximum_iterations = int(maximum_local_iterations)
         self._maximum_line_search_iterations = int(maximum_line_search_iterations)
         self._stress_floor = float(equivalent_stress_floor_mpa)
+        self._modal_elasticity = _modal_elasticity_eigenvalues(self._young, self._poisson)
+        #: ``a_i / Delta_p`` of the scalar reduction, and the coefficients of the
+        #: closed-form admissibility bound.
+        self._modal_relaxation = self._modal_elasticity * _MODAL_METRIC_EIGENVALUES
+        self._modal_bound_weights = 1.0 / (
+            self._modal_elasticity**2 * _MODAL_METRIC_EIGENVALUES
+        )
         self._committed_plastic_strain = np.zeros((point_count, 3), dtype=np.float64)
         self._committed_peeq = np.zeros(point_count, dtype=np.float64)
         self._trial_plastic_strain: FloatArray | None = None
@@ -209,13 +251,162 @@ class DrivenJ2PlaneStressBatch:
         jacobian = np.eye(3)[None, :, :] + increment[:, None, None] * elastic_hessian
         return residual, jacobian, direction
 
+    def maximum_admissible_equivalent_plastic_increment(
+        self, in_plane_strain: ArrayLike
+    ) -> FloatArray:
+        """Largest ``Delta p`` this trial state can absorb, per point.
+
+        Associated J2 relaxes the deviatoric stress towards the origin as
+        ``Delta p`` grows, and reaches it at a finite value: beyond that the
+        local equation has no solution with ``q > 0``, because the flow would
+        have to pass through the origin where the direction is undefined. The
+        bound is closed-form in the modal basis,
+
+        ``Delta p_max = sqrt(sum_i t_i^2 / (c_i^2 m_i))``,
+
+        with ``t`` the modal trial stress. An optimiser driving ``Delta p``
+        should project onto ``[0, Delta p_max)`` rather than discover the wall
+        as an integration failure -- that wall is what stopped the directional
+        replay at state 21, point 117.
+        """
+
+        strain = np.asarray(in_plane_strain, dtype=np.float64)
+        if strain.shape != (self.point_count, 3):
+            raise ValueError(f"in_plane_strain must have shape {(self.point_count, 3)}")
+        trial_stress = np.einsum(
+            "ij,pj->pi", self._elasticity, strain - self._committed_plastic_strain
+        )
+        modal_trial = trial_stress @ _MODAL_BASIS.T
+        return np.sqrt(modal_trial**2 @ self._modal_bound_weights)
+
+    def _solve_equivalent_stress(
+        self, modal_trial: FloatArray, increment: FloatArray
+    ) -> tuple[FloatArray, FloatArray]:
+        """Solve ``sum_i m_i t_i^2 / (q + a_i)^2 = 1`` for every plastic point.
+
+        Written in the common eigenbasis of ``C`` and ``M``, the 3x3 local
+        system collapses to this one scalar equation, with
+        ``a_i = Delta p * c_i * m_i``. The left-hand side is strictly
+        decreasing and convex on ``[0, inf)``, so:
+
+        * the root is unique and bracketed by ``[0, q_trial]``;
+        * convexity puts every Newton iterate on the same side of it, so
+          Newton started at ``q = 0`` increases monotonically to the root and
+          can never overshoot.
+
+        There is therefore no line search to fail, no 3x3 Jacobian to
+        condition, and no branch to follow. Non-existence stops being a
+        numerical accident and becomes the explicit test ``phi(0) > 1``.
+        """
+
+        weights = modal_trial**2 * _MODAL_METRIC_EIGENVALUES
+        relaxation = increment[:, None] * self._modal_relaxation[None, :]
+        # phi(0) > 1 is exactly Delta p < Delta p_max; below the bound the
+        # solve is guaranteed, so this is the only place existence is decided.
+        bound = np.sqrt(modal_trial**2 @ self._modal_bound_weights)
+        # A point with Delta p = 0 is elastic and imposes nothing, including at
+        # a virgin state where the bound itself is zero.
+        inadmissible = (increment > 0.0) & (increment >= bound)
+        if np.any(inadmissible):
+            first = int(np.flatnonzero(inadmissible)[0])
+            error = ConstitutiveIntegrationError(
+                "prescribed Delta p exceeds what the trial state can absorb at "
+                f"point {first}: Delta p={increment[first]:.6e} >= "
+                f"Delta p_max={bound[first]:.6e}"
+            )
+            error.diagnostics = {
+                "failure_stage": "delta_p_above_admissible_bound",
+                "point": first,
+                "delta_p": float(increment[first]),
+                "delta_p_max": float(bound[first]),
+                "q_trial_mpa": float(np.sqrt(weights[first].sum())),
+            }
+            raise error
+
+        equivalent = np.zeros(increment.shape[0], dtype=np.float64)
+        iterations = np.zeros(increment.shape[0], dtype=np.float64)
+        active = increment > 0.0
+        if not np.any(active):
+            return np.sqrt(weights.sum(axis=1)), iterations
+        w = weights[active]
+        a = relaxation[active]
+        reference = np.sqrt(w.sum(axis=1))
+        # Starting point. When the two distinct relaxation values coincide the
+        # equation collapses to the classical radial return `q = q_trial - a`,
+        # which is exact; they never coincide here, but they stay within a
+        # factor of three of each other, so the weighted-mean version of that
+        # formula lands close to the root over the whole admissible range.
+        #
+        # This matters more than it looks. Newton from `q = 0` is monotone and
+        # cannot overshoot, but far below the wall it advances by a factor of
+        # about 1.5 per iteration from a first step of order `a/2`, so reaching
+        # a root of order `q_trial` takes `log(q_trial / a)` iterations -- 50
+        # was not enough at a continuation scale of 2.4e-4, which is exactly
+        # how the replay failed at point 281.
+        effective = np.sum(w * a, axis=1) / np.sum(w, axis=1)
+        low = np.zeros(w.shape[0], dtype=np.float64)
+        high = reference.copy()
+        q = np.clip(reference - effective, 0.0, reference)
+        # `phi` is dimensionless and equals 1 at the root, so the residual test
+        # needs no scaling; the step test catches a root that has settled into
+        # the last bits, which happens near the wall where the root approaches
+        # zero. Both are per point: an all-or-nothing test lets one stagnating
+        # point fail an otherwise converged batch.
+        settled = np.zeros(w.shape[0], dtype=bool)
+        for iteration in range(1, _SCALAR_RETURN_MAXIMUM_ITERATIONS + 1):
+            shifted = q[:, None] + a
+            phi = np.sum(w / shifted**2, axis=1)
+            derivative = -2.0 * np.sum(w / shifted**3, axis=1)
+            # phi is strictly decreasing, so this brackets the root without a
+            # single extra function evaluation.
+            above = phi > 1.0
+            low = np.where(above & ~settled, q, low)
+            high = np.where(~above & ~settled, q, high)
+            candidate = q + (1.0 - phi) / derivative
+            # Convexity keeps an exact Newton step inside the bracket; finite
+            # precision does not, and a step that leaves it is replaced by a
+            # bisection, which alone would converge in about sixty iterations
+            # from any bracket this problem can produce.
+            outside = ~((candidate > low) & (candidate < high))
+            candidate = np.where(outside, 0.5 * (low + high), candidate)
+            update = candidate - q
+            q = np.where(settled, q, candidate)
+            iterations[active] = iteration
+            settled |= np.abs(update) <= 4.0 * np.finfo(float).eps * np.maximum(q, reference)
+            if np.all(settled):
+                break
+        if not np.all(settled):
+            shifted = q[:, None] + a
+            worst = int(np.argmax(np.abs(np.sum(w / shifted**2, axis=1) - 1.0)))
+            error = ConstitutiveIntegrationError(
+                "driven J2 scalar return did not converge at point "
+                f"{int(np.flatnonzero(active)[worst])}"
+            )
+            error.diagnostics = {
+                "failure_stage": "scalar_return",
+                "point": int(np.flatnonzero(active)[worst]),
+                "phi_minus_one": float(np.sum(w[worst] / (q[worst] + a[worst]) ** 2) - 1.0),
+                "equivalent_stress_mpa": float(q[worst]),
+                "trial_equivalent_stress_mpa": float(reference[worst]),
+                "bracket": [float(low[worst]), float(high[worst])],
+                "iterations": _SCALAR_RETURN_MAXIMUM_ITERATIONS,
+            }
+            raise error
+        equivalent[active] = q
+        equivalent[~active] = np.sqrt(weights[~active].sum(axis=1))
+        return equivalent, iterations
+
     def _solve_stress(
         self,
         trial_stress: FloatArray,
         increment: FloatArray,
         initial_stress: FloatArray | None = None,
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
-        stress = trial_stress.copy() if initial_stress is None else initial_stress.copy()
+        # `initial_stress` is accepted for interface compatibility with the
+        # homotopy retry and deliberately ignored: the scalar return needs no
+        # starting guess, so a warm start can only make the answer depend on
+        # the path taken to it.
+        del initial_stress
         trial_equivalent = von_mises(trial_stress)
         impossible = (increment > 0.0) & (trial_equivalent <= self._stress_floor)
         if np.any(impossible):
@@ -225,76 +416,16 @@ class DrivenJ2PlaneStressBatch:
                 f"point {first} has q_trial={trial_equivalent[first]:.3e} MPa"
             )
 
-        scale = np.maximum(np.linalg.norm(trial_stress, axis=1), 1.0)
-        tolerance = self._absolute_tolerance + self._relative_tolerance * scale
-        iterations = np.zeros(self.point_count, dtype=np.int64)
-        converged = increment == 0.0
-
-        for iteration in range(1, self._maximum_iterations + 1):
-            residual, jacobian, _ = self._residual_and_jacobian(stress, trial_stress, increment)
-            residual_norm = np.linalg.norm(residual, axis=1)
-            converged |= residual_norm <= tolerance
-            if np.all(converged):
-                break
-            active = ~converged
-            try:
-                correction = np.linalg.solve(jacobian[active], -residual[active, :, None])[..., 0]
-            except np.linalg.LinAlgError as error:
-                raise ConstitutiveIntegrationError(
-                    "driven J2 local Jacobian is singular"
-                ) from error
-
-            active_indices = np.flatnonzero(active)
-            accepted = np.zeros(active_indices.size, dtype=bool)
-            step = np.ones(active_indices.size, dtype=np.float64)
-            base_norm = residual_norm[active]
-            candidate_stress = stress[active].copy()
-            for _ in range(self._maximum_line_search_iterations):
-                candidates = stress[active] + step[:, None] * correction
-                candidate_residual, _, _ = self._residual_and_jacobian(
-                    candidates,
-                    trial_stress[active],
-                    increment[active],
-                )
-                candidate_norm = np.linalg.norm(candidate_residual, axis=1)
-                admissible = np.isfinite(candidate_norm) & (
-                    candidate_norm <= (1.0 - 1.0e-4 * step) * base_norm
-                )
-                newly_accepted = admissible & ~accepted
-                candidate_stress[newly_accepted] = candidates[newly_accepted]
-                accepted |= admissible
-                if np.all(accepted):
-                    break
-                step[~accepted] *= 0.5
-            if not np.all(accepted):
-                first = int(active_indices[np.flatnonzero(~accepted)[0]])
-                local_index = int(np.flatnonzero(active_indices == first)[0])
-                error = ConstitutiveIntegrationError(
-                    f"driven J2 local line search failed at point {first}"
-                )
-                error.diagnostics = {
-                    "failure_stage": "local_line_search",
-                    "point": first,
-                    "q_trial_mpa": float(von_mises(trial_stress[first][None])[0]),
-                    "delta_p": float(increment[first]),
-                    "newton_iteration": iteration,
-                    "base_residual_mpa": float(base_norm[local_index]),
-                    "jacobian_condition": float(np.linalg.cond(jacobian[local_index])),
-                    "line_search_iterations": self._maximum_line_search_iterations,
-                    "last_step": float(step[local_index]),
-                    "last_residual_mpa": float(candidate_norm[local_index]),
-                }
-                raise error
-            stress[active] = candidate_stress
-            iterations[active] = iteration
-        else:
-            residual, _, _ = self._residual_and_jacobian(stress, trial_stress, increment)
-            residual_norm = np.linalg.norm(residual, axis=1)
-            first = int(np.argmax(residual_norm / tolerance))
-            raise ConstitutiveIntegrationError(
-                "driven J2 local Newton did not converge; "
-                f"point {first}, residual={residual_norm[first]:.3e} MPa"
-            )
+        modal_trial = trial_stress @ _MODAL_BASIS.T
+        equivalent, iterations = self._solve_equivalent_stress(modal_trial, increment)
+        # sigma_i = t_i q / (q + a_i), exactly, once q is known. An elastic
+        # point keeps its trial stress: at Delta p = 0 the ratio is 1 by
+        # construction but degenerates to 0/0 at a virgin state.
+        plastic = increment > 0.0
+        shifted = equivalent[:, None] + increment[:, None] * self._modal_relaxation[None, :]
+        modal_stress = modal_trial.copy()
+        modal_stress[plastic] *= equivalent[plastic, None] / shifted[plastic]
+        stress = modal_stress @ _MODAL_BASIS
 
         residual, jacobian, direction = self._residual_and_jacobian(stress, trial_stress, increment)
         residual_norm = np.linalg.norm(residual, axis=1)

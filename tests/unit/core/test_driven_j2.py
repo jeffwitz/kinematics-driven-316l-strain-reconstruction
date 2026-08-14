@@ -146,3 +146,117 @@ def test_invalid_driven_increment_is_rejected() -> None:
             np.array([-1.0e-4]),
             time_increment=1.0,
         )
+
+
+def test_the_modal_basis_really_diagonalises_both_operators() -> None:
+    """The premise the scalar return is built on, asserted rather than assumed.
+
+    Collapsing the 3x3 local system to one scalar equation is legitimate only
+    because the plane-stress elasticity and the von Mises metric commute. If a
+    future change to either matrix broke that, the return would keep converging
+    and would quietly converge to the wrong stress, so the property is checked
+    here rather than trusted.
+    """
+
+    from fem_inhouse.core.driven_j2 import (
+        _MODAL_BASIS,
+        _MODAL_METRIC_EIGENVALUES,
+        _modal_elasticity_eigenvalues,
+    )
+
+    elasticity = plane_stress_elasticity(YOUNG, POISSON)
+    np.testing.assert_allclose(_MODAL_BASIS @ _MODAL_BASIS.T, np.eye(3), atol=1e-15)
+    np.testing.assert_allclose(
+        _MODAL_BASIS @ elasticity @ _MODAL_BASIS.T,
+        np.diag(_modal_elasticity_eigenvalues(YOUNG, POISSON)),
+        rtol=1e-13,
+        atol=1e-9,
+    )
+    np.testing.assert_allclose(
+        _MODAL_BASIS @ PLANE_STRESS_VON_MISES_METRIC @ _MODAL_BASIS.T,
+        np.diag(_MODAL_METRIC_EIGENVALUES),
+        atol=1e-15,
+    )
+
+
+def test_the_scalar_return_zeroes_the_local_residual_across_the_admissible_range() -> None:
+    """The equation the solver claims to solve, checked at its own solution.
+
+    Sweeping to 99.9 percent of the admissible bound is the point: the old
+    3x3 Newton with a backtracking line search failed exactly where the trial
+    state runs out of stress to relax, and a test that stays in the comfortable
+    middle of the range would not have seen it.
+    """
+
+    rng = np.random.default_rng(20260814)
+    points = 4096
+    material = _material(points)
+    strain = rng.normal(scale=4.0e-3, size=(points, 3))
+    bound = material.maximum_admissible_equivalent_plastic_increment(strain)
+    increment = rng.uniform(0.0, 0.999, size=points) * bound
+
+    trial = material.evaluate(strain, increment, time_increment=1.0)
+    elasticity = plane_stress_elasticity(YOUNG, POISSON)
+    trial_stress = strain @ elasticity.T
+    direction = np.asarray(trial.observables["flow_direction"])
+    residual = (
+        trial.stress_in_plane_mpa - trial_stress + increment[:, None] * (direction @ elasticity.T)
+    )
+    scale = np.maximum(np.linalg.norm(trial_stress, axis=1), 1.0)
+    assert float(np.max(np.linalg.norm(residual, axis=1) / scale)) < 1.0e-13
+
+
+def test_an_increment_beyond_the_admissible_bound_is_named_not_merely_refused() -> None:
+    """Non-existence must arrive as a quantity, not as a solver giving up.
+
+    Associated J2 drives the deviatoric stress to the origin at a finite
+    ``Delta p``; past it no state with ``q > 0`` exists. The old code met that
+    wall as `local line search failed at point 117`, which reads like a
+    conditioning accident and sent the investigation towards branch following.
+    The bound is closed form, so the message can carry both numbers and a
+    caller can project onto the admissible set instead of guessing.
+    """
+
+    material = _material(1)
+    strain = np.array([[3.0e-3, -1.0e-3, 5.0e-4]])
+    bound = float(material.maximum_admissible_equivalent_plastic_increment(strain)[0])
+    assert bound > 0.0
+
+    # Just inside the wall the solve is expected to work, and the returned
+    # equivalent stress is nearly fully relaxed.
+    inside = material.evaluate(strain, np.array([0.999 * bound]), time_increment=1.0)
+    from fem_inhouse.core.constitutive import von_mises
+
+    trial_equivalent = float(von_mises(strain @ plane_stress_elasticity(YOUNG, POISSON).T)[0])
+    assert float(von_mises(inside.stress_in_plane_mpa)[0]) < 0.01 * trial_equivalent
+
+    material.revert()
+    with pytest.raises(ConstitutiveIntegrationError, match="exceeds what the trial state") as info:
+        material.evaluate(strain, np.array([1.001 * bound]), time_increment=1.0)
+    diagnostics = info.value.diagnostics
+    assert diagnostics["failure_stage"] == "delta_p_above_admissible_bound"
+    assert diagnostics["delta_p"] > diagnostics["delta_p_max"] > 0.0
+
+
+def test_the_scalar_return_reproduces_the_classical_radial_return_when_it_is_exact() -> None:
+    """A pure shear state has one relaxation eigenvalue, so the answer is closed form.
+
+    With only the shear mode populated the equation degenerates to
+    ``q = q_trial - a``, which is the textbook radial return. It is the one
+    case where the scalar solve can be checked against arithmetic instead of
+    against another solver.
+    """
+
+    material = _material(1)
+    strain = np.array([[0.0, 0.0, 2.0e-3]])
+    elasticity = plane_stress_elasticity(YOUNG, POISSON)
+    trial_stress = strain @ elasticity.T
+    from fem_inhouse.core.constitutive import von_mises
+
+    trial_equivalent = float(von_mises(trial_stress)[0])
+    shear_relaxation = 3.0 * YOUNG / (2.0 * (1.0 + POISSON))
+    increment = 0.3 * trial_equivalent / shear_relaxation
+
+    trial = material.evaluate(strain, np.array([increment]), time_increment=1.0)
+    expected = trial_equivalent - increment * shear_relaxation
+    assert float(von_mises(trial.stress_in_plane_mpa)[0]) == pytest.approx(expected, rel=1e-12)

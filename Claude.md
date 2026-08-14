@@ -6231,3 +6231,85 @@ La construction sur les 40 états donne
 forme des angles principaux de `7.7°` et `4.3°` avec celui des cinq états.
 C'est nettement plus robuste. Il reste à valider la traduction non linéaire de
 cette base avec le prior avant tout `prior_weight=0`.
+
+### 2026-08-14 — Couplage non local inerte, et le mur de l'incrément plastique
+
+Deux corrections indépendantes, la première invalidante.
+
+#### Le couplage non local SRIX n'avait jamais agi
+
+Mesure de départ, sur le cas P43 réduit hétérogène : la sensibilité de la
+solution au module de couplage, de `Hchi = 0` à `Hchi = 100`, valait
+**`0,000e+00` bit à bit** sur la voie legacy. Le batch construit avec
+`nonlocal_coupling_modulus_mpa=100.0` contenait `MicromorphicCouplingModulus =
+0.0` en tout point.
+
+Deux canaux mènent la même grandeur au batch condensé : la voie J2 passe
+`micromorphic_coupling_modulus_mpa`, la fabrique cristalline passe l'entrée par
+`material_property_values`. Le repli à zéro de `mfront_3d.py` écrasait le second
+**inconditionnellement**. La demande était acceptée, enregistrée au manifeste, et
+jetée. Et la fabrique cristalline ne remplissait `crystal_material_properties`
+que dans le cas local, donc les deux canaux étaient vides à la fois.
+
+Le test d'équivalence Generic/legacy était vert **parce que les deux côtés
+étaient découplés**. C'est le mode d'échec du test du δ : un garde-fou qui ne
+s'active jamais. `9ac1b31` n'avait rien cassé — en rendant le couplage effectif
+côté Generic, il a révélé que le legacy ne l'était pas.
+
+Après correction, les deux backends répondent identiquement (`8,232e-08` mm) et
+leur écart tombe de `5,4e-3` à **`8,3e-12`**. L'équivalence devient vraie.
+
+Le test ajouté n'est pas un test d'accord mais de **sensibilité** : allumer le
+module doit déplacer la réponse. Un accord entre deux backends ne peut pas
+distinguer « tous deux corrects » de « tous deux inertes ».
+
+**Conséquence à trancher** : tout ce qui a été qualifié « non local SRIX » avant
+aujourd'hui l'a été avec `Hchi = 0`, y compris ce que décrit
+`docs/reference/numerics/srix_nonlocal_source.md` et le pas P43 M100. Le champ χ
+était bien calculé et injecté ; seul son effet en retour était nul. Les
+campagnes concernées sont à rejouer.
+
+#### L'incrément plastique : ce n'était pas un problème de solveur
+
+Le replay directionnel butait à l'état 21, point 117, sur
+`driven J2 local line search failed`, insensible à la continuation locale.
+
+En contraintes planes, `C` et `M` commutent. Dans leur base propre commune le
+système local 3×3 se réduit à **une équation scalaire**,
+`phi(q) = Σ m_i t_i²/(q+a_i)² = 1`, avec `phi` strictement décroissante et
+convexe. D'où : racine unique encadrée par `[0, q_trial]`, aucun rôle pour une
+recherche linéaire, et surtout une condition d'existence en forme close —
+`Δp < Δp_max = sqrt(Σ t_i²/(c_i² m_i))`.
+
+C'est toute l'histoire du point 117 : `Δp = 2,935356e-05` contre
+`Δp_max = 2,934566e-05`, dépassement de 0,027 %. J2 associé relaxe la contrainte
+déviatorique vers l'origine et l'atteint à `Δp` fini ; au-delà aucun état à
+`q > 0` n'existe. L'ancien solveur rencontrait un mur de **non-existence** et le
+rapportait comme un accident de conditionnement, ce qui a orienté l'enquête vers
+le suivi de branche.
+
+Détail consigné parce qu'il m'a coûté une itération : Newton depuis `q = 0` est
+monotone et ne dépasse jamais, mais loin du mur il progresse d'un facteur ~1,5
+par itération depuis un premier pas d'ordre `a/2`, donc en `log(q_trial/a)`
+itérations. Ma première version a échoué à l'état 4, point 281 — un échec qui
+ressemblait à celui qu'il venait de remplacer. Corrigé par un départ au retour
+radial classique `q_trial - a_eff`, exact quand les deux valeurs de relaxation
+coïncident, et un encadrement avec repli par bissection.
+
+Vérifications : résidu `1,2e-15` sur 20 000 états aléatoires balayés jusqu'à
+99,9 % du mur ; accord `1e-12` avec le retour radial en cisaillement pur ; et
+les états 10 et 20 du diagnostic directionnel reproduits **bit pour bit**. Le
+nouveau solveur ne donne pas une autre réponse, il donne la même sans condition.
+
+Enfin, en parcourant l'histoire archivée de l'oracle contre la borne
+(`scripts/diagnose_admissible_delta_p_wall.py`), **les 40 états restent en deçà
+du mur**, pire ratio `0,871` à l'état 27 et `0,831` à l'état 21. Le dépassement
+appartient donc aux états **perturbés** par la sonde directionnelle, qui déplace
+la direction d'écoulement et donc la borne. Avec projection sur
+`[0, 0,999 Δp_max)`, le replay va au bout des quatre états, gain directionnel
+`< 0,61 %` partout — le résultat négatif tient désormais sur 4 états sur 4.
+
+La projection n'est délibérément **pas** câblée dans le matériau : elle a joué
+3221 fois avec un ratio demandé allant jusqu'à `6,64`, ce qui est une
+information sur la sonde et non un arrondi à masquer. Voir
+`validation/driven_j2_admissible_increment.md`.
