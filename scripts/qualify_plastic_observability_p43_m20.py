@@ -143,7 +143,8 @@ def main() -> None:
         mode = modes[:, mode_index].reshape(operator.plastic_shape)
         plastic_map = np.mean(mode, axis=-1)
         induced = operator.sensitivity(state, mode)
-        whitened = operator.whitener.apply(induced)
+        measured_induced = operator.transfer.apply(induced)
+        whitened = operator.whitener.apply(measured_induced)
         axes[mode_index, 0].imshow(plastic_map.T, origin="lower", cmap="coolwarm")
         axes[mode_index, 0].set_title(f"phi {mode_index + 1}")
         axes[mode_index, 1].imshow(

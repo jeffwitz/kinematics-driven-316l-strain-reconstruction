@@ -10,7 +10,10 @@ from pathlib import Path
 import numpy as np
 
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import (
+    DICSpectralTransfer,
+    DICSpectralWhitener,
+)
 from fem_inhouse.measurement import image_flow_to_canonical
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
@@ -30,6 +33,7 @@ NOISE = (
         "centred_repeat_flow_pixels.npy"
     )
 )
+TRANSFER = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
 
 
 def main() -> None:
@@ -73,6 +77,7 @@ def main() -> None:
         remove_spatial_mean=False,
         support_mask=support,
     )
+    transfer = DICSpectralTransfer.from_sinusoidal_csv(TRANSFER)
     material = DrivenJ2PlaneStressBatch(
         kinematics.material_point_count,
         young_modulus_mpa=205_000.0,
@@ -119,6 +124,7 @@ def main() -> None:
         weights=weights,
         config=config,
         progress_callback=progress,
+        dic_transfer=transfer,
         plastic_basis=basis,
     )
     output = args.output if args.output.is_absolute() else ROOT / args.output

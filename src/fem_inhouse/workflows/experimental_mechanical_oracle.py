@@ -22,7 +22,10 @@ from fem_inhouse.core.plane_stress_material import (
     ConstitutiveIntegrationError,
     PlaneStressMaterialBatch,
 )
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import (
+    DICSpectralTransfer,
+    DICSpectralWhitener,
+)
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import DiscreteKinematics2D
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
@@ -516,6 +519,7 @@ class ExperimentalOracleIncrementProblem:
         plastic_increment_variable_scale: float,
         equilibrium_scale: float,
         plastic_basis: ArrayLike | None = None,
+        dic_transfer: DICSpectralTransfer | None = None,
     ) -> None:
         measured = np.asarray(measured_displacement, dtype=np.float64)
         if measured.shape != whitener.field_shape or measured.shape[-1] != 2:
@@ -537,6 +541,7 @@ class ExperimentalOracleIncrementProblem:
         self.kinematics = kinematics
         self.measured_displacement = measured.copy()
         self.whitener = whitener
+        self.dic_transfer = dic_transfer
         self.ludwik_increment = ludwik.copy()
         self.previous_increment = previous.copy()
         self.weights = weights
@@ -648,16 +653,21 @@ class ExperimentalOracleIncrementProblem:
             increment,
             time_increment=self.time_increment,
         )
-        displacement_difference = displacement - self.measured_displacement
+        observed_displacement = (
+            self.dic_transfer.apply(displacement)
+            if self.dic_transfer is not None
+            else displacement
+        )
+        displacement_difference = observed_displacement - self.measured_displacement
         data_size = displacement_difference.size
         dic_value = self.weights.dic * self.whitener.quadratic_misfit(
             displacement_difference
         ) / data_size
-        displacement_gradient = (
-            self.weights.dic
-            * self.whitener.normal_action(displacement_difference)
-            / data_size
-        )
+        displacement_gradient = self.weights.dic * self.whitener.normal_action(
+            displacement_difference
+        ) / data_size
+        if self.dic_transfer is not None:
+            displacement_gradient = self.dic_transfer.adjoint(displacement_gradient)
 
         plastic_scale = self.plastic_increment_variable_scale
         prior_difference = (increment - self.ludwik_increment) / plastic_scale
@@ -827,6 +837,7 @@ def solve_experimental_mechanical_oracle_increment(
     time_increment: float = 1.0,
     commit_on_success: bool = True,
     plastic_basis: ArrayLike | None = None,
+    dic_transfer: DICSpectralTransfer | None = None,
 ) -> ExperimentalOracleIncrementResult:
     """Solve and transactionally accept one experimental-oracle increment."""
 
@@ -847,6 +858,7 @@ def solve_experimental_mechanical_oracle_increment(
         kinematics=kinematics,
         measured_displacement=measured,
         whitener=whitener,
+        dic_transfer=dic_transfer,
         ludwik_increment=ludwik_increment,
         previous_increment=previous_increment,
         weights=weights,
@@ -1026,6 +1038,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
     time_increment: float = 1.0,
     commit_on_success: bool = True,
     plastic_basis: ArrayLike | None = None,
+    dic_transfer: DICSpectralTransfer | None = None,
 ) -> ExperimentalOracleIncrementResult:
     """Minimise on the exact mechanical-equilibrium manifold using an adjoint."""
 
@@ -1043,6 +1056,7 @@ def solve_experimental_mechanical_oracle_reduced_increment(
         kinematics=kinematics,
         measured_displacement=measured,
         whitener=whitener,
+        dic_transfer=dic_transfer,
         ludwik_increment=ludwik_increment,
         previous_increment=previous_increment,
         weights=weights,
@@ -1312,6 +1326,7 @@ def solve_experimental_mechanical_oracle_history(
     config: ExperimentalOracleOptimizationConfig | None = None,
     time_increments: ArrayLike | float = 1.0,
     plastic_basis: ArrayLike | None = None,
+    dic_transfer: DICSpectralTransfer | None = None,
 ) -> ExperimentalOracleHistoryResult:
     """Solve a DIC history sequentially, committing only accepted increments."""
 
@@ -1409,6 +1424,7 @@ def solve_experimental_mechanical_oracle_history(
             time_increment=float(dt[index]),
             commit_on_success=True,
             plastic_basis=plastic_basis,
+            dic_transfer=dic_transfer,
         )
         increment_results.append(result)
         if progress_callback is not None:
