@@ -1082,17 +1082,31 @@ def solve_experimental_mechanical_oracle_reduced_increment(
                 config.plastic_increment_variable_scale
             )
         try:
-            equilibrium = solve_fixed_plastic_increment_equilibrium(
-                material=material,
-                kinematics=kinematics,
-                boundary_displacement=measured,
-                equivalent_plastic_increment=increment,
-                initial_displacement=last_displacement,
-                time_increment=time_increment,
-                equilibrium_rms_tolerance=min(
-                    0.1 * config.equilibrium_rms_tolerance, 1.0e-8
-                ),
-            )
+            try:
+                equilibrium = solve_fixed_plastic_increment_equilibrium(
+                    material=material,
+                    kinematics=kinematics,
+                    boundary_displacement=measured,
+                    equivalent_plastic_increment=increment,
+                    initial_displacement=last_displacement,
+                    time_increment=time_increment,
+                    equilibrium_rms_tolerance=min(
+                        0.1 * config.equilibrium_rms_tolerance, 1.0e-8
+                    ),
+                )
+            except (ConstitutiveIntegrationError, RuntimeError):
+                material.revert()
+                equilibrium = solve_fixed_plastic_increment_equilibrium(
+                    material=material,
+                    kinematics=kinematics,
+                    boundary_displacement=measured,
+                    equivalent_plastic_increment=increment,
+                    initial_displacement=measured,
+                    time_increment=time_increment,
+                    equilibrium_rms_tolerance=min(
+                        0.1 * config.equilibrium_rms_tolerance, 1.0e-8
+                    ),
+                )
             last_displacement = equilibrium.displacement.copy()
             state = problem.pack_state(last_displacement, increment)
             evaluation = problem.objective_and_gradient(
