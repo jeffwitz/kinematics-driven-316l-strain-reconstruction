@@ -28,13 +28,31 @@ class PlasticMetric:
     """
 
     amplitude_weight: float = 1.0
+    spatial_weight: float = 0.0
 
     def __post_init__(self) -> None:
         if not np.isfinite(self.amplitude_weight) or self.amplitude_weight <= 0.0:
             raise ValueError("amplitude_weight must be finite and positive")
+        if not np.isfinite(self.spatial_weight) or self.spatial_weight < 0.0:
+            raise ValueError("spatial_weight must be finite and non-negative")
 
     def action(self, plastic: ArrayLike) -> FloatArray:
-        return self.amplitude_weight * np.asarray(plastic, dtype=np.float64)
+        values = np.asarray(plastic, dtype=np.float64)
+        result = self.amplitude_weight * values
+        if self.spatial_weight == 0.0:
+            return result
+        for axis in (0, 1):
+            difference = np.diff(values, axis=axis)
+            if difference.size == 0:
+                continue
+            contribution = difference / difference.size
+            lower = [slice(None)] * values.ndim
+            upper = [slice(None)] * values.ndim
+            lower[axis] = slice(0, -1)
+            upper[axis] = slice(1, None)
+            result[tuple(lower)] -= self.spatial_weight * contribution
+            result[tuple(upper)] += self.spatial_weight * contribution
+        return result
 
 
 @dataclass(frozen=True, slots=True)

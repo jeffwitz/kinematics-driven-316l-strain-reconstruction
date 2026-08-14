@@ -62,6 +62,15 @@ def test_information_operator_is_positive_semidefinite() -> None:
     assert quadratic >= -1.0e-9
 
 
+def test_spatial_plastic_metric_is_positive_definite() -> None:
+    operator = _operator()
+    metric = PlasticMetric(amplitude_weight=1.0, spatial_weight=2.0)
+    rng = np.random.default_rng(43)
+    plastic = rng.normal(size=operator.plastic_shape)
+    quadratic = float(np.vdot(plastic, metric.action(plastic)).real)
+    assert quadratic > 0.0
+
+
 def test_generalized_modes_are_sorted_and_metric_normalized() -> None:
     operator = _operator()
     eigenvalues, modes = operator.generalized_modes(2, metric=PlasticMetric())
