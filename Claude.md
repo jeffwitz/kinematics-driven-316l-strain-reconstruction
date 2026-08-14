@@ -6224,3 +6224,10 @@ valeurs propres sont `[0.1931, 0.0821, 0.01289, 0.00344]`, donc le rapport
 `[4,14,23,32,39]` donne `[0.1596, 0.0860]`; les angles principaux du sous-espace
 de rang 2 avec `[0,10,20,29,39]` sont `6.8°` et `12.0°`. C'est une indication
 positive, mais insuffisante pour figer `r=2` ou lancer l'oracle réduit.
+
+La construction sur les 40 états donne
+`lambda=[1.3153, 0.8071, 0.03914, 0.02336]`, soit un gap
+`lambda_2/lambda_3=20.6`. Le sous-espace de rang 2 formé avec les 40 états
+forme des angles principaux de `7.7°` et `4.3°` avec celui des cinq états.
+C'est nettement plus robuste. Il reste à valider la traduction non linéaire de
+cette base avec le prior avant tout `prior_weight=0`.
