@@ -1,22 +1,45 @@
 {
   "j2": {
     "chi_max": 8.350914772821665e-06,
+    "chi_percentile_5": 4.6989220462809874e-07,
+    "chi_percentile_95": 4.1788666462443015e-06,
     "chi_source_l2_relative": 0.9776877406696945,
     "local_max": 0.0004455878766860518,
     "nonlocal_source_max": 0.00041650823827575704,
     "source_delta_abs_max": 3.177100982720165e-05,
-    "source_delta_l2_relative": 0.05139531482020297
+    "source_delta_l2_relative": 0.05139531482020297,
+    "source_name": "p",
+    "source_percentile_5": 5.190609133228026e-08,
+    "source_percentile_95": 0.0002466702335992846
   },
   "meric": {
     "chi_max": 2.615113159131053e-08,
+    "chi_percentile_5": 3.718104133129985e-10,
+    "chi_percentile_95": 6.4053903729423825e-09,
     "chi_source_l2_relative": 0.9986177237199265,
     "local_max": 1.8705629031851236e-05,
     "nonlocal_source_max": 1.7300820394046378e-05,
     "source_delta_abs_max": 1.4048086378048579e-06,
-    "source_delta_l2_relative": 0.07510084987854411
+    "source_delta_l2_relative": 0.07510084987854411,
+    "source_name": "Gamma",
+    "source_percentile_5": 3.4545652924394827e-13,
+    "source_percentile_95": 1.835442687240002e-05
   },
   "parameters": {
     "coupling_modulus_mpa": 5168.0,
     "length_scale_mm": 0.05888
+  },
+  "srix": {
+    "chi_max": 4.4615497697816946e-08,
+    "chi_percentile_5": 1.8146875539633934e-09,
+    "chi_percentile_95": 1.1974379302848622e-08,
+    "chi_source_l2_relative": 0.9984568089665987,
+    "local_max": 3.085306791009621e-05,
+    "nonlocal_source_max": 2.935679008590958e-05,
+    "source_delta_abs_max": 1.4962778241866306e-06,
+    "source_delta_l2_relative": 0.04837451311449918,
+    "source_name": "Gamma",
+    "source_percentile_5": 3.862305792838328e-06,
+    "source_percentile_95": 3.032937067163089e-05
   }
 }

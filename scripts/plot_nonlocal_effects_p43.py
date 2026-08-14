@@ -20,31 +20,46 @@ def _field(path: Path, key: str, shape: tuple[int, int] | None = None) -> np.nda
     return value
 
 
-def _plot_one(local_path: Path, nonlocal_path: Path, label: str, output: Path) -> dict[str, float]:
+def _limits(*arrays: np.ndarray) -> tuple[float, float]:
+    """Return readable 5--95% limits, ignoring the inactive zero background."""
+    values = np.concatenate([np.abs(np.asarray(array, dtype=float).ravel()) for array in arrays])
+    finite = values[np.isfinite(values)]
+    positive = finite[finite > max(float(np.max(finite, initial=0.0)) * 1.0e-12, 1.0e-30)]
+    if positive.size == 0:
+        positive = finite
+    low, high = np.percentile(positive, [5, 95])
+    return float(low), float(max(high, low + 1.0e-30))
+
+
+def _plot_one(
+    local_path: Path, nonlocal_path: Path, label: str, output: Path, source_name: str
+) -> dict[str, float]:
     local = _field(local_path, "monolithic_peeq")
     coupled_source = _field(nonlocal_path, "monolithic_peeq")
     chi = _field(nonlocal_path, "monolithic_chi", local.shape)
 
     source_delta = coupled_source - local
     filtered_delta = chi - coupled_source
-    scale = max(float(np.max(np.abs(local))), float(np.max(np.abs(coupled_source))), 1e-30)
-    delta_scale = max(float(np.max(np.abs(source_delta))), 1e-30)
+    source_limits = _limits(local, coupled_source)
+    chi_limits = _limits(chi)
+    source_delta_limits = _limits(source_delta)
+    filtered_delta_limits = _limits(filtered_delta)
     centre = local.shape[0] // 2
 
     figure, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
     panels = (
-        (local, f"{label}: local source q"),
-        (coupled_source, f"{label}: q with non-local coupling"),
+        (local, f"{label}: local source {source_name}"),
+        (coupled_source, f"{label}: {source_name} with non-local coupling"),
         (chi, f"{label}: filtered χ"),
-        (source_delta, "q(non-local) - q(local)"),
-        (filtered_delta, "chi - q(non-local)"),
+        (source_delta, f"{source_name}(non-local) - {source_name}(local)"),
+        (filtered_delta, f"chi - {source_name}(non-local)"),
         (None, "central row profiles"),
     )
     for axis, (values, title) in zip(axes.flat, panels, strict=True):
         if values is None:
             x = np.arange(local.shape[1])
-            axis.plot(x, local[centre], label="local q")
-            axis.plot(x, coupled_source[centre], label="non-local q")
+            axis.plot(x, local[centre], label=f"local {source_name}")
+            axis.plot(x, coupled_source[centre], label=f"non-local {source_name}")
             axis.plot(x, chi[centre], label="χ")
             axis.set_xlabel("pixel index")
             axis.set_ylabel("source")
@@ -52,14 +67,22 @@ def _plot_one(local_path: Path, nonlocal_path: Path, label: str, output: Path) -
             axis.grid(alpha=0.25)
             axis.set_title(title)
             continue
-        is_difference = title.startswith(("q(", "chi -"))
+        is_difference = title.startswith((f"{source_name}(", "chi -"))
+        if title == f"{label}: filtered χ":
+            limits = chi_limits
+        elif title.startswith(f"{source_name}(non-local)"):
+            limits = source_delta_limits
+        elif title.startswith("chi -"):
+            limits = filtered_delta_limits
+        else:
+            limits = source_limits
         image = axis.imshow(
             values.T,
             origin="lower",
             aspect="equal",
             cmap="coolwarm" if is_difference else "viridis",
-            vmin=-delta_scale if is_difference else 0.0,
-            vmax=delta_scale if is_difference else scale,
+            vmin=-limits[1] if is_difference else limits[0],
+            vmax=limits[1],
         )
         axis.set_title(title)
         axis.set_xlabel("x pixel")
@@ -73,6 +96,11 @@ def _plot_one(local_path: Path, nonlocal_path: Path, label: str, output: Path) -
         "local_max": float(local.max()),
         "nonlocal_source_max": float(coupled_source.max()),
         "chi_max": float(chi.max()),
+        "source_percentile_5": source_limits[0],
+        "source_percentile_95": source_limits[1],
+        "chi_percentile_5": chi_limits[0],
+        "chi_percentile_95": chi_limits[1],
+        "source_name": source_name,
         "source_delta_l2_relative": float(
             np.linalg.norm(source_delta) / max(np.linalg.norm(local), 1e-30)
         ),
@@ -90,6 +118,8 @@ def main() -> int:
     parser.add_argument("--j2-nonlocal", type=Path, required=True)
     parser.add_argument("--meric-local", type=Path, required=True)
     parser.add_argument("--meric-nonlocal", type=Path, required=True)
+    parser.add_argument("--srix-local", type=Path, required=True)
+    parser.add_argument("--srix-nonlocal", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -99,12 +129,21 @@ def main() -> int:
             args.j2_nonlocal,
             "J2 / p",
             args.output_dir / "p43_m100_j2_nonlocal_effect.png",
+            "p",
         ),
         "meric": _plot_one(
             args.meric_local,
             args.meric_nonlocal,
             "Méric / Γ",
             args.output_dir / "p43_m100_meric_nonlocal_effect.png",
+            "Gamma",
+        ),
+        "srix": _plot_one(
+            args.srix_local,
+            args.srix_nonlocal,
+            "SRIX / Gamma",
+            args.output_dir / "p43_m100_srix_nonlocal_effect.png",
+            "Gamma",
         ),
     }
     import json
