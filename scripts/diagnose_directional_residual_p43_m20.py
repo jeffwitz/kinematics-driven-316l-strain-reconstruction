@@ -115,6 +115,9 @@ def main() -> None:
     for step, increment in enumerate(ludwik):
         target = measured[step + 1]
         zero = np.zeros(args.rank)
+        committed_plastic = baseline_material.committed_plastic_strain
+        committed_peeq = baseline_material.committed_equivalent_plastic_strain
+        directional_material.set_committed_state(committed_plastic, committed_peeq)
         try:
             baseline_result = solve_fixed_plastic_increment_equilibrium(
                 material=baseline_material,
@@ -134,13 +137,16 @@ def main() -> None:
             break
         baseline = baseline_result.displacement.copy()
         baseline_eq = float(baseline_result.equilibrium_rms)
-        baseline_material.commit()
-        directional_material.set_committed_state(
-            baseline_material.committed_plastic_strain,
-            baseline_material.committed_equivalent_plastic_strain,
-        )
 
         if step in selected:
+            directional_zero, directional_zero_eq = solve_candidate(
+                zero, increment, baseline, target
+            )
+            zero_difference = directional_zero - baseline
+            zero_relative_error = float(
+                np.linalg.norm(zero_difference)
+                / max(np.linalg.norm(baseline), 1.0e-30)
+            )
             r0 = observed_residual(baseline, target)
             responses = []
             equilibria = []
@@ -174,6 +180,13 @@ def main() -> None:
                     "state": step + 1,
                     "objective_j0": 0.5 * float(np.vdot(flat_r0, flat_r0).real) / count,
                     "equilibrium_rms": baseline_eq,
+                    "directional_zero_equilibrium_rms": directional_zero_eq,
+                    "directional_zero_relative_error": zero_relative_error,
+                    "directional_zero_absolute_error": float(np.max(np.abs(zero_difference))),
+                    "directional_zero_objective": 0.5 * float(
+                        np.vdot(observed_residual(directional_zero, target),
+                                observed_residual(directional_zero, target)).real
+                    ) / r0.size,
                     "g": g.tolist(),
                     "H": hessian.tolist(),
                     "rho": rho.tolist(),
@@ -185,6 +198,9 @@ def main() -> None:
             )
             print(json.dumps(records[-1]), flush=True)
 
+        # Commit only the accepted b=0 J2/Ludwik baseline, after all candidates
+        # have been evaluated from the same n-1 constitutive state.
+        baseline_material.commit()
         displacement = baseline
 
     output = args.output if args.output.is_absolute() else ROOT / args.output

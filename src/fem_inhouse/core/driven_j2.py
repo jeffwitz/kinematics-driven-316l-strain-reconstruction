@@ -213,8 +213,9 @@ class DrivenJ2PlaneStressBatch:
         self,
         trial_stress: FloatArray,
         increment: FloatArray,
+        initial_stress: FloatArray | None = None,
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
-        stress = trial_stress.copy()
+        stress = trial_stress.copy() if initial_stress is None else initial_stress.copy()
         trial_equivalent = von_mises(trial_stress)
         impossible = (increment > 0.0) & (trial_equivalent <= self._stress_floor)
         if np.any(impossible):
@@ -300,6 +301,25 @@ class DrivenJ2PlaneStressBatch:
             np.column_stack((residual_norm, iterations.astype(np.float64))),
         )
 
+    def _solve_stress_with_continuation(
+        self,
+        trial_stress: FloatArray,
+        increment: FloatArray,
+    ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
+        """Retry the same local problem through a non-committed Delta-p homotopy."""
+        stress = trial_stress.copy()
+        result: tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray] | None = None
+        for scale in np.linspace(0.0, 1.0, 17):
+            result = self._solve_stress(
+                trial_stress,
+                scale * increment,
+                initial_stress=stress,
+            )
+            stress = result[0]
+        if result is None:
+            raise ConstitutiveIntegrationError("local Delta-p continuation produced no state")
+        return result
+
     def evaluate(
         self,
         in_plane_strain: ArrayLike,
@@ -330,10 +350,15 @@ class DrivenJ2PlaneStressBatch:
             self._elasticity,
             strain - self._committed_plastic_strain,
         )
-        stress, direction, tangent, increment_tangent, diagnostics = self._solve_stress(
-            trial_stress,
-            increment,
-        )
+        try:
+            stress, direction, tangent, increment_tangent, diagnostics = self._solve_stress(
+                trial_stress,
+                increment,
+            )
+        except ConstitutiveIntegrationError:
+            stress, direction, tangent, increment_tangent, diagnostics = (
+                self._solve_stress_with_continuation(trial_stress, increment)
+            )
         trial_plastic = self._committed_plastic_strain + increment[:, None] * direction
         trial_peeq = self._committed_peeq + increment
         full = reconstruct_python_plane_stress_state(
