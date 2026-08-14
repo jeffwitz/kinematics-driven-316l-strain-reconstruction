@@ -6216,3 +6216,11 @@ La réponse blanchie `W_D M_D S_p phi` reste visuellement bruitée, ce qui est
 attendu avec l'inverse du PSD ; cela devra être évalué quantitativement. Cette
 version de `M_D` est une approximation isotrope, pas encore la chaîne DIC
 complète ni une MTF directionnelle validée.
+
+La normalisation automatique par Ludwik donne `p_ref=2.96197e-4` sur la
+trajectoire utilisée. Avec `M_D` et `H_p` amplitude-only, les quatre premières
+valeurs propres sont `[0.1931, 0.0821, 0.01289, 0.00344]`, donc le rapport
+`lambda_2/lambda_3` vaut environ `6.37`. Une sélection d'états décalée
+`[4,14,23,32,39]` donne `[0.1596, 0.0860]`; les angles principaux du sous-espace
+de rang 2 avec `[0,10,20,29,39]` sont `6.8°` et `12.0°`. C'est une indication
+positive, mais insuffisante pour figer `r=2` ou lancer l'oracle réduit.
