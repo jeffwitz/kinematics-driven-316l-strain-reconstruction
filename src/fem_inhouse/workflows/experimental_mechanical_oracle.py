@@ -781,6 +781,37 @@ def _objective_value_gradient(
     return evaluation.value, evaluation.gradient
 
 
+def _find_admissible_initial_increment(
+    *,
+    material: DrivenJ2PlaneStressBatch,
+    kinematics: DiscreteKinematics2D,
+    displacement: FloatArray,
+    initial_increment: FloatArray,
+    time_increment: float,
+) -> tuple[FloatArray, float]:
+    """Find a constitutively admissible continuation of a plastic prior."""
+
+    for exponent in range(17):
+        scale = 0.5**exponent
+        candidate = scale * initial_increment
+        try:
+            evaluate_experimental_mechanical_oracle(
+                material,
+                kinematics,
+                displacement,
+                candidate,
+                time_increment=time_increment,
+            )
+        except (ConstitutiveIntegrationError, ValueError):
+            material.revert()
+            continue
+        material.revert()
+        return candidate, scale
+    raise ConstitutiveIntegrationError(
+        "no admissible continuation found for the initial plastic increment"
+    )
+
+
 def _initial_feasible_multiplier(
     problem: ExperimentalOracleIncrementProblem,
     evaluation: ExperimentalOracleObjectiveEvaluation,
@@ -851,6 +882,13 @@ def solve_experimental_mechanical_oracle_increment(
     if initial_u.shape != measured.shape:
         raise ValueError("initial and measured displacement shapes must match")
     initial_p = np.maximum(initial_p, 0.0)
+    initial_p, _ = _find_admissible_initial_increment(
+        material=material,
+        kinematics=kinematics,
+        displacement=initial_u,
+        initial_increment=initial_p,
+        time_increment=time_increment,
+    )
 
     provisional_scale = config.equilibrium_scale or 1.0
     problem = ExperimentalOracleIncrementProblem(
@@ -1050,6 +1088,13 @@ def solve_experimental_mechanical_oracle_reduced_increment(
     initial_u = np.asarray(initial_displacement, dtype=np.float64)
     initial_p = np.maximum(
         np.asarray(initial_equivalent_plastic_increment, dtype=np.float64), 0.0
+    )
+    initial_p, _ = _find_admissible_initial_increment(
+        material=material,
+        kinematics=kinematics,
+        displacement=initial_u,
+        initial_increment=initial_p,
+        time_increment=time_increment,
     )
     problem = ExperimentalOracleIncrementProblem(
         material=material,
