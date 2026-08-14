@@ -85,6 +85,7 @@ class PlasticObservabilityOperator:
         whitener: DICSpectralWhitener,
         *,
         transfer: DICSpectralTransfer | None = None,
+        normalize_state_weights: bool = True,
         gmres_rtol: float = 1.0e-8,
         gmres_maxiter: int = 500,
     ) -> None:
@@ -96,6 +97,7 @@ class PlasticObservabilityOperator:
         self.grid = grid
         self.whitener = whitener
         self.transfer = transfer
+        self.normalize_state_weights = normalize_state_weights
         self.gmres_rtol = gmres_rtol
         self.gmres_maxiter = gmres_maxiter
         displacement_shape = states[0].linearisation.displacement_shape
@@ -194,7 +196,7 @@ class PlasticObservabilityOperator:
         return self.solve_mechanical(state, -self.gp(state, plastic))
 
     def observation(self, state: PlasticObservabilityState, plastic: ArrayLike) -> FloatArray:
-        """Apply ``O = W_D S_p``."""
+        """Apply ``O = W_D M_D S_p``."""
 
         displacement = self.sensitivity(state, plastic)
         if self.transfer is not None:
@@ -204,7 +206,7 @@ class PlasticObservabilityOperator:
     def observation_transpose(
         self, state: PlasticObservabilityState, dual: ArrayLike
     ) -> FloatArray:
-        """Apply ``O.T = -G_p.T K.T^{-1} W_D.T``."""
+        """Apply ``O.T = -G_p.T K.T^{-1} M_D.T W_D.T``."""
 
         whitened_dual = self.whitener.adjoint(dual)
         if self.transfer is not None:
@@ -213,12 +215,21 @@ class PlasticObservabilityOperator:
         return -self.gp_transpose(state, mechanical_dual)
 
     def information_action(self, plastic: ArrayLike) -> FloatArray:
-        """Apply ``sum_n weight_n O_n.T O_n``."""
+        """Apply the weighted information operator.
+
+        By default the state weights are normalized to sum to one, so spectra
+        describe average information per retained state rather than growing
+        solely because more snapshots were selected.
+        """
 
         value = self._plastic(plastic)
         result = np.zeros_like(value)
+        total_weight = sum(state.weight for state in self.states)
+        normalization = (
+            total_weight if self.normalize_state_weights and total_weight > 0.0 else 1.0
+        )
         for state in self.states:
-            result += state.weight * self.observation_transpose(
+            result += (state.weight / normalization) * self.observation_transpose(
                 state,
                 self.observation(state, value),
             )

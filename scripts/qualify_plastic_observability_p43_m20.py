@@ -180,6 +180,7 @@ def main() -> None:
         "schema_version": 1,
         "fields": str(args.fields),
         "state_indices": state_indices.tolist(),
+        "state_weight_normalization": "sum_to_one",
         "rank": int(args.rank),
         "plastic_shape": list(operator.plastic_shape),
         "metric": {
