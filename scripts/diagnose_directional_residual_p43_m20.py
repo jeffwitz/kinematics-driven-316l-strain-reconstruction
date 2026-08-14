@@ -133,6 +133,7 @@ def main() -> None:
                 "state": step + 1,
                 "type": type(error).__name__,
                 "message": str(error),
+                "diagnostics": getattr(error, "diagnostics", None),
             }
             break
         baseline = baseline_result.displacement.copy()

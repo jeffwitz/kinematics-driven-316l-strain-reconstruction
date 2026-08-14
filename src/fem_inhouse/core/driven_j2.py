@@ -268,9 +268,23 @@ class DrivenJ2PlaneStressBatch:
                 step[~accepted] *= 0.5
             if not np.all(accepted):
                 first = int(active_indices[np.flatnonzero(~accepted)[0]])
-                raise ConstitutiveIntegrationError(
+                local_index = int(np.flatnonzero(active_indices == first)[0])
+                error = ConstitutiveIntegrationError(
                     f"driven J2 local line search failed at point {first}"
                 )
+                error.diagnostics = {
+                    "failure_stage": "local_line_search",
+                    "point": first,
+                    "q_trial_mpa": float(von_mises(trial_stress[first][None])[0]),
+                    "delta_p": float(increment[first]),
+                    "newton_iteration": iteration,
+                    "base_residual_mpa": float(base_norm[local_index]),
+                    "jacobian_condition": float(np.linalg.cond(jacobian[local_index])),
+                    "line_search_iterations": self._maximum_line_search_iterations,
+                    "last_step": float(step[local_index]),
+                    "last_residual_mpa": float(candidate_norm[local_index]),
+                }
+                raise error
             stress[active] = candidate_stress
             iterations[active] = iteration
         else:
@@ -310,11 +324,17 @@ class DrivenJ2PlaneStressBatch:
         stress = trial_stress.copy()
         result: tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray] | None = None
         for scale in np.linspace(0.0, 1.0, 17):
-            result = self._solve_stress(
-                trial_stress,
-                scale * increment,
-                initial_stress=stress,
-            )
+            try:
+                result = self._solve_stress(
+                    trial_stress,
+                    scale * increment,
+                    initial_stress=stress,
+                )
+            except ConstitutiveIntegrationError as error:
+                diagnostics = getattr(error, "diagnostics", {})
+                diagnostics["continuation_scale"] = float(scale)
+                error.diagnostics = diagnostics
+                raise
             stress = result[0]
         if result is None:
             raise ConstitutiveIntegrationError("local Delta-p continuation produced no state")
