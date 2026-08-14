@@ -753,7 +753,7 @@ def _objective_value_gradient(
             multiplier=multiplier,
             penalty=penalty,
         )
-    except ConstitutiveIntegrationError:
+    except (ConstitutiveIntegrationError, ValueError):
         problem.material.revert()
         problem.constitutive_rejections += 1
         reference = problem.last_admissible_variables
