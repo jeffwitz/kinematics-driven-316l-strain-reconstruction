@@ -69,6 +69,18 @@ class DirectionalDrivenJ2PlaneStressBatch:
             raise ValueError("direction coefficient shape mismatch")
         self._coefficients = values.copy()
 
+    def set_committed_state(
+        self, plastic_strain: ArrayLike, equivalent_plastic_strain: ArrayLike
+    ) -> None:
+        """Load a committed b=0 state produced by the analytical Driven-J2 backend."""
+        plastic = np.asarray(plastic_strain, dtype=np.float64)
+        peeq = np.asarray(equivalent_plastic_strain, dtype=np.float64)
+        if plastic.shape != (self._point_count, 3) or peeq.shape != (self._point_count,):
+            raise ValueError("incompatible committed directional state")
+        self._committed_plastic_strain = plastic.copy()
+        self._committed_peeq = peeq.copy()
+        self.revert()
+
     def _flow(self, stress: np.ndarray, point: int) -> tuple[np.ndarray, float]:
         q = float(von_mises(stress[None])[0])
         if q <= 1.0e-12:

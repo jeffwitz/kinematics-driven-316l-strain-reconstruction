@@ -90,7 +90,7 @@ def main() -> None:
             observed = transfer.apply(equilibrium.displacement)
             residual = observed - measured[step + 1]
             return objective_scale * float(
-                0.5 * whitener.quadratic_misfit(residual) / residual.size
+                whitener.quadratic_misfit(residual) / residual.size
             )
         except Exception:
             material.revert()
