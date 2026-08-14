@@ -14,7 +14,10 @@ import numpy as np
 from scipy.stats import spearmanr
 
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch
-from fem_inhouse.core.plane_stress_material import PythonJ2PlaneStressBatch
+from fem_inhouse.core.plane_stress_material import (
+    ConstitutiveIntegrationError,
+    PythonJ2PlaneStressBatch,
+)
 from fem_inhouse.identification.dic_whitening import (
     DICSpectralTransfer,
     DICSpectralWhitener,
@@ -303,15 +306,22 @@ def main() -> None:
     warm_start_rows: list[dict[str, object]] = []
 
     def mechanical_warm_start(request: ExperimentalOracleWarmStartRequest) -> np.ndarray:
-        warm_start = solve_fixed_plastic_increment_equilibrium(
-            material=request.material,
-            kinematics=request.kinematics,
-            boundary_displacement=request.measured_displacement,
-            equivalent_plastic_increment=request.ludwik_increment,
-            initial_displacement=request.initial_displacement,
-            time_increment=request.time_increment,
-            equilibrium_rms_tolerance=1.0e-6,
-        )
+        try:
+            warm_start = solve_fixed_plastic_increment_equilibrium(
+                material=request.material,
+                kinematics=request.kinematics,
+                boundary_displacement=request.measured_displacement,
+                equivalent_plastic_increment=request.ludwik_increment,
+                initial_displacement=request.initial_displacement,
+                time_increment=request.time_increment,
+                equilibrium_rms_tolerance=1.0e-6,
+            )
+        except (ConstitutiveIntegrationError, RuntimeError):
+            request.material.revert()
+            warm_start_rows.append(
+                {"increment": request.increment_index, "fallback": "accepted_state"}
+            )
+            return request.initial_displacement
         warm_start_rows.append(
             {
                 "increment": request.increment_index,
