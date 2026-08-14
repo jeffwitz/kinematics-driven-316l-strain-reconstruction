@@ -1,0 +1,141 @@
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+
+
+def _correlated_noise(seed: int = 42) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    white = rng.standard_normal((32, 12, 10, 2))
+    frequencies_x = np.fft.fftfreq(12)[:, None]
+    frequencies_y = np.fft.fftfreq(10)[None, :]
+    low_pass = np.exp(-30.0 * (frequencies_x**2 + frequencies_y**2))
+    transformed = np.fft.fftn(white, axes=(1, 2), norm="ortho")
+    return np.fft.ifftn(
+        transformed * low_pass[None, :, :, None],
+        axes=(1, 2),
+        norm="ortho",
+    ).real
+
+
+def test_spectral_whitener_is_self_adjoint() -> None:
+    whitener = DICSpectralWhitener.from_noise_realisations(_correlated_noise())
+    rng = np.random.default_rng(20260814)
+    left = rng.standard_normal(whitener.field_shape)
+    right = rng.standard_normal(whitener.field_shape)
+
+    lhs = np.vdot(whitener.apply(left), right).real
+    rhs = np.vdot(left, whitener.adjoint(right)).real
+
+    assert lhs == pytest.approx(rhs, rel=2.0e-13, abs=1.0e-12)
+
+
+def test_normal_action_and_quadratic_misfit_are_consistent() -> None:
+    whitener = DICSpectralWhitener.from_noise_realisations(_correlated_noise())
+    rng = np.random.default_rng(7)
+    field = rng.standard_normal(whitener.field_shape)
+
+    normal = whitener.normal_action(field)
+    expected = np.vdot(field, normal).real
+
+    assert expected > 0.0
+    assert 2.0 * whitener.quadratic_misfit(field) == pytest.approx(
+        expected, rel=5.0e-13
+    )
+
+
+def test_low_power_modes_are_penalised_more_than_measured_noise_modes() -> None:
+    whitener = DICSpectralWhitener.from_noise_realisations(_correlated_noise())
+    nx, ny, components = whitener.field_shape
+    low_frequency = np.ones((nx, ny, components))
+    checkerboard = (-1.0) ** (
+        np.arange(nx)[:, None, None] + np.arange(ny)[None, :, None]
+    )
+    checkerboard = np.broadcast_to(checkerboard, (nx, ny, components))
+
+    low_penalty = np.linalg.norm(whitener.apply(low_frequency)) / np.linalg.norm(
+        low_frequency
+    )
+    high_penalty = np.linalg.norm(whitener.apply(checkerboard)) / np.linalg.norm(
+        checkerboard
+    )
+
+    assert high_penalty > 10.0 * low_penalty
+
+
+def test_zero_noise_and_incompatible_fields_are_rejected() -> None:
+    with pytest.raises(ValueError, match="zero spectral power"):
+        DICSpectralWhitener.from_noise_realisations(np.zeros((2, 4, 5, 2)))
+
+    whitener = DICSpectralWhitener.from_noise_realisations(_correlated_noise())
+    with pytest.raises(ValueError, match="field must have shape"):
+        whitener.apply(np.zeros((4, 5, 2)))
+
+
+def test_stationary_field_builds_a_reproducible_target_grid_whitener() -> None:
+    field = _correlated_noise()[0]
+    first = DICSpectralWhitener.from_stationary_noise_field(
+        field,
+        target_shape=(7, 6),
+        sample_count=12,
+        seed=19,
+    )
+    second = DICSpectralWhitener.from_stationary_noise_field(
+        field,
+        target_shape=(7, 6),
+        sample_count=12,
+        seed=19,
+    )
+
+    assert first.field_shape == (7, 6, 2)
+    np.testing.assert_array_equal(
+        first.power_spectral_density,
+        second.power_spectral_density,
+    )
+
+
+def test_stationary_field_rejects_an_impossible_target_shape() -> None:
+    with pytest.raises(ValueError, match="target_shape"):
+        DICSpectralWhitener.from_stationary_noise_field(
+            _correlated_noise()[0],
+            target_shape=(100, 3),
+        )
+
+
+def test_spatial_mean_removal_explicitly_controls_the_dc_uncertainty() -> None:
+    noise = _correlated_noise() + np.array([2.0, -3.0])
+    retained = DICSpectralWhitener.from_noise_realisations(
+        noise,
+        remove_spatial_mean=False,
+    )
+    removed = DICSpectralWhitener.from_noise_realisations(
+        noise,
+        remove_spatial_mean=True,
+    )
+
+    assert np.all(retained.power_spectral_density[0, 0] > 1.0)
+    assert np.all(removed.power_spectral_density[0, 0] < 1.0e-25)
+
+
+def test_masked_whitener_has_the_exact_non_self_adjoint_pair() -> None:
+    noise = _correlated_noise()
+    mask = np.ones(noise.shape[1:])
+    mask[[0, -1], :, :] = 0.0
+    mask[:, [0, -1], :] = 0.0
+    whitener = DICSpectralWhitener.from_noise_realisations(
+        noise,
+        remove_spatial_mean=True,
+        support_mask=mask,
+    )
+    rng = np.random.default_rng(88)
+    left = rng.normal(size=whitener.field_shape)
+    right = rng.normal(size=whitener.field_shape)
+
+    lhs = float(np.vdot(whitener.apply(left), right).real)
+    rhs = float(np.vdot(left, whitener.adjoint(right)).real)
+
+    np.testing.assert_allclose(lhs, rhs, rtol=2.0e-13, atol=1.0e-11)
+    np.testing.assert_array_equal(whitener.normal_action(left)[0], 0.0)
+    np.testing.assert_array_equal(whitener.normal_action(left)[-1], 0.0)

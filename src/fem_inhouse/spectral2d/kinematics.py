@@ -49,6 +49,9 @@ class DiscreteKinematics2D(Protocol):
     @property
     def points_per_pixel(self) -> int: ...
 
+    @property
+    def sample_quadrature_weight(self) -> float: ...
+
     def strain(self, nodal_displacement: ArrayLike) -> FloatArray: ...
 
     def divergence(self, stress: ArrayLike) -> FloatArray: ...
@@ -83,6 +86,12 @@ class CellCenteredOnePoint2D:
     @property
     def points_per_pixel(self) -> int:
         return 1
+
+    @property
+    def sample_quadrature_weight(self) -> float:
+        """Constant weight in the strain/divergence adjoint identity."""
+
+        return self.grid.spacing_x * self.grid.spacing_y
 
     def reference_operator_symbols(
         self, transform_plan: TransformPlan2D
@@ -158,6 +167,12 @@ class TwoSubcellDiagnostic2D:
     @property
     def points_per_pixel(self) -> int:
         return 2
+
+    @property
+    def sample_quadrature_weight(self) -> float:
+        """Area of either constant-strain triangular subcell."""
+
+        return 0.5 * self.grid.spacing_x * self.grid.spacing_y
 
     def reference_operator_symbols(
         self, transform_plan: TransformPlan2D

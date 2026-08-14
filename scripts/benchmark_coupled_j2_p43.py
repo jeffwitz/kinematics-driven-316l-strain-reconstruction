@@ -1222,6 +1222,16 @@ def _solve_sequence(
         .reshape(grid.nx, grid.ny, 2)
         .mean(axis=2)
     )
+    final_plastic_slip = None
+    final_equivalent_plastic_slip = None
+    if "plastic_slip" in final_trial.observables:
+        final_plastic_slip = np.asarray(final_trial.observables["plastic_slip"]).reshape(
+            grid.nx, grid.ny, 2, 12
+        )
+    if "equivalent_plastic_slip" in final_trial.observables:
+        final_equivalent_plastic_slip = np.asarray(
+            final_trial.observables["equivalent_plastic_slip"]
+        ).reshape(grid.nx, grid.ny, 2, 12)
     return {
         "method": method,
         "elapsed_seconds": elapsed,
@@ -1241,6 +1251,8 @@ def _solve_sequence(
         "final_stress": final_stress,
         "final_peeq": final_peeq,
         "final_source": final_peeq,
+        "final_plastic_slip": final_plastic_slip,
+        "final_equivalent_plastic_slip": final_equivalent_plastic_slip,
     }
 
 
@@ -1834,6 +1846,14 @@ def main() -> int:
                 solution_arrays[f"{label}_stress"] = result["final_stress"]
                 solution_arrays[f"{label}_peeq"] = result["final_peeq"]
                 solution_arrays[f"{label}_source"] = result["final_source"]
+                if result.get("final_plastic_slip") is not None:
+                    solution_arrays[f"{label}_plastic_slip"] = result[
+                        "final_plastic_slip"
+                    ]
+                if result.get("final_equivalent_plastic_slip") is not None:
+                    solution_arrays[f"{label}_equivalent_plastic_slip"] = result[
+                        "final_equivalent_plastic_slip"
+                    ]
     if solution_arrays:
         solution_arrays.update(
             {

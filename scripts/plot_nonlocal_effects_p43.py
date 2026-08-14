@@ -47,7 +47,6 @@ def _validate_crystal_pair(
         raise ValueError(f"{nonlocal_path}: expected ell=0.05888 mm")
     shared = (
         "time_path_sha256",
-        "time_history_kind",
         "physical_time_history",
         "total_duration",
         "orientation_sha256",

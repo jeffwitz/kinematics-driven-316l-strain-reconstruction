@@ -37,6 +37,8 @@ class SrixGeneric3DTrial:
     stress_kelvin_mpa: FloatArray
     elastic_strain_kelvin: FloatArray
     accumulated_slip: FloatArray
+    plastic_slip: FloatArray
+    equivalent_plastic_slip: FloatArray
     stress_strain_tangent: FloatArray
     stress_chi_tangent: FloatArray
     accumulated_slip_strain_tangent: FloatArray
@@ -164,6 +166,27 @@ class SrixGeneric3DMaterialPointBatch:
         self._manager = manager
         self._point_count = point_count
         self._elastic_offset = elastic_offset
+        slip_names = (
+            ("ViscoplasticSlip", "EquivalentViscoplasticSlip")
+            if "Meric" in behaviour_name
+            else ("PlasticSlip", "EquivalentPlasticSlip")
+        )
+        offsets: dict[str, int] = {}
+        cursor = 0
+        for variable in behaviour.isvs:
+            offsets[variable.name] = cursor
+            cursor += int(
+                mgis.getVariableSize(variable, mgis.Hypothesis.Tridimensional)
+            )
+        resolved_offsets: list[int] = []
+        for name in slip_names:
+            head = name if name in offsets else f"{name}[0]"
+            if head not in offsets:
+                raise MFrontUnavailableError(
+                    f"{behaviour_name} does not expose the slip family {name!r}"
+                )
+            resolved_offsets.append(offsets[head])
+        self._plastic_slip_offset, self._equivalent_slip_offset = resolved_offsets
         self._thread_count = thread_count
         self._thread_pool = (
             _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
@@ -257,6 +280,10 @@ class SrixGeneric3DMaterialPointBatch:
         forces = np.asarray(self._manager.s1.thermodynamic_forces, dtype=float).copy()
         state = np.asarray(self._manager.s1.internal_state_variables, dtype=float)
         elastic_strain = state[:, self._elastic_offset : self._elastic_offset + 6].copy()
+        plastic_slip = state[:, self._plastic_slip_offset : self._plastic_slip_offset + 12].copy()
+        equivalent_plastic_slip = state[
+            :, self._equivalent_slip_offset : self._equivalent_slip_offset + 12
+        ].copy()
         tangent = np.asarray(self._manager.K, dtype=float).copy()
         if self._mgis_rotations is not None:
             flat_forces = np.ascontiguousarray(forces.reshape(-1))
@@ -281,6 +308,8 @@ class SrixGeneric3DMaterialPointBatch:
             stress_kelvin_mpa=forces[:, :6].copy(),
             elastic_strain_kelvin=elastic_strain,
             accumulated_slip=forces[:, 6].copy(),
+            plastic_slip=plastic_slip,
+            equivalent_plastic_slip=equivalent_plastic_slip,
             stress_strain_tangent=stress_strain.copy(),
             stress_chi_tangent=stress_chi.copy(),
             accumulated_slip_strain_tangent=accumulated_slip_strain.copy(),
@@ -304,6 +333,8 @@ class SrixGenericPlaneStressTrial:
 
     stress_in_plane_mpa: FloatArray
     accumulated_slip: FloatArray
+    plastic_slip: FloatArray
+    equivalent_plastic_slip: FloatArray
     tangent_in_plane_mpa: FloatArray
     stress_chi_tangent_mpa: FloatArray
     accumulated_slip_strain_tangent: FloatArray
@@ -465,6 +496,8 @@ class SrixGeneric3DCondensedPlaneStressBatch:
                 * _KELVIN_TO_ENGINEERING_STRESS_SCALE
             ),
             accumulated_slip=final.accumulated_slip.copy(),
+            plastic_slip=final.plastic_slip.copy(),
+            equivalent_plastic_slip=final.equivalent_plastic_slip.copy(),
             tangent_in_plane_mpa=tangent,
             stress_chi_tangent_mpa=stress_chi_tangent,
             accumulated_slip_strain_tangent=accumulated_slip_strain_tangent,
@@ -500,6 +533,8 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             ),
             observables={
                 "accumulated_slip": trial.accumulated_slip,
+                "plastic_slip": trial.plastic_slip,
+                "equivalent_plastic_slip": trial.equivalent_plastic_slip,
                 "nonlocal_source": trial.accumulated_slip,
                 "generic_dsigma_dchi": trial.stress_chi_tangent_mpa,
                 "generic_dq_depsilon": trial.accumulated_slip_strain_tangent,
@@ -543,6 +578,8 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             tangent_in_plane_mpa=latest.tangent_in_plane_mpa,
             observables={
                 "accumulated_slip": latest.accumulated_slip,
+                "plastic_slip": latest.plastic_slip,
+                "equivalent_plastic_slip": latest.equivalent_plastic_slip,
                 "nonlocal_source": latest.accumulated_slip,
                 "generic_dsigma_dchi": latest.stress_chi_tangent_mpa,
                 "generic_dq_depsilon": latest.accumulated_slip_strain_tangent,

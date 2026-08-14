@@ -15,6 +15,11 @@ from fem_inhouse.core.constitutive import (
     return_mapping,
     von_mises,
 )
+from fem_inhouse.core.driven_j2 import (
+    DrivenJ2MaterialProtocol,
+    DrivenJ2PlaneStressBatch,
+    DrivenJ2Trial,
+)
 from fem_inhouse.core.element import (
     ElementOperators,
     plane_stress_elasticity,
@@ -48,6 +53,9 @@ __all__ = [
     "PLANE_STRESS_VON_MISES_METRIC",
     "ConstitutiveIntegrationError",
     "ConstitutiveTrial",
+    "DrivenJ2MaterialProtocol",
+    "DrivenJ2PlaneStressBatch",
+    "DrivenJ2Trial",
     "ElementOperators",
     "HardeningFunction",
     "HardeningMode",

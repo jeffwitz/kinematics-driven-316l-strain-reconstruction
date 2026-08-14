@@ -1,7 +1,502 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-09
+Dernière mise à jour : 2026-08-14
 Objectif de maturité : **au moins 4/5 sur tous les axes**
+
+## Priorité scientifique actuelle — construire un oracle mécanique compatible avec la DIC
+
+### Constat expérimental à ne plus masquer
+
+Les solveurs directs J2, SRIX et Méric sont désormais suffisamment qualifiés
+numériquement pour que leur désaccord avec l'expérience ne puisse plus être
+attribué par défaut à un simple défaut de Newton, de tangent, de transaction ou
+de couplage non local. Les figures P43 M100 actuelles montrent que le non-local
+agit bien sur les variables plastiques, mais qu'il ne résout pas le problème
+modèle-expérience :
+
+- en J2, le maximum de PEEQ diminue d'environ 44 % entre le local et le
+  non-local et les zones plastiques restent très corrélées entre elles ;
+- en SRIX, le maximum de `Gamma` diminue d'environ 50 % et la localisation est
+  redistribuée ;
+- malgré cela, la déformation totale équivalente J2 reste faiblement corrélée
+  à la DIC P43 sur le cas tracé (`Spearman` voisin de `0.15`, recouvrement des
+  5 % de hotspots voisin de `0.02`).
+
+La DIC est une mesure de déplacement/déformation totale. Elle n'est ni une
+PEEQ ni un glissement cumulé. Une carte PEEQ ou `Gamma` ne doit donc jamais
+être soustraite directement à une carte DIC. Le constat pertinent est que le
+champ de déplacement équilibré produit par les lois actuelles ne reproduit pas
+correctement la géographie expérimentale observée.
+
+**Conséquence : la priorité n'est plus d'ajouter une nouvelle loi directe.** Il
+faut construire une plasticité J2 associée dont l'incrément plastique scalaire
+est libéré, afin d'obtenir un oracle mécanique expérimental qui projette la DIC
+vers un état simultanément proche des mesures et compatible avec l'équilibre.
+Cet oracle servira ensuite à recaler toute loi MFront, puis à mesurer honnêtement
+jusqu'où la loi recalée reproduit l'équilibre et les champs expérimentaux.
+
+### But du P0
+
+Pour chaque incrément expérimental, rechercher simultanément :
+
+```text
+u*          champ de déplacement corrigé, proche de la DIC
+Delta p*    incrément plastique J2 scalaire, positif
+sigma*      contrainte associée à (u*, Delta p*)
+```
+
+sous les contraintes :
+
+```text
+epsilon* = B_h u*
+R_u(u*, Delta p*) = B_h^T sigma* = 0
+Delta p* >= 0
+```
+
+Le résultat attendu est un jeu d'états mécaniques propres :
+
+```text
+(epsilon*, sigma*, Delta p*, p*, u*)
+```
+
+Il ne constitue pas encore une loi constitutive identifiée. Il constitue
+l'**oracle expérimental** contre lequel une loi MFront peut être recalée et
+ensuite rejouée dans le solveur direct.
+
+### Inventaire des briques
+
+| Brique | État | Décision P0 |
+|---|---|---|
+| Histoire DIC plein champ | disponible | réutiliser l'histoire `(steps+1,nx,ny,2)` |
+| Cinématique `u -> epsilon=B_h u` | qualifiée | utiliser `TwoSubcellDiagnostic2D`, sans reconstruction parallèle |
+| Équilibre faible `sigma -> B_h^T sigma` | qualifié | utiliser l'adjoint discret existant |
+| Solveur/préconditionneur spectral matrix-free | qualifié | réutiliser, sans nouveau solveur EF |
+| J2 contraintes planes et écoulement associé | disponible | séparer `Delta p` de Ludwik |
+| Transactions `evaluate/revert/commit` | qualifiées | imposer le même contrat au Driven J2 |
+| Bruit DIC spatial | avancé | construire un whitener spectral `C_D^{-1/2}` |
+| Pénalité pilotée par l'incertitude | disponible au bord | généraliser au plein champ |
+| Identification de petits vecteurs | disponible | ne pas la confondre avec l'optimisation de champs |
+| Optimiseur `(u,Delta p)` / KKT | absent | nouvelle brique principale |
+| Force expérimentale synchronisée | absente | non bloquante pour P0, requise pour l'échelle absolue |
+
+### Contrat du backend `Driven J2`
+
+Le backend ne doit pas imposer Ludwik. L'optimiseur fournit `Delta p >= 0` et
+la loi locale conserve strictement la direction d'écoulement J2 associée en
+résolvant :
+
+```text
+F(sigma; epsilon, Delta p)
+  = sigma - C:[epsilon - epsilon_p^n - Delta p n(sigma)] = 0
+
+n(sigma) = d sigma_eq / d sigma
+```
+
+Après acceptation uniquement :
+
+```text
+epsilon_p^(n+1) = epsilon_p^n + Delta p n(sigma)
+p_(n+1)         = p_n + Delta p
+```
+
+Une évaluation, une line-search ou un essai d'optimisation ne commit jamais
+l'état matériau. `revert()` doit restaurer exactement l'incrément accepté
+précédent. `commit()` n'est permis qu'après convergence de l'incrément global.
+
+En posant :
+
+```text
+A = I + Delta p C : dn/dsigma
+```
+
+le backend doit exposer sans inverse explicite :
+
+```text
+dsigma/depsilon =  A^{-1} C
+dsigma/dDelta_p = -A^{-1} (C:n)
+```
+
+`implicit_sensitivities.py` doit être réutilisé si son contrat couvre ce petit
+système implicite. Les produits globaux restent matrix-free :
+
+```text
+delta epsilon = B_h delta u
+delta sigma   = sigma_,epsilon delta epsilon
+              + sigma_,Delta_p delta p
+delta R_u     = B_h^T delta sigma
+```
+
+### Fonction objectif DIC
+
+Ne pas construire de covariance dense. À partir de la densité spectrale du
+bruit DIC mesuré `S_D(k)`, définir un opérateur de blanchiment spectral :
+
+```text
+FFT(W_D v)(k) = FFT(v)(k) / sqrt(S_D(k) + epsilon)
+```
+
+et :
+
+```text
+J_DIC(u) = 1/2 ||W_D (u-u_DIC)||^2.
+```
+
+Le whitener et son adjoint doivent être matrix-free, testés par produit
+scalaire et compatibles avec le masque/support de l'opérateur d'observation
+DIC existant. Le niveau de régularisation spectral doit venir du bruit mesuré,
+pas d'une constante choisie uniquement pour faire converger.
+
+### Problème inverse P0
+
+Formulation cible par incrément :
+
+```text
+min_(u,Delta p) J_DIC(u) + J_prior(Delta p) + J_reg(Delta p)
+sous R_u(u,Delta p)=0 et Delta p>=0.
+```
+
+Le premier solveur doit être un Lagrangien augmenté :
+
+```text
+L_rho = J_DIC + J_prior + J_reg
+      + lambda^T R_u + rho/2 R_u^T P R_u,
+```
+
+où `P` réutilise autant que possible le préconditionneur mécanique spectral.
+Le solveur doit conserver séparément : norme DIC blanchie, norme d'équilibre,
+violation de positivité, prior, régularisation et évolution du multiplicateur.
+Une diminution de la fonction totale ne suffit pas à déclarer l'équilibre.
+
+### Prior et régularisation de `Delta p`
+
+Ludwik ne disparaît pas : il devient un prior explicite :
+
+```text
+J_prior = lambda_J ||Delta p - Delta p_Ludwik||^2.
+```
+
+La qualification doit utiliser une continuation `lambda_J` forte vers faible,
+afin d'identifier où la donnée et l'équilibre exigent de quitter Ludwik. Le
+champ `Delta p* - Delta p_Ludwik` est un livrable scientifique.
+
+Première régularisation :
+
+```text
+J_reg = lambda_s ||grad Delta p||^2
+      + lambda_t ||Delta p_n-Delta p_(n-1)||^2.
+```
+
+Le Laplacien/DCT et Helmholtz existants doivent être réutilisés. Une variante
+Huber/TV sera comparée ensuite, car une régularisation quadratique peut effacer
+les bandes physiques de localisation. Aucun choix ne sera qualifié sans test
+synthétique avec le bruit P43 réel.
+
+### Force expérimentale
+
+L'absence actuelle de force synchronisée n'empêche pas le P0 méthodologique.
+Elle interdit en revanche de présenter l'oracle comme une identification
+absolue de contrainte ou de loi. Dès que `F_exp(t_n)` est disponible, ajouter :
+
+```text
+F_calc(t_n) ~= F_exp(t_n)
+```
+
+avec sa propre incertitude. Tous les artefacts P0 doivent enregistrer :
+
+```text
+physical_force_history_available: false|true
+absolute_constitutive_identification: false|true
+```
+
+### Architecture minimale
+
+Ne pas créer quinze modules ni un solveur par loi. Le P0 ajoute trois briques :
+
+```text
+src/fem_inhouse/core/driven_j2.py
+    réponse locale pilotée par Delta p
+    tangentes dsigma/depsilon et dsigma/dDelta_p
+    transactions
+
+src/fem_inhouse/identification/dic_whitening.py
+    PSD/covariance du bruit mesuré
+    W_D et W_D^T spectraux matrix-free
+
+src/fem_inhouse/workflows/experimental_mechanical_oracle.py
+    problème incrémental (u, Delta p)
+    équilibre, prior, régularisation, optimisation
+```
+
+L'oracle est indépendant de MFront. Les lois recalées restent des lois MFront
+utilisées par l'infrastructure directe commune :
+
+```text
+oracle expérimental J2 piloté
+        -> états (epsilon*,sigma*,Delta p*)
+        -> recalage loi MFront
+        -> simulation directe avec cette loi
+        -> comparaison équilibre/champs/DIC
+```
+
+### Ordre d'implémentation impératif
+
+1. Figer le constat DIC actuel et les métriques de comparaison.
+2. Implémenter `DrivenJ2MaterialBatch` au point matériau.
+3. Qualifier `evaluate/revert/commit`, positivité et répétabilité.
+4. Vérifier `dsigma/depsilon` et `dsigma/dDelta_p` par différences finies.
+5. Vérifier le produit global `B^T delta sigma` sur petit domaine.
+6. Construire le whitener à partir du bruit DIC mesuré et tester son adjoint.
+7. Construire un problème synthétique J2 connu.
+8. Ajouter une réalisation du bruit P43 mesuré au déplacement synthétique.
+9. Retrouver `u_truth`, `Delta p_truth` et `sigma_truth` sans effacer la localisation.
+10. Implémenter le Lagrangien augmenté séquentiel dans le temps.
+11. Exécuter P43 petit crop, puis M20, M50 et M100.
+12. Produire l'oracle P43 et seulement ensuite recaler J2 Ludwik, SRIX, Méric ou
+    toute autre loi MFront.
+13. Rejouer chaque loi recalée en simulation directe et mesurer ce qu'elle
+    reproduit ou non de l'équilibre et de la DIC.
+
+À chaque niveau :
+
+```text
+matériau -> tangent -> opérateur global -> synthétique bruité -> P43
+```
+
+Ne jamais corriger simultanément plusieurs couches lorsqu'un niveau échoue.
+
+### État d'implémentation du P0 au 2026-08-14
+
+Le premier socle exécutable est maintenant intégré :
+
+| Brique | État |
+|---|---|
+| `DrivenJ2PlaneStressBatch` piloté par `Delta p` | implémenté et testé |
+| `dsigma/depsilon`, `dsigma/dDelta_p` implicites | qualifiés par FD |
+| transactions `evaluate/revert/commit` | testées |
+| résidu global `B^T sigma` et `Jv` matrix-free | implémentés et testés |
+| adjoint global `J^T v` | implémenté et testé par produit scalaire |
+| whitener DIC spectral | implémenté, auto-adjoint testé |
+| objectif DIC + prior Ludwik + régularisations | implémenté |
+| positivité de `Delta p` | imposée par bornes |
+| Lagrangien augmenté séquentiel par incrément | première version implémentée |
+| récupération synthétique affine sans bruit | testée |
+| récupération avec bruit P43 mesuré et bandes localisées | première qualification M5 réussie |
+| application P43 réelle | M20, états DIC réparés 0 à 8, première qualification réussie |
+
+La première boucle utilise L-BFGS-B comme solveur intérieur borné. Elle ne doit
+pas être considérée comme le KKT final haute performance : elle sert à valider
+la formulation, les gradients, la positivité et les transactions avant le test
+synthétique avec le bruit P43 réel. Le préconditionneur mécanique spectral n'est
+pas encore introduit dans la métrique d'équilibre du Lagrangien augmenté.
+
+Le premier synthétique localisé utilise une fenêtre réelle du résidu DISFlow
+entre images répétées P43. Le support libre est appliqué de manière identique à
+la PSD, au whitener et à son adjoint. Une mise à jour sélective de la pénalité
+du Lagrangien augmenté est indispensable : augmenter systématiquement `rho`
+rendait le solveur intérieur mal conditionné et éloignait la solution du truth.
+
+Résultat M5 déterministe archivé dans
+`validation/_generated/performance/experimental_oracle_synthetic_p43_noise/` :
+
+```text
+equilibrium RMS                    3.80e-5
+displacement error recovered/noisy 0.533
+Delta p relative error prior       0.527
+Delta p relative error recovered   0.370
+Delta p Spearman prior             0.652
+Delta p Spearman recovered         0.886
+whitened discrepancy / target      1.017
+projected gradient infinity norm   3.41e-5
+```
+
+Ce résultat qualifie la formulation et ses gradients sur petit domaine. Il ne
+qualifie encore ni les hyperparamètres, ni l'échelle absolue des contraintes,
+ni P43 réel. L'étape suivante est un sweep de discrepancy/prior sur plusieurs
+réalisations P43, puis le passage M20 avant toute application M100. Sur ce
+premier cas, le sweep `1, 1e-2, 1e-4, 7e-5, 3e-5` confirme qu'un poids DIC trop
+fort recopie le bruit et qu'un poids trop faible dépasse le niveau statistique
+admissible. `7e-5` atteint ici la cible `J_DIC/non-weighted ~= 0.5` ; ce nombre
+est propre à ce synthétique et ne doit pas devenir un défaut universel.
+
+Trois fenêtres P43 distinctes `(100,120)`, `(20,30)` et `(180,200)` passent
+ensuite les mêmes critères avec le même réglage, sans retuning :
+
+```text
+equilibrium RMS                    1.32e-5 .. 3.80e-5
+displacement error recovered/noisy 0.468    .. 0.844
+Delta p relative error recovered   0.370    .. 0.392
+Delta p Spearman recovered         0.886    .. 0.891
+discrepancy / target               1.017    .. 1.462
+projected gradient infinity norm   3.41e-5 .. 2.21e-4
+```
+
+Le transfert d'échelle synthétique M10 puis M20 a ensuite été exécuté en
+conservant la géométrie relative de la bande et exactement les mêmes poids :
+
+```text
+case  u_error/noise  Delta_p rel-L2 prior->oracle  Spearman prior->oracle
+M5       0.533                 0.527 -> 0.370             0.652 -> 0.886
+M10      0.536                 0.598 -> 0.277             0.671 -> 0.934
+M20      0.695                 0.598 -> 0.201             0.673 -> 0.946
+```
+
+Les trois cas satisfont simultanément équilibre, discrepancy, réduction du
+bruit, amélioration L2 de `Delta p`, amélioration de sa localisation et gradient
+projeté inférieur à `1e-3`. Le prochain verrou n'est donc plus la formulation
+locale, le gradient ou le passage M20. C'est le branchement de l'histoire DIC
+P43 réelle incrément par incrément, puis le coût à M50/M100. Le solveur intérieur
+atteint encore fréquemment sa limite d'itérations ; son optimisation vient après
+la première histoire P43 convergée.
+
+Ce branchement réel est maintenant effectué sur l'histoire P43 réparée et non
+plus sur une interpolation du seul champ final. Le pilote lit directement :
+
+```text
+validation/reference_data/dic_multistep_history_p0043_repaired_v1/
+    repaired_history_mm.npy
+```
+
+Le premier Lagrangien augmenté simultané reste disponible et qualifié sur les
+synthétiques, mais il est trop mal conditionné sur P43 réel : il peut atteindre
+l'équilibre sans atteindre la stationnarité après des milliers d'itérations
+L-BFGS-B. Une seconde voie cohérente a donc été ajoutée pour la qualification :
+elle élimine `u` en résolvant exactement l'équilibre à chaque essai de `Delta p`
+et calcule le gradient réduit par un adjoint matrix-free. Elle résout le même
+problème contraint ; elle est robuste mais n'est pas encore la cible de
+performance.
+
+Résultat archivé, crop P43 M20 `(1610:1630, 1075:1095)`, histoire DIC réparée
+complète de 40 pas mesurés consécutifs :
+
+```text
+status                              completed
+accepted DIC states                 1 .. 40
+elapsed                             56.99 s
+equilibrium RMS                     1.20e-13 .. 1.48e-9
+projected reduced gradient          2.95e-11 .. 9.30e-8
+maximum Delta p / increment         0 .. 1.03e-3
+whitened discrepancy / target       1.16e-4 .. 3.54e-2
+cutbacks                            0
+constitutive trial rejections       5, all recovered at state 40
+```
+
+Le premier calcul à `356.62 s` et discrepancy gigantesque était invalide : la
+PSD avait été estimée après retrait de la moyenne spatiale, puis utilisée pour
+pondérer un écart de déplacement conservant sa composante constante. Le mode DC
+avait ainsi une variance presque nulle et dominait artificiellement plus de
+`99.9 %` du misfit. Pour l'assimilation P43 réelle, le whitener conserve
+désormais explicitement la moyenne du champ de répétabilité
+(`remove_spatial_mean=False`) : le biais global mesuré fait partie de
+l'incertitude expérimentale. Les tests synthétiques, dont le bruit est
+explicitement recentré, gardent l'option inverse.
+
+Avec ce contrat statistique cohérent, la projection J2 pilotée est équilibrée,
+stationnaire et reste très largement dans l'incertitude DIC mesurée. Le conflit
+M20 précédemment annoncé n'existe donc pas. À l'état final, la correction de
+déplacement maximale vaut `1.15e-5 mm`, soit `12.2 %` de l'incertitude P43
+documentée (`9.4e-5 mm`). La déformation équivalente totale DIC/oracle conserve
+une corrélation de Spearman `0.903` ; le PEEQ cumulé oracle/prior Ludwik reste
+presque identique (`0.20 %` d'écart L2 relatif, Spearman `0.99992`). Ce résultat
+qualifie l'histoire M20 complète comme premier oracle mécaniquement admissible,
+mais pas encore une loi constitutive identifiée.
+
+Artefacts :
+
+```text
+validation/_generated/performance/experimental_oracle_p43_m20/report.json
+validation/_generated/performance/experimental_oracle_p43_m20/fields.npz
+validation/_generated/performance/experimental_oracle_p43_m20/fields.png
+```
+
+Première sensibilité au poids du prior Ludwik, sur les mêmes 40 états :
+
+```text
+prior weight  elapsed  max discrepancy  PEEQ rel-L2 vs prior  Spearman PEEQ
+3e-2           56.99 s       0.0354              0.0020           0.99992
+3e-3           69.18 s       0.0379              0.0154           0.99692
+3e-4          149.24 s       0.0525              0.0551           0.96571
+```
+
+Affaiblir le prior autorise bien le champ piloté à s'en écarter, mais n'améliore
+pas l'accord DIC sur ce crop : à `3e-4`, la régularisation spatiale devient
+dominante, le coût double et les rejets constitutifs passent de `5` à `33`.
+`3e-3` est le candidat de continuation intermédiaire ; `3e-2` reste la référence
+stable tant que la sensibilité n'a pas été répétée sur plusieurs crops et
+échelles. Artefacts complémentaires :
+
+```text
+validation/_generated/performance/experimental_oracle_p43_m20_prior_003/
+validation/_generated/performance/experimental_oracle_p43_m20_prior_0003/
+```
+
+Le test limite `prior_weight=0` apporte la distinction attendue : le champ Δp
+devient effectivement non identifiable/stable avec les seules contraintes
+actuelles. Sur les 40 états, il converge encore mais coûte `315.74 s`, avec
+`103` rejets constitutifs ; au dernier état, la corrélation PEEQ oracle/Ludwik
+tombe à `0.512` et l'écart L2 relatif à `29.97 %`. La corrélation de la
+déformation équivalente oracle/DIC tombe à `0.474`, contre `0.903` avec le
+prior `3e-2`. Le déplacement reste pourtant très proche de la DIC (`14.5 %`
+de l'incertitude au maximum) et l'équilibre reste résolu (`9.55e-9` RMS).
+
+Le baseline Ludwik, évalué directement sur la DIC, n'est pas équilibré : son
+résidu mécanique final vaut `4.79e-2` RMS et `2.45e-1` en norme infinie. Le
+prior ne doit donc pas être interprété comme une solution mécanique ; il sert
+à sélectionner une branche Δp parmi des champs dont l'effet sur u est faible.
+
+Le diagnostic matrix-free de sensibilité `Δp → u`, obtenu par
+`K δu = -Bᵀ σ_,Δp δp` sur 12 directions aléatoires, donne une norme DIC blanchie
+de `184 .. 326` par unité de norme L2 de Δp. Pour une perturbation de taille
+typique `||Δp||₂≈8.0e-3`, cela représente seulement `1.47 .. 2.61` unités
+blanchies : la DIC contraint donc faiblement les détails de Δp. L'artefact
+reproductible est :
+
+```text
+validation/_generated/performance/experimental_oracle_p43_m20/identifiability.json
+scripts/diagnose_experimental_oracle_identifiability.py
+```
+
+La suite prioritaire est : qualifier le compromis discrepancy/prior sur cette
+histoire complète, ajouter le contrôleur de reprise/cutback avant les tailles où
+il devient nécessaire, puis passer à M50/M100 et au recalage des lois MFront.
+
+### Critères de qualification du P0
+
+Le P0 n'est pas qualifié par la seule baisse d'une loss. Il faut démontrer :
+
+- exactitude transactionnelle du Driven J2 ;
+- plateau FD des deux tangentes locales ;
+- adjoint discret `B/B^T` inchangé ;
+- adjoint du whitener ;
+- récupération synthétique de `u`, `Delta p` et `sigma` ;
+- réduction du bruit conforme au discrepancy principle ;
+- conservation des bandes de localisation synthétiques ;
+- décroissance séparée du résidu d'équilibre et du misfit DIC ;
+- indépendance raisonnable à l'initialisation et à la continuation du prior ;
+- provenance complète des PSD, masques, hyperparamètres et transactions.
+
+Sur P43 sans force synchronisée, le livrable doit être nommé :
+
+```text
+mechanically admissible DIC-compatible oracle
+```
+
+et jamais `identified constitutive law`.
+
+### Ce qui est explicitement hors P0
+
+- PINN, Transformer, réseau neuronal ou opérateur neuronal ;
+- optimisation simultanée de tous les temps avant validation séquentielle ;
+- covariance DIC dense ;
+- remplacement des opérateurs spectraux `B` et `B^T` ;
+- identification absolue sans force synchronisée ;
+- champ plastique libre non régularisé pixel par pixel ;
+- modification opportuniste des lois MFront pour améliorer directement les
+  figures avant que l'oracle soit qualifié.
+
+Le P0 doit d'abord produire des données mécaniques propres. Les méthodes
+d'apprentissage ou de sparse regression pourront être évaluées ensuite sur
+`(epsilon*, sigma*, Delta p*)`, et non sur les champs directs actuellement en
+désaccord avec la DIC.
 
 ## État courant prioritaire — 2026-08-08, après reprise des agents
 
@@ -5637,3 +6132,63 @@ vérifiée octet pour octet identique avant/après. Doc `-W` verte.
 Restent 16 erreurs mypy, toutes antérieures et inchangées par ces corrections
 (mesuré des deux côtés du diff) ; l'essentiel est dans `coupled_newton.py`, en
 cours côté session concurrente.
+
+### 2026-08-14 — Réduction de l'espace plastique guidée par l'observabilité DIC
+
+Le diagnostic P43 M20 impose un nouveau jalon avant M50/M200 : le problème
+inverse plein champ en `Delta p(x,t)` n'est pas identifiable avec la DIC seule.
+Avec le prior Ludwik, l'oracle reste proche de Ludwik ; avec `prior_weight=0`,
+la solution devient instable, plus coûteuse et l'accord DIC se dégrade
+(`experimental_oracle_p43_m20_prior_000`). Le champ libre ne doit donc pas être
+interprété comme une vérité expérimentale.
+
+Le prochain objectif est, sans hyper-réduction spatiale, de remplacer le champ
+libre par `Delta p_n = Delta p_L,n + Phi_p a_n`. `u`, les contraintes, tous les
+points matériau et le résidu d'équilibre restent plein champ. RID, DEIM et ECSW
+sont hors périmètre jusqu'à preuve qu'un espace réduit identifiable existe.
+
+La référence de linéarisation est le run M20 priorisé ; elle n'est pas une
+vérité physique. Pour chaque état :
+
+    K = d(B^T sigma)/du       G_p = d(B^T sigma)/d(Delta p)
+    S_p = -K^{-1} G_p         O = W_D S_p
+
+`W_D` est le whitener DIC existant. Le module
+`identification.plastic_observability` introduit les actions matrix-free de
+`G_p`, `G_p.T`, `O` et `O.T`; aucune matrice globale dense n'est formée. Les
+solveurs transposés utilisent explicitement `K.T` et ne supposent pas la
+symétrie du tangent.
+
+Le même module fournit maintenant un premier `PlasticMetric` explicite,
+amplitude-only (`H_p = alpha I`) et `generalized_modes`, qui appelle `eigsh`
+sur les `LinearOperator` de `A_obs` et `H_p`. Cette métrique volontairement
+minimale n'est pas encore une calibration physique de la régularité spatiale;
+elle sert uniquement à valider le pipeline matrix-free et devra être remplacée
+ou complétée après calibration du prior.
+
+Suite obligatoire :
+
+1. tests d'adjoint de `G_p` et `O`, puis tests par différences finies ;
+2. métrique SPD `H_p` documentée (amplitude/régularité du prior) ;
+3. opérateur `A_obs = sum O.T O` et problème `A_obs phi = lambda H_p phi`,
+   sans SVD de snapshots ;
+4. validation des modes sur des états tenus à l'écart ;
+5. intégration d'une paramétrisation réduite dans l'oracle en conservant
+   positivité, transactions et cutbacks ;
+6. reproduction de l'oracle plein avec le prior Ludwik ;
+7. seulement ensuite, test `prior_weight=0` dans l'espace observable.
+
+Le rang ne sera pas choisi par une énergie POD. Il sera justifié par le spectre,
+la stabilité des modes, la validation hors échantillon et la robustesse
+non-linéaire. Le critère scientifique est le nombre de directions plastiques
+réellement observables par cette expérience, puis la question de savoir si,
+dans cet espace, la DIC préfère une solution différente de Ludwik.
+
+Une première qualification M20 est disponible dans
+`validation/_generated/performance/experimental_oracle_p43_m20/observability/`.
+Elle utilise les états `[0, 10, 20, 29, 39]`, le whitener P43 corrigé du mode
+DC et `H_p=I` provisoire. Les deux premières valeurs propres sont environ
+`4.835e7` et `4.027e7`; les contrôles d'adjoint donnent
+`4.2e-16` pour `G_p` et `4.0e-10` pour `O`. Ces valeurs ne sont pas encore une
+conclusion physique : la métrique spatiale doit être calibrée avant de fixer le
+rang ou de lancer l'oracle réduit sans prior.
