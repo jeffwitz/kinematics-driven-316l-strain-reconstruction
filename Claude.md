@@ -6313,3 +6313,63 @@ La projection n'est délibérément **pas** câblée dans le matériau : elle a 
 3221 fois avec un ratio demandé allant jusqu'à `6,64`, ce qui est une
 information sur la sonde et non un arrondi à masquer. Voir
 `validation/driven_j2_admissible_increment.md`.
+
+### 2026-08-15 — L'oracle tensoriel : de l'observabilité à l'excitation réelle
+
+Nuit de travail autonome, quatre commits. Le fil : le spectre d'observabilité
+dit ce que l'instrument *pourrait* voir ; il fallait demander aux données ce
+qu'elles contiennent réellement.
+
+**Matrix-free d'abord** (`712a87e`). Le prototype dense n'était pas un
+algorithme : à M100 l'opérateur de forçage seul ferait `19602 × 60000`, soit
+9,4 Go. `A = W_D M_D K⁻¹ BᵀC H^{-1/2}` s'applique par les opérateurs de champ
+existants, avec `K` récupéré en sparse par **coloriage de son pochoir nodal
+`3×3`** — dix-huit applications, à n'importe quelle taille, sans rien savoir des
+internes de l'élément. M20 tombe de plusieurs minutes à `0,09 s`, M100 coûte
+`5 s`. Validé avant usage : six valeurs singulières à `2,2e-7` du dense, angles
+principaux du rang 2 à `8,5e-7°`, adjoint à `5,3e-14`.
+
+Le balayage M20→M100 **détruit la belle structure de rang 2** : l'écart après le
+mode 2 passe de `330` à `1,1` dès M40. La falaise était un effet de fenêtre.
+À M100, soixante modes montrent une décroissance lente (`σ₁/σ₆₀ = 6,7`), sept
+modes au-dessus d'un sigma, aucun au-dessus de trois. Réduction réelle, mais
+troncature au bruit, pas rang structurel.
+
+**Puis la projection des vrais résidus** (`893a9e1`). Deux corrections de
+construction : le transfert s'applique au **modèle seul** (la mesure est déjà
+passée par l'instrument), et la référence élastique ne demande aucun bloc de
+couplage au bord — `u_el,int = u_DIC,int − K⁻¹ f_int` exactement. Comme `W_D`
+blanchit, les projections sont **directement des z-scores**.
+
+Blanchisseur vérifié avant toute lecture : norme blanchie de vrai bruit sur
+`√(composantes intérieures)` = `1,109` à M20, `1,025` à M100.
+
+À M20 le champ mesuré est élastique à une fraction du bruit près — `0,005σ` par
+nœud à l'état 1, `0,543σ` à l'état 40. À M100 la signature est **détectée** :
+test nul propre (`1,11σ` sur vingt modes à l'état 1), puis croissance monotone
+jusqu'à `167σ`. Et les amplitudes sont physiquement justes : `a_j = c_j/σ_j`
+donne `2,1e-3` à `6,6e-3` contre `5,67e-3` cumulé archivé.
+
+**Enfin la séparation hétérogénéité / plasticité**, sans EBSD. Les motifs des
+résidus normalisés sont parallèles tôt (cos `0,93–0,98` entre états 5, 10, 20)
+et tournent tard (cos `0,27` entre 5 et 40). Un sous-espace de **rang 3** ajusté
+sur les états 3-20 capture `99,70 %` de leur variance et annule tout le résidu
+pré-plastique : `≤ 0,09` fois le bruit, aucun mode au-dessus de `1,3σ` jusqu'à
+l'état 20. Une seconde composante apparaît **entre les états 20 et 25** et monte
+à `21,6σ`.
+
+Conséquence forte : l'eigenstrain équivalent des modes dominants tombe de
+`2,1e-3…6,6e-3` à `1,1e-4…5,8e-4` après correction. **Neuf dixièmes de
+l'amplitude « plastique » apparente étaient de l'hétérogénéité élastique.**
+C'est le piège d'Eshelby rendu quantitatif : un eigenstrain tensoriel libre
+reproduit exactement une inclusion élastique, donc rien dans l'espace plastique
+ne peut les distinguer — seule la dynamique temporelle le peut.
+
+Anomalie consignée sans explication : le résidu corrigé décroît de `2,015`
+(état 35) à `1,131` (état 40).
+
+Voir `validation/dic_excitation_of_observable_plastic_modes.md` et
+`validation/tensor_plastic_observability_m20.md`.
+
+**Dettes non soldées** : le mécanisme de projection Δp à committer, la baseline
+Ludwik à rejouer.

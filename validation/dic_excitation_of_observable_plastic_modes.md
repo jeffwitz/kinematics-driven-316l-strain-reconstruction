@@ -92,3 +92,60 @@ elastic operator, or a loading path that distinguishes them.
 
 Until that is settled, `a_j` should be read as *equivalent eigenstrain*, not as
 plastic strain, however well the number matches.
+
+## The two components separate on the data, without EBSD
+
+The normalised residual fields are mutually parallel early and rotate away
+later — cosine similarity `0.93` to `0.98` among states 5, 10 and 20, `0.909`
+between states 30 and 40, but only `0.27` between states 5 and 40. Two regimes,
+with a fixed pattern in each.
+
+That is enough to separate them without grain data and without assuming
+proportionality. The early states span the heterogeneity subspace directly;
+removing it from the late residuals leaves what elasticity cannot produce at a
+fixed shape. `scripts/separate_elastic_heterogeneity_from_plasticity_p43.py`,
+artefact `heterogeneity_plasticity_separation_m100.json`.
+
+A rank-3 subspace fitted on states 3-20 captures **99.70 %** of their variance:
+
+| state | raw norm / noise | corrected | max abs c raw | max abs c corrected |
+|---:|---:|---:|---:|---:|
+| 1 | `0.112` | `0.077` | `1.11` | `1.11` |
+| 5 | `0.507` | `0.064` | `9.69` | `1.28` |
+| 10 | `1.000` | `0.090` | `20.4` | `1.28` |
+| 20 | `1.951` | `0.047` | `39.0` | `0.63` |
+| 25 | `2.780` | `0.216` | `61.7` | `4.70` |
+| 30 | `4.505` | `1.317` | `110.1` | `14.45` |
+| 35 | `6.047` | `2.015` | `140.5` | `18.11` |
+| 40 | `7.364` | `1.131` | `166.5` | `21.59` |
+
+**Three fixed patterns explain the entire pre-yield residual.** Up to state 20
+the corrected residual is `0.05` to `0.09` of the noise norm and no mode exceeds
+`1.3` sigma. The load-proportional interpretation is not an assumption any more;
+it is measured.
+
+**A second component appears between states 20 and 25** and grows to `21.6`
+sigma. That onset is sharp, which is what a yield point looks like and what pure
+heterogeneity cannot produce.
+
+**And it is an order of magnitude smaller than it looked.** The equivalent
+eigenstrain of the leading modes falls from `2.1e-3 ... 6.6e-3` before the
+correction to `1.1e-4 ... 5.8e-4` after it. Nine tenths of the apparent plastic
+amplitude was elastic heterogeneity.
+
+## What this leaves
+
+The corrected amplitudes are far below the accumulated plastic strain the
+material reached, `5.67e-3` RMS. The observable subspace therefore sees only a
+small projection of the real plastic field — consistent with the spectrum, where
+seven modes clear one noise sigma out of sixty thousand components.
+
+One anomaly is recorded rather than explained: the corrected residual norm falls
+from `2.015` at state 35 to `1.131` at state 40, where accumulated plasticity
+should grow. Either the late pattern rotates further out of the twenty modes
+retained, or state 40 carries something the earlier states do not.
+
+The separation is a **lower bound** on the plastic content: any plastic
+component lying inside the early subspace is removed with it. And the early
+states are assumed plasticity-free, which the state-1 null test and the pattern
+stability to state 20 support but do not prove.
