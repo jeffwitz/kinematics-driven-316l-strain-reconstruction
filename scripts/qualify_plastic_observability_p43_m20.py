@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch
@@ -118,6 +119,44 @@ def main() -> None:
         eigenvalues=eigenvalues,
         state_indices=state_indices,
     )
+    mode_count = min(args.rank, 4)
+    figure, axes = plt.subplots(mode_count, 3, squeeze=False, figsize=(12, 3 * mode_count))
+    spectral_rows: list[dict[str, float | int]] = []
+    state = PlasticObservabilityState(selected[int(state_indices[0])])
+    for mode_index in range(mode_count):
+        mode = modes[:, mode_index].reshape(operator.plastic_shape)
+        plastic_map = np.mean(mode, axis=-1)
+        induced = operator.sensitivity(state, mode)
+        whitened = operator.whitener.apply(induced)
+        axes[mode_index, 0].imshow(plastic_map.T, origin="lower", cmap="coolwarm")
+        axes[mode_index, 0].set_title(f"phi {mode_index + 1}")
+        axes[mode_index, 1].imshow(
+            np.linalg.norm(induced, axis=-1).T, origin="lower", cmap="viridis"
+        )
+        axes[mode_index, 1].set_title("|S_p phi|")
+        axes[mode_index, 2].imshow(
+            np.linalg.norm(whitened, axis=-1).T, origin="lower", cmap="magma"
+        )
+        axes[mode_index, 2].set_title("|W_D S_p phi|")
+        for axis in axes[mode_index]:
+            axis.set_aspect("equal")
+        spectrum = np.abs(np.fft.fftn(plastic_map, norm="ortho")) ** 2
+        spectral_rows.append(
+            {
+                "mode": mode_index + 1,
+                "dc_power_fraction": float(spectrum[0, 0] / np.sum(spectrum)),
+                "nyquist_edge_power_fraction": float(
+                    (np.sum(spectrum[0, :]) + np.sum(spectrum[:, 0]))
+                    / (2.0 * np.sum(spectrum))
+                ),
+            }
+        )
+    figure.tight_layout()
+    figure.savefig(output / "mode_fields.png", dpi=180)
+    plt.close(figure)
+    (output / "mode_spectra.json").write_text(
+        json.dumps(spectral_rows, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     report = {
         "schema_version": 1,
         "fields": str(args.fields),
@@ -132,6 +171,7 @@ def main() -> None:
         },
         "eigenvalues": eigenvalues.tolist(),
         "sqrt_eigenvalues": np.sqrt(np.maximum(eigenvalues, 0.0)).tolist(),
+        "mode_spectra": spectral_rows,
         "adjoint_checks": operator.adjoint_errors(),
     }
     (output / "report.json").write_text(
