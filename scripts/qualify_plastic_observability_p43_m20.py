@@ -138,10 +138,24 @@ def main() -> None:
     mode_count = min(args.rank, 4)
     figure, axes = plt.subplots(mode_count, 3, squeeze=False, figsize=(12, 3 * mode_count))
     spectral_rows: list[dict[str, float | int]] = []
+    subcell_rows: list[dict[str, float | int]] = []
     state = PlasticObservabilityState(selected[int(state_indices[0])])
     for mode_index in range(mode_count):
         mode = modes[:, mode_index].reshape(operator.plastic_shape)
-        plastic_map = np.mean(mode, axis=-1)
+        symmetric = (mode[..., 0] + mode[..., 1]) / np.sqrt(2.0)
+        antisymmetric = (mode[..., 0] - mode[..., 1]) / np.sqrt(2.0)
+        total_norm = float(np.sum(mode**2))
+        subcell_rows.append(
+            {
+                "mode": mode_index + 1,
+                "antisymmetric_energy_fraction": float(
+                    np.sum(antisymmetric**2) / max(total_norm, np.finfo(float).tiny)
+                ),
+                "symmetric_norm": float(np.linalg.norm(symmetric)),
+                "antisymmetric_norm": float(np.linalg.norm(antisymmetric)),
+            }
+        )
+        plastic_map = symmetric
         induced = operator.sensitivity(state, mode)
         measured_induced = operator.transfer.apply(induced)
         whitened = operator.whitener.apply(measured_induced)
@@ -196,6 +210,7 @@ def main() -> None:
         "eigenvalues": eigenvalues.tolist(),
         "sqrt_eigenvalues": np.sqrt(np.maximum(eigenvalues, 0.0)).tolist(),
         "mode_spectra": spectral_rows,
+        "subcell_decomposition": subcell_rows,
         "adjoint_checks": operator.adjoint_errors(),
     }
     (output / "report.json").write_text(
