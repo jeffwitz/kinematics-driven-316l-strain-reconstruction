@@ -15,7 +15,10 @@ from scipy.stats import spearmanr
 
 from fem_inhouse.core.driven_j2 import DrivenJ2PlaneStressBatch
 from fem_inhouse.core.plane_stress_material import PythonJ2PlaneStressBatch
-from fem_inhouse.identification.dic_whitening import DICSpectralWhitener
+from fem_inhouse.identification.dic_whitening import (
+    DICSpectralTransfer,
+    DICSpectralWhitener,
+)
 from fem_inhouse.measurement import image_flow_to_canonical
 from fem_inhouse.postprocessing.kinematics import (
     plane_stress_equivalent_strain,
@@ -50,6 +53,7 @@ MEASURED_HISTORY_REPORT = MEASURED_HISTORY.with_name("report.json")
 DEFAULT_CROP = (1610, 1630, 1075, 1095)
 PIXEL_SIZE_MM = 0.00184
 DIC_UNCERTAINTY_MM = 9.40e-5
+TRANSFER = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
 
 
 def _equivalent_total_strain(displacement: np.ndarray) -> np.ndarray:
@@ -197,6 +201,11 @@ def main() -> None:
     parser.add_argument("--projected-gradient-tolerance", type=float, default=1.0e-2)
     parser.add_argument("--no-mechanical-warm-start", action="store_true")
     parser.add_argument(
+        "--dic-transfer",
+        action="store_true",
+        help="include the measured DIC spatial transfer in the observation cost",
+    )
+    parser.add_argument(
         "--solution-method", choices=("augmented", "reduced"), default="reduced"
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -281,6 +290,11 @@ def main() -> None:
         remove_spatial_mean=False,
         support_mask=support_mask,
     )
+    dic_transfer = (
+        DICSpectralTransfer.from_sinusoidal_csv(TRANSFER)
+        if args.dic_transfer
+        else None
+    )
     material = DrivenJ2PlaneStressBatch(
         kinematics.material_point_count,
         young_modulus_mpa=205_000.0,
@@ -343,6 +357,7 @@ def main() -> None:
         ),
         progress_callback=report_progress,
         solution_method=args.solution_method,
+        dic_transfer=dic_transfer,
         weights=ExperimentalOracleObjectiveWeights(
             dic=args.dic_weight,
             ludwik_prior=args.prior_weight,
