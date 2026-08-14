@@ -1295,6 +1295,7 @@ def solve_experimental_mechanical_oracle_history(
     weights: ExperimentalOracleObjectiveWeights | None = None,
     config: ExperimentalOracleOptimizationConfig | None = None,
     time_increments: ArrayLike | float = 1.0,
+    plastic_basis: ArrayLike | None = None,
 ) -> ExperimentalOracleHistoryResult:
     """Solve a DIC history sequentially, committing only accepted increments."""
 
@@ -1306,6 +1307,11 @@ def solve_experimental_mechanical_oracle_history(
     if tuple(measured.shape[1:]) != whitener.field_shape:
         raise ValueError("DIC history and whitener field shapes must match")
     sample_shape = kinematics.strain_samples(measured[0]).shape[:-1]
+    if plastic_basis is not None:
+        basis = np.asarray(plastic_basis, dtype=np.float64)
+        if basis.ndim != 2 or basis.shape[0] != int(np.prod(sample_shape)):
+            raise ValueError("plastic_basis has an incompatible plastic-point dimension")
+        plastic_basis = basis
     ludwik = np.asarray(ludwik_increment_history, dtype=np.float64)
     expected_ludwik_shape = (measured.shape[0] - 1, *sample_shape)
     if ludwik.shape != expected_ludwik_shape:
@@ -1383,6 +1389,7 @@ def solve_experimental_mechanical_oracle_history(
             config=config,
             time_increment=float(dt[index]),
             commit_on_success=True,
+            plastic_basis=plastic_basis,
         )
         increment_results.append(result)
         if progress_callback is not None:

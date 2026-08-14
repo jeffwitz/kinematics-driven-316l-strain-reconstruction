@@ -141,6 +141,44 @@ def test_global_oracle_transpose_action_satisfies_the_adjoint_identity() -> None
     np.testing.assert_allclose(lhs, rhs, rtol=2.0e-13, atol=1.0e-8)
 
 
+def test_reduced_plastic_parameterisation_round_trips_and_has_reduced_dimension() -> None:
+    grid = StructuredGrid2D(3, 3, 3.0, 3.0)
+    kinematics = TwoSubcellDiagnostic2D(grid)
+    material = DrivenJ2PlaneStressBatch(
+        kinematics.material_point_count,
+        young_modulus_mpa=205_000.0,
+        poisson_ratio=0.30,
+    )
+    measured = _affine_displacement(grid)
+    increment = np.full((*grid.pixel_shape, 2), 0.001)
+    basis = np.column_stack(
+        (
+            np.ones(increment.size),
+            np.linspace(-1.0, 1.0, increment.size),
+        )
+    ) * 1.0e-4
+    problem = ExperimentalOracleIncrementProblem(
+        material=material,
+        kinematics=kinematics,
+        measured_displacement=measured,
+        whitener=_white_dic_whitener(measured.shape, 1.0e-4),
+        ludwik_increment=increment,
+        previous_increment=increment,
+        weights=ExperimentalOracleObjectiveWeights(ludwik_prior=0.1),
+        time_increment=1.0,
+        displacement_variable_scale=1.0e-3,
+        plastic_increment_variable_scale=1.0e-3,
+        equilibrium_scale=100.0,
+        plastic_basis=basis,
+    )
+    variables = problem.pack_state(measured, increment)
+    displacement, reconstructed = problem.unpack_state(variables)
+    assert problem.reduced
+    assert problem.variable_count == problem.displacement_unknown_count + 2
+    np.testing.assert_allclose(displacement, measured)
+    np.testing.assert_allclose(reconstructed, increment, atol=1.0e-12)
+
+
 def _white_dic_whitener(shape: tuple[int, int, int], noise: float) -> DICSpectralWhitener:
     return DICSpectralWhitener(
         power_spectral_density=np.full(shape, noise**2),
