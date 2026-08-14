@@ -6200,3 +6200,10 @@ instantanée, les états sont seulement `[0,10,20,29,39]` et la métrique spatia
 n'est pas activée. Le calcul rank-20 a été trop coûteux dans la configuration
 actuelle et n'a produit aucun artefact ; il faut optimiser les applications
 répétées de `O/O.T` avant d'en déduire quoi que ce soit.
+
+Les figures montrent que `H_p=I` produit des premiers modes en damier, malgré
+des réponses `S_p phi` lisses : c'est un artefact de normalisation/haute
+fréquence, pas un mode plastique physique. Avec le même `p_ref` et
+`spatial_weight=100`, les modes deviennent lisses ; ce poids est uniquement un
+test de suppression du Nyquist et ne constitue pas encore une calibration.
+Aucun oracle réduit ne doit être lancé avant cette calibration.

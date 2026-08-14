@@ -141,12 +141,14 @@ def main() -> None:
         for axis in axes[mode_index]:
             axis.set_aspect("equal")
         spectrum = np.abs(np.fft.fftn(plastic_map, norm="ortho")) ** 2
+        nyquist_x = spectrum.shape[0] // 2
+        nyquist_y = spectrum.shape[1] // 2
         spectral_rows.append(
             {
                 "mode": mode_index + 1,
                 "dc_power_fraction": float(spectrum[0, 0] / np.sum(spectrum)),
-                "nyquist_edge_power_fraction": float(
-                    (np.sum(spectrum[0, :]) + np.sum(spectrum[:, 0]))
+                "nyquist_axis_power_fraction": float(
+                    (np.sum(spectrum[nyquist_x, :]) + np.sum(spectrum[:, nyquist_y]))
                     / (2.0 * np.sum(spectrum))
                 ),
             }
