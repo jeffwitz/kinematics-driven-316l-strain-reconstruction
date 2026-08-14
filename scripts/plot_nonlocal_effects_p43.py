@@ -10,9 +10,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def _field(path: Path, key: str, shape: tuple[int, int] | None = None) -> np.ndarray:
+def _field(
+    path: Path, key: str, shape: tuple[int, int] | None = None, fallback: str | None = None
+) -> np.ndarray:
     with np.load(path) as arrays:
-        value = np.asarray(arrays[key], dtype=float)
+        selected_key = key if key in arrays else fallback
+        if selected_key is None or selected_key not in arrays:
+            raise KeyError(f"{path}: missing {key}")
+        value = np.asarray(arrays[selected_key], dtype=float)
     if value.ndim == 1 and shape is not None:
         value = value.reshape(shape)
     if value.ndim != 2 or value.shape[0] != value.shape[1]:
@@ -34,8 +39,8 @@ def _limits(*arrays: np.ndarray) -> tuple[float, float]:
 def _plot_one(
     local_path: Path, nonlocal_path: Path, label: str, output: Path, source_name: str
 ) -> dict[str, float]:
-    local = _field(local_path, "monolithic_peeq")
-    coupled_source = _field(nonlocal_path, "monolithic_peeq")
+    local = _field(local_path, "monolithic_source", fallback="monolithic_peeq")
+    coupled_source = _field(nonlocal_path, "monolithic_source", fallback="monolithic_peeq")
     chi = _field(nonlocal_path, "monolithic_chi", local.shape)
 
     source_delta = coupled_source - local

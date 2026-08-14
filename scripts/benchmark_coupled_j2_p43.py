@@ -660,6 +660,7 @@ def _solve_production_nested_sequence(
         "final_chi": chi,
         "final_stress": final_stress,
         "final_peeq": final_peeq,
+        "final_source": final_peeq,
     }
 
 
@@ -1067,6 +1068,7 @@ def _solve_sequence(
         "final_chi": chi,
         "final_stress": final_stress,
         "final_peeq": final_peeq,
+        "final_source": final_peeq,
     }
 
 
@@ -1309,6 +1311,7 @@ def main() -> int:
             if "final_stress" in result:
                 solution_arrays[f"{label}_stress"] = result["final_stress"]
                 solution_arrays[f"{label}_peeq"] = result["final_peeq"]
+                solution_arrays[f"{label}_source"] = result["final_source"]
     if solution_arrays:
         np.savez_compressed(solution_path, **solution_arrays)
         report["solution_archive"] = str(solution_path)
