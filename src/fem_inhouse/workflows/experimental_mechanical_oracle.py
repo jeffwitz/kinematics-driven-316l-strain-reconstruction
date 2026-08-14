@@ -1402,11 +1402,7 @@ def solve_experimental_mechanical_oracle_history(
             whitener=whitener,
             ludwik_increment=ludwik[index],
             initial_displacement=initial_displacement,
-            initial_equivalent_plastic_increment=(
-                previous_increment
-                if solution_method == "reduced" and index > 0
-                else ludwik[index]
-            ),
+            initial_equivalent_plastic_increment=ludwik[index],
             previous_increment=previous_increment,
             weights=weights,
             config=config,
