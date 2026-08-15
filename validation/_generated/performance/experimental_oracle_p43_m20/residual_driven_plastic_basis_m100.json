@@ -1,0 +1,111 @@
+{
+  "adjoint_relative_error": 1.8274328019489575e-15,
+  "basis_size": 44,
+  "deviatoric_projector": "identity: e33 absorbs the trace and does not enter plane stress",
+  "dic_peak_equivalent_strain": 0.011159059318634451,
+  "krylov_depth": 10,
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "pixels": 100,
+  "pod_spectrum": [
+    829028.7106945666,
+    823927.9628193728,
+    818999.8790903831,
+    812303.6424878467,
+    807472.8225051812,
+    800970.7453464946,
+    796128.3575513056,
+    793960.2639630404,
+    770128.4711991746,
+    766753.0195035,
+    758471.8902567946,
+    751957.7194976332,
+    724049.4306604555,
+    715453.061771893,
+    712760.5321625997,
+    708236.8661763896,
+    668710.7011141363,
+    665002.1993529092,
+    653934.8081232792,
+    648989.4331213186,
+    595893.1293317708,
+    584594.304266006,
+    579470.4504777286,
+    574010.8350051814,
+    501052.051696867,
+    499627.7490375038,
+    493513.5620333448,
+    489806.82892894355,
+    412821.7273817114,
+    405512.5475566886,
+    400917.11145116907,
+    392703.51657068566,
+    314763.90232256206,
+    310398.91459163564,
+    304424.68016752676,
+    300971.3299762536,
+    212095.65468124056,
+    202708.22395129417,
+    200268.8035118159,
+    188656.41887940117,
+    107146.71595872228,
+    105796.18483035239,
+    102799.44951197732,
+    95310.70717673813
+  ],
+  "records": [
+    {
+      "correlation_with_dic_equivalent_strain": -0.01524632517203685,
+      "misfit_over_elastic_baseline": 0.9996988605211135,
+      "peak_equivalent_plastic_strain": 4.160582265945876e-05,
+      "rank": 1,
+      "share_inside_the_dic_top_decile": 0.02298406083110842
+    },
+    {
+      "correlation_with_dic_equivalent_strain": -0.015140881282874575,
+      "misfit_over_elastic_baseline": 0.9996689574337211,
+      "peak_equivalent_plastic_strain": 4.197472419655501e-05,
+      "rank": 2,
+      "share_inside_the_dic_top_decile": 0.02332259271340885
+    },
+    {
+      "correlation_with_dic_equivalent_strain": -0.04261726382853913,
+      "misfit_over_elastic_baseline": 0.9987688396337722,
+      "peak_equivalent_plastic_strain": 6.393910144618394e-05,
+      "rank": 4,
+      "share_inside_the_dic_top_decile": 0.019942653845197264
+    },
+    {
+      "correlation_with_dic_equivalent_strain": -0.08263689123227382,
+      "misfit_over_elastic_baseline": 0.9965225163044433,
+      "peak_equivalent_plastic_strain": 8.449263162681964e-05,
+      "rank": 8,
+      "share_inside_the_dic_top_decile": 0.01944366877985166
+    },
+    {
+      "correlation_with_dic_equivalent_strain": -0.10218049109916447,
+      "misfit_over_elastic_baseline": 0.970507877702108,
+      "peak_equivalent_plastic_strain": 0.00022223209729096022,
+      "rank": 16,
+      "share_inside_the_dic_top_decile": 0.02892158199669392
+    },
+    {
+      "correlation_with_dic_equivalent_strain": -0.18154473462155707,
+      "misfit_over_elastic_baseline": 0.8322677064369999,
+      "peak_equivalent_plastic_strain": 0.0006060280713853891,
+      "rank": 32,
+      "share_inside_the_dic_top_decile": 0.039526535010355614
+    }
+  ],
+  "reference_state": 20,
+  "schema_version": 1,
+  "states": [
+    25,
+    30,
+    35,
+    40
+  ],
+  "unstructured_top_decile_share": 0.1
+}
