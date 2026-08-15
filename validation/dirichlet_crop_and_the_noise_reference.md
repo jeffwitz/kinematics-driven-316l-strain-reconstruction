@@ -520,3 +520,26 @@ realistic amplitude can reproduce each measured increment exactly, and the
 accumulated path it implies is of the right size. What is not supported is that
 these fields form a small shared subspace with predictive power, or that they
 constitute a dissipative history.
+
+### The path length is zig-zag, not accumulation
+
+The agreement between the reconstructed path length, `6.20e-3`, and the archived
+accumulated plastic strain, `5.67e-3`, is a coincidence of scale and should not
+be read as support.
+
+| quantity | value |
+|---|---:|
+| path length, RMS | `6.20e-3` |
+| net displacement `\|eps_p(40)\|`, RMS | `1.38e-3` |
+| ratio, RMS-weighted | **`4.48`** |
+| ratio, median pointwise | `5.19` |
+
+A monotone trajectory has a ratio of one. At `4.5` the reconstruction wanders
+between four and five times further than it advances, which is exactly what a
+dissipation split near `50/50` implies, and it is where the apparent agreement
+with `5.67e-3` comes from. The net plastic strain is `1.38e-3`, matching the
+state-40 amplitude found independently.
+
+So the path-length check moves from the supporting column to the neutral one:
+the *scale* of plastic activity is right, its *trajectory* is not a monotone
+accumulation.
