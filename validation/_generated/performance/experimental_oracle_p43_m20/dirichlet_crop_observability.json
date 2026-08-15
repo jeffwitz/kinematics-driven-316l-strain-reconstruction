@@ -1,0 +1,60 @@
+{
+  "band_width_pixels": 6.0,
+  "dic_uncertainty_mm": 9.4e-05,
+  "injected_amplitude": 0.01,
+  "noise_realisations": 24,
+  "note": "noise is propagated through the same crop-and-extend operator as the signal, so both ratios compare like with like; the strain metric is the one a Dirichlet crop does not structurally suppress",
+  "outer_pixels": 200,
+  "records": [
+    {
+      "displacement_ratio": 13.927473704603424,
+      "domain_pixels": 100,
+      "guard_pixels": 0,
+      "injected_plastic_strain_rms": 0.004502725626665065,
+      "noise_displacement_rms_mm": 4.722512157761988e-06,
+      "noise_strain_rms": 0.00012584844711542703,
+      "signal_displacement_rms_mm": 6.577266389690007e-05,
+      "signal_strain_rms": 0.002580704346757797,
+      "strain_ratio": 20.506445696471715,
+      "strain_recovered_fraction": 0.5731427052705387
+    },
+    {
+      "displacement_ratio": 11.727805718955223,
+      "domain_pixels": 120,
+      "guard_pixels": 10,
+      "injected_plastic_strain_rms": 0.004502725626665065,
+      "noise_displacement_rms_mm": 7.064739672617022e-06,
+      "noise_strain_rms": 0.0001470257922388792,
+      "signal_displacement_rms_mm": 8.285389433544775e-05,
+      "signal_strain_rms": 0.0025996841025921077,
+      "strain_ratio": 17.68182346107197,
+      "strain_recovered_fraction": 0.5773578756824138
+    },
+    {
+      "displacement_ratio": 12.169318252598055,
+      "domain_pixels": 150,
+      "guard_pixels": 25,
+      "injected_plastic_strain_rms": 0.004502725626665065,
+      "noise_displacement_rms_mm": 8.274971402632656e-06,
+      "noise_strain_rms": 0.00015563525518186248,
+      "signal_displacement_rms_mm": 0.00010070076052978452,
+      "signal_strain_rms": 0.002759752039243264,
+      "strain_ratio": 17.7321779439912,
+      "strain_recovered_fraction": 0.6129069963535106
+    },
+    {
+      "displacement_ratio": 12.270226239783794,
+      "domain_pixels": 200,
+      "guard_pixels": 50,
+      "injected_plastic_strain_rms": 0.004502725626665065,
+      "noise_displacement_rms_mm": 9.7035716499843e-06,
+      "noise_strain_rms": 0.00018034271831020632,
+      "signal_displacement_rms_mm": 0.00011906501947925949,
+      "signal_strain_rms": 0.002923632981636346,
+      "strain_ratio": 16.21153883578168,
+      "strain_recovered_fraction": 0.6493029387184155
+    }
+  ],
+  "schema_version": 1,
+  "window_pixels": 100
+}
