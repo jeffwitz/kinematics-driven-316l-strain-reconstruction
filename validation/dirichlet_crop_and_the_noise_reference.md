@@ -310,3 +310,46 @@ Whether the remaining raw difference is measurement noise the whitener is right
 to discount, or real strain the noise model is wrong about, is the question the
 Ludwik comparison and a better noise estimate have to settle. It should not be
 asserted either way from these numbers.
+
+## Without the whitener in the objective, the fit is exact — and cheap
+
+`scripts/compare_raw_and_whitened_plastic_inversion_p43.py`, artefacts in
+`raw_vs_whitened_state40/`: component maps for both objectives at 128 and 512
+iterations, and the trade-off comparison.
+
+Two inversions, same operator, same Krylov regularisation, same stopping points,
+differing only in whether `W` appears in the objective. Both scored in both
+metrics.
+
+| objective | iterations | raw error | whitened error | `p` RMS | `p` peak |
+|---|---:|---:|---:|---:|---:|
+| raw | 8 | `1.1e-8` | `1.1e-8` | `1.374e-3` | `4.70e-3` |
+| whitened | 128 | `0.784` | `0.035` | `7.97e-4` | `3.30e-3` |
+| whitened | 1024 | `0.496` | `0.006` | `1.083e-3` | `4.13e-3` |
+
+**The raw problem is solved exactly, in eight iterations.** Every component
+follows: `e_xx`, `e_yy` and `g_xy` errors all fall to zero together, so there is
+no component the correction cannot reach.
+
+**The amplitude is the whole content of that result.** Exactness is guaranteed
+in advance: `A` maps onto the strains of every zero-boundary interior field, and
+the residual is one by construction, so *any* target — noise included — is
+exactly reproducible. What is not guaranteed is the price, and the price is
+`p_RMS = 1.374e-3` with a peak of `4.70e-3`, against an archived accumulated
+plastic RMS of `5.67e-3` and a measured peak equivalent strain of `1.12e-2`.
+
+So the question can be answered: **a mechanically admissible plastic field
+reproduces the measured strain increment exactly, at an amplitude the material
+comfortably exceeded.** That is the favourable scenario, not the one where
+closing the gap demands an absurd field.
+
+**And the whitened objective was indeed costing agreement.** At 1024 iterations
+it uses a comparable amplitude, `1.083e-3` against `1.374e-3`, yet still leaves
+half the raw strain difference. It is not spending its budget on the same thing.
+
+The caveat is the one that matters and it is not small: an exact fit that
+includes the noise is not an identification. What the raw inversion establishes
+is a **bound** — the measured kinematics is mechanically admissible at a
+plausible plastic amplitude — not that this particular field is the plastic
+field. Separating the two needs the history constraint, which four independently
+solved states do not provide, and the Ludwik comparison.
