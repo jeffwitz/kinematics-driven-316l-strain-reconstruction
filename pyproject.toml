@@ -12,6 +12,11 @@ dependencies = [
     "h5py>=3.11,<4",
     "matplotlib>=3.8,<4",
     "numpy>=2,<3",
+    # Sparse convex QP for the positive-dissipation constraint of the reduced
+    # plastic inverse. SciPy has no QP: `trust-constr` did not finish in ten
+    # minutes on 320 unknowns, and a hand-rolled add-only active set is wrong
+    # once the cuts outnumber the unknowns.
+    "osqp>=1.1,<2",
     "pypardiso>=0.4.7,<0.5",
     "PyYAML>=6,<7",
     "scikit-image>=0.24,<0.26",
