@@ -6373,3 +6373,46 @@ Voir `validation/dic_excitation_of_observable_plastic_modes.md` et
 
 **Dettes non soldées** : le mécanisme de projection Δp à committer, la baseline
 Ludwik à rejouer.
+
+#### Suite de la nuit : anatomie des modes, et le troisième dépouillement
+
+Les deux dettes sont soldées. Le mécanisme de projection Δp est devenu une
+option documentée `--admissible-fraction` (off par défaut), et la baseline
+Ludwik a été rejouée sur **sa propre** trajectoire avec archivage des
+déplacements manquants.
+
+Ce rejeu **corrige ma conclusion précédente** : je mesurais l'histoire Ludwik
+contre le mur en utilisant les déplacements de l'*oracle*, donc les incréments
+d'une solution contre les états d'une autre.
+
+| | trajectoire oracle | Ludwik rejouée |
+|---|---:|---:|
+| états touchant le mur | `0` / 40 | **`20` / 40** |
+| pire `Δp / Δp_max` | `0,871` | **`3,509`** |
+
+Le dépassement n'appartient donc pas seulement aux états perturbés par la
+sonde : la trajectoire baseline elle-même sort du domaine à la moitié de ses
+états, dont l'état 21. C'est pourquoi clipper la baseline seule suffisait.
+
+**Anatomie des modes M100.** Tous les modes dominants sont concentrés **au
+bord** : avec une bordure de 15 pixels, l'intérieur couvre `49 %` de l'aire mais
+n'en porte que `0,094` au pire et `0,197` en médiane. Sous conditions de
+Dirichlet, un eigenstrain proche du bord a le meilleur bras de levier sur le
+déplacement intérieur, donc l'opérateur classe ces directions en tête.
+Observables mathématiquement, mais c'est la condition aux limites qui parle.
+Modes dominés par le cisaillement (parts moyennes `0,24 / 0,22 / 0,54`).
+
+**Et la reconstruction ne tombe pas où le matériau plastifie.** Pic
+`7,08e-3` contre un pic mesuré de `1,59e-2` — le bon ordre. Mais corrélation
+avec la carte de déformation équivalente DIC de seulement `+0,149`, et part dans
+le décile supérieur `0,134` contre `0,10` au hasard. En masquant une bande de 15
+nœuds dans l'observation, la corrélation passe à `−0,150` : deux géométries
+indépendantes, compatibles avec zéro.
+
+C'est le **troisième dépouillement** de la même mesure, et chacun a retiré une
+couche : les coefficients bruts ressemblaient à de la plasticité à la bonne
+amplitude ; retirer le sous-espace d'hétérogénéité en a ôté neuf dixièmes ;
+l'anatomie montre que ce qui reste vit au bord et non dans la bande.
+
+**Conclusion à ce stade** : la détection à `21,6σ` est réelle, mais l'appeler
+une reconstruction du champ plastique n'est pas soutenu par les données.

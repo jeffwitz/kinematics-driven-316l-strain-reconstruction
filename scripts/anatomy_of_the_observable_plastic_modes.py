@@ -63,6 +63,19 @@ def main() -> int:
     parser.add_argument("--elastic-states", nargs=2, type=int, default=(3, 20))
     parser.add_argument("--subspace-rank", type=int, default=3)
     parser.add_argument("--border-fraction", type=float, default=0.15)
+    parser.add_argument(
+        "--observation-border",
+        type=int,
+        default=1,
+        help=(
+            "nodes masked out of the observation on each side. The default of 1 "
+            "removes only the Dirichlet ring. A wider band asks what the BULK can "
+            "show: the crop boundary is an artefact of choosing a window inside a "
+            "larger measured field, and a near-edge eigenstrain has the strongest "
+            "lever on the interior displacement, so leaving the band observed lets "
+            "the operator rank boundary directions first."
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
@@ -83,9 +96,9 @@ def main() -> int:
     history = history - history[0]
 
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
-    support = np.ones((*grid.node_shape, 2), dtype=np.float64)
-    support[[0, -1], :, :] = 0.0
-    support[:, [0, -1], :] = 0.0
+    mask_width = max(1, arguments.observation_border)
+    support = np.zeros((*grid.node_shape, 2), dtype=np.float64)
+    support[mask_width:-mask_width, mask_width:-mask_width, :] = 1.0
     noise = np.load(NOISE, mmap_mode="r", allow_pickle=False)
     canonical = image_flow_to_canonical(np.asarray(noise[:512, :512]), pixel_size_mm=PIXEL_SIZE_MM)
     whitener = DICSpectralWhitener.from_stationary_noise_field(
@@ -198,6 +211,7 @@ def main() -> int:
         "pixels": pixels,
         "origin_nodes": [x0, y0],
         "border_pixels": border,
+        "observation_border_nodes": mask_width,
         "interior_area_fraction": interior_area_fraction,
         "modes": modes,
         "reconstruction": {

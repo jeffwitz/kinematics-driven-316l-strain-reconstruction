@@ -192,3 +192,24 @@ window inside a larger field. Re-running with the observation restricted to the
 interior — masking the border out of `W_D` rather than only its outermost node —
 would re-rank the modes on what the bulk can show, and is the cheapest next
 test. It costs one extra mask and no new machinery.
+
+### Masking the boundary band does not rescue it
+
+Re-running with a `15`-node band removed from the observation, so the operator
+is ranked on what the bulk can show:
+
+| | border ring only | 15-node band masked |
+|---|---:|---:|
+| interior share, modes 1-6 | `0.11 ... 0.27` | `0.14 ... 0.21` |
+| interior share, modes 8-11 | `0.09 ... 0.30` | `0.40 ... 0.46` |
+| correlation with the DIC equivalent strain | `+0.149` | `-0.150` |
+| share in the DIC top decile | `0.134` | `0.112` |
+
+Masking lifts the middle modes to roughly the interior area fraction, so part of
+the edge concentration was indeed the window. But the leading six modes stay
+edge-weighted, and the correlation moves from `+0.15` to `-0.15` — two
+independent observation geometries returning values consistent with zero.
+
+The negative is therefore robust to the geometry: at M100 the tensor eigenstrain
+reconstruction does not recover the plastic localisation the DIC shows, whether
+or not the boundary band is observed.
