@@ -1,0 +1,57 @@
+{
+  "best_alpha": 10.0,
+  "criterion": "mean absolute log ratio of radial EVM power spectra",
+  "patch_size": 4,
+  "patch_stride": 1,
+  "received_evm_rms": 0.0033060675175804136,
+  "refinement_iterations": 30,
+  "results": [
+    {
+      "alpha": 10.0,
+      "evm_correlation": 0.7969839412767247,
+      "evm_rms": 0.0032708015968790703,
+      "evm_rms_ratio": 0.9893329702089226,
+      "power_ratio_at_12px": 1.2787364866648652,
+      "power_ratio_at_4px": 1.298519657761347,
+      "seconds": 35.83846800005995,
+      "spectral_bias": 0.3245862075710225,
+      "spectral_score": 0.3245862075710225
+    },
+    {
+      "alpha": 3.0,
+      "evm_correlation": 0.4230406765928047,
+      "evm_rms": 0.007891771067529293,
+      "evm_rms_ratio": 2.387056835821969,
+      "power_ratio_at_12px": 33.164340548485164,
+      "power_ratio_at_4px": 70.94838721018144,
+      "seconds": 36.805756087997,
+      "spectral_bias": 4.132714633000386,
+      "spectral_score": 4.132714633000386
+    },
+    {
+      "alpha": 1.0,
+      "evm_correlation": 0.11483083346403627,
+      "evm_rms": 0.18928656208104544,
+      "evm_rms_ratio": 57.25429413479648,
+      "power_ratio_at_12px": 10358.968925960145,
+      "power_ratio_at_4px": 48965.01421302798,
+      "seconds": 35.51576052699238,
+      "spectral_bias": 10.393340576337511,
+      "spectral_score": 10.393340576337511
+    },
+    {
+      "alpha": 0.3,
+      "evm_correlation": 0.06117215487360218,
+      "evm_rms": 1.1101722004283023,
+      "evm_rms_ratio": 335.79840536372217,
+      "power_ratio_at_12px": 344104.6878409644,
+      "power_ratio_at_4px": 2263486.244018058,
+      "seconds": 36.79111836804077,
+      "spectral_bias": 14.123023091655964,
+      "spectral_score": 14.123023091655964
+    }
+  ],
+  "schema_version": 1,
+  "state": 40,
+  "status": "completed_disflow_alpha_tuning"
+}

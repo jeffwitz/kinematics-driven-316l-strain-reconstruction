@@ -1,0 +1,68 @@
+{
+  "best_alpha": 12.0,
+  "criterion": "mean absolute log ratio of radial EVM power spectra",
+  "patch_size": 4,
+  "patch_stride": 1,
+  "received_evm_rms": 0.0033060675175804136,
+  "refinement_iterations": 30,
+  "results": [
+    {
+      "alpha": 12.0,
+      "evm_correlation": 0.8086317728148054,
+      "evm_rms": 0.0031948000147782097,
+      "evm_rms_ratio": 0.9663444553958667,
+      "power_ratio_at_12px": 0.8592238332605767,
+      "power_ratio_at_4px": 0.8142968628951069,
+      "seconds": 41.15151589398738,
+      "spectral_bias": -0.11270399037503495,
+      "spectral_score": 0.2017854676516711
+    },
+    {
+      "alpha": 15.0,
+      "evm_correlation": 0.8121615542979168,
+      "evm_rms": 0.0031324567036331635,
+      "evm_rms_ratio": 0.9474872146367085,
+      "power_ratio_at_12px": 0.5429899307315299,
+      "power_ratio_at_4px": 0.48302308283471485,
+      "seconds": 36.726097404025495,
+      "spectral_bias": -0.6021064377757624,
+      "spectral_score": 0.6704355511068228
+    },
+    {
+      "alpha": 20.0,
+      "evm_correlation": 0.8076279876836072,
+      "evm_rms": 0.0030889681326274547,
+      "evm_rms_ratio": 0.9343330455901138,
+      "power_ratio_at_12px": 0.31133245290238976,
+      "power_ratio_at_4px": 0.2582503045869561,
+      "seconds": 36.27833258500323,
+      "spectral_bias": -1.1821128526220492,
+      "spectral_score": 1.2359259948918948
+    },
+    {
+      "alpha": 30.0,
+      "evm_correlation": 0.7933067864323003,
+      "evm_rms": 0.003056938131259361,
+      "evm_rms_ratio": 0.9246447977858053,
+      "power_ratio_at_12px": 0.15288509233515063,
+      "power_ratio_at_4px": 0.11675580428977278,
+      "seconds": 36.228763442952186,
+      "spectral_bias": -1.9036193471701273,
+      "spectral_score": 1.9491512396341102
+    },
+    {
+      "alpha": 50.0,
+      "evm_correlation": 0.7757128175188468,
+      "evm_rms": 0.003039781459052139,
+      "evm_rms_ratio": 0.9194553477470541,
+      "power_ratio_at_12px": 0.07306589751840453,
+      "power_ratio_at_4px": 0.04914341045249559,
+      "seconds": 36.93439493596088,
+      "spectral_bias": -2.659398875904674,
+      "spectral_score": 2.701507043486052
+    }
+  ],
+  "schema_version": 1,
+  "state": 40,
+  "status": "completed_disflow_alpha_tuning"
+}

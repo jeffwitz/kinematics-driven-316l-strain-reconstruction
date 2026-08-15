@@ -1,0 +1,24 @@
+{
+  "best_alpha": 11.0,
+  "criterion": "mean absolute log ratio of radial EVM power spectra",
+  "patch_size": 4,
+  "patch_stride": 1,
+  "received_evm_rms": 0.0033060675175804136,
+  "refinement_iterations": 30,
+  "results": [
+    {
+      "alpha": 11.0,
+      "evm_correlation": 0.8046875412019314,
+      "evm_rms": 0.003225876829030467,
+      "evm_rms_ratio": 0.9757443887266297,
+      "power_ratio_at_12px": 1.0374262647349126,
+      "power_ratio_at_4px": 1.0124118809113551,
+      "seconds": 37.94453157391399,
+      "spectral_bias": 0.0911778113744823,
+      "spectral_score": 0.09399944559353102
+    }
+  ],
+  "schema_version": 1,
+  "state": 40,
+  "status": "completed_disflow_alpha_tuning"
+}
