@@ -1,0 +1,117 @@
+{
+  "method": "LSQR on the whitened strain residual; iteration count is the regularisation",
+  "note": "no SVD reordering: the previous attempt ranked the Krylov space by |A phi|, which reintroduced the observability ordering it was meant to avoid",
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "pixels": 100,
+  "reference_state": 20,
+  "results": {
+    "25": [
+      {
+        "correlation_with_the_explained_residual": 0.22008347597624,
+        "iterations": 32,
+        "plastic_peak": 0.0005123646409383826,
+        "plastic_rms": 0.00013318198343343518,
+        "relative_residual": 0.11946034769418262,
+        "share_inside_the_residual_top_decile": 0.12062871564728964
+      },
+      {
+        "correlation_with_the_explained_residual": 0.28203214733354975,
+        "iterations": 64,
+        "plastic_peak": 0.000642198911175578,
+        "plastic_rms": 0.00016206519503843413,
+        "relative_residual": 0.06030731456150296,
+        "share_inside_the_residual_top_decile": 0.12679537222211174
+      },
+      {
+        "correlation_with_the_explained_residual": 0.34627115555105553,
+        "iterations": 128,
+        "plastic_peak": 0.0007086498157772275,
+        "plastic_rms": 0.0001841307504794082,
+        "relative_residual": 0.0301747515278174,
+        "share_inside_the_residual_top_decile": 0.1363776479935258
+      }
+    ],
+    "30": [
+      {
+        "correlation_with_the_explained_residual": 0.15763768145286808,
+        "iterations": 32,
+        "plastic_peak": 0.0011513496528010128,
+        "plastic_rms": 0.00029035696539696264,
+        "relative_residual": 0.16657843209989678,
+        "share_inside_the_residual_top_decile": 0.11846553079552999
+      },
+      {
+        "correlation_with_the_explained_residual": 0.22649841941345714,
+        "iterations": 64,
+        "plastic_peak": 0.0019721640410935827,
+        "plastic_rms": 0.0003854860205207289,
+        "relative_residual": 0.10557182819858173,
+        "share_inside_the_residual_top_decile": 0.12855910553448197
+      },
+      {
+        "correlation_with_the_explained_residual": 0.3067401381956806,
+        "iterations": 128,
+        "plastic_peak": 0.003263158411565287,
+        "plastic_rms": 0.0004955947588293284,
+        "relative_residual": 0.06326437686937786,
+        "share_inside_the_residual_top_decile": 0.15356422946416803
+      }
+    ],
+    "35": [
+      {
+        "correlation_with_the_explained_residual": 0.16387915664510605,
+        "iterations": 32,
+        "plastic_peak": 0.0017164104508436556,
+        "plastic_rms": 0.00042617686494543624,
+        "relative_residual": 0.1376563688871124,
+        "share_inside_the_residual_top_decile": 0.11728986619623932
+      },
+      {
+        "correlation_with_the_explained_residual": 0.24524409260865923,
+        "iterations": 64,
+        "plastic_peak": 0.0023425712906256823,
+        "plastic_rms": 0.0005397198552849526,
+        "relative_residual": 0.07960626219550401,
+        "share_inside_the_residual_top_decile": 0.12816533112663153
+      },
+      {
+        "correlation_with_the_explained_residual": 0.34338661030207435,
+        "iterations": 128,
+        "plastic_peak": 0.00396291151055461,
+        "plastic_rms": 0.000657432354328242,
+        "relative_residual": 0.044551452185602386,
+        "share_inside_the_residual_top_decile": 0.15295893723522416
+      }
+    ],
+    "40": [
+      {
+        "correlation_with_the_explained_residual": 0.19442878963621443,
+        "iterations": 32,
+        "plastic_peak": 0.0020315205487885513,
+        "plastic_rms": 0.0005595158251538955,
+        "relative_residual": 0.12733447452099675,
+        "share_inside_the_residual_top_decile": 0.12185087914519373
+      },
+      {
+        "correlation_with_the_explained_residual": 0.2581085458428209,
+        "iterations": 64,
+        "plastic_peak": 0.002636297853518967,
+        "plastic_rms": 0.0006885124624908247,
+        "relative_residual": 0.06713036380391911,
+        "share_inside_the_residual_top_decile": 0.13094191056584245
+      },
+      {
+        "correlation_with_the_explained_residual": 0.323345758518113,
+        "iterations": 128,
+        "plastic_peak": 0.0033002075392110633,
+        "plastic_rms": 0.000797225886679192,
+        "relative_residual": 0.035187600617526266,
+        "share_inside_the_residual_top_decile": 0.14004991312932072
+      }
+    ]
+  },
+  "schema_version": 1
+}

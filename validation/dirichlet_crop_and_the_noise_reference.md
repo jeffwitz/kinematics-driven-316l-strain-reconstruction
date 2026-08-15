@@ -210,3 +210,52 @@ the post-elastic DIC discrepancy on this crop.
 the elastic extension, not Ludwik. Answering "can a freed plastic description
 close the gap Ludwik leaves" needs the Ludwik field on M100 and the correction
 operator around it, and that replay does not exist yet.
+
+### The required plastic field grows monotonically with the load
+
+Same LSQR, all four states, referenced to state 20:
+
+| state | 32 iters | 64 | 128 | `p` RMS at 128 | `p` peak at 128 |
+|---:|---:|---:|---:|---:|---:|
+| 25 | `0.1195` | `0.0603` | `0.0302` | `1.84e-4` | `7.1e-4` |
+| 30 | `0.1666` | `0.1056` | `0.0633` | `4.96e-4` | `3.26e-3` |
+| 35 | `0.1377` | `0.0796` | `0.0446` | `6.57e-4` | `3.96e-3` |
+| 40 | `0.1273` | `0.0671` | `0.0352` | `7.97e-4` | `3.30e-3` |
+
+The states are solved **independently** — nothing imposes irreversibility, history
+consistency, or even continuity of the flow direction — so the ordering is a
+result, not a constraint. The RMS is strictly increasing, `1.84e-4` to `7.97e-4`,
+and the gap closes to between `3 %` and `6 %` at every state, so state 40 was
+not an accident. The correlation with the residual grows with the iteration
+count at every state, reaching `+0.31` to `+0.35`, and the top-decile share
+`0.14` to `0.15` against `0.10`.
+
+The peak is monotone to state 35 and dips slightly at 40; the RMS, which is the
+robust measure, is not affected.
+
+### Two things this does not say
+
+`p_RMS` here is the norm of a **tensor eigenstrain between two states**, while
+the archived `5.67e-3` is an **accumulated scalar history variable**. For a
+roughly proportional monotonic path the orders of magnitude are comparable, and
+that is the whole claim; they are not the same quantity.
+
+And 128 iterations is a *physically reasonable* stopping point matching the
+estimated noise level, not a proven onset of noise fitting — the factor of
+thirty behind it still carries the reservations recorded above. The conclusion
+does not depend on it: at 64 iterations, well before that threshold, `93 %` of
+the gap is already gone at `p_RMS = 6.9e-4`.
+
+### The Ludwik baseline is blocked on a discretisation mismatch
+
+The question actually asked is whether a freed plastic description closes the
+gap *Ludwik* leaves, not the gap the elastic extension leaves. That needs the
+Ludwik field on M100, and `solve_ebi_dirichlet_plane_stress` can produce it —
+but it uses `EBITwoTriangleKinematics2D` with one material state per pixel,
+while every operator built here uses `TwoSubcellDiagnostic2D` with two. The
+strain fields are not comparable term by term.
+
+Reconciling them is the next piece of work and it is not a detail: either the
+residual machinery moves to the EBI kinematics, or the Ludwik solve is repeated
+on the two-sub-cell one. Doing it by interpolation between the two would put an
+uncontrolled error exactly where the measurement is being made.
