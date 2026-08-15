@@ -6493,3 +6493,66 @@ et croissant après : bien meilleur candidat pour un signal inélastique.
 correction est disponible en `apply_without_wrap`, sur choix de l'appelant.
 **Tout chiffre produit contre l'ancien transfert, y compris la fonctionnelle de
 l'oracle, porte cet artefact et doit être recalculé.**
+
+### 2026-08-15 (suite) — L'oracle plastique libre : ce qui est acquis, ce qui ne l'est pas
+
+Session très longue sur `agent/plastic-observability`. Plusieurs conclusions
+successives sont tombées sur des **défauts de méthode**, chacun consigné avec le
+piège plutôt qu'effacé. Le fil est plus instructif que le résultat.
+
+**Trois artefacts trouvés et corrigés.** `DICSpectralTransfer.apply` filtre par
+FFT périodique : sur une rampe affine il fabrique `9,49 σ` d'erreur de bord, et
+cela portait 57 à 71 % du « défaut mécanique ». Le résidu était comparé au bruit
+**brut** alors qu'il vaut `(I − E P_b)n` : le bruit propagé est 18× plus petit,
+donc mes rapports étaient sous-estimés d'autant. Et le gradient de la pénalité de
+dissipation prenait l'adjoint d'une somme cumulée au lieu d'une différence —
+faux à 98 %, optimiseur immobile, ce qui se lisait comme « la contrainte ne coûte
+rien ».
+
+**Ce qui est acquis.** Un eigenstrain plastique d'amplitude réaliste reproduit
+**exactement** chaque incrément mesuré : `p_RMS = 1,374e-3`, pic `4,70e-3`,
+contre un cumulé archivé de `5,67e-3`. L'exactitude est garantie d'avance (`A`
+est surjectif sur les champs à bord nul), donc **seul le prix informe** — et il
+est plausible.
+
+**Ce qui ne l'est pas.** Le sous-espace partagé de rang 16 est de la
+**compression, pas de la prédiction** : en leave-one-out une base construite sur
+trois états ne reproduit le quatrième qu'à 26–63 %, et passer du rang 4 au rang
+32 ne gagne qu'un dixième. La trajectoire libre erre `4,48×` plus qu'elle
+n'avance et se dissipe à 48/52 — donc la longueur de trajet `6,2e-3`, proche du
+`5,67e-3` archivé, est une **coïncidence d'échelle** due au zigzag, pas une
+accumulation.
+
+**Le nombre manquant** est le prix de l'admissibilité : l'erreur DIC de la
+meilleure histoire vérifiant `D_kq ≥ 0`. Deux tentatives ont échoué, pour deux
+raisons distinctes. Une pénalité quadratique sur `min(D,0)` a un minimiseur
+trivial en zéro. Et un active-set **à ajout seul** est faux dès que les coupes
+dépassent le nombre d'inconnues : traiter chaque inégalité active comme une
+égalité sur-détermine et force la même solution triviale.
+
+#### Ordre de travail arrêté avec l'encadrement
+
+1. **Kelvin/Mandel** comme convention interne obligatoire — `[11, 22, √2·12]`
+   pour contraintes **et** déformations, Voigt-ingénieur ne survivant qu'aux
+   interfaces MFront/MGIS avec conversion au bord. `src/fem_inhouse/core/kelvin.py`
+   pose la représentation et fixe les deux pièges vérifiés contre le code :
+   `strain()` rend de l'ingénieur donc la ligne Kelvin est `B_shear/√2` **et non**
+   `√2·B_shear` ; et `C^K = 2G` là où l'ingénieur a `G`. La migration du cœur
+   reste à faire, avec rejeu des qualifications — le fit exact devrait être
+   invariant, mais rang, QR/Krylov tronqués, normes de trajectoire et
+   leave-one-out utilisaient une géométrie dépendante de la convention.
+2. **QP dissipatif** par convexification séquentielle : `σ` gelée, QP creux avec
+   cutting-plane, contraintes **reconstruites** à chaque boucle extérieure (une
+   coupe bâtie sur `σ^(j)` n'est pas valide pour `σ^(j+1)`), départ à `a = 0`
+   qui est faisable par construction. **Aucun solveur QP n'est installé** — ni
+   OSQP, ni quadprog, ni cvxpy ; c'est un ajout de dépendance à décider.
+3. **Replay Ludwik TwoSubcell**, avec deux histoires constitutives indépendantes
+   par pixel et jamais d'interpolation depuis l'EBI.
+
+#### Terminologie à corriger dans les notes
+
+Parler de **contrainte dure de dissipation positive**, pas de « plasticité
+thermodynamiquement admissible » : même avec `σ:Δε_p ≥ 0` partout, on n'a imposé
+ni surface de charge, ni normalité, ni consistance. Ce qu'on démontrerait est
+l'existence d'une **histoire d'eigenstrain localement dissipative** compatible
+avec la DIC et l'équilibre.
