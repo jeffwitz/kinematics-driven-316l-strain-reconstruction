@@ -123,6 +123,25 @@ def three_dimensional_from_plane_stress_plastic(values: ArrayLike) -> FloatArray
     )
 
 
+#: Gauge of the equivalent plastic strain on a plane-stress Kelvin triple.
+#:
+#: Kelvin makes the *contraction* metric-free, which is what work and
+#: dissipation need. It does **not** make this gauge the identity, and expecting
+#: it to is the trap the convention is meant to remove.
+#:
+#: The reason is geometric, not conventional: with `eps_zz` fixed by plastic
+#: incompressibility, the plane-stress plastic triple is not an orthonormal
+#: subspace of the three-dimensional deviatoric space. Completing `(a, b, c)`
+#: to `(a, b, -(a+b), 0, 0, c)` and taking `2/3` of the squared norm gives
+#: `2/3 [2a^2 + 2ab + 2b^2 + c^2]`, whose matrix has eigenvalues `2/3, 2/3, 2`.
+#:
+#: So `p_eq` is `sqrt(z^T G z)` and never `np.linalg.norm(z)`, in any
+#: convention. Verified against the completion route to `1.9e-16`.
+PLANE_STRESS_PLASTIC_GAUGE = (2.0 / 3.0) * np.array(
+    [[2.0, 1.0, 0.0], [1.0, 2.0, 0.0], [0.0, 0.0, 1.0]]
+)
+
+
 def equivalent_plastic_strain(values: ArrayLike) -> FloatArray:
     """`sqrt(2/3) |dev eps_p|` from a plane-stress Kelvin plastic strain.
 

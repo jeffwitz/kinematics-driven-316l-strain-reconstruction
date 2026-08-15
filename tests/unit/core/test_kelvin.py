@@ -124,3 +124,28 @@ def test_the_equivalent_plastic_strain_needs_the_out_of_plane_component() -> Non
 
     # And the in-plane norm alone is not it.
     assert not np.isclose(float(np.linalg.norm(kelvin_plastic)), increment, rtol=1e-3)
+
+
+def test_kelvin_does_not_make_the_plastic_gauge_the_identity() -> None:
+    """The expectation Kelvin does *not* satisfy, pinned so nobody assumes it.
+
+    Kelvin removes the metric from contractions, which is what dissipation
+    needs. It does not remove it from the equivalent plastic strain, because a
+    plane-stress plastic triple with `eps_zz` fixed by incompressibility is not
+    an orthonormal subspace of the 3D deviatoric space. Writing
+    `np.linalg.norm(z)` for `p_eq` after migrating to Kelvin would be a silent
+    error of exactly the kind the migration exists to prevent.
+    """
+
+    from fem_inhouse.core.kelvin import PLANE_STRESS_PLASTIC_GAUGE
+
+    gauge = PLANE_STRESS_PLASTIC_GAUGE
+    assert not np.allclose(gauge, np.eye(3))
+    np.testing.assert_allclose(
+        np.sort(np.linalg.eigvalsh(gauge)), [2.0 / 3.0, 2.0 / 3.0, 2.0], rtol=1e-13
+    )
+
+    generator = np.random.default_rng(9)
+    triples = generator.normal(size=(200, 3)) * 1.0e-3
+    through_gauge = np.sqrt(np.einsum("pi,ij,pj->p", triples, gauge, triples))
+    np.testing.assert_allclose(equivalent_plastic_strain(triples), through_gauge, rtol=1e-13)
