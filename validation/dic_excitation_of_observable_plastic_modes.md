@@ -324,3 +324,58 @@ correction is available as `apply_without_wrap` and callers opt in. **Every
 number produced against the old transfer, including the oracle objective
 itself, carries this artefact** and should be recomputed before being relied
 upon.
+
+## With `M_D = I`, there is no mechanical defect above the noise at all
+
+`scripts/compare_measurement_transfer_variants_p43.py`, artefact
+`measurement_transfer_variants_m100.json`. `W_D` is kept throughout — it says a
+difference at a badly measured frequency counts for less, which is wanted — and
+only `M_D` varies.
+
+The adjoint of the wrap-free transfer is `P + (I - P) T`, not the forward
+`P + T (I - P)`: the affine projector and the filter do not commute. Reusing the
+forward action would leave the partial SVD converging to a well-formed wrong
+answer, so the pair is built explicitly and checked at `2.1e-13`.
+
+| state | `M_D = I` | wrap-free | periodic |
+|---:|---:|---:|---:|
+| 1 | `0.028` | `0.056` | `0.081` |
+| 10 | `0.232` | `0.276` | `0.647` |
+| 20 | `0.452` | `0.499` | `1.180` |
+| 30 | `0.701` | `1.183` | `2.944` |
+| 40 | `0.578` | `1.709` | `5.873` |
+
+**Every layer of transfer modelling adds residual, and the identity leaves none
+above the noise.** With `M_D = I` the measured field never exceeds `0.82` of the
+pure-noise norm at any state, peak at state 35. The `1.71` that survived the
+wrap-free repair at state 40 was still transfer-related.
+
+So on this crop the DIC kinematics is consistent with a homogeneous isotropic
+elastic extension of its own boundary, to within the measurement noise, at every
+state up to a peak equivalent strain of `1.6e-2`. That is not a claim that the
+material is elastic: it is that the plastic field's signature on the interior
+kinematics stays below the DIC noise, which is exactly what the observability
+spectrum predicted at `SNR ~ 0.18`.
+
+**The transfer changes the amplitude, not the direction.** Per mode, the
+observation predicted with the identity and with the wrap-free transfer
+correlates at `0.9977` to `1.0000` over twelve modes, while `sigma_1` drops by
+`15.6` times. It attenuates the observable modes by about `94 %` without
+rotating them, which is why including it made every signal-to-noise figure
+pessimistic.
+
+**The principal-angle comparison is uninformative and is not reported as a
+result.** With the identity the spectrum is flat — `sigma_1 / sigma_12 = 1.019`
+— so the leading four modes span an arbitrary slice of a degenerate subspace and
+the angles between two such slices carry no meaning. The flatness is itself the
+finding: without the low-pass the operator has no scale preference, and the
+spectral structure seen earlier was produced by the transfer.
+
+### Recommendation
+
+Take `M_D = I` as the scientific baseline: it adds nothing beyond the data and
+it cannot manufacture the class of artefact just found. Keep the wrap-free
+transfer as a sensitivity analysis on spatial resolution, and retire the
+periodic one. If an inversion ever starts exploiting two-to-four-pixel patterns,
+the transfer becomes necessary again — that is the condition to watch, not a
+reason to keep it now.
