@@ -73,6 +73,10 @@ def main() -> int:
     parser.add_argument("--alpha", type=float, default=15.0)
     parser.add_argument("--epsilons", nargs="+", type=float, default=[0.001, 0.01, 0.05, 0.1])
     parser.add_argument("--iterations", type=int, default=30)
+    # The grid the matching stage leaves behind is what the refinement exists to
+    # erase, so the iteration budget is a sweep axis in its own right. When
+    # given, it replaces the epsilon sweep and the first epsilon is held fixed.
+    parser.add_argument("--iteration-values", nargs="+", type=int, default=None)
     parser.add_argument("--size", type=int, default=100)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
@@ -93,12 +97,18 @@ def main() -> int:
 
     panels = [("received (Adil)", received, None)]
     summary = []
-    for epsilon in arguments.epsilons:
+    sweeping_iterations = arguments.iteration_values is not None
+    cases = (
+        [(arguments.epsilons[0], count) for count in arguments.iteration_values]
+        if sweeping_iterations
+        else [(epsilon, arguments.iterations) for epsilon in arguments.epsilons]
+    )
+    for epsilon, iterations in cases:
         rows, columns = _flow_field(
             reference,
             target,
             alpha=arguments.alpha,
-            iterations=arguments.iterations,
+            iterations=iterations,
             patch_size=4,
             patch_stride=1,
             epsilon=epsilon,
@@ -111,6 +121,7 @@ def main() -> int:
         correlation = float(np.corrcoef(field.ravel(), received.ravel())[0, 1])
         entry = {
             "epsilon": epsilon,
+            "iterations": iterations,
             "spectral_score": score,
             "evm_correlation": correlation,
             "evm_rms_ratio": float(
@@ -118,9 +129,13 @@ def main() -> int:
             ),
         }
         summary.append(entry)
-        panels.append((f"epsilon = {epsilon:g}", field, entry))
+        label = (
+            f"{iterations} VR iterations" if sweeping_iterations else f"epsilon = {epsilon:g}"
+        )
+        panels.append((label, field, entry))
         print(
-            f"  epsilon {epsilon:6.3f}: score {score:.3f}  corr {correlation:.4f}  "
+            f"  epsilon {epsilon:6.3f} x{iterations:4d}: score {score:.3f}  "
+            f"corr {correlation:.4f}  "
             f"rms ratio {entry['evm_rms_ratio']:.3f}",
             flush=True,
         )
@@ -143,7 +158,12 @@ def main() -> int:
     figure.colorbar(image, ax=axes, shrink=0.8, label="equivalent strain")
     figure.suptitle(
         f"{arguments.size}x{arguments.size} px at ({row}, {column}), alpha = {arguments.alpha:g}, "
-        f"{arguments.iterations} iterations, shared scale {low:.2e} to {high:.2e}",
+        + (
+            f"epsilon = {arguments.epsilons[0]:g}"
+            if sweeping_iterations
+            else f"{arguments.iterations} iterations"
+        )
+        + f", shared scale {low:.2e} to {high:.2e}",
         fontsize=10,
     )
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
