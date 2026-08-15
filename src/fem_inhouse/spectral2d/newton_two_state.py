@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Literal, cast
 
@@ -594,6 +595,23 @@ def _solve_two_state_step_doubling(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class TwoStateIncrementFields:
+    """Converged fields of one increment, in the layout `Spectral2DResult` uses.
+
+    The result keeps the last increment only, which is enough to qualify a
+    solver and not enough to compare a simulated trajectory against a measured
+    one. The three fields here are the ones an identification needs: the
+    kinematics to observe, the stress that fixes the J2 flow direction, and the
+    plastic strain that carries the history.
+    """
+
+    increment: int
+    displacement: FloatArray
+    stress_in_plane_mpa: FloatArray
+    plastic_strain_tensor: FloatArray | None
+
+
 def solve_two_state_dirichlet_plane_stress(
     *,
     grid: StructuredGrid2D,
@@ -602,14 +620,24 @@ def solve_two_state_dirichlet_plane_stress(
     config: EBISpectralSolverConfig,
     transform_plan: TransformPlan2D | None = None,
     time_increment_override: float | None = None,
+    increment_observer: Callable[[TwoStateIncrementFields], None] | None = None,
 ) -> Spectral2DResult:
-    """Solve the direct two-state TRI2 oracle with the EBI Newton machinery."""
+    """Solve the direct two-state TRI2 oracle with the EBI Newton machinery.
+
+    `increment_observer` receives the converged fields of every increment, in
+    the layout the result uses. Comparing a simulated history against a
+    measured one otherwise costs one full resolution per state, and the
+    progress callback carries scalars only. The arrays are the solver's live
+    buffers -- copy anything kept beyond the call.
+    """
 
     history = np.asarray(boundary_displacement_history, dtype=np.float64)
     expected = (history.shape[0], *grid.node_shape, 2)
     if history.ndim != 4 or history.shape != expected or not np.allclose(history[0], 0.0):
         raise ValueError(f"invalid boundary history shape {history.shape}")
     if config.step_doubling.enabled:
+        if increment_observer is not None:
+            raise ValueError("increment_observer is not supported with step doubling")
         if not config.adaptive_stepping_enabled:
             raise ValueError("step-doubling requires adaptive stepping")
         return _solve_two_state_step_doubling(
@@ -1239,6 +1267,20 @@ def solve_two_state_dirichlet_plane_stress(
             )
             if factor < 1.0:
                 force_fixed_linear_tolerance = True
+        if converged and increment_observer is not None:
+            assert final_trial is not None
+            increment_observer(
+                TwoStateIncrementFields(
+                    increment=increment,
+                    displacement=final_applied + fluctuation,
+                    stress_in_plane_mpa=_reshape_two_state(
+                        final_trial.stress_in_plane_mpa, grid
+                    ),
+                    plastic_strain_tensor=_reshape_two_state(
+                        final_trial.plastic_strain_tensor, grid
+                    ),
+                )
+            )
         if not converged:
             elements.revert()
             native_timing = getattr(material, "timing_statistics", None)

@@ -6,6 +6,7 @@ from fem_inhouse.spectral2d import (
     AdaptiveStepConfig,
     EBISpectralSolverConfig,
     EBITwoTriangleKinematics2D,
+    StepDoublingErrorConfig,
     StructuredGrid2D,
 )
 from fem_inhouse.spectral2d.newton_two_state import (
@@ -417,3 +418,67 @@ def test_two_state_reference_updates_reuse_green_plan_and_archive_changes() -> N
     assert result.diagnostics.reference_updates
     assert any(update["accepted"] for update in result.diagnostics.reference_updates)
     assert result.diagnostics.transform_planning_seconds >= 0.0
+
+
+def test_increment_observer_sees_every_converged_state() -> None:
+    """The observer must deliver the intermediate states the result drops.
+
+    Its whole purpose is to compare a simulated history against a measured one
+    without paying a full resolution per state, so what it hands over at the
+    last increment has to be exactly the field the result carries, and the
+    states before it have to be the genuine converged solutions -- which is
+    checked here by re-solving the truncated history and demanding equality.
+    """
+
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, y = grid.coordinates
+    boundary = np.zeros((4, *grid.node_shape, 2))
+    for index in range(1, 4):
+        boundary[index, ..., 0] = 0.01 * index * x[:, None]
+        boundary[index, ..., 1] = 0.015 * index * y[None, :]
+    common = dict(
+        relative_equilibrium_tolerance=1.0e-10,
+        transform=SpectralTransformConfig(backend="scipy"),
+    )
+    seen: dict[int, np.ndarray] = {}
+    stresses: dict[int, np.ndarray] = {}
+
+    def record(fields) -> None:
+        seen[fields.increment] = fields.displacement.copy()
+        stresses[fields.increment] = fields.stress_in_plane_mpa.copy()
+
+    full = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common),
+        increment_observer=record,
+    )
+    assert sorted(seen) == [1, 2, 3]
+    np.testing.assert_allclose(seen[3], full.displacement)
+    np.testing.assert_allclose(stresses[3], full.stress_in_plane_mpa)
+    for stop in (1, 2):
+        truncated = solve_two_state_dirichlet_plane_stress(
+            grid=grid,
+            material=NonlinearStateBatch(32),
+            boundary_displacement_history=boundary[: stop + 1],
+            config=EBISpectralSolverConfig(**common),
+        )
+        np.testing.assert_allclose(seen[stop], truncated.displacement, atol=1.0e-12)
+
+
+def test_increment_observer_is_refused_with_step_doubling() -> None:
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    boundary = np.zeros((2, *grid.node_shape, 2))
+    boundary[1, ..., 0] = 0.01
+    with pytest.raises(ValueError, match="increment_observer"):
+        solve_two_state_dirichlet_plane_stress(
+            grid=grid,
+            material=NonlinearStateBatch(32),
+            boundary_displacement_history=boundary,
+            config=EBISpectralSolverConfig(
+                adaptive_stepping_enabled=True,
+                step_doubling=StepDoublingErrorConfig(enabled=True),
+            ),
+            increment_observer=lambda fields: None,
+        )
