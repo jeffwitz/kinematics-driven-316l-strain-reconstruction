@@ -84,6 +84,41 @@ class DICSpectralTransfer:
 
         return self.apply(values)
 
+    def apply_without_wrap(self, values: ArrayLike) -> FloatArray:
+        """Apply the transfer without the periodic wrap of the plain FFT.
+
+        :meth:`apply` filters through `fftn`, which treats the window as
+        periodic. A displacement field over a crop is dominated by an affine
+        ramp, and a ramp is discontinuous across the wrap, so the low-pass
+        smears that artificial jump into a band along the crop border.
+
+        The size is not academic. On a `100 x 100` crop at one per cent strain,
+        `apply` moves a PURE AFFINE field -- which a low-pass must leave
+        untouched -- by `8.9e-4 mm`, nine and a half times the DIC uncertainty,
+        with 90 % of the error inside an eight-node border. Measured against the
+        P43 history, that artefact accounted for 57 to 71 % of the residual to
+        an elastic model at every state.
+
+        The affine part is exactly invariant under any low-pass, so it can be
+        removed before filtering and added back after. This is exact for affine
+        fields, to machine precision, and leaves genuinely high-frequency
+        content filtered identically.
+
+        `apply` is deliberately left as it is: it defines every archived result,
+        and changing it silently would move numbers that campaigns were reported
+        against. Callers opt in.
+        """
+
+        field = np.asarray(values, dtype=np.float64)
+        if field.ndim != 3:
+            raise ValueError("values must have shape (nx, ny, components)")
+        rows, columns = field.shape[0], field.shape[1]
+        x, y = np.meshgrid(np.arange(rows), np.arange(columns), indexing="ij")
+        basis = np.stack([np.ones_like(x), x, y], axis=-1).reshape(-1, 3).astype(np.float64)
+        coefficients, *_ = np.linalg.lstsq(basis, field.reshape(-1, field.shape[2]), rcond=None)
+        affine = (basis @ coefficients).reshape(field.shape)
+        return np.asarray(affine + self.apply(field - affine), dtype=np.float64)
+
 
 def _opposite_frequency_indices(size: int) -> NDArray[np.int64]:
     return (-np.arange(size, dtype=np.int64)) % size

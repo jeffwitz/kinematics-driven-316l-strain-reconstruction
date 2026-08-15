@@ -166,3 +166,46 @@ def test_spectral_transfer_is_self_adjoint_and_suppresses_short_wavelengths() ->
     assert np.linalg.norm(transfer.apply(short_wave)) < np.linalg.norm(
         transfer.apply(long_wave)
     )
+
+
+def test_the_periodic_transfer_distorts_an_affine_field_and_the_wrap_free_one_does_not() -> None:
+    """A low-pass must leave an affine field alone. The plain FFT does not.
+
+    `apply` filters through `fftn`, which treats the crop as periodic, and a
+    displacement ramp is discontinuous across the wrap. On a 100x100 crop at one
+    per cent strain the error reaches nine DIC sigma, concentrated in a border
+    band -- and measured against the P43 history that artefact carried most of
+    the residual to an elastic model. The regression guards both halves: that
+    the plain transfer really does distort, so the motivation cannot quietly
+    disappear, and that the wrap-free one is exact.
+    """
+
+    import numpy as np
+
+    from fem_inhouse.identification.dic_whitening import DICSpectralTransfer
+
+    transfer = DICSpectralTransfer(
+        wavelengths_pixels=np.array([2.0, 4.0, 8.0, 16.0, 64.0, 512.0]),
+        gains=np.array([0.05, 0.35, 0.72, 0.9, 0.98, 1.0]),
+    )
+    pixel_size_mm = 0.00184
+    nodes = 101
+    x, y = np.meshgrid(
+        np.arange(nodes) * pixel_size_mm, np.arange(nodes) * pixel_size_mm, indexing="ij"
+    )
+    affine = np.zeros((nodes, nodes, 2))
+    affine[:, :, 0] = 1.0e-2 * x
+    affine[:, :, 1] = -3.0e-3 * y
+
+    periodic_error = np.abs(np.asarray(transfer.apply(affine)) - affine).max()
+    assert periodic_error > 20.0 * 9.4e-5 / 10.0  # several DIC sigma, comfortably
+
+    wrap_free = np.asarray(transfer.apply_without_wrap(affine))
+    np.testing.assert_allclose(wrap_free, affine, rtol=0.0, atol=1e-14)
+
+    # A genuinely high-frequency field must still be filtered the same way.
+    generator = np.random.default_rng(3)
+    rough = generator.normal(size=affine.shape) * 1.0e-4
+    np.testing.assert_allclose(
+        transfer.apply_without_wrap(rough), transfer.apply(rough), rtol=0.0, atol=2e-6
+    )

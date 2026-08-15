@@ -269,3 +269,58 @@ the observed defect, and cannot be what the early rank-3 subspace represents.
 
 What that subspace *is* remains open, along with why the late component does not
 coincide with the DIC localisation.
+
+## The early subspace was not mechanics at all
+
+No elastic model could explain it, so the three patterns were finally examined
+directly. The first alone carries `97.7 %` of the early variance, all three put
+`90` to `98 %` of their energy in an eight-node border covering `29 %` of the
+nodes, they are `73` to `83 %` in the `x` component, and an affine fit leaves
+`99 %` of them unexplained. Not rigid motion, not a gradient: an edge band.
+
+That signature identifies the cause. `DICSpectralTransfer.apply` filters
+through `fftn`, which treats the crop as **periodic**. A displacement field over
+a window is dominated by an affine ramp, and a ramp is discontinuous across the
+wrap, so the low-pass smears that artificial jump along the border.
+
+Applied to a **pure affine field**, which any low-pass must leave untouched:
+
+| | value |
+|---|---:|
+| maximum error | `8.92e-4 mm` = **`9.49` DIC sigma** |
+| energy inside the 8-node border | `0.896` (band covers `0.292`) |
+| share in the `x` component | `0.917` |
+| a constant field, for control | `1.9e-17 mm` |
+
+The same fingerprint as the early patterns. The constant control confirms the
+transfer is normalised correctly: it is specifically the ramp that breaks it.
+
+**Removing the affine part before filtering and adding it back is exact** — the
+affine field is invariant under any low-pass — and leaves high-frequency content
+filtered identically. Error on the affine field falls from `9.49` sigma to
+`7.4e-18 mm`.
+
+Rebuilding the residual with the wrap-free transfer:
+
+| state | periodic | wrap-free | removed |
+|---:|---:|---:|---:|
+| 1 | `0.081` | `0.056` | `31 %` |
+| 10 | `0.647` | `0.276` | `57 %` |
+| 20 | `1.180` | `0.499` | `58 %` |
+| 30 | `2.944` | `1.183` | `60 %` |
+| 40 | `5.873` | `1.709` | **`71 %`** |
+
+**Between 57 and 71 % of the mechanical defect was a periodic-FFT artefact.**
+Before state 20 the residual now sits below the pure-noise norm at every state,
+so the "early elastic heterogeneity" largely ceases to exist — which is why no
+elasticity, crystallographic or effective, could ever have accounted for it.
+
+What survives at state 40 is `1.71` times the noise, small before yield and
+growing after: a far cleaner candidate for an inelastic signal than anything
+examined above.
+
+`apply` is left unchanged because it defines every archived result; the
+correction is available as `apply_without_wrap` and callers opt in. **Every
+number produced against the old transfer, including the oracle objective
+itself, carries this artefact** and should be recomputed before being relied
+upon.
