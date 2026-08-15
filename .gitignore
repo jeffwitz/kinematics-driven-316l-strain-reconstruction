@@ -38,3 +38,17 @@ kinematics_extension_v1.diff
 # unreadable diff in every commit and, in a file-sync folder, invited conflicted
 # copies. Untracked on 2026-08-03 with `git rm --cached`.
 .codebase-memory/
+
+# LaTeX build artefacts. The note in paper/ is compiled with xelatex and biber,
+# which leave a dozen intermediate files next to the sources; only the sources
+# and the built PDF are worth an history.
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.toc

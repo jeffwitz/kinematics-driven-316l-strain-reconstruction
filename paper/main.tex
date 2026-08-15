@@ -1,0 +1,805 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------------------
+% Template habituel : note scientifique sobre et argumentee
+% ---------------------------------------------------------------------------
+\usepackage[a4paper,margin=2.35cm]{geometry}
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{microtype}
+\usepackage{csquotes}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{xurl}
+\usepackage{hyperref}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric}
+\usepackage{listings}
+\setlength{\headheight}{14pt}
+\usepackage[backend=biber,style=authoryear,sorting=nyt,maxcitenames=2,maxbibnames=12,giveninits=true]{biblatex}
+\addbibresource{references.bib}
+
+\setmainfont{Liberation Serif}
+\setsansfont{Liberation Sans}
+\setmonofont{Liberation Mono}
+
+\definecolor{mainblue}{HTML}{17324D}
+\definecolor{accent}{HTML}{B85C38}
+\definecolor{teal}{HTML}{008A8A}
+\definecolor{softblue}{HTML}{EEF5FA}
+\definecolor{softorange}{HTML}{FFF4EC}
+\definecolor{softteal}{HTML}{ECF8F7}
+\definecolor{softgray}{HTML}{F6F6F6}
+\definecolor{darkgray}{HTML}{333333}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=mainblue,
+  citecolor=accent,
+  urlcolor=mainblue,
+  pdftitle={Cinématique DIC plein champ, calcul local/global et identification par défaut d'équilibre},
+  pdfauthor={Jean-François Witz},
+  pdfsubject={Plasticité cristalline, DIC, EBSD, local/global, pénalisation, défaut d'équilibre, identification},
+  pdfkeywords={DIC, EBSD, plasticité cristalline, local-global, domain decomposition, equilibrium gap, FEMU, data-driven}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textsc{DIC plein champ -- stratégie local/global}}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}
+  {\Large\bfseries\color{mainblue}}
+  {\thesection}{0.75em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{darkgray}}
+  {\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkgray}}
+  {\thesubsubsection}{0.75em}{}
+
+\setlist[itemize]{leftmargin=1.3em,itemsep=0.2em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=0.25em,topsep=0.25em}
+\setstretch{1.06}
+\sisetup{locale=FR,detect-all=true}
+
+\newtcolorbox{thesisbox}[1][]{
+  breakable,
+  colback=softblue,
+  colframe=mainblue,
+  boxrule=0.8pt,
+  arc=2mm,
+  left=1.0em,right=1.0em,top=0.8em,bottom=0.8em,
+  #1
+}
+\newtcolorbox{warningbox}[1][]{
+  breakable,
+  colback=softorange,
+  colframe=accent,
+  boxrule=0.8pt,
+  arc=2mm,
+  left=1.0em,right=1.0em,top=0.8em,bottom=0.8em,
+  #1
+}
+\newtcolorbox{methodbox}[1][]{
+  breakable,
+  colback=softgray,
+  colframe=darkgray,
+  boxrule=0.5pt,
+  arc=2mm,
+  left=1.0em,right=1.0em,top=0.8em,bottom=0.8em,
+  #1
+}
+\newtcolorbox{ideabox}[1][]{
+  breakable,
+  colback=softteal,
+  colframe=teal,
+  boxrule=0.8pt,
+  arc=2mm,
+  left=1.0em,right=1.0em,top=0.8em,bottom=0.8em,
+  #1
+}
+
+\newcommand{\udic}{\bm{u}^{\mathrm{DIC}}}
+\newcommand{\epsdic}{\bm{\varepsilon}^{\mathrm{DIC}}}
+\newcommand{\sigmadic}{\bm{\sigma}^{\mathrm{DIC}}}
+\newcommand{\jump}[1]{\left[\!\left[ #1 \right]\!\right]}
+\newcommand{\Rmech}{\bm{R}}
+\newcommand{\Req}{\bm{r}}
+\newcommand{\state}{\mathcal{S}}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{1.2cm}
+  {\Huge\bfseries\color{mainblue}
+  Exploiter une cinématique DIC plein champ\par}
+  \vspace{0.35cm}
+  {\LARGE\bfseries
+  pour le calcul local/global, le diagnostic de modèle et l'identification constitutive\par}
+  \vspace{0.9cm}
+
+  \begin{thesisbox}
+  \large
+  \textbf{Idée directrice.} Lorsque le déplacement est mesuré dans tout le domaine à chaque instant,
+  il ne doit pas être traité comme une condition de Dirichlet forte intérieure. Il peut au contraire
+  fournir (i) un prédicteur cinématique et constitutif plein champ extrêmement riche, (ii) une
+  régularisation souple temporaire pour découpler et initialiser les sous-domaines, puis (iii) un
+  défaut d'équilibre directement exploitable pour évaluer, localiser et éventuellement identifier
+  une loi constitutive sans résoudre un problème FEM global complet à chaque essai de paramètres.
+  \end{thesisbox}
+
+  \vspace{0.8cm}
+  {\large Note d'idéation scientifique et d'architecture numérique\par}
+  \vspace{0.25cm}
+  {\normalsize Démonstrateur 316L -- DIC / EBSD / plasticité cristalline\par}
+
+  \vfill
+  {\large Jean-François Witz\par}
+  {\normalsize Univ. Lille, CNRS, Centrale Lille, UMR 9013 -- LaMcube\par}
+  \vspace{0.45cm}
+  {\normalsize Version du 13 août 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section*{Résumé exécutif}
+\addcontentsline{toc}{section}{Résumé exécutif}
+
+Le point de départ est inhabituel pour un problème de mécanique numérique : la corrélation
+ d'images donne une estimation du déplacement à chaque noeud ou pixel du domaine observé et
+à plusieurs instants. Dans un calcul direct classique, seule une partie de cette information serait
+utilisée comme condition aux limites. L'imposer fortement partout serait pourtant excessif : le
+problème mécanique n'aurait pratiquement plus la possibilité de corriger les incompatibilités dues
+au bruit de mesure, aux hypothèses 2D, à une loi constitutive imparfaite ou à la discrétisation.
+
+La proposition développée ici est de transformer cette information redondante en un avantage
+algorithmique et scientifique. Avant toute décomposition du domaine, le champ DIC complet est
+projeté avec la cinématique discrète du solveur, puis la loi matériau est rejouée en chaque point à
+partir de l'état convergé au temps précédent. On obtient ainsi un \emph{prédicteur constitutif
+expérimental} de l'état interne, de la contrainte, des tangentes et, pour une loi non locale, du champ
+micromorphique. Ce prédicteur n'est jamais commité : il sert uniquement d'initialisation.
+
+Le domaine est ensuite partitionné. Les déplacements DIC intérieurs ne deviennent pas des
+conditions de Dirichlet : ils apparaissent comme une attache faible pondérée par une raideur
+$\kappa_D$. Cette raideur est initialement forte pour tirer chaque sous-domaine vers l'état
+expérimental, puis elle décroît lorsque l'équilibre des tractions d'interface exige que la mécanique
+s'écarte de la mesure. Dans le mode direct visé ici, $\kappa_D$ doit tendre vers zéro à l'intérieur :
+la solution finale ne conserve comme conditions cinématiques imposées que les véritables bords de
+Dirichlet. Le champ DIC a alors servi de continuation, de préconditionneur physique et de prédicteur
+multiéchelle, sans biaiser la solution finale.
+
+Enfin, le même rejeu constitutif de la cinématique mesurée fournit presque gratuitement un défaut
+d'équilibre faible. Intégré dans le temps, ce défaut devient (i) une carte de discordance
+expérience--modèle et (ii) une fonction coût d'identification qui ne nécessite pas de résoudre un
+problème FEM non linéaire global pour chaque jeu de paramètres. Cette voie se rattache à
+l'Equilibrium Gap Method, aux approches d'identification plein champ et à la Constitutive Relation
+Error, mais la combinaison proposée avec états internes incrémentaux de plasticité cristalline,
+EBSD, non-localité et continuation local/global constitue une piste méthodologique spécifique à
+évaluer.
+
+\begin{ideabox}
+\textbf{Hypothèse centrale à tester.} Le champ DIC plein champ peut jouer trois rôles successifs :
+\emph{prédicteur constitutif global}, \emph{coarse predictor expérimental pour la résolution
+local/global}, puis \emph{source d'un défaut d'équilibre utilisé pour le diagnostic et l'inversion}.
+Ces trois rôles utilisent la même donnée et la même loi matériau, mais répondent à trois objectifs
+numériques différents.
+\end{ideabox}
+
+\section{Pourquoi le problème est différent d'une décomposition de domaine classique}
+
+\subsection{Une cinématique expérimentale disponible dans tout le domaine}
+
+À chaque instant $t_n$, on dispose d'un champ expérimental
+\begin{equation}
+  \udic_n = \udic(\bm{x},t_n)
+\end{equation}
+sur une grille très dense, potentiellement de plusieurs millions de pixels. La DIC plein champ est
+précisément l'une des raisons pour lesquelles les méthodes d'identification mécanique peuvent
+exploiter bien davantage d'information que des jauges ou quelques capteurs ponctuels
+\parencite{hild2006review}.
+
+La tentation naturelle consiste à imposer $\udic_n$ comme condition de Dirichlet partout. Cela
+supprime cependant une grande partie du problème mécanique. Une donnée expérimentale comporte
+du bruit et peut être incompatible avec les hypothèses du modèle ; une imposition forte transfère
+alors cette incompatibilité directement aux déformations et aux contraintes.
+
+L'objectif est donc différent :
+\begin{equation}
+  \boxed{
+  \text{utiliser la DIC partout pendant la résolution, mais ne conserver in fine
+  que les vrais bords de Dirichlet.}
+  }
+\end{equation}
+
+\subsection{La donnée expérimentale comme information algorithmique et non comme contrainte}
+
+Les approches de régularisation mécanique de la DIC ont déjà montré l'intérêt de combiner
+information image et admissibilité mécanique au moyen d'une pénalisation ou d'un filtre mécanique
+\parencite{rethore2009mechanicalfilter,mendoza2019regularization}. De même, des travaux ont
+explicitement couplé des sous-domaines de DIC régularisée et formulé un problème d'interface
+compatible avec le calcul parallèle \parencite{bouclier2017domain}.
+
+La proposition présente inverse toutefois le point de vue. La DIC n'est plus l'inconnue que la
+mécanique régularise : elle est déjà mesurée et sert à accélérer un problème direct fortement non
+linéaire. La mécanique doit progressivement pouvoir s'en écarter pour atteindre son propre équilibre.
+
+\section{Prédicteur constitutif expérimental avant partitionnement}
+
+\subsection{Projection cinématique cohérente avec le solveur}
+
+Avant de partitionner le domaine, on calcule les déformations expérimentales avec \emph{le même
+opérateur discret} que celui du solveur :
+\begin{equation}
+  \epsdic_n = B_h\,\udic_n .
+\end{equation}
+Cette étape est préférable à l'import d'un champ de déformations calculé par une chaîne différente :
+elle préserve les conventions de cisaillement, les points matériels, les sous-cellules et les filtres
+cinématiques du problème numérique.
+
+\subsection{Rejeu incrémental de la loi matériau}
+
+Soit $\state_{n-1}^{\mathrm{conv}}$ l'état matériau commité après convergence mécanique de l'instant
+précédent. Pour chaque point matériel $q$, le prédicteur est obtenu indépendamment par
+\begin{equation}
+  \left(
+  \state_{n,q}^{\mathrm{pred}},
+  \bm{\sigma}_{n,q}^{\mathrm{pred}},
+  \mathbb{C}_{n,q}^{\mathrm{pred}},
+  \Gamma_{n,q}^{\mathrm{pred}}
+  \right)
+  =
+  \mathcal{M}_{\bm{\theta}}
+  \left(
+  \state_{n-1,q}^{\mathrm{conv}},
+  \epsdic_{n,q},
+  \Delta t_n
+  \right),
+  \label{eq:predictor}
+\end{equation}
+où $\bm{\theta}$ désigne les paramètres constitutifs.
+
+Pour une plasticité cristalline, $\state$ contient notamment les glissements et variables de
+durcissement ; $\Gamma$ peut représenter une mesure scalaire d'activité plastique, par exemple la
+somme des glissements cumulés positifs. Le calcul de \eqref{eq:predictor} est massivement parallèle
+par point matériel.
+
+\begin{warningbox}
+\textbf{Règle de transaction impérative.} L'état $\state_n^{\mathrm{pred}}$ n'est jamais commité.
+Pendant la résolution mécanique, toute réévaluation doit repartir de
+$\state_{n-1}^{\mathrm{conv}}$ et intégrer directement jusqu'à la cinématique trial courante.
+Commiter le prédicteur DIC puis le corriger créerait un faux morceau de chemin de chargement en
+plasticité path-dependent.
+\end{warningbox}
+
+\subsection{Extension non locale}
+
+Si la loi dépend d'un champ micromorphique $\chi$, le prédicteur peut inclure un petit point fixe
+\emph{sans résoudre l'équilibre mécanique} :
+\begin{align}
+  \Gamma_n^{(k)} &= \mathcal{G}\left(\state_{n-1}^{\mathrm{conv}},\epsdic_n,\chi_n^{(k)}\right),\\
+  (I-\ell^2\Delta)\chi_n^{(k+1)} &= \Gamma_n^{(k)}.
+\end{align}
+La cinématique étant figée par la DIC, le coût reste constitué d'intégrations matérielles pointwise et
+d'un problème de Helmholtz scalaire. Le résultat fournit $\chi_n^{\mathrm{pred}}$ avant le début du
+problème local/global.
+
+\subsection{Ce que le prédicteur fournit gratuitement}
+
+Avant toute itération d'interface, on possède déjà une approximation cohérente de
+\begin{equation}
+\left\{
+\udic_n,
+\epsdic_n,
+\state_n^{\mathrm{pred}},
+\bm{\sigma}_n^{\mathrm{pred}},
+\mathbb{C}_n^{\mathrm{pred}},
+\Gamma_n^{\mathrm{pred}},
+\chi_n^{\mathrm{pred}}
+\right\}.
+\end{equation}
+En particulier, après partitionnement, chaque interface hérite immédiatement de tractions
+prédites $\bm{t}^{\mathrm{pred}}=\bm{\sigma}^{\mathrm{pred}}\bm{n}$. Le défaut initial de continuité des
+tractions est donc mesurable sans solve global.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=8mm and 12mm,
+  box/.style={draw=mainblue, rounded corners=2mm, fill=softblue, align=center, minimum height=9mm, text width=32mm},
+  mat/.style={draw=teal, rounded corners=2mm, fill=softteal, align=center, minimum height=9mm, text width=32mm},
+  glob/.style={draw=accent, rounded corners=2mm, fill=softorange, align=center, minimum height=9mm, text width=34mm},
+  arr/.style={-{Latex[length=2.2mm]}, thick, draw=darkgray}
+]
+\node[box] (dic) {DIC plein champ\\$\udic_n(\bm{x})$};
+\node[box, right=of dic] (kin) {cinématique discrète\\$\epsdic_n=B_h\udic_n$};
+\node[mat, right=of kin] (umat) {rejeu UMat/MFront\\depuis $\state_{n-1}^{\rm conv}$};
+\node[mat, below=of umat] (pred) {prédicteur global\\$\state_n^{pred},\bm{\sigma}_n^{pred},\chi_n^{pred}$};
+\node[glob, left=of pred] (part) {partitionnement\\restrictions par sous-domaine};
+\node[glob, left=of part] (lg) {local/global\\pénalisation DIC décroissante};
+\node[box, below=of lg] (conv) {solution convergée\\Dirichlet seulement au bord};
+\draw[arr] (dic)--(kin);
+\draw[arr] (kin)--(umat);
+\draw[arr] (umat)--(pred);
+\draw[arr] (pred)--(part);
+\draw[arr] (part)--(lg);
+\draw[arr] (lg)--(conv);
+\end{tikzpicture}
+\caption{Ordre logique proposé. Le prédicteur constitutif est construit sur le champ global avant que la partition ne définisse des interfaces artificielles. Les états prédits sont ensuite distribués aux sous-domaines comme initialisation, sans commit constitutif.}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Résolution local/global avec pénalisation DIC décroissante}
+
+\subsection{Problème local pénalisé}
+
+Après partitionnement $\Omega=\cup_s\Omega_s$, chaque sous-domaine résout un problème non
+linéaire incluant une attache faible au champ expérimental :
+\begin{equation}
+  \Rmech_s(\bm{u}_s,\state_s)
+  + \kappa_D^{(k)}\,\bm{W}_{D,s}
+    \left(\bm{u}_s-\udic_s\right)
+  + \bm{R}_{\Gamma,s} = \bm{0}.
+  \label{eq:penalizedlocal}
+\end{equation}
+$\bm{R}_{\Gamma,s}$ représente le couplage d'interface et $\bm{W}_{D,s}$ pondère la confiance
+accordée aux données. Dans le cas idéal, $\bm{W}_D$ est relié à l'inverse de la covariance de mesure
+plutôt qu'à un poids uniforme ; cette logique rejoint l'importance de la métrique statistique dans
+l'identification plein champ \parencite{roux2020optimal}.
+
+Dans une implémentation matrix-free, la contribution au Jacobien est immédiate :
+\begin{equation}
+  \bm{J}_s\bm{v}
+  = \bm{J}_{\mathrm{mech},s}\bm{v}
+  + \kappa_D^{(k)}\bm{W}_{D,s}\bm{v}
+  + \bm{J}_{\Gamma,s}\bm{v}.
+\end{equation}
+Elle ne nécessite aucune matrice globale assemblée.
+
+\subsection{Deux contraintes d'interface distinctes}
+
+Sur une interface $\Gamma_{ss'}$, la solution mécanique doit tendre vers
+\begin{align}
+  \jump{\bm{u}} &= \bm{u}_s-\bm{u}_{s'} = \bm{0},\\
+  \jump{\bm{t}} &= \bm{t}_s+\bm{t}_{s'} = \bm{0}.
+\end{align}
+La pénalisation DIC ne doit pas être confondue avec le mécanisme de couplage des interfaces. Elle
+apporte une information extérieure au problème mécanique ; l'interface impose l'admissibilité
+globale.
+
+\subsection{Continuation ``data vers mécanique''}
+
+L'idée centrale est d'utiliser une raideur de pénalisation variable :
+\begin{equation}
+  \kappa_D^{(0)} > \kappa_D^{(1)} > \cdots > \kappa_D^{(K)}.
+\end{equation}
+Au début, $\kappa_D$ est suffisamment grand pour maintenir les solutions locales près de la
+cinématique expérimentale. Les sous-domaines sont donc fortement initialisés et presque découplés.
+Lorsque le saut de traction ne peut plus diminuer sans s'écarter du champ mesuré, la pénalisation est
+relâchée.
+
+Pour le problème direct visé, la cible est
+\begin{equation}
+  \boxed{\kappa_{D,\mathrm{int}}^{(K)}\rightarrow 0}
+\end{equation}
+sur les degrés de liberté intérieurs. La solution finale n'est alors pas une solution assimilée : elle
+est une solution mécanique dont les seules conditions cinématiques permanentes sont celles des
+bords physiques de Dirichlet.
+
+\begin{methodbox}
+\textbf{Alternative assimilation.} Un second mode pourrait conserver un plancher
+$\kappa_D^{\mathrm{stat}}>0$ fixé par le niveau de bruit expérimental. Ce mode répondrait à une autre
+question : trouver l'état mécaniquement admissible le plus compatible avec la mesure compte tenu de
+son incertitude. Il faut le distinguer explicitement du problème direct non biaisé.
+\end{methodbox}
+
+\subsection{Règle adaptative de relâchement}
+
+Trois indicateurs peuvent piloter la continuation :
+\begin{align}
+ \eta_D &= \left[\frac{1}{N_D}(\bm{u}-\udic)^T\bm{C}_D^{-1}(\bm{u}-\udic)\right]^{1/2},\\
+ \eta_u &= \frac{\|\jump{\bm{u}}\|}{u_{\mathrm{ref}}},\\
+ \eta_t &= \frac{\|\jump{\bm{t}}\|}{t_{\mathrm{ref}}}.
+\end{align}
+Une règle de départ pourrait être : si $\eta_D$ est inférieur ou comparable au niveau de bruit mais
+que $\eta_t$ stagne au-dessus de sa cible, diminuer $\kappa_D$. Autrement dit, on ne demande pas au
+calcul de reproduire la mesure plus précisément que ce que sa propre incertitude justifie lorsque
+cela empêche l'équilibre mécanique.
+
+Le code du projet contient déjà une calibration de pénalité au bord par principe de discrépance : la
+raideur est fixée de façon que l'écart RMS simulation--DIC atteigne l'incertitude expérimentale, et
+non pour améliorer artificiellement la convergence. La présente stratégie généralise cette idée à
+l'intérieur du domaine, mais avec un rôle temporaire de continuation.
+
+\subsection{Le champ DIC comme coarse predictor expérimental}
+
+Dans une décomposition de domaine classique, les modes de grande longueur d'onde motivent un
+espace grossier afin que l'information traverse rapidement le domaine. Ici, $\udic$ contient déjà une
+estimation globale des translations, rotations, extensions moyennes et grandes variations spatiales.
+Il peut donc être interprété comme un \emph{coarse predictor expérimental distribué}. Cette idée ne
+supprime pas a priori la nécessité d'un problème grossier, mais elle conduit à une hypothèse testable :
+le nombre d'itérations globales pourrait devenir beaucoup moins sensible au nombre de
+sous-domaines.
+
+Les méthodes LATIN multiscalaires montrent précisément l'intérêt d'un niveau macro pour accélérer
+la propagation d'information entre sous-structures \parencite{ladeveze2010latin}. Une contribution
+potentielle du présent cadre serait d'étudier dans quelle mesure la cinématique mesurée peut
+compléter ou réduire cet espace macro.
+
+\subsection{Algorithme proposé à un instant de mesure}
+
+\begin{methodbox}
+\textbf{Algorithme conceptuel au temps $t_n$.}
+\begin{enumerate}
+  \item Charger $\udic_n$ et calculer $\epsdic_n=B_h\udic_n$ sur le domaine complet.
+  \item Depuis $\state_{n-1}^{\mathrm{conv}}$, rejouer la loi matériau à tous les points pour obtenir
+  $\state_n^{\mathrm{pred}}$, $\bm{\sigma}_n^{\mathrm{pred}}$ et, si nécessaire, $\chi_n^{\mathrm{pred}}$.
+  \item Partitionner le domaine et distribuer aux sous-domaines les restrictions du prédicteur.
+  \item Initialiser les inconnues locales avec $\udic_n$ et un $\kappa_D$ élevé.
+  \item Résoudre les sous-domaines en parallèle sans commiter les états matériaux.
+  \item Calculer les sauts de déplacement et de traction aux interfaces ; effectuer la correction globale.
+  \item Si l'équilibre d'interface stagne alors que l'écart à la DIC est inférieur au niveau statistiquement utile,
+  diminuer $\kappa_D$ et recommencer.
+  \item Lorsque les résidus locaux et les interfaces satisfont les critères et que la pénalisation intérieure a
+  atteint sa cible (zéro pour le problème direct), commiter une seule fois $\state_n^{\mathrm{conv}}$.
+\end{enumerate}
+\end{methodbox}
+
+\section{Le prédicteur DIC comme détecteur presque gratuit d'insuffisance du modèle}
+
+\subsection{État constitutivement admissible, mais pas nécessairement statiquement admissible}
+
+Le rejeu de la loi sur $\epsdic$ produit un état compatible avec la loi choisie, mais rien ne garantit
+que le champ de contraintes correspondant satisfasse l'équilibre. Pour les degrés de liberté
+intérieurs, on peut calculer le résidu faible
+\begin{equation}
+  \Req_n(\bm{\theta})
+  = \bm{f}_{\mathrm{int}}
+  \left(\bm{\sigma}^{\mathrm{DIC}}_n(\bm{\theta})\right)
+  - \bm{f}_{\mathrm{ext},n}.
+  \label{eq:eqgap}
+\end{equation}
+En forme élémentaire,
+\begin{equation}
+  \bm{r}_{e,n}
+  = \int_{\Omega_e} \bm{B}^T\bm{\sigma}^{\mathrm{DIC}}_n\,\mathrm{d}\Omega
+  - \bm{f}_{e,n}^{\mathrm{ext}}.
+\end{equation}
+Il est préférable d'utiliser cette forme faible FEM plutôt que de calculer directement
+$\nabla\!\cdot\!\bm{\sigma}$, qui amplifierait les dérivations du bruit expérimental.
+
+Cette logique est directement apparentée à l'Equilibrium Gap Method, introduite pour identifier des
+champs d'endommagement à partir de mesures de déplacement plein champ
+\parencite{claire2004equilibrium}. Des extensions ont ensuite exploité les résidus et sensibilités
+pour diagnostiquer la qualité d'un modèle et guider son enrichissement
+\parencite{neggers2017enrichment}.
+
+\subsection{Carte spatio-temporelle de discordance expérience--modèle}
+
+Pour ne pas juger une loi sur un seul instant, on peut accumuler l'indicateur dans le temps :
+\begin{equation}
+  E_e(\bm{\theta})
+  = \sum_{n=1}^{N_t} w_n\,
+    \bm{r}_{e,n}^T\bm{W}_{r,e,n}\bm{r}_{e,n}.
+  \label{eq:localcum}
+\end{equation}
+La carte $E_e$ indique les zones où, sur toute l'histoire, la cinématique observée conduit la loi à
+produire un champ de contraintes difficilement compatible avec l'équilibre.
+
+\begin{warningbox}
+Un grand $E_e$ n'est pas une preuve que la seule loi constitutive est erronée. Le défaut peut aussi
+provenir du bruit DIC, d'un mauvais recalage DIC--EBSD, d'effets hors-plan, d'une épaisseur ou de
+forces extérieures mal connues, de la discrétisation ou d'une hypothèse cinématique. La quantité doit
+être interprétée comme une \textbf{discordance expérience--modèle} avant toute attribution causale.
+\end{warningbox}
+
+La pondération $\bm{W}_r$ peut être reliée à la covariance du résidu induite par l'incertitude DIC.
+Cette normalisation permettrait de distinguer une discordance mécaniquement significative d'un
+résidu compatible avec le bruit de mesure, dans l'esprit des métriques statistiques proposées pour
+l'identification plein champ \parencite{roux2020optimal}.
+
+\subsection{Lecture physique avec EBSD}
+
+Dans le démonstrateur 316L, la carte $E_e$ peut être croisée avec :
+\begin{itemize}
+  \item l'orientation cristalline et la désorientation ;
+  \item les joints de grains ;
+  \item l'activité des systèmes de glissement ;
+  \item le glissement cumulé $\Gamma$ ;
+  \item les gradients de $\Gamma$ ou du champ micromorphique $\chi$ ;
+  \item les zones de localisation observées par DIC.
+\end{itemize}
+Une concentration du défaut aux joints de grains, dans certains grains ou dans les bandes de
+localisation devient alors une information directe pour comparer J2, SRIX local, SRIX non local ou
+d'autres enrichissements constitutifs.
+
+\section{Ouverture inverse : identification par écart à l'équilibre}
+
+\subsection{Pourquoi cette voie peut être beaucoup moins chère que la FEMU}
+
+Une FEMU classique évalue chaque jeu de paramètres $\bm{\theta}$ par
+\begin{equation}
+ \bm{\theta}
+ \longrightarrow
+ \text{solve FEM non linéaire complet}
+ \longrightarrow
+ \bm{u}^{\mathrm{calc}}(\bm{\theta})
+ \longrightarrow
+ \|\bm{u}^{\mathrm{calc}}-\udic\|.
+\end{equation}
+L'identification intégrée et la FEMU sont des outils puissants, y compris pour les lois
+élastoplastiques \parencite{bertin2016idic}, mais elles impliquent généralement des résolutions
+mécaniques répétées.
+
+Ici, la DIC fournit déjà le champ cinématique. Pour une loi candidate, l'évaluation devient
+\begin{equation}
+ \bm{\theta}
+ \longrightarrow
+ \text{rejeu constitutif local de l'histoire DIC}
+ \longrightarrow
+ \bm{\sigma}^{\mathrm{DIC}}(\bm{\theta})
+ \longrightarrow
+ \Req(\bm{\theta}).
+\end{equation}
+La fonction coût peut être
+\begin{equation}
+  J_{\mathrm{eq}}(\bm{\theta})
+  = \sum_{n=1}^{N_t}
+  \Req_n(\bm{\theta})^T
+  \bm{C}_{r,n}^{-1}
+  \Req_n(\bm{\theta}).
+  \label{eq:objective}
+\end{equation}
+Pour une loi locale, le calcul dominant est alors la chronologie constitutive en chaque point ; tous
+les points sont parallèles spatialement. Pour la loi non locale, il faut ajouter le ou les solves de
+Helmholtz sur $\chi$, mais on évite toujours le Newton/Krylov mécanique global pour chaque jeu de
+paramètres.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparaison conceptuelle entre FEMU et pré-identification par défaut d'équilibre.}
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}p{3.2cm}XX@{}}
+\toprule
+ & FEMU / I-DIC mécanique & Rejeu DIC + défaut d'équilibre \\
+\midrule
+Cinématique & calculée par le modèle & imposée par la mesure pour l'évaluation \\
+Coût par $\bm{\theta}$ & solve mécanique global non linéaire & intégration constitutive + assemblage du résidu \\
+Parallélisme & limité par le solve global & massif par point matériel \\
+État interne & issu du solve direct & rejoué incrémentalement sur l'histoire DIC \\
+Sortie locale & écart déplacement / image & défaut d'équilibre local spatio-temporel \\
+Rôle recommandé & validation finale / raffinement & filtrage, initialisation, exploration paramétrique \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Il ne faut pas supposer a priori que $J_{\mathrm{eq}}$ conduit exactement au même optimum que la
+FEMU. La stratégie la plus robuste est donc hiérarchique :
+\begin{equation}
+  \boxed{
+  \text{identification rapide par }J_{\mathrm{eq}}
+  \;\longrightarrow\;
+  \text{quelques candidats}
+  \;\longrightarrow\;
+  \text{validation par solve mécanique complet.}
+  }
+\end{equation}
+
+\subsection{Sensibilités et optimisation}
+
+Si l'on dispose des sensibilités constitutives
+$\partial\bm{\sigma}/\partial\bm{\theta}$, alors
+\begin{equation}
+  \frac{\partial J_{\mathrm{eq}}}{\partial\theta_i}
+  = 2\sum_n
+  \Req_n^T\bm{C}_{r,n}^{-1}
+  \frac{\partial \Req_n}{\partial\theta_i},
+\end{equation}
+avec
+\begin{equation}
+  \frac{\partial \Req_n}{\partial\theta_i}
+  = \mathcal{A}
+  \left(
+  \frac{\partial\bm{\sigma}^{\mathrm{DIC}}_n}{\partial\theta_i}
+  \right),
+\end{equation}
+où $\mathcal{A}$ est l'opérateur faible d'équilibre. L'essentiel de la sensibilité reste donc local au
+matériau et n'exige pas nécessairement un adjoint mécanique global. Cette piste peut devenir
+particulièrement attractive avec un backend GPU différentiable ou des sensibilités fournies par la
+loi matériau.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=9mm and 12mm,
+  box/.style={draw=mainblue, rounded corners=2mm, fill=softblue, align=center, minimum height=9mm, text width=34mm},
+  eq/.style={draw=accent, rounded corners=2mm, fill=softorange, align=center, minimum height=9mm, text width=35mm},
+  outbox/.style={draw=teal, rounded corners=2mm, fill=softteal, align=center, minimum height=9mm, text width=36mm},
+  arr/.style={-{Latex[length=2.2mm]}, thick, draw=darkgray}
+]
+\node[box] (theta) {paramètres candidats\\$\bm{\theta}$};
+\node[box, right=of theta] (replay) {rejeu de toute l'histoire DIC\\pointwise et path-dependent};
+\node[eq, right=of replay] (res) {résidu faible d'équilibre\\$\Req_n(\bm{\theta})$};
+\node[outbox, below=of res] (cost) {coût global\\$J_{eq}(\bm{\theta})$};
+\node[outbox, left=of cost] (map) {carte locale cumulée\\$E_e(\bm{\theta})$};
+\node[box, left=of map] (femu) {quelques candidats\\validation FEMU / solve complet};
+\draw[arr] (theta)--(replay);
+\draw[arr] (replay)--(res);
+\draw[arr] (res)--(cost);
+\draw[arr] (res)--(map);
+\draw[arr] (cost)--(femu);
+\draw[arr] (map)--(femu);
+\end{tikzpicture}
+\caption{Ouverture inverse. La cinématique mesurée remplace le solve mécanique comme source des gradients de déformation pendant la phase d'exploration paramétrique. Le solve complet reste l'étape de validation finale.}
+\label{fig:inverse}
+\end{figure}
+
+\section{Positionnement scientifique et hypothèse de nouveauté}
+
+La proposition ne part pas d'une page blanche. Plusieurs familles de travaux couvrent des morceaux
+du problème :
+\begin{itemize}
+  \item l'Equilibrium Gap Method exploite l'équilibre et les champs de déplacement mesurés pour
+  identifier des paramètres ou champs constitutifs \parencite{claire2004equilibrium};
+  \item la Constitutive Compatibility Method a été formulée dans une décomposition de domaine
+  spécifiquement destinée aux mesures plein champ, avec problèmes locaux de type Dirichlet puis
+  restauration de l'équilibre macroscopique \parencite{lubineau2015dd};
+  \item la DIC régularisée mécaniquement et son couplage de domaines ont déjà été formulés avec des
+  inconnues d'interface et une perspective parallèle \parencite{bouclier2017domain,mendoza2019regularization};
+  \item la Constitutive Relation Error fournit un cadre récent de modélisation data-driven où les
+  relations physiques et les données expérimentales sont combinées explicitement
+  \parencite{ladeveze2024cre};
+  \item les champs résiduels peuvent servir à diagnostiquer l'insuffisance d'un modèle et à guider
+  des enrichissements progressifs \parencite{neggers2017enrichment}.
+\end{itemize}
+
+\begin{ideabox}
+\textbf{Hypothèse de contribution originale, à confirmer par une revue bibliographique exhaustive.}
+La piste spécifique n'est pas l'usage de la DIC, de l'equilibrium gap, de la pénalisation ou de la
+décomposition de domaine pris séparément. Elle réside dans leur assemblage pour un problème direct
+et inverse path-dependent :
+\begin{enumerate}
+  \item prédire avant partitionnement les états internes d'une loi non linéaire à partir de l'histoire DIC ;
+  \item utiliser cette prédiction comme initialisation globale cohérente des sous-domaines ;
+  \item appliquer une attache DIC intérieure temporaire, relâchée en fonction de l'équilibre d'interface jusqu'à disparition dans le problème direct ;
+  \item réutiliser exactement le même rejeu constitutif pour construire une fonction coût d'équilibre et une carte de défaut de modèle ;
+  \item appliquer le tout à une plasticité cristalline hétérogène informée par EBSD, potentiellement non locale et massivement parallèle.
+\end{enumerate}
+\end{ideabox}
+
+La question méthodologique peut alors être formulée ainsi :
+\begin{quote}
+\emph{Une cinématique expérimentale dense peut-elle remplacer une partie du rôle du coarse space
+numérique dans une résolution local/global non linéaire, puis servir de support à une identification
+constitutive par défaut d'équilibre sans solve mécanique répété ?}
+\end{quote}
+
+\section{Architecture numérique compatible avec le plein EBSD}
+
+Le plein champ EBSD de plusieurs milliers de pixels par direction dépasse l'échelle des crops de
+validation. L'architecture proposée est néanmoins favorable au calcul distribué :
+\begin{itemize}
+  \item le prédicteur constitutif DIC est massivement parallèle par point matériel ;
+  \item les sous-domaines peuvent être résolus indépendamment pendant les phases locales ;
+  \item le solveur matrix-free évite le stockage d'une matrice globale ;
+  \item seules les traces d'interface, les corrections globales et éventuellement le champ $\chi$ doivent circuler entre sous-domaines ;
+  \item la pénalisation DIC est une opération diagonale, naturelle sur GPU.
+\end{itemize}
+
+Une implémentation Dask/CUDA peut donc être envisagée à grain grossier : un worker par GPU conserve
+les états d'un ou plusieurs sous-domaines, tandis que les kernels locaux utilisent CuPy/cuFFT. Le
+scheduler ne doit pas intervenir dans chaque produit Jacobien--vecteur ; il orchestre des solves
+locaux complets et des étapes globales. Le prédicteur DIC peut être calculé avant le partitionnement
+au sens algorithmique, puis distribué par blocs sans modifier sa définition globale.
+
+\section{Programme de validation proposé}
+
+\subsection{Étape 1 -- preuve de concept J2 sur un domaine où la solution complète est connue}
+
+Utiliser un cas M100 ou M200 pour lequel le solve monolithique actuel fournit une référence. Découper
+artificiellement le domaine en $2\times2$, $4\times4$, puis davantage.
+
+Comparer :
+\begin{enumerate}
+  \item solve local/global sans information DIC intérieure ;
+  \item simple initialisation $\bm{u}^0=\udic$ ;
+  \item prédicteur constitutif DIC sans pénalisation ;
+  \item pénalisation DIC fixe ;
+  \item pénalisation DIC décroissante jusqu'à zéro ;
+  \item éventuellement pénalisation décroissante + coarse space classique.
+\end{enumerate}
+
+Mesurer le nombre d'itérations globales, le nombre total de Newton/Krylov locaux, le coût matériau,
+les sauts de traction/déplacement, l'écart final à la référence et la sensibilité au partitionnement.
+
+\subsection{Étape 2 -- validation de l'indicateur d'équilibre}
+
+Pour la même histoire DIC :
+\begin{enumerate}
+  \item rejouer la loi sans solve global et calculer $\Req_n$ ;
+  \item vérifier que le résidu du champ issu du solve convergé est nettement plus faible ;
+  \item comparer les cartes cumulées pour plusieurs lois ou paramètres connus ;
+  \item injecter des erreurs contrôlées dans les paramètres et vérifier que $J_{\mathrm{eq}}$ possède un minimum près des paramètres de référence ;
+  \item propager un bruit DIC synthétique pour définir $\bm{C}_r$ et les seuils de significativité.
+\end{enumerate}
+
+\subsection{Étape 3 -- SRIX et EBSD}
+
+Une fois le principe qualifié en J2, l'intérêt scientifique apparaît avec la plasticité cristalline :
+rejeu path-dependent des systèmes de glissement, croisement des cartes de résidu avec l'EBSD et
+comparaison local/non-local. Le prédicteur expérimental peut également être utilisé pour fournir les
+états initiaux des futures résolutions distribuées sur la carte EBSD complète.
+
+\subsection{Étape 4 -- inversion rapide puis validation FEMU}
+
+Sur un petit nombre de paramètres SRIX :
+\begin{enumerate}
+  \item cartographier $J_{\mathrm{eq}}(\bm{\theta})$ ;
+  \item lancer une optimisation sans solve mécanique global ;
+  \item retenir quelques candidats ;
+  \item exécuter seulement ensuite le solve complet pour comparer les champs calculés à la DIC et les réactions aux mesures de force disponibles.
+\end{enumerate}
+
+Le rapport de coût entre les deux étages devra être mesuré et non supposé. Un gain important est
+attendu conceptuellement, mais sa magnitude dépendra du coût du matériau, du nombre de temps DIC,
+des éventuelles itérations non locales et du nombre de paramètres.
+
+\section{Questions ouvertes à conserver}
+
+\begin{methodbox}
+\begin{enumerate}
+  \item Quelle loi de décroissance de $\kappa_D$ maximise la convergence sans introduire un nouveau paramètre arbitraire ?
+  \item Peut-on relier directement la décision de relâchement au principe de discrépance et au rapport $\eta_t/\eta_D$ ?
+  \item La DIC permet-elle réellement de réduire la dimension du coarse space, ou seulement d'améliorer l'initialisation ?
+  \item Faut-il pondérer $\bm{W}_D$ point par point avec une covariance DIC estimée, ou une covariance simplifiée suffit-elle ?
+  \item Comment séparer dans $E_e$ le défaut constitutif d'un défaut de recalage DIC--EBSD ou d'un effet 3D ?
+  \item Pour SRIX non local, doit-on conserver un solve Helmholtz global pendant les premières versions ou décomposer également $\chi$ ?
+  \item Jusqu'où $J_{\mathrm{eq}}$ conserve-t-il l'identifiabilité de paramètres qui seraient observables en FEMU ?
+  \item Les sensibilités constitutives suffisent-elles à obtenir un gradient robuste de $J_{\mathrm{eq}}$ pour une optimisation de grande dimension ?
+\end{enumerate}
+\end{methodbox}
+
+\section{Conclusion}
+
+La disponibilité d'un champ DIC dense à chaque instant change la structure même du problème. Le
+champ expérimental ne doit pas être réduit à un chargement de bord, ni imposé fortement dans le
+volume. Il peut d'abord être transformé en un prédicteur complet de la cinématique et des états
+internes, puis servir de guide temporaire à une résolution local/global qui libère progressivement
+les degrés de liberté intérieurs jusqu'à retrouver un problème mécanique classique aux seules
+conditions de bord.
+
+Cette même opération de rejeu constitutif possède une seconde valeur : elle produit sans solve
+global un défaut d'équilibre faible, calculable localement, cumulable dans le temps et comparable à
+l'incertitude expérimentale. Elle ouvre ainsi une voie de diagnostic spatial de l'insuffisance du
+modèle et une stratégie d'identification potentiellement beaucoup moins coûteuse que la FEMU pour
+l'exploration paramétrique.
+
+\begin{thesisbox}
+\textbf{Vision unifiée.} La DIC plein champ pourrait devenir simultanément :
+\begin{center}
+\textbf{un prédicteur d'état} $\rightarrow$ \textbf{un accélérateur local/global}
+$\rightarrow$ \textbf{un détecteur de défaut de modèle}
+$\rightarrow$ \textbf{une fonction coût d'identification}.
+\end{center}
+Le caractère convaincant de cette proposition dépend maintenant de trois démonstrations :
+absence de biais du solve direct lorsque la pénalisation intérieure disparaît, réduction effective du
+coût de résolution avec le nombre de sous-domaines, et pouvoir discriminant du défaut d'équilibre
+pour les paramètres et enrichissements constitutifs.
+\end{thesisbox}
+
+\printbibliography
+
+\end{document}
