@@ -1,0 +1,166 @@
+{
+  "decimation": 3,
+  "field_shape": [
+    1200,
+    1033
+  ],
+  "history": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/p0043_evm_history.h5",
+  "model_parameter_note": "a POD mode carries one value per pixel, so the model cost is rank times the pixel count -- the comparison with a convolutional decoder must be made on both the per-state cost and this one",
+  "model_parameters": 1159600,
+  "normalisation": "H_t = EVM_t / mean(EVM_t), frozen",
+  "results": [
+    {
+      "coefficients_per_state": 2,
+      "rank": 2,
+      "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
+      "temporal_holdout": {
+        "field_error": 0.2127481601695731,
+        "gradient_error": 0.9285298059697885
+      },
+      "train_states": {
+        "field_error": 0.1536379338157539,
+        "gradient_error": 0.4098229453690436
+      }
+    },
+    {
+      "coefficients_per_state": 4,
+      "rank": 4,
+      "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
+      "temporal_holdout": {
+        "field_error": 0.20574231805905904,
+        "gradient_error": 0.8976239201828298
+      },
+      "train_states": {
+        "field_error": 0.13315237840919417,
+        "gradient_error": 0.35909270150560607
+      }
+    },
+    {
+      "coefficients_per_state": 8,
+      "rank": 8,
+      "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
+      "temporal_holdout": {
+        "field_error": 0.18711649435434063,
+        "gradient_error": 0.7967788266839859
+      },
+      "train_states": {
+        "field_error": 0.09913004670930319,
+        "gradient_error": 0.27456198791241876
+      }
+    },
+    {
+      "coefficients_per_state": 16,
+      "rank": 16,
+      "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
+      "temporal_holdout": {
+        "field_error": 0.18125358565629013,
+        "gradient_error": 0.7608405107296345
+      },
+      "train_states": {
+        "field_error": 0.052665633428838406,
+        "gradient_error": 0.15708926532170017
+      }
+    }
+  ],
+  "schema_version": 1,
+  "spatial_holdout_fraction": 0.06453694740238791,
+  "spatial_holdout_regions": [
+    [
+      600,
+      600,
+      600
+    ],
+    [
+      2400,
+      2100,
+      600
+    ]
+  ],
+  "states": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "status": "completed_pod_morphology_baseline",
+  "temporal_holdout_states": [
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "train_states": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+  ]
+}
