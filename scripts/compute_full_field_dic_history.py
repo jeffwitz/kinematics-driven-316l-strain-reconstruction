@@ -169,6 +169,15 @@ def main() -> int:
     # price of resolution stays measurable.
     parser.add_argument("--patch-size", type=int, default=None)
     parser.add_argument("--patch-stride", type=int, default=None)
+    # The tuned settings. Alpha 100 leaves no structure below twenty pixels;
+    # thirty iterations leave the matching grid the refinement exists to erase;
+    # epsilon at 1e-3 sits close enough to total variation to produce staircase
+    # bands that a derivative turns into spurious localisation. None of these
+    # was chosen to resemble the received fields, which are themselves
+    # unconverged -- they are the settings that leave no identifiable artefact.
+    parser.add_argument("--alpha", type=float, default=None)
+    parser.add_argument("--epsilon", type=float, default=None)
+    parser.add_argument("--refinement-iterations", type=int, default=None)
     arguments = parser.parse_args()
 
     images = sorted(arguments.image_root.glob("*.tif"))
@@ -184,6 +193,12 @@ def main() -> int:
         DISFLOW_SETTINGS["patch_size"] = arguments.patch_size
     if arguments.patch_stride is not None:
         DISFLOW_SETTINGS["patch_stride"] = arguments.patch_stride
+    if arguments.alpha is not None:
+        DISFLOW_SETTINGS["variational_refinement_alpha"] = arguments.alpha
+    if arguments.epsilon is not None:
+        DISFLOW_SETTINGS["variational_refinement_epsilon"] = arguments.epsilon
+    if arguments.refinement_iterations is not None:
+        DISFLOW_SETTINGS["variational_refinement_iterations"] = arguments.refinement_iterations
 
     row_slice = slice(*CROP_ROWS)
     column_slice = slice(*CROP_COLUMNS)

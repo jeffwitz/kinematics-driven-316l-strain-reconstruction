@@ -1,0 +1,40 @@
+{
+  "displacement_noise_rms_pixel": 0.1476457903687556,
+  "displacement_noise_rms_um": 0.2716682542785103,
+  "equivalent_strain": {
+    "noise_rms": 0.00028636697575209314,
+    "noise_to_signal": 0.10048403668145292,
+    "signal_rms": 0.0028498753156176696
+  },
+  "pair": [
+    "000334.tif",
+    "000335.tif"
+  ],
+  "per_component": {
+    "xx": {
+      "noise_rms": 0.00015073698117806602,
+      "ratio": 0.07311813372166505,
+      "signal_rms": 0.0020615540018002723
+    },
+    "xy": {
+      "noise_rms": 0.00010245483226537538,
+      "ratio": 0.1825476347850059,
+      "signal_rms": 0.0005612498479426523
+    },
+    "yy": {
+      "noise_rms": 0.00017772276894820763,
+      "ratio": 0.07242859605256759,
+      "signal_rms": 0.0024537652064830734
+    }
+  },
+  "schema_version": 1,
+  "settings": {
+    "alpha": 15.0,
+    "epsilon": 0.01,
+    "finest_scale": 0,
+    "iterations": 100,
+    "patch_size": 4,
+    "patch_stride": 1
+  },
+  "status": "completed_null_test_noise_floor"
+}
