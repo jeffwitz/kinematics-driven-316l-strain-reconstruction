@@ -573,3 +573,46 @@ multiplier-based dropping so the working set stays at most `n_unknowns`, or an
 off-the-shelf QP solver. That is a bounded piece of work on a problem of 320
 unknowns, and it is the last step before the Ludwik comparison can be
 interpreted.
+
+## Kelvin migration of the inverse core, and what it moved
+
+`TensorPlasticObservabilityOperator` is now Kelvin internally. Engineering Voigt
+survives only where an interface imposes it — `strain` returns it, and
+`divergence_from_sample_stress` expects Voigt stress — with conversion at those
+two calls and nowhere else.
+
+Verified before reading anything into the replays:
+
+| check | value |
+|---|---:|
+| `K = B_K^T C_K B_K` unchanged (the two scalings cancel) | `1.7e-15` |
+| physical response of a given plastic tensor unchanged | `4.1e-16` |
+| adjoint | `3.0e-16` |
+| unit coordinate gives unit RMS `p_eq` | `1.000000` |
+
+The gauge test was rewritten. It used to pin the inverse von Mises metric, which
+was correct while the module stored engineering shear; it now asserts the
+property that matters and is convention-independent — a unit coordinate vector
+is a plastic field of unit RMS equivalent strain — so it survives the next
+migration too.
+
+### The physical conclusions are robust; the Krylov geometry improved
+
+| quantity | engineering | Kelvin |
+|---|---:|---:|
+| residual at 128 LSQR iterations, state 40 | `0.0352` | `0.0405` |
+| `p` RMS there | `7.97e-4` | `8.04e-4` |
+| leave-one-out, state 35 held out, rank 32 | `0.264` | **`0.208`** |
+| leave-one-out, state 40 held out, rank 32 | `0.496` | **`0.399`** |
+| negative dissipation points | `0.477` | `0.452` |
+| accumulated path RMS | `6.20e-3` | `6.28e-3` |
+
+The trade-off, the amplitude and the path are unchanged to within a few per
+cent: they are physical, and the convention does not touch them.
+
+Prediction improved measurably. That is the expected direction: the engineering
+norm counts shear twice, so it distorted the geometry in which QR, Krylov and
+the truncated bases were built. The conclusion is unchanged in kind — a basis
+built on three states still misses 20 to 40 % of the fourth, so it remains
+compression rather than prediction — but it is less severe than the engineering
+numbers suggested, and those numbers should not be quoted further.

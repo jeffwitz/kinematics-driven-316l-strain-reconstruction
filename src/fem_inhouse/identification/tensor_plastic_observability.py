@@ -36,8 +36,12 @@ import scipy.sparse as sparse
 from numpy.typing import ArrayLike, NDArray
 from scipy.sparse.linalg import LinearOperator, factorized
 
-from fem_inhouse.core.constitutive import PLANE_STRESS_VON_MISES_METRIC
 from fem_inhouse.core.element import plane_stress_elasticity
+from fem_inhouse.core.kelvin import (
+    KELVIN_SCALE_2D,
+    PLANE_STRESS_PLASTIC_GAUGE,
+    stiffness_from_engineering,
+)
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
 from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
@@ -59,16 +63,18 @@ _COLOURS = 2 * _STENCIL_RADIUS + 1
 
 
 def inverse_gauge_square_root(point_count: int) -> FloatArray:
-    """Return ``H^-1/2`` for ``H_loc = M^-1 / point_count``.
+    """Return ``H^-1/2`` for the Kelvin gauge ``H = G / point_count``.
 
-    ``H`` is the gauge in which the norm of an increment is its equivalent
-    plastic strain: ``n = M s / q`` gives ``n^T M^-1 n = 1``, so
-    ``(Delta p n)^T M^-1 (Delta p n) = Delta p^2``. Dividing by the point count
-    turns the sum into a root-mean-square, matching the scalar runs.
+    ``G`` is the plane-stress plastic gauge: the norm it induces is the
+    equivalent plastic strain, so a unit coordinate vector is a unit RMS of
+    ``p_eq``. Kelvin does not make ``G`` the identity -- with ``eps_zz`` fixed by
+    incompressibility the plane-stress triple is not an orthonormal subspace of
+    the 3D deviatoric space -- but it does make every *contraction* in this
+    module a plain dot product, which is what the dissipation constraint needs.
     """
 
-    eigenvalues, vectors = np.linalg.eigh(PLANE_STRESS_VON_MISES_METRIC)
-    root = (vectors * np.sqrt(eigenvalues)) @ vectors.T
+    eigenvalues, vectors = np.linalg.eigh(PLANE_STRESS_PLASTIC_GAUGE)
+    root = (vectors / np.sqrt(eigenvalues)) @ vectors.T
     return np.asarray(root * np.sqrt(point_count), dtype=np.float64)
 
 
@@ -107,10 +113,14 @@ class TensorPlasticObservabilityOperator:
         """
 
         kinematics = TwoSubcellDiagnostic2D(grid)
+        # Everything inside this module is Kelvin. The engineering convention
+        # survives only where an external interface imposes it: `strain` returns
+        # it and `divergence_from_sample_stress` expects Voigt stress, so the
+        # conversion happens at those two calls and nowhere else.
         if point_elasticity is None:
             elasticity = np.broadcast_to(
-                np.asarray(
-                    plane_stress_elasticity(young_modulus_mpa, poisson_ratio), dtype=np.float64
+                stiffness_from_engineering(
+                    plane_stress_elasticity(young_modulus_mpa, poisson_ratio)
                 ),
                 (kinematics.material_point_count, 3, 3),
             ).copy()
@@ -147,12 +157,27 @@ class TensorPlasticObservabilityOperator:
         return 2 * (self.grid.nx - 1) * (self.grid.ny - 1)
 
     def _strain_transpose(self, stress: FloatArray) -> FloatArray:
-        """``B^T``. The divergence operator is ``-w B^T``; undo both."""
+        """``B_K^T`` applied to a Kelvin stress.
 
+        `B_K = B / S`, so `B_K^T sigma_K = B^T (sigma_K / S)` -- the Kelvin
+        stress is converted back to Voigt and handed to the existing operator.
+        The stiffness `K = B_K^T C_K B_K` is unchanged by the migration, since
+        the two scalings cancel: `(B/S)^T (S C S) (B/S) = B^T C B`.
+        """
+
+        voigt = stress.reshape(-1, 3) / KELVIN_SCALE_2D
         nodal = self.kinematics.divergence_from_sample_stress(
-            stress.reshape((self.grid.nx, self.grid.ny, 2, 3))
+            voigt.reshape((self.grid.nx, self.grid.ny, 2, 3))
         )
         return -pack_interior(nodal) / self.quadrature_weight
+
+    def kelvin_strain(self, displacement: ArrayLike) -> FloatArray:
+        """The kinematics returns engineering shear; divide it into Kelvin."""
+
+        engineering = np.asarray(
+            self.kinematics.strain(displacement), dtype=np.float64
+        ).reshape(-1, 3)
+        return engineering / KELVIN_SCALE_2D
 
     def matvec(self, values: ArrayLike) -> FloatArray:
         vector = np.asarray(values, dtype=np.float64).reshape(-1, 3)
@@ -164,13 +189,24 @@ class TensorPlasticObservabilityOperator:
         observed = self.whitener.apply(self.transfer.apply(displacement))
         return np.asarray(observed, dtype=np.float64).reshape(-1)
 
+    def kelvin_response(self, plastic: ArrayLike) -> FloatArray:
+        """Kelvin strain produced by a Kelvin plastic field, without observation."""
+
+        stress = np.einsum(
+            "pi,pij->pj", np.asarray(plastic, dtype=np.float64).reshape(-1, 3), self.elasticity
+        )
+        displacement = unpack_interior(
+            self.solve_stiffness(self._strain_transpose(stress.reshape(-1))), self.grid
+        )
+        return self.kelvin_strain(displacement).reshape(-1)
+
     def rmatvec(self, values: ArrayLike) -> FloatArray:
         field = np.asarray(values, dtype=np.float64).reshape((*self.grid.node_shape, 2))
         dual = self.transfer.adjoint(self.whitener.adjoint(field))
         displacement = unpack_interior(
             self.solve_stiffness(pack_interior(np.asarray(dual, dtype=np.float64))), self.grid
         )
-        strain = np.asarray(self.kinematics.strain(displacement), dtype=np.float64).reshape(-1, 3)
+        strain = self.kelvin_strain(displacement)
         stress = np.einsum("pi,pij->pj", strain, self.elasticity)
         return (stress @ self.inverse_gauge_root).reshape(-1)
 
@@ -216,12 +252,15 @@ def _assemble_sparse_stiffness(
             for component in range(2):
                 probe = np.zeros((*interior, 2), dtype=np.float64)
                 probe[offset_x::_COLOURS, offset_y::_COLOURS, component] = 1.0
-                strain = kinematics.strain(unpack_interior(probe.reshape(-1), grid))
+                engineering = np.asarray(
+                    kinematics.strain(unpack_interior(probe.reshape(-1), grid)),
+                    dtype=np.float64,
+                ).reshape(-1, 3)
                 stress = np.einsum(
-                    "pi,pij->pj", np.asarray(strain, dtype=np.float64).reshape(-1, 3), elasticity
+                    "pi,pij->pj", engineering / KELVIN_SCALE_2D, elasticity
                 )
                 nodal = kinematics.divergence_from_sample_stress(
-                    stress.reshape((grid.nx, grid.ny, 2, 3))
+                    (stress / KELVIN_SCALE_2D).reshape((grid.nx, grid.ny, 2, 3))
                 )
                 response = (-pack_interior(nodal) / weight).reshape(*interior, 2)
 

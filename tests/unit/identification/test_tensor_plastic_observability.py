@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fem_inhouse.core.constitutive import PLANE_STRESS_VON_MISES_METRIC
 from fem_inhouse.core.element import plane_stress_elasticity
 from fem_inhouse.identification.tensor_plastic_observability import (
     TensorPlasticObservabilityOperator,
@@ -44,22 +43,36 @@ def _operator(pixels: int) -> TensorPlasticObservabilityOperator:
     )
 
 
-def test_the_gauge_root_squares_back_to_the_inverse_von_mises_metric() -> None:
-    """`H_loc = M^-1 / N` is the metric in which the norm of `Delta p n` is `Delta p`."""
+def test_the_gauge_root_turns_a_unit_coordinate_into_a_unit_equivalent_strain() -> None:
+    """What the gauge is *for*, asserted instead of the matrix it happens to be.
 
-    points = 7
-    root = inverse_gauge_square_root(points)
-    np.testing.assert_allclose(
-        root @ root, PLANE_STRESS_VON_MISES_METRIC * points, rtol=1e-13, atol=1e-13
+    The previous form of this test pinned the inverse von Mises metric, which
+    was the right gauge while the module stored engineering shear. After the
+    Kelvin migration the matrix is different -- the plane-stress plastic gauge,
+    eigenvalues 2/3, 2/3 and 2 -- but the property that matters is unchanged and
+    is what should have been asserted all along: a coordinate vector of unit
+    norm is a plastic field of unit RMS equivalent strain. That statement is
+    convention-independent, so this test survives the next migration too.
+    """
+
+    from fem_inhouse.core.kelvin import (
+        PLANE_STRESS_PLASTIC_GAUGE,
+        equivalent_plastic_strain,
     )
 
-    # The property the gauge exists for, checked on an actual J2 increment.
-    stress = np.array([120.0, -45.0, 30.0])
-    equivalent = float(np.sqrt(stress @ PLANE_STRESS_VON_MISES_METRIC @ stress))
-    direction = PLANE_STRESS_VON_MISES_METRIC @ stress / equivalent
-    increment = 3.5e-4 * direction
-    gauge = np.linalg.inv(PLANE_STRESS_VON_MISES_METRIC)
-    assert float(increment @ gauge @ increment) == pytest.approx(3.5e-4**2, rel=1e-12)
+    points = 512
+    root = inverse_gauge_square_root(points)
+    np.testing.assert_allclose(
+        root @ PLANE_STRESS_PLASTIC_GAUGE @ root, points * np.eye(3), rtol=1e-12, atol=1e-12
+    )
+
+    generator = np.random.default_rng(6)
+    coordinates = generator.normal(size=(points, 3))
+    coordinates /= np.linalg.norm(coordinates)
+    plastic = coordinates @ root
+    assert float(np.sqrt((equivalent_plastic_strain(plastic) ** 2).mean())) == pytest.approx(
+        1.0, rel=1e-12
+    )
 
 
 def test_the_coloured_sparse_stiffness_reproduces_the_assembled_residual() -> None:

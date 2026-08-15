@@ -1,0 +1,85 @@
+{
+  "accumulated_plastic_path_peak": 0.017354366483644433,
+  "accumulated_plastic_path_rms": 0.006283211054841376,
+  "dense_states": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "dissipation": {
+    "definition": "mid-point rule with the absolute stress, sigma_20 + C:(d_eps_sim - d_eps_p)",
+    "negative_fraction": 0.452385,
+    "negative_share_of_absolute_power": 0.4450764605353443
+  },
+  "dissipation_without_the_state_20_stress": {
+    "definition": "the earlier, incorrect test: d_sigma : d_eps_p",
+    "negative_fraction": 0.530785
+  },
+  "leave_one_state_out": [
+    {
+      "errors": {
+        "16": 0.4374593052268627,
+        "32": 0.3885146987520241,
+        "4": 0.5176635098024712,
+        "8": 0.5089997355196717
+      },
+      "held_out": 25
+    },
+    {
+      "errors": {
+        "16": 0.29154141845207626,
+        "32": 0.23903255310821125,
+        "4": 0.34767138712762147,
+        "8": 0.31958181461795626
+      },
+      "held_out": 30
+    },
+    {
+      "errors": {
+        "16": 0.24349606471338447,
+        "32": 0.2078171179622154,
+        "4": 0.32527595558817707,
+        "8": 0.2652196591908618
+      },
+      "held_out": 35
+    },
+    {
+      "errors": {
+        "16": 0.47635751670665283,
+        "32": 0.39846837534468915,
+        "4": 0.554294643998515,
+        "8": 0.5314038900214181
+      },
+      "held_out": 40
+    }
+  ],
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "rank_used_for_dissipation": 16,
+  "schema_version": 1,
+  "states": [
+    25,
+    30,
+    35,
+    40
+  ]
+}

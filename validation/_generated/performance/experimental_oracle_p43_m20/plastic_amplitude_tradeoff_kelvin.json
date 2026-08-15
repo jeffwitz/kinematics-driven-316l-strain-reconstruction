@@ -1,0 +1,47 @@
+{
+  "method": "LSQR on the whitened strain residual; iteration count is the regularisation",
+  "note": "no SVD reordering: the previous attempt ranked the Krylov space by |A phi|, which reintroduced the observability ordering it was meant to avoid",
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "pixels": 100,
+  "reference_state": 20,
+  "results": {
+    "40": [
+      {
+        "correlation_with_the_explained_residual": 0.06952605579169668,
+        "iterations": 8,
+        "plastic_peak": 0.0013960463993577773,
+        "plastic_rms": 0.00028549020339171184,
+        "relative_residual": 0.39019937420096823,
+        "share_inside_the_residual_top_decile": 0.10605843856682826
+      },
+      {
+        "correlation_with_the_explained_residual": 0.200173906627046,
+        "iterations": 64,
+        "plastic_peak": 0.0025191180490828687,
+        "plastic_rms": 0.0006810489043779391,
+        "relative_residual": 0.07819036025313572,
+        "share_inside_the_residual_top_decile": 0.11469597779570231
+      },
+      {
+        "correlation_with_the_explained_residual": 0.2610195544741887,
+        "iterations": 128,
+        "plastic_peak": 0.0030676793289998233,
+        "plastic_rms": 0.000803635034686891,
+        "relative_residual": 0.04054536744296616,
+        "share_inside_the_residual_top_decile": 0.12205889979819308
+      },
+      {
+        "correlation_with_the_explained_residual": 0.3375178038420733,
+        "iterations": 512,
+        "plastic_peak": 0.003926100200561659,
+        "plastic_rms": 0.0010009502719931277,
+        "relative_residual": 0.0125065078882853,
+        "share_inside_the_residual_top_decile": 0.1325114794501514
+      }
+    ]
+  },
+  "schema_version": 1
+}
