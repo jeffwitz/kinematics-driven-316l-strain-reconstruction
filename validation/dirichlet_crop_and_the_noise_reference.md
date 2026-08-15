@@ -88,3 +88,38 @@ Every signal-to-noise figure in
 that reference and is superseded here. The projections reported in sigma there
 require the residual covariance `Q C_D Q^T`, not `C_D`, and have not yet been
 recomputed.
+
+## The strain-metric operator works; its whitener does not
+
+`scripts/qualify_strain_metric_observability_p43.py`, artefact
+`strain_metric_observability_m100.json`.
+
+The observable was rebuilt as the **strain** of the residual, with the whitener
+estimated from 200 real noise realisations pushed through the same
+crop-and-extend operator. The operator itself is sound: its adjoint agrees to
+`6.1e-14`, and the whitener reproduces the norm of the noise it was built from
+to `0.9983`.
+
+**But the null test fails.** At state 1, where the material is elastic and the
+residual must be noise, the whitened residual reaches `1.80` times the expected
+noise norm and a single mode reads `8.78` sigma. A whitener that cannot return
+noise for noise is not measuring anything, so the spectrum and the z-scores from
+this run are **not reported as results**.
+
+The cause is the stationarity assumption. `DICSpectralWhitener` models one
+spectral density for the whole field, and the pointwise standard deviation of
+the propagated noise strain varies by a factor of `6.3` across the window. The
+edge-versus-interior split is not where it varies -- that ratio is `1.03` -- so
+the elastic extension is not what breaks it; the underlying DIC repeat noise is
+simply not spatially uniform. Passing the self-consistency check while failing
+the null test is exactly what a stationary model does when the truth is not:
+it reproduces the global norm and misses the directional structure.
+
+**What stands, therefore, is the unwhitened comparison of the previous section**,
+which assumes nothing about stationarity: `0.30` at state 1 rising to `8.23` at
+state 40, in strain, against noise propagated identically.
+
+A usable whitener for this observable needs a pointwise variance, not a
+spectral one, and ideally the local correlation as well. That is the next piece
+of machinery, and until it exists no per-mode significance can be quoted in this
+metric.
