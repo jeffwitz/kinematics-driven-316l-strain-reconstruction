@@ -1,0 +1,34 @@
+{
+  "alpha": 15.0,
+  "iterations": 30,
+  "results": [
+    {
+      "epsilon": 0.001,
+      "evm_correlation": 0.7377988242221342,
+      "evm_rms_ratio": 1.0007821707814206,
+      "spectral_score": 0.23443778153040404
+    },
+    {
+      "epsilon": 0.01,
+      "evm_correlation": 0.9142242809070884,
+      "evm_rms_ratio": 0.9221637535887972,
+      "spectral_score": 0.8484894464105915
+    },
+    {
+      "epsilon": 0.05,
+      "evm_correlation": 0.6683228124681769,
+      "evm_rms_ratio": 1.4791329051235345,
+      "spectral_score": 2.0979327111470845
+    },
+    {
+      "epsilon": 0.1,
+      "evm_correlation": 0.45774896828775813,
+      "evm_rms_ratio": 2.3752750852835947,
+      "spectral_score": 3.3501764548646933
+    }
+  ],
+  "window_row_column": [
+    350,
+    1600
+  ]
+}

@@ -54,6 +54,7 @@ def _flow_field(
     iterations: int,
     patch_size: int,
     patch_stride: int,
+    epsilon: float = 0.002,
 ) -> tuple[FloatArray, FloatArray]:
     flow = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
     flow.setFinestScale(0)
@@ -63,7 +64,7 @@ def _flow_field(
     flow.setVariationalRefinementAlpha(alpha)
     flow.setVariationalRefinementDelta(1.0)
     flow.setVariationalRefinementGamma(0.0)
-    flow.setVariationalRefinementEpsilon(0.002)
+    flow.setVariationalRefinementEpsilon(epsilon)
     flow.setVariationalRefinementIterations(iterations)
     field = flow.calc(reference, target, None)
     rows = slice(*CROP_ROWS)
