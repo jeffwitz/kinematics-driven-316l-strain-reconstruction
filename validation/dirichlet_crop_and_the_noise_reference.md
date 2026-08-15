@@ -123,3 +123,42 @@ A usable whitener for this observable needs a pointwise variance, not a
 spectral one, and ideally the local correlation as well. That is the next piece
 of machinery, and until it exists no per-mode significance can be quoted in this
 metric.
+
+## A pointwise whitener passes the null test — and moves the noise floor
+
+`fem_inhouse.identification.pointwise_whitening`. Two stages: divide by the
+standard deviation estimated at each point and component, then whiten the
+remainder spectrally. Fitted on 300 **independent, non-overlapping** noise
+patches and validated on 100 held out — the only check a self-consistent
+whitener cannot fake.
+
+| whitener | held-out norm | directional sd | worst direction |
+|---|---:|---:|---:|
+| spectral only (previous) | `0.998` on its own samples | — | fails at `8.78` |
+| pointwise only | `0.919` | `0.963` | `1.405` |
+| pointwise + spectral | **`0.990`** | **`0.979`** | `1.270` |
+
+The composition returns noise for noise on data it has never seen, in norm and
+along directions fixed before the samples were drawn. Neither stage alone does.
+
+**And it shows the repeat-noise dataset understates the real noise floor.**
+Applied to the experiment, state 1 comes back at `1.94` rather than `1.0`:
+
+| state | 1 | 2 | 3 | 5 | 10 | 20 | 30 | 40 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| whitened residual / expected | `1.94` | `3.31` | `4.69` | `7.36` | `14.3` | `28.4` | `43.4` | `57.9` |
+
+The repeat dataset images the same state twice; a history correlates *deformed*
+states against a reference, where decorrelation is worse. A factor of two
+between the two is unsurprising, and it is the history's floor that matters.
+
+Taking state 1 as an empirical floor, the residual reaches about `30` times the
+noise at state 40 — still a large, unambiguous signal.
+
+Two caveats bound that number. State 1 may itself contain a little signal, which
+would make the floor too high and the ratio conservative. And if decorrelation
+grows with strain the floor grows too, which would make it optimistic. The
+growth is close to proportional to the load and far too regular for noise, which
+is what argues it is a real response; separating a load-proportional systematic
+from plasticity is the question that remains, and it is now asked against a
+metric that has passed its null test.
