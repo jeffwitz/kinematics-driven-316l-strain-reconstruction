@@ -616,3 +616,43 @@ the truncated bases were built. The conclusion is unchanged in kind — a basis
 built on three states still misses 20 to 40 % of the fourth, so it remains
 compression rather than prediction — but it is less severe than the engineering
 numbers suggested, and those numbers should not be quoted further.
+
+## The dissipative QP runs; it is not yet converged
+
+`scripts/solve_dissipative_plastic_history_p43.py`, with OSQP. The formulation
+is the corrected one throughout: hard inequalities rather than a penalty, cuts
+**rebuilt** at every outer iteration because a cut is only valid for the `sigma`
+it was linearised at, mid-point dissipation with the absolute stress, and the
+contraction as a plain Kelvin dot product.
+
+One more trap found and fixed. Starting from `a = 0` is feasible, which makes it
+a **fixed point of a cut-then-solve loop**: there is no violation to cut on, the
+QP never runs, and the trajectory never leaves zero — four outer iterations
+returned an error of exactly 1.000 with zero cuts. The solve has to come first,
+with an empty constraint set, and the violations of *its* answer are what the
+cuts are built from.
+
+A reduced run — five states, rank 8, 1200 cuts — completes and gives:
+
+| | mean error | negative points | path / net |
+|---|---:|---:|---:|
+| free | `0.328` | `0.433` | `4.48` |
+| constrained | `0.957` | `0.448` | **`1.41`** |
+
+**This is not the price of admissibility and must not be quoted as one.** With
+1200 cuts against roughly two hundred thousand violated constraints, the
+solution is being degraded by the cuts without reaching feasibility: the
+negative fraction is unchanged at `0.45`. A number is only meaningful once the
+violations are actually driven to zero.
+
+What *is* meaningful is the structural effect. The path-to-net ratio falls from
+`4.48` to `1.41` under partial constraint: the dissipation requirement removes
+the zig-zag, which is exactly what it should do and what the free solution
+lacked. The trajectory becomes nearly monotone before it becomes feasible.
+
+Two things stand between this and the number. The cutting-plane needs to reach
+feasibility — many more cuts per round, or a smarter selection than "the most
+negative", since violations cluster and a spread-out set would constrain more
+per row. And OSQP's cost grows with the constraint count, so the full run needs
+either a tighter tolerance schedule or warm-starting between rounds, which the
+solver supports and this script does not yet use.
