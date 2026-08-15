@@ -25,11 +25,13 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+import cv2
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 from compare_disflow_profiles_p43 import equivalent_strain  # type: ignore[import-not-found]
 from numpy.typing import NDArray
+from tune_disflow_alpha_against_received import _flow_field  # type: ignore[import-not-found]
 
 FloatArray = NDArray[np.float64]
 
@@ -62,19 +64,40 @@ def main() -> int:
     parser.add_argument("--state", type=int, default=40)
     parser.add_argument("--factor", type=int, default=4)
     parser.add_argument("--zoom-size", type=int, default=600)
+    # The converged settings are recomputed here rather than read from a stored
+    # history: one image pair costs a minute, and the whole point of the panel
+    # is to compare against fields that were produced with too few refinement
+    # iterations to have erased the matching grid.
+    parser.add_argument("--alpha", type=float, default=15.0)
+    parser.add_argument("--epsilon", type=float, default=0.001)
+    parser.add_argument("--iterations", type=int, default=100)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
+
+    images = sorted(
+        (Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/DIC_images")).glob("*.tif")
+    )
+    converged_rows, converged_columns = _flow_field(
+        cv2.imread(str(images[0]), cv2.IMREAD_GRAYSCALE),
+        cv2.imread(str(images[arguments.state]), cv2.IMREAD_GRAYSCALE),
+        alpha=arguments.alpha,
+        iterations=arguments.iterations,
+        patch_size=4,
+        patch_stride=1,
+        epsilon=arguments.epsilon,
+    )
 
     fields = {
         "received (Adil)": equivalent_strain(
             np.asarray(np.load(RECEIVED_ROOT / "V_40.npy"), dtype=np.float64),
             np.asarray(np.load(RECEIVED_ROOT / "U_40.npy"), dtype=np.float64),
         ),
-        "DISFlow patch 8 / stride 3": _from_history(
-            DATA_ROOT / "p0043_disflow_history.h5", arguments.state
-        ),
-        "DISFlow patch 4 / stride 1": _from_history(
+        "unconverged\nalpha 100, 30 iterations": _from_history(
             DATA_ROOT / "p0043_disflow_history_patch4.h5", arguments.state
+        ),
+        f"converged\nalpha {arguments.alpha:g}, eps {arguments.epsilon:g},"
+        f" {arguments.iterations} iterations": equivalent_strain(
+            converged_rows, converged_columns
         ),
     }
 
