@@ -10,7 +10,7 @@
       "equilibrium_rms": 3.154608185811773e-14,
       "maximum_ratio": 0.0,
       "plastic_points": 0,
-      "points_at_or_beyond_the_wall": 800,
+      "points_at_or_beyond_the_wall": 0,
       "state": 1
     },
     {
@@ -329,7 +329,6 @@
   "states_completed": 40,
   "states_requested": 40,
   "states_with_a_point_at_or_beyond_the_wall": [
-    1,
     7,
     11,
     12,

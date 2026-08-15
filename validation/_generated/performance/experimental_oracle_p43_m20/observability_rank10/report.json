@@ -1,0 +1,73 @@
+{
+  "adjoint_checks": {
+    "gp_relative_error": 4.1575858848288355e-16,
+    "observation_relative_error": 4.03569895622614e-10
+  },
+  "eigenvalues": [
+    2494.809896634521,
+    2078.0898865873664,
+    1844.426879301507,
+    1535.1675695551396,
+    455.13407950576294,
+    435.3555827841465,
+    369.4422831051597,
+    357.19642503959705,
+    340.9132689903249,
+    332.0507120323836
+  ],
+  "fields": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/fields.npz",
+  "metric": {
+    "amplitude_weight": 1.0,
+    "reference_scale": 0.000253965205518845,
+    "spatial_weight": 0.0,
+    "type": "amplitude_plus_neighbour_differences"
+  },
+  "mode_spectra": [
+    {
+      "dc_power_fraction": 0.0007806230856894831,
+      "mode": 1,
+      "nyquist_edge_power_fraction": 0.010326429240910333
+    },
+    {
+      "dc_power_fraction": 7.38325477451218e-05,
+      "mode": 2,
+      "nyquist_edge_power_fraction": 0.001510557980434555
+    },
+    {
+      "dc_power_fraction": 0.00042120653923243554,
+      "mode": 3,
+      "nyquist_edge_power_fraction": 0.00532536722507043
+    },
+    {
+      "dc_power_fraction": 0.00015354883958496637,
+      "mode": 4,
+      "nyquist_edge_power_fraction": 0.0027147092040724847
+    }
+  ],
+  "plastic_shape": [
+    20,
+    20,
+    2
+  ],
+  "rank": 10,
+  "schema_version": 1,
+  "sqrt_eigenvalues": [
+    49.94807200117459,
+    45.58607119052229,
+    42.94679125733967,
+    39.18121449821508,
+    21.333871648291197,
+    20.86517631806994,
+    19.22088143413719,
+    18.899640870651407,
+    18.463836789527928,
+    18.222258697329035
+  ],
+  "state_indices": [
+    0,
+    10,
+    20,
+    29,
+    39
+  ]
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "dc_power_fraction": 0.03796660987933589,
+    "mode": 1,
+    "nyquist_edge_power_fraction": 0.08417990781563504
+  },
+  {
+    "dc_power_fraction": 0.0025609756759880976,
+    "mode": 2,
+    "nyquist_edge_power_fraction": 0.013199174614130893
+  },
+  {
+    "dc_power_fraction": 0.01687104530442198,
+    "mode": 3,
+    "nyquist_edge_power_fraction": 0.05770442238931834
+  },
+  {
+    "dc_power_fraction": 0.0047747825554796865,
+    "mode": 4,
+    "nyquist_edge_power_fraction": 0.01793851598070394
+  }
+]

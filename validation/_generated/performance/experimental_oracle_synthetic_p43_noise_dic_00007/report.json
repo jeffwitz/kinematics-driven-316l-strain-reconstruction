@@ -1,0 +1,91 @@
+{
+  "augmented_iterations": [
+    {
+      "equilibrium_rms": 0.011260984521829298,
+      "index": 1,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006304015148604592,
+      "penalty": 1.0,
+      "projected_gradient_inf": 6.755010569504751e-05
+    },
+    {
+      "equilibrium_rms": 0.009529745010301939,
+      "index": 2,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006048126154604754,
+      "penalty": 1.0,
+      "projected_gradient_inf": 2.3036635313899742e-05
+    },
+    {
+      "equilibrium_rms": 0.0022619924103360225,
+      "index": 3,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006100320998833151,
+      "penalty": 10.0,
+      "projected_gradient_inf": 0.00014660802814096436
+    },
+    {
+      "equilibrium_rms": 0.000995803955588797,
+      "index": 4,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006079576094478261,
+      "penalty": 10.0,
+      "projected_gradient_inf": 5.678501762864304e-05
+    },
+    {
+      "equilibrium_rms": 0.0007206437366247988,
+      "index": 5,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006068732226319094,
+      "penalty": 10.0,
+      "projected_gradient_inf": 2.256878740155205e-05
+    },
+    {
+      "equilibrium_rms": 3.7969094581103815e-05,
+      "index": 6,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006069510425258004,
+      "penalty": 100.0,
+      "projected_gradient_inf": 3.413059081618503e-05
+    }
+  ],
+  "displacement_error_ratio_recovered_over_measured": 0.5330810808072184,
+  "git_sha": "2c714ad02a9d0800afc11a471e95ac638d67f5a2",
+  "grid_shape": [
+    5,
+    5
+  ],
+  "interpretation": "Formulation/gradient P0 qualification only. This synthetic does not identify an absolute constitutive law and uses no synchronized force.",
+  "measured_displacement_error_l2_mm": 3.2583741104161857e-06,
+  "noise_pixel_size_mm": 0.00184,
+  "noise_source": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+  "objective_components": {
+    "augmented_equilibrium": -2.6157441431371188e-08,
+    "dic_misfit": 3.558955168705472e-05,
+    "ludwik_prior": 0.0005528912187958007,
+    "spatial_regularisation": 1.849642948437638e-05,
+    "temporal_regularisation": 0.0,
+    "truth_dic_misfit": 0.3530668986383778
+  },
+  "oracle_equilibrium_rms": 3.7969094581103815e-05,
+  "prior_relative_l2": 0.5272181636929943,
+  "prior_spearman": 0.6518907184019087,
+  "recovered_displacement_error_l2_mm": 1.736977592454919e-06,
+  "recovered_relative_l2": 0.3701468619345796,
+  "recovered_spearman": 0.8860095185429582,
+  "recovery_qualified": true,
+  "schema_version": 1,
+  "status": "qualified_synthetic_recovery",
+  "truth_equilibrium_rms": 9.091968573346133e-10,
+  "weights": {
+    "dic": 7e-05,
+    "ludwik_prior": 0.03,
+    "spatial_plastic_increment": 0.0003
+  }
+}

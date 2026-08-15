@@ -1,0 +1,112 @@
+{
+  "baseline_ludwik": {
+    "dic_is_the_baseline_displacement": true,
+    "equilibrium_inf_mpa_mm": 0.24450329375900287,
+    "equilibrium_rms_mpa_mm": 0.04789107120571929
+  },
+  "directional_sensitivity": [
+    {
+      "direction": 0,
+      "displacement_inf_mm_per_unit_delta_p": 9.804924959284145e-05,
+      "displacement_rms_mm_per_unit_delta_p": 2.304705889107181e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 249.12010928925721
+    },
+    {
+      "direction": 1,
+      "displacement_inf_mm_per_unit_delta_p": 0.00012152442785960863,
+      "displacement_rms_mm_per_unit_delta_p": 2.5110077432959728e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 185.71395033715544
+    },
+    {
+      "direction": 2,
+      "displacement_inf_mm_per_unit_delta_p": 0.00012872288914253798,
+      "displacement_rms_mm_per_unit_delta_p": 2.6605018945805496e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 205.42589947701774
+    },
+    {
+      "direction": 3,
+      "displacement_inf_mm_per_unit_delta_p": 0.0001140563721371163,
+      "displacement_rms_mm_per_unit_delta_p": 2.554126920213757e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 325.925334654145
+    },
+    {
+      "direction": 4,
+      "displacement_inf_mm_per_unit_delta_p": 0.00010483232135195491,
+      "displacement_rms_mm_per_unit_delta_p": 2.5914783747378547e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 299.83021019269904
+    },
+    {
+      "direction": 5,
+      "displacement_inf_mm_per_unit_delta_p": 0.00010147523315534913,
+      "displacement_rms_mm_per_unit_delta_p": 2.3798406781987927e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 249.42190019238896
+    },
+    {
+      "direction": 6,
+      "displacement_inf_mm_per_unit_delta_p": 0.0001218189708740795,
+      "displacement_rms_mm_per_unit_delta_p": 2.6146495436824135e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 299.15429276572746
+    },
+    {
+      "direction": 7,
+      "displacement_inf_mm_per_unit_delta_p": 0.0001437979937440279,
+      "displacement_rms_mm_per_unit_delta_p": 2.8752700827843148e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 286.02117902195977
+    },
+    {
+      "direction": 8,
+      "displacement_inf_mm_per_unit_delta_p": 0.00010770211421630051,
+      "displacement_rms_mm_per_unit_delta_p": 2.5935933081762888e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 183.71704513428887
+    },
+    {
+      "direction": 9,
+      "displacement_inf_mm_per_unit_delta_p": 9.980198089693041e-05,
+      "displacement_rms_mm_per_unit_delta_p": 2.3958695599794365e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 264.7241767914991
+    },
+    {
+      "direction": 10,
+      "displacement_inf_mm_per_unit_delta_p": 9.534326234608863e-05,
+      "displacement_rms_mm_per_unit_delta_p": 2.4922170717900577e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 301.5748301988834
+    },
+    {
+      "direction": 11,
+      "displacement_inf_mm_per_unit_delta_p": 0.00014504150255562209,
+      "displacement_rms_mm_per_unit_delta_p": 2.5878451656898956e-05,
+      "gmres_info": 0,
+      "whitened_displacement_norm_per_unit_delta_p": 195.75799828266304
+    }
+  ],
+  "oracle_final": {
+    "dic_equivalent_strain_maximum": 0.00879561683579855,
+    "dic_state": 40,
+    "dic_uncertainty_mm": 9.4e-05,
+    "displacement_correction_inf_mm": 1.1480915066142128e-05,
+    "displacement_correction_inf_over_uncertainty": 0.12213739432066094,
+    "displacement_correction_rms_mm": 3.515313122071865e-06,
+    "displacement_relative_l2": 7.169410225036994e-05,
+    "equivalent_strain_relative_l2": 0.06337067912831439,
+    "equivalent_strain_spearman": 0.9029311025109344,
+    "oracle_equivalent_strain_maximum": 0.007894629072104557,
+    "peeq_oracle_maximum": 0.008464003369392747,
+    "peeq_prior_maximum": 0.008478876222460234,
+    "peeq_prior_oracle_relative_l2": 0.002043507477966866,
+    "peeq_prior_oracle_spearman": 0.999916936980856
+  },
+  "oracle_report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/report.json",
+  "schema_version": 1,
+  "typical_oracle_delta_p_l2": 0.008018693114933502
+}

@@ -6416,3 +6416,41 @@ l'anatomie montre que ce qui reste vit au bord et non dans la bande.
 
 **Conclusion à ce stade** : la détection à `21,6σ` est réelle, mais l'appeler
 une reconstruction du champ plastique n'est pas soutenu par les données.
+
+#### Test EBSD : le défaut n'est pas de l'hétérogénéité élastique cristalline
+
+L'élasticité de référence est remplacée par la vraie : à chaque pixel, le
+tenseur cubique **déjà déclaré par la loi FCC du dépôt** (`E = 99950,3 MPa`,
+`ν = 0,388`, `G = 122000 MPa`, anisotropie de Zener `3,39`) est tourné en 3D par
+l'orientation EBSD puis condensé exactement,
+`C_ps = C_aa − C_ab C_bb⁻¹ C_ba`. Jauge, chaîne de mesure, conditions aux
+limites, crop et diagnostics inchangés. Aucune plasticité cristalline, aucun
+recalage.
+
+Chaîne vérifiée d'abord : un cristal isotrope se condense sur
+`plane_stress_elasticity` **à n'importe quel angle d'Euler**, à `4e-16` — ce qui
+teste ensemble la rotation 3D, la convention de Voigt et le complément de Schur.
+Symétrie cubique préservée à `7e-17`. Et sur une frontière affine à 1 %,
+l'extension isotrope fluctue de `6e-20 mm` — le zéro exact que la théorie
+impose — contre `6,18e-5 mm` RMS pour l'EBSD, soit `0,66 σ` DIC.
+
+**Le premier crop était un mauvais test.** À `(1610, 1075)` un seul grain couvre
+`70,4 %` de la fenêtre. Sous Dirichlet quasi affine, une raideur uniforme même
+anisotrope rend le même champ. Crop rebalayé pour la diversité de grains et
+`(1580, 1030)` retenu : grain dominant `20,6 %`, `7,2` grains effectifs.
+
+**Sur ce vrai polycristal, le résidu ne bouge pas** : `5,873` → `5,875` à l'état
+40, et le contrôle à orientations permutées est identique. Ce n'est donc pas une
+question de mauvais arrangement spatial.
+
+**La raison est l'orthogonalité, pas la petitesse.** La correction EBSD vaut
+`2,6 %` du résidu à l'état 20 et `3,0 %` à l'état 40 — non négligeable — mais son
+cosinus avec le résidu vaut `+0,0015` et `+0,0057`. Retrancher une composante
+orthogonale ne peut pas réduire une norme, et la norme monte bien du
+`√(1+ε²)` prévu. Seul `1 %` de la correction tombe dans le sous-espace précoce
+de rang 3.
+
+**Le confondeur principal identifié cette nuit est donc éliminé.** L'équivalence
+d'Eshelby reste vraie en principe, mais l'élasticité cristalline réelle de cette
+éprouvette ne produit pas le défaut observé. Ce que représente le sous-espace
+précoce de rang 3 reste ouvert.

@@ -1,0 +1,51 @@
+{
+  "adjoint_checks": {
+    "gp_relative_error": 4.21806268514628e-16,
+    "observation_relative_error": 8.85154207263369e-07
+  },
+  "eigenvalues": [
+    0.15955797998861374,
+    0.08596976496695966
+  ],
+  "fields": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/fields.npz",
+  "measurement_transfer": {
+    "model": "isotropic average of horizontal and vertical sinusoidal gains",
+    "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
+  },
+  "metric": {
+    "amplitude_weight": 1.0,
+    "reference_scale": 0.00029619732789253723,
+    "spatial_weight": 0.0,
+    "type": "amplitude_plus_neighbour_differences"
+  },
+  "mode_spectra": [
+    {
+      "dc_power_fraction": 0.0009199906264720865,
+      "mode": 1,
+      "nyquist_axis_power_fraction": 0.00342281906681764
+    },
+    {
+      "dc_power_fraction": 0.0004441304138970674,
+      "mode": 2,
+      "nyquist_axis_power_fraction": 0.00426057358656439
+    }
+  ],
+  "plastic_shape": [
+    20,
+    20,
+    2
+  ],
+  "rank": 2,
+  "schema_version": 1,
+  "sqrt_eigenvalues": [
+    0.3994470928528755,
+    0.29320601113715195
+  ],
+  "state_indices": [
+    4,
+    14,
+    23,
+    32,
+    39
+  ]
+}

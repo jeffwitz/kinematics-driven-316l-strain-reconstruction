@@ -1,0 +1,65 @@
+{
+  "adjoint_checks": {
+    "gp_relative_error": 4.1575858848288355e-16,
+    "observation_relative_error": 6.671138844558075e-07
+  },
+  "eigenvalues": [
+    0.19311940458163945,
+    0.0820914461377342,
+    0.012890027234613573,
+    0.0034373294269905747
+  ],
+  "fields": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/fields.npz",
+  "measurement_transfer": {
+    "model": "isotropic average of horizontal and vertical sinusoidal gains",
+    "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
+  },
+  "metric": {
+    "amplitude_weight": 1.0,
+    "reference_scale": 0.00029619732789253723,
+    "spatial_weight": 0.0,
+    "type": "amplitude_plus_neighbour_differences"
+  },
+  "mode_spectra": [
+    {
+      "dc_power_fraction": 0.0002469731550650641,
+      "mode": 1,
+      "nyquist_axis_power_fraction": 0.003814352615459361
+    },
+    {
+      "dc_power_fraction": 0.007822540845363723,
+      "mode": 2,
+      "nyquist_axis_power_fraction": 0.0037742807659970463
+    },
+    {
+      "dc_power_fraction": 0.004174916204936411,
+      "mode": 3,
+      "nyquist_axis_power_fraction": 0.002670248995069828
+    },
+    {
+      "dc_power_fraction": 0.07305787658344094,
+      "mode": 4,
+      "nyquist_axis_power_fraction": 0.008393161044202546
+    }
+  ],
+  "plastic_shape": [
+    20,
+    20,
+    2
+  ],
+  "rank": 4,
+  "schema_version": 1,
+  "sqrt_eigenvalues": [
+    0.43945352949047917,
+    0.28651604865650054,
+    0.1135342557760149,
+    0.058628742328235
+  ],
+  "state_indices": [
+    0,
+    10,
+    20,
+    29,
+    39
+  ]
+}

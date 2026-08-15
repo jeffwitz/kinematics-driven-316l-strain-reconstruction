@@ -1,0 +1,1017 @@
+{
+  "absolute_constitutive_identification": false,
+  "accepted_increments": 40,
+  "crop_nodes": [
+    1610,
+    1630,
+    1075,
+    1095
+  ],
+  "dic_history": "repaired measured P43 DIC history",
+  "dic_history_source": "validation/reference_data/dic_multistep_history_p0043_repaired_v1/repaired_history_mm.npy",
+  "dic_state_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "elapsed_seconds": 69.1818898380734,
+  "failed_increment": null,
+  "field_comparison_final_state": {
+    "dic_equivalent_strain_maximum": 0.00879561683579855,
+    "dic_state": 40,
+    "dic_uncertainty_mm": 9.4e-05,
+    "displacement_correction_inf_mm": 1.1340917056484878e-05,
+    "displacement_correction_inf_over_uncertainty": 0.12064805379239232,
+    "displacement_correction_rms_mm": 3.499015554557819e-06,
+    "displacement_relative_l2": 7.136171664737829e-05,
+    "equivalent_strain_relative_l2": 0.06293043328325083,
+    "equivalent_strain_spearman": 0.901779313123851,
+    "oracle_equivalent_strain_maximum": 0.007851741092425708,
+    "peeq_oracle_maximum": 0.008352874007915822,
+    "peeq_prior_maximum": 0.008478876222460234,
+    "peeq_prior_oracle_relative_l2": 0.015418800287147646,
+    "peeq_prior_oracle_spearman": 0.9969187932424576
+  },
+  "figure": "validation/_generated/performance/experimental_oracle_p43_m20_prior_003/fields.png",
+  "git_sha": "2c714ad02a9d0800afc11a471e95ac638d67f5a2",
+  "increments": [
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.0747220944464912e-12,
+          "index": 1,
+          "inner_iterations": 0,
+          "inner_success": true,
+          "objective": 4.060744195839859e-09,
+          "penalty": 0.0,
+          "projected_gradient_inf": 2.952849631524531e-11
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.0001160212627382817,
+      "equilibrium_rms": 1.0747220944464912e-12,
+      "increment": 1,
+      "maximum_delta_p": 0.0,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 2.952849631524531e-11,
+      "raw_dic_misfit_per_dof": 5.801063136914085e-05
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.8329929473608907e-12,
+          "index": 1,
+          "inner_iterations": 0,
+          "inner_success": true,
+          "objective": 8.425203292551404e-09,
+          "penalty": 0.0,
+          "projected_gradient_inf": 3.049194275792024e-11
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.00024072009407289727,
+      "equilibrium_rms": 1.8329929473608907e-12,
+      "increment": 2,
+      "maximum_delta_p": 0.0,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 3.049194275792024e-11,
+      "raw_dic_misfit_per_dof": 0.00012036004703644864
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.7948199772382748e-12,
+          "index": 1,
+          "inner_iterations": 0,
+          "inner_success": true,
+          "objective": 2.3348973291360028e-08,
+          "penalty": 0.0,
+          "projected_gradient_inf": 5.418653297540713e-11
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.0006671135226102865,
+      "equilibrium_rms": 2.7948199772382748e-12,
+      "increment": 3,
+      "maximum_delta_p": 0.0,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 5.418653297540713e-11,
+      "raw_dic_misfit_per_dof": 0.00033355676130514326
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 5.6419328225535263e-11,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.00013206863298547206,
+          "penalty": 0.0,
+          "projected_gradient_inf": 4.0332927736553786e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.0020832743583474355,
+      "equilibrium_rms": 5.6419328225535263e-11,
+      "increment": 4,
+      "maximum_delta_p": 6.723627707907379e-05,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 4.0332927736553786e-08,
+      "raw_dic_misfit_per_dof": 0.0010416371791737177
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 7.649714759473117e-10,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.0011017882052981032,
+          "penalty": 0.0,
+          "projected_gradient_inf": 5.422045706903263e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.0024793672599734144,
+      "equilibrium_rms": 7.649714759473117e-10,
+      "increment": 5,
+      "maximum_delta_p": 0.00015882945748638445,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 5.422045706903263e-08,
+      "raw_dic_misfit_per_dof": 0.0012396836299867072
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.214742661659197e-10,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.0004560608850175473,
+          "penalty": 0.0,
+          "projected_gradient_inf": 5.272085640535765e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.004084834150962826,
+      "equilibrium_rms": 1.214742661659197e-10,
+      "increment": 6,
+      "maximum_delta_p": 6.343565922627576e-05,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 5.272085640535765e-08,
+      "raw_dic_misfit_per_dof": 0.002042417075481413
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.0448240754180217e-09,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.0027768761051721103,
+          "penalty": 0.0,
+          "projected_gradient_inf": 7.111496007197909e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.0021139479939532653,
+      "equilibrium_rms": 1.0448240754180217e-09,
+      "increment": 7,
+      "maximum_delta_p": 0.00024324117340409566,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 7.111496007197909e-08,
+      "raw_dic_misfit_per_dof": 0.0010569739969766327
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.1666857743755285e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0012716713214846389,
+          "penalty": 0.0,
+          "projected_gradient_inf": 7.303901197649347e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.00454986298633051,
+      "equilibrium_rms": 1.1666857743755285e-10,
+      "increment": 8,
+      "maximum_delta_p": 0.00011797124272067174,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 7.303901197649347e-09,
+      "raw_dic_misfit_per_dof": 0.002274931493165255
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.2955679853499306e-11,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 8.309372087662913e-05,
+          "penalty": 0.0,
+          "projected_gradient_inf": 2.5111362774431866e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.008913800588548147,
+      "equilibrium_rms": 2.2955679853499306e-11,
+      "increment": 9,
+      "maximum_delta_p": 3.846295446798521e-05,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 2.5111362774431866e-08,
+      "raw_dic_misfit_per_dof": 0.004456900294274074
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 6.241079938420053e-10,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.0010882590728377654,
+          "penalty": 0.0,
+          "projected_gradient_inf": 9.304134926096876e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.0072372547270602855,
+      "equilibrium_rms": 6.241079938420053e-10,
+      "increment": 10,
+      "maximum_delta_p": 0.00010585399489301897,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 9.304134926096876e-08,
+      "raw_dic_misfit_per_dof": 0.0036186273635301427
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 4.603636214913059e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.005697080072178709,
+          "penalty": 0.0,
+          "projected_gradient_inf": 3.8962084666192255e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.008282127039172332,
+      "equilibrium_rms": 4.603636214913059e-10,
+      "increment": 11,
+      "maximum_delta_p": 0.00026343831423239933,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 3.8962084666192255e-08,
+      "raw_dic_misfit_per_dof": 0.004141063519586166
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.8281656444969682e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0038938980965886848,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.747203507670167e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.00803381476294736,
+      "equilibrium_rms": 1.8281656444969682e-10,
+      "increment": 12,
+      "maximum_delta_p": 0.00020983332195801787,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.747203507670167e-08,
+      "raw_dic_misfit_per_dof": 0.00401690738147368
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.0365582584583502e-10,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.0007808761747478914,
+          "penalty": 0.0,
+          "projected_gradient_inf": 5.254775435143679e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.008973809248666692,
+      "equilibrium_rms": 2.0365582584583502e-10,
+      "increment": 13,
+      "maximum_delta_p": 0.00011724682135575284,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 5.254775435143679e-08,
+      "raw_dic_misfit_per_dof": 0.004486904624333346
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.7077628520616507e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.005921681714156991,
+          "penalty": 0.0,
+          "projected_gradient_inf": 3.705678876026036e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.012108264433974385,
+      "equilibrium_rms": 1.7077628520616507e-10,
+      "increment": 14,
+      "maximum_delta_p": 0.0002752867027431841,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 3.705678876026036e-08,
+      "raw_dic_misfit_per_dof": 0.006054132216987192
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.4931921673524966e-11,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0017017969096860402,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.6231150024299122e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.012138313830836037,
+      "equilibrium_rms": 2.4931921673524966e-11,
+      "increment": 15,
+      "maximum_delta_p": 0.00014344396536871554,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.6231150024299122e-08,
+      "raw_dic_misfit_per_dof": 0.006069156915418018
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 4.696221894763496e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.007907446524974101,
+          "penalty": 0.0,
+          "projected_gradient_inf": 4.80372679082706e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.01782694452140624,
+      "equilibrium_rms": 4.696221894763496e-10,
+      "increment": 16,
+      "maximum_delta_p": 0.00033933849839593266,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 4.80372679082706e-08,
+      "raw_dic_misfit_per_dof": 0.00891347226070312
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 4.7446843353180073e-11,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.001953221564318916,
+          "penalty": 0.0,
+          "projected_gradient_inf": 2.111178329136218e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.017135148433384362,
+      "equilibrium_rms": 4.7446843353180073e-11,
+      "increment": 17,
+      "maximum_delta_p": 0.00016613806519931684,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 2.111178329136218e-08,
+      "raw_dic_misfit_per_dof": 0.008567574216692181
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 7.325782573616577e-11,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.001780872018894659,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.4834444142932365e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.020779018838442374,
+      "equilibrium_rms": 7.325782573616577e-11,
+      "increment": 18,
+      "maximum_delta_p": 0.00012214226770274042,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.4834444142932365e-08,
+      "raw_dic_misfit_per_dof": 0.010389509419221187
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.1739444254720966e-10,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.00032203654702705776,
+          "penalty": 0.0,
+          "projected_gradient_inf": 8.989357836000752e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.01949104619997407,
+      "equilibrium_rms": 1.1739444254720966e-10,
+      "increment": 19,
+      "maximum_delta_p": 7.537992638560853e-05,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 8.989357836000752e-08,
+      "raw_dic_misfit_per_dof": 0.009745523099987035
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.1591472243155425e-10,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.0004653260682389675,
+          "penalty": 0.0,
+          "projected_gradient_inf": 5.269034428576587e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.019721422431883524,
+      "equilibrium_rms": 1.1591472243155425e-10,
+      "increment": 20,
+      "maximum_delta_p": 9.47930258936165e-05,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 5.269034428576587e-08,
+      "raw_dic_misfit_per_dof": 0.009860711215941762
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 3.245280003989964e-09,
+          "index": 1,
+          "inner_iterations": 3,
+          "inner_success": true,
+          "objective": 0.006649880175406196,
+          "penalty": 0.0,
+          "projected_gradient_inf": 9.492842828120455e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.021673099460724706,
+      "equilibrium_rms": 3.245280003989964e-09,
+      "increment": 21,
+      "maximum_delta_p": 0.0003356830917021662,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 9.492842828120455e-08,
+      "raw_dic_misfit_per_dof": 0.010836549730362353
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 5.958715557013654e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.007402816114043741,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.0943634620986918e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.018857804823037578,
+      "equilibrium_rms": 5.958715557013654e-10,
+      "increment": 22,
+      "maximum_delta_p": 0.0005296735996410203,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.0943634620986918e-08,
+      "raw_dic_misfit_per_dof": 0.009428902411518789
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 6.841637104883343e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.004946261594298914,
+          "penalty": 0.0,
+          "projected_gradient_inf": 8.398752541299889e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.01832466149403183,
+      "equilibrium_rms": 6.841637104883343e-10,
+      "increment": 23,
+      "maximum_delta_p": 0.00021830471705103343,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 8.398752541299889e-09,
+      "raw_dic_misfit_per_dof": 0.009162330747015914
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 9.435098326396614e-11,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0030254952150864855,
+          "penalty": 0.0,
+          "projected_gradient_inf": 9.740182156736879e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.03787209550993596,
+      "equilibrium_rms": 9.435098326396614e-11,
+      "increment": 24,
+      "maximum_delta_p": 0.00017665753905438673,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 9.740182156736879e-09,
+      "raw_dic_misfit_per_dof": 0.01893604775496798
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 9.080440836977703e-11,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0033096980690310923,
+          "penalty": 0.0,
+          "projected_gradient_inf": 2.1935037615605966e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.023742637647771844,
+      "equilibrium_rms": 9.080440836977703e-11,
+      "increment": 25,
+      "maximum_delta_p": 0.00023106046526247107,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 2.1935037615605966e-08,
+      "raw_dic_misfit_per_dof": 0.011871318823885922
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.1596382476805263e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.006352847153928802,
+          "penalty": 0.0,
+          "projected_gradient_inf": 3.3301075855938065e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.03471874516055742,
+      "equilibrium_rms": 1.1596382476805263e-10,
+      "increment": 26,
+      "maximum_delta_p": 0.00028168280533747006,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 3.3301075855938065e-08,
+      "raw_dic_misfit_per_dof": 0.01735937258027871
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.1740110136281124e-09,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.014680183490237914,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.6264045472828562e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.013285133572067823,
+      "equilibrium_rms": 2.1740110136281124e-09,
+      "increment": 27,
+      "maximum_delta_p": 0.0009625716178358071,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.6264045472828562e-08,
+      "raw_dic_misfit_per_dof": 0.0066425667860339115
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.6069392867779328e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0045188827409189045,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.9779802399209224e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.020356550981326983,
+      "equilibrium_rms": 1.6069392867779328e-10,
+      "increment": 28,
+      "maximum_delta_p": 0.0004910202576213233,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.9779802399209224e-08,
+      "raw_dic_misfit_per_dof": 0.010178275490663491
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.58796809467038e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.003668949529494347,
+          "penalty": 0.0,
+          "projected_gradient_inf": 7.935001584270564e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.01595025944716987,
+      "equilibrium_rms": 2.58796809467038e-10,
+      "increment": 29,
+      "maximum_delta_p": 0.0004097322619715705,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 7.935001584270564e-09,
+      "raw_dic_misfit_per_dof": 0.007975129723584934
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 3.49641426263629e-09,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.021745137444765323,
+          "penalty": 0.0,
+          "projected_gradient_inf": 6.584150725469585e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.024693072334092233,
+      "equilibrium_rms": 3.49641426263629e-09,
+      "increment": 30,
+      "maximum_delta_p": 0.0006802049354527634,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 6.584150725469585e-08,
+      "raw_dic_misfit_per_dof": 0.012346536167046116
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 6.953973438872709e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.005709085830795006,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.9032656675667285e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.013906759649012878,
+      "equilibrium_rms": 6.953973438872709e-10,
+      "increment": 31,
+      "maximum_delta_p": 0.0003432499785873214,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.9032656675667285e-08,
+      "raw_dic_misfit_per_dof": 0.006953379824506439
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 6.995872489311789e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0068016417864815385,
+          "penalty": 0.0,
+          "projected_gradient_inf": 7.857082294019412e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.017718141074407095,
+      "equilibrium_rms": 6.995872489311789e-10,
+      "increment": 32,
+      "maximum_delta_p": 0.0003755532884459303,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 7.857082294019412e-09,
+      "raw_dic_misfit_per_dof": 0.008859070537203547
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 7.299202099928789e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.007366268948538186,
+          "penalty": 0.0,
+          "projected_gradient_inf": 9.646379498656645e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.031568366024332495,
+      "equilibrium_rms": 7.299202099928789e-10,
+      "increment": 33,
+      "maximum_delta_p": 0.0004210730965161754,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 9.646379498656645e-09,
+      "raw_dic_misfit_per_dof": 0.015784183012166247
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 2.493265172513077e-09,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.02930515555376039,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.4224837912404928e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.012539883625162352,
+      "equilibrium_rms": 2.493265172513077e-09,
+      "increment": 34,
+      "maximum_delta_p": 0.0006281729663397343,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.4224837912404928e-08,
+      "raw_dic_misfit_per_dof": 0.006269941812581176
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.2882254125669295e-09,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.012300894486656158,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.2215397320175262e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.01703736132853577,
+      "equilibrium_rms": 1.2882254125669295e-09,
+      "increment": 35,
+      "maximum_delta_p": 0.0008106191953586982,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.2215397320175262e-08,
+      "raw_dic_misfit_per_dof": 0.008518680664267884
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 3.915409472995509e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.03746362096966249,
+          "penalty": 0.0,
+          "projected_gradient_inf": 2.8954218970221573e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.02091872760169913,
+      "equilibrium_rms": 3.915409472995509e-10,
+      "increment": 36,
+      "maximum_delta_p": 0.0006148455628235465,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 2.8954218970221573e-08,
+      "raw_dic_misfit_per_dof": 0.010459363800849565
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 8.918151458791e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.010485795202523377,
+          "penalty": 0.0,
+          "projected_gradient_inf": 8.967567031862702e-09
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.012645187336187597,
+      "equilibrium_rms": 8.918151458791e-10,
+      "increment": 37,
+      "maximum_delta_p": 0.0006277608077601065,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 8.967567031862702e-09,
+      "raw_dic_misfit_per_dof": 0.006322593668093799
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 5.329600634240172e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0061149586465264055,
+          "penalty": 0.0,
+          "projected_gradient_inf": 4.465397445962101e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.02313740771410581,
+      "equilibrium_rms": 5.329600634240172e-10,
+      "increment": 38,
+      "maximum_delta_p": 0.00037301526166367833,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 4.465397445962101e-08,
+      "raw_dic_misfit_per_dof": 0.011568703857052906
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 9.001594501580875e-10,
+          "index": 1,
+          "inner_iterations": 4,
+          "inner_success": true,
+          "objective": 0.0067981844415445445,
+          "penalty": 0.0,
+          "projected_gradient_inf": 1.1681294876897885e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 0,
+      "converged": true,
+      "discrepancy_ratio": 0.021404220098431573,
+      "equilibrium_rms": 9.001594501580875e-10,
+      "increment": 39,
+      "maximum_delta_p": 0.0010136984191629044,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 1.1681294876897885e-08,
+      "raw_dic_misfit_per_dof": 0.010702110049215787
+    },
+    {
+      "augmented_history": [
+        {
+          "equilibrium_rms": 1.312486493490692e-10,
+          "index": 1,
+          "inner_iterations": 7,
+          "inner_success": true,
+          "objective": 0.006374871387146101,
+          "penalty": 0.0,
+          "projected_gradient_inf": 4.94916884398842e-08
+        }
+      ],
+      "augmented_iterations": 1,
+      "constitutive_rejections": 5,
+      "converged": true,
+      "discrepancy_ratio": 0.022389884579456357,
+      "equilibrium_rms": 1.312486493490692e-10,
+      "increment": 40,
+      "maximum_delta_p": 0.0004975454993049009,
+      "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      "projected_gradient_inf": 4.94916884398842e-08,
+      "raw_dic_misfit_per_dof": 0.011194942289728178
+    }
+  ],
+  "mechanical_warm_start": {
+    "enabled": false,
+    "increments": []
+  },
+  "mesh": [
+    20,
+    20
+  ],
+  "ordered_pseudo_time_only": true,
+  "physical_force_history_available": false,
+  "requested_increments": 40,
+  "schema_version": 1,
+  "solution_method": "reduced",
+  "status": "completed",
+  "weights": {
+    "dic": 7e-05,
+    "ludwik_prior": 0.003,
+    "spatial_plastic_increment": 0.0003,
+    "temporal_plastic_increment": 0.0
+  }
+}

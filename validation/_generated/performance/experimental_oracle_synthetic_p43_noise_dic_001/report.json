@@ -1,0 +1,127 @@
+{
+  "augmented_iterations": [
+    {
+      "equilibrium_rms": 0.03855163199624677,
+      "index": 1,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0007397314743757559,
+      "penalty": 1.0,
+      "projected_gradient_inf": 0.0002589677765780483
+    },
+    {
+      "equilibrium_rms": 0.026064101784126315,
+      "index": 2,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.000814956902370776,
+      "penalty": 1.0,
+      "projected_gradient_inf": 0.00023342728997371862
+    },
+    {
+      "equilibrium_rms": 0.008367131522023027,
+      "index": 3,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0008973369146192756,
+      "penalty": 10.0,
+      "projected_gradient_inf": 0.00039907842384351
+    },
+    {
+      "equilibrium_rms": 0.003344294868003868,
+      "index": 4,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009158482952619638,
+      "penalty": 10.0,
+      "projected_gradient_inf": 0.00027685777820418174
+    },
+    {
+      "equilibrium_rms": 0.0017881706701412233,
+      "index": 5,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009178458092382837,
+      "penalty": 10.0,
+      "projected_gradient_inf": 8.881579733181358e-05
+    },
+    {
+      "equilibrium_rms": 0.0002269299128120614,
+      "index": 6,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009188604882997476,
+      "penalty": 100.0,
+      "projected_gradient_inf": 6.672248913807216e-05
+    },
+    {
+      "equilibrium_rms": 0.00022816512425851912,
+      "index": 7,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009183874836959776,
+      "penalty": 100.0,
+      "projected_gradient_inf": 0.00033558950803384586
+    },
+    {
+      "equilibrium_rms": 0.00010385560950221156,
+      "index": 8,
+      "inner_iterations": 47,
+      "inner_success": true,
+      "objective": 0.0009188227075944758,
+      "penalty": 1000.0,
+      "projected_gradient_inf": 0.0018288748096257166
+    },
+    {
+      "equilibrium_rms": 0.0001152478078451309,
+      "index": 9,
+      "inner_iterations": 86,
+      "inner_success": true,
+      "objective": 0.0009181212721152607,
+      "penalty": 1000.0,
+      "projected_gradient_inf": 0.0008830327296594215
+    },
+    {
+      "equilibrium_rms": 5.607433274355201e-06,
+      "index": 10,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009183904201664748,
+      "penalty": 10000.0,
+      "projected_gradient_inf": 0.00019229683095063602
+    }
+  ],
+  "displacement_error_ratio_recovered_over_measured": 0.9588550151993883,
+  "git_sha": "2c714ad02a9d0800afc11a471e95ac638d67f5a2",
+  "grid_shape": [
+    5,
+    5
+  ],
+  "interpretation": "Formulation/gradient P0 qualification only. This synthetic does not identify an absolute constitutive law and uses no synchronized force.",
+  "measured_displacement_error_l2_mm": 3.2583741104161857e-06,
+  "noise_pixel_size_mm": 0.00184,
+  "noise_source": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+  "objective_components": {
+    "augmented_equilibrium": 2.0565005636703014e-08,
+    "dic_misfit": 0.00016925404798473798,
+    "ludwik_prior": 0.0007294108680243895,
+    "spatial_regularisation": 1.9704939151710697e-05,
+    "temporal_regularisation": 0.0,
+    "truth_dic_misfit": 0.3530668986383778
+  },
+  "oracle_equilibrium_rms": 5.607433274355201e-06,
+  "prior_relative_l2": 0.5272181636929943,
+  "prior_spearman": 0.6518907184019087,
+  "recovered_displacement_error_l2_mm": 3.124308357168405e-06,
+  "recovered_relative_l2": 0.3072473976878377,
+  "recovered_spearman": 0.9253405906314716,
+  "recovery_qualified": true,
+  "schema_version": 1,
+  "status": "qualified_synthetic_recovery",
+  "truth_equilibrium_rms": 9.091968573346133e-10,
+  "weights": {
+    "dic": 0.01,
+    "ludwik_prior": 0.03,
+    "spatial_plastic_increment": 0.0003
+  }
+}

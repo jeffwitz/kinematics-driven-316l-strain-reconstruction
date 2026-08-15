@@ -1,0 +1,114 @@
+{
+  "augmented_iterations": [
+    {
+      "equilibrium_rms": 0.012589387781563327,
+      "index": 1,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0011236507984932803,
+      "penalty": 1.0,
+      "projected_gradient_inf": 5.667508425727265e-05
+    },
+    {
+      "equilibrium_rms": 0.011649045804159203,
+      "index": 2,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.000998892957034534,
+      "penalty": 1.0,
+      "projected_gradient_inf": 5.7467543971021314e-05
+    },
+    {
+      "equilibrium_rms": 0.0010940856969935317,
+      "index": 3,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.001000452517999239,
+      "penalty": 10.0,
+      "projected_gradient_inf": 8.539600675810653e-05
+    },
+    {
+      "equilibrium_rms": 0.001840200623260349,
+      "index": 4,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009797113359993684,
+      "penalty": 10.0,
+      "projected_gradient_inf": 6.756470989124242e-05
+    },
+    {
+      "equilibrium_rms": 0.0002165221923625777,
+      "index": 5,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009743170946173499,
+      "penalty": 100.0,
+      "projected_gradient_inf": 0.0001388623239900273
+    },
+    {
+      "equilibrium_rms": 0.00031415044069232965,
+      "index": 6,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009696240147942221,
+      "penalty": 100.0,
+      "projected_gradient_inf": 9.301818712352029e-05
+    },
+    {
+      "equilibrium_rms": 2.4147476570591957e-05,
+      "index": 7,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0009689587623570604,
+      "penalty": 1000.0,
+      "projected_gradient_inf": 0.00031286817400701285
+    }
+  ],
+  "discrepancy": {
+    "ratio_recovered_over_target": 0.8812489421053742,
+    "target_per_dof": 0.5
+  },
+  "displacement_error_ratio_recovered_over_measured": 0.5357928874673724,
+  "git_sha": "2c714ad02a9d0800afc11a471e95ac638d67f5a2",
+  "grid_shape": [
+    10,
+    10
+  ],
+  "interpretation": "Formulation/gradient P0 qualification only. This synthetic does not identify an absolute constitutive law and uses no synchronized force.",
+  "measured_displacement_error_l2_mm": 1.6763493340332736e-05,
+  "noise_origin": [
+    100,
+    120
+  ],
+  "noise_pixel_size_mm": 0.00184,
+  "noise_source": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+  "objective_components": {
+    "augmented_equilibrium": 2.183461526481675e-08,
+    "dic_misfit": 3.0843712973688093e-05,
+    "ludwik_prior": 0.0009304155062916261,
+    "raw_dic_misfit_per_dof": 0.4406244710526871,
+    "spatial_regularisation": 7.677708476481318e-06,
+    "temporal_regularisation": 0.0,
+    "truth_dic_misfit": 0.33853420449700045
+  },
+  "oracle_equilibrium_rms": 2.4147476570591957e-05,
+  "prior_relative_l2": 0.5984724663615919,
+  "prior_spearman": 0.6708941681092004,
+  "recovered_displacement_error_l2_mm": 8.981760500856944e-06,
+  "recovered_relative_l2": 0.2770661052424979,
+  "recovered_spearman": 0.9336855489617387,
+  "recovery_qualified": true,
+  "schema_version": 1,
+  "status": "qualified_synthetic_recovery",
+  "synthetic_band": {
+    "prior_offset_pixels": 1.5,
+    "prior_width_pixels": 0.9750000000000001,
+    "truth_width_pixels": 1.5
+  },
+  "truth_equilibrium_rms": 4.17776364020443e-10,
+  "weights": {
+    "dic": 7e-05,
+    "ludwik_prior": 0.03,
+    "spatial_plastic_increment": 0.0003
+  }
+}

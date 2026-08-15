@@ -1,0 +1,26 @@
+{
+  "adjoint_checks": {
+    "gp_relative_error": 0.0,
+    "observation_relative_error": 0.0
+  },
+  "direction_shape": [
+    20,
+    20,
+    2,
+    3
+  ],
+  "eigenvalues": [
+    0.055752522592899055,
+    0.041798703434615725
+  ],
+  "interpretation": "instantaneous mechanically observable J2 flow-direction perturbations",
+  "schema_version": 1,
+  "state_count": 5,
+  "state_indices": [
+    0,
+    10,
+    20,
+    29,
+    39
+  ]
+}

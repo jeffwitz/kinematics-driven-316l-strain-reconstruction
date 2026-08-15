@@ -1,0 +1,62 @@
+{
+  "display": {
+    "lower_percentile": 5.0,
+    "upper_percentile": 95.0
+  },
+  "j2": {
+    "figure": "validation/_generated/performance/p43_m100_j2_local_nonlocal_dic.png",
+    "peeq_local_vs_nonlocal": {
+      "left_max": 0.0323575020219212,
+      "left_min": 0.0,
+      "relative_l2": 0.28155064687669473,
+      "right_max": 0.018242952687340493,
+      "right_min": 0.0,
+      "spearman": 0.9941509277729118,
+      "top_5_percent_jaccard": 0.8656716417910447
+    },
+    "physical_note": "DIC equivalent total strain is not PEEQ; the two quantities are shown on separate rows and are not subtracted from each other.",
+    "total_strain_dic_vs_local": {
+      "left_max": 0.007840904461025913,
+      "left_min": 8.756163964824661e-05,
+      "relative_l2": 0.6024089236678555,
+      "right_max": 0.025198648282463435,
+      "right_min": 0.0002727955745808274,
+      "spearman": 0.1504850365173533,
+      "top_5_percent_jaccard": 0.014895729890764648
+    },
+    "total_strain_dic_vs_nonlocal": {
+      "left_max": 0.007840904461025913,
+      "left_min": 8.756163964824661e-05,
+      "relative_l2": 0.5256072621315744,
+      "right_max": 0.015405097870355156,
+      "right_min": 0.00026926241749382736,
+      "spearman": 0.14671618808976486,
+      "top_5_percent_jaccard": 0.022
+    }
+  },
+  "slip_systems": {
+    "reason": "The completed coupled SRIX archives contain Gamma but not the twelve per-system signed and accumulated slips; they cannot be reconstructed from Gamma alone.",
+    "status": "not_archived_in_completed_coupled_runs"
+  },
+  "srix": {
+    "chi_vs_nonlocal_gamma": {
+      "left_max": 0.02094643853942174,
+      "left_min": 0.0037025356879984072,
+      "relative_l2": 0.1864826051241578,
+      "right_max": 0.01044854263431702,
+      "right_min": 0.008575391554559539,
+      "spearman": 0.7280535941605358,
+      "top_5_percent_jaccard": 0.035196687370600416
+    },
+    "figure": "validation/_generated/performance/p43_m100_srix_gamma_local_vs_nonlocal.png",
+    "gamma_local_vs_nonlocal": {
+      "left_max": 0.04159698763566732,
+      "left_min": 0.0009858119741074744,
+      "relative_l2": 0.28752520337205134,
+      "right_max": 0.02094643853942174,
+      "right_min": 0.0037025356879984072,
+      "spearman": 0.8826259375142593,
+      "top_5_percent_jaccard": 0.40252454417952316
+    }
+  }
+}

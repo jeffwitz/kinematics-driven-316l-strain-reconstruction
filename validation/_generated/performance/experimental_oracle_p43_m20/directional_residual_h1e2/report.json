@@ -1,0 +1,124 @@
+{
+  "completed_states": [
+    10,
+    20
+  ],
+  "equilibrium_tolerance": 1e-09,
+  "finite_difference_step": 0.01,
+  "objective_definition": "0.5 * ||W_D (M_D u - u_DIC)||^2 / N_D",
+  "rank": 2,
+  "records": [
+    {
+      "H": [
+        [
+          2.173730748824479e-07,
+          8.995454426754437e-08
+        ],
+        [
+          8.995454426754437e-08,
+          7.087524322009253e-07
+        ]
+      ],
+      "b_gn": [
+        10.473441389062101,
+        -10.271650098303752
+      ],
+      "candidate_equilibrium_rms": [
+        {
+          "minus": 5.01479195979251e-13,
+          "plus": 4.854329633069768e-13
+        },
+        {
+          "minus": 4.896354019898951e-13,
+          "plus": 4.924729084223291e-13
+        }
+      ],
+      "delta_j_gn": 3.963398146273561e-05,
+      "directional_zero_absolute_error": 0.0,
+      "directional_zero_equilibrium_rms": 2.2070310249557248e-12,
+      "directional_zero_objective": 0.009042444538457043,
+      "directional_zero_plastic_strain_relative_error": 7.672982305913725e-12,
+      "directional_zero_relative_error": 0.0,
+      "directional_zero_stress_relative_error": 3.3857824874073763e-11,
+      "equilibrium_rms": 5.156645048155618e-13,
+      "finite_difference_step": 0.01,
+      "g": [
+        -1.3526625558729337e-06,
+        6.3379233428237405e-06
+      ],
+      "objective_j0": 0.009042444538457041,
+      "rho": [
+        -0.021573900383100024,
+        0.055981144909282576
+      ],
+      "single_mode_predicted_fraction": [
+        0.0004654331777399232,
+        0.0031338885853540964
+      ],
+      "single_mode_rho_squared": [
+        0.0004654331777399234,
+        0.0031338885853540947
+      ],
+      "state": 10
+    },
+    {
+      "H": [
+        [
+          2.1789040303039153e-08,
+          -1.2207149144652276e-08
+        ],
+        [
+          -1.2207149144652276e-08,
+          2.101885958345245e-08
+        ]
+      ],
+      "b_gn": [
+        109.3952855306013,
+        -63.76340383827414
+      ],
+      "candidate_equilibrium_rms": [
+        {
+          "minus": 1.0757109418292757e-12,
+          "plus": 9.622077374553164e-13
+        },
+        {
+          "minus": 1.0234264780926235e-12,
+          "plus": 9.751489045328438e-13
+        }
+      ],
+      "delta_j_gn": 0.00025825718400972246,
+      "directional_zero_absolute_error": 0.0,
+      "directional_zero_equilibrium_rms": 1.8896093769422927e-11,
+      "directional_zero_objective": 0.042721294033574254,
+      "directional_zero_plastic_strain_relative_error": 3.639419183780357e-13,
+      "directional_zero_relative_error": 0.0,
+      "directional_zero_stress_relative_error": 1.791151810614816e-11,
+      "equilibrium_rms": 1.860155281913275e-11,
+      "finite_difference_step": 0.01,
+      "g": [
+        -3.1619876660132526e-06,
+        2.675638598033528e-06
+      ],
+      "objective_j0": 0.04272129403357427,
+      "rho": [
+        -0.07328311529503204,
+        0.06313725271188181
+      ],
+      "single_mode_predicted_fraction": [
+        0.005370414987344961,
+        0.003986312680004024
+      ],
+      "single_mode_rho_squared": [
+        0.005370414987344958,
+        0.003986312680004027
+      ],
+      "state": 20
+    }
+  ],
+  "replay_failure": null,
+  "schema_version": 1,
+  "states": [
+    10,
+    20
+  ]
+}

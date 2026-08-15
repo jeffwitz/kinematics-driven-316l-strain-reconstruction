@@ -100,7 +100,9 @@ def main() -> int:
                 "state": step + 1,
                 "equilibrium_rms": float(result.equilibrium_rms),
                 "plastic_points": int(np.count_nonzero(plastic)),
-                "points_at_or_beyond_the_wall": int(np.count_nonzero(ratio >= 1.0)),
+                # Masked by `plastic`: an elastic point has ratio = inf by
+                # construction (its bound may be zero) and touches no wall.
+                "points_at_or_beyond_the_wall": int(np.count_nonzero(plastic & (ratio >= 1.0))),
                 "maximum_ratio": float(np.max(ratio[plastic])) if np.any(plastic) else 0.0,
                 "clipped_points": int(np.count_nonzero(clipped < requested - 0.0)),
             }

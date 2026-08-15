@@ -1,0 +1,100 @@
+{
+  "adjoint_checks": {
+    "gp_relative_error": 4.1575858848288355e-16,
+    "observation_relative_error": 6.671138844558075e-07
+  },
+  "eigenvalues": [
+    1.3152780427188702,
+    0.8070503023649477,
+    0.039144511718559954,
+    0.023358373441398152
+  ],
+  "fields": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/fields.npz",
+  "measurement_transfer": {
+    "model": "isotropic average of horizontal and vertical sinusoidal gains",
+    "path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
+  },
+  "metric": {
+    "amplitude_weight": 1.0,
+    "reference_scale": 0.00029619732789253723,
+    "spatial_weight": 0.0,
+    "type": "amplitude_plus_neighbour_differences"
+  },
+  "mode_spectra": [
+    {
+      "dc_power_fraction": 0.0003143869866913591,
+      "mode": 1,
+      "nyquist_axis_power_fraction": 0.0035907142725976615
+    },
+    {
+      "dc_power_fraction": 0.0008114510378233335,
+      "mode": 2,
+      "nyquist_axis_power_fraction": 0.004033696597033453
+    },
+    {
+      "dc_power_fraction": 0.06278833480576275,
+      "mode": 3,
+      "nyquist_axis_power_fraction": 0.0025569000142668416
+    },
+    {
+      "dc_power_fraction": 0.00025370497201708764,
+      "mode": 4,
+      "nyquist_axis_power_fraction": 0.004089342551970304
+    }
+  ],
+  "plastic_shape": [
+    20,
+    20,
+    2
+  ],
+  "rank": 4,
+  "schema_version": 1,
+  "sqrt_eigenvalues": [
+    1.1468557200968525,
+    0.8983597844766581,
+    0.19784972003659737,
+    0.1528344641806885
+  ],
+  "state_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39
+  ]
+}

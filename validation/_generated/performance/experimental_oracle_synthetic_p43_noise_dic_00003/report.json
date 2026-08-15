@@ -1,0 +1,109 @@
+{
+  "augmented_iterations": [
+    {
+      "equilibrium_rms": 0.01269659945300486,
+      "index": 1,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0006080124379355964,
+      "penalty": 1.0,
+      "projected_gradient_inf": 0.0001159727260512248
+    },
+    {
+      "equilibrium_rms": 0.013358747566856012,
+      "index": 2,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0005834966474639885,
+      "penalty": 1.0,
+      "projected_gradient_inf": 7.928509041270315e-05
+    },
+    {
+      "equilibrium_rms": 0.00225569333124322,
+      "index": 3,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0005879465393961159,
+      "penalty": 10.0,
+      "projected_gradient_inf": 4.562563500328526e-05
+    },
+    {
+      "equilibrium_rms": 0.0015155619158868402,
+      "index": 4,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0005837446510224442,
+      "penalty": 10.0,
+      "projected_gradient_inf": 0.0005834774765266342
+    },
+    {
+      "equilibrium_rms": 0.00021993022322968077,
+      "index": 5,
+      "inner_iterations": 239,
+      "inner_success": true,
+      "objective": 0.000582987627334489,
+      "penalty": 100.0,
+      "projected_gradient_inf": 0.00025552726808631467
+    },
+    {
+      "equilibrium_rms": 0.0001045059855523418,
+      "index": 6,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0005817021514308877,
+      "penalty": 100.0,
+      "projected_gradient_inf": 0.00014257568818678713
+    },
+    {
+      "equilibrium_rms": 0.00023494575037124766,
+      "index": 7,
+      "inner_iterations": 400,
+      "inner_success": false,
+      "objective": 0.0005807149752787809,
+      "penalty": 100.0,
+      "projected_gradient_inf": 0.0001407297482797959
+    },
+    {
+      "equilibrium_rms": 8.934895970163905e-06,
+      "index": 8,
+      "inner_iterations": 288,
+      "inner_success": true,
+      "objective": 0.0005806958157663117,
+      "penalty": 1000.0,
+      "projected_gradient_inf": 0.00024380981520314178
+    }
+  ],
+  "displacement_error_ratio_recovered_over_measured": 0.7251821176442356,
+  "git_sha": "2c714ad02a9d0800afc11a471e95ac638d67f5a2",
+  "grid_shape": [
+    5,
+    5
+  ],
+  "interpretation": "Formulation/gradient P0 qualification only. This synthetic does not identify an absolute constitutive law and uses no synchronized force.",
+  "measured_displacement_error_l2_mm": 3.2583741104161857e-06,
+  "noise_pixel_size_mm": 0.00184,
+  "noise_source": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+  "objective_components": {
+    "augmented_equilibrium": 4.004987288897514e-09,
+    "dic_misfit": 2.379214552594759e-05,
+    "ludwik_prior": 0.0005385210525689216,
+    "spatial_regularisation": 1.8378612684153706e-05,
+    "temporal_regularisation": 0.0,
+    "truth_dic_misfit": 0.3530668986383778
+  },
+  "oracle_equilibrium_rms": 8.934895970163905e-06,
+  "prior_relative_l2": 0.5272181636929943,
+  "prior_spearman": 0.6518907184019087,
+  "recovered_displacement_error_l2_mm": 2.362914637468762e-06,
+  "recovered_relative_l2": 0.37118721348802874,
+  "recovered_spearman": 0.8893519304495183,
+  "recovery_qualified": true,
+  "schema_version": 1,
+  "status": "qualified_synthetic_recovery",
+  "truth_equilibrium_rms": 9.091968573346133e-10,
+  "weights": {
+    "dic": 3e-05,
+    "ludwik_prior": 0.03,
+    "spatial_plastic_increment": 0.0003
+  }
+}

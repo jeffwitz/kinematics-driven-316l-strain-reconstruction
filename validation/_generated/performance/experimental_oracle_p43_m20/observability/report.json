@@ -1,0 +1,33 @@
+{
+  "adjoint_checks": {
+    "gp_relative_error": 4.1575858848288355e-16,
+    "observation_relative_error": 4.03569895622614e-10
+  },
+  "eigenvalues": [
+    48350284.15239847,
+    40274105.31134956
+  ],
+  "fields": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/performance/experimental_oracle_p43_m20/fields.npz",
+  "metric": {
+    "amplitude_weight": 1.0,
+    "type": "amplitude_identity"
+  },
+  "plastic_shape": [
+    20,
+    20,
+    2
+  ],
+  "rank": 2,
+  "schema_version": 1,
+  "sqrt_eigenvalues": [
+    6953.436859021477,
+    6346.188250544539
+  ],
+  "state_indices": [
+    0,
+    10,
+    20,
+    29,
+    39
+  ]
+}

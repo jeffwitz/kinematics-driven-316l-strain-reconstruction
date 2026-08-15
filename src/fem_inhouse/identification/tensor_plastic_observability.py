@@ -94,11 +94,33 @@ class TensorPlasticObservabilityOperator:
         poisson_ratio: float,
         transfer: FieldOperator,
         whitener: FieldOperator,
+        point_elasticity: ArrayLike | None = None,
     ) -> TensorPlasticObservabilityOperator:
+        """Build the operator, optionally with a per-point elastic reference.
+
+        `point_elasticity` carries `(points, 3, 3)` plane-stress stiffnesses, so
+        the reference model against which the mechanical defect is measured can
+        be the real crystallographic elasticity rather than a homogeneous
+        isotropic one. Everything else -- the gauge, the measurement chain, the
+        boundary conditions -- is unchanged, which is what makes the two runs
+        comparable.
+        """
+
         kinematics = TwoSubcellDiagnostic2D(grid)
-        elasticity = np.asarray(
-            plane_stress_elasticity(young_modulus_mpa, poisson_ratio), dtype=np.float64
-        )
+        if point_elasticity is None:
+            elasticity = np.broadcast_to(
+                np.asarray(
+                    plane_stress_elasticity(young_modulus_mpa, poisson_ratio), dtype=np.float64
+                ),
+                (kinematics.material_point_count, 3, 3),
+            ).copy()
+        else:
+            elasticity = np.asarray(point_elasticity, dtype=np.float64)
+            if elasticity.shape != (kinematics.material_point_count, 3, 3):
+                raise ValueError(
+                    "point_elasticity must have shape "
+                    f"{(kinematics.material_point_count, 3, 3)}"
+                )
         weight = float(kinematics.sample_quadrature_weight)
         stiffness = _assemble_sparse_stiffness(grid, kinematics, elasticity, weight)
         return cls(
@@ -135,7 +157,7 @@ class TensorPlasticObservabilityOperator:
     def matvec(self, values: ArrayLike) -> FloatArray:
         vector = np.asarray(values, dtype=np.float64).reshape(-1, 3)
         plastic = vector @ self.inverse_gauge_root
-        stress = plastic @ self.elasticity
+        stress = np.einsum("pi,pij->pj", plastic, self.elasticity)
         displacement = unpack_interior(
             self.solve_stiffness(self._strain_transpose(stress.reshape(-1))), self.grid
         )
@@ -149,7 +171,8 @@ class TensorPlasticObservabilityOperator:
             self.solve_stiffness(pack_interior(np.asarray(dual, dtype=np.float64))), self.grid
         )
         strain = np.asarray(self.kinematics.strain(displacement), dtype=np.float64).reshape(-1, 3)
-        return (strain @ self.elasticity @ self.inverse_gauge_root).reshape(-1)
+        stress = np.einsum("pi,pij->pj", strain, self.elasticity)
+        return (stress @ self.inverse_gauge_root).reshape(-1)
 
     def as_linear_operator(self) -> LinearOperator:
         return LinearOperator(
@@ -194,7 +217,9 @@ def _assemble_sparse_stiffness(
                 probe = np.zeros((*interior, 2), dtype=np.float64)
                 probe[offset_x::_COLOURS, offset_y::_COLOURS, component] = 1.0
                 strain = kinematics.strain(unpack_interior(probe.reshape(-1), grid))
-                stress = np.asarray(strain, dtype=np.float64).reshape(-1, 3) @ elasticity
+                stress = np.einsum(
+                    "pi,pij->pj", np.asarray(strain, dtype=np.float64).reshape(-1, 3), elasticity
+                )
                 nodal = kinematics.divergence_from_sample_stress(
                     stress.reshape((grid.nx, grid.ny, 2, 3))
                 )

@@ -1,0 +1,123 @@
+{
+  "completed_states": [
+    10,
+    20
+  ],
+  "equilibrium_tolerance": 1e-09,
+  "finite_difference_step": 0.001,
+  "objective_definition": "0.5 * ||W_D (M_D u - u_DIC)||^2 / N_D",
+  "rank": 2,
+  "records": [
+    {
+      "H": [
+        [
+          2.1747069481972784e-07,
+          8.998574048665213e-08
+        ],
+        [
+          8.998574048665213e-08,
+          7.09225251894255e-07
+        ]
+      ],
+      "b_gn": [
+        10.47051522702749,
+        -10.268011623092482
+      ],
+      "candidate_equilibrium_rms": [
+        {
+          "minus": 6.590902435557806e-10,
+          "plus": 6.595045503874485e-10
+        },
+        {
+          "minus": 6.40057454251344e-10,
+          "plus": 6.403004875758394e-10
+        }
+      ],
+      "delta_j_gn": 3.963388998901382e-05,
+      "directional_zero_absolute_error": 0.0,
+      "directional_zero_equilibrium_rms": 2.2070310249557248e-12,
+      "directional_zero_objective": 0.009042444538457043,
+      "directional_zero_relative_error": 0.0,
+      "equilibrium_rms": 5.156645048155618e-13,
+      "finite_difference_step": 0.001,
+      "g": [
+        -1.3530555923126816e-06,
+        6.340136063860069e-06
+      ],
+      "objective_j0": 0.009042444538457041,
+      "rho": [
+        -0.021575324923425065,
+        0.05598201914801044
+      ],
+      "state": 10
+    },
+    {
+      "H": [
+        [
+          2.1799428863341587e-08,
+          -1.2214034739859071e-08
+        ],
+        [
+          -1.2214034739859071e-08,
+          2.103318546325394e-08
+        ]
+      ],
+      "b_gn": [
+        109.36696185672893,
+        -63.74556815362112
+      ],
+      "candidate_equilibrium_rms": [
+        {
+          "minus": 7.34192904339636e-11,
+          "plus": 7.375200941530262e-11
+        },
+        {
+          "minus": 3.269211439728017e-11,
+          "plus": 3.260662059123011e-11
+        }
+      ],
+      "delta_j_gn": 0.0002582591613888443,
+      "directional_zero_absolute_error": 0.0,
+      "directional_zero_equilibrium_rms": 1.8896093769422927e-11,
+      "directional_zero_objective": 0.042721294033574254,
+      "directional_zero_relative_error": 0.0,
+      "equilibrium_rms": 1.860155281913275e-11,
+      "finite_difference_step": 0.001,
+      "g": [
+        -3.16272788893594e-06,
+        2.6765842289465368e-06
+      ],
+      "objective_j0": 0.04272129403357427,
+      "rho": [
+        -0.07328280313484846,
+        0.06313805391800528
+      ],
+      "state": 20
+    }
+  ],
+  "replay_failure": {
+    "diagnostics": {
+      "base_residual_mpa": 0.22507025980524498,
+      "continuation_scale": 0.75,
+      "delta_p": 3.050545698793013e-05,
+      "failure_stage": "local_line_search",
+      "jacobian_condition": 1.1073708102152344,
+      "last_residual_mpa": 10.702288838637056,
+      "last_step": 1.52587890625e-05,
+      "line_search_iterations": 16,
+      "newton_iteration": 11,
+      "point": 117,
+      "q_trial_mpa": 5.783603350804413
+    },
+    "message": "driven J2 local line search failed at point 117",
+    "state": 21,
+    "type": "ConstitutiveIntegrationError"
+  },
+  "schema_version": 1,
+  "states": [
+    10,
+    20,
+    30,
+    40
+  ]
+}

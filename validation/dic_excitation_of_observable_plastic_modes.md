@@ -213,3 +213,59 @@ independent observation geometries returning values consistent with zero.
 The negative is therefore robust to the geometry: at M100 the tensor eigenstrain
 reconstruction does not recover the plastic localisation the DIC shows, whether
 or not the boundary band is observed.
+
+## The defect is not crystallographic elastic heterogeneity
+
+`scripts/test_ebsd_elastic_reference_p43.py`, artefacts
+`ebsd_elastic_reference_m100.json` and `..._polycrystal.json`.
+
+The reference elasticity is replaced by the real one: at each pixel the cubic
+tensor of the FCC law this repository already declares — `E = 99950.3 MPa`,
+`nu = 0.388`, `G = 122000 MPa`, Zener anisotropy `3.39` — is rotated in three
+dimensions by the recorded EBSD orientation and then condensed exactly,
+`C_ps = C_aa - C_ab C_bb^-1 C_ba`. Gauge, measurement chain, boundary
+conditions, crop and diagnostics are unchanged. No plasticity model, no
+crystal plasticity, no fitting.
+
+**The chain is verified first.** An isotropic crystal condenses to
+`plane_stress_elasticity` at any Euler angle, to `4e-16` relative — the 3D
+rotation, the Voigt mapping and the Schur complement together. A cubic symmetry
+leaves the tensor unchanged to `7e-17`. And on an affine boundary at 1 % strain,
+the isotropic extension has an interior fluctuation of `6e-20 mm`, exactly the
+zero theory requires, while the EBSD extension fluctuates by `6.18e-5 mm` RMS,
+`0.66` DIC sigma. The anisotropy is real and it reaches the operator, whose
+leading singular values move by 9 %.
+
+**The first crop was a poor test and was replaced.** At `(1610, 1075)` a single
+grain covers `70.4 %` of the window and three cover `94.5 %`; under a
+near-affine Dirichlet boundary a uniform stiffness — anisotropic or not —
+returns the same field, so there was little heterogeneity to find. The crop was
+rescanned for grain diversity and `(1580, 1030)` retained: dominant grain
+`20.6 %`, `7.2` effective grains.
+
+**On that genuinely polycrystalline crop, the residual does not move:**
+
+| state | isotropic | EBSD | shuffled |
+|---:|---:|---:|---:|
+| 20 | `1.180` | `1.180` | `1.180` |
+| 30 | `2.944` | `2.948` | `2.944` |
+| 40 | `5.873` | `5.875` | `5.873` |
+
+And the shuffled control is identical, so this is not a question of the wrong
+spatial arrangement.
+
+**The reason is orthogonality, not smallness.** The correction the EBSD
+reference makes to the residual is not negligible — `2.6 %` of it at state 20,
+`3.0 %` at state 40 — but its cosine with the residual is `+0.0015` and
+`+0.0057`. It points somewhere else entirely. Subtracting an orthogonal
+component cannot reduce a norm, and indeed the norm rises by the `sqrt(1+e^2)`
+that predicts, `5.8734` to `5.8750`. Only `1 %` of the correction lands in the
+empirical early rank-3 subspace, which therefore keeps its unexplained origin.
+
+**So the principal confounder identified last night is eliminated.** Eshelby
+equivalence remains true in principle — an eigenstrain can imitate an inclusion
+— but the actual crystallographic elasticity of this specimen does not produce
+the observed defect, and cannot be what the early rank-3 subspace represents.
+
+What that subspace *is* remains open, along with why the late component does not
+coincide with the DIC localisation.

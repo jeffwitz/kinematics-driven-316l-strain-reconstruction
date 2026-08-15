@@ -1,0 +1,22 @@
+[
+  {
+    "dc_power_fraction": 0.0002469731550650641,
+    "mode": 1,
+    "nyquist_axis_power_fraction": 0.003814352615459361
+  },
+  {
+    "dc_power_fraction": 0.007822540845363723,
+    "mode": 2,
+    "nyquist_axis_power_fraction": 0.0037742807659970463
+  },
+  {
+    "dc_power_fraction": 0.004174916204936411,
+    "mode": 3,
+    "nyquist_axis_power_fraction": 0.002670248995069828
+  },
+  {
+    "dc_power_fraction": 0.07305787658344094,
+    "mode": 4,
+    "nyquist_axis_power_fraction": 0.008393161044202546
+  }
+]
