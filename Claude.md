@@ -6454,3 +6454,42 @@ de rang 3.
 d'Eshelby reste vraie en principe, mais l'élasticité cristalline réelle de cette
 éprouvette ne produit pas le défaut observé. Ce que représente le sous-espace
 précoce de rang 3 reste ouvert.
+
+#### Le défaut précoce n'était pas de la mécanique — artefact de FFT périodique
+
+Après avoir éliminé l'élasticité cristalline (orthogonale, cos `+0,006`) puis
+**toute** hétérogénéité élastique effective linéaire — six canaux de Kelvin sans
+dimension par pixel, un seul champ pour dix-huit états, angles principaux avec
+le sous-espace précoce de `81,7°`, `88,4°`, `89,4°` — il restait à regarder les
+trois motifs eux-mêmes.
+
+Le premier porte `97,7 %` de la variance précoce. Tous trois placent `90` à
+`98 %` de leur énergie dans une bande de huit nœuds couvrant `29 %` des nœuds,
+sont à `73–83 %` sur `x`, et un ajustement affine en laisse `99 %` inexpliqué.
+Une bande de bord, ni translation ni rotation ni gradient.
+
+C'est la signature d'une FFT périodique. `DICSpectralTransfer.apply` filtre par
+`fftn`, qui traite le crop comme périodique ; or un champ de déplacement sur une
+fenêtre est dominé par une rampe affine, discontinue au raccord périodique.
+
+Appliqué à un champ **purement affine**, qu'un passe-bas doit laisser intact :
+`8,92e-4 mm`, soit **`9,49 σ` DIC**, avec `89,6 %` de l'erreur dans la bande de
+bord et `91,7 %` sur `x`. Un champ constant passe à `1,9e-17` — la normalisation
+est bonne, c'est spécifiquement la rampe.
+
+Retirer la part affine avant filtrage et la remettre après est **exact** (un
+champ affine est invariant sous tout passe-bas) et laisse les hautes fréquences
+filtrées à l'identique : l'erreur tombe à `7,4e-18 mm`.
+
+Reconstruit ainsi, le résidu perd **57 à 71 %** à tous les états — `5,873` →
+`1,709` fois le bruit à l'état 40 — et passe **sous le bruit avant l'état 20**.
+L'« hétérogénéité élastique précoce » cesse largement d'exister, ce qui explique
+enfin pourquoi aucune élasticité ne pouvait en rendre compte.
+
+Ce qui survit à l'état 40 vaut `1,71` fois le bruit, faible avant l'écoulement
+et croissant après : bien meilleur candidat pour un signal inélastique.
+
+`apply` est laissé inchangé — il définit tous les résultats archivés — et la
+correction est disponible en `apply_without_wrap`, sur choix de l'appelant.
+**Tout chiffre produit contre l'ancien transfert, y compris la fonctionnelle de
+l'oracle, porte cet artefact et doit être recalculé.**
