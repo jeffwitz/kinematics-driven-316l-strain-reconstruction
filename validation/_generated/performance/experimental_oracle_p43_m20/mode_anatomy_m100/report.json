@@ -1,0 +1,280 @@
+{
+  "border_pixels": 15,
+  "interior_area_fraction": 0.49,
+  "modes": [
+    {
+      "coefficient_final_state": -21.587454226516005,
+      "component_shares": [
+        0.16667055886725415,
+        0.056958459442779,
+        0.7763709816899669
+      ],
+      "interior_fraction": 0.10461847064012178,
+      "mode": 1,
+      "participation_ratio": 0.2145729561221678,
+      "peak_over_rms": 4.013541278822147,
+      "singular_value": 37191.21809382742
+    },
+    {
+      "coefficient_final_state": 5.140427603286114,
+      "component_shares": [
+        0.24658918583474165,
+        0.06388647868417024,
+        0.6895243354810882
+      ],
+      "interior_fraction": 0.11372912922177046,
+      "mode": 2,
+      "participation_ratio": 0.1853801692337102,
+      "peak_over_rms": 4.936448821530382,
+      "singular_value": 33512.005958815316
+    },
+    {
+      "coefficient_final_state": 5.409551215691488,
+      "component_shares": [
+        0.040172818690810116,
+        0.14926288697114887,
+        0.810564294338041
+      ],
+      "interior_fraction": 0.15178912826884802,
+      "mode": 3,
+      "participation_ratio": 0.23442526749171216,
+      "peak_over_rms": 3.923551964000824,
+      "singular_value": 27304.6033036668
+    },
+    {
+      "coefficient_final_state": 5.445285655036745,
+      "component_shares": [
+        0.40288444755230546,
+        0.10048092286810763,
+        0.4966346295795869
+      ],
+      "interior_fraction": 0.2296531148985536,
+      "mode": 4,
+      "participation_ratio": 0.19250614865527763,
+      "peak_over_rms": 4.069347700265863,
+      "singular_value": 26410.188637570252
+    },
+    {
+      "coefficient_final_state": -6.811804831167704,
+      "component_shares": [
+        0.08159540809881156,
+        0.27263378286674045,
+        0.6457708090344481
+      ],
+      "interior_fraction": 0.12560537807163089,
+      "mode": 5,
+      "participation_ratio": 0.2234999007347633,
+      "peak_over_rms": 4.610660731776414,
+      "singular_value": 26219.635586877517
+    },
+    {
+      "coefficient_final_state": 2.979793779214474,
+      "component_shares": [
+        0.29293933648425324,
+        0.07627534691259848,
+        0.6307853166031483
+      ],
+      "interior_fraction": 0.26517527268586055,
+      "mode": 6,
+      "participation_ratio": 0.24075836007105617,
+      "peak_over_rms": 4.463571466104132,
+      "singular_value": 26078.087154497483
+    },
+    {
+      "coefficient_final_state": 10.32701557874289,
+      "component_shares": [
+        0.3384796853128395,
+        0.08151797786744056,
+        0.58000233681972
+      ],
+      "interior_fraction": 0.1643198157144847,
+      "mode": 7,
+      "participation_ratio": 0.20473928413943923,
+      "peak_over_rms": 4.246996770541068,
+      "singular_value": 25603.61064985686
+    },
+    {
+      "coefficient_final_state": -3.893581952166512,
+      "component_shares": [
+        0.36500345529000744,
+        0.10118739127748486,
+        0.5338091534325078
+      ],
+      "interior_fraction": 0.10693983114627609,
+      "mode": 8,
+      "participation_ratio": 0.25682946509582877,
+      "peak_over_rms": 3.6098030937916583,
+      "singular_value": 25095.77027786717
+    },
+    {
+      "coefficient_final_state": -0.7016187271881975,
+      "component_shares": [
+        0.4059820933568918,
+        0.09696058230037663,
+        0.4970573243427316
+      ],
+      "interior_fraction": 0.09408822997734477,
+      "mode": 9,
+      "participation_ratio": 0.26471957116902445,
+      "peak_over_rms": 3.853321344509778,
+      "singular_value": 22075.03008028524
+    },
+    {
+      "coefficient_final_state": 3.178848521406354,
+      "component_shares": [
+        0.10511899019170429,
+        0.29273459730087514,
+        0.6021464125074206
+      ],
+      "interior_fraction": 0.3022476187931763,
+      "mode": 10,
+      "participation_ratio": 0.287673808803643,
+      "peak_over_rms": 4.106156481958692,
+      "singular_value": 21878.744028652407
+    },
+    {
+      "coefficient_final_state": -0.15987266516897813,
+      "component_shares": [
+        0.051685427201722936,
+        0.41127458683750523,
+        0.5370399859607718
+      ],
+      "interior_fraction": 0.16112364409820717,
+      "mode": 11,
+      "participation_ratio": 0.19369907147974752,
+      "peak_over_rms": 3.9519280007643505,
+      "singular_value": 21784.160160188385
+    },
+    {
+      "coefficient_final_state": -18.473713220616585,
+      "component_shares": [
+        0.1294483270947545,
+        0.3172764636564662,
+        0.5532752092487794
+      ],
+      "interior_fraction": 0.27744745244294167,
+      "mode": 12,
+      "participation_ratio": 0.40627060940720094,
+      "peak_over_rms": 3.2042068533606964,
+      "singular_value": 21343.404255969952
+    },
+    {
+      "coefficient_final_state": 7.782074494929901,
+      "component_shares": [
+        0.11972229499106617,
+        0.3568069591883946,
+        0.5234707458205393
+      ],
+      "interior_fraction": 0.12860548787156864,
+      "mode": 13,
+      "participation_ratio": 0.2738457526197802,
+      "peak_over_rms": 3.5532637569981746,
+      "singular_value": 20197.52926404878
+    },
+    {
+      "coefficient_final_state": 0.5017881409354851,
+      "component_shares": [
+        0.17085494271011847,
+        0.0520095565112159,
+        0.7771355007786657
+      ],
+      "interior_fraction": 0.2890660994732071,
+      "mode": 14,
+      "participation_ratio": 0.39456725539876114,
+      "peak_over_rms": 2.7044227636514457,
+      "singular_value": 19587.013223656493
+    },
+    {
+      "coefficient_final_state": -8.829930035432396,
+      "component_shares": [
+        0.1229271677084134,
+        0.38551165931627995,
+        0.4915611729753067
+      ],
+      "interior_fraction": 0.12720610943332494,
+      "mode": 15,
+      "participation_ratio": 0.30292341480072654,
+      "peak_over_rms": 3.4485722322843455,
+      "singular_value": 18037.1360336371
+    },
+    {
+      "coefficient_final_state": -14.561846750414354,
+      "component_shares": [
+        0.16628018308704848,
+        0.21012878099249654,
+        0.623591035920455
+      ],
+      "interior_fraction": 0.4713862151797179,
+      "mode": 16,
+      "participation_ratio": 0.5281055537504042,
+      "peak_over_rms": 2.6513195840536277,
+      "singular_value": 16870.888449729766
+    },
+    {
+      "coefficient_final_state": 5.8253896331643125,
+      "component_shares": [
+        0.4176249579008711,
+        0.3775747005551152,
+        0.20480034154401372
+      ],
+      "interior_fraction": 0.8118789166111137,
+      "mode": 17,
+      "participation_ratio": 0.35168954920286216,
+      "peak_over_rms": 3.103788028185469,
+      "singular_value": 16552.696735873127
+    },
+    {
+      "coefficient_final_state": 2.8235856425496637,
+      "component_shares": [
+        0.38421800986553334,
+        0.3648585312068109,
+        0.2509234589276558
+      ],
+      "interior_fraction": 0.6393260639880423,
+      "mode": 18,
+      "participation_ratio": 0.4374909849188343,
+      "peak_over_rms": 2.59634051610464,
+      "singular_value": 15895.984046259082
+    },
+    {
+      "coefficient_final_state": -6.476851064147011,
+      "component_shares": [
+        0.2878702575717651,
+        0.3018736083052995,
+        0.41025613412293543
+      ],
+      "interior_fraction": 0.4846872979196732,
+      "mode": 19,
+      "participation_ratio": 0.46789080062514105,
+      "peak_over_rms": 2.8764444800867337,
+      "singular_value": 15487.094737021445
+    },
+    {
+      "coefficient_final_state": -0.9427527979479146,
+      "component_shares": [
+        0.46151273017178135,
+        0.412424940921274,
+        0.1260623289069446
+      ],
+      "interior_fraction": 0.5449381011574235,
+      "mode": 20,
+      "participation_ratio": 0.4762757963528338,
+      "peak_over_rms": 2.2720352965692974,
+      "singular_value": 15079.667005332429
+    }
+  ],
+  "origin_nodes": [
+    1610,
+    1075
+  ],
+  "pixels": 100,
+  "reconstruction": {
+    "correlation_with_dic_equivalent_strain": 0.14944442208608122,
+    "measured_peak_equivalent_strain": 0.01586129251188046,
+    "peak_equivalent_eigenstrain": 0.0070792321474647075,
+    "rms_equivalent_eigenstrain": 0.001716036409605324,
+    "share_expected_if_unstructured": 0.1,
+    "share_inside_the_dic_top_decile": 0.13440721396635327
+  },
+  "schema_version": 1
+}

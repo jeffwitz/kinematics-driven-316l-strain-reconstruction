@@ -149,3 +149,46 @@ The separation is a **lower bound** on the plastic content: any plastic
 component lying inside the early subspace is removed with it. And the early
 states are assumed plasticity-free, which the state-1 null test and the pattern
 stability to state 20 support but do not prove.
+
+## The modes are edge-dominated, and the reconstruction misses the localisation
+
+`scripts/anatomy_of_the_observable_plastic_modes.py`, artefact
+`mode_anatomy_m100/`. Each mode is described before anything is built on it: how
+much of its energy sits away from the border, how it splits across the tensor
+components, and at what spatial concentration.
+
+**Every leading mode is concentrated near the boundary.** With a `15`-pixel
+border, the interior covers `49 %` of the area, but the interior share of the
+mode energy is `0.094` at worst, `0.197` at the median, and only one mode of
+twenty exceeds the area fraction. Mode 1 puts `10.5 %` of its energy in half the
+domain. Under Dirichlet boundaries a near-edge eigenstrain has the strongest
+lever on the interior displacement, so the operator ranks those directions
+first — mathematically observable, physically the boundary talking.
+
+They are also **shear-dominated**: mean component shares
+`0.24 / 0.22 / 0.54` for `e11 / e22 / g12`.
+
+**And the reconstruction does not land where the material yields.** Combining
+the modes with the heterogeneity-corrected coefficients gives a field whose
+equivalent measure peaks at `7.08e-3`, against a measured peak equivalent strain
+of `1.59e-2` — the right order. But its correlation with the DIC equivalent
+strain map is only `+0.149`, and the share of it falling inside the DIC top
+decile is `0.134`, against `0.10` for an unstructured field. Barely above
+chance.
+
+So the `21.6` sigma detection is real and it is not the bulk plastic
+localisation. The observable subspace is dominated by near-boundary directions,
+and that is what the data lights up in it.
+
+This is the third reading of the same measurement, and each one removed a layer:
+the raw coefficients looked like plasticity at the right amplitude; removing the
+elastic-heterogeneity subspace cut nine tenths of it; and the anatomy shows that
+what remains lives at the edges rather than in the band. Whatever is being
+detected, calling it a reconstruction of the plastic field is not supported.
+
+**What would decide it.** The edge dominance is a property of the Dirichlet
+window, not of the specimen: the crop boundary is an artefact of choosing a
+window inside a larger field. Re-running with the observation restricted to the
+interior — masking the border out of `W_D` rather than only its outermost node —
+would re-rank the modes on what the bulk can show, and is the cheapest next
+test. It costs one extra mask and no new machinery.
