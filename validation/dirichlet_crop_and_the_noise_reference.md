@@ -543,3 +543,33 @@ state-40 amplitude found independently.
 So the path-length check moves from the supporting column to the neutral one:
 the *scale* of plastic activity is right, its *trajectory* is not a monotone
 accumulation.
+
+## The hard dissipation constraint: built, not solved
+
+`scripts/qualify_hard_dissipation_constraint_p43.py`. **No result is quoted from
+it**; the script is committed for the diagnosis it carries.
+
+The formulation is the right one — minimise the misfit subject to
+`D_k(q) >= 0` at every point and step, with the corrected mid-point dissipation
+and the absolute stress, `sigma` refrozen between outer iterations because the
+constraints are quadratic in the coefficients. Two solver failures stopped it.
+
+`trust-constr` did not finish in ten minutes on 320 unknowns with a few thousand
+constraints. Replacing it with an active set solved through a dense KKT system
+is fast for small sets but cubic in the number of cuts, so admitting thousands
+is slower again than what it replaced.
+
+The second failure is the instructive one. An **add-only** active set is wrong as
+soon as the cuts outnumber the unknowns: treating every active inequality as an
+equality over-determines the system — a singular KKT at rank 8 with four states
+— and in the limit forces the trivial solution. That is the same collapse the
+penalty formulation produced, reached by a different route, and it would have
+been easy to misread as "admissibility is unaffordable".
+
+So the question stays open, and it is now precisely posed. Feasibility is never
+in doubt: `a = 0` gives zero increments and zero dissipation. The entire content
+is the **price**, and measuring it needs a genuine quadratic program —
+multiplier-based dropping so the working set stays at most `n_unknowns`, or an
+off-the-shelf QP solver. That is a bounded piece of work on a problem of 320
+unknowns, and it is the last step before the Ludwik comparison can be
+interpreted.
