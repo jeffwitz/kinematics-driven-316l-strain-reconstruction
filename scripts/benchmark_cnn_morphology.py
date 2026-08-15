@@ -116,9 +116,19 @@ def main() -> int:
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--steps", type=int, default=3000)
     parser.add_argument("--train-states", type=int, default=30)
-    parser.add_argument("--decimate", type=int, default=3)
+    # Full resolution by default. The spectra showed signal above noise down to a
+    # two-pixel wavelength, and taking every third pixel with no anti-aliasing
+    # filter folds everything between two and six pixels back into the low
+    # frequencies -- destroying exactly the texture whose representability is
+    # the question. Training is on patches anyway, so decimation buys nothing.
+    parser.add_argument("--decimate", type=int, default=1)
+    # Scaled so the two terms are of comparable magnitude on this data rather
+    # than tuned; the point is that the gradient is optimised at all, not that
+    # the trade-off is optimal.
+    parser.add_argument("--gradient-weight", type=float, default=10.0)
     parser.add_argument("--seed", type=int, default=20260816)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--weights", type=Path, default=None)
     arguments = parser.parse_args()
 
     torch.manual_seed(arguments.seed)
@@ -170,17 +180,39 @@ def main() -> int:
             chosen.append(fields[state, row : row + patch, column : column + patch])
         return torch.from_numpy(np.stack(chosen)[:, None])
 
+    def gradient_loss(candidate: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
+        """First differences along both axes.
+
+        Judging a network on a morphological measure it was never asked to
+        optimise is not a fair test: plain MSE is free to smooth fine structure
+        whenever that lowers the mean square, and the POD baseline shows the
+        verdict lives in the gradient, 0.181 in field against 0.761 in
+        gradient. So the training objective now contains the quantity the
+        verdict uses.
+        """
+
+        total = candidate.new_zeros(())
+        for axis in (2, 3):
+            total = total + nn.functional.mse_loss(
+                torch.diff(candidate, dim=axis), torch.diff(reference, dim=axis)
+            )
+        return total
+
     started = time.perf_counter()
     for iteration in range(1, arguments.steps + 1):
         batch = sample_batch()
-        loss = nn.functional.mse_loss(model(batch), batch)
+        prediction = model(batch)
+        field_term = nn.functional.mse_loss(prediction, batch)
+        gradient_term = gradient_loss(prediction, batch)
+        loss = field_term + arguments.gradient_weight * gradient_term
         optimiser.zero_grad(set_to_none=True)
         loss.backward()
         optimiser.step()
         schedule.step()
         if iteration % 250 == 0 or iteration == 1:
             print(
-                f"  step {iteration:5d}  loss {loss.item():.5e}  "
+                f"  step {iteration:5d}  field {field_term.item():.4e}  "
+                f"gradient {gradient_term.item():.4e}  "
                 f"({time.perf_counter() - started:.0f} s)",
                 flush=True,
             )
@@ -194,35 +226,45 @@ def main() -> int:
     # region, and a seen window of the same size taken from training pixels.
     size = HOLDOUT_REGIONS[0][2] // step
     side = (size // arguments.downsampling) * arguments.downsampling
-    seen_corner = (0, 700)
-    holdout_corner = (HOLDOUT_REGIONS[0][0] // step, HOLDOUT_REGIONS[0][1] // step)
+    seen_corner = (0, 700 // step)
+    holdout_corners = [(row // step, column // step) for row, column, _ in HOLDOUT_REGIONS]
     seen_window = mask[
         seen_corner[0] : seen_corner[0] + side, seen_corner[1] : seen_corner[1] + side
     ]
     if not seen_window.all():
         raise SystemExit("the seen evaluation window overlaps a holdout region")
 
-    def evaluate(state_subset: list[int], corner: tuple[int, int]) -> dict:
-        errors, gradients = [], []
-        for index in state_subset:
-            row, column = corner
-            window = fields[index, row : row + side, column : column + side]
-            with torch.no_grad():
-                output = model(torch.from_numpy(window[None, None]))[0, 0].numpy()
-            reference = window[halo:-halo, halo:-halo]
-            candidate = output[halo:-halo, halo:-halo]
-            errors.append(_relative(candidate, reference))
-            gradients.append(_gradient_error(candidate, reference))
+    def evaluate(state_subset: list[int], corners: list[tuple[int, int]]) -> dict:
+        """Averaged over every requested window: two holdout regions were
+        defined precisely so a lucky local texture could not carry the verdict,
+        and reporting only the first would waste that."""
+
+        errors, gradients, per_window = [], [], []
+        for corner_index, (row, column) in enumerate(corners):
+            window_errors = []
+            for index in state_subset:
+                window = fields[index, row : row + side, column : column + side]
+                with torch.no_grad():
+                    output = model(torch.from_numpy(window[None, None]))[0, 0].numpy()
+                reference = window[halo:-halo, halo:-halo]
+                candidate = output[halo:-halo, halo:-halo]
+                errors.append(_relative(candidate, reference))
+                window_errors.append(errors[-1])
+                gradients.append(_gradient_error(candidate, reference))
+            per_window.append({"corner": [row, column],
+                               "field_error": float(np.mean(window_errors))})
+            del corner_index
         return {
             "field_error": float(np.mean(errors)),
             "gradient_error": float(np.mean(gradients)),
+            "per_window": per_window,
         }
 
     evaluations = {
-        "seen_region_seen_states": evaluate(train_states, seen_corner),
-        "spatial_holdout_seen_states": evaluate(train_states, holdout_corner),
-        "seen_region_temporal_holdout": evaluate(test_states, seen_corner),
-        "spatial_and_temporal_holdout": evaluate(test_states, holdout_corner),
+        "seen_region_seen_states": evaluate(train_states, [seen_corner]),
+        "spatial_holdout_seen_states": evaluate(train_states, holdout_corners),
+        "seen_region_temporal_holdout": evaluate(test_states, [seen_corner]),
+        "spatial_and_temporal_holdout": evaluate(test_states, holdout_corners),
     }
     for label, entry in evaluations.items():
         print(f"  {label:34s} field {entry['field_error']:.4f}  "
@@ -260,7 +302,24 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", "utf-8")
-    print(f"wrote {arguments.output}")
+    # The weights are the artefact, not the error table: the next step wraps
+    # this decoder in the mechanical adjoint, and a benchmark whose network
+    # vanishes with the process would have to be rerun to be used.
+    weights = arguments.weights or arguments.output.with_suffix(".pt")
+    weights.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "state_dict": model.state_dict(),
+            "architecture": report["architecture"],
+            "normalisation": report["normalisation"],
+            "seed": arguments.seed,
+            "decimate": step,
+            "train_states": [indices[i] for i in train_states],
+            "holdout_regions": [list(region) for region in HOLDOUT_REGIONS],
+        },
+        weights,
+    )
+    print(f"wrote {arguments.output} and {weights}")
     return 0
 
 

@@ -62,6 +62,44 @@ def _gradient_error(candidate: FloatArray, reference: FloatArray) -> float:
     return float(np.sqrt(errors / max(norms, 1e-30)))
 
 
+#: The window the convolutional benchmark evaluates on, in full-resolution
+#: pixels, kept here so both scripts quote the same region.
+WINDOW_CORNER = (0, 700)
+WINDOW_SIDE = 600
+
+
+def _window_errors(fields, centre, basis, mask, subset, corner, side, step):
+    """POD reconstruction error restricted to one window of the fitted domain."""
+
+    row, column = corner[0] // step, corner[1] // step
+    extent = side // step
+    shape = fields.shape[1:]
+    window = np.zeros(shape, dtype=bool)
+    window[row : row + extent, column : column + extent] = True
+    if not mask[window].all():
+        raise SystemExit("the comparison window overlaps a spatial holdout")
+    selector = window[mask]
+    errors, gradients = [], []
+    for index in subset:
+        observed = fields[index][mask]
+        reconstruction = centre + (basis @ (observed - centre)) @ basis
+        errors.append(_relative(reconstruction[selector], observed[selector]))
+        full = np.zeros(shape)
+        reference = np.zeros(shape)
+        full[mask] = reconstruction
+        reference[mask] = observed
+        gradients.append(
+            _gradient_error(
+                full[row : row + extent, column : column + extent],
+                reference[row : row + extent, column : column + extent],
+            )
+        )
+    return {
+        "field_error": float(np.mean(errors)),
+        "gradient_error": float(np.mean(gradients)),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--history", type=Path, default=DATA)
@@ -105,7 +143,11 @@ def main() -> int:
         if rank > right.shape[0]:
             continue
         basis = right[:rank]
-        entry: dict[str, object] = {"rank": rank, "coefficients_per_state": rank}
+        entry: dict[str, object] = {
+            "rank": rank,
+            "coefficients_per_state": rank,
+            "model_parameters": int((rank + 1) * right.shape[1]),
+        }
         for label, subset in (("train_states", train), ("temporal_holdout", test)):
             errors, gradients = [], []
             for index in subset:
@@ -122,6 +164,12 @@ def main() -> int:
                 "field_error": float(np.mean(errors)),
                 "gradient_error": float(np.mean(gradients)),
             }
+        # The same windows the convolutional benchmark reports on. Comparing a
+        # domain-wide POD error against a CNN error measured on one window
+        # compares different populations of pixels, and a locally easy or hard
+        # region would then decide the verdict.
+        entry["seen_window"] = _window_errors(fields, centre, basis, mask, train + test,
+                                              WINDOW_CORNER, WINDOW_SIDE, step)
         entry["spatial_holdout"] = (
             "undefined: POD modes are tied to absolute positions and say nothing "
             "about pixels excluded from the fit"
@@ -146,11 +194,12 @@ def main() -> int:
         "temporal_holdout_states": [indices[index] for index in test],
         "spatial_holdout_regions": [list(region) for region in HOLDOUT_REGIONS],
         "spatial_holdout_fraction": float(1.0 - mask.mean()),
-        "model_parameters": int(right.shape[1]),
+        "pixels_in_fit": int(right.shape[1]),
         "model_parameter_note": (
-            "a POD mode carries one value per pixel, so the model cost is rank "
-            "times the pixel count -- the comparison with a convolutional "
-            "decoder must be made on both the per-state cost and this one"
+            "a POD mode carries one value per pixel, so the model cost is "
+            "(rank + 1) times the pixel count, the mean field included; it is "
+            "reported per rank in the results because a single number that "
+            "does not depend on the rank is not a model cost"
         ),
         "results": results,
     }
