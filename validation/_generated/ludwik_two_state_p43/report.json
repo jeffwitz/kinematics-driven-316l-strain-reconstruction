@@ -1,0 +1,296 @@
+{
+  "cpu": "x86_64",
+  "field_file": "results/ludwik-two-state-replay-p0043/report.npz",
+  "increments_run": 40,
+  "ludwik": {
+    "exponent": 0.245,
+    "hardening_coefficient_mpa": {
+      "max": 809.7682169531314,
+      "mean": 159.69029668990188,
+      "min": 57.55263906068622
+    },
+    "poisson_ratio": 0.3,
+    "yield_stress_mpa": {
+      "max": 436.40631265932365,
+      "mean": 143.24321382855985,
+      "min": 50.0
+    },
+    "young_modulus_mpa": 205000.0
+  },
+  "mesh": [
+    100,
+    100
+  ],
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "per_state": {
+    "25": {
+      "absolute": {
+        "E_L": 1.6361730196494655,
+        "elastic_absolute_gap": 0.13085845814546315,
+        "elastic_relative_error": 0.466225722376397,
+        "eta_L": -0.6361730196494655,
+        "ludwik_absolute_gap": 0.21410707861053563,
+        "ludwik_relative_error": 0.7628259480188428,
+        "per_component": {
+          "xx": {
+            "E_L": 1.7866379564007475,
+            "elastic_relative_error": 0.42535632644664334,
+            "ludwik_relative_error": 0.7599577578247602
+          },
+          "xy": {
+            "E_L": 1.3274961086459076,
+            "elastic_relative_error": 0.9079774697272674,
+            "ludwik_relative_error": 1.2053365578011048
+          },
+          "yy": {
+            "E_L": 1.7319589891278873,
+            "elastic_relative_error": 0.38625646589622975,
+            "ludwik_relative_error": 0.6689803582177443
+          }
+        },
+        "strain_norm_dic": 0.2806761872306511
+      },
+      "increment_from_state_20": {
+        "E_L": 2.896408049787782,
+        "elastic_absolute_gap": 0.03148973725448894,
+        "elastic_relative_error": 0.30368273116044014,
+        "eta_L": -1.896408049787782,
+        "ludwik_absolute_gap": 0.09120712846960398,
+        "ludwik_relative_error": 0.8795891071146377,
+        "per_component": {
+          "xx": {
+            "E_L": 3.1972666745649687,
+            "elastic_relative_error": 0.29723612375421965,
+            "ludwik_relative_error": 0.9503431529562355
+          },
+          "xy": {
+            "E_L": 1.9246231295716065,
+            "elastic_relative_error": 0.670006160341226,
+            "ludwik_relative_error": 1.2895093531481858
+          },
+          "yy": {
+            "E_L": 3.3789810352542484,
+            "elastic_relative_error": 0.22655607650355997,
+            "ludwik_relative_error": 0.7655286859271397
+          }
+        },
+        "strain_norm_dic": 0.10369288083704846
+      },
+      "nodal_displacement": {
+        "dic_rms_mm": 0.03197721231900353,
+        "elastic_relative_error": 0.0002748936948835602,
+        "elastic_rms_mm": 8.790334046446973e-06,
+        "ludwik_relative_error": 0.0005785280432634238,
+        "ludwik_rms_mm": 1.849971407193215e-05
+      }
+    },
+    "30": {
+      "absolute": {
+        "E_L": 1.6966886501625449,
+        "elastic_absolute_gap": 0.24283539240373866,
+        "elastic_relative_error": 0.5039460873745326,
+        "eta_L": -0.6966886501625449,
+        "ludwik_absolute_gap": 0.41201605414919124,
+        "ludwik_relative_error": 0.8550396067421917,
+        "per_component": {
+          "xx": {
+            "E_L": 1.5093258597449128,
+            "elastic_relative_error": 0.6023325430220946,
+            "ludwik_relative_error": 0.9091160833491627
+          },
+          "xy": {
+            "E_L": 1.4078353147875335,
+            "elastic_relative_error": 0.85835680377387,
+            "ludwik_relative_error": 1.2084250210410075
+          },
+          "yy": {
+            "E_L": 2.321035760757175,
+            "elastic_relative_error": 0.31564072486210704,
+            "ludwik_relative_error": 0.7326134099562668
+          }
+        },
+        "strain_norm_dic": 0.48186779992452533
+      },
+      "increment_from_state_20": {
+        "E_L": 1.8011366015554988,
+        "elastic_absolute_gap": 0.1758551944045474,
+        "elastic_relative_error": 0.5343921852522379,
+        "eta_L": -0.8011366015554988,
+        "ludwik_absolute_gap": 0.31673922721568804,
+        "ludwik_relative_error": 0.9625133244430322,
+        "per_component": {
+          "xx": {
+            "E_L": 1.4481829182642534,
+            "elastic_relative_error": 0.7212312964667614,
+            "ludwik_relative_error": 1.0444748436607454
+          },
+          "xy": {
+            "E_L": 1.4790861077418012,
+            "elastic_relative_error": 0.7815869994321915,
+            "ludwik_relative_error": 1.1560344728517535
+          },
+          "yy": {
+            "E_L": 3.146455998842891,
+            "elastic_relative_error": 0.2716281657623173,
+            "ludwik_relative_error": 0.8546660716175346
+          }
+        },
+        "strain_norm_dic": 0.32907516101033957
+      },
+      "nodal_displacement": {
+        "dic_rms_mm": 0.03758536295761892,
+        "elastic_relative_error": 0.0009536312153425802,
+        "elastic_rms_mm": 3.5842575356366086e-05,
+        "ludwik_relative_error": 0.0013960914436915114,
+        "ludwik_rms_mm": 5.2472603633171614e-05
+      }
+    },
+    "35": {
+      "absolute": {
+        "E_L": 2.065552639265369,
+        "elastic_absolute_gap": 0.2468964377757897,
+        "elastic_relative_error": 0.3896112234621897,
+        "eta_L": -1.065552639265369,
+        "ludwik_absolute_gap": 0.5099775886730004,
+        "ludwik_relative_error": 0.8047624909097354,
+        "per_component": {
+          "xx": {
+            "E_L": 1.7709185341191838,
+            "elastic_relative_error": 0.45117195779568015,
+            "ludwik_relative_error": 0.7989887821352081
+          },
+          "xy": {
+            "E_L": 1.7362981274610576,
+            "elastic_relative_error": 0.6834414983818121,
+            "ludwik_relative_error": 1.1866581938695198
+          },
+          "yy": {
+            "E_L": 2.6047271448839835,
+            "elastic_relative_error": 0.2816960350781002,
+            "ludwik_relative_error": 0.7337413091741184
+          }
+        },
+        "strain_norm_dic": 0.6336995007017555
+      },
+      "increment_from_state_20": {
+        "E_L": 2.4518165419077693,
+        "elastic_absolute_gap": 0.16964681219018612,
+        "elastic_relative_error": 0.35828737494931245,
+        "eta_L": -1.4518165419077693,
+        "ludwik_absolute_gap": 0.4159428604098189,
+        "ludwik_relative_error": 0.8784549126574356,
+        "per_component": {
+          "xx": {
+            "E_L": 1.8698513750311456,
+            "elastic_relative_error": 0.4784965330803019,
+            "ludwik_relative_error": 0.8947174003278386
+          },
+          "xy": {
+            "E_L": 2.113329217069022,
+            "elastic_relative_error": 0.5440105222537603,
+            "ludwik_relative_error": 1.1496733310718492
+          },
+          "yy": {
+            "E_L": 3.3625281539443503,
+            "elastic_relative_error": 0.2424264967918972,
+            "ludwik_relative_error": 0.815165920724854
+          }
+        },
+        "strain_norm_dic": 0.47349369263761065
+      },
+      "nodal_displacement": {
+        "dic_rms_mm": 0.043750646126006446,
+        "elastic_relative_error": 0.0006846168027627828,
+        "elastic_rms_mm": 2.995242746959244e-05,
+        "ludwik_relative_error": 0.001203990324085139,
+        "ludwik_rms_mm": 5.267535460818469e-05
+      }
+    },
+    "40": {
+      "absolute": {
+        "E_L": 2.912492296784851,
+        "elastic_absolute_gap": 0.24671595180909003,
+        "elastic_relative_error": 0.2918511197067342,
+        "eta_L": -1.9124922967848512,
+        "ludwik_absolute_gap": 0.7185583091379173,
+        "ludwik_relative_error": 0.8500141379538969,
+        "per_component": {
+          "xx": {
+            "E_L": 2.635757914695364,
+            "elastic_relative_error": 0.2831408278902785,
+            "ludwik_relative_error": 0.7462906780851994
+          },
+          "xy": {
+            "E_L": 2.2537369906148887,
+            "elastic_relative_error": 0.5389720905125613,
+            "ludwik_relative_error": 1.2147013372971955
+          },
+          "yy": {
+            "E_L": 3.622560492877932,
+            "elastic_relative_error": 0.23325943941190883,
+            "ludwik_relative_error": 0.8449964298044346
+          }
+        },
+        "strain_norm_dic": 0.845348656044225
+      },
+      "increment_from_state_20": {
+        "E_L": 3.8645959760172643,
+        "elastic_absolute_gap": 0.16188044892447415,
+        "elastic_relative_error": 0.23641673053002846,
+        "eta_L": -2.8645959760172643,
+        "ludwik_absolute_gap": 0.625602531509391,
+        "ludwik_relative_error": 0.9136551454695059,
+        "per_component": {
+          "xx": {
+            "E_L": 3.265853906086197,
+            "elastic_relative_error": 0.24235987511962326,
+            "ludwik_relative_error": 0.7915119448379846
+          },
+          "xy": {
+            "E_L": 3.0042968310437095,
+            "elastic_relative_error": 0.3946077518419354,
+            "ludwik_relative_error": 1.185518818364009
+          },
+          "yy": {
+            "E_L": 5.007233917669797,
+            "elastic_relative_error": 0.18564859103992826,
+            "ludwik_relative_error": 0.929585921822738
+          }
+        },
+        "strain_norm_dic": 0.6847250131644677
+      },
+      "nodal_displacement": {
+        "dic_rms_mm": 0.04897223986845331,
+        "elastic_relative_error": 0.0005190630111326646,
+        "elastic_rms_mm": 2.5419678288030474e-05,
+        "ludwik_relative_error": 0.0011888419022815136,
+        "ludwik_rms_mm": 5.8220250804198544e-05
+      }
+    }
+  },
+  "pixel_size_mm": 0.00184,
+  "question": "how much of the elastic defect in the measured kinematics does Ludwik/J2 already explain, both fields seen through the same TwoSubcellDiagnostic2D observation operator",
+  "reference_state": 20,
+  "schema_version": 1,
+  "solver": {
+    "elapsed_seconds_ludwik": 349.7194624519907,
+    "final_residual": 8.95019622679953e-10,
+    "gmres_restart": 50,
+    "kinematics": "TwoSubcellDiagnostic2D",
+    "linear_tolerance_mode": "fixed",
+    "newton_iterations": 380,
+    "observation_operator": "TwoSubcellDiagnostic2D.strain, Kelvin coordinates",
+    "reference_update_mode": "initial",
+    "tolerance": 1e-08
+  },
+  "states": [
+    25,
+    30,
+    35,
+    40
+  ],
+  "status": "completed_ludwik_two_state_replay_p43"
+}

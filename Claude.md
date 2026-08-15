@@ -6612,3 +6612,59 @@ Le QP dissipatif libre — il mélange le prix de la dissipation et l'incapacit�
 rang 16 à représenter les états non vus, donc il ne mesure pas ce qu'on veut. Le
 raffinement du rang partagé. Tout nouveau travail sur le blanchisseur. Et
 Méric/SRIX tant qu'on ne sait pas ce que Ludwik rate exactement.
+
+### 2026-08-15 — Ludwik sur l'histoire mesurée : E_L > 1
+
+Note complète : `validation/ludwik_on_the_measured_p43_history.md`.
+Artefacts : `results/ludwik-two-state-replay-p0043/`.
+
+**La brique existait déjà.** Aucun solveur à écrire, et pas même besoin de
+l'opérateur d'observation commun imaginé la veille : `newton_two_state.py`
+fournit `solve_two_state_dirichlet_plane_stress`, qui construit
+`TwoSubcellDiagnostic2D` et `TraditionalTwoStateTriangleBatch` — deux histoires
+constitutives indépendantes par pixel — et l'inverse construit la même
+cinématique. Mesure, simulation et inverse partagent nativement le layout
+`(nx, ny, 2, 3)`. Ce qui manquait était un artefact, pas une capacité : le
+benchmark TRI2 existant pilote ce solveur avec une rampe proportionnelle sur un
+autre crop, jamais avec l'histoire DIC.
+
+**Le résultat est négatif et net.** `E_L` vaut 1,64 / 1,70 / 2,07 / 2,91 aux
+états 25/30/35/40 : Ludwik dégrade l'accord en déformation d'un facteur 1,6 à
+2,9 par rapport à ne rien faire. L'écart nodal reste à 0,1 % pour les deux
+modèles — un crop en Dirichlet total est presque déterminé par son bord, toute
+la discrimination est dans la déformation.
+
+**L'amplitude est bonne, la distribution est fausse.** À l'état 40 la
+déformation équivalente moyenne de Ludwik tombe à 2 % de la mesure, mais son
+coefficient de variation vaut 0,77 contre 0,22 mesuré, et sa corrélation avec la
+DIC est de 0,229 quand la solution **élastique**, sans aucune plasticité,
+atteint 0,645. Ludwik corrèle à −0,569 avec la carte de limite d'élasticité, la
+mesure seulement à −0,196 : le modèle localise dans les pixels mous de cette
+carte, l'éprouvette non.
+
+**Aucun recalage d'amplitude ne peut réparer cela.** La correction
+`c = ε_L − ε_el` est orthogonale au défaut `g = ε_DIC − ε_el` : `cos(c,g)` vaut
++0,006 à +0,038 selon l'état, le meilleur facteur global est 0,005–0,02, et à
+cet optimum `E_L = 0,999`. Deux produits scalaires suffisent à fermer
+l'hypothèse amplitude au niveau global. Ils ne ferment **pas** l'hypothèse
+amplitude ponctuelle : un champ `δp(x)` le long de `n_L` a vingt mille degrés de
+liberté et peut annuler la correction là où le modèle localise à tort. C'est
+maintenant l'expérience décisive, plus une formalité.
+
+**Le garde-fou à lever avant d'interpréter.** Le défaut élastique vaut 0,29 de
+la norme mesurée alors que l'accord nodal est à 0,1 % : une grande part est de
+la texture à l'échelle du pixel. La référence de bruit propagé `(I − E P_b) n`
+existe mais n'a pas été appliquée ici. Si le défaut élastique est largement du
+bruit, « orthogonal » parle en partie du bruit et pas de Ludwik. `E_L > 1` et
+l'écart de CV n'en dépendent pas — ce sont des propriétés du champ simulé.
+
+**Deux incidents.** La politique « optimized » du benchmark TRI2
+(Eisenstat-Walker + référence par itération de Newton), qualifiée sur 8
+incréments proportionnels, ne converge pas à l'incrément 38 sur 40 incréments
+d'histoire mesurée ; la politique conservatrice passe. Le solveur gagne un
+`increment_observer` optionnel livrant déplacement, contrainte et déformation
+plastique de chaque incrément convergé — le résultat ne garde que le dernier, et
+le `progress_callback` ne transporte que des scalaires.
+
+Suite : 1584 passés, 1 ignoré (les 7 SRIX-generic exigent
+`SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY=build/srix-generic/src/libBehaviour.so`).
