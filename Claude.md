@@ -6556,3 +6556,59 @@ thermodynamiquement admissible » : même avec `σ:Δε_p ≥ 0` partout, on n'a
 ni surface de charge, ni normalité, ni consistance. Ce qu'on démontrerait est
 l'existence d'une **histoire d'eigenstrain localement dissipative** compatible
 avec la DIC et l'équilibre.
+
+### 2026-08-15 (fin) — Le déblocage : comparer par opérateur d'observation commun
+
+**Le blocage annoncé était faux, et c'est la chose la plus utile de cette fin de
+session.** J'avais écrit qu'un replay Ludwik exigeait un nouveau solveur sur
+`TwoSubcellDiagnostic2D`, les cinématiques n'étant pas comparables. C'est vrai
+des **champs internes aux points d'intégration**. Ce n'est pas vrai de la
+cinématique nodale.
+
+Vérifié : `Spectral2DResult` expose `displacement`, un champ **nodal** sur le
+même `StructuredGrid2D`, et `TwoSubcellDiagnostic2D.strain()` prend précisément
+un champ nodal. On peut donc définir un opérateur d'observation commun et
+comparer `B_obs u_DIC` à `B_obs u_Ludwik^EBI` — sans interpolation, sans
+conversion d'état matériau, sans mélange de points d'intégration. C'est le
+principe de l'identification intégrée : les représentations internes n'ont pas à
+coïncider, seule l'observation doit être la même.
+
+Plusieurs jours de dérive évités. Le solveur EBI existant suffit.
+
+**Ce qu'il reste à câbler** : `solve_ebi_dirichlet_plane_stress` veut un
+`HookeanPlaneStressMaterialBatch` avec **un état par pixel**. Le seul appelant du
+dépôt (`tests/unit/spectral2d/test_ebi.py`) utilise un stub élastique, donc il
+n'existe pas de matériau Ludwik J2 prêt pour ce protocole. La route probable est
+`create_plane_stress_material_batch` avec `mfront_behaviour_id="ludwik_j2"` et
+`point_count = pixels²`, à condition qu'il expose `elastic_tangent_in_plane_mpa`.
+C'est le premier point à vérifier.
+
+#### La métrique à produire
+
+`E_L = ‖ε_Ludwik − ε_DIC‖ / ‖ε_élastique − ε_DIC‖` aux états 25/30/35/40, plus
+les erreurs par composante Kelvin et les cartes. Pas de blanchisseur dans
+l'objectif principal.
+
+#### Puis la hiérarchie qui remplace le rang
+
+L'inverse change de rôle : il n'explique plus `ε_DIC − ε_élastique` mais
+`r_L = ε_DIC − ε_Ludwik`, et `δε_p = 0` devient **la solution Ludwik** au lieu de
+« pas de plasticité ». Trois modèles emboîtés, dans une base Kelvin orthonormée
+pour la jauge plastique `Q^T G_p Q = I` :
+
+* **A** — amplitude seule, `δε_p = δp·n_L` : Ludwik a-t-il la bonne direction et
+  la mauvaise quantité ?
+* **B** — plus les deux directions transverses : faut-il vraiment sortir de J2 ?
+* **C** — tenseur libre, borne supérieure seulement.
+
+La décomposition amplitude / direction est le résultat visé, pas « un champ
+plastique ». Et la dissipation redevient traitable : Ludwik vérifie déjà
+`σ:Δε_p^L > 0`, donc la correction dispose d'une marge au lieu de devoir
+fabriquer toute la trajectoire.
+
+#### Mis en pause explicitement
+
+Le QP dissipatif libre — il mélange le prix de la dissipation et l'incapacité du
+rang 16 à représenter les états non vus, donc il ne mesure pas ce qu'on veut. Le
+raffinement du rang partagé. Tout nouveau travail sur le blanchisseur. Et
+Méric/SRIX tant qu'on ne sait pas ce que Ludwik rate exactement.
