@@ -353,3 +353,57 @@ is a **bound** — the measured kinematics is mechanically admissible at a
 plausible plastic amplitude — not that this particular field is the plastic
 field. Separating the two needs the history constraint, which four independently
 solved states do not provide, and the Ludwik comparison.
+
+## A single subspace of rank 16 carries all four states
+
+`scripts/qualify_shared_plastic_subspace_p43.py`, artefacts in
+`shared_subspace/`.
+
+Solving each state on its own is unconstrained enough that an exact fit is
+guaranteed, so exactness there carries no information. Requiring all four states
+to build their plasticity inside the **same spatial subspace** is the first
+constraint that is neither a constitutive law nor a smoothness prior: the
+material has one place where it yields, and the load changes how much. The
+subspace is a block Krylov space driven by all four measured residuals at once,
+kept in Krylov order and never reordered by singular gain.
+
+| shared rank | raw error, states 25 / 30 / 35 / 40 |
+|---:|---|
+| 4 | `0.123` `0.092` `0.109` `0.115` |
+| 8 | `0.0104` `0.0087` `0.0097` `0.0112` |
+| 16 | `0.0001` `0.0001` `0.0001` `0.0001` |
+
+**Sixteen shared spatial modes reproduce all four strain increments to `1e-4`**,
+and eight already reach one per cent. That is 64 coefficients against 30 000
+plastic components, with the four states forced through the same spatial
+subspace — a genuine reduction, and the one the whole construction was aiming
+at.
+
+A consistency check passes: the shared subspace needs `1.37e-3` at state 40,
+against `1.374e-3` for the independent exact fit of the previous section.
+
+## But the coefficient history is not what plasticity should look like
+
+| state | 25 | 30 | 35 | 40 |
+|---|---:|---:|---:|---:|
+| plastic RMS | `2.74e-4` | `1.56e-3` | `1.47e-3` | `1.37e-3` |
+
+These are increments from state 20, so under monotonic loading they should grow.
+They jump between 25 and 30 and then **decrease**.
+
+The obvious explanation — that the exact fit is absorbing a state-independent
+noise contribution which swamps the trend — does not survive the check: the same
+non-monotone shape is already there at **rank 4**, where the fit is only 11 %
+accurate and far from noise-limited. It is in the leading modes, not in the tail.
+
+Two readings remain, and this run does not separate them. Either the plastic
+increment relative to state 20 genuinely saturates after state 30, which would
+be consistent with the regime change already located between states 20 and 25;
+or the shared subspace is fitting something that is not plastic and happens to
+be roughly constant over the later states.
+
+Deciding needs the constraint this construction still lacks: nothing here
+imposes irreversibility, and nothing ties `a_n` to `a_{n-1}`. A history-
+constrained solve — coefficients monotone in the appropriate sense, or a
+positive increment per step — is the next thing to try, and it is now cheap
+because the subspace is only sixteen-dimensional.
