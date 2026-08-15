@@ -459,3 +459,64 @@ first — the adjoint of the increment `a_k - a_{k-1}` is a reverse difference
 gradient `98 %` wrong and the optimiser motionless at every penalty, which read
 exactly like "the constraint costs nothing". It is checked against finite
 differences now, to `2.6e-9`.
+
+## Retraction, and the test that deflates the rank-16 result
+
+`scripts/qualify_subspace_prediction_and_dissipation_p43.py`, artefact
+`subspace_prediction.json`.
+
+**The 54.2 % figure is withdrawn.** It was computed with `sigma` built from the
+strain *increment* since state 20, which makes it the stress increment
+`d_sigma`, not the stress. State 20 carries load, so the absolute term is
+missing and the sign of `sigma : d_eps_p` is not what was tested. Rebuilt with
+`sigma_n = sigma_20 + C:(d_eps_sim - d_eps_p)`, the stress increment taken from
+the **simulation** rather than the DIC, and the mid-point rule over all twenty
+states instead of four long jumps:
+
+| test | negative points |
+|---|---:|
+| the withdrawn one, `d_sigma : d_eps_p` | `0.526` |
+| corrected, absolute stress, mid-point, 20 states | **`0.477`** |
+
+Including `sigma_20` moves it from `0.526` to `0.477`, so the omission was real
+but it was not hiding a sign flip. What the corrected number says is weaker and
+different: at `47.7 %`, the reconstructed increments are **as often against the
+stress as with it** — no preferential alignment, which is what an arbitrary
+field gives, not evidence of inadmissibility. The earlier conclusion was both
+wrongly computed and too strong.
+
+One point in the other direction: the accumulated plastic path length, which is
+the quantity irreversibility actually constrains, comes out at an RMS of
+`6.20e-3` and a peak of `1.77e-2` — comparable to the archived accumulated
+`5.67e-3`. The net-norm non-monotonicity flagged earlier was indeed not an
+irreversibility violation, as the path length grows by construction.
+
+## Leave one state out: the subspace does not predict
+
+The rank-16 basis was built from the residuals of all four states, so
+reproducing them is compression. Building it from three and asking for the
+fourth separates compression from prediction:
+
+| held out | rank 4 | rank 8 | rank 16 | rank 32 |
+|---:|---:|---:|---:|---:|
+| 25 | `0.633` | `0.579` | `0.544` | `0.515` |
+| 30 | `0.421` | `0.371` | `0.344` | `0.331` |
+| 35 | `0.372` | `0.317` | `0.288` | `0.264` |
+| 40 | `0.599` | `0.571` | `0.521` | `0.496` |
+
+**A basis that has not seen a state reproduces it only to between 26 % and
+63 %**, and adding modes barely helps — from rank 4 to rank 32 the error moves
+by a tenth. The missing content is not in the span the other states generate at
+any rank.
+
+So the rank-16 closure is **compression of four known fields, not a
+low-dimensional mechanical subspace the material lives in**. The headline of the
+previous section has to be read down accordingly: sixteen modes fit four states
+because sixty-four coefficients fit four fields, not because the post-elastic
+kinematics is sixteen-dimensional.
+
+What survives is narrower and still worth having: a plastic eigenstrain of
+realistic amplitude can reproduce each measured increment exactly, and the
+accumulated path it implies is of the right size. What is not supported is that
+these fields form a small shared subspace with predictive power, or that they
+constitute a dissipative history.
