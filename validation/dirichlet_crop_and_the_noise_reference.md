@@ -407,3 +407,55 @@ imposes irreversibility, and nothing ties `a_n` to `a_{n-1}`. A history-
 constrained solve — coefficients monotone in the appropriate sense, or a
 positive increment per step — is the next thing to try, and it is now cheap
 because the subspace is only sixteen-dimensional.
+
+## Irreversibility: the unconstrained fit is inadmissible, and the penalty test is malformed
+
+`scripts/qualify_history_constrained_plastic_solve_p43.py`, artefacts in
+`history_constrained/`.
+
+Plasticity dissipates, so `sigma_k : (eps_p(k) - eps_p(k-1)) >= 0` at every
+point between consecutive states. With the stress frozen at the unconstrained
+solution the constraint is linear in the sixteen reduced coefficients.
+
+**The first reading is a genuine result.** In the unconstrained exact fit,
+**54.2 %** of the material points have *negative* dissipation. More than half
+the domain is thermodynamically inadmissible, which is strong evidence that the
+exactly-fitting field is not a plastic history whatever its amplitude.
+
+**The second is a defect in my test, and it invalidates the rest of the table.**
+
+| penalty | mean error | `p` RMS at state 40 | monotone | negative-power share |
+|---:|---:|---:|---|---:|
+| 0 | `0.0001` | `1.37e-3` | no | `0.542` |
+| `0.01` | `0.839` | `3.98e-4` | yes | `0.618` |
+| `1` | `0.994` | `7.9e-6` | yes | `0.617` |
+| `1e4` | `1.000` | `8.0e-10` | yes | `0.616` |
+
+A squared penalty on `min(power, 0)` has a **trivial minimiser at zero**: halving
+the field quarters the violation without reorienting anything. The optimiser
+takes that route — the amplitude collapses by four orders of magnitude, the
+misfit goes to one, and the *fraction* of violating points does not improve at
+all, drifting from `0.542` to `0.616`. The monotone amplitudes in the right-hand
+column are an artefact of shrinking towards zero, not a history.
+
+So this run does **not** show that irreversibility is incompatible with the
+data. It shows that a penalty formulation cannot test it, because the constraint
+is scale-free and the objective is not.
+
+The fix is a hard feasibility constraint rather than a penalty:
+
+```text
+min || A Phi a - r ||^2   subject to   sigma_k . Phi (a_k - a_{k-1}) >= 0.
+```
+
+Eighty thousand linear inequalities on sixty-four unknowns, which an active-set
+or cutting-plane loop handles because very few will be active. Then the question
+has an answer: either a feasible point fits nearly as well, and the field can be
+a plastic history, or the best feasible fit is far worse, and it cannot.
+
+One caution for that run: the gradient of the penalty term was wrong here at
+first — the adjoint of the increment `a_k - a_{k-1}` is a reverse difference
+`q_j - q_{j+1}`, and a reverse cumulative sum was used instead. It left the
+gradient `98 %` wrong and the optimiser motionless at every penalty, which read
+exactly like "the constraint costs nothing". It is checked against finite
+differences now, to `2.6e-9`.

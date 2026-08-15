@@ -1,0 +1,144 @@
+{
+  "constraint": "sigma_k : (eps_p(k) - eps_p(k-1)) >= 0, stress frozen",
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "rank": 16,
+  "records": [
+    {
+      "amplitude_is_monotone": false,
+      "negative_dissipation_fraction": 0.5530125,
+      "negative_dissipation_share_of_power": 0.541930932961114,
+      "penalty": 0.0,
+      "plastic_rms_by_state": [
+        0.0002743031515199116,
+        0.00155794670678127,
+        0.0014746981532155674,
+        0.0013744317997593902
+      ],
+      "raw_error_by_state": [
+        9.719881317544929e-05,
+        7.599138629403713e-05,
+        8.343472156460021e-05,
+        9.752355870314987e-05
+      ]
+    },
+    {
+      "amplitude_is_monotone": true,
+      "negative_dissipation_fraction": 0.5615375,
+      "negative_dissipation_share_of_power": 0.6184266547713952,
+      "penalty": 0.01,
+      "plastic_rms_by_state": [
+        0.0003520194826840647,
+        0.0003891264220713678,
+        0.0003983429880618847,
+        0.000398430213623089
+      ],
+      "raw_error_by_state": [
+        0.9516052580743095,
+        0.7655349022863325,
+        0.7775178487923762,
+        0.8626810531097373
+      ]
+    },
+    {
+      "amplitude_is_monotone": true,
+      "negative_dissipation_fraction": 0.56185,
+      "negative_dissipation_share_of_power": 0.6181781953126876,
+      "penalty": 0.1,
+      "plastic_rms_by_state": [
+        6.434499703379482e-05,
+        7.017833109529974e-05,
+        7.193660485406863e-05,
+        7.210516379303078e-05
+      ],
+      "raw_error_by_state": [
+        0.8813233830133121,
+        0.9585423705704798,
+        0.9609125199918358,
+        0.9771977332327518
+      ]
+    },
+    {
+      "amplitude_is_monotone": true,
+      "negative_dissipation_fraction": 0.562875,
+      "negative_dissipation_share_of_power": 0.6165424223338821,
+      "penalty": 1.0,
+      "plastic_rms_by_state": [
+        7.095118932065025e-06,
+        7.72318953204003e-06,
+        7.917457100227751e-06,
+        7.937769988901771e-06
+      ],
+      "raw_error_by_state": [
+        0.9852773325938756,
+        0.9954633754101287,
+        0.9957010834641754,
+        0.9975219760097178
+      ]
+    },
+    {
+      "amplitude_is_monotone": true,
+      "negative_dissipation_fraction": 0.563025,
+      "negative_dissipation_share_of_power": 0.6163200721748756,
+      "penalty": 10.0,
+      "plastic_rms_by_state": [
+        7.170886521715526e-07,
+        7.803973418658596e-07,
+        8.00032067762277e-07,
+        8.021017159243088e-07
+      ],
+      "raw_error_by_state": [
+        0.9984959439579428,
+        0.9995419219118737,
+        0.9995656118978951,
+        0.9997499951300102
+      ]
+    },
+    {
+      "amplitude_is_monotone": true,
+      "negative_dissipation_fraction": 0.5630125,
+      "negative_dissipation_share_of_power": 0.6162969932149602,
+      "penalty": 100.0,
+      "plastic_rms_by_state": [
+        7.178549003022172e-08,
+        7.81214005913985e-08,
+        8.008700670108641e-08,
+        8.029435911415647e-08
+      ],
+      "raw_error_by_state": [
+        0.9998492731203538,
+        0.9999541476378293,
+        0.9999565155612067,
+        0.9999749772558516
+      ]
+    },
+    {
+      "amplitude_is_monotone": true,
+      "negative_dissipation_fraction": 0.5630625,
+      "negative_dissipation_share_of_power": 0.6162965545108751,
+      "penalty": 10000.0,
+      "plastic_rms_by_state": [
+        7.179089154479632e-10,
+        7.812766383193936e-10,
+        8.009364519343931e-10,
+        8.030110417710216e-10
+      ],
+      "raw_error_by_state": [
+        0.9999984924227882,
+        0.9999995414405033,
+        0.9999995651153251,
+        0.999999749736197
+      ]
+    }
+  ],
+  "reference_state": 20,
+  "schema_version": 1,
+  "states": [
+    25,
+    30,
+    35,
+    40
+  ]
+}
