@@ -162,3 +162,51 @@ growth is close to proportional to the load and far too regular for noise, which
 is what argues it is a real response; separating a load-proportional systematic
 from plasticity is the question that remains, and it is now asked against a
 metric that has passed its null test.
+
+## Corrected: a plastic field of realistic amplitude explains the gap
+
+The previous section is **superseded**. Its Krylov space was compressed by an
+SVD of the responses `A Phi`, which reorders the directions by singular gain --
+reintroducing exactly the observability ranking the residual-driven
+construction was meant to avoid. The leading direction was therefore not
+`A^T r`, which is why rank 1 gave a meaningless `0.9997`. And cutting at rank 32
+answered a question nobody asked.
+
+`scripts/qualify_plastic_amplitude_tradeoff_p43.py` removes the reordering and
+runs LSQR on the same operator, with the iteration count as the regularisation.
+State 40, referenced to state 20:
+
+| iterations | relative residual | plastic RMS | plastic peak | correlation with the residual |
+|---:|---:|---:|---:|---:|
+| 1 | `0.791` | `5.8e-5` | `6.0e-4` | `+0.061` |
+| 8 | `0.360` | `2.9e-4` | `1.5e-3` | `+0.125` |
+| 32 | `0.127` | `5.6e-4` | `2.0e-3` | `+0.194` |
+| 128 | `0.035` | `8.0e-4` | `3.3e-3` | `+0.323` |
+| 512 | `0.010` | `9.8e-4` | `4.2e-3` | `+0.399` |
+
+**The gap closes, and at an amplitude the experiment comfortably exceeded.**
+Ninety-nine per cent of the residual is removed by a plastic field of RMS
+`9.8e-4` and peak `4.2e-3`, against an archived accumulated plastic RMS of
+`5.67e-3` and a measured peak equivalent strain of `1.1e-2`. Nothing implausible
+is being asked of the material.
+
+**Where to stop.** The residual at state 40 sits about thirty times the
+empirical noise floor, so it can legitimately be reduced by that factor and no
+further: a relative residual of about `0.033`, reached near **128 iterations**.
+There the plastic field has RMS `8.0e-4` and peak `3.3e-3`. Past that, LSQR is
+fitting noise, which is what the growing amplitude beyond 128 shows.
+
+**And it does sit where the discrepancy is.** Compared with the residual it is
+meant to explain -- not with the total DIC strain, which measures
+`e_el + e_p` and not `p` -- the correlation rises monotonically from `+0.06` to
+`+0.40`, and the share inside the residual's top decile from `0.124` to `0.148`
+against `0.10` for an unstructured field.
+
+So the earlier negative was an artefact of the ranking, compounded by an
+arbitrary cut. A plastic eigenstrain field of realistic amplitude does explain
+the post-elastic DIC discrepancy on this crop.
+
+**Not yet done, and it is the question actually asked:** the baseline here is
+the elastic extension, not Ludwik. Answering "can a freed plastic description
+close the gap Ludwik leaves" needs the Ludwik field on M100 and the correction
+operator around it, and that replay does not exist yet.
