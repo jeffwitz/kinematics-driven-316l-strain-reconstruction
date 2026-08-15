@@ -1,69 +1,89 @@
 {
-  "decimation": 3,
+  "decimation": 1,
   "field_shape": [
-    1200,
-    1033
+    3599,
+    3099
   ],
   "history": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/p0043_evm_history.h5",
-  "model_parameter_note": "a POD mode carries one value per pixel, so the model cost is rank times the pixel count -- the comparison with a convolutional decoder must be made on both the per-state cost and this one",
-  "model_parameters": 1159600,
+  "model_parameter_note": "a POD mode carries one value per pixel, so the model cost is (rank + 1) times the pixel count, the mean field included; it is reported per rank in the results because a single number that does not depend on the rank is not a model cost",
   "normalisation": "H_t = EVM_t / mean(EVM_t), frozen",
+  "pixels_in_fit": 10433301,
   "results": [
     {
       "coefficients_per_state": 2,
+      "model_parameters": 31299903,
       "rank": 2,
+      "seen_window": {
+        "field_error": 0.1490604296323243,
+        "gradient_error": 0.5117459394848589
+      },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.2127481601695731,
-        "gradient_error": 0.9285298059697885
+        "field_error": 0.2127537866693227,
+        "gradient_error": 1.0414554761121444
       },
       "train_states": {
-        "field_error": 0.1536379338157539,
-        "gradient_error": 0.4098229453690436
+        "field_error": 0.1536525249523055,
+        "gradient_error": 0.47124873840245846
       }
     },
     {
       "coefficients_per_state": 4,
+      "model_parameters": 52166505,
       "rank": 4,
+      "seen_window": {
+        "field_error": 0.1348783969557342,
+        "gradient_error": 0.4809284179038632
+      },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.20574231805905904,
-        "gradient_error": 0.8976239201828298
+        "field_error": 0.2057097427301163,
+        "gradient_error": 1.0201785551174236
       },
       "train_states": {
-        "field_error": 0.13315237840919417,
-        "gradient_error": 0.35909270150560607
+        "field_error": 0.1331609655248755,
+        "gradient_error": 0.417690338901251
       }
     },
     {
       "coefficients_per_state": 8,
+      "model_parameters": 93899709,
       "rank": 8,
+      "seen_window": {
+        "field_error": 0.10971149455923183,
+        "gradient_error": 0.39515167082166025
+      },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.18711649435434063,
-        "gradient_error": 0.7967788266839859
+        "field_error": 0.18708431918694957,
+        "gradient_error": 0.8976322828892908
       },
       "train_states": {
-        "field_error": 0.09913004670930319,
-        "gradient_error": 0.27456198791241876
+        "field_error": 0.0991074012586196,
+        "gradient_error": 0.3258746102730769
       }
     },
     {
       "coefficients_per_state": 16,
+      "model_parameters": 177366117,
       "rank": 16,
+      "seen_window": {
+        "field_error": 0.08327735423380755,
+        "gradient_error": 0.3146053618108845
+      },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.18125358565629013,
-        "gradient_error": 0.7608405107296345
+        "field_error": 0.18122993533631943,
+        "gradient_error": 0.8518436589484738
       },
       "train_states": {
-        "field_error": 0.052665633428838406,
-        "gradient_error": 0.15708926532170017
+        "field_error": 0.05266954526829868,
+        "gradient_error": 0.19066204740668993
       }
     }
   ],
   "schema_version": 1,
-  "spatial_holdout_fraction": 0.06453694740238791,
+  "spatial_holdout_fraction": 0.06455487931330828,
   "spatial_holdout_regions": [
     [
       600,

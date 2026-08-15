@@ -45,6 +45,7 @@ from benchmark_pod_morphology import (  # type: ignore[import-not-found]
     _gradient_error,
     _relative,
 )
+from morphology_benchmark_split import split_states  # type: ignore[import-not-found]
 from torch import nn
 
 DATA = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/p0043_evm_history.h5")
@@ -115,7 +116,6 @@ def main() -> int:
     parser.add_argument("--patch", type=int, default=128)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--steps", type=int, default=3000)
-    parser.add_argument("--train-states", type=int, default=30)
     # Full resolution by default. The spectra showed signal above noise down to a
     # two-pixel wavelength, and taking every third pixel with no anti-aliasing
     # filter folds everything between two and six pixels back into the low
@@ -149,8 +149,7 @@ def main() -> int:
         )
     shape = fields.shape[1:]
     mask = _training_mask(shape, step)
-    train_states = [i for i, s in enumerate(indices) if s <= arguments.train_states]
-    test_states = [i for i, s in enumerate(indices) if s > arguments.train_states]
+    train_states, test_states = split_states(indices)
     print(f"{len(indices)} states, shape {shape}, holdout "
           f"{100 * (1 - mask.mean()):.1f} % of pixels", flush=True)
 

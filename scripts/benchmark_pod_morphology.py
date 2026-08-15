@@ -35,6 +35,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+from morphology_benchmark_split import split_states  # type: ignore[import-not-found]
 from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
@@ -68,32 +69,49 @@ WINDOW_CORNER = (0, 700)
 WINDOW_SIDE = 600
 
 
-def _window_errors(fields, centre, basis, mask, subset, corner, side, step):
-    """POD reconstruction error restricted to one window of the fitted domain."""
+def _window_errors(fields, centre_bands, basis_band, mask, subset, corner, side, step,
+                   rank, shape):
+    """POD error on the window the convolutional benchmark reports on.
+
+    Comparing a domain-wide POD error against a network error measured on one
+    window compares different populations of pixels, and a locally easy or hard
+    region would then decide the verdict. The gradient error needs the field
+    laid out in two dimensions, so this one window is reassembled -- it is
+    small.
+    """
 
     row, column = corner[0] // step, corner[1] // step
     extent = side // step
-    shape = fields.shape[1:]
-    window = np.zeros(shape, dtype=bool)
-    window[row : row + extent, column : column + extent] = True
-    if not mask[window].all():
+    if not mask[row : row + extent, column : column + extent].all():
         raise SystemExit("the comparison window overlaps a spatial holdout")
-    selector = window[mask]
+    coefficients = {index: np.zeros(rank) for index in subset}
+    for start, stop in fields.bands():
+        modes = basis_band(rank, start, stop)
+        local = mask[start:stop]
+        for index in subset:
+            coefficients[index] += modes @ (
+                fields.rows(index, start, stop)[local] - centre_bands[start]
+            )
     errors, gradients = [], []
     for index in subset:
-        observed = fields[index][mask]
-        reconstruction = centre + (basis @ (observed - centre)) @ basis
-        errors.append(_relative(reconstruction[selector], observed[selector]))
-        full = np.zeros(shape)
-        reference = np.zeros(shape)
-        full[mask] = reconstruction
-        reference[mask] = observed
-        gradients.append(
-            _gradient_error(
-                full[row : row + extent, column : column + extent],
-                reference[row : row + extent, column : column + extent],
-            )
-        )
+        reconstruction = np.zeros((extent, extent))
+        reference = np.zeros((extent, extent))
+        for start, stop in fields.bands():
+            overlap = slice(max(start, row), min(stop, row + extent))
+            if overlap.start >= overlap.stop:
+                continue
+            modes = basis_band(rank, start, stop)
+            local = mask[start:stop]
+            band = np.zeros((stop - start, shape[1]))
+            band[local] = coefficients[index] @ modes + centre_bands[start]
+            observed = np.zeros((stop - start, shape[1]))
+            observed[local] = fields.rows(index, start, stop)[local]
+            rows = slice(overlap.start - start, overlap.stop - start)
+            target = slice(overlap.start - row, overlap.stop - row)
+            reconstruction[target] = band[rows, column : column + extent]
+            reference[target] = observed[rows, column : column + extent]
+        errors.append(_relative(reconstruction, reference))
+        gradients.append(_gradient_error(reconstruction, reference))
     return {
         "field_error": float(np.mean(errors)),
         "gradient_error": float(np.mean(gradients)),
@@ -104,72 +122,132 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--history", type=Path, default=DATA)
     parser.add_argument("--ranks", nargs="+", type=int, default=[2, 4, 8, 16, 32, 64])
-    parser.add_argument("--decimate", type=int, default=3)
-    parser.add_argument("--train-states", type=int, default=30)
+    parser.add_argument("--decimate", type=int, default=1)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
     step = arguments.decimate
-    with h5py.File(arguments.history, "r") as handle:
-        evm = handle["evm"]
-        states = int(evm.shape[0])
-        means = np.asarray(handle.attrs["mean_evm"], dtype=np.float64)
-        # State 0 is the undeformed reference and its mean is zero, so it has no
-        # normalised morphology; the history proper starts at one.
-        indices = list(range(1, states))
-        fields = np.stack(
-            [np.asarray(evm[state][::step, ::step], dtype=np.float64) / means[state]
-             for state in indices]
-        )
-    shape = fields.shape[1:]
-    print(f"{len(indices)} states, decimated shape {shape}", flush=True)
+    handle = h5py.File(arguments.history, "r")
+    evm = handle["evm"]
+    states = int(evm.shape[0])
+    means = np.asarray(handle.attrs["mean_evm"], dtype=np.float64)
+    # State 0 is the undeformed reference and its mean is zero, so it has no
+    # normalised morphology; the history proper starts at one.
+    indices = list(range(1, states))
+    shape = (evm.shape[1] // step + (evm.shape[1] % step > 0),
+             evm.shape[2] // step + (evm.shape[2] % step > 0))
+    print(f"{len(indices)} states, shape {shape}", flush=True)
+
+    class Fields:
+        """Normalised morphology maps, read in row bands rather than stacked.
+
+        With forty states and eleven million pixels the snapshot form of the
+        POD needs only a forty-by-forty correlation matrix in memory; stacking
+        the fields to get it is what exhausted the RAM, not the method. Bands
+        are cached so a single pass over the states costs one read each.
+        """
+
+        def __init__(self, band: int = 400) -> None:
+            self.band = band
+            self._cache: dict[tuple[int, int], np.ndarray] = {}
+
+        def rows(self, index: int, start: int, stop: int) -> np.ndarray:
+            key = (index, start)
+            if key not in self._cache:
+                self._cache.clear()
+                state = indices[index]
+                block = np.asarray(
+                    evm[state, start * step : stop * step : step], dtype=np.float64
+                )
+                self._cache[key] = block / means[state]
+            return self._cache[key]
+
+        def bands(self):
+            for start in range(0, shape[0], self.band):
+                yield start, min(start + self.band, shape[0])
+
+    fields = Fields()
 
     mask = np.ones(shape, dtype=bool)
     for row, column, size in HOLDOUT_REGIONS:
         mask[row // step : (row + size) // step, column // step : (column + size) // step] = False
     print(f"spatial holdout covers {100.0 * (1.0 - mask.mean()):.1f} % of the field", flush=True)
 
-    train = [index for index, state in enumerate(indices) if state <= arguments.train_states]
-    test = [index for index, state in enumerate(indices) if state > arguments.train_states]
+    train, test = split_states(indices)
+    print(f"train {len(train)} states, temporal holdout "
+          f"{[indices[i] for i in test]}", flush=True)
 
-    # The basis is fitted on the training states over the training pixels only,
-    # so a temporal holdout is not contaminated by the states it must predict.
-    matrix = fields[train][:, mask]
-    centre = matrix.mean(axis=0)
-    _, _, right = np.linalg.svd(matrix - centre, full_matrices=False)
+    # Snapshot POD: accumulate the state-by-state correlation matrix band by
+    # band, so only a small square matrix is ever resident. The mean field is
+    # accumulated the same way.
+    count = len(train)
+    centre_bands: dict[int, np.ndarray] = {}
+    for start, stop in fields.bands():
+        local = mask[start:stop]
+        centre_bands[start] = sum(
+            fields.rows(index, start, stop)[local] for index in train
+        ) / count
+    correlation = np.zeros((count, count))
+    for start, stop in fields.bands():
+        local = mask[start:stop]
+        block = np.stack(
+            [fields.rows(index, start, stop)[local] - centre_bands[start] for index in train]
+        )
+        correlation += block @ block.T
+    values, vectors = np.linalg.eigh(correlation)
+    order = np.argsort(values)[::-1]
+    values, vectors = np.maximum(values[order], 0.0), vectors[:, order]
+    pixels = int(mask.sum())
+    print(f"snapshot correlation {correlation.shape}, {pixels} fitted pixels", flush=True)
+
+    def basis_band(rank: int, start: int, stop: int) -> np.ndarray:
+        """Spatial modes over one band, rebuilt from the snapshot vectors."""
+
+        local = mask[start:stop]
+        block = np.stack(
+            [fields.rows(index, start, stop)[local] - centre_bands[start] for index in train]
+        )
+        scale = 1.0 / np.sqrt(np.maximum(values[:rank], 1.0e-30))
+        return (vectors[:, :rank] * scale).T @ block
 
     results = []
     for rank in arguments.ranks:
-        if rank > right.shape[0]:
+        if rank > count:
             continue
-        basis = right[:rank]
         entry: dict[str, object] = {
             "rank": rank,
             "coefficients_per_state": rank,
-            "model_parameters": int((rank + 1) * right.shape[1]),
+            "model_parameters": int((rank + 1) * pixels),
         }
+        # Projection coefficients are accumulated over bands, then the squared
+        # errors are accumulated in a second pass; nothing full-field is held.
         for label, subset in (("train_states", train), ("temporal_holdout", test)):
-            errors, gradients = [], []
-            for index in subset:
-                observed = fields[index][mask]
-                coefficients = basis @ (observed - centre)
-                reconstruction = centre + coefficients @ basis
-                errors.append(_relative(reconstruction, observed))
-                full = np.zeros(shape)
-                full[mask] = reconstruction
-                reference = np.zeros(shape)
-                reference[mask] = observed
-                gradients.append(_gradient_error(full, reference))
+            coefficients = {index: np.zeros(rank) for index in subset}
+            for start, stop in fields.bands():
+                modes = basis_band(rank, start, stop)
+                local = mask[start:stop]
+                for index in subset:
+                    residual = fields.rows(index, start, stop)[local] - centre_bands[start]
+                    coefficients[index] += modes @ residual
+            errors = np.zeros(len(subset))
+            norms = np.zeros(len(subset))
+            for start, stop in fields.bands():
+                modes = basis_band(rank, start, stop)
+                local = mask[start:stop]
+                for position, index in enumerate(subset):
+                    observed = fields.rows(index, start, stop)[local] - centre_bands[start]
+                    difference = coefficients[index] @ modes - observed
+                    errors[position] += float((difference**2).sum())
+                    norms[position] += float(
+                        ((observed + centre_bands[start]) ** 2).sum()
+                    )
             entry[label] = {
-                "field_error": float(np.mean(errors)),
-                "gradient_error": float(np.mean(gradients)),
+                "field_error": float(np.mean(np.sqrt(errors / np.maximum(norms, 1e-30)))),
             }
-        # The same windows the convolutional benchmark reports on. Comparing a
-        # domain-wide POD error against a CNN error measured on one window
-        # compares different populations of pixels, and a locally easy or hard
-        # region would then decide the verdict.
-        entry["seen_window"] = _window_errors(fields, centre, basis, mask, train + test,
-                                              WINDOW_CORNER, WINDOW_SIDE, step)
+        entry["seen_window"] = _window_errors(
+            fields, centre_bands, basis_band, mask, train + test,
+            WINDOW_CORNER, WINDOW_SIDE, step, rank, shape,
+        )
         entry["spatial_holdout"] = (
             "undefined: POD modes are tied to absolute positions and say nothing "
             "about pixels excluded from the fit"
@@ -178,7 +256,8 @@ def main() -> int:
         print(
             f"  rank {rank:3d}: train {entry['train_states']['field_error']:.4f}  "
             f"temporal holdout {entry['temporal_holdout']['field_error']:.4f}  "
-            f"(gradient {entry['temporal_holdout']['gradient_error']:.4f})",
+            f"window {entry['seen_window']['field_error']:.4f} "
+            f"(gradient {entry['seen_window']['gradient_error']:.4f})",
             flush=True,
         )
 
@@ -192,9 +271,15 @@ def main() -> int:
         "states": indices,
         "train_states": [indices[index] for index in train],
         "temporal_holdout_states": [indices[index] for index in test],
+        "split_rationale": (
+            "the holdout is spread over the loading in two-state blocks so "
+            "training spans every mechanical regime; withholding states 31-40 "
+            "would test out-of-distribution extrapolation instead of the "
+            "compactness of the representation"
+        ),
         "spatial_holdout_regions": [list(region) for region in HOLDOUT_REGIONS],
         "spatial_holdout_fraction": float(1.0 - mask.mean()),
-        "pixels_in_fit": int(right.shape[1]),
+        "pixels_in_fit": pixels,
         "model_parameter_note": (
             "a POD mode carries one value per pixel, so the model cost is "
             "(rank + 1) times the pixel count, the mean field included; it is "
@@ -205,6 +290,7 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", "utf-8")
+    handle.close()
     print(f"wrote {arguments.output}")
     return 0
 
