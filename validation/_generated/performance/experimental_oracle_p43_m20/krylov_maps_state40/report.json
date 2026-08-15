@@ -1,0 +1,47 @@
+{
+  "dic_peak_equivalent_strain": 0.011159059318634451,
+  "origin_nodes": [
+    1580,
+    1030
+  ],
+  "records": [
+    {
+      "equivalent_map_correlation": 0.7214822474469327,
+      "iterations": 8,
+      "plastic_peak": 0.0014601105666667042,
+      "plastic_rms": 0.0002892558702959731,
+      "relative_strain_error": 0.9522633837906227
+    },
+    {
+      "equivalent_map_correlation": 0.7670730204289513,
+      "iterations": 32,
+      "plastic_peak": 0.002031520548788551,
+      "plastic_rms": 0.0005595158251538955,
+      "relative_strain_error": 0.8813343841969986
+    },
+    {
+      "equivalent_map_correlation": 0.7954388408142115,
+      "iterations": 64,
+      "plastic_peak": 0.002636297853518956,
+      "plastic_rms": 0.0006885124624908285,
+      "relative_strain_error": 0.835002350831664
+    },
+    {
+      "equivalent_map_correlation": 0.824537950448212,
+      "iterations": 128,
+      "plastic_peak": 0.003300216093116695,
+      "plastic_rms": 0.0007972274556487131,
+      "relative_strain_error": 0.7841639383562847
+    },
+    {
+      "equivalent_map_correlation": 0.8890080820532305,
+      "iterations": 512,
+      "plastic_peak": 0.0041511448352663655,
+      "plastic_rms": 0.0009849526487991926,
+      "relative_strain_error": 0.6431108800606365
+    }
+  ],
+  "reference_state": 20,
+  "schema_version": 1,
+  "state": 40
+}

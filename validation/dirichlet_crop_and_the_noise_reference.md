@@ -259,3 +259,54 @@ Reconciling them is the next piece of work and it is not a detail: either the
 residual machinery moves to the EBI kinematics, or the Ludwik solve is repeated
 on the two-sub-cell one. Doing it by interpolation between the two would put an
 uncontrolled error exactly where the measurement is being made.
+
+## The maps: two metrics that disagree, and it matters
+
+`scripts/plot_krylov_correction_maps_p43.py`, artefacts in
+`krylov_maps_state40/` — `krylov_correction_maps.png`, `krylov_tradeoff.png`.
+
+Drawn at state 40 referenced to state 20: the von Mises equivalent of the
+measured strain increment, of the simulation as LSQR directions are added, their
+difference, and the plastic field responsible. Native two-sub-cell layout,
+averaged over sub-cells for display only, no interpolation. The forward operator
+here is the **physical** one — the whitener belongs to the inverse problem, not
+to the strain being looked at.
+
+| iterations | whitened residual | **raw strain error** | equivalent-map correlation | plastic RMS |
+|---:|---:|---:|---:|---:|
+| 8 | `0.360` | `0.952` | `0.722` | `2.9e-4` |
+| 32 | `0.127` | `0.881` | `0.767` | `5.6e-4` |
+| 64 | `0.067` | `0.835` | `0.795` | `6.9e-4` |
+| 128 | `0.035` | `0.784` | `0.825` | `8.0e-4` |
+| 512 | `0.010` | `0.643` | `0.889` | `9.9e-4` |
+
+**The two metrics disagree by a wide margin, and this qualifies the earlier
+headline.** At 128 iterations the correction removes `96.5 %` of the residual in
+the whitened metric but only `22 %` of the raw strain difference. At 512, `99 %`
+against `36 %`.
+
+The whitener divides by the pointwise deviation of the propagated noise and then
+whitens spectrally. The elastic extension removes the smooth part of the noise,
+so the propagated noise is comparatively small at low wavenumber and the
+whitener weights those components heavily. The fit therefore concentrates on the
+smooth part of the discrepancy and leaves the rough part largely untouched —
+which is statistically correct for detecting signal against noise, and is not
+the same statement as reproducing the measured strain field.
+
+**What does improve steadily is the resemblance.** The correlation between the
+simulated and measured equivalent-strain maps rises from `0.722` to `0.889`. The
+maps show the correction building where the measurement localises rather than at
+the edges.
+
+So the honest reading, and the one to carry forward:
+
+* a plastic field of realistic amplitude removes almost all of the
+  **statistically significant** part of the discrepancy;
+* it removes only a third of the **raw** strain difference, most of which sits
+  in components the noise model treats as unreliable;
+* and the corrected field looks progressively more like the measured one.
+
+Whether the remaining raw difference is measurement noise the whitener is right
+to discount, or real strain the noise model is wrong about, is the question the
+Ludwik comparison and a better noise estimate have to settle. It should not be
+asserted either way from these numbers.
