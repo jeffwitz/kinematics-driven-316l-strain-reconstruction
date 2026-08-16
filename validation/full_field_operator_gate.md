@@ -513,6 +513,42 @@ So `patient` is not usable as a default: it cannot be bounded. `measure` with a
 fifteen-second limit is the default, and `patient` stays available for a
 deliberate offline planning run by someone willing to pay for it.
 
+## The gate, at full field
+
+```text
+grid 3599 x 3099, 22 293 208 interior unknowns, 22 306 602 material points
+kernel numba, preconditioner diagonal, backend fftw, 8 workers, setup 11.6 s
+
+stiffness symmetry        9.963e-16     v.Kv  +8.005751e+18
+preconditioner symmetry   4.309e-14     v.Mv  +1.178128e+02
+conjugate gradient        29 iterations
+adjoint dot product       4.445e-17     over 2 pairs
+A 52.00 s   A^T 53.03 s   peak 1785 MB
+```
+
+**PASSED.** The adjoint holds at 4.4e-17, nine orders below the registered 1e-8,
+at 22.3 million unknowns. Nothing guaranteed a priori that the adjoint of the
+lifted primal would be consistent, and that was the whole point of the gate.
+
+Twenty-nine iterations is exactly what 200 and 256 square gave with padding, so
+mesh independence holds across three orders of magnitude in size. Symmetry and
+positivity hold. Peak memory is 1.8 GB against the 14 GB allowed.
+
+Wisdom pays as intended: the cold plan costs 249.2 s and writes the cache, a
+warm build costs **8.0 s** and keeps the plan quality -- `M` at 830 ms against
+874 -- so four minutes are spent once for this dataset and never again. `M` at
+830 ms against 2560 unpadded confirms the 3.7 padding gain at the real size.
+
+One estimate of mine was out by a factor of two and the reason is worth
+recording. I predicted about 25 s from `29 x (M + K)`; the measurement is 52.
+The gap is neither `M` nor `K` but the rest of the chain -- the dot products and
+axpys of conjugate gradient over 178 MB vectors, plus the `B` and `B^T`
+applications outside the loop. At this size the solver's own vector algebra
+stops being negligible, and no extrapolation from 1024 square could have shown
+it.
+
+`T_A` over this milestone: **134 s to 52 s**, and qualified rather than hoped.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
