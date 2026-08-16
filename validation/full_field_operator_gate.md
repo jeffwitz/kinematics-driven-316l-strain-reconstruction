@@ -474,6 +474,35 @@ An earlier claim that this milestone would land near five seconds is withdrawn.
 It extrapolated a 1024-square measurement linearly and ignored that the
 transform dominates completely at full field.
 
+## How long planning is worth, measured
+
+Letting `FFTW_MEASURE` run unbounded was time given away. At 1799 x 1549 --
+2.79 Mpoints, the same factor structure as the real padded case:
+
+| planning | plan | DST | break-even |
+|---|---|---|---|
+| `estimate` | 0.1 s | 44.8 ms | -- |
+| `measure`, 1 s | 1.2 s | 43.2 ms | 726 calls |
+| `measure`, 5 s | 6.9 s | 39.4 ms | 1262 |
+| **`measure`, 15 s** | 15.0 s | **32.8 ms** | 1252 |
+| `measure`, 60 s | 49.0 s | 43.0 ms | 28 379 |
+| `patient`, 60 s | 60.0 s | 30.4 ms | 4174 |
+
+**On a smooth size the whole spread is 1.47**, and fifteen seconds captures
+almost all of it. Beyond that the budget is spent for nothing: 49 s of planning
+returned 43.0 ms, worse than the 15 s plan. The default is now 15 s.
+
+This compounds with the padding in a way worth noticing. The collapse of
+`estimate` measured earlier -- 1228 ms against 97 -- belonged to the awkward
+size. On a smooth one `estimate` is within 47 % of the best plan, so padding
+does not merely divide the transform by 3.7: it also makes expensive planning
+close to pointless.
+
+One caveat on the method. FFTW accumulates wisdom **within the process**, so
+each plan benefits from its predecessors and the rows are not independent --
+the unlimited row built in 0.0 s because it reloaded. The ordering conclusion
+holds; the individual figures deserve care.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A

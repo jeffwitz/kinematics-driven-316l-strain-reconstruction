@@ -138,7 +138,7 @@ class FullFieldPlasticOperator:
                  maximum_iterations: int = 2000,
                  wisdom: Path | None = None, kernel: str = "generic",
                  preconditioner: str = "diagonal", warm_start: bool = False,
-                 planner: str = "measure", planning_seconds: float | None = 30.0,
+                 planner: str = "measure", planning_seconds: float | None = 15.0,
                  pad_transform: int = 0) -> None:
         self.grid = grid
         self.kinematics = TwoSubcellDiagnostic2D(grid)
@@ -427,7 +427,8 @@ def main() -> int:
                         help="enlarge the preconditioner transform by this many nodes")
     parser.add_argument("--planner", default="measure",
                         choices=("estimate", "measure", "patient"))
-    parser.add_argument("--planning-seconds", type=float, default=30.0)
+    parser.add_argument("--planning-seconds", type=float, default=15.0,
+                        help="unlimited planning buys nothing; see the gate document")
     parser.add_argument("--preconditioner", default="diagonal",
                         choices=("diagonal", "coupled"))
     parser.add_argument("--wisdom", type=Path,
