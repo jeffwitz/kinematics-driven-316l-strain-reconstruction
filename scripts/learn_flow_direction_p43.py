@@ -401,6 +401,8 @@ def main() -> int:
                         help="raw modes, free coefficients, project the assembled field")
     parser.add_argument("--free-sign-qp", action="store_true",
                         help="constrain only the final combination, C a >= 0")
+    parser.add_argument("--seed", type=int, default=20260816,
+                        help="initialisation, for reproducibility across restarts")
     parser.add_argument("--resume", action="store_true",
                         help="continue from the checkpoint beside the output file")
     parser.add_argument("--load-weights", type=Path, default=None,
@@ -408,7 +410,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
-    torch.manual_seed(20260816)
+    torch.manual_seed(arguments.seed)
     pixels = arguments.pixels
     x0, y0 = arguments.origin
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
@@ -554,7 +556,7 @@ def main() -> int:
         path = torch.zeros((points, 1), dtype=torch.float64)
         previous_stress = torch.from_numpy(reference_stress)
         loss = torch.zeros((), dtype=torch.float64)
-        scores, negative, singular = {}, [], []
+        scores, negative, singular, fractions = {}, [], [], []
         for state in states:
             plastic_np = plastic.detach().numpy()
             predictor = torch.from_numpy(elastic[state] + apply_numpy(plastic_np))
@@ -571,13 +573,24 @@ def main() -> int:
             wants = grad and state in training
             with torch.set_grad_enabled(wants):
                 modes = network(state_image)
+                # How much of the field the thermodynamic constraint actually
+                # touches. If it is a few per cent the projection is a light
+                # correction; if it is most of the field the learned directions
+                # are being rewritten and the "free" direction is a fiction.
                 if arguments.project_field:
                     frozen, _ = project_field_solve(
                         modes, stress, target, apply_numpy, arguments.ridge
                     )
+                    touched = float(frozen.double().mean())
                     modes = masked_modes(modes, stress, frozen)
                 elif arguments.project_dissipative:
+                    touched = float(
+                        (torch.einsum("pir,pi->pr", modes.detach(), stress) < 0)
+                        .double().mean()
+                    )
                     modes = project_dissipative(modes, stress)
+                else:
+                    touched = 0.0
                 responses = Mechanics.apply(modes)
                 flat = responses.reshape(-1, rank)
                 gram = flat.T @ flat
@@ -660,10 +673,9 @@ def main() -> int:
                     float(torch.quantile(cosine[active], 0.1))
                     if bool(active.any()) else 0.0,
                 ))
-                singular.append(
-                    float(torch.linalg.svdvals(flat.detach())[-1]
-                          / torch.linalg.svdvals(flat.detach())[0])
-                )
+                values = torch.linalg.svdvals(flat.detach())
+                singular.append((values / values[0].clamp_min(1e-300)).numpy())
+                fractions.append(touched)
                 scores[state] = float(
                     torch.linalg.vector_norm(remaining.detach()) / defect[state]
                 )
@@ -688,7 +700,14 @@ def main() -> int:
                 "median_stress_alignment_where_active": float(counts[:, 9].mean()),
                 "tenth_percentile_stress_alignment": float(counts[:, 10].mean()),
             },
-            float(np.mean(singular)),
+            {
+                "normalised_singular_spectrum": np.mean(singular, axis=0).tolist(),
+                "smallest_over_largest": float(np.mean(singular, axis=0)[-1]),
+                "effective_rank_at_1e6": int(
+                    (np.mean(singular, axis=0) > 1e-6).sum()
+                ),
+                "projected_fraction": float(np.mean(fractions)),
+            },
         )
 
     def krylov_basis(size: int) -> np.ndarray:
@@ -833,7 +852,7 @@ def main() -> int:
                 "held_out": float(np.mean([scores[s] for s in sorted(holdout)])),
                 "final_state": scores[states[-1]],
                 "dissipation": negative,
-                "smallest_over_largest_singular_value": conditioning,
+                "geometry": conditioning,
             }
             print(f"scored r={rank}: fitted {results[f'learned_r{rank}']['fitted']:.4f}  "
                   f"held out {results[f'learned_r{rank}']['held_out']:.4f}", flush=True)
@@ -878,6 +897,8 @@ def main() -> int:
                     f"p_eq {negative['accumulated_equivalent_plastic_strain']:.3e}  "
                     f"chi {negative['mean_stress_alignment_where_active']:+.3f} "
                     f"(global {negative['global_stress_alignment']:+.3f})  "
+                    f"proj {100 * conditioning['projected_fraction']:.1f} %  "
+                    f"effrank {conditioning['effective_rank_at_1e6']}/{rank}  "
                     f"({time.time() - start:.0f} s)",
                     flush=True,
                 )
@@ -889,7 +910,7 @@ def main() -> int:
             "held_out": float(np.mean([scores[s] for s in sorted(holdout)])),
             "final_state": scores[states[-1]],
             "dissipation": negative,
-            "smallest_over_largest_singular_value": conditioning,
+            "geometry": conditioning,
         }
         # Without the weights nothing can be re-scored later, which is how the
         # magnitude of the negative dissipation went unmeasured on the first
