@@ -111,7 +111,14 @@ def main() -> int:
     parser.add_argument("--history", type=Path, default=DATA)
     parser.add_argument("--latent", type=int, default=16)
     parser.add_argument("--features", type=int, default=128)
-    parser.add_argument("--fourier-scale", type=float, default=12.0)
+    # The scale sets the bandwidth, and getting it wrong disables the whole
+    # point of the encoding. Coordinates span [-1, 1], so a frequency b gives
+    # 2b cycles across the field; reaching Nyquist on an N-pixel axis needs
+    # b ~ N/4. At scale 12 the map topped out near forty cycles, resolving
+    # nothing finer than about forty-five pixels -- the same failure as the
+    # convolutional bottleneck, reached by a different route. Default None
+    # derives it from the grid instead of guessing.
+    parser.add_argument("--fourier-scale", type=float, default=None)
     parser.add_argument("--width", type=int, default=256)
     parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--batch-coordinates", type=int, default=8192)
@@ -140,6 +147,11 @@ def main() -> int:
         )
     shape = fields.shape[1:]
     train_states, test_states = split_states(indices)
+    if arguments.fourier_scale is None:
+        # Three sigma reaches Nyquist, so the tail of the distribution covers
+        # the finest resolvable structure rather than stopping short of it.
+        arguments.fourier_scale = float(min(shape)) / 12.0
+        print(f"fourier scale set to {arguments.fourier_scale:.1f} from the grid", flush=True)
 
     mask = np.ones(shape, dtype=bool)
     for row, column, size in HOLDOUT_REGIONS:
