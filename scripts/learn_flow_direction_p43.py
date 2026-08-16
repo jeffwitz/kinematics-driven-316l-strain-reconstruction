@@ -302,7 +302,16 @@ def main() -> int:
                               - (plastic + increment).detach().numpy())
                 )
                 power = (0.5 * (previous_stress + new_stress) * increment.detach()).sum(dim=1)
-                negative.append(float((power < 0).double().mean()))
+                # The count of offending points says nothing about how much
+                # power flows the wrong way. For the fixed basis the two turn
+                # out to agree closely -- 47 % of points and 47 % of |power| --
+                # so the inadmissibility is not a small-amplitude edge effect.
+                negative.append((
+                    float((power < 0).double().mean()),
+                    float(power.clamp_max(0).abs().sum()
+                          / power.abs().sum().clamp_min(1e-300)),
+                    float(power.sum()),
+                ))
                 singular.append(
                     float(torch.linalg.svdvals(flat.detach())[-1]
                           / torch.linalg.svdvals(flat.detach())[0])
@@ -313,7 +322,17 @@ def main() -> int:
             plastic = (plastic + increment).detach()
             path = path + increment.detach().pow(2).sum(dim=1, keepdim=True).sqrt()
             previous_stress = new_stress
-        return loss, scores, float(np.mean(negative)), float(np.mean(singular))
+        counts = np.asarray(negative)
+        return (
+            loss,
+            scores,
+            {
+                "negative_point_fraction": float(counts[:, 0].mean()),
+                "negative_power_share": float(counts[:, 1].mean()),
+                "net_dissipation": float(counts[:, 2].sum()),
+            },
+            float(np.mean(singular)),
+        )
 
     def krylov_basis(size: int) -> np.ndarray:
         """Fixed residual-driven basis, seeded from training increments only."""
@@ -372,7 +391,12 @@ def main() -> int:
             simulated = elastic[state] + apply_numpy(plastic)
             new_stress = reference_stress + stress_of(simulated - plastic)
             power = (0.5 * (previous_stress + new_stress) * increment).sum(axis=1)
-            negative.append(float((power < 0).mean()))
+            negative.append((
+                float((power < 0).mean()),
+                float(np.abs(np.minimum(power, 0.0)).sum()
+                      / max(np.abs(power).sum(), 1e-300)),
+                float(power.sum()),
+            ))
             previous_stress = new_stress
             scores[state] = float(
                 np.linalg.norm(measured[state] - simulated) / defect[state]
@@ -382,7 +406,11 @@ def main() -> int:
             "fitted": float(np.mean([scores[s] for s in training])),
             "held_out": float(np.mean([scores[s] for s in sorted(holdout)])),
             "final_state": scores[states[-1]],
-            "negative_dissipation_fraction": float(np.mean(negative)),
+            "dissipation": {
+                "negative_point_fraction": float(np.asarray(negative)[:, 0].mean()),
+                "negative_power_share": float(np.asarray(negative)[:, 1].mean()),
+                "net_dissipation": float(np.asarray(negative)[:, 2].sum()),
+            },
         }
 
     channels = 2 * (3 + 3 + 3 + 1)
@@ -392,8 +420,10 @@ def main() -> int:
             entry = baseline(kind, rank)
             results[f"{kind}_r{rank}"] = entry
             print(f"{kind:8s} r={rank:2d}: fitted {entry['fitted']:.4f}  "
-                  f"held out {entry['held_out']:.4f}  negative dissipation "
-                  f"{100 * entry['negative_dissipation_fraction']:.1f} %", flush=True)
+                  f"held out {entry['held_out']:.4f}  negative "
+                  f"{100 * entry['dissipation']['negative_point_fraction']:.1f} % of points, "
+                  f"{100 * entry['dissipation']['negative_power_share']:.1f} % of power",
+                  flush=True)
     for rank in arguments.ranks:
         network = Generator(channels=channels, rank=rank).double()
         optimiser = torch.optim.Adam(network.parameters(), lr=arguments.learning_rate)
@@ -412,7 +442,8 @@ def main() -> int:
                 print(
                     f"  r={rank:2d} step {step:4d}: loss {float(loss.detach()):.4e}  "
                     f"fitted {fitted:.4f}  held out {held:.4f}  "
-                    f"negative dissipation {100 * negative:.1f} %  "
+                    f"negative {100 * negative['negative_point_fraction']:.1f} % of "
+                    f"points, {100 * negative['negative_power_share']:.1f} % of power  "
                     f"({time.time() - start:.0f} s)",
                     flush=True,
                 )
@@ -423,9 +454,15 @@ def main() -> int:
             "fitted": float(np.mean([scores[s] for s in training])),
             "held_out": float(np.mean([scores[s] for s in sorted(holdout)])),
             "final_state": scores[states[-1]],
-            "negative_dissipation_fraction": negative,
+            "dissipation": negative,
             "smallest_over_largest_singular_value": conditioning,
         }
+        # Without the weights nothing can be re-scored later, which is how the
+        # magnitude of the negative dissipation went unmeasured on the first
+        # pass of this very script.
+        torch.save(
+            network.state_dict(), arguments.output.with_suffix(f".r{rank}.weights")
+        )
         print(f"learned r={rank}: fitted {results[f'learned_r{rank}']['fitted']:.4f}  "
               f"held out {results[f'learned_r{rank}']['held_out']:.4f}", flush=True)
 
