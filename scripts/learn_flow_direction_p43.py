@@ -56,6 +56,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from scipy.optimize import nnls
 from torch import nn
 
 from fem_inhouse.core.kelvin import KELVIN_SCALE_2D
@@ -118,6 +119,63 @@ class Generator(nn.Module):
         return modes / scale
 
 
+def project_dissipative(modes: torch.Tensor, stress: torch.Tensor) -> torch.Tensor:
+    """Each learned direction, pushed into the half-space `sigma . v >= 0`.
+
+    ```text
+    P(v) = v + relu(-sigma . v) / |sigma|^2 * sigma      so   sigma . P(v) = max(sigma . v, 0)
+    ```
+
+    This is emphatically not the J2 arm. Nothing tells the network that the
+    plastic increment should be parallel to `N(sigma)`; it may learn any tensor
+    direction whatsoever inside the whole half-space. The only thing forbidden
+    is climbing the thermodynamic slope, which is the freedom the previous run
+    showed the network exploiting -- 37 to 43 % of points anti-dissipative,
+    because the gradients make those directions extremely profitable against
+    the DIC loss.
+
+    Incompressibility needs no projection here and imposing one would be wrong.
+    Plastic incompressibility is `tr_3(eps_p) = 0`, which under plane stress
+    fixes `eps_p_zz = -(eps_p_xx + eps_p_yy)` and leaves the in-plane triple
+    entirely free; demanding a vanishing *in-plane* trace would force
+    `eps_p_zz = 0`, a plane-strain plasticity this specimen does not have. With
+    `sigma_zz = 0` the in-plane Kelvin dot product also equals the full
+    three-dimensional `sigma : eps_p` exactly, so the half-space above is the
+    complete thermodynamic condition rather than an in-plane shadow of it.
+
+    Modes are renormalised afterwards: the projection changes their length, and
+    the Gram penalty and the ridge scaling both compare shapes, not sizes.
+    """
+
+    overlap = torch.einsum("pir,pi->pr", modes, stress)
+    square = stress.pow(2).sum(dim=1, keepdim=True).clamp_min(1e-300)
+    pushed = modes + (torch.relu(-overlap) / square).unsqueeze(1) * stress.unsqueeze(2)
+    scale = pushed.pow(2).sum(dim=(0, 1)).sqrt().clamp_min(1e-12)
+    return pushed / scale
+
+
+def non_negative_solve(gram: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
+    """`argmin_a >= 0  a^T G a - 2 a^T b`, differentiated through its active set.
+
+    The active set is found once in numpy on the `r x r` normal equations --
+    `G = L L^T` turns the problem into an ordinary NNLS on `(L^T, L^-1 b)`, so
+    it costs nothing next to one application of the mechanics. The free
+    coefficients are then re-solved in torch, which is exact almost everywhere
+    by the KKT conditions: the active constraints are locally constant, so the
+    gradient of the solution is the gradient of the reduced linear system.
+    """
+
+    factor = torch.linalg.cholesky(gram)
+    reduced = torch.linalg.solve_triangular(factor, right[:, None], upper=False)[:, 0]
+    guess, _ = nnls(factor.T.detach().numpy(), reduced.detach().numpy())
+    free = torch.from_numpy(np.nonzero(guess > 0.0)[0])
+    answer = torch.zeros(gram.shape[0], dtype=gram.dtype)
+    if free.numel() == 0:
+        return answer
+    solved = torch.linalg.solve(gram[free][:, free], right[free])
+    return answer.index_put((free,), solved)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", nargs=2, type=int, default=(1580, 1030))
@@ -131,6 +189,7 @@ def main() -> int:
     parser.add_argument("--ridge", type=float, default=1e-6)
     parser.add_argument("--orthogonality", type=float, default=1e-2)
     parser.add_argument("--dissipation", type=float, default=1e-2)
+    parser.add_argument("--project-dissipative", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
@@ -269,13 +328,18 @@ def main() -> int:
             wants = grad and state in training
             with torch.set_grad_enabled(wants):
                 modes = network(state_image)
+                if arguments.project_dissipative:
+                    modes = project_dissipative(modes, stress)
                 responses = Mechanics.apply(modes)
                 flat = responses.reshape(-1, rank)
                 gram = flat.T @ flat
                 right_hand = flat.T @ target.reshape(-1)
                 ridge = arguments.ridge * torch.diagonal(gram).mean().clamp_min(1e-300)
-                coefficients = torch.linalg.solve(
-                    gram + ridge * torch.eye(rank, dtype=torch.float64), right_hand
+                regular = gram + ridge * torch.eye(rank, dtype=torch.float64)
+                coefficients = (
+                    non_negative_solve(regular, right_hand)
+                    if arguments.project_dissipative
+                    else torch.linalg.solve(regular, right_hand)
                 )
                 increment = modes @ coefficients
                 simulated = predictor + responses @ coefficients
