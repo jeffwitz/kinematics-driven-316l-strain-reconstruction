@@ -347,9 +347,16 @@ def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
             "pir,r->pi", detached, torch.from_numpy(coefficients)
         )
         updated = (stress * assembled).sum(dim=1) < 0.0
-        if bool((updated == mask).all()):
-            break
+        converged = bool((updated == mask).all())
         mask = updated
+        if converged:
+            break
+    # The set returned is the one recomputed *from the coefficients returned*,
+    # never the one they were solved against. That makes `Psi a = P_H(Phi a)`
+    # hold exactly whether or not the fixed point closed, so dissipation against
+    # the predictor is guaranteed rather than approached: returning the earlier
+    # set left 2.5 to 3.2 % of points negative at high rank, which looked like
+    # physics and was bookkeeping.
     return mask, torch.from_numpy(coefficients)
 
 
@@ -394,6 +401,8 @@ def main() -> int:
                         help="raw modes, free coefficients, project the assembled field")
     parser.add_argument("--free-sign-qp", action="store_true",
                         help="constrain only the final combination, C a >= 0")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue from the checkpoint beside the output file")
     parser.add_argument("--load-weights", type=Path, default=None,
                         help="score a finished run's weights, adding no training")
     parser.add_argument("--output", type=Path, required=True)
@@ -812,9 +821,10 @@ def main() -> int:
         if arguments.load_weights is not None:
             # Diagnostics added after a campaign started can be recovered from
             # the weights rather than by paying for the training again.
-            network.load_state_dict(torch.load(
+            saved = torch.load(
                 arguments.load_weights.with_suffix(f".r{rank}.weights"), weights_only=True
-            ))
+            )
+            network.load_state_dict(saved.get("network", saved))
             with torch.no_grad():
                 _, scores, negative, conditioning = rollout(network, rank, grad=False)
             results[f"learned_r{rank}"] = {
@@ -829,13 +839,31 @@ def main() -> int:
                   f"held out {results[f'learned_r{rank}']['held_out']:.4f}", flush=True)
             continue
         optimiser = torch.optim.Adam(network.parameters(), lr=arguments.learning_rate)
+        checkpoint = arguments.output.with_suffix(f".r{rank}.weights")
+        first = 1
+        # Saving only at the end throws away everything a killed run did, which
+        # is how three campaigns were lost to a session teardown. Checkpoint at
+        # every report, and resume from it.
+        if checkpoint.exists() and arguments.resume:
+            state = torch.load(checkpoint, weights_only=True)
+            network.load_state_dict(state["network"])
+            optimiser.load_state_dict(state["optimiser"])
+            first = int(state["step"]) + 1
+            print(f"  r={rank}: resuming at step {first}", flush=True)
         start = time.time()
-        for step in range(1, arguments.steps + 1):
+        for step in range(first, arguments.steps + 1):
             optimiser.zero_grad()
             loss, _, _, _ = rollout(network, rank, grad=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(network.parameters(), 1.0)
             optimiser.step()
+            if step % max(arguments.steps // 40, 1) == 0:
+                torch.save(
+                    {"network": network.state_dict(),
+                     "optimiser": optimiser.state_dict(),
+                     "step": step, "rank": rank},
+                    checkpoint,
+                )
             if step % max(arguments.steps // 8, 1) == 0:
                 with torch.no_grad():
                     _, scores, negative, conditioning = rollout(network, rank, grad=False)
@@ -867,7 +895,9 @@ def main() -> int:
         # magnitude of the negative dissipation went unmeasured on the first
         # pass of this very script.
         torch.save(
-            network.state_dict(), arguments.output.with_suffix(f".r{rank}.weights")
+            {"network": network.state_dict(), "optimiser": optimiser.state_dict(),
+             "step": arguments.steps, "rank": rank},
+            checkpoint,
         )
         print(f"learned r={rank}: fitted {results[f'learned_r{rank}']['fitted']:.4f}  "
               f"held out {results[f'learned_r{rank}']['held_out']:.4f}", flush=True)
