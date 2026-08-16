@@ -24,12 +24,15 @@ class FullDirichletDSTIFFTWPlan2D:
     grid: StructuredGrid2D
     config: SpectralTransformConfig
     _diagnostics: TransformDiagnostics = field(init=False)
-    _physical_input: np.ndarray = field(init=False, repr=False)
-    _spectral_output: np.ndarray = field(init=False, repr=False)
-    _spectral_input: np.ndarray = field(init=False, repr=False)
-    _physical_output: np.ndarray = field(init=False, repr=False)
+    #: One plan and one buffer pair serve both directions. `RODFT00` is its own
+    #: inverse up to the scaling already applied below, and the two plans this
+    #: class used to build were identical in every respect a planner sees --
+    #: same direction, shape, flags and thread count -- differing only in which
+    #: arrays they were bound to. Measuring both doubled the planning cost, and
+    #: at full field the two extra buffers were 356 MB of nothing.
+    _input: np.ndarray = field(init=False, repr=False)
+    _output: np.ndarray = field(init=False, repr=False)
     _forward: Any = field(init=False, repr=False)
-    _inverse: Any = field(init=False, repr=False)
     _scale: float = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -61,10 +64,8 @@ class FullDirichletDSTIFFTWPlan2D:
         wisdom_loaded = False
         if self.config.fftw_use_wisdom and self.config.fftw_wisdom_directory is not None:
             wisdom_loaded = load_wisdom(self.config.fftw_wisdom_directory, metadata, pyfftw)
-        self._physical_input = pyfftw.empty_aligned(shape, dtype="float64")
-        self._spectral_output = pyfftw.empty_aligned(shape, dtype="float64")
-        self._spectral_input = pyfftw.empty_aligned(shape, dtype="float64")
-        self._physical_output = pyfftw.empty_aligned(shape, dtype="float64")
+        self._input = pyfftw.empty_aligned(shape, dtype="float64")
+        self._output = pyfftw.empty_aligned(shape, dtype="float64")
         flags = {
             "estimate": "FFTW_ESTIMATE",
             "measure": "FFTW_MEASURE",
@@ -72,16 +73,8 @@ class FullDirichletDSTIFFTWPlan2D:
         }
         started = time.perf_counter()
         self._forward = pyfftw.FFTW(
-            self._physical_input,
-            self._spectral_output,
-            axes=(0, 1),
-            direction=("FFTW_RODFT00", "FFTW_RODFT00"),
-            flags=(flags[self.config.fftw_planner_effort],),
-            threads=self.config.workers,
-        )
-        self._inverse = pyfftw.FFTW(
-            self._spectral_input,
-            self._physical_output,
+            self._input,
+            self._output,
             axes=(0, 1),
             direction=("FFTW_RODFT00", "FFTW_RODFT00"),
             flags=(flags[self.config.fftw_planner_effort],),
@@ -130,17 +123,17 @@ class FullDirichletDSTIFFTWPlan2D:
         values = self._validate(source)
         if destination.shape != values.shape:
             raise ValueError(f"destination shape {destination.shape} does not match {values.shape}")
-        np.copyto(self._physical_input, values)
+        np.copyto(self._input, values)
         self._forward()
-        np.multiply(self._spectral_output, self._scale, out=destination)
+        np.multiply(self._output, self._scale, out=destination)
 
     def inverse_into(self, source: ArrayLike, destination: FloatArray) -> None:
         values = self._validate(source)
         if destination.shape != values.shape:
             raise ValueError(f"destination shape {destination.shape} does not match {values.shape}")
-        np.copyto(self._spectral_input, values)
-        self._inverse()
-        np.multiply(self._physical_output, self._scale, out=destination)
+        np.copyto(self._input, values)
+        self._forward()
+        np.multiply(self._output, self._scale, out=destination)
 
     def forward_displacement(self, interior_field: ArrayLike) -> FloatArray:
         values = self._validate(interior_field)
