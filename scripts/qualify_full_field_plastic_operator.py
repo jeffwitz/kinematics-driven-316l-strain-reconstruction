@@ -428,7 +428,7 @@ def main() -> int:
     parser.add_argument("--planner", default="measure",
                         choices=("estimate", "measure", "patient"))
     parser.add_argument("--planning-seconds", type=float, default=15.0,
-                        help="unlimited planning buys nothing; see the gate document")
+                        help="'patient' does not honour this; see the gate document")
     parser.add_argument("--preconditioner", default="diagonal",
                         choices=("diagonal", "coupled"))
     parser.add_argument("--wisdom", type=Path,
