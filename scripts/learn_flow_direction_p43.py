@@ -56,7 +56,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from scipy.optimize import lsq_linear, nnls
+from scipy.optimize import lsq_linear, minimize, nnls
 from torch import nn
 
 from fem_inhouse.core.kelvin import KELVIN_SCALE_2D, PLANE_STRESS_PLASTIC_GAUGE
@@ -211,6 +211,84 @@ def non_negative_solve(gram: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
     return answer.index_put((free,), solved)
 
 
+def constrained_solve(
+    gram: torch.Tensor, right: torch.Tensor, rows: torch.Tensor
+) -> torch.Tensor:
+    """`argmin a^T G a - 2 a^T b` under `rows @ a >= 0`, `a` free in sign.
+
+    This is the minimal thermodynamic requirement: nothing is asked of the
+    individual modes, only of the combination they form. It is strictly weaker
+    than projecting every mode and then demanding non-negative coefficients,
+    since a negative coefficient is admissible wherever the others make up for
+    it pointwise.
+
+    It is only weaker, however, once the modes are already projected. On raw
+    modes the feasible set is `{0}` exactly -- twenty thousand half-spaces
+    through the origin of `R^4` leave nothing unless their normals are strongly
+    clustered -- measured at 0.0000 attainable `|a|` at initialisation and after
+    training alike, at ranks 4 and 8. So the projection is not an extra
+    restriction laid on top of the physics; it is close to the only way the
+    physics admits anything at all with globally constant coefficients.
+
+    Solved by constraint generation, because at most `r` of the twenty thousand
+    constraints can be active at the optimum: solve, find the violated rows, add
+    the worst of them, repeat. The active set is then frozen and the KKT block
+    system re-solved in torch, which carries the gradient exactly almost
+    everywhere.
+    """
+
+    matrix = gram.detach().numpy()
+    vector = right.detach().numpy()
+    constraints = rows.detach().numpy()
+    rank = matrix.shape[0]
+    chosen: list[int] = []
+    answer = np.linalg.solve(matrix, vector)
+    for _ in range(24):
+        margin = constraints @ answer
+        violated = np.argsort(margin)[:8]
+        if margin[violated[0]] >= -1e-12 * max(np.abs(margin).max(), 1e-300):
+            break
+        chosen = sorted(set(chosen) | set(int(v) for v in violated))
+        block = constraints[chosen]
+        outcome = minimize(
+            lambda a: 0.5 * a @ matrix @ a - vector @ a,
+            answer,
+            jac=lambda a: matrix @ a - vector,
+            constraints=[{"type": "ineq", "fun": lambda a, b=block: b @ a,
+                          "jac": lambda a, b=block: b}],
+            method="SLSQP",
+            options={"maxiter": 200, "ftol": 1e-14},
+        )
+        answer = outcome.x
+    if not chosen:
+        return torch.linalg.solve(gram, right)
+    block = constraints[chosen]
+    # A constraint is active when its margin is small *against the scale of the
+    # problem*, never against the largest margin present: as the solution
+    # approaches the apex of the cone every margin collapses together, the
+    # self-referential threshold goes to zero with them, and the active set
+    # comes back empty. That silently returned the unconstrained answer --
+    # caught by a unit test where the reference QP gave `a = 0` and this gave
+    # the free solution with 178 of 400 rows violated.
+    reach = np.linalg.norm(answer)
+    if reach <= 1e-10 * max(np.linalg.norm(np.linalg.solve(matrix, vector)), 1e-300):
+        return torch.zeros_like(right)
+    active = block @ answer <= 1e-8 * np.linalg.norm(block, axis=1) * reach
+    if not active.any():
+        return torch.linalg.solve(gram, right)
+    binding = torch.from_numpy(block[active])
+    # KKT with the active set frozen: [G  C^T; C  0] [a; mu] = [b; 0].
+    size = rank + binding.shape[0]
+    system = torch.zeros((size, size), dtype=gram.dtype)
+    system[:rank, :rank] = gram
+    system[:rank, rank:] = binding.T
+    system[rank:, :rank] = binding
+    system = system + 1e-12 * torch.eye(size, dtype=gram.dtype)
+    load = torch.zeros(size, dtype=gram.dtype)
+    load[:rank] = right
+    return torch.linalg.solve(system, load)[:rank]
+
+
 def check_non_negative_solve(trials: int = 12, rank: int = 9) -> float:
     """Agreement with an independent bounded solver, on random problems."""
 
@@ -248,6 +326,8 @@ def main() -> int:
     parser.add_argument("--orthogonality", type=float, default=1e-2)
     parser.add_argument("--dissipation", type=float, default=1e-2)
     parser.add_argument("--project-dissipative", action="store_true")
+    parser.add_argument("--free-sign-qp", action="store_true",
+                        help="constrain only the final combination, C a >= 0")
     parser.add_argument("--load-weights", type=Path, default=None,
                         help="score a finished run's weights, adding no training")
     parser.add_argument("--output", type=Path, required=True)
@@ -400,11 +480,14 @@ def main() -> int:
                 right_hand = flat.T @ target.reshape(-1)
                 ridge = arguments.ridge * torch.diagonal(gram).mean().clamp_min(1e-300)
                 regular = gram + ridge * torch.eye(rank, dtype=torch.float64)
-                coefficients = (
-                    non_negative_solve(regular, right_hand)
-                    if arguments.project_dissipative
-                    else torch.linalg.solve(regular, right_hand)
-                )
+                if arguments.project_dissipative and arguments.free_sign_qp:
+                    coefficients = constrained_solve(
+                        regular, right_hand, torch.einsum("pir,pi->pr", modes, stress)
+                    )
+                elif arguments.project_dissipative:
+                    coefficients = non_negative_solve(regular, right_hand)
+                else:
+                    coefficients = torch.linalg.solve(regular, right_hand)
                 increment = modes @ coefficients
                 simulated = predictor + responses @ coefficients
                 remaining = torch.from_numpy(measured[state]) - simulated
