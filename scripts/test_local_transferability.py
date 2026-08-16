@@ -85,31 +85,52 @@ def harmonic_inpaint(solve, patch: np.ndarray, core: int, offset: int) -> np.nda
 
 
 class CorePredictor(nn.Module):
-    """Context to core: convolutional trunk, global pooling, dense head.
+    """Context to core, keeping a spatial map all the way to the output.
 
-    Pooling rather than a decoder over the full context, because the output is
-    a small core and the point is what the surroundings say about it, not a
-    reconstruction of the surroundings themselves.
+    An earlier version pooled the trunk to one vector per channel before a
+    dense head. That destroys exactly what the task needs: whether a band
+    arrives from the left or the right, whether it is inclined one way or the
+    other, whether a structure three pixels outside the core continues into it.
+    Two patches with the same motifs in different places pool to nearly the
+    same vector, so the head could only ever emit a position-blind average, and
+    a relative error of one was the arithmetic consequence rather than a
+    statement about the data.
+
+    The trunk therefore reduces to a coarse feature map, never to a point, and
+    a small decoder reads the core out of it. There is no skip across the
+    blanked centre, which would let the network copy an answer it is supposed
+    to infer.
     """
 
     def __init__(self, *, context: int, core: int, width: int = 32) -> None:
         super().__init__()
+        # Down to a map of about a quarter of the core, so position survives.
+        levels = max(1, int(np.log2(context // max(core // 4, 2))))
         layers: list[nn.Module] = []
         channels = 2
-        for _ in range(int(np.log2(context // 8))):
-            layers += [nn.Conv2d(channels, width, 4, stride=2, padding=1),
-                       nn.GroupNorm(4, width), nn.GELU()]
-            channels = width
-        layers.append(nn.AdaptiveAvgPool2d(1))
+        for level in range(levels):
+            out = width * (2 ** min(level, 2))
+            layers += [nn.Conv2d(channels, out, 4, stride=2, padding=1),
+                       nn.GroupNorm(4, out), nn.GELU()]
+            channels = out
         self.trunk = nn.Sequential(*layers)
-        self.head = nn.Sequential(
-            nn.Linear(width, 256), nn.GELU(), nn.Linear(256, core * core)
-        )
+        self.reduced = context // (2**levels)
+        head: list[nn.Module] = []
+        size = self.reduced
+        while size < core:
+            head += [nn.ConvTranspose2d(channels, width, 4, stride=2, padding=1),
+                     nn.GroupNorm(4, width), nn.GELU()]
+            channels = width
+            size *= 2
+        head.append(nn.Conv2d(channels, 1, 3, padding=1))
+        self.head = nn.Sequential(*head)
         self.core = core
 
     def forward(self, patch: torch.Tensor) -> torch.Tensor:
-        pooled = self.trunk(patch).flatten(1)
-        return self.head(pooled).view(-1, self.core, self.core)
+        features = self.trunk(patch)
+        decoded = self.head(features)[:, 0]
+        centre = (decoded.shape[-1] - self.core) // 2
+        return decoded[:, centre : centre + self.core, centre : centre + self.core]
 
 
 def main() -> int:
@@ -120,7 +141,10 @@ def main() -> int:
     parser.add_argument("--steps", type=int, default=4000)
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--evaluations", type=int, default=400)
-    parser.add_argument("--decimate", type=int, default=2)
+    # Full resolution: decimating without an anti-aliasing filter has already
+    # cost this campaign twice, and a small core on a decimated grid would sit
+    # at exactly the scales the subsampling altered.
+    parser.add_argument("--decimate", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20260816)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
@@ -184,13 +208,25 @@ def main() -> int:
         flag[:, offset : offset + core, offset : offset + core] = 1.0
         return torch.from_numpy(np.stack([blanked, flag], axis=1))
 
-    def relative(candidate: np.ndarray, reference: np.ndarray) -> float:
-        # Relative to the fluctuation of the core, not to its level: predicting
-        # the mean of a nearly constant patch is not a success.
-        centred = reference - reference.mean(axis=(1, 2), keepdims=True)
-        return float(
-            np.linalg.norm(candidate - reference) / max(np.linalg.norm(centred), 1e-30)
-        )
+    def scores(candidate: np.ndarray, reference: np.ndarray) -> dict:
+        """Level and morphology reported separately.
+
+        The combined figure conflates two failures. A prediction that recovers
+        the texture but misses the level by a little would otherwise be graded
+        with one that emits a constant, and the morphology is the question.
+        """
+
+        reference_mean = reference.mean(axis=(1, 2), keepdims=True)
+        candidate_mean = candidate.mean(axis=(1, 2), keepdims=True)
+        fluctuation = reference - reference_mean
+        norm = max(float(np.linalg.norm(fluctuation)), 1e-30)
+        return {
+            "total": float(np.linalg.norm(candidate - reference) / norm),
+            "morphology": float(
+                np.linalg.norm((candidate - candidate_mean) - fluctuation) / norm
+            ),
+            "level": float(np.linalg.norm(candidate_mean - reference_mean) / norm),
+        }
 
     results = []
     for context in arguments.contexts:
@@ -227,18 +263,20 @@ def main() -> int:
         entry = {
             "context": context,
             "parameters": parameters,
-            "network": relative(predicted, cores),
-            "harmonic_inpainting": relative(harmonic, cores),
-            "ring_mean": relative(np.asarray(constant), cores),
+            "network": scores(predicted, cores),
+            "harmonic_inpainting": scores(harmonic, cores),
+            "ring_mean": scores(np.asarray(constant), cores),
             "seconds": time.perf_counter() - started,
         }
-        entry["gain_over_harmonic"] = (
-            1.0 - entry["network"] / max(entry["harmonic_inpainting"], 1e-30)
+        entry["morphology_gain_over_harmonic"] = 1.0 - entry["network"]["morphology"] / max(
+            entry["harmonic_inpainting"]["morphology"], 1e-30
         )
         results.append(entry)
-        print(f"context {context}: network {entry['network']:.4f}  harmonic "
-              f"{entry['harmonic_inpainting']:.4f}  ring mean {entry['ring_mean']:.4f}  "
-              f"gain {100 * entry['gain_over_harmonic']:+.1f} %", flush=True)
+        print(f"context {context}: network morph {entry['network']['morphology']:.4f} "
+              f"(level {entry['network']['level']:.4f})  harmonic morph "
+              f"{entry['harmonic_inpainting']['morphology']:.4f}  ring mean "
+              f"{entry['ring_mean']['morphology']:.4f}  gain "
+              f"{100 * entry['morphology_gain_over_harmonic']:+.1f} %", flush=True)
 
     report = {
         "schema_version": 1,
