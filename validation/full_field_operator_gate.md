@@ -108,15 +108,33 @@ eps_p  --A-->  d eps      on the real field, reusing the existing solver
    unknowns and the DST-I `B_0^-1` preconditioner as they stand.
    Note this solve is **linear** -- our `A` is the elastic eigenstrain response,
    not the constitutive Newton loop -- so it is one preconditioned Krylov solve
-   and no Newton iteration.
+   and no Newton iteration. `K = B^T C B` with Dirichlet data is symmetric
+   positive definite, so the solver is **preconditioned conjugate gradient**, not
+   GMRES: GMRES belongs to the constitutive Newton loop where the Jacobian is
+   neither symmetric nor definite. CG is cheaper per iteration, stores no Krylov
+   basis, and its symmetry makes the adjoint cleaner.
+
+   The inversion is **not** done in Fourier and cannot be. DST-I does not
+   diagonalise the coupled elastic operator under zero Dirichlet on all four
+   edges: `(lambda + mu) grad(div u)` carries mixed derivatives, and with
+   `u_x` expanding in `sin.sin`, `d2 u_y / dx dy` produces `cos.cos`, which
+   leaves the space -- no single separable transform can do it, since a cosine
+   basis cannot vanish at both ends. In the *periodic* case `Gamma_hat(k)` would
+   be exact, a matrix multiply per wavevector handling the coupling without
+   approximation; the boundary is what breaks that, not the elasticity. Hence
+   `B_0` as a reference operator, hence a preconditioner, hence iterations.
 2. Implement `A^T` **separately**, never assumed equal to `A`. `K` is symmetric
    so `A^T = C B K^-1 B^T w` reuses the same solve, but the implementation is
    written and tested independently.
 3. Qualify the pair: `|<Ax, y> - <x, A^T y>| / (|Ax| |y|)` below **1e-8**, on
    the real domain with the real Dirichlet treatment, over several random pairs.
-   **The Krylov tolerance and this threshold are coupled**: `A` is only computed
-   to the inner tolerance, so the solve must be tightened well below 1e-8 or the
-   test measures the solver's stopping criterion rather than the adjoint.
+   **The Krylov tolerance and this threshold are coupled**, and not merely as a
+   matter of accuracy: an iterative solve to tolerance `tau` is not a linear
+   operator at all, since the Krylov subspace depends on the right-hand side. So
+   the identity cannot be verified better than `tau`, and the solve must be
+   tightened well below 1e-8 or the test measures the stopping criterion rather
+   than the adjoint. The transform inside the preconditioner is applied
+   identically in both directions.
 4. Measure `T_A`, `T_{A^T}` and peak memory, and report the **Krylov iteration
    count**, which is what actually sets the cost: `B_0` is a reference operator,
    not the exact inverse, so even the linear elastic solve iterates. That count
