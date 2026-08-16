@@ -44,7 +44,20 @@ gated on the whole qualification passing again.
 from __future__ import annotations
 
 import numpy as np
-from numba import njit, prange
+
+try:  # Performance extra. The NumPy path below is the reference and must work
+    from numba import njit, prange  # without it, so nothing scientific depends
+    HAS_NUMBA = True                # on a compiler being present.
+except ImportError:  # pragma: no cover - exercised only where numba is absent
+    HAS_NUMBA = False
+
+    def njit(*_args, **_kwargs):
+        def decorate(function):
+            return function
+
+        return decorate
+
+    prange = range
 
 #: The support, as measured. Order fixes the meaning of the coefficient rows.
 OFFSETS = ((-1, 0), (-1, 1), (0, -1), (0, 0), (0, 1), (1, -1), (1, 0))
@@ -148,6 +161,31 @@ def apply_stencil_indexed(u, out, s, offsets):
             out[1, i, j] = fy
 
 
+def apply_stencil_slices(blocks, field, out):
+    """The NumPy reference: seven passes, correct everywhere, no compiler.
+
+    Kept as the fallback and as the oracle the kernel is checked against, so a
+    machine without the performance extra still runs every campaign, slower.
+    """
+
+    out[...] = 0.0
+    height, width = field.shape[1], field.shape[2]
+    for (di, dj), block in blocks.items():
+        source = field[
+            :,
+            max(0, -di) : height - max(0, di),
+            max(0, -dj) : width - max(0, dj),
+        ]
+        target = out[
+            :,
+            max(0, di) : height - max(0, -di),
+            max(0, dj) : width - max(0, -dj),
+        ]
+        target[0] += block[0, 0] * source[0] + block[0, 1] * source[1]
+        target[1] += block[1, 0] * source[0] + block[1, 1] * source[1]
+    return out
+
+
 class FusedStencil:
     """Buffers allocated once, reused for every application inside the solver."""
 
@@ -159,6 +197,7 @@ class FusedStencil:
             np.stack([blocks[o] for o in OFFSETS]), dtype=np.float64
         )
         self.offsets = np.asarray(OFFSETS, dtype=np.int64)
+        self.blocks = dict(blocks)
         height, width = interior_shape[0], interior_shape[1]
         # One halo ring, which *is* the Dirichlet condition: the fluctuation
         # vanishes outside, so the padding stays zero for ever and the kernel
@@ -171,6 +210,8 @@ class FusedStencil:
 
         height, width = self.shape
         view = np.asarray(field, dtype=np.float64).reshape(2, height, width)
+        if not HAS_NUMBA:
+            return apply_stencil_slices(self.blocks, view, self.output).reshape(-1)
         apply_stencil_fused(view, self.output, self.coefficients)
         apply_stencil_ring(view, self.output, self.coefficients, self.offsets)
         return self.output.reshape(-1)
