@@ -311,7 +311,7 @@ def masked_modes(
     return modes - usable[:, None, None] * removal
 
 
-def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
+def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=4):
     """Impose dissipation on the assembled field, not on the individual modes.
 
     ```text
@@ -325,8 +325,15 @@ def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
 
     The reduced problem is nonlinear in `a` because the active set moves with
     it, so it is solved as a fixed point: guess the set, solve the resulting
-    linear least squares, recompute the set, repeat. Each round costs `r`
-    applications of the mechanics. The set is then frozen and returned with the
+    linear least squares, recompute the set, repeat. **Each round costs `r`
+    applications of the mechanics**, which makes this arm as many times more
+    expensive than a projected-mode one as it takes rounds -- measured at
+    roughly ten, which is why rank 4 alone was heading for eleven hours. The
+    budget is capped and the cap is not a correctness question: the set returned
+    is always the one the final coefficients imply, so dissipation against the
+    predictor holds however early the iteration stops. What a small budget costs
+    is the optimality of `a`, and the drift of the set between the last two
+    rounds is reported so that cost is visible. The set is then frozen and returned with the
     coefficients, which makes the whole thing differentiable exactly almost
     everywhere -- the same measure-zero caveat as every other active set here.
     """
@@ -334,6 +341,7 @@ def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
     detached = modes.detach()
     mask = torch.zeros(detached.shape[0], dtype=torch.bool)
     coefficients = None
+    drift = 0.0
     for _ in range(rounds):
         current = masked_modes(detached, stress, mask)
         responses = np.stack(
@@ -348,6 +356,7 @@ def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
         )
         updated = (stress * assembled).sum(dim=1) < 0.0
         converged = bool((updated == mask).all())
+        drift = float((updated != mask).double().mean())
         mask = updated
         if converged:
             break
@@ -357,7 +366,7 @@ def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
     # the predictor is guaranteed rather than approached: returning the earlier
     # set left 2.5 to 3.2 % of points negative at high rank, which looked like
     # physics and was bookkeeping.
-    return mask, torch.from_numpy(coefficients)
+    return mask, torch.from_numpy(coefficients), drift
 
 
 def check_non_negative_solve(trials: int = 12, rank: int = 9) -> float:
@@ -401,6 +410,8 @@ def main() -> int:
                         help="raw modes, free coefficients, project the assembled field")
     parser.add_argument("--free-sign-qp", action="store_true",
                         help="constrain only the final combination, C a >= 0")
+    parser.add_argument("--fixed-point-rounds", type=int, default=4,
+                        help="active-set iterations; each costs r mechanics applications")
     parser.add_argument("--seed", type=int, default=20260816,
                         help="initialisation, for reproducibility across restarts")
     parser.add_argument("--resume", action="store_true",
@@ -556,7 +567,7 @@ def main() -> int:
         path = torch.zeros((points, 1), dtype=torch.float64)
         previous_stress = torch.from_numpy(reference_stress)
         loss = torch.zeros((), dtype=torch.float64)
-        scores, negative, singular, fractions = {}, [], [], []
+        scores, negative, singular, fractions, drifts = {}, [], [], [], []
         for state in states:
             plastic_np = plastic.detach().numpy()
             predictor = torch.from_numpy(elastic[state] + apply_numpy(plastic_np))
@@ -578,9 +589,11 @@ def main() -> int:
                 # correction; if it is most of the field the learned directions
                 # are being rewritten and the "free" direction is a fiction.
                 if arguments.project_field:
-                    frozen, _ = project_field_solve(
-                        modes, stress, target, apply_numpy, arguments.ridge
+                    frozen, _, drift = project_field_solve(
+                        modes, stress, target, apply_numpy, arguments.ridge,
+                        rounds=arguments.fixed_point_rounds,
                     )
+                    drifts.append(drift)
                     touched = float(frozen.double().mean())
                     modes = masked_modes(modes, stress, frozen)
                 elif arguments.project_dissipative:
@@ -707,6 +720,7 @@ def main() -> int:
                     (np.mean(singular, axis=0) > 1e-6).sum()
                 ),
                 "projected_fraction": float(np.mean(fractions)),
+                "active_set_drift": float(np.mean(drifts)) if drifts else 0.0,
             },
         )
 
@@ -897,7 +911,8 @@ def main() -> int:
                     f"p_eq {negative['accumulated_equivalent_plastic_strain']:.3e}  "
                     f"chi {negative['mean_stress_alignment_where_active']:+.3f} "
                     f"(global {negative['global_stress_alignment']:+.3f})  "
-                    f"proj {100 * conditioning['projected_fraction']:.1f} %  "
+                    f"proj {100 * conditioning['projected_fraction']:.1f} % "
+                    f"(drift {100 * conditioning['active_set_drift']:.2f} %)  "
                     f"effrank {conditioning['effective_rank_at_1e6']}/{rank}  "
                     f"({time.time() - start:.0f} s)",
                     flush=True,
