@@ -62,11 +62,60 @@ champ assemblé, `d eps_p = P_H(Phi a)`, avec modes bruts et coefficients
 libres — c'est le dernier contrôle purement géométrique avant la
 cristallographie.
 
+### Changement de cap — P43 redevient un banc de qualification
+
+Le démonstrateur 100x100 a servi son objet et **ne prépare pas le plein champ**.
+Deux arithmétiques l'imposent.
+
+La mécanique ne passe pas à l'échelle telle qu'implémentée : le solveur direct
+creux coûte 12 ms à 19 602 degrés de liberté et environ `N^1.5`, donc **~460 s
+par résolution** à 22,3 millions, avec une factorisation qui ne tient pas en
+mémoire. Une Green par FFT est l'alternative : un aller-retour 3600x3100 mesure
+**616 ms**, donc quelques secondes par application de `A`.
+
+Et les coefficients réduits ne passent pas à l'échelle **physiquement** : seize
+nombres globaux décrivent plausiblement quelques grains, pas des milliers. Le
+mur de calcul et le défaut de modélisation sont le même mur.
+
+La première estimation — 32 min par pas de gradient, 4,4 ans par campagne —
+était un artefact de la construction explicite de `A Phi` colonne par colonne.
+En assemblant le champ d'abord, `v = Σ a_jk w_j φ_jk`, puis `q = P_H(v)`, le
+gradient mécanique coûte **un `A` et un `A^T`**, quel que soit le nombre de
+coefficients. Deux réserves honnêtes : le problème intérieur en `a` devient
+itératif dès qu'on ne peut plus former les équations normales, chaque itération
+coûtant `A + A^T` — d'où l'importance du warm-start et d'un active-set
+semi-lisse exploitant que `P_H` est affine par morceaux. Et le gradient
+extérieur n'a probablement **pas** besoin d'un second adjoint : la partie DIC de
+la perte extérieure *est* le terme de données intérieur, la pénalité
+d'orthogonalité ne dépend pas de `a`, et seuls le ridge (`O(1e-6)`) et la
+pénalité de dissipation (poids `1e-2`) brisent l'identité. Cette dernière est
+**redondante dans les bras contraints**, où la dissipation tient par
+construction ; en la retirant le théorème de l'enveloppe s'applique et le budget
+est divisé par deux.
+
 ### Ce qui tourne
 
-Le bras à signe libre aux rangs 4, 8, 16 : modes projetés, coefficients de signe
-libre, contrainte portant seulement sur la combinaison finale. Logs
-`essais/9_numerical/freesign_r{4,8,16}.log`.
+Rien. La chaîne P43 est arrêtée, ses points de reprise conservés dans
+`validation/_generated/adaptive_reduced_basis/*.weights` (non versionnés). La
+campagne suivante est le **jalon 0**, décrit dans
+`validation/full_field_operator_gate.md` : opérateur mécanique plein champ sous
+données de Dirichlet mesurées, adjoint implémenté séparément et qualifié sous
+1e-8. Verrou de correction, pas de vitesse. Ni CNN, ni entraînement, ni EBSD.
+
+### Deux erreurs à ne pas refaire
+
+Les **fenêtres avec DIC imposée sur leur contour** sont un excellent matériau
+d'apprentissage et jamais une preuve : la cinématique du bord contient déjà
+l'effet de tout l'extérieur, donc une plasticité juste au-delà peut être
+réattribuée à l'intérieur, et dix mille fenêtres résolues indépendamment ne
+garantissent rien sur `B^T sigma = 0` global. L'architecture est CNN par tuiles,
+champ plastique assemblé globalement, équilibre global.
+
+L'**investissement FFT n'est pas jetable** avec la cristallographie : avec
+`C(x) = C_0 + ΔC(x)`, l'inverse homogène reste le préconditionneur spectral
+naturel du problème hétérogène. Et l'anisotropie élastique n'a pas à entrer en
+même temps que l'EBSD — élasticité isotrope plus géométrie cristallographique
+dans le générateur plastique sépare proprement les deux effets.
 
 ### Documents référencés
 
@@ -76,6 +125,7 @@ libre, contrainte portant seulement sur la combinaison finale. Logs
 | `validation/adaptive_reduced_basis_learned_flow.md` | la campagne courante et son tableau complet |
 | `validation/adaptive_reduced_basis_preregistration.md` | seuils préenregistrés, dont le critère déclaré inatteignable |
 | `validation/adaptive_reduced_basis_first_rung.md` | bases construites à la main, plafond du champ libre |
+| `validation/full_field_operator_gate.md` | **le jalon 0 et la campagne à venir** |
 | `validation/morphology_reduction_findings.md` | la ligne base fixe, réfutée |
 | `validation/ludwik_on_the_measured_p43_history.md` | le verdict Ludwik |
 

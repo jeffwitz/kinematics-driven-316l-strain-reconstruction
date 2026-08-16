@@ -398,33 +398,43 @@ such.
 
 ### Milestones, in order
 
-Superseded and archived as negative controls: morphological inpainting and the
-useful-radius ablation, together with POD, POD per band, the autoencoder and the
-neural field. They tested how well a network reconstructs an image from its
-surroundings, which is not the question.
+**P43 is a qualification bench, not the scientific object.** The 100x100
+demonstrator answered its hypothesis and does not prepare the full field: the
+sparse direct mechanics costs about `N^1.5` and would need ~460 s per solve at
+22.3 million degrees of freedom, and sixteen global coefficients describe a few
+grains plausibly and thousands of grains not at all. The computational wall and
+the modelling flaw are the same wall. Everything below is superseded as a *line
+of campaigns*; the results stand as measurements.
 
-1. **Done** -- hand-built adaptive bases on P43 100x100, and the free-field
-   ceiling that invalidated the spatial holdout.
-   `adaptive_reduced_basis_first_rung.md`.
-2. **Done** -- learned flow direction, unconstrained and then dissipative by
-   construction, against both baselines on a temporal holdout.
-   `adaptive_reduced_basis_learned_flow.md`.
-3. **Running** -- the free-sign arm: projected modes, coefficients free in sign,
-   constrained only by `C a >= 0` on the final combination. It separates "the
-   physics kills the rank" from "our way of imposing it kills the rank".
-4. **Next, and required before any conclusion about crystallography** -- the
-   extrapolating temporal split, training on 21-33 and testing on 34-40. The
-   current interleaved split tests interpolation along a smooth path, which
-   Krylov passes almost by construction.
-5. Then, and only if the minimal thermodynamic formulation still flattens with
-   rank: **crystallographic structure**, `sum_alpha gamma^alpha sign(tau^alpha)
-   P^alpha` with the verified EBSD orientations, as a structural ablation rather
-   than an input channel. Not before.
-6. Deferred ablations: the `G_p`-metric projection against the Euclidean one; the
-   midpoint fixed-point loop for the residual negative dissipation. Neither is a
-   repair.
-7. **Repair the elastic lifting** across `scripts/*_p43.py`, and re-derive any
+Done and archived: hand-built adaptive bases and the free-field ceiling
+(`adaptive_reduced_basis_first_rung.md`); the learned flow direction,
+unconstrained and then dissipative by construction
+(`adaptive_reduced_basis_learned_flow.md`); the free-sign arm, which showed the
+positive orthant was not the constriction -- 0.6209, 0.6461, 0.6255 against
+0.6209, 0.6511, 0.5869; and the feasibility LP showing the raw-mode cone is
+exactly `{0}`.
+
+0. **The full-field mechanical operator** --
+   `validation/full_field_operator_gate.md`. Lifting of the measured Dirichlet
+   data, `A` and `A^T` matrix-free and separately implemented, dot product below
+   1e-8, timings, spectral fusion, two Dirichlet strategies compared. Isotropic
+   homogeneous elasticity only, no network. A correctness gate: nothing is built
+   until it passes.
+1. Assembled-field projection at full field with the generator **frozen**,
+   evaluated by tiles with a halo of the receptive radius.
+2. Local coefficients under a partition of unity with a **single global
+   mechanics**, sweeping the coefficient density to trace `E_DIC` against `N_a`.
+3. Matrix-free training, temporal mini-batches, warm-started `a`, tiled forward
+   and backward. Then `theta` frozen and temporal extrapolation, which is the
+   only test that makes the generator a scientific claim.
+4. Crystallography, after the above and not before, and with isotropic
+   elasticity first so the plastic geometry is separated from elastic
+   anisotropy.
+5. **Repair the elastic lifting** across `scripts/*_p43.py`, and re-derive any
    quoted residual that depends on it.
+
+Superseded and kept as negative controls: morphological inpainting, the
+useful-radius ablation, POD, POD per band, the autoencoder, the neural field.
 
 ### The item whose cost is unknown
 
