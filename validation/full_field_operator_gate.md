@@ -112,7 +112,23 @@ eps_p  --A-->  d eps      on the real field, reusing the existing solver
    positive definite, so the solver is **preconditioned conjugate gradient**, not
    GMRES: GMRES belongs to the constitutive Newton loop where the Jacobian is
    neither symmetric nor definite. CG is cheaper per iteration, stores no Krylov
-   basis, and its symmetry makes the adjoint cleaner.
+   basis, and its symmetry makes the adjoint cleaner. Both are equally
+   matrix-free -- each needs only `v -> K v` and `r -> M^-1 r` -- but CG has a
+   short recurrence, so three working vectors against the fifty full-field
+   vectors a GMRES(50) would hold at 22 million degrees of freedom.
+
+   What CG requires in exchange is symmetry and positive definiteness of **both**
+   the operator and the preconditioner, and that is verified, not assumed.
+   `K = B^T C B` restricted to the interior is SPD in linear elasticity, a
+   principal submatrix of an SPD matrix being SPD. `B_0^-1` is diagonal in modal
+   space and SPD if its symbol is positive throughout -- `green.py` already
+   validates `mu > 0` and `lambda + mu > 0` on the reference Lame parameters,
+   which is a good sign that positivity was considered -- but the discrete
+   implementation can still break symmetry, typically if the interior grid size
+   does not match what the DST-I assumes. Test `<K v, w> = <v, K w>` and
+   `<v, M^-1 v> > 0` on random vectors before trusting CG; the fallback is GMRES
+   or an explicit symmetrisation. A three-line test is a better way to find this
+   out than a CG that quietly diverges on the full field.
 
    The inversion is **not** done in Fourier and cannot be. DST-I does not
    diagonalise the coupled elastic operator under zero Dirichlet on all four
