@@ -1,0 +1,409 @@
+[
+  {
+    "step": 2000,
+    "seconds": 1989.4736950719962,
+    "seen_region_seen_states": {
+      "field_error": 0.32823417941108346,
+      "gradient_error": 0.9842492889493075,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.32823417941108346
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.28750626370310783,
+      "gradient_error": 0.984880265955279,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.30533769726753235
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.2696748301386833
+        }
+      ]
+    }
+  },
+  {
+    "step": 4000,
+    "seconds": 3581.8182045029243,
+    "seen_region_seen_states": {
+      "field_error": 0.3368052844889462,
+      "gradient_error": 0.9773492949374225,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.3368052844889462
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.29374255146831274,
+      "gradient_error": 0.979044015988134,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.3114548306912184
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.2760302722454071
+        }
+      ]
+    }
+  },
+  {
+    "step": 6000,
+    "seconds": 5251.9105489519425,
+    "seen_region_seen_states": {
+      "field_error": 0.30738968402147293,
+      "gradient_error": 0.9746075006435351,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.30738968402147293
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2734571173787117,
+      "gradient_error": 0.9770328741330256,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.28872947581112385
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.25818475894629955
+        }
+      ]
+    }
+  },
+  {
+    "step": 8000,
+    "seconds": 6843.275880704983,
+    "seen_region_seen_states": {
+      "field_error": 0.3021335219964385,
+      "gradient_error": 0.9727892345931279,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.3021335219964385
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2726110899820924,
+      "gradient_error": 0.9756569471505546,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2844848595559597
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.26073732040822506
+        }
+      ]
+    }
+  },
+  {
+    "step": 10000,
+    "seconds": 8949.06399418402,
+    "seen_region_seen_states": {
+      "field_error": 0.2999222818762064,
+      "gradient_error": 0.9709479689661612,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.2999222818762064
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2711881771683693,
+      "gradient_error": 0.9739399818546224,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2835376337170601
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.2588387206196785
+        }
+      ]
+    }
+  },
+  {
+    "step": 12000,
+    "seconds": 10520.54575616098,
+    "seen_region_seen_states": {
+      "field_error": 0.29999374924227595,
+      "gradient_error": 0.970287822241098,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.29999374924227595
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.27303328830748796,
+      "gradient_error": 0.973340850195141,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2855342123657465
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.26053236424922943
+        }
+      ]
+    }
+  },
+  {
+    "step": 14000,
+    "seconds": 11822.77661101101,
+    "seen_region_seen_states": {
+      "field_error": 0.29745872411876917,
+      "gradient_error": 0.9683530364000152,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.29745872411876917
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2689356869086623,
+      "gradient_error": 0.9711476078128274,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.27941168285906315
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.2584596909582615
+        }
+      ]
+    }
+  },
+  {
+    "step": 16000,
+    "seconds": 13969.31970284495,
+    "seen_region_seen_states": {
+      "field_error": 0.30033945571631193,
+      "gradient_error": 0.9669889573285133,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.30033945571631193
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2720619859173894,
+      "gradient_error": 0.9702918603162536,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2835726197808981
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.2605513520538807
+        }
+      ]
+    }
+  },
+  {
+    "step": 18000,
+    "seconds": 15287.26986385393,
+    "seen_region_seen_states": {
+      "field_error": 0.30085529014468193,
+      "gradient_error": 0.9658623114073033,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.30085529014468193
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2716790419071913,
+      "gradient_error": 0.9684454133953264,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2820590902119875
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.26129899360239506
+        }
+      ]
+    }
+  },
+  {
+    "step": 20000,
+    "seconds": 16590.821285230923,
+    "seen_region_seen_states": {
+      "field_error": 0.29990852205082774,
+      "gradient_error": 0.9652188322240148,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.29990852205082774
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.27033283095806837,
+      "gradient_error": 0.967183922067184,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2825488355010748
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.25811682641506195
+        }
+      ]
+    }
+  },
+  {
+    "step": 22000,
+    "seconds": 18418.85428148799,
+    "seen_region_seen_states": {
+      "field_error": 0.2977369003929198,
+      "gradient_error": 0.9641377205637687,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.2977369003929198
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.2696501072496176,
+      "gradient_error": 0.9661978554670744,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2801863234490156
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.25911389105021954
+        }
+      ]
+    }
+  }
+]
