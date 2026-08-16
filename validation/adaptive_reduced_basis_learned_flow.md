@@ -82,12 +82,25 @@ projecting every mode and then forcing non-negative coefficients. Testing it on
 ranks 4 and 8 alike, by a feasibility LP.
 
 Twenty thousand half-spaces through the origin of `R^4` leave nothing unless
-their normals are strongly clustered -- that is, unless the modes are already
-nearly all dissipative. So the projection is not an extra restriction laid over
-the physics; with globally constant coefficients it is close to the only way the
-physics admits anything at all. This also settles the question left open since
-the Krylov campaign: that cone was genuinely trivial, not a QP declining to
-leave the origin.
+their normals are strongly clustered. This also settles the question left open
+since the Krylov campaign: that cone was genuinely trivial, not a QP declining
+to leave the origin, and it explains retrospectively why those solves returned
+`a = 0`.
+
+**It does not show that projecting each mode is necessary**, and an earlier
+revision of this document said so. What is shown is narrower: *a global linear
+combination of these raw modes* meets the dissipative cone only at the origin.
+The condition can instead be imposed on the assembled field,
+
+```text
+d eps_p(x) = P_H[ Phi(x) a ]
+```
+
+with raw modes and free coefficients. That is exactly the physical requirement
+on the result -- neither `sigma . phi_k >= 0` per mode nor `a_k >= 0` -- and it
+cannot collapse to `a = 0`, since every combination is made admissible after
+assembly. It costs a nonlinear reduced solve, still in `r` unknowns, and it is
+the last purely geometric control before crystallography.
 
 What *was* excessive is `a_k >= 0`. With projected modes the feasible set
 contains the positive orthant and more, since a negative coefficient is

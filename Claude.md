@@ -53,9 +53,14 @@ supplémentaires ajoutent de la plasticité positive et négative qui s'annule.
 égal.
 
 Le cône `{C a >= 0}` sur modes non projetés est **exactement {0}**, mesuré par
-LP de faisabilité. Cela clôt la question ouverte depuis la campagne Krylov et
-montre que la projection n'est pas une sur-contrainte mais à peu près la seule
-façon dont la physique admet quelque chose avec des coefficients globaux.
+LP de faisabilité. Cela clôt la question ouverte depuis la campagne Krylov —
+ces QP renvoyaient `a = 0` parce que le cône l'était, pas par défaut de
+solveur. En revanche cela ne montre **pas** que projeter chaque mode soit
+nécessaire : seulement qu'une combinaison linéaire globale de ces modes bruts
+ne rencontre le cône qu'à l'origine. La condition peut aussi porter sur le
+champ assemblé, `d eps_p = P_H(Phi a)`, avec modes bruts et coefficients
+libres — c'est le dernier contrôle purement géométrique avant la
+cristallographie.
 
 ### Ce qui tourne
 

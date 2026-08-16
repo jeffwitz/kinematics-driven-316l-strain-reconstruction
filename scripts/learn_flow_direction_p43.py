@@ -289,6 +289,70 @@ def constrained_solve(
     return torch.linalg.solve(system, load)[:rank]
 
 
+def masked_modes(
+    modes: torch.Tensor, stress: torch.Tensor, mask: torch.Tensor
+) -> torch.Tensor:
+    """`Psi` such that `Psi a = P_H(Phi a)` for the given active set.
+
+    The projection is piecewise linear, so once the set of points where
+    `sigma . (Phi a) < 0` is known the whole map is a linear operator: leave
+    `Phi_g` alone off the set, and strip the offending stress component from it
+    on the set. That is what makes a nonlinear reduced problem solvable by a
+    handful of linear solves and differentiable by freezing the set.
+    """
+
+    square = stress.pow(2).sum(dim=1, keepdim=True)
+    floor = float(1e-12 * square.mean().clamp_min(1e-300))
+    share = torch.einsum("pir,pi->pr", modes, stress) / square.clamp_min(floor)
+    removal = stress[:, :, None] * share[:, None, :]
+    # Where the stress vanishes there is nothing to strip and the denominator is
+    # meaningless, so those points keep their raw mode.
+    usable = mask & (square[:, 0] >= floor)
+    return modes - usable[:, None, None] * removal
+
+
+def project_field_solve(modes, stress, target, apply_numpy, ridge, rounds=12):
+    """Impose dissipation on the assembled field, not on the individual modes.
+
+    ```text
+    d eps_p(x) = P_H[ Phi(x) a ],     a free in sign, Phi unconstrained
+    ```
+
+    This is the minimal physical requirement and nothing more: no mode has to be
+    dissipative on its own and no coefficient has to be positive. Unlike
+    `C a >= 0` on raw modes, whose feasible set is exactly the origin here, it
+    cannot collapse -- every combination is made admissible after assembly.
+
+    The reduced problem is nonlinear in `a` because the active set moves with
+    it, so it is solved as a fixed point: guess the set, solve the resulting
+    linear least squares, recompute the set, repeat. Each round costs `r`
+    applications of the mechanics. The set is then frozen and returned with the
+    coefficients, which makes the whole thing differentiable exactly almost
+    everywhere -- the same measure-zero caveat as every other active set here.
+    """
+
+    detached = modes.detach()
+    mask = torch.zeros(detached.shape[0], dtype=torch.bool)
+    coefficients = None
+    for _ in range(rounds):
+        current = masked_modes(detached, stress, mask)
+        responses = np.stack(
+            [apply_numpy(current[:, :, k].numpy()).reshape(-1)
+             for k in range(current.shape[2])], axis=1
+        )
+        gram = responses.T @ responses
+        gram = gram + ridge * np.trace(gram) / gram.shape[0] * np.eye(gram.shape[0])
+        coefficients = np.linalg.solve(gram, responses.T @ target.detach().numpy().reshape(-1))
+        assembled = torch.einsum(
+            "pir,r->pi", detached, torch.from_numpy(coefficients)
+        )
+        updated = (stress * assembled).sum(dim=1) < 0.0
+        if bool((updated == mask).all()):
+            break
+        mask = updated
+    return mask, torch.from_numpy(coefficients)
+
+
 def check_non_negative_solve(trials: int = 12, rank: int = 9) -> float:
     """Agreement with an independent bounded solver, on random problems."""
 
@@ -326,6 +390,8 @@ def main() -> int:
     parser.add_argument("--orthogonality", type=float, default=1e-2)
     parser.add_argument("--dissipation", type=float, default=1e-2)
     parser.add_argument("--project-dissipative", action="store_true")
+    parser.add_argument("--project-field", action="store_true",
+                        help="raw modes, free coefficients, project the assembled field")
     parser.add_argument("--free-sign-qp", action="store_true",
                         help="constrain only the final combination, C a >= 0")
     parser.add_argument("--load-weights", type=Path, default=None,
@@ -472,7 +538,12 @@ def main() -> int:
             wants = grad and state in training
             with torch.set_grad_enabled(wants):
                 modes = network(state_image)
-                if arguments.project_dissipative:
+                if arguments.project_field:
+                    frozen, _ = project_field_solve(
+                        modes, stress, target, apply_numpy, arguments.ridge
+                    )
+                    modes = masked_modes(modes, stress, frozen)
+                elif arguments.project_dissipative:
                     modes = project_dissipative(modes, stress)
                 responses = Mechanics.apply(modes)
                 flat = responses.reshape(-1, rank)
@@ -535,7 +606,14 @@ def main() -> int:
                 # sqrt(3/2) and let it exceed one. The pointwise mean is
                 # dominated by the crowd of barely active points, so the
                 # work-weighted global ratio is reported beside it.
+                # The construction guarantees dissipation against the
+                # *predictor* stress, so this must be numerically zero. Anything
+                # else is a bug, not a physical residual -- the midpoint figure
+                # beside it is the honest one and is expected to be nonzero.
+                against_predictor = (stress * increment.detach()).sum(dim=1)
                 negative.append((
+                    float((against_predictor < -1e-12 * against_predictor.abs()
+                           .max().clamp_min(1e-300)).double().mean()),
                     float((power < 0).double().mean()),
                     float(power.clamp_max(0).abs().sum()
                           / power.abs().sum().clamp_min(1e-300)),
@@ -564,17 +642,18 @@ def main() -> int:
             loss,
             scores,
             {
-                "negative_point_fraction": float(counts[:, 0].mean()),
-                "negative_power_share": float(counts[:, 1].mean()),
-                "net_dissipation": float(counts[:, 2].sum()),
-                "accumulated_equivalent_plastic_strain": float(counts[:, 3].sum() / points),
-                "mean_stress_alignment_where_active": float(counts[:, 4].mean()),
-                "first_percentile_of_power": float(counts[:, 5].min()),
+                "negative_against_predictor": float(counts[:, 0].mean()),
+                "negative_point_fraction": float(counts[:, 1].mean()),
+                "negative_power_share": float(counts[:, 2].mean()),
+                "net_dissipation": float(counts[:, 3].sum()),
+                "accumulated_equivalent_plastic_strain": float(counts[:, 4].sum() / points),
+                "mean_stress_alignment_where_active": float(counts[:, 5].mean()),
+                "first_percentile_of_power": float(counts[:, 6].min()),
                 "global_stress_alignment": float(
-                    counts[:, 6].sum() / max(counts[:, 7].sum(), 1e-300)
+                    counts[:, 7].sum() / max(counts[:, 8].sum(), 1e-300)
                 ),
-                "median_stress_alignment_where_active": float(counts[:, 8].mean()),
-                "tenth_percentile_stress_alignment": float(counts[:, 9].mean()),
+                "median_stress_alignment_where_active": float(counts[:, 9].mean()),
+                "tenth_percentile_stress_alignment": float(counts[:, 10].mean()),
             },
             float(np.mean(singular)),
         )
@@ -741,6 +820,7 @@ def main() -> int:
                 print(
                     f"  r={rank:2d} step {step:4d}: loss {float(loss.detach()):.4e}  "
                     f"fitted {fitted:.4f}  held out {held:.4f}  "
+                    f"D-pred {100 * negative['negative_against_predictor']:.2f} %  "
                     f"negative {100 * negative['negative_point_fraction']:.1f} % of "
                     f"points, {100 * negative['negative_power_share']:.1f} % of power  "
                     f"p_eq {negative['accumulated_equivalent_plastic_strain']:.3e}  "
