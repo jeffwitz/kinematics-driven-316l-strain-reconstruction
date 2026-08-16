@@ -61,34 +61,66 @@ dissipation holds by construction. Removing it makes the envelope theorem apply
 to `O(ridge)` and halves the budget. To be confirmed numerically when the outer
 loop is built.
 
+## The full-Dirichlet solver already exists. Do not rebuild it.
+
+An earlier revision of this document registered "build the lifting", "compare
+two Dirichlet strategies" and "test whether the spectral operations fuse". All
+three were written without reading `docs/explanation/spectral_mechanics/`, and
+all three are already answered there and in the code.
+
+```text
+u = u* + u^f,     u*|_boundary = u_DIC,     u^f|_boundary = 0
+```
+
+`u*` is a discrete harmonic extension of the measured boundary displacements --
+`spectral2d/boundary.py::HarmonicDirichletExtension2D` -- so the transform acts
+on the homogeneous fluctuation `u^f` and the problem is **not** periodic. The
+production chain is local kinematics, then `sigma` and `C_alg`, then
+`R = -sum B^T sigma`, solved by a matrix-free Newton-GMRES with
+`J v = -sum B^T C_alg B v`, and the DST-I basis -- compatible with `u^f = 0` on
+all four edges -- applies `B_0^-1` as the **preconditioner**. No global plastic
+stiffness is ever assembled. `full_dirichlet_formulation.md` is explicit that
+`B_0` is a Gelebart-type reference operator and deliberately *not* the exact
+inverse of the coupled isotropic stiffness.
+
+So the scaling problem was never "find a fast Dirichlet solver". It is:
+
+```text
+plug the new plastic inverse onto the spectral Dirichlet solver that exists
+```
+
 ## Registered scope of this milestone
 
 Full field, 3599x3099, **isotropic homogeneous elasticity only**. No CNN, no
-assembled-field projection, no training, no EBSD, no local coefficients. One
-question:
+assembled-field projection, no training, no EBSD, no local coefficients, and
+**no new boundary treatment**. One question:
 
 ```text
-eps_p  --A-->  d eps      on the real field, with the measured Dirichlet data
+eps_p  --A-->  d eps      on the real field, reusing the existing solver
 ```
 
 ## Registered tasks
 
-1. Build the lifting of the measured Dirichlet data, `u = u_D + u_tilde` with
-   `u_tilde` vanishing on the boundary, so the correction problem is
-   `K_II u_tilde_I = f_I(eps_p) - K_IB u_D`.
-2. Implement `A` matrix-free over the whole domain.
-3. Implement `A^T` **separately**, never assumed equal to `A`.
-4. Qualify the pair: `|<Ax, y> - <x, A^T y>| / (|Ax| |y|)` below **1e-8**, on
+1. Implement the matrix-free action `A: d eps_p -> d eps` on top of the existing
+   machinery: the plastic field enters as a mechanical source, the fluctuation
+   `u^f` is obtained by the existing preconditioned Krylov solve, and the strain
+   is read back. Reuse the harmonic lifting, the homogeneous fluctuation
+   unknowns and the DST-I `B_0^-1` preconditioner as they stand.
+   Note this solve is **linear** -- our `A` is the elastic eigenstrain response,
+   not the constitutive Newton loop -- so it is one preconditioned Krylov solve
+   and no Newton iteration.
+2. Implement `A^T` **separately**, never assumed equal to `A`. `K` is symmetric
+   so `A^T = C B K^-1 B^T w` reuses the same solve, but the implementation is
+   written and tested independently.
+3. Qualify the pair: `|<Ax, y> - <x, A^T y>| / (|Ax| |y|)` below **1e-8**, on
    the real domain with the real Dirichlet treatment, over several random pairs.
-5. Measure time and peak memory of `A` and `A^T`.
-6. Test whether the spectral operations fuse into a single symbol. `A = B K^-1
-   B^T w C` admits one only while `K` is translation invariant, which holds for
-   homogeneous elasticity and will not hold once per-point crystalline stiffness
-   enters. The gain is real now and must not be built upon as permanent.
-7. Compare at least two Dirichlet strategies: a fast direct spectral route
-   (sine/cosine diagonalisation, available after the lifting makes the boundary
-   conditions homogeneous) against a matrix-free iterative solve preconditioned
-   by the homogeneous spectral operator.
+   **The Krylov tolerance and this threshold are coupled**: `A` is only computed
+   to the inner tolerance, so the solve must be tightened well below 1e-8 or the
+   test measures the solver's stopping criterion rather than the adjoint.
+4. Measure `T_A`, `T_{A^T}` and peak memory, and report the **Krylov iteration
+   count**, which is what actually sets the cost: `B_0` is a reference operator,
+   not the exact inverse, so even the linear elastic solve iterates. That count
+   is the number to know before any budget is written down.
 
 ## Registered acceptance criteria
 
@@ -125,6 +157,12 @@ everything outside it, so plasticity just beyond the edge can be reattributed
 inside. Ten thousand independently solved windows also guarantee nothing about
 `B^T sigma = 0` over the whole domain. The architecture is tiled CNN plus a
 globally assembled plastic field plus global equilibrium.
+
+**Do not reason about scale without reading `spectral_mechanics` first.** Two
+consecutive plans were drafted around rebuilding a Dirichlet solver that has
+been in the repository, documented, for a long time. The bridge page
+`docs/explanation/spectral_mechanics/plastic_inverse_reuse.md` exists so the
+next reader does not repeat it.
 
 **The FFT investment is not disposable when crystallography arrives.** With
 `C(x) = C_0 + Delta C(x)` the homogeneous inverse `K_0^-1` remains the natural

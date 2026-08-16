@@ -22,6 +22,28 @@ field. Everything therefore passes through the mechanical operator below.
 
 ## 2. The mechanical chain
 
+### The full-Dirichlet solver already exists
+
+Before reasoning about scale, read
+`docs/explanation/spectral_mechanics/` -- in particular `solver_pipeline.md`,
+`full_dirichlet_formulation.md` and the bridge page `plastic_inverse_reuse.md`.
+Two consecutive plans in this project were drafted around rebuilding a Dirichlet
+spectral solver that has been in the repository all along.
+
+What is provided: the splitting `u = u* + u^f` with `u*` a discrete harmonic
+extension of the measured boundary displacements
+(`spectral2d/boundary.py::HarmonicDirichletExtension2D`), so the transform acts
+on the homogeneous fluctuation and nothing is treated as periodic; a matrix-free
+Newton-GMRES with `J v = -sum B^T C_alg B v`; and the DST-I basis applying the
+reference inverse `B_0^-1` as a **preconditioner only**, `B_0` being a
+Gelebart-type reference operator rather than the exact inverse of the coupled
+stiffness. No global stiffness is assembled.
+
+What the reconstruction has to add is only the matrix-free eigenstrain operator
+`A` and its adjoint on top of that, and the rule that makes it scale: never
+apply the solver once per mode. Assemble the plastic field first, apply `A`
+once, and recover the gradient of every coefficient from a single `A^T`.
+
 ### The eigenstrain forward operator
 
 Treat plasticity as an eigenstrain. With `C` the plane-stress elasticity, `B`

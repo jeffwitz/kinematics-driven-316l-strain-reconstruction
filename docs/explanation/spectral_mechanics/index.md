@@ -39,6 +39,7 @@ the local kinematics and constitutive response.
 scientific_question
 solver_pipeline
 full_dirichlet_formulation
+plastic_inverse_reuse
 discrete_kinematics
 dtt_green_operator
 fftw_backend
