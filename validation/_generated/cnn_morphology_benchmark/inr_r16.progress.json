@@ -1,0 +1,38 @@
+[
+  {
+    "step": 2500,
+    "seconds": 834.9652706929483,
+    "seen_region_seen_states": {
+      "field_error": 0.3950612349435687,
+      "gradient_error": 0.9987774061276349
+    },
+    "spatial_holdout_seen_states": {
+      "field_error": 0.40274327620863914,
+      "gradient_error": 1.0030394234945137
+    }
+  },
+  {
+    "step": 5000,
+    "seconds": 1984.2503118970199,
+    "seen_region_seen_states": {
+      "field_error": 0.39137828163802624,
+      "gradient_error": 0.9999634154596246
+    },
+    "spatial_holdout_seen_states": {
+      "field_error": 0.40354848001152277,
+      "gradient_error": 1.0149921199212002
+    }
+  },
+  {
+    "step": 7500,
+    "seconds": 3490.152636104962,
+    "seen_region_seen_states": {
+      "field_error": 0.38255276903510094,
+      "gradient_error": 0.9999856443127413
+    },
+    "spatial_holdout_seen_states": {
+      "field_error": 0.40517218597233295,
+      "gradient_error": 1.0250234878859885
+    }
+  }
+]
