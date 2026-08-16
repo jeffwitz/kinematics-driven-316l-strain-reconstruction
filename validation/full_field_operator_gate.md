@@ -431,6 +431,26 @@ for FFTW with `estimate` -- so FFTW is worth it *only* with a measured plan, and
 with `estimate` on this size it loses to pocketfft. Wisdom rebuilds the operator
 in 11.3 s rather than replanning.
 
+The 2.2 above is a **SciPy** ratio and transferring it to FFTW was unverified.
+Measured properly it is worse than that, in the direction that favours padding.
+A controlled pair at a million points, measured plans throughout:
+
+| interior | `N` | scipy | fftw estimate | fftw measured |
+|---|---|---|---|---|
+| 1023 x 1023 | `2^11` | 41 ms | 7 ms | **8 ms** |
+| 1032 x 1032 | `2 . 1033` | 93 ms | 1228 ms | **97 ms** |
+
+FFTW only shines on smooth sizes: it beats SciPy fivefold on the good one and
+merely matches it on the bad one, while `estimate` collapses to 1228 ms. And at
+the two real full-field sizes, measured plans:
+
+| size | `N` | plan | DST |
+|---|---|---|---|
+| 3598 x 3098 | `2.59.61` x `2.3.1033` | 33 s | **373 ms** |
+| 3599 x 3099 | `2^5 3^2 5^2` x `2^3 5^2 31` | 67 s | **100 ms** |
+
+So one node of padding is worth **3.7** on the transform, not 2.2.
+
 Padding is not free, and the cost is in iterations:
 
 | pad | iterations |
@@ -440,8 +460,15 @@ Padding is not free, and the cost is in iterations:
 | 2 | 36 |
 
 Reproduced at 200 and 256 pixels square, positive definite throughout. One node
-of padding buys 2.2 on the transform and costs 1.38 in count, so **1.6 net**:
-`T_A` from about 54 s to about 34 s. Two nodes lose the gain.
+of padding buys 3.7 on the transform and costs 1.38 in count, so **2.7 net**:
+`T_A` from about 54 s to about **20 s**. Two nodes would have to buy another 1.24
+to break even and will not.
+
+One further thing the timing exposes. A single plan measures in 33 to 67
+seconds, yet building the repository's operator took minutes -- so it creates
+several plans. `RODFT00` is its own inverse up to scaling, and one plan serves
+both displacement components through the new-array execute interface, so there
+is probably a factor of two to four to recover on planning alone.
 
 An earlier claim that this milestone would land near five seconds is withdrawn.
 It extrapolated a 1024-square measurement linearly and ignored that the
