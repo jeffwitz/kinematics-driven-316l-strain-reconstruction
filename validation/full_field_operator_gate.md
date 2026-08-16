@@ -562,6 +562,67 @@ it.
   operator already qualified at 1.5e-15, must agree with the full-field operator
   restricted to that crop under the same boundary data, to solver tolerance.
 
+## What follows: a nonlinear bench before the network
+
+Milestone 0 qualified the *linear* operator and its adjoint. What is still
+unknown is how the **global nonlinear loop** behaves once internal variables, an
+algorithmic tangent, Newton-Krylov, many spatial coefficients and history all
+arrive together. J2-Ludwik is the right bench for that -- not as a return to the
+constitutive postulate this project exists to get past, but as an oracle whose
+answer is known, whose plasticity localises, and whose tangent becomes spatially
+variable under load.
+
+```text
+local coefficients -> d eps_p(x) -> sigma(x) -> R(u) -> global Newton-Krylov
+```
+
+with `R(u) = -B^T sigma` and `J(u) v = -B^T C_alg(x) B v`, matrix-free
+throughout, no assembled tangent. The material parameters stay **homogeneous and
+known**: locality comes from the plastic representation, not from an invented
+map of `sigma_y(x)`, `K(x)`, `n(x)`, which would confound nonlinearity with
+heterogeneous-property identification.
+
+Two facts make this the right next step rather than a detour.
+
+**J2 keeps symmetry.** The algorithmic tangent of associative J2 with isotropic
+hardening is symmetric, unlike crystal plasticity's, so conjugate gradient stays
+valid and everything qualified in this milestone survives unchanged.
+
+**But the tangent contrast is far worse than the elastic one.** The Voigt/Reuss
+bracket of 1.41 computed above for cubic 316L said crystalline *elasticity* will
+not break the preconditioner. That does not transfer: in the plastic zone the
+deviatoric tangent modulus collapses toward zero as hardening falls, so the
+contrast is potentially unbounded. This is the real risk, and it is much sharper
+than the number I reassured with earlier.
+
+### The order, and one test that comes before all of it
+
+**Milestone 1.0** -- does the homogeneous preconditioner survive a heterogeneous
+tangent? Replace `C` by a synthetic `C_alg(x)`, a fraction of points softened by
+a chosen factor, and measure `n_CG` against that fraction and that contrast. Ten
+minutes, no Newton loop, and it separates "the preconditioner survives" from
+"the loop works". If 29 becomes 300 at a contrast of 100, the preconditioner is
+the next milestone and nothing else. If it stays under 60, 1A can be written
+without reservation.
+
+**Milestone 1A** -- J2-Ludwik forward, nonlinear matrix-free, on 256 to 1024
+square with a clean synthetic Dirichlet loading rather than the DIC lifting,
+whose repair is still outstanding. Report per increment: plastic fraction,
+tangent contrast, Newton steps, Krylov per Newton, and the time split across
+constitutive, Jacobian-vector, preconditioner and vector algebra. That last one
+matters: at full field it already accounted for the factor of two between my
+25 s estimate and the measured 52.
+
+**Milestone 1B** -- local coefficients on that same known problem, on grids of
+8x8, 16x16, 32x32 patches under a partition of unity. The property to verify is
+that the coefficient count never multiplies the number of global solves:
+assemble `q(x)` first, then solve once. Ten thousand coefficients must cost
+local contractions, not ten thousand applications of `A`.
+
+**Milestone 1C** -- the same at full field, with the measured DIC lifting.
+
+**Then** the frozen CNN generator and the assembled-field projection.
+
 ## What follows, and only after
 
 * **Milestone 1** -- the assembled-field projection at full field with the
