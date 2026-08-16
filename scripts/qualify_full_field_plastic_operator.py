@@ -245,7 +245,18 @@ class FullFieldPlasticOperator:
         return np.asarray(self.kinematics.strain(nodal)).reshape(-1, 3) / KELVIN_SCALE_2D
 
     def stress_of(self, strain: np.ndarray) -> np.ndarray:
-        return strain.reshape(-1, 3) @ self.elasticity
+        """Kelvin stress from Kelvin strain, homogeneous or per point.
+
+        A per-point tangent is what a plastic zone produces, and it is also what
+        makes the stencil invalid -- that shortcut exists only because a
+        homogeneous `C` on a regular grid gives a translation-invariant
+        operator.
+        """
+
+        flat = strain.reshape(-1, 3)
+        if self.elasticity.ndim == 2:
+            return flat @ self.elasticity
+        return np.einsum("pi,pij->pj", flat, self.elasticity)
 
     def divergence(self, kelvin_stress: np.ndarray) -> np.ndarray:
         """`B^T` on a Kelvin stress, returning the interior nodal load."""
@@ -320,6 +331,11 @@ class FullFieldPlasticOperator:
         return self._kernel_out.reshape(-1)
 
     def stiffness(self, interior: np.ndarray) -> np.ndarray:
+        if self.kernel != "generic" and self.elasticity.ndim != 2:
+            raise ValueError(
+                "the stencil assumes a homogeneous C; a per-point tangent is not "
+                "translation invariant, so use kernel='generic'"
+            )
         if self.kernel == "numba":
             return self.stiffness_numba(interior)
         if self.kernel == "stencil":

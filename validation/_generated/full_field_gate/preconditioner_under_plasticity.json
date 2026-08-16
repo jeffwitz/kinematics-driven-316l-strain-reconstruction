@@ -1,0 +1,106 @@
+{
+  "baseline_iterations": 24,
+  "grid": {
+    "f0.05_c10.0": {
+      "iterations": 33,
+      "seconds": 5.6558678150177
+    },
+    "f0.05_c100.0": {
+      "iterations": 34,
+      "seconds": 5.668907880783081
+    },
+    "f0.05_c1000.0": {
+      "iterations": 36,
+      "seconds": 6.33995509147644
+    },
+    "f0.05_c10000.0": {
+      "iterations": 34,
+      "seconds": 6.211785793304443
+    },
+    "f0.05_c2.0": {
+      "iterations": 27,
+      "seconds": 4.530539512634277
+    },
+    "f0.0_c10.0": {
+      "iterations": 24,
+      "seconds": 3.998802900314331
+    },
+    "f0.0_c100.0": {
+      "iterations": 24,
+      "seconds": 4.1423423290252686
+    },
+    "f0.0_c1000.0": {
+      "iterations": 24,
+      "seconds": 4.04172420501709
+    },
+    "f0.0_c10000.0": {
+      "iterations": 24,
+      "seconds": 4.176089286804199
+    },
+    "f0.0_c2.0": {
+      "iterations": 24,
+      "seconds": 4.292076110839844
+    },
+    "f0.2_c10.0": {
+      "iterations": 37,
+      "seconds": 6.640539646148682
+    },
+    "f0.2_c100.0": {
+      "iterations": 44,
+      "seconds": 7.5388383865356445
+    },
+    "f0.2_c1000.0": {
+      "iterations": 44,
+      "seconds": 7.6416614055633545
+    },
+    "f0.2_c10000.0": {
+      "iterations": 42,
+      "seconds": 7.081971883773804
+    },
+    "f0.2_c2.0": {
+      "iterations": 29,
+      "seconds": 5.306148290634155
+    },
+    "f0.5_c10.0": {
+      "iterations": 45,
+      "seconds": 7.861531496047974
+    },
+    "f0.5_c100.0": {
+      "iterations": 54,
+      "seconds": 8.96772813796997
+    },
+    "f0.5_c1000.0": {
+      "iterations": 55,
+      "seconds": 10.217345237731934
+    },
+    "f0.5_c10000.0": {
+      "iterations": 57,
+      "seconds": 10.175997257232666
+    },
+    "f0.5_c2.0": {
+      "iterations": 30,
+      "seconds": 5.25194787979126
+    },
+    "f1.0_c10.0": {
+      "iterations": 54,
+      "seconds": 9.3089599609375
+    },
+    "f1.0_c100.0": {
+      "iterations": 72,
+      "seconds": 12.943197965621948
+    },
+    "f1.0_c1000.0": {
+      "iterations": 78,
+      "seconds": 13.331920862197876
+    },
+    "f1.0_c10000.0": {
+      "iterations": 79,
+      "seconds": 13.92467975616455
+    },
+    "f1.0_c2.0": {
+      "iterations": 31,
+      "seconds": 5.198315382003784
+    }
+  },
+  "pixels": 256
+}
