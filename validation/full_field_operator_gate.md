@@ -194,6 +194,46 @@ no element arrays and no reassembly. A factor of five to ten there would put
 `T_A` under thirty seconds and make the transform the dominant term, at which
 point threaded FFTW plans become worth their while.
 
+## The stencil, identified rather than derived
+
+`K = B^T C B` on this grid with homogeneous elasticity is a fixed local
+operator, and it was read off the generic operator's impulse response rather
+than rederived by hand -- the generic one is already qualified against the
+assembled sparse operator at 4e-13, so it serves as the oracle.
+
+Nothing was assumed. All four pixel-parity classes were extracted and compared,
+and the support was allowed to declare its own size.
+
+* **One stencil suffices.** Disagreement between the four parity classes is
+  exactly `0.000e+00`.
+* **Seven blocks within a radius of one**, not nine: the TRI2 split drops two
+  diagonal corners.
+* **Reproduces the operator to 1.95e-16** relative, at 64, 128, 256, 512 and
+  1024 pixels square alike -- machine precision, not an approximation.
+* **Symmetry below 5e-15 and positive energy**, which CG needs as much as it
+  needs agreement.
+
+Throughput of the slice-based NumPy prototype, which is a lower bound rather
+than the verdict -- each accumulated neighbour rereads and rewrites the whole
+output, so seven blocks make seven passes through memory where a fused kernel
+makes one:
+
+| pixels | generic | stencil | speedup | Mpix/s |
+|---|---|---|---|---|
+| 256 | 18.5 ms | 3.3 ms | 5.7 | 19.9 |
+| 512 | 91.8 ms | 24.1 ms | 3.8 | 10.8 |
+| 1024 | 422.4 ms | 83.7 ms | 5.1 | 12.5 |
+
+Extrapolated to 11.15 million pixels: generic `K` about 4.5 s, NumPy stencil
+about 0.9 s, and a fused single-pass kernel plausibly 0.2 to 0.3 s.
+
+**Amdahl then decides when to stop.** With `M` around 1.0 s at full field, a PCG
+iteration goes from roughly 5.5 s to 1.9 s on the NumPy stencil alone -- `T_A`
+from about 134 s to 40 s. A fused kernel would take it to about 26 s, at which
+point the preconditioner is 80 % of the cost and further stencil work is wasted.
+That is the moment to switch to threaded FFTW and to reducing the 21 iterations,
+in that order, and not before.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A

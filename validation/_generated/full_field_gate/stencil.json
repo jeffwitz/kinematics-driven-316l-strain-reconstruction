@@ -1,0 +1,58 @@
+{
+  "block_count": 7,
+  "identified_on_pixels": 64,
+  "offsets": [
+    [
+      -1,
+      0
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      -1
+    ],
+    [
+      1,
+      0
+    ]
+  ],
+  "parity_disagreement": 0.0,
+  "sizes": {
+    "1024": {
+      "energy": 7.514869749028022e+17,
+      "generic_seconds": 0.4224218924840291,
+      "megapixels_per_second": 12.508336174997638,
+      "minimum_equivalent_gigabytes_per_second": 0.40026675759992436,
+      "relative_error": 1.9539039575361626e-16,
+      "speedup": 5.0488758924682875,
+      "stencil_seconds": 0.08366652329762776,
+      "symmetry": 4.838442620735773e-15
+    },
+    "512": {
+      "energy": 1.8776370997520547e+17,
+      "generic_seconds": 0.09176492691040039,
+      "megapixels_per_second": 10.823516931524178,
+      "minimum_equivalent_gigabytes_per_second": 0.3463525418087737,
+      "relative_error": 1.9505716531282617e-16,
+      "speedup": 3.8036743124252634,
+      "stencil_seconds": 0.024125337600708008,
+      "symmetry": 3.584789480298589e-16
+    }
+  },
+  "support_radius": 1
+}
