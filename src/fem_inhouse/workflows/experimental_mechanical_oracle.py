@@ -398,6 +398,7 @@ def _solve_fixed_plastic_increment_equilibrium(
     maximum_line_search_iterations: int = 12,
     krylov_relative_tolerance: float = 1.0e-10,
     maximum_krylov_iterations: int = 500,
+    preconditioner: LinearOperator | None = None,
 ) -> FixedIncrementEquilibriumResult:
     """Solve mechanical equilibrium at prescribed ``Delta p`` without commit."""
 
@@ -468,6 +469,7 @@ def _solve_fixed_plastic_increment_equilibrium(
                     dtype=np.float64,
                 ),
                 -residual_vector,
+                M=preconditioner,
                 rtol=krylov_relative_tolerance,
                 atol=0.0,
                 maxiter=maximum_krylov_iterations,
@@ -526,8 +528,16 @@ def solve_fixed_plastic_increment_equilibrium(
     maximum_line_search_iterations: int = 12,
     krylov_relative_tolerance: float = 1.0e-10,
     maximum_krylov_iterations: int = 500,
+    preconditioner: LinearOperator | None = None,
 ) -> FixedIncrementEquilibriumResult:
-    """Solve a fixed increment, retrying through a non-committed homotopy."""
+    """Solve a fixed increment, retrying through a non-committed homotopy.
+
+    ``preconditioner`` is optional and changes nothing about the answer: it is
+    applied inside GMRES only. Without one the Krylov count grows like the
+    square root of the unknowns -- 1398 iterations at 200 pixels square where a
+    spectral reference operator needs 21 -- so at any real size it is the
+    difference between a solve and a wait.
+    """
 
     try:
         return _solve_fixed_plastic_increment_equilibrium(
@@ -542,6 +552,7 @@ def solve_fixed_plastic_increment_equilibrium(
             maximum_line_search_iterations=maximum_line_search_iterations,
             krylov_relative_tolerance=krylov_relative_tolerance,
             maximum_krylov_iterations=maximum_krylov_iterations,
+            preconditioner=preconditioner,
         )
     except (ConstitutiveIntegrationError, RuntimeError, ValueError):
         material.revert()
