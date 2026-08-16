@@ -206,6 +206,24 @@ so the settings that resolve more are also the cleaner ones.
 
 ## 5. What is refuted, including my own errors
 
+* **The elastic lifting used across the P43 scripts does not equilibrate**, and
+  this is a defect in the code rather than a result. Three conventions meet in
+  one expression: `operator.elasticity` is the **Kelvin** stiffness,
+  `kinematics.strain` returns **engineering** shear, and
+  `divergence_from_sample_stress` expects **Voigt**. The `extension()` helper
+  chains them without conversion, which doubles the shear stress. Measured on a
+  non-equilibrated field, the lifted result retains **32 %** of the interior
+  equilibrium residual where the converted form reaches 4e-16, and the two
+  lifted fields differ by 92 % in norm. The operator chain itself is sound --
+  `matvec`, `rmatvec` and `kelvin_response` convert correctly -- so what is
+  affected is the elastic reference, and therefore every residual measured
+  against it: the "elastic defect is 0.29 of the measured strain norm" figure,
+  the residual-driven Krylov subspaces, and the dissipation studies built on
+  them. Verified numerically for one script; the same textual pattern appears in
+  roughly a dozen others under `scripts/*_p43.py`. Not yet repaired, and no
+  campaign replayed: recorded here so that no conclusion drawn from those
+  residuals is quoted again without redoing the lifting.
+  `adaptive_reduced_basis_p43.py` converts and asserts the residual at startup.
 * **Morphological inpainting adds nothing over a Laplace solution**, which is
   what stopped the campaign. With the pooling defect repaired and a genuine
   spatial decoder, the network reaches a morphology error of 0.997 to 1.008
