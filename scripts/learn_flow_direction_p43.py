@@ -56,10 +56,10 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from scipy.optimize import nnls
+from scipy.optimize import lsq_linear, nnls
 from torch import nn
 
-from fem_inhouse.core.kelvin import KELVIN_SCALE_2D
+from fem_inhouse.core.kelvin import KELVIN_SCALE_2D, PLANE_STRESS_PLASTIC_GAUGE
 from fem_inhouse.identification.tensor_plastic_observability import (
     TensorPlasticObservabilityOperator,
 )
@@ -115,8 +115,27 @@ class Generator(nn.Module):
         nx, ny = raw.shape[1], raw.shape[2]
         modes = raw.reshape(self.rank, 2, 3, nx, ny).permute(3, 4, 1, 2, 0)
         modes = modes.reshape(-1, 3, self.rank)
-        scale = modes.pow(2).sum(dim=(0, 1)).sqrt().clamp_min(1e-12)
+        scale = torch.einsum("pir,ij,pjr->r", modes, GAUGE, modes).clamp_min(1e-24).sqrt()
         return modes / scale
+
+
+#: `eps_p_zz` is fixed by incompressibility, so the plane-stress plastic triple
+#: is not an orthonormal subspace of deviatoric space and its norm is not the
+#: Euclidean one. Every plastic magnitude in this script -- the accumulated
+#: path fed to the network, the mode normalisation, the diversity Gram -- goes
+#: through this gauge. An earlier revision used `|v|_2` for the path, which
+#: silently corrupted one of the network's own input channels.
+GAUGE = torch.from_numpy(PLANE_STRESS_PLASTIC_GAUGE)
+#: The same object without the 2/3, i.e. the plain three-dimensional Frobenius
+#: norm of the completed tensor, which is what a cosine against the stress
+#: needs.
+FROBENIUS = torch.from_numpy(1.5 * PLANE_STRESS_PLASTIC_GAUGE)
+
+
+def gauge_norm(values: torch.Tensor) -> torch.Tensor:
+    """`sqrt(v^T G_p v)` per material point: the equivalent plastic strain."""
+
+    return torch.einsum("pi,ij,pj->p", values, GAUGE, values).clamp_min(0.0).sqrt()
 
 
 def project_dissipative(modes: torch.Tensor, stress: torch.Tensor) -> torch.Tensor:
@@ -148,21 +167,37 @@ def project_dissipative(modes: torch.Tensor, stress: torch.Tensor) -> torch.Tens
     """
 
     overlap = torch.einsum("pir,pi->pr", modes, stress)
-    square = stress.pow(2).sum(dim=1, keepdim=True).clamp_min(1e-300)
-    pushed = modes + (torch.relu(-overlap) / square).unsqueeze(1) * stress.unsqueeze(2)
-    scale = pushed.pow(2).sum(dim=(0, 1)).sqrt().clamp_min(1e-12)
+    square = stress.pow(2).sum(dim=1, keepdim=True)
+    # Where the stress vanishes the half-space is the whole space and the
+    # correction is a division by nothing; leave those directions untouched
+    # rather than let a near-zero denominator manufacture an enormous mode.
+    floor = 1e-12 * square.mean().clamp_min(1e-300)
+    correction = (torch.relu(-overlap) / square.clamp_min(floor)).unsqueeze(1)
+    pushed = modes + torch.where(
+        (square < floor).unsqueeze(2), torch.zeros_like(overlap).unsqueeze(1), correction
+    ) * stress.unsqueeze(2)
+    scale = torch.einsum("pir,ij,pjr->r", pushed, GAUGE, pushed).clamp_min(1e-24).sqrt()
     return pushed / scale
 
 
 def non_negative_solve(gram: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
     """`argmin_a >= 0  a^T G a - 2 a^T b`, differentiated through its active set.
 
-    The active set is found once in numpy on the `r x r` normal equations --
-    `G = L L^T` turns the problem into an ordinary NNLS on `(L^T, L^-1 b)`, so
-    it costs nothing next to one application of the mechanics. The free
-    coefficients are then re-solved in torch, which is exact almost everywhere
-    by the KKT conditions: the active constraints are locally constant, so the
-    gradient of the solution is the gradient of the reduced linear system.
+    Cholesky alone solves the *unconstrained* system and settles nothing about
+    the sign; the algorithm is an **active-set NNLS followed by a Cholesky
+    solve on the free variables**, in that order. Cholesky only compresses the
+    problem first: `G = L L^T` turns `min_{a>=0} a^T G a - 2 a^T b` into an
+    ordinary `r x r` NNLS on `(L^T, L^-1 b)`, so finding the active set costs
+    nothing beside one application of the mechanics. Only then are the free
+    coefficients re-solved.
+
+    Differentiating through it is exact almost everywhere by KKT: the active
+    constraints are locally constant, so the gradient of the solution is the
+    gradient of the reduced linear system. It is undefined exactly at the
+    changes of active set, which is the same measure-zero caveat a ReLU carries.
+
+    `check_non_negative_solve` validates this against `lsq_linear`, a
+    trust-region method sharing no code path with the active-set one.
     """
 
     factor = torch.linalg.cholesky(gram)
@@ -174,6 +209,29 @@ def non_negative_solve(gram: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
         return answer
     solved = torch.linalg.solve(gram[free][:, free], right[free])
     return answer.index_put((free,), solved)
+
+
+def check_non_negative_solve(trials: int = 12, rank: int = 9) -> float:
+    """Agreement with an independent bounded solver, on random problems."""
+
+    generator = np.random.default_rng(11)
+    worst = 0.0
+    for _ in range(trials):
+        raw = generator.standard_normal((3 * rank, rank))
+        gram = torch.from_numpy(raw.T @ raw + 1e-6 * np.eye(rank))
+        right = torch.from_numpy(generator.standard_normal(rank) * 5.0)
+        mine = non_negative_solve(gram, right).numpy()
+        factor = np.linalg.cholesky(gram.numpy())
+        reference = lsq_linear(
+            factor.T,
+            np.linalg.solve(factor, right.numpy()),
+            bounds=(0.0, np.inf),
+            tol=1e-14,
+        ).x
+        scale = max(np.linalg.norm(reference), 1e-12)
+        worst = max(worst, float(np.linalg.norm(mine - reference) / scale))
+        assert mine.min() > -1e-10, mine.min()
+    return worst
 
 
 def main() -> int:
@@ -266,6 +324,10 @@ def main() -> int:
     ) / abs(float((apply_numpy(left) * right).sum()))
     print(f"adjoint dot-product test: {discrepancy:.3e}", flush=True)
     assert discrepancy < 1e-8
+    if arguments.project_dissipative:
+        agreement = check_non_negative_solve()
+        print(f"non-negative solve against lsq_linear: {agreement:.3e}", flush=True)
+        assert agreement < 1e-6
 
     report = json.loads((HISTORY.with_name("report.json")).read_text(encoding="utf-8"))
     bounds = list(map(int, report["solve_bounds"]))
@@ -345,8 +407,7 @@ def main() -> int:
                 simulated = predictor + responses @ coefficients
                 remaining = torch.from_numpy(measured[state]) - simulated
                 if wants:
-                    shapes = modes.reshape(-1, rank)
-                    overlap = shapes.T @ shapes
+                    overlap = torch.einsum("pir,ij,pjs->rs", modes, GAUGE, modes)
                     new_stress = torch.from_numpy(reference_stress) + torch.from_numpy(
                         stress_of(simulated.detach().numpy() - (plastic + increment)
                                   .detach().numpy())
@@ -370,11 +431,27 @@ def main() -> int:
                 # power flows the wrong way. For the fixed basis the two turn
                 # out to agree closely -- 47 % of points and 47 % of |power| --
                 # so the inadmissibility is not a small-amplitude edge effect.
+                # The half-space forbids sigma . v < 0 but permits sigma . v = 0
+                # with an enormous v: the network could trade anti-dissipative
+                # work for a huge increment almost orthogonal to the stress,
+                # which is admissible and not plausible. chi is that cosine on
+                # the plastically active points, and the amplitude is reported
+                # beside it so the trade is visible if it happens.
+                amplitude = gauge_norm(increment.detach())
+                frobenius = torch.einsum(
+                    "pi,ij,pj->p", increment.detach(), FROBENIUS, increment.detach()
+                ).clamp_min(0.0).sqrt()
+                stress_norm = new_stress.pow(2).sum(dim=1).sqrt()
+                active = amplitude > 0.1 * amplitude.mean().clamp_min(1e-300)
+                cosine = power / (stress_norm * frobenius).clamp_min(1e-300)
                 negative.append((
                     float((power < 0).double().mean()),
                     float(power.clamp_max(0).abs().sum()
                           / power.abs().sum().clamp_min(1e-300)),
                     float(power.sum()),
+                    float(amplitude.sum()),
+                    float(cosine[active].mean()) if bool(active.any()) else 0.0,
+                    float(torch.quantile(power, 0.01)),
                 ))
                 singular.append(
                     float(torch.linalg.svdvals(flat.detach())[-1]
@@ -384,7 +461,7 @@ def main() -> int:
                     torch.linalg.vector_norm(remaining.detach()) / defect[state]
                 )
             plastic = (plastic + increment).detach()
-            path = path + increment.detach().pow(2).sum(dim=1, keepdim=True).sqrt()
+            path = path + gauge_norm(increment.detach())[:, None]
             previous_stress = new_stress
         counts = np.asarray(negative)
         return (
@@ -394,6 +471,9 @@ def main() -> int:
                 "negative_point_fraction": float(counts[:, 0].mean()),
                 "negative_power_share": float(counts[:, 1].mean()),
                 "net_dissipation": float(counts[:, 2].sum()),
+                "accumulated_equivalent_plastic_strain": float(counts[:, 3].sum() / points),
+                "mean_stress_alignment_where_active": float(counts[:, 4].mean()),
+                "first_percentile_of_power": float(counts[:, 5].min()),
             },
             float(np.mean(singular)),
         )
@@ -455,11 +535,22 @@ def main() -> int:
             simulated = elastic[state] + apply_numpy(plastic)
             new_stress = reference_stress + stress_of(simulated - plastic)
             power = (0.5 * (previous_stress + new_stress) * increment).sum(axis=1)
+            gauge = PLANE_STRESS_PLASTIC_GAUGE
+            amplitude = np.sqrt(np.maximum(
+                np.einsum("pi,ij,pj->p", increment, gauge, increment), 0.0))
+            frobenius = np.sqrt(np.maximum(
+                np.einsum("pi,ij,pj->p", increment, 1.5 * gauge, increment), 0.0))
+            stress_norm = np.sqrt((new_stress**2).sum(axis=1))
+            active = amplitude > 0.1 * max(amplitude.mean(), 1e-300)
+            cosine = power / np.maximum(stress_norm * frobenius, 1e-300)
             negative.append((
                 float((power < 0).mean()),
                 float(np.abs(np.minimum(power, 0.0)).sum()
                       / max(np.abs(power).sum(), 1e-300)),
                 float(power.sum()),
+                float(amplitude.sum()),
+                float(cosine[active].mean()) if active.any() else 0.0,
+                float(np.quantile(power, 0.01)),
             ))
             previous_stress = new_stress
             scores[state] = float(
@@ -474,6 +565,13 @@ def main() -> int:
                 "negative_point_fraction": float(np.asarray(negative)[:, 0].mean()),
                 "negative_power_share": float(np.asarray(negative)[:, 1].mean()),
                 "net_dissipation": float(np.asarray(negative)[:, 2].sum()),
+                "accumulated_equivalent_plastic_strain": float(
+                    np.asarray(negative)[:, 3].sum() / points
+                ),
+                "mean_stress_alignment_where_active": float(
+                    np.asarray(negative)[:, 4].mean()
+                ),
+                "first_percentile_of_power": float(np.asarray(negative)[:, 5].min()),
             },
         }
 
@@ -486,7 +584,9 @@ def main() -> int:
             print(f"{kind:8s} r={rank:2d}: fitted {entry['fitted']:.4f}  "
                   f"held out {entry['held_out']:.4f}  negative "
                   f"{100 * entry['dissipation']['negative_point_fraction']:.1f} % of points, "
-                  f"{100 * entry['dissipation']['negative_power_share']:.1f} % of power",
+                  f"{100 * entry['dissipation']['negative_power_share']:.1f} % of power  "
+                  f"p_eq {entry['dissipation']['accumulated_equivalent_plastic_strain']:.3e}  "
+                  f"chi {entry['dissipation']['mean_stress_alignment_where_active']:+.3f}",
                   flush=True)
     for rank in arguments.ranks:
         network = Generator(channels=channels, rank=rank).double()
@@ -508,6 +608,8 @@ def main() -> int:
                     f"fitted {fitted:.4f}  held out {held:.4f}  "
                     f"negative {100 * negative['negative_point_fraction']:.1f} % of "
                     f"points, {100 * negative['negative_power_share']:.1f} % of power  "
+                    f"p_eq {negative['accumulated_equivalent_plastic_strain']:.3e}  "
+                    f"chi {negative['mean_stress_alignment_where_active']:+.3f}  "
                     f"({time.time() - start:.0f} s)",
                     flush=True,
                 )
