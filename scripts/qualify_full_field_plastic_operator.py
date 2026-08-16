@@ -75,9 +75,10 @@ POISSON = 0.30
 class FullFieldPlasticOperator:
     """`A eps_p = B K^-1 B^T w C eps_p`, matrix-free, on the existing solver."""
 
-    def __init__(self, grid: StructuredGrid2D, *, backend: str = "scipy",
+    def __init__(self, grid: StructuredGrid2D, *, backend: str = "fftw",
                  workers: int = 1, tolerance: float = 1e-12,
-                 maximum_iterations: int = 2000) -> None:
+                 maximum_iterations: int = 2000,
+                 wisdom: Path | None = None) -> None:
         self.grid = grid
         self.kinematics = TwoSubcellDiagnostic2D(grid)
         self.points = self.kinematics.material_point_count
@@ -85,9 +86,18 @@ class FullFieldPlasticOperator:
         self.elasticity = stiffness_from_engineering(
             plane_stress_elasticity(YOUNG_MPA, POISSON)
         )
+        # FFTW with persistent plans and wisdom, not the SciPy prototype. The
+        # repository ships both; running the sweep on SciPy was an oversight,
+        # and the difference is measured rather than assumed.
         self.plan = create_full_dirichlet_dsti_plan(
-            grid, SpectralTransformConfig(backend=backend, workers=workers)
+            grid,
+            SpectralTransformConfig(
+                backend=backend, workers=workers,
+                fftw_planner_effort="measure", fftw_wisdom_directory=wisdom,
+                fftw_planning_time_limit_s=None if wisdom is not None else 2.0,
+            ),
         )
+        self.backend_name = str(self.plan.backend_name)
         symbols = self.kinematics.reference_operator_symbols(self.plan)
         lambda_0, mu_0, _ = project_isotropic_plane_stress_tangent(self.elasticity)
         self.green = B0Green2D(symbols, lambda_0=lambda_0, mu_0=mu_0)
@@ -191,7 +201,9 @@ def relative(left: float, right: float) -> float:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pixels", nargs=2, type=int, default=(100, 100))
-    parser.add_argument("--backend", default="scipy")
+    parser.add_argument("--backend", default="fftw")
+    parser.add_argument("--wisdom", type=Path,
+                        default=Path.home() / ".cache/fem_inhouse/fftw_wisdom")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--tolerance", type=float, default=1e-12)
     parser.add_argument("--pairs", type=int, default=4)
@@ -203,16 +215,22 @@ def main() -> int:
     nx, ny = arguments.pixels
     grid = StructuredGrid2D(nx, ny, PIXEL_SIZE_MM * nx, PIXEL_SIZE_MM * ny)
     started = time.time()
+    arguments.wisdom.mkdir(parents=True, exist_ok=True)
     operator = FullFieldPlasticOperator(
         grid, backend=arguments.backend, workers=arguments.workers,
-        tolerance=arguments.tolerance,
+        tolerance=arguments.tolerance, wisdom=arguments.wisdom,
     )
+    report_backend = operator.backend_name
     print(f"grid {nx}x{ny}, {operator.size} interior unknowns, "
-          f"{operator.points} material points, setup {time.time() - started:.1f} s",
+          f"{operator.points} material points, backend {report_backend}, "
+          f"{arguments.workers} workers, setup {time.time() - started:.1f} s",
           flush=True)
 
     generator = np.random.default_rng(20260816)
-    report: dict[str, object] = {"pixels": [nx, ny], "interior_unknowns": operator.size}
+    report: dict[str, object] = {
+        "pixels": [nx, ny], "interior_unknowns": operator.size,
+        "backend": report_backend, "workers": arguments.workers,
+    }
 
     # 1. The operator must be symmetric and positive definite, or CG is invalid.
     left = generator.standard_normal(operator.size)

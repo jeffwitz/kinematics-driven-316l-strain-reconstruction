@@ -156,6 +156,44 @@ eps_p  --A-->  d eps      on the real field, reusing the existing solver
    not the exact inverse, so even the linear elastic solve iterates. That count
    is the number to know before any budget is written down.
 
+## Measured, at the gate
+
+Mesh independence, which is the result that decides feasibility: **21 PCG
+iterations** at 24, 48, 100 and 200 pixels square, invariably, against 178, 352,
+717 and 1398 unpreconditioned. The problem does not get harder with size; the
+kernel is simply expensive.
+
+The sign convention was caught by the positivity check, not by reading: both
+operators are symmetric to 2e-15, but `B_0^-1` follows the production
+convention where it acts on `R = -sum B^T sigma` while the stiffness here
+already carries that minus, so `M` came out uniformly negative definite and the
+composed system indefinite. Fixed, and the gate then passes: adjoint 2.3e-15
+over four pairs, agreement with the sparse direct operator 4.2e-13.
+
+**Where the time goes, which is not where it was assumed.** At 400 square, with
+FFTW and four workers:
+
+| | per call | share |
+|---|---|---|
+| `K = B^T C B` | 76.9 ms | 84 % |
+| `M = B_0^-1` | 14.2 ms | 16 % |
+
+and inside `K`: divergence 54.4 ms, strain 23.5 ms, stress 1.3 ms, unpack
+0.9 ms. The transform is a sixth of the cost. FFTW single-threaded matches SciPy
+exactly at 200 square (0.60 s per apply either way) and four workers buy 23 %;
+running the first sweep on the SciPy prototype was an oversight but not the
+reason for the cost.
+
+Extrapolated to the full field -- 160 000 pixels at 400 square against 11.15
+million -- `21 (K + M) = 1.91 s` becomes roughly **134 s per apply**, some 112 s
+of it in `B` and `B^T`.
+
+So the lever is the stencil, not the FFT. On a regular grid with homogeneous
+elasticity `B^T C B` is a fixed linear stencil and should be array shifts with
+no element arrays and no reassembly. A factor of five to ten there would put
+`T_A` under thirty seconds and make the transform the dominant term, at which
+point threaded FFTW plans become worth their while.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
