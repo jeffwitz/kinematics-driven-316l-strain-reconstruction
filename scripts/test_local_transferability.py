@@ -46,11 +46,121 @@ import numpy as np
 import torch
 from benchmark_pod_morphology import HOLDOUT_REGIONS  # type: ignore[import-not-found]
 from morphology_benchmark_split import split_states  # type: ignore[import-not-found]
+from scipy.ndimage import distance_transform_edt
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import factorized
 from torch import nn
 
 DATA = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/p0043_evm_history.h5")
+CRYSTAL = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5")
+
+#: The twelve FCC octahedral systems, {111}<110>, as plane normals and slip
+#: directions in the crystal frame.
+FCC_SYSTEMS = [
+    ((1, 1, 1), d) for d in ((-1, 1, 0), (0, -1, 1), (1, 0, -1))
+] + [
+    ((-1, 1, 1), d) for d in ((1, 1, 0), (0, -1, 1), (-1, 0, -1))
+] + [
+    ((1, -1, 1), d) for d in ((1, 1, 0), (0, 1, 1), (1, 0, -1))
+] + [
+    ((1, 1, -1), d) for d in ((-1, 1, 0), (0, 1, 1), (1, 0, 1))
+]
+
+# A slip direction lies in its slip plane. The check is one line and it is not
+# decorative: a mistyped direction in this table stays plausible everywhere
+# except in the bound it breaks. `(1,-1,1)[-1,0,-1]` sat here with a dot
+# product of -2, and it pushed the Schmid factors to 0.905 -- exactly the
+# (1 + |cos theta|) / 2 = 0.908 that a non-orthogonal pair allows.
+for _normal, _direction in FCC_SYSTEMS:
+    assert np.dot(_normal, _direction) == 0, (_normal, _direction)
+
+#: Loading along <111> minimises the largest Schmid factor of the twelve FCC
+#: octahedral systems. No orientation whatsoever can fall below it, so a map
+#: that does is reporting something other than a Schmid factor.
+MINIMUM_MAX_SCHMID = 0.2721655269759087
+
+
+def schmid_channels(path: Path, shape: tuple[int, int]) -> np.ndarray:
+    """Sorted Schmid factors per pixel, plus a validity flag, from the EBSD.
+
+    Neither Euler angles nor a rotation matrix is used as the network input.
+    316L is cubic, so an orientation is defined up to twenty-four rotations and
+    both representations jump across symmetry boundaries -- a network would see
+    artificial discontinuities where the crystal is unchanged. Sorting the
+    twelve Schmid factors is invariant under those symmetries by construction,
+    and it is the mechanically meaningful quantity: how easily each system can
+    be driven by the applied axis.
+
+    Two conventions are fixed by measurement rather than asserted.
+
+    The loading axis is the first sample axis. `g` maps sample coordinates to
+    crystal coordinates, so the loading direction seen by the crystal is a
+    *column* of `g`, not a row. Taking column 0, 1 and 2 in turn and comparing
+    the resulting largest factor against the archived `max_schmid_factor` gives
+    0.77, 0.18 and 0.06; the choice is the measurement, not a reading of the
+    acquisition notes, which do not record it.
+
+    That 0.77 is also the honest limit of this reconstruction. The archived map
+    and this one share their distribution almost exactly -- medians 0.4633 and
+    0.4615 -- but agree to 1e-3 on only 18 % of pixels, and no integer shift
+    improves the correlation, so the residual is a convention inside their
+    calculation rather than a registration offset. What is used downstream is
+    this computation, which is bounded correctly by construction; the archived
+    map is used only as the outlier detector below.
+
+    Corrupt pixels are found through that archived map. Non-indexed EBSD points
+    carry the sentinel 1449 in all three Euler angles, and a sentinel still
+    produces a perfectly valid rotation, hence a perfectly plausible Schmid
+    factor -- this computation cannot detect its own bad inputs. The archived
+    map can: 827 of its pixels fall outside the physically attainable
+    [0.2722, 0.5], and they are exactly the sentinel ones. They are refilled
+    from their nearest valid neighbour rather than dropped, since dropping
+    pixels would punch holes into every patch that overlaps them, and the flag
+    channel tells the network which pixels were invented.
+    """
+
+    with h5py.File(path, "r") as handle:
+        phi1 = np.deg2rad(np.asarray(handle["orientation/phi1"], dtype=np.float64))
+        capital = np.deg2rad(np.asarray(handle["orientation/Phi"], dtype=np.float64))
+        phi2 = np.deg2rad(np.asarray(handle["orientation/phi2"], dtype=np.float64))
+        archived = np.asarray(handle["schmid/max_schmid_factor"], dtype=np.float64)
+    phi1, capital, phi2, archived = (
+        a[: shape[0], : shape[1]] for a in (phi1, capital, phi2, archived)
+    )
+    c1, s1 = np.cos(phi1), np.sin(phi1)
+    c2, s2 = np.cos(capital), np.sin(capital)
+    c3, s3 = np.cos(phi2), np.sin(phi2)
+    # Column 0 of the Bunge ZXZ matrix: the first sample axis in crystal frame.
+    axis = np.stack(
+        [
+            c1 * c3 - s1 * s3 * c2,
+            -c1 * s3 - s1 * c3 * c2,
+            s1 * s2,
+        ],
+        axis=-1,
+    )
+    axis = axis / np.maximum(np.linalg.norm(axis, axis=-1, keepdims=True), 1e-12)
+    factors = []
+    for normal, direction in FCC_SYSTEMS:
+        n = np.asarray(normal, dtype=np.float64) / np.sqrt(3.0)
+        d = np.asarray(direction, dtype=np.float64) / np.sqrt(2.0)
+        factors.append(np.abs((axis @ n) * (axis @ d)))
+    stacked = np.sort(np.stack(factors, axis=0), axis=0)[::-1].astype(np.float32)
+
+    corrupt = ~(
+        (archived >= MINIMUM_MAX_SCHMID - 1e-6) & (archived <= 0.5 + 1e-6)
+    )
+    if corrupt.any():
+        _, nearest = distance_transform_edt(corrupt, return_indices=True)
+        stacked = stacked[:, nearest[0], nearest[1]]
+        print(f"EBSD: refilled {int(corrupt.sum())} non-indexed pixels "
+              f"({100 * corrupt.mean():.4f} %) from their nearest valid neighbour",
+              flush=True)
+    top = stacked.max(axis=0)
+    assert top.min() >= MINIMUM_MAX_SCHMID - 1e-6 and top.max() <= 0.5 + 1e-6, (
+        float(top.min()), float(top.max())
+    )
+    return np.concatenate([stacked, (~corrupt)[None].astype(np.float32)], axis=0)
 
 
 def harmonic_operator(core: int):
@@ -102,12 +212,12 @@ class CorePredictor(nn.Module):
     to infer.
     """
 
-    def __init__(self, *, context: int, core: int, width: int = 32) -> None:
+    def __init__(self, *, context: int, core: int, width: int = 32, extra: int = 0) -> None:
         super().__init__()
         # Down to a map of about a quarter of the core, so position survives.
         levels = max(1, int(np.log2(context // max(core // 4, 2))))
         layers: list[nn.Module] = []
-        channels = 2
+        channels = 2 + extra
         for level in range(levels):
             out = width * (2 ** min(level, 2))
             layers += [nn.Conv2d(channels, out, 4, stride=2, padding=1),
@@ -146,6 +256,8 @@ def main() -> int:
     # at exactly the scales the subsampling altered.
     parser.add_argument("--decimate", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20260816)
+    parser.add_argument("--ebsd", action="store_true")
+    parser.add_argument("--schmid-channels", type=int, default=6)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
@@ -176,12 +288,24 @@ def main() -> int:
     print(f"{len(indices)} states, shape {shape}, core {core}, "
           f"held-out {100 * excluded.mean():.1f} % of pixels", flush=True)
 
+    crystal = None
+    if arguments.ebsd:
+        crystal = schmid_channels(CRYSTAL, (shape[0] * step, shape[1] * step))
+        # The last channel is the validity flag and is always kept; the leading
+        # ones are the sorted factors, of which the largest carry the signal.
+        crystal = np.concatenate(
+            [crystal[: arguments.schmid_channels], crystal[-1:]]
+        )[:, ::step, ::step]
+        print(f"EBSD: {crystal.shape[0] - 1} sorted Schmid channels plus a "
+              f"validity flag, range {crystal[:-1].min():.3f} to "
+              f"{crystal[:-1].max():.3f}", flush=True)
+
     solve = harmonic_operator(core)
 
     def sample(context: int, inside: bool, count: int):
         half = context // 2
         offset = half - core // 2
-        patches, cores = [], []
+        patches, cores, corners = [], [], []
         while len(patches) < count:
             state = (train_states[generator.integers(len(train_states))]
                      if not inside else generator.integers(len(indices)))
@@ -199,14 +323,25 @@ def main() -> int:
                 continue
             patches.append(fields[state, row : row + context, column : column + context])
             cores.append(patches[-1][offset : offset + core, offset : offset + core].copy())
-        return np.stack(patches), np.stack(cores), offset
+            corners.append((row, column))
+        return np.stack(patches), np.stack(cores), offset, corners
 
-    def masked(patches: np.ndarray, offset: int) -> torch.Tensor:
+    def masked(patches: np.ndarray, offset: int, corners: list) -> torch.Tensor:
         blanked = patches.copy()
         blanked[:, offset : offset + core, offset : offset + core] = 0.0
         flag = np.zeros_like(blanked)
         flag[:, offset : offset + core, offset : offset + core] = 1.0
-        return torch.from_numpy(np.stack([blanked, flag], axis=1))
+        channels = [blanked, flag]
+        if crystal is not None:
+            # The crystallography is *not* blanked in the core: it is a static
+            # material property, known everywhere, unlike the measurement.
+            extent = patches.shape[1]
+            for index in range(crystal.shape[0]):
+                channels.append(
+                    np.stack([crystal[index, r : r + extent, c : c + extent]
+                              for r, c in corners])
+                )
+        return torch.from_numpy(np.stack(channels, axis=1))
 
     def scores(candidate: np.ndarray, reference: np.ndarray) -> dict:
         """Level and morphology reported separately.
@@ -230,15 +365,16 @@ def main() -> int:
 
     results = []
     for context in arguments.contexts:
-        model = CorePredictor(context=context, core=core)
+        model = CorePredictor(context=context, core=core,
+                              extra=0 if crystal is None else crystal.shape[0])
         parameters = sum(p.numel() for p in model.parameters())
         optimiser = torch.optim.Adam(model.parameters(), lr=1.0e-3)
         schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, arguments.steps)
         started = time.perf_counter()
         for iteration in range(1, arguments.steps + 1):
-            patches, cores, offset = sample(context, False, arguments.batch)
+            patches, cores, offset, corners = sample(context, False, arguments.batch)
             loss = nn.functional.mse_loss(
-                model(masked(patches, offset)), torch.from_numpy(cores)
+                model(masked(patches, offset, corners)), torch.from_numpy(cores)
             )
             optimiser.zero_grad(set_to_none=True)
             loss.backward()
@@ -248,10 +384,10 @@ def main() -> int:
                 print(f"  context {context} step {iteration}: loss {loss.item():.4e} "
                       f"({time.perf_counter() - started:.0f} s)", flush=True)
 
-        patches, cores, offset = sample(context, True, arguments.evaluations)
+        patches, cores, offset, corners = sample(context, True, arguments.evaluations)
         model.eval()
         with torch.no_grad():
-            predicted = model(masked(patches, offset)).numpy()
+            predicted = model(masked(patches, offset, corners)).numpy()
         harmonic = np.stack(
             [harmonic_inpaint(solve, patch, core, offset) for patch in patches]
         )
@@ -282,6 +418,7 @@ def main() -> int:
         "schema_version": 1,
         "status": "completed_local_transferability",
         "core": core,
+        "ebsd": bool(arguments.ebsd),
         "decimation": step,
         "evaluation": "cores strictly inside the two spatial holdout regions",
         "metric": "error relative to the fluctuation of the core",

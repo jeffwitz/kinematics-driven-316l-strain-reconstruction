@@ -157,6 +157,23 @@ so the settings that resolve more are also the cleaner ones.
   state 1 to +0.116 at state 38, positive throughout, carried mostly by the
   loading mode. An artefact would be constant. EBSD registration is declared but
   not verified, which is the dominant uncertainty.
+* **The EBSD carries 827 non-indexed pixels**, 0.0074 % of the map, filled with
+  the sentinel 1449 in all three Euler angles. They are invisible to any
+  orientation-derived quantity -- a sentinel still yields a valid rotation and
+  therefore a plausible Schmid factor -- but the archived `max_schmid_factor`
+  exposes them, since a Schmid factor must lie in `[0.2722, 0.5]` and theirs do
+  not. That lower bound is the `<111>` loading direction, which minimises the
+  largest of the twelve factors. `schmid_channels` uses the archived map purely
+  as this detector and refills the offending pixels from their nearest valid
+  neighbour, carrying a validity flag alongside.
+* **The loading axis is the first sample axis, measured not assumed.** `g` maps
+  sample to crystal, so the axis the crystal sees is a *column* of `g`. Columns
+  0, 1 and 2 reproduce the archived map at 0.77, 0.18 and 0.06. The
+  acquisition notes do not record the convention; this comparison is the only
+  evidence, and 0.77 with 18 % of pixels agreeing to 1e-3, no shift improving
+  it, and near-identical distributions (medians 0.4633 and 0.4615) says the
+  residual is a convention inside their calculation rather than a registration
+  offset. Ours is bounded correctly by construction and is what is used.
 * **The fine 2-8 px band is not a fixed pattern**: correlation 0.820 between
   neighbouring states decaying to 0.188 between extremes, with the across-state
   mean holding 47.8 % of its energy. Half common, half evolving.
@@ -183,7 +200,11 @@ so the settings that resolve more are also the cleaner ones.
   a conclusion drawn before an order of magnitude was checked: decimating by
   three after measuring signal down to two pixels; a Fourier bandwidth ten times
   too narrow; proposing to low-pass the fine band without testing its temporal
-  correlation; quoting 0.115 as a bar.
+  correlation; quoting 0.115 as a bar; one mistyped slip direction,
+  `(1,-1,1)[-1,0,-1]`, whose dot product of -2 pushed the Schmid factors to
+  0.905 against a hard bound of 0.5. Each was caught by a bound, never by
+  inspection, which is why `FCC_SYSTEMS` now asserts its own orthogonality and
+  `schmid_channels` asserts its own range.
 
 ---
 
