@@ -285,7 +285,14 @@ def main() -> int:
     def krylov_basis(size: int) -> np.ndarray:
         """Residual-driven and fixed: the premise this campaign is testing."""
 
-        seeds = [apply_transpose(measured[s] - elastic[s]).reshape(-1) for s in states]
+        # The seeds must be masked exactly as the coefficient fit is. Built from
+        # the full-field residual instead, this basis has seen the held-out
+        # answer, and it shows: rank 32 reached 0.0081 there, which is the
+        # signature the preregistration names as a failure rather than a result.
+        seeds = [
+            apply_transpose(np.where(fit[:, None], measured[s] - elastic[s], 0.0)).reshape(-1)
+            for s in states
+        ]
         basis, _ = np.linalg.qr(np.asarray(seeds).T)
         columns, total = [basis], basis.shape[1]
         while total < size:
@@ -325,7 +332,12 @@ def main() -> int:
 
     fixed = krylov_basis(max(arguments.ranks))
     for rank in arguments.ranks:
-        for name in ("krylov", "aligned"):
+        # `aligned_free` is the control that separates the two things the
+        # `aligned` arm changes at once. It carries the same state-generated
+        # modes with the sign condition released, so a gap between the two is
+        # the cost of demanding dissipation, while a gap that survives to
+        # `krylov` is the flow direction being wrong.
+        for name in ("krylov", "aligned", "aligned_free"):
             plastic = np.zeros((points, 3))
             history_fit, history_held, dissipation = [], [], []
             previous_stress = reference_stress
@@ -338,7 +350,7 @@ def main() -> int:
                     non_negative = False
                 else:
                     modes = stress_band_basis(stress, rank, fit)
-                    non_negative = True
+                    non_negative = name == "aligned"
                 responses = np.stack(
                     [apply(modes[:, :, k]).reshape(-1) for k in range(rank)], axis=1
                 )

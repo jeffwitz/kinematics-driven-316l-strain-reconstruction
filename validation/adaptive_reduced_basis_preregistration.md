@@ -104,6 +104,19 @@ adaptive Phi_theta(S)   this campaign
 
 `E_DIC(r)` is the held-out relative error, `r = 2, 4, 8, 16, 32`.
 
+## Outcome of the registered criteria
+
+**Criterion 1 is unreachable by construction and the campaign is inconclusive on
+its own terms.** The free plastic field, unconstrained and fitted exactly on the
+training region, still leaves 0.6028 of the elastic defect inside the held-out
+square. No basis can go below that, so `E_DIC(16) <= 0.10` was never attainable.
+The threshold is not moved: it is recorded as unreachable, established by a
+control involving none of the methods under test. Designing a spatial holdout
+was the error, since it measures extrapolation into a hole that equilibrium and
+the surrounding data do not determine. Results in
+`adaptive_reduced_basis_first_rung.md`; a temporal holdout needs its own
+preregistration.
+
 ## Registered acceptance criteria
 
 A reduction is claimed only if **all four** hold.
