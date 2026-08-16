@@ -296,6 +296,67 @@ a fivefold memory factor for 29 % is a bad trade, and the slice version stays.
 `einsum` is recorded as tried and rejected on measurement, so it need not be
 revisited.
 
+## The coupled preconditioner: tried, isolated, and rejected
+
+`B_0` is diagonal per component, so the cross term of isotropic elasticity --
+`(lambda + mu) grad(div u)`, which couples the components through `k_x k_y` --
+is absent from the reference. Adding it looked like the obvious way to take 21
+iterations down to ten, and the iteration count is now the whole cost.
+
+The first attempt read 32 iterations against 21 and the result was **not
+usable**: it replaced the repository's diagonal `2 mu_0 L + lambda_0 X` by the
+continuous symbol `mu_0 L + (lambda_0 + mu_0) X` *and* added a cross term, so
+two things changed at once and the outcome was attributed to one of them.
+
+Redone with the diagonal left exactly as the repository has it and only
+`c = alpha sqrt(X Y)` varying, every mode verified positive definite:
+
+| `alpha` | iterations |
+|---|---|
+| 0, the repository diagonal | **21** |
+| 0.25 `lambda_0` | 21 |
+| 0.5 `lambda_0` | 21 |
+| `lambda_0` | 22 |
+| 2 `lambda_0` | 23 |
+| `lambda_0 + mu_0` | 29 |
+| -`lambda_0` | 22 |
+
+Monotone, best at zero. The 32 decomposes: 29 from the `lambda_0 + mu_0`
+coefficient, the rest from the diagonal changed alongside it.
+
+The reason is the one the geometry already gave. The true discrete coupling is
+not diagonal in the DST-I basis -- a mixed derivative maps `sin.sin` to
+`cos.cos` and leaves the space -- so a cross term that *is* diagonal per mode
+models a coupling that does not exist in this representation. `B_0` is not a lazy
+approximation of the `2x2` symbol; it is the best approximation **representable**
+in the basis the Dirichlet conditions impose.
+
+The reference Lame ratio is not a lever either: 21 iterations across
+`lambda_0 / mu_0` from 0.0625 to 8, degrading only at 16. The count is a robust
+property of the operator-preconditioner pair.
+
+What remains for the preconditioner is therefore not its symbol but the cost of
+applying it -- warmed FFTW plans, threading, the buffered transform path -- and
+warm starting across the many solves a campaign performs, which attacks the
+count without touching the reference at all.
+
+## What crystalline elasticity would cost, from the registered constants
+
+`c11 = 218300`, `c12 = 144800`, `c44 = 125400` MPa (`srix_parameters.py`):
+
+| | |
+|---|---|
+| Zener anisotropy `2 c44 / (c11 - c12)` | 3.412 |
+| shear modulus, `{100}<110>` to `{100}<010>` | 36.75 to 125.4 GPa |
+| Young's modulus, `<100>` to `<111>` | 102.8 to 301.7 GPa |
+| **Voigt / Reuss bracket on `mu`** | 89.9 / 63.8 GPa, **1.409** |
+
+The last line is the one that matters. With a homogeneous reference chosen
+between the Voigt and Reuss bounds, the contrast a heterogeneous solve faces is
+**1.41**, not the 3.4 separating extreme orientations. Heterogeneous FFT schemes
+routinely handle contrasts of ten to a thousand. Crystallography will raise the
+iteration count moderately and will not break this preconditioner.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A

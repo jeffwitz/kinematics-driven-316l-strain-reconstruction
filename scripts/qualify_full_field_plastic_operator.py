@@ -72,13 +72,72 @@ YOUNG_MPA = 205_000.0
 POISSON = 0.30
 
 
+class CoupledGreen2D:
+    """The full `2x2` isotropic symbol, inverted block by block per mode.
+
+    `B0Green2D` is diagonal per component: it divides `u_x` by
+    `2 mu L + lambda X` and `u_y` by `2 mu L + lambda Y`, and carries no cross
+    term at all. The elastic operator has one -- `(lambda + mu) grad(div u)`
+    couples the components through `k_x k_y` -- so a reference that ignores it
+    is spectrally further from `K` than it needs to be. That is why the solve
+    takes twenty-one iterations rather than a handful, and the iteration count
+    is now the whole cost: with the fused kernel `K` is 2 % of an iteration.
+
+    Writing `L = k_x^2 + k_y^2`, `X = k_x^2`, `Y = k_y^2` -- the moduli of the
+    symbols the kinematics supplies -- the symbol is
+
+    ```text
+    A = [ mu L + (lambda + mu) X        (lambda + mu) C     ]
+        [ (lambda + mu) C               mu L + (lambda + mu) Y ]
+    ```
+
+    with `C = k_x k_y`. The cross term is *modelled* rather than supplied: the
+    kinematics offers no discrete `k_x k_y` symbol, precisely because a mixed
+    derivative maps `sin.sin` to `cos.cos` and leaves the DST-I space. `C` is
+    taken as `sqrt(X Y)`, which is unambiguous here because every DST-I mode has
+    `k_x, k_y > 0`. It is a preconditioner, so being the exact discrete symbol
+    is not required -- only being closer to `K` than the diagonal one, and being
+    symmetric positive definite.
+
+    Positive definiteness is not assumed. The determinant works out to
+    `mu (lambda + 2 mu) (k_x^2 + k_y^2)^2`, positive whenever `mu > 0` and
+    `lambda + 2 mu > 0`, and the qualification measures it anyway.
+    """
+
+    def __init__(self, symbols, *, lambda_0: float, mu_0: float,
+                 tolerance: float = 1e-12) -> None:
+        laplacian = np.abs(np.asarray(symbols.laplacian, dtype=np.float64))
+        along_x = np.abs(np.asarray(symbols.directional_x, dtype=np.float64))
+        along_y = np.abs(np.asarray(symbols.directional_y, dtype=np.float64))
+        cross = np.sqrt(np.maximum(along_x * along_y, 0.0))
+        coupling = lambda_0 + mu_0
+        top = mu_0 * laplacian + coupling * along_x
+        bottom = mu_0 * laplacian + coupling * along_y
+        side = coupling * cross
+        determinant = top * bottom - side * side
+        scale = max(1.0, float(np.max(np.abs(determinant))))
+        usable = np.abs(determinant) > tolerance * scale
+        safe = np.where(usable, determinant, 1.0)
+        self.inverse_top = np.where(usable, bottom / safe, 0.0)
+        self.inverse_bottom = np.where(usable, top / safe, 0.0)
+        self.inverse_side = np.where(usable, -side / safe, 0.0)
+
+    def apply(self, transformed) -> np.ndarray:
+        field = np.asarray(transformed, dtype=np.float64)
+        out = np.empty_like(field)
+        out[..., 0] = self.inverse_top * field[..., 0] + self.inverse_side * field[..., 1]
+        out[..., 1] = self.inverse_side * field[..., 0] + self.inverse_bottom * field[..., 1]
+        return out
+
+
 class FullFieldPlasticOperator:
     """`A eps_p = B K^-1 B^T w C eps_p`, matrix-free, on the existing solver."""
 
     def __init__(self, grid: StructuredGrid2D, *, backend: str = "fftw",
                  workers: int = 1, tolerance: float = 1e-12,
                  maximum_iterations: int = 2000,
-                 wisdom: Path | None = None, kernel: str = "generic") -> None:
+                 wisdom: Path | None = None, kernel: str = "generic",
+                 preconditioner: str = "diagonal") -> None:
         self.grid = grid
         self.kinematics = TwoSubcellDiagnostic2D(grid)
         self.points = self.kinematics.material_point_count
@@ -100,8 +159,21 @@ class FullFieldPlasticOperator:
         self.backend_name = str(self.plan.backend_name)
         symbols = self.kinematics.reference_operator_symbols(self.plan)
         lambda_0, mu_0, _ = project_isotropic_plane_stress_tangent(self.elasticity)
-        self.green = B0Green2D(symbols, lambda_0=lambda_0, mu_0=mu_0)
+        self.preconditioner_name = preconditioner
+        if preconditioner == "coupled":
+            self.green = CoupledGreen2D(symbols, lambda_0=lambda_0, mu_0=mu_0)
+        elif preconditioner == "diagonal":
+            self.green = B0Green2D(symbols, lambda_0=lambda_0, mu_0=mu_0)
+        else:
+            raise ValueError("preconditioner must be 'diagonal' or 'coupled'")
         self.interior_shape = (*grid.interior_shape, 2)
+        # The production solver applies the preconditioner through buffered
+        # transforms; this used the allocating ones, which is the same mistake
+        # the stencil wrapper made -- a fast core dressed in the traffic it
+        # exists to avoid. Three buffers, allocated once.
+        self._spectral = np.empty(self.interior_shape, dtype=np.float64)
+        self._green = np.empty(self.interior_shape, dtype=np.float64)
+        self._physical = np.empty(self.interior_shape, dtype=np.float64)
         self.size = int(np.prod(self.interior_shape))
         self.tolerance = tolerance
         self.maximum_iterations = maximum_iterations
@@ -217,10 +289,19 @@ class FullFieldPlasticOperator:
         """
 
         shaped = np.asarray(interior, dtype=np.float64).reshape(self.interior_shape)
-        spectral = self.plan.forward_displacement(shaped)
-        return -np.asarray(
-            self.plan.inverse_displacement(self.green.apply(spectral))
-        ).reshape(-1)
+        sign = 1.0 if self.preconditioner_name == "coupled" else -1.0
+        buffered = hasattr(self.plan, "forward_into") and hasattr(self.green, "apply_into")
+        if buffered:
+            self.plan.forward_into(shaped, self._spectral)
+            self.green.apply_into(self._spectral, self._green)
+            self.plan.inverse_into(self._green, self._physical)
+        else:
+            self._spectral[...] = self.plan.forward_displacement(shaped)
+            self._green[...] = self.green.apply(self._spectral)
+            self._physical[...] = self.plan.inverse_displacement(self._green)
+        if sign < 0.0:
+            np.negative(self._physical, out=self._physical)
+        return self._physical.reshape(-1)
 
     def solve(self, load: np.ndarray) -> np.ndarray:
         """`K^-1 load` by preconditioned conjugate gradient."""
@@ -276,6 +357,8 @@ def main() -> int:
     parser.add_argument("--pixels", nargs=2, type=int, default=(100, 100))
     parser.add_argument("--backend", default="fftw")
     parser.add_argument("--kernel", default="generic", choices=("generic", "stencil"))
+    parser.add_argument("--preconditioner", default="diagonal",
+                        choices=("diagonal", "coupled"))
     parser.add_argument("--wisdom", type=Path,
                         default=Path.home() / ".cache/fem_inhouse/fftw_wisdom")
     parser.add_argument("--workers", type=int, default=1)
@@ -293,11 +376,12 @@ def main() -> int:
     operator = FullFieldPlasticOperator(
         grid, backend=arguments.backend, workers=arguments.workers,
         tolerance=arguments.tolerance, wisdom=arguments.wisdom,
-        kernel=arguments.kernel,
+        kernel=arguments.kernel, preconditioner=arguments.preconditioner,
     )
     report_backend = operator.backend_name
     print(f"grid {nx}x{ny}, {operator.size} interior unknowns, "
           f"{operator.points} material points, kernel {arguments.kernel}, "
+          f"preconditioner {arguments.preconditioner}, "
           f"backend {report_backend}, "
           f"{arguments.workers} workers, setup {time.time() - started:.1f} s",
           flush=True)
@@ -306,7 +390,7 @@ def main() -> int:
     report: dict[str, object] = {
         "pixels": [nx, ny], "interior_unknowns": operator.size,
         "backend": report_backend, "workers": arguments.workers,
-        "kernel": arguments.kernel,
+        "kernel": arguments.kernel, "preconditioner": arguments.preconditioner,
     }
 
     # 1. The operator must be symmetric and positive definite, or CG is invalid.
