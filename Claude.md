@@ -6668,3 +6668,51 @@ le `progress_callback` ne transporte que des scalaires.
 
 Suite : 1584 passés, 1 ignoré (les 7 SRIX-generic exigent
 `SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY=build/srix-generic/src/libBehaviour.so`).
+
+### 2026-08-16 — Point complet : l'identification plastique pilotée par la DIC
+
+**Document de reprise à froid : `validation/dic_driven_plastic_identification.md`.**
+Il contient tout — problème, chaîne mécanique, données et leur emplacement,
+acquis, réfuté, hypothèse courante, jalons, et les pièges. À lire en premier
+après cette entrée.
+
+Résumé de ce qui a changé aujourd'hui.
+
+**L'histoire DIC plein champ existe enfin** : 41 états 3600×3100, recalculés
+depuis les 42 TIFF avec un paramétrage convergé (`finest_scale` 0, patch 4,
+stride 1, alpha 15, epsilon 0,01, **100 itérations**). Le budget d'itérations
+était le facteur dominant, pas le lissage ni la fenêtre. Les champs `U_40`/`V_40`
+reçus portent la grille de patches non effacée : **ils ne sont pas convergés**,
+et il ne faut pas chercher à les reproduire.
+
+**Le plancher de bruit est mesuré** pour la première fois, via l'image répétée
+de l'état final : 0,148 px, et 0,100 en EVM. Le signal dépasse le bruit
+jusqu'à 2 px. Cela valide rétroactivement le défaut élastique de 0,29 sur lequel
+repose le verdict Ludwik.
+
+**Ludwik dégrade** : `E_L` = 1,64 → 2,91. Amplitude juste, distribution fausse,
+correction orthogonale au défaut. La carte de limite d'élasticité localise là où
+l'éprouvette ne localise pas.
+
+**Aucune représentation réduite globale ne fonctionne.** POD par bande de
+pyramide laplacienne : erreur de holdout 0,562 / 0,507 / 0,544 / 0,320 au rang
+31, avec une erreur d'entraînement de **0,000** dans les quatre bandes. Le
+repère de 0,115 que j'utilisais était un artefact de normalisation ; toute
+comparaison qui s'y référait est nulle. Autoencodeur convolutionnel et neural
+field échouent de même.
+
+**Trente-deux états ne peuvent pas soutenir un holdout temporel** — 31 modes,
+32 snapshots, aucune marge. La puissance statistique de ce jeu est spatiale.
+
+**La question a donc changé** : non plus « le champ est-il de faible dimension »
+mais « existe-t-il une règle locale spatialement transférable qui, couplée à
+l'équilibre et à la thermodynamique, reproduit les hétérogénéités ». Ce qui doit
+être compact n'est plus le champ mais le générateur.
+
+Trois garde-fous à ne pas perdre : l'inpainting local n'est pas une loi locale
+et exige une ligne de base ; P43 qualifie le logiciel, pas l'hypothèse ; et ne
+jamais donner `(x,y)` au réseau, sinon il apprend une carte de l'éprouvette.
+
+Et le rappel qui gouverne tout : **`A` est surjectif sur les champs à bord nul**,
+donc ajuster la DIC est garanti et ne prouve rien. Ce qui brise la
+dégénérescence est le partage des poids, pas l'équilibre.
