@@ -192,6 +192,23 @@ inside. Ten thousand independently solved windows also guarantee nothing about
 `B^T sigma = 0` over the whole domain. The architecture is tiled CNN plus a
 globally assembled plastic field plus global equilibrium.
 
+**Crystal plasticity does not invalidate CG, but three things must not be
+confused.** Symmetry survives heterogeneity: cubic `C(x)` is pointwise SPD for
+any admissible crystal, so `K = B^T C(x) B` stays SPD and CG stays valid. What
+degrades is the preconditioner, since translation invariance is lost and
+`B_0^-1` built on a homogeneous reference no longer approximates `K^-1` as
+well -- `n_CG` grows with the elastic contrast, which is a measurable cost
+rather than an obstacle, and the repository already carries the cubic constants
+(`crystal_plane_stress_elasticity.py`, `srix_parameters.py`) so it need not be
+invented. What *would* break CG is putting the algorithmic tangent of crystal
+plasticity into the operator: that one is genuinely non-symmetric, through the
+hardening interaction matrix and the rotation terms, which is why the production
+SRIX and Meric pipeline uses GMRES. Our `A` is not that operator -- the
+eigenstrain formulation keeps it linear elastic and pushes all plasticity into
+the source. And with isotropic elasticity plus crystallography in the plastic
+generator only, nothing changes at all: not the symmetry, not the invariance,
+not the preconditioner.
+
 **Do not reason about scale without reading `spectral_mechanics` first.** Two
 consecutive plans were drafted around rebuilding a Dirichlet solver that has
 been in the repository, documented, for a long time. The bridge page
