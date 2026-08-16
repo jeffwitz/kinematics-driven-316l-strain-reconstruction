@@ -223,8 +223,21 @@ class FullFieldPlasticOperator:
                 (self.interior_shape[0] + 2 * radius,
                  self.interior_shape[1] + 2 * radius, 2)
             )
+        elif kernel == "numba":
+            from stencil_kernel import HAS_NUMBA, OFFSETS, apply_stencil_interleaved
+
+            self.blocks = self.extract_stencil()
+            if tuple(sorted(self.blocks)) != OFFSETS:
+                raise ValueError(f"unexpected stencil support: {sorted(self.blocks)}")
+            self._coefficients = np.ascontiguousarray(
+                np.stack([self.blocks[o] for o in OFFSETS])
+            )
+            self._kernel_out = np.zeros(self.interior_shape, dtype=np.float64)
+            self._fused = apply_stencil_interleaved
+            if not HAS_NUMBA:
+                raise RuntimeError("kernel 'numba' needs the performance extra")
         elif kernel != "generic":
-            raise ValueError("kernel must be 'generic' or 'stencil'")
+            raise ValueError("kernel must be 'generic', 'stencil' or 'numba'")
 
     # -- the pieces, each one line of mechanics ------------------------------
 
@@ -299,7 +312,16 @@ class FullFieldPlasticOperator:
                        radius + dj : radius + dj + width] @ block.T
         return out.reshape(-1)
 
+    def stiffness_numba(self, interior: np.ndarray) -> np.ndarray:
+        """One fused pass on the solver's own layout: no copy, no allocation."""
+
+        view = np.asarray(interior, dtype=np.float64).reshape(self.interior_shape)
+        self._fused(view, self._kernel_out, self._coefficients)
+        return self._kernel_out.reshape(-1)
+
     def stiffness(self, interior: np.ndarray) -> np.ndarray:
+        if self.kernel == "numba":
+            return self.stiffness_numba(interior)
         if self.kernel == "stencil":
             return self.stiffness_stencil(interior)
         return self.stiffness_generic(interior)
@@ -398,7 +420,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pixels", nargs=2, type=int, default=(100, 100))
     parser.add_argument("--backend", default="fftw")
-    parser.add_argument("--kernel", default="generic", choices=("generic", "stencil"))
+    parser.add_argument("--kernel", default="generic",
+                        choices=("generic", "stencil", "numba"))
     parser.add_argument("--warm-start", action="store_true")
     parser.add_argument("--pad-transform", type=int, default=0,
                         help="enlarge the preconditioner transform by this many nodes")
@@ -469,17 +492,26 @@ def main() -> int:
     operator.solve(load)
     report["preconditioned_iterations"] = operator.iterations[-1]
     report["preconditioned_seconds"] = time.time() - started
-    saved = operator.precondition
-    operator.precondition = lambda v: np.asarray(v, dtype=np.float64).reshape(-1)
-    started = time.time()
-    try:
-        operator.solve(load)
-        report["plain_iterations"] = operator.iterations[-1]
-        report["plain_seconds"] = time.time() - started
-    except RuntimeError:
+    # The unpreconditioned comparison is skipped above a size where it cannot
+    # converge anyway: at 200 square it already needed 1398 iterations and the
+    # count grows like the square root of the unknowns, so at full field it
+    # would spend half an hour hitting the cap to confirm what 24 to 200 square
+    # already established.
+    if operator.size <= 200_000:
+        saved = operator.precondition
+        operator.precondition = lambda v: np.asarray(v, dtype=np.float64).reshape(-1)
+        started = time.time()
+        try:
+            operator.solve(load)
+            report["plain_iterations"] = operator.iterations[-1]
+            report["plain_seconds"] = time.time() - started
+        except RuntimeError:
+            report["plain_iterations"] = None
+            report["plain_seconds"] = None
+        operator.precondition = saved
+    else:
         report["plain_iterations"] = None
         report["plain_seconds"] = None
-    operator.precondition = saved
     print(f"conjugate gradient: {report['preconditioned_iterations']} iterations "
           f"preconditioned ({report['preconditioned_seconds']:.1f} s) against "
           f"{report['plain_iterations']} plain", flush=True)

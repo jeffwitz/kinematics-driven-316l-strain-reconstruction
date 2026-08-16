@@ -215,3 +215,65 @@ class FusedStencil:
         apply_stencil_fused(view, self.output, self.coefficients)
         apply_stencil_ring(view, self.output, self.coefficients, self.offsets)
         return self.output.reshape(-1)
+
+
+@njit(parallel=True, cache=True, fastmath=False, boundscheck=False)
+def apply_stencil_interleaved(u, out, s):
+    """`out = K u` with `u`, `out` shaped `(H, W, 2)`: the solver's own layout.
+
+    Measured 40 % slower than `(2, H, W)` -- an inner stride of two doubles
+    costs some vectorisation -- and chosen anyway, because the alternative is
+    transposing in and out of every call. At full field those copies run some
+    250 ms against a 15 ms kernel, so the faster layout would be slower in
+    place. The ring is handled here too, with out-of-range neighbours
+    contributing nothing, so no halo and no copy is needed at all.
+    """
+
+    height = u.shape[0]
+    width = u.shape[1]
+    a00, a01, a10, a11 = s[0, 0, 0], s[0, 0, 1], s[0, 1, 0], s[0, 1, 1]
+    b00, b01, b10, b11 = s[1, 0, 0], s[1, 0, 1], s[1, 1, 0], s[1, 1, 1]
+    c00, c01, c10, c11 = s[2, 0, 0], s[2, 0, 1], s[2, 1, 0], s[2, 1, 1]
+    d00, d01, d10, d11 = s[3, 0, 0], s[3, 0, 1], s[3, 1, 0], s[3, 1, 1]
+    e00, e01, e10, e11 = s[4, 0, 0], s[4, 0, 1], s[4, 1, 0], s[4, 1, 1]
+    f00, f01, f10, f11 = s[5, 0, 0], s[5, 0, 1], s[5, 1, 0], s[5, 1, 1]
+    g00, g01, g10, g11 = s[6, 0, 0], s[6, 0, 1], s[6, 1, 0], s[6, 1, 1]
+    for i in prange(height):
+        inner = 0 < i < height - 1
+        for j in range(width):
+            if inner and 0 < j < width - 1:
+                ax, ay = u[i - 1, j, 0], u[i - 1, j, 1]
+                bx, by = u[i - 1, j + 1, 0], u[i - 1, j + 1, 1]
+                cx, cy = u[i, j - 1, 0], u[i, j - 1, 1]
+                dx, dy = u[i, j, 0], u[i, j, 1]
+                ex, ey = u[i, j + 1, 0], u[i, j + 1, 1]
+                fx_, fy_ = u[i + 1, j - 1, 0], u[i + 1, j - 1, 1]
+                gx, gy = u[i + 1, j, 0], u[i + 1, j, 1]
+            else:
+                ax = ay = bx = by = cx = cy = 0.0
+                ex = ey = fx_ = fy_ = gx = gy = 0.0
+                dx, dy = u[i, j, 0], u[i, j, 1]
+                if i > 0:
+                    ax, ay = u[i - 1, j, 0], u[i - 1, j, 1]
+                    if j + 1 < width:
+                        bx, by = u[i - 1, j + 1, 0], u[i - 1, j + 1, 1]
+                if j > 0:
+                    cx, cy = u[i, j - 1, 0], u[i, j - 1, 1]
+                if j + 1 < width:
+                    ex, ey = u[i, j + 1, 0], u[i, j + 1, 1]
+                if i + 1 < height:
+                    gx, gy = u[i + 1, j, 0], u[i + 1, j, 1]
+                    if j > 0:
+                        fx_, fy_ = u[i + 1, j - 1, 0], u[i + 1, j - 1, 1]
+            out[i, j, 0] = (
+                a00 * ax + a01 * ay + b00 * bx + b01 * by
+                + c00 * cx + c01 * cy + d00 * dx + d01 * dy
+                + e00 * ex + e01 * ey + f00 * fx_ + f01 * fy_
+                + g00 * gx + g01 * gy
+            )
+            out[i, j, 1] = (
+                a10 * ax + a11 * ay + b10 * bx + b11 * by
+                + c10 * cx + c11 * cy + d10 * dx + d11 * dy
+                + e10 * ex + e11 * ey + f10 * fx_ + f11 * fy_
+                + g10 * gx + g11 * gy
+            )
