@@ -357,6 +357,52 @@ between the Voigt and Reuss bounds, the contrast a heterogeneous solve faces is
 routinely handle contrasts of ten to a thousand. Crystallography will raise the
 iteration count moderately and will not break this preconditioner.
 
+## Warm start, tolerance, and warmed FFTW plans
+
+Consecutive solves in an identification loop have nearby right-hand sides, so
+the previous solution is a better opening guess than zero. It is off during
+qualification -- it makes the accuracy `A` achieves depend on history, which the
+adjoint test must not see -- and on in production.
+
+On a sequence where the plastic field moves by a halving step, eight solves:
+
+| `rtol` | cold | warm | gain |
+|---|---|---|---|
+| 1e-12 | 168 | 149 | 1.13 |
+| 1e-9 | 128 | 109 | 1.17 |
+| 1e-6 | 88 | 69 | 1.28 |
+| 1e-4 | 56 | 40 | 1.40 |
+
+Warm starting alone is modest, and for a clear reason: it saves the first few
+orders of magnitude of residual reduction, so its value is set by the ratio of
+the tolerance to the initial residual. **Loosening the tolerance is the larger
+lever**, and the two compound -- 168 iterations at 1e-12 cold against 69 at 1e-6
+warm, a factor of 2.4, and 21 per solve down to 7. That is the factor hoped for
+from a coupled preconditioner, obtained with no new machinery.
+
+The tolerance is a training-time choice and not free. Qualification stays at
+1e-12, and so does any solve whose result is reported: the DIC noise floor is
+10 %, so a gradient does not need twelve digits, but a measurement does.
+
+Applying the preconditioner, with planning taken out of the timer, at 1024
+square:
+
+| backend | workers | `M` |
+|---|---|---|
+| scipy | 1 | 274.9 ms |
+| fftw | 1 | 169.1 ms |
+| fftw | 8 | **76.3 ms** |
+
+A factor of 3.6 over the SciPy prototype on what is now the dominant term. The
+four-worker point read 577 ms and is discarded: it built in 1.2 s against 16 and
+41 for its neighbours, so it loaded stale wisdom instead of measuring a plan.
+
+**Compounded, at 1024 square.** An iteration was `K` 428.6 ms plus `M` 274.9 ms.
+It is now roughly `K` 1.4 ms plus `M` 76.3 ms, a factor of **9**, and the
+iteration count falls from 21 to 7 under a training tolerance with warm start,
+for **27 overall** on `A`. The 134 s extrapolated at the start of this milestone
+lands near five.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A

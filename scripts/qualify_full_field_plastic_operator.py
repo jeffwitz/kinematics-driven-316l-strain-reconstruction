@@ -137,7 +137,7 @@ class FullFieldPlasticOperator:
                  workers: int = 1, tolerance: float = 1e-12,
                  maximum_iterations: int = 2000,
                  wisdom: Path | None = None, kernel: str = "generic",
-                 preconditioner: str = "diagonal") -> None:
+                 preconditioner: str = "diagonal", warm_start: bool = False) -> None:
         self.grid = grid
         self.kinematics = TwoSubcellDiagnostic2D(grid)
         self.points = self.kinematics.material_point_count
@@ -178,6 +178,13 @@ class FullFieldPlasticOperator:
         self.tolerance = tolerance
         self.maximum_iterations = maximum_iterations
         self.iterations: list[int] = []
+        # Consecutive solves in an identification loop have nearby right-hand
+        # sides, so the previous solution is a far better opening guess than
+        # zero. Off during qualification -- it makes the achieved accuracy of A
+        # depend on history, which the adjoint test must not see -- and on in
+        # production, where the tolerance is what guarantees the result.
+        self.warm_start = warm_start
+        self._previous: np.ndarray | None = None
         # The generic operator stays, always, as the oracle: it is the general
         # case, it handles heterogeneous C, and every future change to the fast
         # path is checked against it. The stencil is a specialised backend valid
@@ -318,13 +325,17 @@ class FullFieldPlasticOperator:
         preconditioner = LinearOperator(
             (self.size, self.size), matvec=self.precondition, dtype=np.float64
         )
+        guess = self._previous if (self.warm_start and self._previous is not None) else None
         answer, info = cg(
             operator, np.asarray(load, dtype=np.float64).reshape(-1), M=preconditioner,
-            rtol=self.tolerance, atol=0.0, maxiter=self.maximum_iterations, callback=tick,
+            x0=guess, rtol=self.tolerance, atol=0.0,
+            maxiter=self.maximum_iterations, callback=tick,
         )
         if info != 0:
             raise RuntimeError(f"conjugate gradient did not converge, info={info}")
         self.iterations.append(count)
+        if self.warm_start:
+            self._previous = answer.copy()
         return answer
 
     # -- the operator and its adjoint ----------------------------------------
@@ -357,6 +368,7 @@ def main() -> int:
     parser.add_argument("--pixels", nargs=2, type=int, default=(100, 100))
     parser.add_argument("--backend", default="fftw")
     parser.add_argument("--kernel", default="generic", choices=("generic", "stencil"))
+    parser.add_argument("--warm-start", action="store_true")
     parser.add_argument("--preconditioner", default="diagonal",
                         choices=("diagonal", "coupled"))
     parser.add_argument("--wisdom", type=Path,
@@ -377,6 +389,7 @@ def main() -> int:
         grid, backend=arguments.backend, workers=arguments.workers,
         tolerance=arguments.tolerance, wisdom=arguments.wisdom,
         kernel=arguments.kernel, preconditioner=arguments.preconditioner,
+        warm_start=arguments.warm_start,
     )
     report_backend = operator.backend_name
     print(f"grid {nx}x{ny}, {operator.size} interior unknowns, "
