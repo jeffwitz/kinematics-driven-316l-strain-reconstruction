@@ -137,7 +137,9 @@ class FullFieldPlasticOperator:
                  workers: int = 1, tolerance: float = 1e-12,
                  maximum_iterations: int = 2000,
                  wisdom: Path | None = None, kernel: str = "generic",
-                 preconditioner: str = "diagonal", warm_start: bool = False) -> None:
+                 preconditioner: str = "diagonal", warm_start: bool = False,
+                 planner: str = "measure", planning_seconds: float | None = 30.0,
+                 pad_transform: int = 0) -> None:
         self.grid = grid
         self.kinematics = TwoSubcellDiagnostic2D(grid)
         self.points = self.kinematics.material_point_count
@@ -148,16 +150,34 @@ class FullFieldPlasticOperator:
         # FFTW with persistent plans and wisdom, not the SciPy prototype. The
         # repository ships both; running the sweep on SciPy was an oversight,
         # and the difference is measured rather than assumed.
+        # For RODFT00 the logical length is N = 2(n+1), so it is `n + 1` that
+        # must factor well -- and with an interior of `pixels - 1`, that is the
+        # pixel count itself. Ours are 3599 = 59 x 61 and 3099 = 3 x 1033, both
+        # poor, while 3600 and 3100 are 2^5 3^2 5^2 and 2^3 5^2 31: 68 ns per
+        # point against 150, a factor of 2.2. The extra node does not exist in
+        # the data, so the *preconditioner* is padded instead. That is legitimate
+        # where cropping would not be: `M_pad = R M' R^T` is a principal
+        # submatrix of an SPD operator and so is SPD, and a reference operator
+        # never had to be exact. The plan below is built on the padded shape.
+        self.pad = int(pad_transform)
+        padded_grid = StructuredGrid2D(
+            grid.nx + self.pad, grid.ny + self.pad,
+            grid.length_x * (grid.nx + self.pad) / grid.nx,
+            grid.length_y * (grid.ny + self.pad) / grid.ny,
+        ) if self.pad else grid
         self.plan = create_full_dirichlet_dsti_plan(
-            grid,
+            padded_grid,
             SpectralTransformConfig(
                 backend=backend, workers=workers,
-                fftw_planner_effort="measure", fftw_wisdom_directory=wisdom,
-                fftw_planning_time_limit_s=None if wisdom is not None else 2.0,
+                fftw_planner_effort=planner, fftw_wisdom_directory=wisdom,
+                fftw_planning_time_limit_s=planning_seconds,
             ),
         )
         self.backend_name = str(self.plan.backend_name)
-        symbols = self.kinematics.reference_operator_symbols(self.plan)
+        padded_kinematics = (
+            TwoSubcellDiagnostic2D(padded_grid) if self.pad else self.kinematics
+        )
+        symbols = padded_kinematics.reference_operator_symbols(self.plan)
         lambda_0, mu_0, _ = project_isotropic_plane_stress_tangent(self.elasticity)
         self.preconditioner_name = preconditioner
         if preconditioner == "coupled":
@@ -167,13 +187,15 @@ class FullFieldPlasticOperator:
         else:
             raise ValueError("preconditioner must be 'diagonal' or 'coupled'")
         self.interior_shape = (*grid.interior_shape, 2)
+        self.padded_shape = (*padded_grid.interior_shape, 2)
+        self._padded_buffer = np.zeros(self.padded_shape, dtype=np.float64)
         # The production solver applies the preconditioner through buffered
         # transforms; this used the allocating ones, which is the same mistake
         # the stencil wrapper made -- a fast core dressed in the traffic it
         # exists to avoid. Three buffers, allocated once.
-        self._spectral = np.empty(self.interior_shape, dtype=np.float64)
-        self._green = np.empty(self.interior_shape, dtype=np.float64)
-        self._physical = np.empty(self.interior_shape, dtype=np.float64)
+        self._spectral = np.empty(self.padded_shape, dtype=np.float64)
+        self._green = np.empty(self.padded_shape, dtype=np.float64)
+        self._physical = np.empty(self.padded_shape, dtype=np.float64)
         self.size = int(np.prod(self.interior_shape))
         self.tolerance = tolerance
         self.maximum_iterations = maximum_iterations
@@ -295,7 +317,12 @@ class FullFieldPlasticOperator:
         Negating here puts both on the same side.
         """
 
-        shaped = np.asarray(interior, dtype=np.float64).reshape(self.interior_shape)
+        given = np.asarray(interior, dtype=np.float64).reshape(self.interior_shape)
+        if self.pad:
+            self._padded_buffer[: self.interior_shape[0], : self.interior_shape[1]] = given
+            shaped = self._padded_buffer
+        else:
+            shaped = given
         sign = 1.0 if self.preconditioner_name == "coupled" else -1.0
         buffered = hasattr(self.plan, "forward_into") and hasattr(self.green, "apply_into")
         if buffered:
@@ -308,6 +335,10 @@ class FullFieldPlasticOperator:
             self._physical[...] = self.plan.inverse_displacement(self._green)
         if sign < 0.0:
             np.negative(self._physical, out=self._physical)
+        if self.pad:
+            return self._physical[
+                : self.interior_shape[0], : self.interior_shape[1]
+            ].reshape(-1).copy()
         return self._physical.reshape(-1)
 
     def solve(self, load: np.ndarray) -> np.ndarray:
@@ -369,6 +400,11 @@ def main() -> int:
     parser.add_argument("--backend", default="fftw")
     parser.add_argument("--kernel", default="generic", choices=("generic", "stencil"))
     parser.add_argument("--warm-start", action="store_true")
+    parser.add_argument("--pad-transform", type=int, default=0,
+                        help="enlarge the preconditioner transform by this many nodes")
+    parser.add_argument("--planner", default="measure",
+                        choices=("estimate", "measure", "patient"))
+    parser.add_argument("--planning-seconds", type=float, default=30.0)
     parser.add_argument("--preconditioner", default="diagonal",
                         choices=("diagonal", "coupled"))
     parser.add_argument("--wisdom", type=Path,
@@ -389,7 +425,9 @@ def main() -> int:
         grid, backend=arguments.backend, workers=arguments.workers,
         tolerance=arguments.tolerance, wisdom=arguments.wisdom,
         kernel=arguments.kernel, preconditioner=arguments.preconditioner,
-        warm_start=arguments.warm_start,
+        warm_start=arguments.warm_start, planner=arguments.planner,
+        planning_seconds=arguments.planning_seconds,
+        pad_transform=arguments.pad_transform,
     )
     report_backend = operator.backend_name
     print(f"grid {nx}x{ny}, {operator.size} interior unknowns, "
@@ -451,11 +489,14 @@ def main() -> int:
     for _ in range(arguments.pairs):
         x = generator.standard_normal((operator.points, 3))
         y = generator.standard_normal((operator.points, 3))
-        forward = float((operator.apply(x) * y).sum())
+        # One solve each. An earlier version called `apply(x)` twice, paying a
+        # whole extra solve just to normalise, which at full field is minutes.
+        image = operator.apply(x)
+        forward = float((image * y).sum())
         backward = float((x * operator.apply_transpose(y)).sum())
         discrepancies.append(
             abs(forward - backward)
-            / max(float(np.linalg.norm(operator.apply(x)) * np.linalg.norm(y)), 1e-300)
+            / max(float(np.linalg.norm(image) * np.linalg.norm(y)), 1e-300)
         )
     report["adjoint_discrepancy"] = max(discrepancies)
     print(f"adjoint dot product: {max(discrepancies):.3e} over "

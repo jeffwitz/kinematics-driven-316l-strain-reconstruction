@@ -403,6 +403,50 @@ iteration count falls from 21 to 7 under a training tolerance with warm start,
 for **27 overall** on `A`. The 134 s extrapolated at the start of this milestone
 lands near five.
 
+## FFTW at full field: the size analysis I got wrong, and what it is worth
+
+I blamed the transform cost on `3098 = 2 x 1549` and proposed cropping the
+domain. **That factorised the wrong number.** For `RODFT00` the logical length
+is `N = 2(n + 1)`, so it is `n + 1` that must factor well -- and with an
+interior of `pixels - 1`, that is the pixel count itself.
+
+| interior | `N = 2(n+1)` | scipy DST | ns/point |
+|---|---|---|---|
+| 3598 x 3098 (ours) | `2.59.61` x `2.3.1033` | 1672 ms | 150.0 |
+| 3599 x 3099 | `2^5 3^2 5^2` x `2^3 5^2 31` | **759 ms** | **68.0** |
+| 3597 x 3099 | `2^2 7.257` x `2^3 5^2 31` | 1146 ms | 102.8 |
+
+A factor of **2.2**, not the 1.29 an earlier comparison suggested -- that one
+was against 3584 x 3072, which is smooth in `n` and poor in `n + 1`.
+
+The smooth interior needs 3601 x 3101 displacement nodes and the data has 3600
+x 3100. So the domain is not cropped; the **preconditioner** is padded, which is
+legitimate exactly where cropping would not be: `M_pad = R M' R^T` is a
+principal submatrix of an SPD operator and therefore SPD, and a reference
+operator never had to be exact.
+
+Planning is a one-off and it does terminate. Measured at full field: the plan
+took several minutes, `M` then costs **2560 ms** against 6394 for SciPy and 8815
+for FFTW with `estimate` -- so FFTW is worth it *only* with a measured plan, and
+with `estimate` on this size it loses to pocketfft. Wisdom rebuilds the operator
+in 11.3 s rather than replanning.
+
+Padding is not free, and the cost is in iterations:
+
+| pad | iterations |
+|---|---|
+| 0 | 21 |
+| 1 | 29 |
+| 2 | 36 |
+
+Reproduced at 200 and 256 pixels square, positive definite throughout. One node
+of padding buys 2.2 on the transform and costs 1.38 in count, so **1.6 net**:
+`T_A` from about 54 s to about 34 s. Two nodes lose the gain.
+
+An earlier claim that this milestone would land near five seconds is withdrawn.
+It extrapolated a 1024-square measurement linearly and ignored that the
+transform dominates completely at full field.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
