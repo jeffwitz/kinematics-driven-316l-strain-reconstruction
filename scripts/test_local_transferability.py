@@ -100,7 +100,24 @@ def schmid_channels(path: Path, shape: tuple[int, int]) -> np.ndarray:
     0.77, 0.18 and 0.06; the choice is the measurement, not a reading of the
     acquisition notes, which do not record it.
 
-    That 0.77 is also the honest limit of this reconstruction. The archived map
+    That comparison is internal to the EBSD, since both maps come from the same
+    Euler arrays, so the sample frame is tied to the DIC separately and by the
+    mechanics. The tensile axis of the DIC is the *column* axis, +0.224 % mean
+    at state 40 against -0.187 % across the rows. Correlating this map against
+    the measured field at state 38 then ranks the three sample axes +0.119,
+    +0.062 and -0.028, which selects axis 0 without reference to the archived
+    map. Sample X therefore runs along the image columns: the sample frame is
+    turned a quarter turn from the array indexing, which is the ordinary EBSD
+    convention and the thing the notes omit.
+
+    The grids themselves need no transformation. Every mirror collapses the
+    correlation -- +0.119 becoming +0.030, +0.052 and -0.009 -- and a shift scan
+    over +/-64 pixels peaks at (0, -4) with +0.1227 against +0.1220 at zero, a
+    plateau rather than an offset, falling to +0.062 at the edge of the scan.
+    The co-registration the inventory declares without a method is verified to
+    within a few pixels, well below the grain size.
+
+    The 0.77 above is the honest limit of this reconstruction. The archived map
     and this one share their distribution almost exactly -- medians 0.4633 and
     0.4615 -- but agree to 1e-3 on only 18 % of pixels, and no integer shift
     improves the correlation, so the residual is a convention inside their

@@ -174,6 +174,26 @@ so the settings that resolve more are also the cleaner ones.
   it, and near-identical distributions (medians 0.4633 and 0.4615) says the
   residual is a convention inside their calculation rather than a registration
   offset. Ours is bounded correctly by construction and is what is used.
+* **The EBSD-to-DIC frame is now verified rather than declared**, which the
+  inventory listed as the dominant uncertainty. Three independent measurements,
+  none of which relies on the archived map:
+  - The DIC tensile axis is the **column** axis, `d(u_col)/d(col)` reaching
+    +0.224 % at state 40 while `d(u_row)/d(row)` contracts to -0.187 %.
+  - Correlating our Schmid map against the measured field at state 38 ranks the
+    three sample axes at +0.119, +0.062 and -0.028, selecting axis 0. Sample X
+    therefore lies along the image columns: the sample frame sits a quarter turn
+    from the array indexing, the ordinary EBSD convention.
+  - The grids need no transformation. Every mirror collapses the correlation
+    (+0.119 to +0.030, +0.052, -0.009), and a shift scan over +/-64 px peaks at
+    (0, -4) with +0.1227 against +0.1220 at zero -- a plateau, not an offset --
+    falling to +0.062 at the edge. Registration holds to a few pixels, well
+    below the grain size.
+* **Open, and relevant to the mechanical loop**: that transverse-to-axial ratio
+  is 0.835, where plane-stress uniaxial tension admits at most 0.5 and plastic
+  incompressibility sits exactly there. Nothing downstream depends on it yet,
+  but milestone 4 takes its boundary conditions from these displacements, so it
+  must be explained before then -- specimen not in uniaxial tension over the
+  field of view, an anisotropic scale, or an axis-dependent DISFlow bias.
 * **The fine 2-8 px band is not a fixed pattern**: correlation 0.820 between
   neighbouring states decaying to 0.188 between extremes, with the across-state
   mean holding 47.8 % of its energy. Half common, half evolving.
