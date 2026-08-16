@@ -188,12 +188,18 @@ so the settings that resolve more are also the cleaner ones.
     (0, -4) with +0.1227 against +0.1220 at zero -- a plateau, not an offset --
     falling to +0.062 at the edge. Registration holds to a few pixels, well
     below the grain size.
-* **Open, and relevant to the mechanical loop**: that transverse-to-axial ratio
-  is 0.835, where plane-stress uniaxial tension admits at most 0.5 and plastic
-  incompressibility sits exactly there. Nothing downstream depends on it yet,
-  but milestone 4 takes its boundary conditions from these displacements, so it
-  must be explained before then -- specimen not in uniaxial tension over the
-  field of view, an anisotropic scale, or an axis-dependent DISFlow bias.
+* **The loading is macroscopically tensile but the field is not strictly
+  uniaxial**, the in-plane transverse-to-axial ratio of the total strain being
+  0.835 at state 40. This is a characteristic of the test, not a defect, and
+  there is **no general 0.5 bound on that ratio** -- an earlier revision of this
+  document claimed one and was wrong. Plastic incompressibility says
+  `tr(eps_p) = 0`; the one-half follows only when the two transverse components
+  are equal, and 2D DIC does not measure `eps_zz`, which is free to take
+  -0.165 `eps_xx` and close the trace exactly. The measured numbers are total
+  strains besides, so comparing their ratio to a property of `eps_p` is a
+  category error. Real grips, local multiaxiality and 316L texture all pull the
+  in-plane ratio away from any idealised value. Nothing here needs
+  investigating.
 * **The fine 2-8 px band is not a fixed pattern**: correlation 0.820 between
   neighbouring states decaying to 0.188 between extremes, with the across-state
   mean holding 47.8 % of its energy. Half common, half evolving.
@@ -225,6 +231,14 @@ so the settings that resolve more are also the cleaner ones.
   0.905 against a hard bound of 0.5. Each was caught by a bound, never by
   inspection, which is why `FCC_SYSTEMS` now asserts its own orthogonality and
   `schmid_channels` asserts its own range.
+* And the converse mistake, which is worse because a bound is what stops the
+  others: **inventing one**. The transverse-to-axial ratio was reported as
+  violating a physical maximum of 0.5 that does not exist, on strains that were
+  not even the plastic ones. A bound is only usable when its hypotheses are
+  written down next to it -- 0.2722 for the largest Schmid factor holds for any
+  FCC orientation whatsoever; 0.5 for the strain ratio holds only under
+  idealised uniaxial tension with a symmetric transverse response, which this
+  test does not have.
 
 ---
 
@@ -279,6 +293,18 @@ such.
   specimen rather than a law. This is the most obvious leak.
 * Do not materialise a patch dataset: sample states, positions and windows
   online from the HDF5.
+* **The measured boundary conditions are the problem statement.** Never rescale,
+  symmetrise or otherwise correct the DIC displacements to bring them closer to
+  an idealised loading -- the transverse contraction, any grip rotation, the
+  local multiaxiality and the anisotropy are what makes this dataset worth
+  solving against. Using the real conditions rather than an invented uniaxial
+  tension is the point of the approach, not an imperfection in it.
+* **Do not assert a bound without its hypotheses.** The two in play here are not
+  alike: 0.2722 to 0.5 for the largest Schmid factor holds for every FCC
+  orientation and caught two real defects; 0.5 for the transverse-to-axial
+  strain ratio holds only under idealised uniaxial tension and was pure
+  invention here. A bound whose assumptions are not written beside it will
+  eventually manufacture a false anomaly.
 
 ### Milestones, in order
 
