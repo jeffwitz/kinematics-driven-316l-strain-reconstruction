@@ -206,6 +206,13 @@ so the settings that resolve more are also the cleaner ones.
 
 ## 5. What is refuted, including my own errors
 
+* **Morphological inpainting adds nothing over a Laplace solution**, which is
+  what stopped the campaign. With the pooling defect repaired and a genuine
+  spatial decoder, the network reaches a morphology error of 0.997 to 1.008
+  across contexts 32, 64 and 128 while harmonic inpainting sits at 0.956 to
+  0.987 -- a gain of -1.3 % to -5.4 %, that is, a loss. Runs stopped mid-sweep
+  and kept as a negative control on the fixed-basis premise, not as evidence
+  about the adaptive one.
 * **No global reduced representation works.** POD per Laplacian band gives
   held-out errors 0.562, 0.507, 0.544, 0.320 at rank 31 with a training error of
   exactly 0.000 in all four bands. A convolutional autoencoder plateaus at a
@@ -260,6 +267,43 @@ to local states that equilibrium supplies. Long-range interaction is the
 solver's job, not the network's -- which is the argument against a transformer
 or a global implicit representation.
 
+### The object being reduced was wrong, and the correction
+
+The failures listed in section 5 share one premise, and it is the premise rather
+than the methods that is now identified as the fault. **Nothing requires the
+plastic field to lie on a global low-dimensional manifold.** What must be low
+dimensional is the space of admissible plastic corrections *around the current
+mechanical state*:
+
+```text
+refuted     eps_p_n = Phi a_n             one fixed Phi(x) for every state
+registered  eps_p_n = Phi_theta(S_n) a_n  a basis the current state generates
+```
+
+The inverse still solves for `r` numbers per increment, but the basis they
+weight is regenerated at each one and is free to move a band, reorient it, or
+follow the microstructure. The `r` numbers no longer encode an image; they
+weight directions the mechanics itself produced. Ranks 2 to 32, on the P43
+100x100 demonstrator first, where `TensorPlasticObservabilityOperator` already
+supplies `matvec`, `rmatvec` and `kelvin_response` in Kelvin.
+
+Two failure modes specific to this formulation, both registered in
+`adaptive_reduced_basis_preregistration.md`:
+
+* **The generator can hide the answer in the basis.** With enough capacity a
+  rank-one `Phi` equal to the required correction gives `E_DIC = 0` at `r = 1` --
+  the surjectivity of `A` returning one level up. `S_n` is the predictor state
+  and excludes the interior DIC, but the coefficients must also be fitted on the
+  training region alone, since `a_n` is global and a full-field `g_n` would
+  otherwise pull the held-out region into the fit.
+* **The reduced dissipation cone is expected to be trivial.** `C a >= 0` is
+  millions of half-spaces intersected in `R^8`; the Krylov cone already admitted
+  only `q = 0` at every rank. The remedy is structural rather than constrained:
+  modes built as `m_k(x) N(sigma_bar)` with `m_k >= 0` are dissipative by
+  construction, and the crystallographic form
+  `sum_alpha gamma^alpha sign(tau^alpha) P^alpha` is dissipative *and* makes the
+  EBSD ablation structural instead of an extra input channel.
+
 The loop, at state `n`:
 
 ```text
@@ -308,17 +352,27 @@ such.
 
 ### Milestones, in order
 
-1. **Morphological local transferability** -- context ring to hidden core, strict
-   spatial holdout, against an inpainting baseline.
-2. **Useful radius**, by ablation over context sizes at a fixed core; the plateau
-   estimates the informative range of the local rule and sets the architecture.
-3. **Adjoint qualification of the full-field solver** -- see below. Moved ahead
-   of the P43 loop deliberately.
-4. **Mechanical loop on P43** -- primal, adjoint, Kelvin, dissipation, patch
-   seams, timings.
-5. **End-to-end full-field learning**, DIC in the loss only.
-6. **Spatial then temporal validation**, with no interior DIC given to
-   `F_theta`.
+Milestones 1 and 2 -- morphological inpainting and the useful-radius ablation --
+were **stopped mid-run and archived as negative controls**, together with the
+POD, CAE and INR campaigns. They tested how well a network reconstructs an image
+from its surroundings, which is no longer the question. The partial results,
+network morphology error 0.998 to 1.008 against harmonic inpainting at 0.876 to
+0.986, are recorded in section 5 and settle nothing about the reduction
+hypothesis in its current form.
+
+1. **Reduced adaptive basis on the P43 100x100 demonstrator**, per
+   `adaptive_reduced_basis_preregistration.md`: `E_DIC(r)` held out, against the
+   free plastic field above and the fixed POD/Krylov basis below, at ranks 2 to
+   32, with the free and the stress-aligned mode parameterisations.
+2. **Structural EBSD ablation** -- crystallographic modes against isotropic
+   normal modes, same architecture, same rank, same optimiser.
+3. **Adjoint qualification of the full-field solver** -- see below. Still ahead
+   of any full-field work, and now also needed to differentiate the reduced
+   least squares through `A Phi`.
+4. **Full field**, conditional on milestone 1 succeeding: `A Phi` costs `r`
+   operator applications per increment, which is the reason `r` must stay small.
+5. **Spatial then temporal validation**, with no interior DIC given to
+   `F_theta` and the coefficients fitted outside the held-out regions.
 
 ### The item whose cost is unknown
 
