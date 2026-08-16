@@ -270,6 +270,32 @@ competing with it.
 Extrapolation is deliberately not carried to 3599x3099 here; the numbers above
 are measured.
 
+## `einsum` was tried before any native kernel, and rejected
+
+A sliding-window view contracted by `einsum` should in principle fuse the seven
+slice passes into one, without a compiled dependency. Measured at 1024 square,
+against the slice version at 97.7 ms and 33.5 MB peak:
+
+| | time | Mpix/s | peak | error |
+|---|---|---|---|---|
+| `einsum` `(H,W,2)`, `optimize=False` | 3063 ms | 0.3 | 16.7 MB | 9e-17 |
+| `einsum` `(H,W,2)`, `optimize=True` | 75.6 ms | 13.8 | 167.5 MB | 1.4e-16 |
+| `einsum` `(2,H,W)`, `optimize=False` | 3135 ms | 0.3 | 16.7 MB | 9e-17 |
+| `einsum` `(2,H,W)`, `optimize=True` | 58.5 ms | 17.9 | 167.5 MB | 1.4e-16 |
+
+`optimize=False` is thirty-one times *slower*: the generic engine walks the
+strided view element by element and fuses nothing. Layout matters as expected,
+`(2,H,W)` beating `(H,W,2)` by 30 %. But `optimize=True` buys its speed by
+materialising the window -- peak memory 167.5 MB against a field of 17.5 MB,
+which is precisely the 3x3 neighbourhood copied out. At full field that is
+roughly 1.8 GB of transient allocation per `K`, twenty-one times per `A`,
+inside a CG loop.
+
+The gain is 1.67 on `K`, which at 55 % of an iteration is 1.29 overall. Paying
+a fivefold memory factor for 29 % is a bad trade, and the slice version stays.
+`einsum` is recorded as tried and rejected on measurement, so it need not be
+revisited.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
