@@ -248,6 +248,8 @@ def main() -> int:
     parser.add_argument("--orthogonality", type=float, default=1e-2)
     parser.add_argument("--dissipation", type=float, default=1e-2)
     parser.add_argument("--project-dissipative", action="store_true")
+    parser.add_argument("--load-weights", type=Path, default=None,
+                        help="score a finished run's weights, adding no training")
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
@@ -444,6 +446,12 @@ def main() -> int:
                 stress_norm = new_stress.pow(2).sum(dim=1).sqrt()
                 active = amplitude > 0.1 * amplitude.mean().clamp_min(1e-300)
                 cosine = power / (stress_norm * frobenius).clamp_min(1e-300)
+                # chi is a genuine cosine: the denominator carries the
+                # three-dimensional Frobenius norm `sqrt(z^T M_p z)` with
+                # `M_p = 3/2 G_p`, not `p_eq`, which would inflate it by
+                # sqrt(3/2) and let it exceed one. The pointwise mean is
+                # dominated by the crowd of barely active points, so the
+                # work-weighted global ratio is reported beside it.
                 negative.append((
                     float((power < 0).double().mean()),
                     float(power.clamp_max(0).abs().sum()
@@ -452,6 +460,11 @@ def main() -> int:
                     float(amplitude.sum()),
                     float(cosine[active].mean()) if bool(active.any()) else 0.0,
                     float(torch.quantile(power, 0.01)),
+                    float(power.sum()),
+                    float((stress_norm * frobenius).sum()),
+                    float(cosine[active].median()) if bool(active.any()) else 0.0,
+                    float(torch.quantile(cosine[active], 0.1))
+                    if bool(active.any()) else 0.0,
                 ))
                 singular.append(
                     float(torch.linalg.svdvals(flat.detach())[-1]
@@ -474,6 +487,11 @@ def main() -> int:
                 "accumulated_equivalent_plastic_strain": float(counts[:, 3].sum() / points),
                 "mean_stress_alignment_where_active": float(counts[:, 4].mean()),
                 "first_percentile_of_power": float(counts[:, 5].min()),
+                "global_stress_alignment": float(
+                    counts[:, 6].sum() / max(counts[:, 7].sum(), 1e-300)
+                ),
+                "median_stress_alignment_where_active": float(counts[:, 8].mean()),
+                "tenth_percentile_stress_alignment": float(counts[:, 9].mean()),
             },
             float(np.mean(singular)),
         )
@@ -551,6 +569,10 @@ def main() -> int:
                 float(amplitude.sum()),
                 float(cosine[active].mean()) if active.any() else 0.0,
                 float(np.quantile(power, 0.01)),
+                float(power.sum()),
+                float((stress_norm * frobenius).sum()),
+                float(np.median(cosine[active])) if active.any() else 0.0,
+                float(np.quantile(cosine[active], 0.1)) if active.any() else 0.0,
             ))
             previous_stress = new_stress
             scores[state] = float(
@@ -572,6 +594,16 @@ def main() -> int:
                     np.asarray(negative)[:, 4].mean()
                 ),
                 "first_percentile_of_power": float(np.asarray(negative)[:, 5].min()),
+                "global_stress_alignment": float(
+                    np.asarray(negative)[:, 6].sum()
+                    / max(np.asarray(negative)[:, 7].sum(), 1e-300)
+                ),
+                "median_stress_alignment_where_active": float(
+                    np.asarray(negative)[:, 8].mean()
+                ),
+                "tenth_percentile_stress_alignment": float(
+                    np.asarray(negative)[:, 9].mean()
+                ),
             },
         }
 
@@ -586,10 +618,30 @@ def main() -> int:
                   f"{100 * entry['dissipation']['negative_point_fraction']:.1f} % of points, "
                   f"{100 * entry['dissipation']['negative_power_share']:.1f} % of power  "
                   f"p_eq {entry['dissipation']['accumulated_equivalent_plastic_strain']:.3e}  "
-                  f"chi {entry['dissipation']['mean_stress_alignment_where_active']:+.3f}",
+                  f"chi {entry['dissipation']['mean_stress_alignment_where_active']:+.3f} "
+                  f"(global {entry['dissipation']['global_stress_alignment']:+.3f})",
                   flush=True)
     for rank in arguments.ranks:
         network = Generator(channels=channels, rank=rank).double()
+        if arguments.load_weights is not None:
+            # Diagnostics added after a campaign started can be recovered from
+            # the weights rather than by paying for the training again.
+            network.load_state_dict(torch.load(
+                arguments.load_weights.with_suffix(f".r{rank}.weights"), weights_only=True
+            ))
+            with torch.no_grad():
+                _, scores, negative, conditioning = rollout(network, rank, grad=False)
+            results[f"learned_r{rank}"] = {
+                "per_state": {str(k): v for k, v in scores.items()},
+                "fitted": float(np.mean([scores[s] for s in training])),
+                "held_out": float(np.mean([scores[s] for s in sorted(holdout)])),
+                "final_state": scores[states[-1]],
+                "dissipation": negative,
+                "smallest_over_largest_singular_value": conditioning,
+            }
+            print(f"scored r={rank}: fitted {results[f'learned_r{rank}']['fitted']:.4f}  "
+                  f"held out {results[f'learned_r{rank}']['held_out']:.4f}", flush=True)
+            continue
         optimiser = torch.optim.Adam(network.parameters(), lr=arguments.learning_rate)
         start = time.time()
         for step in range(1, arguments.steps + 1):
@@ -609,7 +661,8 @@ def main() -> int:
                     f"negative {100 * negative['negative_point_fraction']:.1f} % of "
                     f"points, {100 * negative['negative_power_share']:.1f} % of power  "
                     f"p_eq {negative['accumulated_equivalent_plastic_strain']:.3e}  "
-                    f"chi {negative['mean_stress_alignment_where_active']:+.3f}  "
+                    f"chi {negative['mean_stress_alignment_where_active']:+.3f} "
+                    f"(global {negative['global_stress_alignment']:+.3f})  "
                     f"({time.time() - start:.0f} s)",
                     flush=True,
                 )
