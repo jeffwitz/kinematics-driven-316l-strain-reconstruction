@@ -14,17 +14,15 @@
       "model_parameters": 31299903,
       "rank": 2,
       "seen_window": {
-        "field_error": 0.1490604296323243,
-        "gradient_error": 0.5117459394848589
+        "field_error": 0.13560234098430973,
+        "gradient_error": 0.4270137870042777
       },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.2127537866693227,
-        "gradient_error": 1.0414554761121444
+        "field_error": 0.143423906096507
       },
       "train_states": {
-        "field_error": 0.1536525249523055,
-        "gradient_error": 0.47124873840245846
+        "field_error": 0.15619425874737386
       }
     },
     {
@@ -32,17 +30,15 @@
       "model_parameters": 52166505,
       "rank": 4,
       "seen_window": {
-        "field_error": 0.1348783969557342,
-        "gradient_error": 0.4809284179038632
+        "field_error": 0.12144316085566231,
+        "gradient_error": 0.38635341276135515
       },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.2057097427301163,
-        "gradient_error": 1.0201785551174236
+        "field_error": 0.13555916328505688
       },
       "train_states": {
-        "field_error": 0.1331609655248755,
-        "gradient_error": 0.417690338901251
+        "field_error": 0.1337060064902418
       }
     },
     {
@@ -50,17 +46,15 @@
       "model_parameters": 93899709,
       "rank": 8,
       "seen_window": {
-        "field_error": 0.10971149455923183,
-        "gradient_error": 0.39515167082166025
+        "field_error": 0.08998090068982935,
+        "gradient_error": 0.31246683483796367
       },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.18708431918694957,
-        "gradient_error": 0.8976322828892908
+        "field_error": 0.12215723629969295
       },
       "train_states": {
-        "field_error": 0.0991074012586196,
-        "gradient_error": 0.3258746102730769
+        "field_error": 0.09902411420574143
       }
     },
     {
@@ -68,17 +62,31 @@
       "model_parameters": 177366117,
       "rank": 16,
       "seen_window": {
-        "field_error": 0.08327735423380755,
-        "gradient_error": 0.3146053618108845
+        "field_error": 0.05719887583040508,
+        "gradient_error": 0.21782353743333135
       },
       "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
       "temporal_holdout": {
-        "field_error": 0.18122993533631943,
-        "gradient_error": 0.8518436589484738
+        "field_error": 0.11724839949077356
       },
       "train_states": {
-        "field_error": 0.05266954526829868,
-        "gradient_error": 0.19066204740668993
+        "field_error": 0.051051853016756424
+      }
+    },
+    {
+      "coefficients_per_state": 32,
+      "model_parameters": 344298933,
+      "rank": 32,
+      "seen_window": {
+        "field_error": 0.0195553370523758,
+        "gradient_error": 0.07132393789870993
+      },
+      "spatial_holdout": "undefined: POD modes are tied to absolute positions and say nothing about pixels excluded from the fit",
+      "temporal_holdout": {
+        "field_error": 0.11491800013164724
+      },
+      "train_states": {
+        "field_error": 2.0529340904717294e-15
       }
     }
   ],
@@ -96,6 +104,7 @@
       600
     ]
   ],
+  "split_rationale": "the holdout is spread over the loading in two-state blocks so training spans every mechanical regime; withholding states 31-40 would test out-of-distribution extrapolation instead of the compactness of the representation",
   "states": [
     1,
     2,
@@ -140,16 +149,14 @@
   ],
   "status": "completed_pod_morphology_baseline",
   "temporal_holdout_states": [
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
+    8,
+    9,
+    18,
+    19,
+    28,
+    29,
     37,
-    38,
-    39,
-    40
+    38
   ],
   "train_states": [
     1,
@@ -159,8 +166,6 @@
     5,
     6,
     7,
-    8,
-    9,
     10,
     11,
     12,
@@ -169,8 +174,6 @@
     15,
     16,
     17,
-    18,
-    19,
     20,
     21,
     22,
@@ -179,8 +182,14 @@
     25,
     26,
     27,
-    28,
-    29,
-    30
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    39,
+    40
   ]
 }

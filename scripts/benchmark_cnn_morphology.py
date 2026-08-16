@@ -129,6 +129,11 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=20260816)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--weights", type=Path, default=None)
+    # Without intermediate evaluations a long CPU run cannot be told apart from
+    # a converged one: the first sweep produced train and holdout errors equal
+    # to within ten percent, which is underfitting, and only a curve shows when
+    # that stops being true. Each checkpoint also survives a crash.
+    parser.add_argument("--checkpoint-every", type=int, default=2000)
     arguments = parser.parse_args()
 
     torch.manual_seed(arguments.seed)
@@ -179,43 +184,6 @@ def main() -> int:
             chosen.append(fields[state, row : row + patch, column : column + patch])
         return torch.from_numpy(np.stack(chosen)[:, None])
 
-    def gradient_loss(candidate: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
-        """First differences along both axes.
-
-        Judging a network on a morphological measure it was never asked to
-        optimise is not a fair test: plain MSE is free to smooth fine structure
-        whenever that lowers the mean square, and the POD baseline shows the
-        verdict lives in the gradient, 0.181 in field against 0.761 in
-        gradient. So the training objective now contains the quantity the
-        verdict uses.
-        """
-
-        total = candidate.new_zeros(())
-        for axis in (2, 3):
-            total = total + nn.functional.mse_loss(
-                torch.diff(candidate, dim=axis), torch.diff(reference, dim=axis)
-            )
-        return total
-
-    started = time.perf_counter()
-    for iteration in range(1, arguments.steps + 1):
-        batch = sample_batch()
-        prediction = model(batch)
-        field_term = nn.functional.mse_loss(prediction, batch)
-        gradient_term = gradient_loss(prediction, batch)
-        loss = field_term + arguments.gradient_weight * gradient_term
-        optimiser.zero_grad(set_to_none=True)
-        loss.backward()
-        optimiser.step()
-        schedule.step()
-        if iteration % 250 == 0 or iteration == 1:
-            print(
-                f"  step {iteration:5d}  field {field_term.item():.4e}  "
-                f"gradient {gradient_term.item():.4e}  "
-                f"({time.perf_counter() - started:.0f} s)",
-                flush=True,
-            )
-
     # Evaluation on whole regions, with a halo trimmed so patch borders never
     # enter a reported number.
     halo = 16
@@ -259,6 +227,71 @@ def main() -> int:
             "per_window": per_window,
         }
 
+    def gradient_loss(candidate: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
+        """First differences along both axes.
+
+        Judging a network on a morphological measure it was never asked to
+        optimise is not a fair test: plain MSE is free to smooth fine structure
+        whenever that lowers the mean square, and the POD baseline shows the
+        verdict lives in the gradient, 0.181 in field against 0.761 in
+        gradient. So the training objective now contains the quantity the
+        verdict uses.
+        """
+
+        total = candidate.new_zeros(())
+        for axis in (2, 3):
+            total = total + nn.functional.mse_loss(
+                torch.diff(candidate, dim=axis), torch.diff(reference, dim=axis)
+            )
+        return total
+
+    def snapshot(iteration: int) -> dict:
+        model.eval()
+        entry = {
+            "step": iteration,
+            "seconds": time.perf_counter() - started,
+            "seen_region_seen_states": evaluate(train_states, [seen_corner]),
+            "spatial_and_temporal_holdout": evaluate(test_states, holdout_corners),
+        }
+        model.train()
+        return entry
+
+    history_path = arguments.output.with_suffix(".progress.json")
+    progress: list[dict] = []
+    started = time.perf_counter()
+    for iteration in range(1, arguments.steps + 1):
+        batch = sample_batch()
+        prediction = model(batch)
+        field_term = nn.functional.mse_loss(prediction, batch)
+        gradient_term = gradient_loss(prediction, batch)
+        loss = field_term + arguments.gradient_weight * gradient_term
+        optimiser.zero_grad(set_to_none=True)
+        loss.backward()
+        optimiser.step()
+        schedule.step()
+        if iteration % 250 == 0 or iteration == 1:
+            print(
+                f"  step {iteration:5d}  field {field_term.item():.4e}  "
+                f"gradient {gradient_term.item():.4e}  "
+                f"({time.perf_counter() - started:.0f} s)",
+                flush=True,
+            )
+        if iteration % arguments.checkpoint_every == 0:
+            entry = snapshot(iteration)
+            progress.append(entry)
+            history_path.write_text(json.dumps(progress, indent=2) + "\n", "utf-8")
+            torch.save({"state_dict": model.state_dict(), "step": iteration},
+                       arguments.output.with_suffix(".checkpoint.pt"))
+            print(
+                f"    checkpoint {iteration}: seen "
+                f"{entry['seen_region_seen_states']['field_error']:.4f} / "
+                f"{entry['seen_region_seen_states']['gradient_error']:.4f}  "
+                f"holdout "
+                f"{entry['spatial_and_temporal_holdout']['field_error']:.4f} / "
+                f"{entry['spatial_and_temporal_holdout']['gradient_error']:.4f}",
+                flush=True,
+            )
+
     evaluations = {
         "seen_region_seen_states": evaluate(train_states, [seen_corner]),
         "spatial_holdout_seen_states": evaluate(train_states, holdout_corners),
@@ -298,6 +331,7 @@ def main() -> int:
             "compression": float(shape[0] * shape[1]) / latent_per_state,
         },
         "evaluations": evaluations,
+        "progress": progress,
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", "utf-8")

@@ -1,0 +1,125 @@
+{
+  "architecture": {
+    "decoder_parameters": 246769,
+    "downsampling": 16,
+    "latent_channels": 4,
+    "total_parameters": 491021,
+    "width": 24
+  },
+  "compactness": {
+    "compression": 64.49679057179867,
+    "field_values_per_state": 11153301,
+    "latent_values_per_state": 172928
+  },
+  "evaluations": {
+    "seen_region_seen_states": {
+      "field_error": 0.2766824699938297,
+      "gradient_error": 0.9548488593229514,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.2766824699938297
+        }
+      ]
+    },
+    "seen_region_temporal_holdout": {
+      "field_error": 0.2539191972464323,
+      "gradient_error": 0.9516122692275966,
+      "per_window": [
+        {
+          "corner": [
+            0,
+            700
+          ],
+          "field_error": 0.2539191972464323
+        }
+      ]
+    },
+    "spatial_and_temporal_holdout": {
+      "field_error": 0.25071293860673904,
+      "gradient_error": 0.9577488388373392,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2560648526996374
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.24536102451384068
+        }
+      ]
+    },
+    "spatial_holdout_seen_states": {
+      "field_error": 0.2716700911987573,
+      "gradient_error": 0.9597350768650764,
+      "per_window": [
+        {
+          "corner": [
+            600,
+            600
+          ],
+          "field_error": 0.2757279770448804
+        },
+        {
+          "corner": [
+            2400,
+            2100
+          ],
+          "field_error": 0.2676122053526342
+        }
+      ]
+    }
+  },
+  "normalisation": "H_t = EVM_t / mean(EVM_t), frozen",
+  "schema_version": 1,
+  "status": "completed_cnn_morphology_benchmark",
+  "training": {
+    "batch": 16,
+    "patch": 128,
+    "seconds": 3478.7747580119176,
+    "states": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      39,
+      40
+    ],
+    "steps": 4000
+  }
+}
