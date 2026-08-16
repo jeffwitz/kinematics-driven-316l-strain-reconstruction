@@ -52,3 +52,6 @@ kinematics_extension_v1.diff
 *.out
 *.run.xml
 *.toc
+
+# Trained weights: needed on disk for --load-weights re-scoring, never committed.
+validation/_generated/**/*.weights

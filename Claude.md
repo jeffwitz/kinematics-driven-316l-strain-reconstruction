@@ -1,9 +1,110 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-14
+Dernière mise à jour : 2026-08-16
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
-## Priorité scientifique actuelle — construire un oracle mécanique compatible avec la DIC
+## ÉTAT COURANT — identification plastique pilotée par la DIC (2026-08-16)
+
+**Point d'entrée unique pour reprendre à froid :
+`validation/dic_driven_plastic_identification.md`.** Ce document porte le
+problème, la chaîne mécanique, les conventions et leurs pièges, les
+emplacements de données, ce qui est établi, ce qui est réfuté, et la suite. La
+présente section n'en est que le résumé.
+
+### Où nous en sommes
+
+L'objet que l'on cherchait à réduire était le mauvais. Toutes les tentatives de
+représentation réduite **fixe** ont échoué — POD globale, POD par bande de
+Laplace, autoencodeur convolutif, champ neuronal implicite, inpainting
+morphologique — et c'est la prémisse commune qui est en cause, non les
+méthodes : rien n'oblige le champ plastique à vivre sur une variété globale de
+faible dimension. Ce qui doit être de faible dimension est **l'espace des
+corrections plastiques admissibles autour de l'état mécanique courant**.
+
+```text
+réfuté      eps_p_n = Phi a_n              un Phi(x) fixe pour tous les états
+en cours    eps_p_n = Phi_theta(S_n) a_n   une base que l'état engendre
+```
+
+Un générateur convolutif reçoit l'état du **prédicteur** — contrainte,
+déformation, plastique accumulée, chemin plastique, en Kelvin — et produit `r`
+directions plastiques plein champ ; l'équilibre en choisit les coefficients ; la
+DIC n'intervient que dans la perte. Ni DIC intérieure ni coordonnée en entrée.
+
+### Résultats, P43 100x100, holdout temporel
+
+Métrique : part du défaut élastique qui subsiste, `1.0` = pas mieux que
+l'élasticité.
+
+| base | r=4 | r=8 | r=16 | puissance négative | chi |
+|---|---|---|---|---|---|
+| krylov fixe | 0.602 | 0.392 | 0.245 | 42-44 % | +0.016 à +0.033 |
+| J2 imposé à la main | 0.895 | 0.876 | 0.855 | 26-28 % | +0.39 à +0.41 |
+| direction apprise, libre | 0.608 | 0.547 | 0.506 (partiel) | 37-43 % | non mesuré |
+| apprise, dissipative par construction | 0.621 | 0.651 | 0.587 | **8-11 %** | +0.31 à +0.36 |
+
+Trois faits structurent la lecture. **Qualité d'ajustement et plausibilité
+physique sont fortement anticorrélées** : Krylov gagne toutes les colonnes
+d'ajustement et est l'objet le moins physique du tableau. **Le rang de Krylov
+n'achète pas de travail plastique** — sa dissipation nette reste à 2.0e3 aux
+trois rangs pendant que la puissance absolue double, donc les modes
+supplémentaires ajoutent de la plasticité positive et négative qui s'annule.
+**Apprendre la direction bat largement la prescrire**, 0.62 contre 0.89 à rang
+égal.
+
+Le cône `{C a >= 0}` sur modes non projetés est **exactement {0}**, mesuré par
+LP de faisabilité. Cela clôt la question ouverte depuis la campagne Krylov et
+montre que la projection n'est pas une sur-contrainte mais à peu près la seule
+façon dont la physique admet quelque chose avec des coefficients globaux.
+
+### Ce qui tourne
+
+Le bras à signe libre aux rangs 4, 8, 16 : modes projetés, coefficients de signe
+libre, contrainte portant seulement sur la combinaison finale. Logs
+`essais/9_numerical/freesign_r{4,8,16}.log`.
+
+### Documents référencés
+
+| fichier | contenu |
+|---|---|
+| `validation/dic_driven_plastic_identification.md` | **le document de reprise à froid** |
+| `validation/adaptive_reduced_basis_learned_flow.md` | la campagne courante et son tableau complet |
+| `validation/adaptive_reduced_basis_preregistration.md` | seuils préenregistrés, dont le critère déclaré inatteignable |
+| `validation/adaptive_reduced_basis_first_rung.md` | bases construites à la main, plafond du champ libre |
+| `validation/morphology_reduction_findings.md` | la ligne base fixe, réfutée |
+| `validation/ludwik_on_the_measured_p43_history.md` | le verdict Ludwik |
+
+Scripts vivants : `scripts/learn_flow_direction_p43.py` (le principal) et
+`scripts/adaptive_reduced_basis_p43.py`.
+
+### Deux défauts consignés, non réparés
+
+* **Le relèvement élastique d'une douzaine de `scripts/*_p43.py` n'équilibre
+  pas.** Raideur Kelvin, déformation de génie et divergence Voigt enchaînées
+  sans conversion, ce qui double la contrainte de cisaillement : 32 % du résidu
+  intérieur subsiste là où la forme convertie atteint 4e-16. Tout résidu mesuré
+  contre cette référence est affecté, dont le « défaut élastique à 0.29 » et les
+  sous-espaces de Krylov. Les deux scripts vivants convertissent et l'assertent.
+* Le bras libre au rang 16 n'a jamais fini et précède la sauvegarde des poids,
+  donc il n'est pas re-notable.
+
+### Garde-fous permanents
+
+* `A` est **surjectif** : ajuster la DIC ne prouve rien, seules les contraintes
+  portent de l'information.
+* Une erreur retenue proche de zéro est une **fuite**, pas un succès.
+* Ne jamais déplacer un seuil préenregistré après avoir vu les résultats ; si
+  l'instrument est incapable de l'atteindre, le démontrer par un témoin
+  indépendant et le consigner comme tel.
+* Les conditions aux limites mesurées sont l'énoncé du problème : jamais
+  renormalisées vers un chargement idéalisé.
+* Une borne ne s'énonce jamais sans ses hypothèses.
+* `p_eq` est `sqrt(z^T G z)` avec `PLANE_STRESS_PLASTIC_GAUGE`, jamais
+  `norm(z)`.
+
+---
+
+## [SUPERSEDÉ le 2026-08-16 — voir l'état courant ci-dessus] Priorité scientifique — oracle mécanique compatible avec la DIC
 
 ### Constat expérimental à ne plus masquer
 

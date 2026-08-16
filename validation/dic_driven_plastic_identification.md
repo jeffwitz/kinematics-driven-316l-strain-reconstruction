@@ -152,7 +152,35 @@ so the settings that resolve more are also the cleaner ones.
   (-0.196). The correction it applies is **orthogonal** to the defect, cosine
   +0.006 to +0.038, so no rescaling can help.
 * **The elastic defect is real and well above noise**: 0.29 of the measured
-  strain norm at state 40 against a noise ratio of 0.100.
+  strain norm at state 40 against a noise ratio of 0.100. Caveat: computed with
+  the broken elastic lifting recorded in section 5, so the figure needs redoing.
+* **Learning the flow direction beats prescribing it, by a wide margin.** At
+  equal rank on the temporal holdout, the learned generator reaches 0.62, 0.65
+  and 0.59 against 0.89, 0.88 and 0.85 for hand-built J2 normality banded by
+  equivalent stress. Full table in
+  `adaptive_reduced_basis_learned_flow.md`.
+* **Fitting quality and physical plausibility are sharply anticorrelated.** The
+  fixed Krylov basis wins every fitting column -- 0.60, 0.39, 0.245 -- and is
+  the least physical object measured: 44 % of its plastic power flows backwards
+  and its increments are almost exactly orthogonal to the stress, `chi = +0.016`
+  at rank 16. Its net dissipation is flat at 2.0e3 across ranks while the
+  absolute power doubles, so the extra modes add equal and opposite plasticity
+  that cancels energetically and buys DIC agreement. The constrained learned
+  basis does six times more net plastic work.
+* **Dissipation can be enforced by construction at moderate cost.** Projecting
+  each learned direction into the local half-space `sigma . v >= 0` and taking
+  non-negative coefficients drops the negative power share from 37-43 % to
+  8-11 %, raises `chi` to +0.31..+0.36, and costs +0.013 at rank 4, +0.104 at
+  rank 8. The feared escape -- huge increments nearly orthogonal to the stress
+  -- did not occur: `p_eq` is flat at 8.2-8.8e-3 while `chi` rises with rank.
+* **The pointwise dissipation cone on unprojected modes is exactly `{0}`**,
+  measured by a feasibility LP at random initialisation and after training, at
+  ranks 4 and 8. Twenty thousand half-spaces through the origin of `R^4` leave
+  nothing unless the modes are already nearly all dissipative. This closes the
+  question left open by the Krylov campaign -- that cone was genuinely trivial,
+  not a QP declining to leave the origin -- and it means the projection is not
+  an extra restriction over the physics but close to the only way globally
+  constant coefficients admit anything.
 * **The strain follows the Schmid factor weakly but monotonically**, +0.008 at
   state 1 to +0.116 at state 38, positive throughout, carried mostly by the
   loading mode. An artefact would be constant. EBSD registration is declared but
@@ -370,27 +398,33 @@ such.
 
 ### Milestones, in order
 
-Milestones 1 and 2 -- morphological inpainting and the useful-radius ablation --
-were **stopped mid-run and archived as negative controls**, together with the
-POD, CAE and INR campaigns. They tested how well a network reconstructs an image
-from its surroundings, which is no longer the question. The partial results,
-network morphology error 0.998 to 1.008 against harmonic inpainting at 0.876 to
-0.986, are recorded in section 5 and settle nothing about the reduction
-hypothesis in its current form.
+Superseded and archived as negative controls: morphological inpainting and the
+useful-radius ablation, together with POD, POD per band, the autoencoder and the
+neural field. They tested how well a network reconstructs an image from its
+surroundings, which is not the question.
 
-1. **Reduced adaptive basis on the P43 100x100 demonstrator**, per
-   `adaptive_reduced_basis_preregistration.md`: `E_DIC(r)` held out, against the
-   free plastic field above and the fixed POD/Krylov basis below, at ranks 2 to
-   32, with the free and the stress-aligned mode parameterisations.
-2. **Structural EBSD ablation** -- crystallographic modes against isotropic
-   normal modes, same architecture, same rank, same optimiser.
-3. **Adjoint qualification of the full-field solver** -- see below. Still ahead
-   of any full-field work, and now also needed to differentiate the reduced
-   least squares through `A Phi`.
-4. **Full field**, conditional on milestone 1 succeeding: `A Phi` costs `r`
-   operator applications per increment, which is the reason `r` must stay small.
-5. **Spatial then temporal validation**, with no interior DIC given to
-   `F_theta` and the coefficients fitted outside the held-out regions.
+1. **Done** -- hand-built adaptive bases on P43 100x100, and the free-field
+   ceiling that invalidated the spatial holdout.
+   `adaptive_reduced_basis_first_rung.md`.
+2. **Done** -- learned flow direction, unconstrained and then dissipative by
+   construction, against both baselines on a temporal holdout.
+   `adaptive_reduced_basis_learned_flow.md`.
+3. **Running** -- the free-sign arm: projected modes, coefficients free in sign,
+   constrained only by `C a >= 0` on the final combination. It separates "the
+   physics kills the rank" from "our way of imposing it kills the rank".
+4. **Next, and required before any conclusion about crystallography** -- the
+   extrapolating temporal split, training on 21-33 and testing on 34-40. The
+   current interleaved split tests interpolation along a smooth path, which
+   Krylov passes almost by construction.
+5. Then, and only if the minimal thermodynamic formulation still flattens with
+   rank: **crystallographic structure**, `sum_alpha gamma^alpha sign(tau^alpha)
+   P^alpha` with the verified EBSD orientations, as a structural ablation rather
+   than an input channel. Not before.
+6. Deferred ablations: the `G_p`-metric projection against the Euclidean one; the
+   midpoint fixed-point loop for the residual negative dissipation. Neither is a
+   repair.
+7. **Repair the elastic lifting** across `scripts/*_p43.py`, and re-derive any
+   quoted residual that depends on it.
 
 ### The item whose cost is unknown
 
@@ -408,24 +442,59 @@ is consistent. Qualify it with a dot-product test,
 
 ## 7. Where things are
 
-Notes: `validation/morphology_reduction_findings.md` (the reduction campaign),
-`validation/ludwik_on_the_measured_p43_history.md` (the Ludwik verdict), and the
-older `validation/tensor_plastic_observability_m20.md`,
-`validation/dic_excitation_of_observable_plastic_modes.md`,
-`validation/dirichlet_crop_and_the_noise_reference.md`.
+### Read these, in this order
 
-Artefacts: `validation/_generated/cnn_morphology_benchmark/` and
-`validation/_generated/disflow_profiles_p43/`.
+1. **`adaptive_reduced_basis_learned_flow.md`** -- the current campaign and its
+   full result table. Start here.
+2. **`adaptive_reduced_basis_preregistration.md`** -- the registered thresholds,
+   including the record that criterion 1 was unreachable by construction.
+3. **`adaptive_reduced_basis_first_rung.md`** -- the hand-built bases, the free
+   field ceiling of 0.6028, and why the spatial holdout was the wrong
+   instrument.
+4. `morphology_reduction_findings.md` and `ludwik_on_the_measured_p43_history.md`
+   -- the refuted fixed-basis line and the Ludwik verdict, kept as negative
+   controls.
+5. Older: `tensor_plastic_observability_m20.md`,
+   `dic_excitation_of_observable_plastic_modes.md`,
+   `dirichlet_crop_and_the_noise_reference.md`.
 
-Scripts, roughly in the order they matter: `compute_full_field_dic_history.py`,
-`measure_null_test_noise_floor.py`, `build_evm_history.py`,
-`benchmark_pod_per_scale.py`, `replay_ludwik_two_state_history_p43.py`,
-`build_incremental_dissipative_history.py`, `correlate_modes_with_schmid.py`,
-`test_fine_band_is_fixed.py`, `morphology_benchmark_split.py`.
+### The scripts that matter now
 
-Abandoned but kept: `benchmark_cnn_morphology.py`,
-`benchmark_neural_field_morphology.py`, `build_lowpass_evm_history.py` (written,
-never used -- the fine band must not be filtered).
+* `learn_flow_direction_p43.py` -- **the live one**. Generator, exact adjoint
+  through the mechanics, reduced solve, three arms (`--project-dissipative`,
+  `--free-sign-qp`, or neither), both baselines rebuilt inside it under the same
+  split, weight saving and `--load-weights` re-scoring.
+* `adaptive_reduced_basis_p43.py` -- the hand-built first rung, and the only
+  place the free-field ceiling is computed.
+* Data preparation, unchanged and not to be replayed:
+  `compute_full_field_dic_history.py`, `measure_null_test_noise_floor.py`,
+  `build_evm_history.py`.
+* Refuted or abandoned, kept: `benchmark_pod_per_scale.py`,
+  `benchmark_cnn_morphology.py`, `benchmark_neural_field_morphology.py`,
+  `test_local_transferability.py`, `build_lowpass_evm_history.py` (written,
+  never used -- the fine band must not be filtered).
+
+Artefacts under `validation/_generated/adaptive_reduced_basis/`, logs and large
+outputs under `/home/jeff/CNRS/Theses/Adil/essais/9_numerical/`.
+
+### Running right now
+
+The free-sign arm at ranks 4, 8 and 16: projected modes, coefficients free in
+sign, constrained only by `C a >= 0` on the final combination. Logs
+`essais/9_numerical/freesign_r{4,8,16}.log`. It decides whether the weak
+improvement with rank under `a >= 0` was the physics or the construction.
+
+### Two defects recorded and not yet repaired
+
+* **The elastic lifting in about a dozen `scripts/*_p43.py` does not
+  equilibrate** -- Kelvin stiffness, engineering strain and Voigt divergence
+  chained without conversion, doubling the shear stress. It retains 32 % of the
+  interior residual where the converted form reaches 4e-16. Every residual
+  measured against that reference is affected, including the "elastic defect is
+  0.29" figure and the residual-driven Krylov subspaces. The two current scripts
+  convert and assert.
+* **The unconstrained learned arm at r=16 never finished** and predates both the
+  alignment diagnostics and weight saving, so it cannot be re-scored.
 
 ## 8. Standing constraints
 
