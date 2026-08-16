@@ -234,6 +234,42 @@ point the preconditioner is 80 % of the cost and further stencil work is wasted.
 That is the moment to switch to threaded FFTW and to reducing the 21 iterations,
 in that order, and not before.
 
+## The stencil wired in, and where the time now sits
+
+The generic operator stays as the oracle -- it is the general case, it will
+handle heterogeneous `C`, and every change to the fast path is checked against
+it. The stencil is a specialised backend valid only under its preconditions,
+regular TRI2 grid and homogeneous elasticity, and is *derived from* the generic
+one rather than written independently.
+
+The full gate was rerun on both. They agree to the digit: same stiffness
+symmetry 3.814e-15, same `v.Kv` 2.847300e+16, same 21 PCG iterations, same
+agreement with the sparse direct operator 4.629e-13, adjoint 3.84e-16 against
+3.88e-16. Nothing in the chain changed.
+
+| 2048 square | `K` | `M` | `A` | speedup |
+|---|---|---|---|---|
+| generic | 1749 ms (82 %) | 387 ms (18 %) | 49.7 s | -- |
+| stencil | 335 ms (55 %) | 272 ms (45 %) | 17.8 s | 2.80 |
+
+Twenty-one iterations either way, at 1024 and 2048 square alike, and the
+stencil holds 12.5 Mpix/s at both sizes.
+
+**The decision this was meant to inform has changed shape.** `K` is at 55 %,
+just over the line where a fused native kernel would be worth its dependency,
+but only just. A fivefold kernel would take the iteration from 607 ms to 339 ms,
+so `A` from about 47 s to about 26 s at full field -- a factor of 1.8.
+
+Cutting the iteration count is now worth as much and costs no dependency at all.
+Twenty-one down to ten is a factor of 2.1, and unlike the kernel it divides `K`
+and `M` **together**. The coupled `2x2` spectral preconditioner, which the
+current `B_0` deliberately is not, is therefore the better next move: same
+benefit, no new build chain, and it compounds with a kernel later rather than
+competing with it.
+
+Extrapolation is deliberately not carried to 3599x3099 here; the numbers above
+are measured.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A

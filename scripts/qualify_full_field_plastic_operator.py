@@ -78,7 +78,7 @@ class FullFieldPlasticOperator:
     def __init__(self, grid: StructuredGrid2D, *, backend: str = "fftw",
                  workers: int = 1, tolerance: float = 1e-12,
                  maximum_iterations: int = 2000,
-                 wisdom: Path | None = None) -> None:
+                 wisdom: Path | None = None, kernel: str = "generic") -> None:
         self.grid = grid
         self.kinematics = TwoSubcellDiagnostic2D(grid)
         self.points = self.kinematics.material_point_count
@@ -106,6 +106,24 @@ class FullFieldPlasticOperator:
         self.tolerance = tolerance
         self.maximum_iterations = maximum_iterations
         self.iterations: list[int] = []
+        # The generic operator stays, always, as the oracle: it is the general
+        # case, it handles heterogeneous C, and every future change to the fast
+        # path is checked against it. The stencil is a specialised backend valid
+        # only under its preconditions -- regular TRI2 grid, homogeneous C -- and
+        # is derived from the generic one rather than written independently.
+        self.kernel = kernel
+        self.blocks: dict[tuple[int, int], np.ndarray] | None = None
+        self._pad: np.ndarray | None = None
+        if kernel == "stencil":
+            self.blocks = self.extract_stencil()
+            radius = max(max(abs(i), abs(j)) for i, j in self.blocks)
+            self._radius = radius
+            self._pad = np.zeros(
+                (self.interior_shape[0] + 2 * radius,
+                 self.interior_shape[1] + 2 * radius, 2)
+            )
+        elif kernel != "generic":
+            raise ValueError("kernel must be 'generic' or 'stencil'")
 
     # -- the pieces, each one line of mechanics ------------------------------
 
@@ -124,11 +142,66 @@ class FullFieldPlasticOperator:
         )
         return -pack_interior(nodal) / self.weight
 
-    def stiffness(self, interior: np.ndarray) -> np.ndarray:
+    def stiffness_generic(self, interior: np.ndarray) -> np.ndarray:
         """`K v`, matrix-free: strain, stress, divergence. Never assembled."""
 
         nodal = unpack_interior(np.asarray(interior, dtype=np.float64).reshape(-1), self.grid)
         return self.divergence(self.stress_of(self.kelvin_strain(nodal)))
+
+    def extract_stencil(self, tolerance: float = 1e-12) -> dict[tuple[int, int], np.ndarray]:
+        """The `2x2` blocks of `K`, read off its own impulse response.
+
+        On this grid with homogeneous elasticity the composition `B^T C B` is a
+        constant local operator, so it is identified rather than rederived: the
+        generic path is qualified against the assembled sparse operator at
+        4e-13 and serves as the oracle. Nothing is assumed about the support or
+        about parity -- both were settled by measurement, one stencil of seven
+        blocks within a radius of one, the four pixel-parity classes agreeing to
+        exactly zero, and agreement with the generic operator at 1.95e-16.
+        """
+
+        shape = self.interior_shape
+        node = (shape[0] // 2, shape[1] // 2)
+        columns = []
+        for component in (0, 1):
+            impulse = np.zeros(shape)
+            impulse[node[0], node[1], component] = 1.0
+            columns.append(self.stiffness_generic(impulse.reshape(-1)).reshape(shape))
+        largest = max(float(np.abs(c).max()) for c in columns)
+        blocks: dict[tuple[int, int], np.ndarray] = {}
+        for di in (-2, -1, 0, 1, 2):
+            for dj in (-2, -1, 0, 1, 2):
+                block = np.array(
+                    [[columns[c][node[0] + di, node[1] + dj, r] for c in (0, 1)]
+                     for r in (0, 1)]
+                )
+                if np.abs(block).max() > tolerance * largest:
+                    blocks[(di, dj)] = block
+        return blocks
+
+    def stiffness_stencil(self, interior: np.ndarray) -> np.ndarray:
+        """Seven constant blocks on immediate neighbours, by slice views.
+
+        The fluctuation vanishes outside the interior, so the zero pad *is* the
+        Dirichlet condition and no boundary branch is needed. Views, never
+        `roll`, which copies and wraps.
+        """
+
+        assert self.blocks is not None and self._pad is not None
+        field = np.asarray(interior, dtype=np.float64).reshape(self.interior_shape)
+        radius, pad = self._radius, self._pad
+        pad[radius:-radius, radius:-radius] = field
+        height, width = field.shape[0], field.shape[1]
+        out = np.zeros_like(field)
+        for (di, dj), block in self.blocks.items():
+            out += pad[radius + di : radius + di + height,
+                       radius + dj : radius + dj + width] @ block.T
+        return out.reshape(-1)
+
+    def stiffness(self, interior: np.ndarray) -> np.ndarray:
+        if self.kernel == "stencil":
+            return self.stiffness_stencil(interior)
+        return self.stiffness_generic(interior)
 
     def precondition(self, interior: np.ndarray) -> np.ndarray:
         """`B_0^-1` through DST-I. A preconditioner, never an exact inverse.
@@ -202,6 +275,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pixels", nargs=2, type=int, default=(100, 100))
     parser.add_argument("--backend", default="fftw")
+    parser.add_argument("--kernel", default="generic", choices=("generic", "stencil"))
     parser.add_argument("--wisdom", type=Path,
                         default=Path.home() / ".cache/fem_inhouse/fftw_wisdom")
     parser.add_argument("--workers", type=int, default=1)
@@ -219,10 +293,12 @@ def main() -> int:
     operator = FullFieldPlasticOperator(
         grid, backend=arguments.backend, workers=arguments.workers,
         tolerance=arguments.tolerance, wisdom=arguments.wisdom,
+        kernel=arguments.kernel,
     )
     report_backend = operator.backend_name
     print(f"grid {nx}x{ny}, {operator.size} interior unknowns, "
-          f"{operator.points} material points, backend {report_backend}, "
+          f"{operator.points} material points, kernel {arguments.kernel}, "
+          f"backend {report_backend}, "
           f"{arguments.workers} workers, setup {time.time() - started:.1f} s",
           flush=True)
 
@@ -230,6 +306,7 @@ def main() -> int:
     report: dict[str, object] = {
         "pixels": [nx, ny], "interior_unknowns": operator.size,
         "backend": report_backend, "workers": arguments.workers,
+        "kernel": arguments.kernel,
     }
 
     # 1. The operator must be symmetric and positive definite, or CG is invalid.
