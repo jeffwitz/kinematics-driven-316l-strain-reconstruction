@@ -1,0 +1,56 @@
+{
+  "dissipation": {
+    "pass": true,
+    "worst_D": 5.169633348996747e-06
+  },
+  "fcc_geometry": {
+    "active_count": 8,
+    "expected_active": 8,
+    "expected_schmid": 0.4082482904638631,
+    "pass": true,
+    "schmid_values": [
+      0.408248290463863,
+      0.408248290463863,
+      0.408248290463863,
+      0.408248290463863,
+      0.408248290463863,
+      0.408248290463863,
+      0.408248290463863,
+      0.408248290463863
+    ]
+  },
+  "memory": {
+    "max_rss_mb": 941.6328125
+  },
+  "permutation_equivariance": {
+    "stress_max_abs_diff": 5.684341886080802e-14,
+    "tangent_max_abs_diff": 2.9103830456733704e-11
+  },
+  "substepping": {
+    "2": 3.624192417527039e-14,
+    "4": 2.2580221248564084e-15,
+    "8": 1.4090562484164737e-16
+  },
+  "tangent": {
+    "fd_sweep": {
+      "1e-06": 0.0014918854867573828,
+      "1e-05": 0.14865265868138522,
+      "0.0001": 11.037423717818456
+    },
+    "pass": true,
+    "richardson_sweep": {
+      "1e-06": 2.967717591673136e-07,
+      "1e-05": 0.00013521689106710255,
+      "0.0001": 1.2054363237383114
+    }
+  },
+  "transactions": {
+    "commit_advances": 1.1908478956099182e-05,
+    "double_evaluate_identical": 0.0,
+    "revert_restores": 0.0
+  },
+  "zero_increment": {
+    "slip_delta": 0.0,
+    "state_delta": 0.0
+  }
+}
