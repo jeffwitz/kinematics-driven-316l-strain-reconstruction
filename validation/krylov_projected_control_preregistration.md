@@ -36,6 +36,28 @@ orthogonal to `sigma`) is the pre-declared failure mode. `E`, `chi`, `p_eq`
 and the work split must therefore be read together; the thermodynamic
 half-space alone is necessary, not sufficient.
 
+> **Refinement, registered before the f_0 runs.** The projector must not be
+> expected to raise `chi`: an anti-dissipative point is corrected exactly
+> onto the boundary `sigma : P_H(v) = 0`, not into the half-space interior.
+> A large share of the plasticity can therefore end up *exactly tangential*,
+> so the boundary fraction is measured on the plastic active set:
+
+```text
+f_0(eps_c) = #{ x active : |sigma_pred : Delta eps^p| < eps_c |sigma| |Delta eps^p|_F }
+             / #{ x active },
+```
+
+> reported for `eps_c = 1e-3` (primary) and `1e-2`. Three outcomes are
+> distinguished, and `f_0` is what separates them:
+
+1. `E` stays excellent, `chi` genuinely rises, `p_eq` normal, `f_0` small:
+   Krylov + thermodynamics is a serious representation.
+2. `E` stays excellent, `D_-^pred = 0`, but `chi ~ 0` and/or `f_0` large:
+   Krylov exploits the tangent zero-work subspace; `D >= 0` is necessary but
+   insufficient, and the network's true task becomes *selecting a plastic
+   direction inside the whole admissible half-space*, not mere dissipation.
+3. `E` degrades strongly: the raw fit rested largely on anti-dissipation.
+
 ## Two Krylov constructions, never mixed
 
 1. **Oracle** — the basis is built from the residuals of *all* states,

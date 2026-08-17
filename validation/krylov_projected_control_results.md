@@ -28,7 +28,12 @@ strategy-changing bar is missed by 0.016.
 | 4 — `p_eq <= 2 x raw(rank)` | no amplitude explosion | **1.01x at every rank** | pass |
 
 The pre-declared failure signature — small `E` with `chi -> 0` and/or
-exploding `p_eq` — did not occur.
+exploding `p_eq` — did not occur; but the **refined** reading (registered
+before the f_0 runs) did: `E` stays excellent with `D_-^pred = 0` while a
+large share of the active plasticity sits exactly on the zero-work boundary
+(`f_0 ~ 0.47`). The result therefore lands on the refined outcome 2: the
+tangent zero-work subspace carries the mass of the redirected plasticity,
+and `D >= 0` is demonstrated necessary but insufficient.
 
 ## The table (held-out means; medians beside each result JSON)
 
@@ -42,6 +47,23 @@ Thermodynamics of the corrected `G_p` line: negative-work share (midpoint)
 `3.4 / 6.0 / 6.8 %` (raw: `43 / 46 / 47 %`), work-weighted alignment
 `0.932 / 0.880 / 0.864` (raw: `0.135 / 0.086 / 0.062`), projection active on
 ~46 % of points, multi-start spread `<= 1e-3` relative.
+
+**The boundary fraction, measured on the plastic active set** (registered
+after the first reading, before any result of the f_0 runs — the metric the
+projector correction demanded):
+
+| rank | `f_0(1e-3)` | `f_0(1e-2)` | oracle `f_0(1e-3)` |
+|---|---|---|---|
+| 4 | **0.449** | 0.457 | 0.464 |
+| 8 | **0.465** | 0.472 | 0.461 |
+| 16 | **0.466** | 0.473 | 0.464 |
+
+Roughly **half of the active plasticity sits exactly on the zero-work
+boundary** `sigma_pred : Delta eps^p = 0`, at every rank, in both lines, and
+stably across states (0.46–0.66 per state). The projector does not redirect
+the anti-dissipative mass into the half-space interior: it deposits it on the
+boundary. The high work-weighted `chi_global` is carried by the aligned
+points; the *mass* of the redirected plasticity is exactly tangential.
 
 ## The two dissipations, measured separately
 
@@ -87,17 +109,27 @@ expressivity ceiling and is labelled as such; the two are never mixed.
 
 ## What this says about the network
 
-At equal rank, on the same window and the same temporal holdout, the fixed
-projected-Krylov geometry beats the learned dissipative generator by
-**0.19–0.25** at r=8/16 (0.492 vs 0.651; 0.402 vs 0.587) and matches it at
-r=4 (0.653 vs 0.621), with cleaner thermodynamics (3.4–6.8 % negative power
-against 8–11 %). The generator's current role — inventing the plastic
-geometry from scratch — is therefore not supported by this control: the
-DIC-adapted mechanical geometry plus the thermodynamic half-space already
-carries most of the gap reduction, predictively. What remains open for a
-network is narrower and better posed: transferring or predicting modes across
-increments, enriching the geometry beyond the Krylov span, or supplying the
-state-dependent projector frame — not replacing the geometry itself.
+Two facts, both measured:
+
+1. At equal rank, on the same window and the same temporal holdout, the fixed
+   projected-Krylov geometry beats the learned dissipative generator by
+   **0.19–0.25** at r=8/16 (0.492 vs 0.651; 0.402 vs 0.587) and matches it at
+   r=4 (0.653 vs 0.621), with `D_-^pred` at `5e-17` and a smaller `D_-^mid`
+   (3.4–6.8 % against 8–11 %). Inventing the plastic geometry from scratch is
+   therefore not where the network earns its keep.
+2. But `f_0 ~ 0.47` shows that thermodynamics alone does not select a
+   physically credible direction: `D >= 0` is necessary and insufficient.
+   Half of the redirected plasticity is exactly zero-work — the outcome the
+   refined registration anticipated, and it is the scientifically interesting
+   one: the constraint eliminates anti-dissipation, and the *direction
+   selection inside the entire admissible half-space* remains open.
+
+The network's task is now precisely posed: not to enforce dissipation (done,
+exactly), not to replace the mechanical geometry (Krylov already carries
+most of the kinematic fit), but to **select, among all the directions of the
+admissible half-space, the ones the material would actually take** — i.e., to
+pull the zero-work boundary mass into the interior along physically credible
+directions, with the geometry as a given rather than as an invention.
 
 ## Registered caveats
 

@@ -305,6 +305,8 @@ def main() -> int:
         accumulated_gauge = 0.0
         chi_active: list[float] = []
         activities: list[float] = []
+        boundary_fractions_1e3: list[float] = []
+        boundary_fractions_1e2: list[float] = []
         starts_spread: list[float] = []
         for state in STATES:
             predictor = elastic[state] + apply_numpy(plastic)
@@ -375,6 +377,20 @@ def main() -> int:
             cosine = power / np.maximum(stress_norm * frobenius, 1e-300)
             if active_points.any():
                 chi_active.append(float(cosine[active_points].mean()))
+            # f_0: the share of the active plasticity pushed exactly onto the
+            # zero-work boundary |sigma_pred : Delta eps^p| ~ 0. The projector
+            # deposits every anti-dissipative point on sigma : P_H(v) = 0, so
+            # a large f_0 means the constraint redirected the field onto the
+            # boundary rather than into the half-space interior.
+            work_cosine = power_pred / np.maximum(stress_norm * frobenius, 1e-300)
+            boundary_fractions_1e3.append(
+                float((np.abs(work_cosine) < 1e-3)[active_points].sum())
+                / max(int(active_points.sum()), 1)
+            )
+            boundary_fractions_1e2.append(
+                float((np.abs(work_cosine) < 1e-2)[active_points].sum())
+                / max(int(active_points.sum()), 1)
+            )
             total_power_positive += float(np.maximum(power, 0.0).sum())
             total_power_negative += float(np.abs(np.minimum(power, 0.0)).sum())
             total_predictor_positive += float(np.maximum(power_pred, 0.0).sum())
@@ -390,6 +406,8 @@ def main() -> int:
                 "active_fraction": float(np.mean(active)),
                 "start_spread": starts_spread[-1],
                 "chi_active_mean": chi_active[-1] if chi_active else 0.0,
+                "boundary_fraction_1e3": boundary_fractions_1e3[-1],
+                "boundary_fraction_1e2": boundary_fractions_1e2[-1],
             }
             print(
                 f"  r={rank:2d} state {state:2d}: E {score:.4f}  "
@@ -417,6 +435,8 @@ def main() -> int:
             ),
             "predictor_negative_work": total_predictor_negative,
             "projected_fraction_mean": float(np.mean(activities)),
+            "boundary_fraction_1e3": float(np.mean(boundary_fractions_1e3)),
+            "boundary_fraction_1e2": float(np.mean(boundary_fractions_1e2)),
             "start_spread_relative_mean": float(np.mean(starts_spread)),
         }
         print(
