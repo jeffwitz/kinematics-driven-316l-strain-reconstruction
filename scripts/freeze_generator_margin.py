@@ -20,6 +20,7 @@ equilibrate, the margin would measure a convention bug, not a noise floor.
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -63,8 +64,16 @@ class _Identity:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--origin", nargs=2, type=int, default=list(ORIGIN))
+    parser.add_argument("--pixels", type=int, default=PIXELS)
+    parser.add_argument("--output", type=Path, default=OUT / "margin_frozen.json")
+    arguments = parser.parse_args()
+    pixels = arguments.pixels
+    x0, y0 = arguments.origin
+    out = arguments.output
     grid = StructuredGrid2D(
-        PIXELS, PIXELS, PIXEL_SIZE_MM * PIXELS, PIXEL_SIZE_MM * PIXELS
+        pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels
     )
     operator = TensorPlasticObservabilityOperator.build(
         grid,
@@ -84,7 +93,7 @@ def main() -> int:
         voigt = stress_kelvin.reshape(-1, 3) / KELVIN_SCALE_2D
         return pack_interior(
             operator.kinematics.divergence_from_sample_stress(
-                voigt.reshape((PIXELS, PIXELS, 2, 3))
+                voigt.reshape((pixels, pixels, 2, 3))
             )
         )
 
@@ -92,7 +101,7 @@ def main() -> int:
         forcing = -divergence(stress_of(kelvin_strain(field))) / operator.quadrature_weight
         lifted = field.copy()
         lifted[1:-1, 1:-1, :] -= operator.solve_stiffness(forcing).reshape(
-            PIXELS - 1, PIXELS - 1, 2
+            pixels - 1, pixels - 1, 2
         )
         return lifted
 
@@ -101,12 +110,11 @@ def main() -> int:
     )
     bounds = list(map(int, report["solve_bounds"]))
     source = np.load(HISTORY, mmap_mode="r", allow_pickle=False)
-    x0, y0 = ORIGIN
     history = np.asarray(
         source[
             :,
-            x0 - bounds[0] : x0 + PIXELS - bounds[0] + 1,
-            y0 - bounds[2] : y0 + PIXELS - bounds[2] + 1,
+            x0 - bounds[0] : x0 + pixels - bounds[0] + 1,
+            y0 - bounds[2] : y0 + pixels - bounds[2] + 1,
             :,
         ],
         dtype=np.float64,
@@ -129,7 +137,7 @@ def main() -> int:
         defects[state] = float(np.linalg.norm(measured - elastic))
 
     noise = np.load(NOISE, mmap_mode="r", allow_pickle=False)
-    window = (slice(x0, x0 + PIXELS + 1), slice(y0, y0 + PIXELS + 1))
+    window = (slice(x0, x0 + pixels + 1), slice(y0, y0 + pixels + 1))
     noise_canonical = image_flow_to_canonical(
         np.asarray(noise[window]), pixel_size_mm=PIXEL_SIZE_MM
     )
@@ -137,7 +145,7 @@ def main() -> int:
     # Placement sanity check: the noise grid's physical alignment with the
     # history grid cannot be asserted by a residual; a second window 300 nodes
     # away along the first axis bounds the sensitivity of the margin to it.
-    shifted = (slice(x0 + 300, x0 + 300 + PIXELS + 1), window[1])
+    shifted = (slice(x0 + 300, x0 + 300 + pixels + 1), window[1])
     shifted_canonical = image_flow_to_canonical(
         np.asarray(noise[shifted]), pixel_size_mm=PIXEL_SIZE_MM
     )
@@ -147,6 +155,8 @@ def main() -> int:
     margin = float(np.median(list(margins.values())))
     payload = {
         "schema_version": 1,
+        "origin": [x0, y0],
+        "pixels": pixels,
         "definition": "median over held-out states of "
         "|eps_noise| / |eps_measured - eps_elastic|",
         "heldout_states": list(HELDOUT),
@@ -157,8 +167,8 @@ def main() -> int:
         "margin_frozen": margin,
         "elastic_lifting_residual_guard": residual,
     }
-    OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "margin_frozen.json").write_text(
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     print(json.dumps(payload, indent=2, sort_keys=True))

@@ -1,0 +1,33 @@
+{
+  "a_leg": {
+    "note": "local reduced objective; the orthogonality term is constant in a and carries no gradient",
+    "state": 24,
+    "sweep": {
+      "1e-06": 0.07720004458602799,
+      "1e-05": 0.07720466279109305,
+      "0.0001": 0.07723447999615804,
+      "0.001": 0.0772672085269789
+    }
+  },
+  "schema_version": 1,
+  "theta_leg": {
+    "activity_stable": true,
+    "base_projected_fraction": 0.0,
+    "parameters_sampled": [
+      "body.7.bias",
+      "body.0.weight",
+      "body.13.weight",
+      "body.1.bias",
+      "body.15.bias",
+      "body.9.bias",
+      "body.1.weight",
+      "body.12.bias"
+    ],
+    "sweep": {
+      "1e-06": 1.0,
+      "1e-05": 1.0,
+      "0.0001": 1.0,
+      "0.001": 1.0
+    }
+  }
+}

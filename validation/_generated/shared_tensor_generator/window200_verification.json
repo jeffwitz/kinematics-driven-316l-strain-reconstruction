@@ -1,0 +1,23 @@
+{
+  "alignment_max_abs_diff": 0.0,
+  "alignment_pass": true,
+  "elastic_lifting_pass": true,
+  "elastic_lifting_residual": 2.787933238308654e-10,
+  "origin_100_historical": [
+    1580,
+    1030
+  ],
+  "origin_200": [
+    1530,
+    980
+  ],
+  "pixels": 200,
+  "schema_version": 1,
+  "solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ],
+  "window_inside_sub_roi": true
+}

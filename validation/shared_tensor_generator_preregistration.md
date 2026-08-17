@@ -41,6 +41,24 @@ far-too-strong `Delta p * n_J2` constraint.
   gates (temporal holdout, transversality, kernel-component stability), not in
   the architecture.
 
+> **Amendment, recorded 2026-08-17 before any result.** The campaign window
+> moves from the 100×100 qualification bench to the **P43 200×200 window**,
+> origin `(1530, 980)` in full-grid coordinates — the exact centre of the
+> historical 100×100. Pre-run verification passed:
+> `validation/_generated/shared_tensor_generator/window200_verification.json`
+> (alignment with the historical crop `0.0`, elastic-lifting residual on the
+> new boundary `2.8e-10`). Everything else is unchanged: temporal split
+> {24, 28, 32, 36, 40}, states 21-40, ranks {4, 8, 16}, 400 steps, the
+> historical metric. The noise margin is recomputed with the identical
+> definition on the new window: **`margin(E) = 0.158`** (artifact
+> `margin_frozen_200.json`; the 100×100 frozen value `0.204` remains the
+> qualification-bench record, and all margin references in the gates below
+> read the window's own value). The first 200×200 run is the branch-D network
+> basis (`--project-field`), whose objective is the registered one: does the
+> shared tensor rule reduce `E` and generalise to the held-out increments.
+> Gates 3 and 5 diagnostics apply to it; gates 4 and 6 remain the 100×100
+> qualification record and are not replayed by directive. No full-field run.
+
 ## The model under test
 
 ```text
