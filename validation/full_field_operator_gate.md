@@ -646,6 +646,42 @@ backwards, the budget for a training step is a small multiple of a single
 preconditioned solve -- not the eight-Newton cold cost every earlier estimate
 of mine was built on.
 
+## MFront is slower than the vectorised Python batch
+
+The profile put 76 % of a nonlinear run in the constitutive integration and I
+concluded that the remedy was the compiled `PixelLudwikJ2Plasticity` MFront
+behaviour already in the repository. Measured at equal input -- 80 000 material
+points, same strains, same committed state, tangent requested in both:
+
+| branch | Python batch | MFront native | | stress agreement |
+|---|---|---|---|---|
+| elastic | **37.8 ms** | 225.8 ms | Python 6x faster | 1.0e-16 |
+| plastic | **238.9 ms** | 500.9 ms | Python 2x faster | 1.7e-14 |
+
+They compute the same thing to sixteen and fourteen digits. MFront is simply
+two to six times slower here, and the reason is structural:
+`PythonJ2PlaneStressBatch` is a radial return vectorised across every point at
+once, with a vectorised local Newton, while MGIS goes point by point through an
+interface. Compilation does not recover the lost vectorisation.
+
+**So the conclusion was wrong and is withdrawn.** It was asserted from the
+profile without measuring the alternative.
+
+The real option for the constitutive term, still at 3.0 microseconds per point
+in the plastic branch, is a fused kernel of the kind that gave 345 on the
+stencil: a scalar local Newton per point with no intermediate arrays, where the
+Python batch currently makes several memory passes over `(80 000, 3)` arrays.
+And if that lands, the Amdahl balance shifts a fourth time and the linear
+algebra becomes comparable again.
+
+For the record, the driver-level numbers do not support this comparison and
+were not used for it. P43 M200 through the coupled micromorphic driver took
+326.9 s for eight increments, 76 Newton and 2802 Krylov -- 36.9 per Newton,
+which agrees nicely with the 44 and 49 measured at 256 and 512 square. But that
+driver carries a micromorphic coupling the two-state bench does not, so per
+Newton per point it reads 54 microseconds against 46 and would make MFront look
+slower for the wrong reason.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
