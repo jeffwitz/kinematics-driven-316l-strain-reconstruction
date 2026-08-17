@@ -1,0 +1,15 @@
+{
+  "bars": {
+    "beats_default_by": 0.1,
+    "beats_j2_by": 0.9
+  },
+  "fitted_parameters": {
+    "q_mpa": 10.000000000000002,
+    "tau0_mpa": 40.0
+  },
+  "misfit_default": 1.0879998874862801e-09,
+  "misfit_fitted": 1.0879998874862983e-09,
+  "misfit_j2_baseline": 3.6333667067567566e-09,
+  "reading": "negative",
+  "schema_version": 1
+}
