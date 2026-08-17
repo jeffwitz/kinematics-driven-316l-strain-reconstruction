@@ -179,6 +179,14 @@ kernel there, and the gate fails regardless of any score. The joint
 `(theta, a_n)` Gauss-Newton spectrum is reported in full, without threshold —
 it informs the next design, not this gate.
 
+> **Operationalisation, recorded before any run.** The combined floors in
+> `floors.json` are defect-metric quantities, not singular-value units; the
+> gate is therefore applied in the milestone-3-precedented relative form:
+> every per-state normalised singular value `sigma_k / sigma_1 >= 1e-6` at
+> every held-out state (the spectra are saved per state by the run driver).
+> The noise-normalised values `sigma_k / margin_s` are reported beside them,
+> without threshold, as the noise-aware reading.
+
 **Gate 4 — twin with controlled invisible share.** The milestone-3 lesson is
 a clause: a twin truth with a large spatial mean is mostly invisible (78 % of
 the registered truth, floor 80 %), and the gate then measures the truth's

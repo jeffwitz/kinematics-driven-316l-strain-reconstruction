@@ -414,6 +414,14 @@ def main() -> int:
                         help="active-set iterations; each costs r mechanics applications")
     parser.add_argument("--seed", type=int, default=20260816,
                         help="initialisation, for reproducibility across restarts")
+    parser.add_argument("--optimizer", choices=("adam", "adamw"), default="adam",
+                        help="frozen by the milestone-4 preregistration: every run twice")
+    parser.add_argument("--observed-history", type=Path, default=None,
+                        help="gate-4 twin input: observed displacements replacing the measured DIC")
+    parser.add_argument("--field-report", action="store_true",
+                        help="save per-state increments, stresses, coefficients and modes (gate 6)")
+    parser.add_argument("--gradient-check", action="store_true",
+                        help="gate 2: central-FD sweep against the autograd gradient, then exit")
     parser.add_argument("--resume", action="store_true",
                         help="continue from the checkpoint beside the output file")
     parser.add_argument("--load-weights", type=Path, default=None,
@@ -544,7 +552,18 @@ def main() -> int:
     states = arguments.states
     holdout = set(arguments.holdout)
     training = [s for s in states if s not in holdout]
-    measured = {s: kelvin_strain(history[s] - reference) for s in states}
+    if arguments.observed_history is not None:
+        observed_source = np.load(
+            arguments.observed_history, mmap_mode="r", allow_pickle=False
+        )
+        measured = {
+            s: kelvin_strain(
+                np.asarray(observed_source[s], dtype=np.float64) - reference
+            )
+            for s in states
+        }
+    else:
+        measured = {s: kelvin_strain(history[s] - reference) for s in states}
     elastic = {s: kelvin_strain(elastic_lift(history[s] - reference)) for s in states}
     defect = {s: float(np.linalg.norm(measured[s] - elastic[s])) for s in states}
     reference_stress = stress_of(kelvin_strain(reference))
@@ -560,7 +579,7 @@ def main() -> int:
         image = stacked.reshape(pixels, pixels, -1).transpose(2, 0, 1)
         return torch.from_numpy(np.ascontiguousarray(image))[None]
 
-    def rollout(network: nn.Module, rank: int, grad: bool):
+    def rollout(network: nn.Module, rank: int, grad: bool, capture_fields: bool = False):
         """One pass over every increment, gradients only on training ones."""
 
         plastic = torch.zeros((points, 3), dtype=torch.float64)
@@ -568,6 +587,7 @@ def main() -> int:
         previous_stress = torch.from_numpy(reference_stress)
         loss = torch.zeros((), dtype=torch.float64)
         scores, negative, singular, fractions, drifts = {}, [], [], [], []
+        fields = {"increments": [], "stresses": [], "coefficients": [], "modes": []}
         for state in states:
             plastic_np = plastic.detach().numpy()
             predictor = torch.from_numpy(elastic[state] + apply_numpy(plastic_np))
@@ -695,6 +715,11 @@ def main() -> int:
             plastic = (plastic + increment).detach()
             path = path + gauge_norm(increment.detach())[:, None]
             previous_stress = new_stress
+            if capture_fields:
+                fields["increments"].append(increment.detach().numpy().copy())
+                fields["stresses"].append(new_stress.numpy().copy())
+                fields["coefficients"].append(coefficients.detach().numpy().copy())
+                fields["modes"].append(modes.detach().numpy().copy())
         counts = np.asarray(negative)
         return (
             loss,
@@ -719,9 +744,11 @@ def main() -> int:
                 "effective_rank_at_1e6": int(
                     (np.mean(singular, axis=0) > 1e-6).sum()
                 ),
+                "per_state_singular_spectra": [s.tolist() for s in singular],
                 "projected_fraction": float(np.mean(fractions)),
                 "active_set_drift": float(np.mean(drifts)) if drifts else 0.0,
             },
+            fields,
         )
 
     def krylov_basis(size: int) -> np.ndarray:
@@ -836,6 +863,125 @@ def main() -> int:
         }
 
     channels = 2 * (3 + 3 + 3 + 1)
+
+    if arguments.gradient_check:
+        # Gate 2 of the milestone-4 preregistration: central differences against
+        # the autograd gradient of the full objective, four decades, V-shaped.
+        # The theta gradient differentiates through the per-state coefficient
+        # solves, so the theta leg exercises the whole chain; the a_n leg checks
+        # the local reduced objective at one training state against its analytic
+        # gradient through the solve. The projection-activity guard is inherited
+        # from the milestone-3 gate 2.
+        rank = arguments.ranks[0]
+        network = Generator(channels=channels, rank=rank).double()
+        optimiser_class = (
+            torch.optim.Adam if arguments.optimizer == "adam" else torch.optim.AdamW
+        )
+        optimiser = optimiser_class(network.parameters(), lr=arguments.learning_rate)
+        optimiser.zero_grad()
+        loss, _, _, conditioning, _ = rollout(network, rank, grad=True)
+        loss.backward()
+        base_touched = conditioning["projected_fraction"]
+        named = [(n, p) for n, p in network.named_parameters() if p.grad is not None]
+        rng = np.random.default_rng(20260817)
+        chosen = rng.choice(len(named), size=min(8, len(named)), replace=False)
+        theta_sweep, activity_ok = {}, True
+        for h in (1e-3, 1e-4, 1e-5, 1e-6):
+            worst_relative = 0.0
+            for idx in chosen:
+                parameter = named[idx][1]
+                scale = max(float(parameter.detach().abs().max()), 1e-12)
+                step = h * scale
+                analytic = float((parameter.grad * step).sum())
+                with torch.no_grad():
+                    parameter.add_(step)
+                    plus, _, _, cond_plus, _ = rollout(network, rank, grad=False)
+                    parameter.sub_(2 * step)
+                    minus, _, _, cond_minus, _ = rollout(network, rank, grad=False)
+                    parameter.add_(step)
+                fd = float((plus - minus) / 2)
+                if abs(analytic) > 0:
+                    worst_relative = max(
+                        worst_relative, abs(analytic - fd) / abs(analytic)
+                    )
+                if (
+                    abs(cond_plus["projected_fraction"] - base_touched) > 0.01
+                    or abs(cond_minus["projected_fraction"] - base_touched) > 0.01
+                ):
+                    activity_ok = False
+            theta_sweep[h] = worst_relative
+
+        # a_n leg: the local reduced objective at one training state, rebuilt
+        # from captured fields with the same formulas as the rollout. The
+        # orthogonality term is constant in a and carries no gradient.
+        with torch.no_grad():
+            _, _, _, _, fields = rollout(network, rank, grad=False, capture_fields=True)
+        target_state = 24
+        pos = states.index(target_state)
+        plastic_before = np.sum(fields["increments"][:pos], axis=0)
+        predictor = torch.from_numpy(elastic[target_state] + apply_numpy(plastic_before))
+        target = torch.from_numpy(measured[target_state]) - predictor
+        modes = torch.from_numpy(fields["modes"][pos])
+        responses = torch.from_numpy(
+            apply_numpy(fields["modes"][pos].reshape(points, 3, -1)).reshape(
+                points, 3, -1
+            )
+        )
+        previous_stress = torch.from_numpy(
+            fields["stresses"][pos - 1] if pos > 0 else reference_stress
+        )
+        plastic = torch.from_numpy(plastic_before)
+        elasticity = torch.from_numpy(operator.elasticity)
+
+        def local_loss(a: torch.Tensor) -> torch.Tensor:
+            increment = modes @ a
+            simulated = predictor + responses @ a
+            remaining = target - simulated
+            stress_change = torch.einsum(
+                "pi,pij->pj", simulated - plastic - increment, elasticity
+            )
+            new_stress = torch.from_numpy(reference_stress) + stress_change
+            power = (0.5 * (previous_stress + new_stress) * increment).sum(dim=1)
+            denominator = max(abs(float(power.detach().abs().mean())), 1e-30)
+            return (
+                remaining.pow(2).sum() / defect[target_state] ** 2
+                + arguments.dissipation * torch.relu(-power).mean() / denominator
+            )
+
+        a0 = torch.from_numpy(fields["coefficients"][pos]).requires_grad_(True)
+        local_loss(a0).backward()
+        grad_a = a0.grad.detach().numpy()
+        a_sweep = {}
+        for h in (1e-3, 1e-4, 1e-5, 1e-6):
+            scale = max(float(np.abs(a0.detach().numpy()).max()), 1e-12)
+            step = h * scale
+            delta = np.zeros_like(grad_a)
+            delta[0] = step
+            analytic = float(grad_a @ delta)
+            plus = float(local_loss(a0 + torch.from_numpy(delta)))
+            minus = float(local_loss(a0 - torch.from_numpy(delta)))
+            fd = (plus - minus) / 2
+            a_sweep[h] = abs(analytic - fd) / max(abs(analytic), 1e-300)
+        report = {
+            "schema_version": 1,
+            "theta_leg": {
+                "sweep": theta_sweep,
+                "activity_stable": bool(activity_ok),
+                "base_projected_fraction": base_touched,
+                "parameters_sampled": [named[i][0] for i in chosen],
+            },
+            "a_leg": {
+                "state": target_state,
+                "sweep": a_sweep,
+                "note": "local reduced objective; the orthogonality term is "
+                "constant in a and carries no gradient",
+            },
+        }
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
+        arguments.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0
+
     results = {}
     for rank in arguments.ranks:
         for kind in ("krylov", "aligned"):
@@ -859,7 +1005,7 @@ def main() -> int:
             )
             network.load_state_dict(saved.get("network", saved))
             with torch.no_grad():
-                _, scores, negative, conditioning = rollout(network, rank, grad=False)
+                _, scores, negative, conditioning, _ = rollout(network, rank, grad=False)
             results[f"learned_r{rank}"] = {
                 "per_state": {str(k): v for k, v in scores.items()},
                 "fitted": float(np.mean([scores[s] for s in training])),
@@ -871,7 +1017,10 @@ def main() -> int:
             print(f"scored r={rank}: fitted {results[f'learned_r{rank}']['fitted']:.4f}  "
                   f"held out {results[f'learned_r{rank}']['held_out']:.4f}", flush=True)
             continue
-        optimiser = torch.optim.Adam(network.parameters(), lr=arguments.learning_rate)
+        optimiser_class = (
+            torch.optim.Adam if arguments.optimizer == "adam" else torch.optim.AdamW
+        )
+        optimiser = optimiser_class(network.parameters(), lr=arguments.learning_rate)
         checkpoint = arguments.output.with_suffix(f".r{rank}.weights")
         first = 1
         # Saving only at the end throws away everything a killed run did, which
@@ -886,7 +1035,7 @@ def main() -> int:
         start = time.time()
         for step in range(first, arguments.steps + 1):
             optimiser.zero_grad()
-            loss, _, _, _ = rollout(network, rank, grad=True)
+            loss, _, _, _, _ = rollout(network, rank, grad=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(network.parameters(), 1.0)
             optimiser.step()
@@ -899,7 +1048,7 @@ def main() -> int:
                 )
             if step % max(arguments.steps // 8, 1) == 0:
                 with torch.no_grad():
-                    _, scores, negative, conditioning = rollout(network, rank, grad=False)
+                    _, scores, negative, conditioning, _ = rollout(network, rank, grad=False)
                 held = float(np.mean([scores[s] for s in sorted(holdout)]))
                 fitted = float(np.mean([scores[s] for s in training]))
                 print(
@@ -918,7 +1067,17 @@ def main() -> int:
                     flush=True,
                 )
         with torch.no_grad():
-            _, scores, negative, conditioning = rollout(network, rank, grad=False)
+            _, scores, negative, conditioning, fields = rollout(
+                network, rank, grad=False, capture_fields=arguments.field_report
+            )
+        if arguments.field_report:
+            np.savez_compressed(
+                checkpoint.with_suffix(".fields.npz"),
+                increments=np.stack(fields["increments"]),
+                stresses=np.stack(fields["stresses"]),
+                coefficients=np.stack(fields["coefficients"]),
+                modes=np.stack(fields["modes"]),
+            )
         results[f"learned_r{rank}"] = {
             "per_state": {str(k): v for k, v in scores.items()},
             "fitted": float(np.mean([scores[s] for s in training])),
