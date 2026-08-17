@@ -34,6 +34,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from fem_inhouse.core.kelvin import KELVIN_SCALE_2D, PLANE_STRESS_PLASTIC_GAUGE
+from fem_inhouse.identification.tensor_local_inverse import TensorLocalBasis
 from fem_inhouse.identification.tensor_plastic_observability import (
     TensorPlasticObservabilityOperator,
 )
@@ -56,6 +57,8 @@ REFERENCE_STATE = 20
 STATES = list(range(21, 41))
 HELDOUT = (24, 28, 32, 36, 40)
 RIDGE = 1e-6
+PATCHES_TRAJECTORY = 8
+SUBCELLS_TRAJECTORY = 2
 
 GAUGE = np.asarray(PLANE_STRESS_PLASTIC_GAUGE, dtype=np.float64)
 INV_GAUGE = np.linalg.inv(GAUGE)
@@ -130,6 +133,8 @@ def main() -> int:
     parser.add_argument("--maxiter", type=int, default=200)
     parser.add_argument("--gradient-check", action="store_true",
                         help="FD sweep of the projected chain gradient at one state, then exit")
+    parser.add_argument("--trajectories", type=Path, default=None,
+                        help="save per-state, per-point constitutive trajectories for the phase-space analysis")
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     pixels = arguments.pixels
@@ -146,6 +151,7 @@ def main() -> int:
         whitener=_Identity(),
     )
     points = operator.kinematics.material_point_count
+    inv_elasticity = np.linalg.inv(operator.elasticity)
 
     def kelvin_strain(field) -> np.ndarray:
         return operator.kelvin_strain(field).reshape(-1, 3)
@@ -288,6 +294,40 @@ def main() -> int:
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 0
 
+    trajectory_machinery = None
+    if arguments.trajectories is not None:
+        # Nullspace projection for the observable part of the stored fields:
+        # the 192-coefficient tensor family (degree zero, patches 8) and the
+        # measured null directions of the displacement operator, the same
+        # convention as the milestone-3 observability and gate 6.
+        basis = TensorLocalBasis.build(pixels, pixels, PATCHES_TRAJECTORY)
+        count = basis.coefficient_count
+        columns = np.empty((pixels * pixels * 3, count))
+        unit = np.zeros(count)
+        for index in range(count):
+            unit[:] = 0.0
+            unit[index] = 1.0
+            columns[:, index] = basis.assemble(unit.reshape(basis.coefficient_shape)).ravel()
+        gram = columns.T @ columns
+        ridge = 1e-12 * max(float(np.trace(gram)) / count, 1e-300)
+        twin = np.load(
+            ROOT / "validation/_generated/shared_tensor_generator/twin_gate4.npz",
+            allow_pickle=False,
+        )
+        null_vectors = twin["null_vectors"]
+
+        def observable_part(field_points: np.ndarray) -> np.ndarray:
+            pixel = field_points.reshape(pixels, pixels, SUBCELLS_TRAJECTORY, 3).mean(axis=2)
+            coefficients = np.linalg.solve(
+                gram + ridge * np.eye(count),
+                basis.assemble_transpose(pixel).ravel(),
+            )
+            projected = coefficients - null_vectors.T @ (null_vectors @ coefficients)
+            assembled = basis.assemble(projected.reshape(basis.coefficient_shape))
+            return np.repeat(assembled[:, :, None, :], SUBCELLS_TRAJECTORY, axis=2).reshape(-1, 3)
+
+        trajectory_machinery = observable_part
+
     results: dict[str, dict] = {}
     for rank in arguments.ranks:
         basis = krylov_basis(rank)
@@ -307,6 +347,12 @@ def main() -> int:
         activities: list[float] = []
         boundary_fractions_1e3: list[float] = []
         boundary_fractions_1e2: list[float] = []
+        trajectory_stress: list[np.ndarray] = []
+        trajectory_eps_elastic: list[np.ndarray] = []
+        trajectory_eps_inel: list[np.ndarray] = []
+        trajectory_d_eps_inel: list[np.ndarray] = []
+        trajectory_eps_inel_obs: list[np.ndarray] = []
+        trajectory_d_eps_inel_obs: list[np.ndarray] = []
         starts_spread: list[float] = []
         for state in STATES:
             predictor = elastic[state] + apply_numpy(plastic)
@@ -409,6 +455,15 @@ def main() -> int:
                 "boundary_fraction_1e3": boundary_fractions_1e3[-1],
                 "boundary_fraction_1e2": boundary_fractions_1e2[-1],
             }
+            if arguments.trajectories is not None:
+                trajectory_stress.append(stress.copy())
+                trajectory_eps_elastic.append(
+                    np.einsum("ij,pj->pi", inv_elasticity, stress)
+                )
+                trajectory_eps_inel.append(plastic.copy())
+                trajectory_d_eps_inel.append(increment.copy())
+                trajectory_eps_inel_obs.append(trajectory_machinery(plastic))
+                trajectory_d_eps_inel_obs.append(trajectory_machinery(increment))
             print(
                 f"  r={rank:2d} state {state:2d}: E {score:.4f}  "
                 f"active {100 * float(np.mean(active)):.1f} %  obj {best_value:.3e}",
@@ -448,6 +503,21 @@ def main() -> int:
             f"proj {100 * results[f'r{rank}']['projected_fraction_mean']:.1f} %",
             flush=True,
         )
+        if arguments.trajectories is not None:
+            trajectory_path = arguments.trajectories.with_name(
+                arguments.trajectories.stem + f".r{rank}.npz"
+            )
+            np.savez_compressed(
+                trajectory_path,
+                states=np.asarray(STATES),
+                stress=np.stack(trajectory_stress),
+                eps_elastic=np.stack(trajectory_eps_elastic),
+                eps_inel=np.stack(trajectory_eps_inel),
+                d_eps_inel=np.stack(trajectory_d_eps_inel),
+                eps_inel_observable=np.stack(trajectory_eps_inel_obs),
+                d_eps_inel_observable=np.stack(trajectory_d_eps_inel_obs),
+            )
+            print(f"saved trajectories: {trajectory_path}", flush=True)
 
     payload = {
         "schema_version": 1,
