@@ -62,12 +62,14 @@ YOUNG_MPA = 205_000.0
 POISSON = 0.30
 
 
-def partition_of_unity(grid: StructuredGrid2D, patches: int) -> np.ndarray:
-    """Bilinear weights of a `patches x patches` coefficient grid, per pixel.
+def assemble_increment(grid: StructuredGrid2D, patches: int,
+                       coefficients: np.ndarray) -> np.ndarray:
+    """`sum_j w_j(x) a_j` for a bilinear partition of unity, without the matrix.
 
-    Returns `(pixels, patches^2)`. The columns sum to one at every pixel, so the
-    coefficients are amplitudes of a genuine partition rather than of overlapping
-    bumps whose total is a free parameter.
+    The weights are separable, `w_j(x, y) = wx_i(x) wy_k(y)`, so the field is
+    two small contractions. Materialising the `(pixels, patches^2)` matrix is
+    what killed the 1024-square, 4096-coefficient case: 1 048 576 x 4096 in
+    float64 is 34 GB, and it has no business existing.
     """
 
     x = np.linspace(0.0, patches - 1.0, grid.nx)
@@ -77,8 +79,8 @@ def partition_of_unity(grid: StructuredGrid2D, patches: int) -> np.ndarray:
     wy = np.clip(1.0 - np.abs(y[:, None] - nodes[None, :]), 0.0, None)
     wx /= wx.sum(axis=1, keepdims=True)
     wy /= wy.sum(axis=1, keepdims=True)
-    weights = np.einsum("xi,yj->xyij", wx, wy).reshape(grid.nx * grid.ny, patches * patches)
-    return weights
+    square = coefficients.reshape(patches, patches)
+    return np.einsum("xi,ij,yj->xy", wx, square, wy).reshape(-1)
 
 
 def uniaxial_boundary(grid: StructuredGrid2D, strain: float) -> np.ndarray:
@@ -120,13 +122,12 @@ def main() -> int:
             (spectral.size, spectral.size), matvec=spectral.precondition, dtype=np.float64
         )
         for patches in arguments.patches:
-            weights = partition_of_unity(grid, patches)
             generator = np.random.default_rng(20260817)
             # Coefficients that localise: a smooth random field over the patch
             # grid, non-negative, peaking near the registered amplitude.
             coefficients = np.abs(generator.standard_normal(patches * patches))
             coefficients *= arguments.peak_increment / coefficients.max()
-            per_pixel = weights @ coefficients
+            per_pixel = assemble_increment(grid, patches, coefficients)
             increment = np.repeat(per_pixel, points // (grid.nx * grid.ny))
 
             # The unpreconditioned arm runs only at the smallest size. At 64

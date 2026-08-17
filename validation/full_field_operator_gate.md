@@ -549,6 +549,49 @@ it.
 
 `T_A` over this milestone: **134 s to 52 s**, and qualified rather than hoped.
 
+## Milestones 1A and 1B: the nonlinear loop with many local coefficients
+
+Three increments of synthetic uniaxial Dirichlet loading, `Delta p` prescribed
+from a coarse grid of coefficients under a bilinear partition of unity, the
+global equilibrium solved by the existing Newton loop with a matrix-free
+Jacobian and the spectral preconditioner from milestone 0.
+
+**The coefficient count costs nothing.** Krylov totals over three increments:
+
+| grid | 64 coeff | 256 | 1024 | 4096 |
+|---|---|---|---|---|
+| 256 | 168 | 175 | 161 | 156 |
+| 512 | 166 | 175 | 166 | 158 |
+| 1024 | 167 | 180 | 168 | -- |
+
+Eight Newton iterations everywhere, at every size and every coefficient count.
+Multiplying the coefficients by 64 changes neither Newton, nor Krylov, nor the
+time. The architectural property holds: the field is assembled first and the
+mechanics solved once, so coefficients cost interpolation.
+
+**The preconditioner decides everything.** At 256 square, over the four
+coefficient counts, preconditioned against not:
+
+```text
+168 Krylov,      56 s
+145 649 Krylov, 6487 s
+```
+
+867 times fewer iterations and 115 times less time. Unpreconditioned, a single
+case took nearly two hours.
+
+**Mesh independence survives the nonlinearity**: 166 to 180 Krylov from 256 to
+1024 square, the elastic behaviour unchanged. Time grows with the point count --
+40, 115, 440 s -- so the full field extrapolates to roughly 78 minutes for three
+increments.
+
+The 1024-square, 4096-coefficient case was killed by the OOM killer, and the
+cause was mine rather than the solver's: the partition of unity was
+materialised as a dense `(pixels, patches^2)` matrix, which at that size is
+1 048 576 x 4096 in float64, or 34 GB. The weights are separable, so the field
+is now two small contractions -- agreeing with the dense route to 4.4e-16 and
+summing to one to 2.2e-16.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
