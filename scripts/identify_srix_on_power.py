@@ -40,6 +40,9 @@ PIXELS = 100
 SUBCELLS = 2
 N_STATES = 20
 HELDOUT = (24, 28, 32, 36, 40)
+# Fast-iteration window: the central 20x20 elements of the 100x100 grid.
+WINDOW = 20
+WINDOW_OFFSET = (40, 40)
 
 
 def slip_tensors() -> np.ndarray:
@@ -76,11 +79,21 @@ def main() -> int:
     arguments = parser.parse_args()
 
     tr = np.load(OUT / "krylov_trajectories.r16.npz", allow_pickle=False)
-    n_states, n_points, _ = tr["stress"].shape
-    stress = tr["stress"]  # (states, points, 3) predictor stress, Kelvin
-    eps_elastic = tr["eps_elastic"]  # (states, points, 3) Kelvin in-plane
-    eps_inel = tr["eps_inel_observable"]  # (states, points, 3) Kelvin in-plane
-    d_eps_inel = tr["d_eps_inel_observable"]
+    n_states = N_STATES
+
+    def crop_window(array: np.ndarray) -> np.ndarray:
+        """Crop the central 20x20 window out of the (state, 100, 100, 2, ...) layout."""
+
+        shaped = array.reshape(n_states, PIXELS, PIXELS, SUBCELLS, -1)
+        i0, j0 = WINDOW_OFFSET
+        window = shaped[:, i0 : i0 + WINDOW, j0 : j0 + WINDOW, :, :]
+        return window.reshape(n_states, -1, array.shape[-1])
+
+    stress = crop_window(tr["stress"])  # (states, points, 3) predictor stress, Kelvin
+    eps_elastic = crop_window(tr["eps_elastic"])
+    eps_inel = crop_window(tr["eps_inel_observable"])
+    d_eps_inel = crop_window(tr["d_eps_inel_observable"])
+    n_points = stress.shape[1]
 
     # Total strain per state, 6-component Kelvin: [xx, yy, zz, sqrt2 yz, sqrt2 xz, sqrt2 xy]
     nu = 0.30
@@ -110,8 +123,10 @@ def main() -> int:
         [inplane_power(stress[n], d_eps_inel[n]) for n in range(n_states)]
     )  # (states, points)
 
-    # Orientations and the systems in the global frame.
-    angles = orientation_maps()
+    # Orientations and the systems in the global frame, on the same window.
+    angles = orientation_maps().reshape(PIXELS, PIXELS, SUBCELLS, 3)
+    i0, j0 = WINDOW_OFFSET
+    angles = angles[i0 : i0 + WINDOW, j0 : j0 + WINDOW, :, :].reshape(-1, 3)
     rotations = rotations_from_euler_bunge_deg(angles)  # Q_global_to_material
     material = slip_tensors()
     material_to_global = np.swapaxes(rotations, 1, 2)
@@ -119,12 +134,9 @@ def main() -> int:
 
     default = SRIX_PARAMETER_SETS[DEFAULT_PARAMETER_SET]
     base_props, _ = resolve_srix_parameters(parameter_set=DEFAULT_PARAMETER_SET)
+    ATTRIBUTES = ("tau0_mpa", "overstress_modulus_mpa", "q_mpa", "b", "c_mpa", "d")
     theta0 = np.log(
-        np.asarray(
-            [getattr(default, f"{name}_mpa" if name != "b" else "b") for name in
-             ("tau0", "overstress_modulus", "q", "b", "c", "d")],
-            dtype=np.float64,
-        )
+        np.asarray([getattr(default, attr) for attr in ATTRIBUTES], dtype=np.float64)
     )
 
     spec = MFRONT_BEHAVIOURS.get(BEHAVIOUR_IDENTIFIER)
@@ -146,10 +158,36 @@ def main() -> int:
             behaviour_name=spec.tridimensional_behaviour,
         )
         powers = np.zeros((n_states, n_points))
+        failures = 0
         previous_slip = np.zeros((n_points, 12))
+        previous_strain = np.zeros((n_points, 6))
         for n in range(n_states):
-            trial = batch.evaluate(total_strain[n], time_increment=1.0, collect_observables=True)
-            batch.commit()
+            try:
+                trial = batch.evaluate(total_strain[n], time_increment=1.0, collect_observables=True)
+                batch.commit()
+            except Exception:
+                # Uniform substepping: the reconstructed path can exceed what
+                # one step of the local Newton admits (already true at the
+                # default parameters beyond state 26). Each successful
+                # sub-step commits immediately; a failure abandons the state
+                # and the objective penalises it.
+                trial = None
+                for sub in range(1, 5):
+                    try:
+                        trial = batch.evaluate(
+                            previous_strain + (sub / 4.0) * (total_strain[n] - previous_strain),
+                            time_increment=0.25,
+                            collect_observables=True,
+                        )
+                        batch.commit()
+                    except Exception:
+                        trial = None
+                        break
+                if trial is None:
+                    failures += 1
+                    previous_strain = total_strain[n].copy()
+                    continue
+            previous_strain = total_strain[n].copy()
             slip = np.asarray(trial.observables["equivalent_plastic_slip"])  # (points, 12)
             delta_slip = slip - previous_slip
             previous_slip = slip.copy()
@@ -163,20 +201,20 @@ def main() -> int:
             s3[:, 1, 2] = s3[:, 2, 1] = sigma6[:, 3] / np.sqrt(2.0)
             tau = np.einsum("pij,pijc->pc", s3, systems_global)
             powers[n] = np.sum(tau * delta_slip, axis=1)
-        return powers
+        return powers, failures
 
     def objective(theta_log: np.ndarray, mask_states: list[int]) -> float:
-        powers = integrate(theta_log)
+        powers, failures = integrate(theta_log)
         mask = np.zeros(n_states, dtype=bool)
         mask[mask_states] = True
         num = np.sum((powers[mask] - d_exp[mask]) ** 2)
         den = max(np.sum(d_exp[mask] ** 2), 1e-300)
-        return float(num / den)
+        return float(num / den + 10.0 * failures)
 
     training = [n for n in range(n_states) if n not in [s - 21 for s in HELDOUT]]
     heldout = [s - 21 for s in HELDOUT]
 
-    def fd_gradient(theta_log: np.ndarray) -> np.ndarray:
+    def fd_gradient(theta_log: np.ndarray, mask_states: list[int]) -> np.ndarray:
         gradient = np.zeros_like(theta_log)
         for index in range(len(theta_log)):
             step = 1e-4 * max(1.0, abs(theta_log[index]))
@@ -184,23 +222,23 @@ def main() -> int:
             minus = theta_log.copy()
             plus[index] += step
             minus[index] -= step
-            gradient[index] = (objective(plus, training) - objective(minus, training)) / (2 * step)
+            gradient[index] = (objective(plus, mask_states) - objective(minus, mask_states)) / (2 * step)
         return gradient
 
+    bounds = [(value - 1.5, value + 1.5) for value in theta0]
     result = minimize(
         objective,
         theta0,
         args=(training,),
         method="L-BFGS-B",
         jac=fd_gradient,
+        bounds=bounds,
         options={"maxiter": arguments.maxiter, "ftol": 1e-12, "gtol": 1e-8},
     )
     fitted = np.exp(result.x)
     names = ("tau0", "R", "Q", "b", "C", "d")
-    defaults = np.asarray(
-        [getattr(default, f"{n}_mpa" if n != "b" else "b") for n in ("tau0", "overstress_modulus", "q", "b", "c", "d")]
-    )
-    fitted_powers = integrate(result.x)
+    defaults = np.asarray([getattr(default, attr) for attr in ATTRIBUTES])
+    fitted_powers, final_failures = integrate(result.x)
     heldout_r2 = {}
     for s in heldout:
         num = np.sum((fitted_powers[s] - d_exp[s]) ** 2)
@@ -215,6 +253,7 @@ def main() -> int:
         "ratios_to_default": {name: float(fitted[i] / defaults[i]) for i, name in enumerate(names)},
         "optimization_success": bool(result.success),
         "final_objective": float(result.fun),
+        "integration_failures_at_optimum": int(final_failures),
         "heldout_r2_per_state": heldout_r2,
         "heldout_r2_mean": mean_r2,
         "reading": "explains" if mean_r2 >= 0.30 else "partial" if mean_r2 >= 0.10 else "negative",
