@@ -37,14 +37,49 @@ coefficient perturbation at 1 Newton, not 8. Then `1N -> 0.1N + 1N = 1.1N`: the
 certification alone costs more than the entire solve it certifies, and
 hyper-reduction is a **10 % loss**.
 
-So the gain exists in exactly two places, and this is registered before the
-work rather than discovered after it:
+Generally, with `r` the RID fraction, `n` Newton iterations and one full
+certification, the constitutive speedup is `S = n / (n r + 1)`: 4.44 at eight
+Newton and `r = 0.1`, 1.67 at two, and **0.91 at one**.
 
-* the cold, multi-Newton regime, where it is worth about 4;
-* the warm regime **only with amortised certification**, which the
-  specification defers to `certification="periodic"` and does not qualify.
+So three regimes have to be kept apart, and reported apart.
 
-Any campaign result must be read against which regime it belongs to.
+**Cold, certified.** Systematic full certification, which is the qualification
+mode: it establishes that the reconstruction is right and produces the
+error-against-cost curves. Worth about 4 at eight Newton.
+
+**Hot, amortised.** The training mode, and the one certification must *not* run
+in every step of. Certifying every `q` steps gives `S = 1 / (r + 1/q)`: 3.33 at
+`q = 5`, 5.0 at 10, 6.67 at 20, tending to `1/r`. Between certifications the
+drift is watched on **sentinel points disjoint from the RID** -- checking the
+approximation at the points that built it would be close to tautological -- with
+a full certification triggered by drift, by a large change in the active zone,
+or periodically.
+
+**Physical commit.** Before an increment is actually accepted, a full-field
+integration is mandatory and the committed state is the exact one, so
+reconstruction error cannot accumulate from increment to increment.
+
+## Two ceilings this campaign cannot exceed
+
+Neither is a reason not to proceed; both are reasons not to expect a factor of
+ten.
+
+**Amdahl on the whole run.** `S = 1/(r + 1/q)` is the speedup of the
+*constitutive term*, which is 76 % of a nonlinear run. Overall,
+
+```text
+r = 0.10, q -> infinity :  1 / (0.24 + 0.076) = 3.16
+r = 0.02, q -> infinity :  1 / (0.24 + 0.015) = 3.92
+```
+
+The 24 % that is mechanics, residual and vector algebra bounds the whole method
+near **4**, however aggressive the domain.
+
+**The two remedies are substitutes, not complements.** MFront at eight threads
+is 1.9 times faster than the Python batch on the plastic branch. Adopting it
+takes the constitutive share from 76 % to about 62 %, and the hyper-reduction
+ceiling with it, down to about **2.3**. Both attack the same term. They should
+therefore be measured in the same run rather than stacked in expectations.
 
 ## Existing API this reuses, as required before coding
 
