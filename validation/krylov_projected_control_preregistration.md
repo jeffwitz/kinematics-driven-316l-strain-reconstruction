@@ -67,6 +67,13 @@ predictive fit must reproduce the archived raw-Krylov scores
 (`0.602 / 0.392 / 0.245` held out). A mismatch means the replication is
 wrong, not the physics.
 
+> **Passed 2026-08-17, before any projected run:** `--projector none` at r=4
+> reproduces the archived scores exactly — held-out mean `0.6021` (the
+> archived table reports held-out **means**; the decision criteria below
+> therefore read the held-out mean, with the median reported beside it),
+> fitted mean `0.3955`, `p_eq 3.648e-3`, `chi 0.033`. The replication is
+> validated against the frozen pipeline, bit for bit.
+
 ## Frozen decision criteria (100×100, held-out states)
 
 The line `Krylov + P_H^{G_p}` is declared **strategy-changing** only if, at

@@ -38,7 +38,7 @@ from fem_inhouse.identification.tensor_plastic_observability import (
     TensorPlasticObservabilityOperator,
 )
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
-from fem_inhouse.spectral2d.newton_ebi import pack_interior
+from fem_inhouse.spectral2d.newton_ebi import pack_interior, unpack_interior
 
 ROOT = Path(__file__).resolve().parents[1]
 HISTORY = (
@@ -171,9 +171,9 @@ def main() -> int:
             axis=1,
         )
         solved = operator.solve_stiffness(loads if columns > 1 else loads[:, 0])
-        solved = solved.reshape(-1, columns) if solved.ndim == 2 else solved
+        solved = solved.reshape(-1, columns) if columns > 1 else solved[:, None]
         return np.stack(
-            [kelvin_strain(np.asarray(operator.kinematics.unpack_interior(solved[:, k], grid)))
+            [kelvin_strain(np.asarray(unpack_interior(solved[:, k], grid)))
              for k in range(columns)],
             axis=2,
         )
@@ -263,31 +263,43 @@ def main() -> int:
                 gradient = modes.reshape(-1, rank).T @ dual.ravel()
                 return 0.5 * float(np.sum(residual**2)), gradient
 
-            starts = []
-            zeros = np.zeros(rank)
-            starts.append(zeros)
-            if arguments.projector != "none":
+            if arguments.projector == "none":
+                # Linear problem: the script's own baseline solve, verbatim.
+                best_solution = np.linalg.solve(
+                    gram + RIDGE * np.trace(gram) / rank * np.eye(rank),
+                    responses.T @ target.reshape(-1),
+                )
+                best_value = 0.5 * float(
+                    np.sum((responses @ best_solution - target.reshape(-1)) ** 2)
+                )
+                starts_spread.append(0.0)
+            else:
+                starts = [np.zeros(rank)]
                 linear = np.linalg.solve(
                     gram + RIDGE * np.trace(gram) / rank * np.eye(rank),
                     responses.T @ target.reshape(-1),
                 )
                 starts.append(linear)
-            rng = np.random.default_rng(20260817 + rank)
-            starts.append(rng.normal(scale=max(float(np.linalg.norm(starts[0])), 1e-6), size=rank))
-            best_value, best_solution = np.inf, None
-            values = []
-            for start in starts:
-                result = minimize(
-                    objective_and_gradient,
-                    start,
-                    method="L-BFGS-B",
-                    jac=True,
-                    options={"maxiter": arguments.maxiter, "ftol": 1e-14, "gtol": 1e-8},
+                rng = np.random.default_rng(20260817 + rank)
+                starts.append(
+                    rng.normal(
+                        scale=max(float(np.linalg.norm(starts[0])), 1e-6), size=rank
+                    )
                 )
-                values.append(float(result.fun))
-                if float(result.fun) < best_value:
-                    best_value, best_solution = float(result.fun), result.x
-            starts_spread.append(float(np.std(values)) / max(best_value, 1e-300))
+                best_value, best_solution = np.inf, None
+                values = []
+                for start in starts:
+                    result = minimize(
+                        objective_and_gradient,
+                        start,
+                        method="L-BFGS-B",
+                        jac=True,
+                        options={"maxiter": arguments.maxiter, "ftol": 1e-14, "gtol": 1e-8},
+                    )
+                    values.append(float(result.fun))
+                    if float(result.fun) < best_value:
+                        best_value, best_solution = float(result.fun), result.x
+                starts_spread.append(float(np.std(values)) / max(best_value, 1e-300))
             increment = modes @ best_solution
             projected, active = project(increment, stress, arguments.projector)
             increment = projected
