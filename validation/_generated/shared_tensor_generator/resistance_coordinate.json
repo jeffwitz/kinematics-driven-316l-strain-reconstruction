@@ -1,0 +1,202 @@
+{
+  "bars": {
+    "jump_bar": 0.1,
+    "overstress_bar": 0.3
+  },
+  "baseline_r2_mean": 0.03572590009250196,
+  "folds": [
+    {
+      "baseline_r2": 0.49778416102454215,
+      "resistance_r2": 0.4955918969699107,
+      "state": 0,
+      "tune_score": 0.08474045292022314,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.08779907639003337,
+      "resistance_r2": 0.0876878849912478,
+      "state": 1,
+      "tune_score": 0.08647001597062609,
+      "tuned_a": 0.0,
+      "tuned_b": 1.0,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.04117425434389843,
+      "resistance_r2": 0.03794049544721745,
+      "state": 2,
+      "tune_score": 0.08567975693389107,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.053052238495396975,
+      "resistance_r2": 0.055495906816270035,
+      "state": 3,
+      "tune_score": 0.08592314310746252,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.06713386272394706,
+      "resistance_r2": 0.06530162119708416,
+      "state": 4,
+      "tune_score": 0.0866439865611548,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.09598409825626719,
+      "resistance_r2": 0.09272007551476902,
+      "state": 5,
+      "tune_score": 0.08517921217165403,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.04403082593482244,
+      "resistance_r2": 0.04654104131320802,
+      "state": 6,
+      "tune_score": 0.08677622706172261,
+      "tuned_a": 0.0,
+      "tuned_b": 1.0,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.002649236347286199,
+      "resistance_r2": 0.0018639150390933334,
+      "state": 7,
+      "tune_score": 0.08882915007485526,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.08897656893265293,
+      "resistance_r2": 0.041514983054497634,
+      "state": 8,
+      "tune_score": 0.0862038204542851,
+      "tuned_a": 0.0,
+      "tuned_b": 0.0,
+      "tuned_c": 0.3
+    },
+    {
+      "baseline_r2": 0.08055598078247483,
+      "resistance_r2": 0.0802026833074454,
+      "state": 9,
+      "tune_score": 0.08078842062361025,
+      "tuned_a": 0.0,
+      "tuned_b": 1.0,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": -0.30177117447086665,
+      "resistance_r2": -0.30460848293281884,
+      "state": 10,
+      "tune_score": 0.08742433513226211,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": -0.2061393788950847,
+      "resistance_r2": -0.2159421017852532,
+      "state": 11,
+      "tune_score": 0.09011358218270671,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": -0.17888082300405084,
+      "resistance_r2": -0.17434603107255287,
+      "state": 12,
+      "tune_score": 0.08372245070053352,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.022692466383669396,
+      "resistance_r2": 0.02581664304697029,
+      "state": 13,
+      "tune_score": 0.08629662695838847,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.0969232562757697,
+      "resistance_r2": 0.10083507693752458,
+      "state": 14,
+      "tune_score": 0.07984751275358126,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.07084833084218678,
+      "resistance_r2": 0.07113454245604789,
+      "state": 15,
+      "tune_score": 0.08546399893650869,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": -0.05157016350967947,
+      "resistance_r2": -0.034157931308796075,
+      "state": 16,
+      "tune_score": 0.08610992514603077,
+      "tuned_a": 0.0,
+      "tuned_b": 1.0,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.08881222282229573,
+      "resistance_r2": 0.08764506731229305,
+      "state": 17,
+      "tune_score": 0.08295264547787151,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.10611800124928594,
+      "resistance_r2": 0.10423003536147124,
+      "state": 18,
+      "tune_score": 0.08376503482913789,
+      "tuned_a": 0.0,
+      "tuned_b": 0.3,
+      "tuned_c": 0.0
+    },
+    {
+      "baseline_r2": 0.008344960925191769,
+      "resistance_r2": 0.012185627091863216,
+      "state": 19,
+      "tune_score": 0.0872401123933827,
+      "tuned_a": 0.0,
+      "tuned_b": 1.0,
+      "tuned_c": 0.0
+    }
+  ],
+  "jump": -0.0018432526546273212,
+  "parameter_spread": {
+    "a": 0.0,
+    "b": 0.31843366656181316,
+    "c": 0.0653834841531101
+  },
+  "resistance_r2_mean": 0.03388264743787464,
+  "schema_version": 1,
+  "verdict": {
+    "jump_is_real": false,
+    "overstress_is_the_coordinate": false,
+    "parameters_stable": false
+  }
+}
