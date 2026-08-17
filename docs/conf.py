@@ -50,6 +50,7 @@ exclude_patterns = [
     "performance.md",
     "reduced_example.md",
     "scientific_contract.md",
+    "explanation/mission_tann.md",
     "validation.md",
     "archive/**",
 ]

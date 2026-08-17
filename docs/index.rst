@@ -62,7 +62,8 @@ Recommended journeys
    :doc:`explanation/micromorphic_model` →
    :doc:`explanation/parameter_identification` →
    :doc:`explanation/current_evidence` →
-   :doc:`explanation/scope_and_prediction`
+   :doc:`explanation/scope_and_prediction` →
+   :doc:`explanation/femu_identification`
 
 **Understand the spectral mechanics evidence**
    :doc:`explanation/spectral_mechanics/index` →
