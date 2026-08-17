@@ -173,6 +173,7 @@ dans le générateur plastique sépare proprement les deux effets.
 | `validation/adaptive_reduced_basis_preregistration.md` | seuils préenregistrés, dont le critère déclaré inatteignable |
 | `validation/adaptive_reduced_basis_first_rung.md` | bases construites à la main, plafond du champ libre |
 | `docs/explanation/spectral_mechanics/plastic_inverse_reuse.md` | la page-pont : ce que le solveur spectral fournit déjà |
+| `docs/how-to/choose_mfront_backend.md` | **choisir *et appeler* MFront** : le piège du `thread_count`, le croisement mesuré, l'étiquette `python_condensed` trompeuse, les conventions génie/Kelvin, un extrait qui marche |
 | `validation/morphology_reduction_findings.md` | la ligne base fixe, réfutée |
 | `validation/ludwik_on_the_measured_p43_history.md` | le verdict Ludwik |
 
