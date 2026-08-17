@@ -1,0 +1,65 @@
+{
+  "observability": {
+    "coefficients": 192,
+    "condition_number": 3.4877854962583516e+16,
+    "truths": {
+      "registered": {
+        "best_gauge_relative_error": 0.797395699951219,
+        "levels": [
+          {
+            "directions_kept": 146,
+            "gauge_relative_error": 0.8212959898517325,
+            "truncation": "1e-2"
+          },
+          {
+            "directions_kept": 171,
+            "gauge_relative_error": 0.797395699951219,
+            "truncation": "1e-3"
+          },
+          {
+            "directions_kept": 173,
+            "gauge_relative_error": 0.7988077037305477,
+            "truncation": "1e-4"
+          },
+          {
+            "directions_kept": 173,
+            "gauge_relative_error": 0.7988077037305477,
+            "truncation": "1e-6"
+          }
+        ],
+        "truth_fraction_in_null_subspace": 0.7806071870781676
+      },
+      "zero_mean": {
+        "best_gauge_relative_error": 0.5166738779236657,
+        "levels": [
+          {
+            "directions_kept": 146,
+            "gauge_relative_error": 0.5587061911066886,
+            "truncation": "1e-2"
+          },
+          {
+            "directions_kept": 171,
+            "gauge_relative_error": 0.5166738779236657,
+            "truncation": "1e-3"
+          },
+          {
+            "directions_kept": 173,
+            "gauge_relative_error": 5.095415546455565,
+            "truncation": "1e-4"
+          },
+          {
+            "directions_kept": 173,
+            "gauge_relative_error": 5.095415546455565,
+            "truncation": "1e-6"
+          }
+        ],
+        "truth_fraction_in_null_subspace": 0.3185210740626349
+      }
+    },
+    "uniform_eigenstrain_response": {
+      "xx": 0.0,
+      "xy_kelvin": 0.0,
+      "yy": 0.0
+    }
+  }
+}

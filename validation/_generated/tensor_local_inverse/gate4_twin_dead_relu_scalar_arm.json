@@ -1,0 +1,3907 @@
+{
+  "gate_4_twin": {
+    "coefficients": 192,
+    "family_separation_decades": 5.896497907496163,
+    "j2_cone_departure": 0.5020156756182262,
+    "passed_gate_4": false,
+    "passed_gate_5": true,
+    "passed_gate_7": true,
+    "scalar_j2": {
+      "decades": 0.0,
+      "evaluations": 1,
+      "final_active_fraction": 0.0,
+      "final_objective": 1.9172863160305565e-09,
+      "gauge_relative_error": 1.0,
+      "history": [
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 1.0,
+          "minimum_dissipation": 0.0,
+          "objective": 1.9172863160305565e-09
+        }
+      ],
+      "initial_objective": 1.9172863160305565e-09,
+      "maximum_active_fraction": 0.0,
+      "minimum_dissipation": 0.0,
+      "seconds": 0.028591156005859375
+    },
+    "tensor": {
+      "decades": 5.896497907496163,
+      "evaluations": 644,
+      "final_active_fraction": 0.000244140625,
+      "final_objective": 2.4332630718953285e-15,
+      "gauge_relative_error": 0.309252365174223,
+      "history": [
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.5659674915352516,
+          "minimum_dissipation": 0.024232755694453323,
+          "objective": 1.9172863160305565e-09
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.5529177417119829,
+          "minimum_dissipation": 0.020491360570086513,
+          "objective": 2.2624447006158047e-09
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.537809801909295,
+          "minimum_dissipation": 0.022495061202360393,
+          "objective": 8.700612244800076e-10
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.5255725148216884,
+          "minimum_dissipation": 0.022246200037930236,
+          "objective": 6.971991674903326e-10
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.47924031790322896,
+          "minimum_dissipation": 0.0194931492096105,
+          "objective": 1.973067569685864e-10
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4679234037833445,
+          "minimum_dissipation": 0.01825560465131543,
+          "objective": 1.4569748332656566e-10
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.46034161112786826,
+          "minimum_dissipation": 0.017512523193250973,
+          "objective": 1.1095376139595164e-10
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.45161968901224403,
+          "minimum_dissipation": 0.016251438855001615,
+          "objective": 8.441145465854981e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4450914606035949,
+          "minimum_dissipation": 0.015101870081411083,
+          "objective": 6.523469751474568e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4383595567649159,
+          "minimum_dissipation": 0.012737117639110996,
+          "objective": 3.675330470170695e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4362438688848972,
+          "minimum_dissipation": 0.01208242816972146,
+          "objective": 2.8536992951310005e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.434686768762023,
+          "minimum_dissipation": 0.011491025892731533,
+          "objective": 2.4314368901946304e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.42992330543090773,
+          "minimum_dissipation": 0.008307188805322996,
+          "objective": 1.622891999143036e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4261268594652706,
+          "minimum_dissipation": 0.007466642544365304,
+          "objective": 1.2765002549231865e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4233597010765032,
+          "minimum_dissipation": 0.006885880636952756,
+          "objective": 1.0654101016786804e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.42128908295289985,
+          "minimum_dissipation": 0.007166865516359522,
+          "objective": 9.546439260014827e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4185978923805282,
+          "minimum_dissipation": 0.007589776462916652,
+          "objective": 1.0249221693653874e-11
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4201217205435581,
+          "minimum_dissipation": 0.007334009465607763,
+          "objective": 9.022589671664948e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4187608089369721,
+          "minimum_dissipation": 0.007617474329769769,
+          "objective": 8.280921472031794e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4177756784918634,
+          "minimum_dissipation": 0.007428730428173992,
+          "objective": 7.759314077283002e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4166777592485525,
+          "minimum_dissipation": 0.006955112513225519,
+          "objective": 7.278902172045715e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.41465205355733525,
+          "minimum_dissipation": 0.006130953096991423,
+          "objective": 6.60006473065792e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4116760435267,
+          "minimum_dissipation": 0.005138658768972204,
+          "objective": 6.41948283014266e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4114681471022447,
+          "minimum_dissipation": 0.005078655833866709,
+          "objective": 5.702662843774354e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.41123353822402936,
+          "minimum_dissipation": 0.005124981492515838,
+          "objective": 5.498635750356182e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4101849946801074,
+          "minimum_dissipation": 0.005064325560874319,
+          "objective": 5.151297277572244e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40846448050040735,
+          "minimum_dissipation": 0.00463321565902241,
+          "objective": 4.644773399230939e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40543472472402864,
+          "minimum_dissipation": 0.003948377687197982,
+          "objective": 4.65324110902016e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40686204770084733,
+          "minimum_dissipation": 0.004293625551794461,
+          "objective": 4.3927482537799606e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.4059243075733812,
+          "minimum_dissipation": 0.004032643852236073,
+          "objective": 4.160971040851103e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40484196980465215,
+          "minimum_dissipation": 0.0038034396415751025,
+          "objective": 3.957037371798544e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40275021727034643,
+          "minimum_dissipation": 0.0035470760425712544,
+          "objective": 3.890529544708365e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40276115134956786,
+          "minimum_dissipation": 0.0035423956395855415,
+          "objective": 3.641679620883228e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40214654659774907,
+          "minimum_dissipation": 0.003472578182076909,
+          "objective": 3.484600704083259e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.40112154753672363,
+          "minimum_dissipation": 0.0033176141383226606,
+          "objective": 3.3681512732415516e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.39973477930068246,
+          "minimum_dissipation": 0.0030131869027106547,
+          "objective": 3.1668411139883254e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.39635694721515796,
+          "minimum_dissipation": 0.0018784994524162421,
+          "objective": 2.845190392509242e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.3934341185741262,
+          "minimum_dissipation": 0.0004759394200265606,
+          "objective": 2.931900516779689e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.39499580765327624,
+          "minimum_dissipation": 0.001262143959299955,
+          "objective": 2.7069140832956087e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.39467287725330374,
+          "minimum_dissipation": 0.0009691637361659111,
+          "objective": 2.5886231769465443e-12
+        },
+        {
+          "active_fraction": 0.0,
+          "gauge_relative_error": 0.39410214847895614,
+          "minimum_dissipation": 0.0005207592930473096,
+          "objective": 2.4636809211181173e-12
+        },
+        {
+          "active_fraction": 0.0001220703125,
+          "gauge_relative_error": 0.3931819709832327,
+          "minimum_dissipation": 0.0,
+          "objective": 2.339939676272606e-12
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.39098940261959086,
+          "minimum_dissipation": 5.421010862427522e-20,
+          "objective": 2.215593813782893e-12
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.39027291794203217,
+          "minimum_dissipation": 0.0,
+          "objective": 2.0953912389625784e-12
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.38999506644490245,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.028897491508031e-12
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.3888306712709393,
+          "minimum_dissipation": 0.0,
+          "objective": 1.8829992052927857e-12
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.38694689101209373,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 1.8563545028595464e-12
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.38656812193471946,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 1.7019314086425601e-12
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3862477261264589,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.6527168676349584e-12
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3854602871215216,
+          "minimum_dissipation": 2.168404344971009e-19,
+          "objective": 1.5780168434675867e-12
+        },
+        {
+          "active_fraction": 0.000732421875,
+          "gauge_relative_error": 0.3840885591474826,
+          "minimum_dissipation": 0.0,
+          "objective": 1.4478707710941489e-12
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.38203789157187557,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 1.5077356984406389e-12
+        },
+        {
+          "active_fraction": 0.000732421875,
+          "gauge_relative_error": 0.3831932837478561,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.3883558163529865e-12
+        },
+        {
+          "active_fraction": 0.000732421875,
+          "gauge_relative_error": 0.3823142259492951,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.3174578091184015e-12
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.38202216137054235,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.279828281800062e-12
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3813958147647114,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.218817722283531e-12
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3806460032826367,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.1607572192936247e-12
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.38006505882983216,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.1166239018010387e-12
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.37905655779060154,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.0713678972126171e-12
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3784389427146928,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.029812451683711e-12
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.37733967457342527,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 9.745367311456894e-13
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.37580994948409174,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 1.0539989986224114e-12
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3768833824847784,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 9.585802802291158e-13
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.3762784150900644,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 9.311849902430482e-13
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3755048746348146,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 8.875364058940593e-13
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.37397052099652844,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 8.897160038963616e-13
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3747308286169485,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 8.582479356405517e-13
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3742426679458521,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 8.25475483519988e-13
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.37400304297867915,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 8.055959074762749e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.37304849682556446,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 7.487832581731469e-13
+        },
+        {
+          "active_fraction": 0.002197265625,
+          "gauge_relative_error": 0.37164848993479965,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 7.036286150877046e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.3702979798913453,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 6.648417665811963e-13
+        },
+        {
+          "active_fraction": 0.0025634765625,
+          "gauge_relative_error": 0.37029592116305404,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 6.425180111575451e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.37005670465918217,
+          "minimum_dissipation": -1.4094628242311558e-18,
+          "objective": 6.206416256524609e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.36969424360234643,
+          "minimum_dissipation": -1.734723475976807e-18,
+          "objective": 6.02086331252841e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36793446501814825,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 6.140012007872571e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.3688985967473104,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 5.840554192069248e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.3681188633964371,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 5.56042978990578e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36775331881528045,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 5.421454950291197e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.3671345484814279,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 5.231880826496573e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36633876218967726,
+          "minimum_dissipation": -1.951563910473908e-18,
+          "objective": 5.211234195439615e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.3667135486455165,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 5.102844178704456e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36648933329455274,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 4.958188834208248e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36614055147335794,
+          "minimum_dissipation": -1.4094628242311558e-18,
+          "objective": 4.774476574718761e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.3659552117023606,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 4.680564436006138e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36538031479061006,
+          "minimum_dissipation": -1.3010426069826053e-18,
+          "objective": 4.4648812206523334e-13
+        },
+        {
+          "active_fraction": 0.0030517578125,
+          "gauge_relative_error": 0.36461652534890004,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 4.3923967022065813e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.364844268548291,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 4.2193750474126996e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.3648190099632563,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 4.107876450239912e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36455594796629426,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 3.9764864288790514e-13
+        },
+        {
+          "active_fraction": 0.0030517578125,
+          "gauge_relative_error": 0.36400893100670434,
+          "minimum_dissipation": -1.4094628242311558e-18,
+          "objective": 3.784560841280231e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.36258125612868153,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 4.74004669849025e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.3637124526625518,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 3.723060752553876e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.36320251386977626,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 3.5920335207076537e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.36294855317040514,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 3.517677159121951e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.36262775545181475,
+          "minimum_dissipation": -1.734723475976807e-18,
+          "objective": 3.43081449897107e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.36235050316311496,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 3.3459775536405804e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.36228649913454386,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 3.284470055273969e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.3620834731497045,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 3.201484763249492e-13
+        },
+        {
+          "active_fraction": 0.003173828125,
+          "gauge_relative_error": 0.3618123211712436,
+          "minimum_dissipation": -1.3010426069826053e-18,
+          "objective": 3.1316110828697066e-13
+        },
+        {
+          "active_fraction": 0.0029296875,
+          "gauge_relative_error": 0.36100554650644084,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 2.973650938903162e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.36005214301361604,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 2.9343341987858656e-13
+        },
+        {
+          "active_fraction": 0.0028076171875,
+          "gauge_relative_error": 0.36001528673946614,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 2.765147561821416e-13
+        },
+        {
+          "active_fraction": 0.0028076171875,
+          "gauge_relative_error": 0.3599066143734871,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 2.7086218958674376e-13
+        },
+        {
+          "active_fraction": 0.0028076171875,
+          "gauge_relative_error": 0.35954651027405865,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 2.6252993734189613e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.3584010405976269,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 3.094071641818093e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.35929761263030524,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 2.5895838775642283e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.35881559388643075,
+          "minimum_dissipation": -1.4094628242311558e-18,
+          "objective": 2.5060662384739243e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.3582247689204812,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 2.4177190534957647e-13
+        },
+        {
+          "active_fraction": 0.002685546875,
+          "gauge_relative_error": 0.35758087563905633,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 2.3507558852665395e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.35714139984629106,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 2.2795297863653634e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.3570160752447589,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 2.22359517376261e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.3565431037142949,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 2.1094270360812341e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.3559860232454461,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 2.0158478161276173e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.354726828588292,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 2.0685713484735514e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.35544663444682645,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 1.9591001252308467e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.3547784199895801,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 1.864925244732948e-13
+        },
+        {
+          "active_fraction": 0.00244140625,
+          "gauge_relative_error": 0.35450312110806625,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 1.810652674201303e-13
+        },
+        {
+          "active_fraction": 0.002197265625,
+          "gauge_relative_error": 0.35388251637236284,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 1.7414794717278315e-13
+        },
+        {
+          "active_fraction": 0.002197265625,
+          "gauge_relative_error": 0.3536917682838132,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.6967001816922655e-13
+        },
+        {
+          "active_fraction": 0.002197265625,
+          "gauge_relative_error": 0.3536945034879027,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.6392166738435427e-13
+        },
+        {
+          "active_fraction": 0.002197265625,
+          "gauge_relative_error": 0.35355470939053335,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.5940351921155872e-13
+        },
+        {
+          "active_fraction": 0.002197265625,
+          "gauge_relative_error": 0.3533040817517579,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.5516747799335685e-13
+        },
+        {
+          "active_fraction": 0.0020751953125,
+          "gauge_relative_error": 0.3528779043555578,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 1.5199211012939427e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.35258435922159803,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 1.46230476877376e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3524324992428402,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.4311291096546844e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.35224722114608126,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 1.3956234775915432e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3519079019796395,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 1.3431997708486015e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.35126647431844465,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.350558980529901e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.35159755873703774,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 1.307514074853392e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3514129715664839,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 1.2725849198831592e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3512676275534146,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.2431664010919392e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.35094886213499216,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.1939448570139658e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.35038861029427326,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 1.1476259999386654e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3498781843632604,
+          "minimum_dissipation": -1.2468324983583301e-18,
+          "objective": 1.1278013885348285e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3499713080683067,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.0969200784285409e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34995992054237857,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 1.0891985527742274e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34984796991739703,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 1.075457892829241e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3495543969208377,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.0638467687539824e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34944151173882,
+          "minimum_dissipation": -1.0842021724855044e-18,
+          "objective": 1.0416613135513041e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34936296081418317,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.0332945189148769e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34924725085222297,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.0209887078947265e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3488108986389782,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 1.0024814183010317e-13
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3485620696390349,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 9.780384463819765e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3484673123703441,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 9.548646136261445e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3481852088821286,
+          "minimum_dissipation": -1.734723475976807e-18,
+          "objective": 9.23922683930112e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34784303800855254,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 9.031272887526387e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34737105189286777,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 8.815071770494448e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3472909304164191,
+          "minimum_dissipation": -1.3010426069826053e-18,
+          "objective": 8.70721480167009e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34712693879005935,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 8.538745661653439e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3468872345302477,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 8.35024495444881e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3461160097686254,
+          "minimum_dissipation": -5.963111948670274e-19,
+          "objective": 8.803408401014781e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3466605614215018,
+          "minimum_dissipation": -1.3010426069826053e-18,
+          "objective": 8.259736884954307e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3465054471561026,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 8.135322450148774e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3463795622696209,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 8.03717342678313e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.346256076033359,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 7.941169893092077e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34600209226190826,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 7.763281018148719e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3455907456634929,
+          "minimum_dissipation": -1.0299920638612292e-18,
+          "objective": 7.629610259204599e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3452855939725668,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 7.439999209316e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34524071499659365,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.367766020102686e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3451793979484647,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 7.308820777970642e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34508170438802915,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 7.245920278844677e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34473629473063927,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 7.077014669315438e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3444566593616547,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 7.022075200229913e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3443936804576791,
+          "minimum_dissipation": -7.047314121155779e-19,
+          "objective": 6.877416929363652e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34432291051881025,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 6.796814425862837e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34418945797177314,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 6.708865247863678e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34398762235145935,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 6.602906633647175e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3433731863773544,
+          "minimum_dissipation": -8.131516293641283e-19,
+          "objective": 6.34753273207916e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3426594167130873,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 6.604678086609529e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34314689434100404,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 6.279684989659627e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34297071195945167,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 6.205232207296521e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34267986638741704,
+          "minimum_dissipation": -1.3010426069826053e-18,
+          "objective": 6.093082742297517e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34224117172562085,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 5.975436366341057e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34208730334247917,
+          "minimum_dissipation": -1.1926223897340549e-18,
+          "objective": 5.851946269096065e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3418823814729374,
+          "minimum_dissipation": -1.1384122811097797e-18,
+          "objective": 5.718075885657249e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34166853845045775,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 5.609043461878463e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3411216199799846,
+          "minimum_dissipation": -1.3552527156068805e-18,
+          "objective": 5.4077086912278714e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3401077255468267,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 6.480710517841791e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3409776954544003,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 5.379394692097451e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.34080073388615545,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 5.318909372270054e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3407015972065161,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 5.269072868529379e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3405216576638236,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 5.176145965509335e-14
+        },
+        {
+          "active_fraction": 0.001953125,
+          "gauge_relative_error": 0.3401936795762618,
+          "minimum_dissipation": -1.463672932855431e-18,
+          "objective": 5.083482350705706e-14
+        },
+        {
+          "active_fraction": 0.0018310546875,
+          "gauge_relative_error": 0.33996664976328134,
+          "minimum_dissipation": -1.3552527156068805e-18,
+          "objective": 4.99481000776745e-14
+        },
+        {
+          "active_fraction": 0.0018310546875,
+          "gauge_relative_error": 0.3399420454002277,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 4.9365151903705116e-14
+        },
+        {
+          "active_fraction": 0.0018310546875,
+          "gauge_relative_error": 0.339863980347002,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 4.875826385314851e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3397008542296981,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 4.821573647585677e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3394218881660944,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 4.74197957676998e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.339282904034681,
+          "minimum_dissipation": -8.131516293641283e-19,
+          "objective": 4.689128646715468e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3390274775372247,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 4.615622957290511e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33879482878890216,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 4.658104019949671e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33893219098129695,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 4.577419546806892e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3388207271032077,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 4.520260903398591e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3386674968745059,
+          "minimum_dissipation": -9.75781955236954e-19,
+          "objective": 4.4534250031668606e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33857614660561997,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 4.409222012452061e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33836420584229465,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 4.323014169341408e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3381354923549988,
+          "minimum_dissipation": -7.589415207398531e-19,
+          "objective": 4.319695926030803e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33824703386494553,
+          "minimum_dissipation": -8.673617379884035e-19,
+          "objective": 4.2798009208022296e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3381273141820701,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 4.2221108423473766e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33799846692167007,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 4.153760468387463e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33785036642649136,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 4.0928515997094617e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3376404918918697,
+          "minimum_dissipation": -9.215718466126788e-19,
+          "objective": 4.012189351192976e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33752130273740466,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.941177193172615e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3373519895303965,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 3.8586906143846935e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3371400407852266,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 3.7720633712242767e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3367997616891224,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 3.740892541982564e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.33676159920641807,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 3.666808692213656e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3367578297179652,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 3.64301001886722e-14
+        },
+        {
+          "active_fraction": 0.001708984375,
+          "gauge_relative_error": 0.3365970170492199,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.564856223994657e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33622044966100567,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.5144559294723075e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3360656653433227,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 3.424192742394683e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3360397255875752,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 3.3938523312916685e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33594196410327015,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 3.360620616940615e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33579441079484423,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 3.316476895996744e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33551708044098616,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 3.254489828040319e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.335299567162947,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 3.185051532164433e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3350856487900734,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 3.107504201343869e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3348946706521271,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 3.0385415300229526e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3346504211942154,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.9744071889893e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33435794931549556,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 2.9729918172482915e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3345016835029371,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.94286909702656e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33439729922478856,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 2.904657199815318e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3342320545780493,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 2.856247928880518e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33401480838955105,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 2.845213049939535e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3339747103915177,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 2.7869208244009518e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33393580090457703,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.7633030374146657e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33386741871801423,
+          "minimum_dissipation": -6.505213034913027e-19,
+          "objective": 2.7405743911019563e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3337686809864352,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 2.7017029692589308e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3334290696445675,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 2.612805924180065e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33318571776251293,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.9482587461441327e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33337447106219525,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.583256997687487e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3332050553261414,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 2.5321060509050754e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3330472579209565,
+          "minimum_dissipation": -9.215718466126788e-19,
+          "objective": 2.488020179912321e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3329924796262875,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.4566510091526255e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33294291741503357,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.4178400219755546e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33286980998343874,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 2.3687012588943224e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33280261142172435,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 2.3429656159061082e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33260075458666233,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 2.312136148645178e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33256251651231894,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.2723232591229187e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33245726625413735,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.2358710621128488e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33234927419419447,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 2.2116546282100877e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3321533243819992,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.1590933988046014e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3318896631176382,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 2.179075905417711e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3320392257760656,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.1327454344330288e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.33189933757288326,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 2.0954110904886425e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3318218100943174,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 2.0670456131436535e-14
+        },
+        {
+          "active_fraction": 0.00146484375,
+          "gauge_relative_error": 0.3316701984566811,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.01522017019052e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.331448100014774,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.982386089515861e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.33131082406810325,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.9560702499864114e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.33132483056289364,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 1.9393541585483482e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33129259282757667,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.9260883144487464e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33124062445766,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.9129759154066897e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33100936754188065,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.9036595104286838e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3309785981466953,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.8677144673453154e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33095378953954946,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.8540351702092806e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33090273571388645,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.8418952637569817e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33086292095493214,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.8287659334785546e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3307256801384673,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.795927826288759e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33056616564835506,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 1.781317300548701e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33060114730477225,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.7622649482209152e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3306064099308592,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.7527303219084753e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3305771450933872,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.7484722076952403e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3305560095184545,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.7367016442823904e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3304983661193862,
+          "minimum_dissipation": -9.215718466126788e-19,
+          "objective": 1.7238738748866595e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.330417807628285,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.710879360511653e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33033034741807954,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.693452525798779e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3301070104536233,
+          "minimum_dissipation": -5.963111948670274e-19,
+          "objective": 1.7728245689211265e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3302779541993836,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.685410197193734e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3301998524533312,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.667019684710444e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3301673945529064,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.6558883068886998e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.33012301461526894,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.6417792932937692e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3300666858922556,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 1.626350859793414e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32998229945796553,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.6066904724504225e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32986327333278304,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.588632736725702e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32978718561748394,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.572837245435582e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3297929327081175,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 1.5640753306429655e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3297698342556083,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.550760085684247e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3297029568436581,
+          "minimum_dissipation": -8.131516293641283e-19,
+          "objective": 1.5358719365233342e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3296259050536959,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.519828544533226e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32951142932271166,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.5041482368317998e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3294147514804923,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.4918347603352336e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3293844819490256,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.4792517753040256e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3292689650302546,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.4533791501464054e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3292163321676495,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.4483819709904668e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32922037643887075,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.4377851581777294e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32919614220178384,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.425597492964856e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3291219241908103,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.4080958985724176e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3290008027030956,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.3879003886548228e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32870959357651236,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.401433327063459e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3288901121715228,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 1.3801222156751361e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32879728609861236,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 1.3640083954825632e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3287602957542575,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.354504718700561e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3287093537044859,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.3432564452385724e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32867747042785556,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.3322267285664932e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3286080301355042,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.3258527222835166e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3286169484601225,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.3175046198531752e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32861681860396885,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.3140335246463424e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3285979640974515,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.306335569150616e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32848514491168157,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.2968091285741721e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32845518404186486,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.2839346220032895e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3284164599668471,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.276386156749033e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.328358125883025,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.2711560100299105e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32830333269840484,
+          "minimum_dissipation": -3.7947076036992655e-19,
+          "objective": 1.2652273533817679e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3282505717206279,
+          "minimum_dissipation": 0.0,
+          "objective": 1.2570622367153157e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3281167976526254,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.2379780054699652e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3279301297258236,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.2624726597529234e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3280598621698411,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.2322264213760783e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3279883215459965,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.2224915919095818e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32793340767801843,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 1.2135161485696998e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.32782513432646954,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.202021926242339e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.32773024519083405,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.189347501034758e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.3276100741495358,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.1740804746402696e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.32745255242785093,
+          "minimum_dissipation": -4.87890977618477e-19,
+          "objective": 1.1592818335262008e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.32735346057364484,
+          "minimum_dissipation": -2.710505431213761e-19,
+          "objective": 1.1469870995200793e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.32730652562473544,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.1387049606026451e-14
+        },
+        {
+          "active_fraction": 0.0013427734375,
+          "gauge_relative_error": 0.3272062065672642,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 1.1292296969130923e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.327110967848454,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.1167024918849767e-14
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32698732413387804,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.1034961291759308e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3268560751264084,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.0875456997431192e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3266889316023425,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 1.0726497228724306e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3265654315036,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.125105180944388e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32666553718837976,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.0696480601583303e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3265923431418763,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 1.0631207121321585e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32653402729257747,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.0562286677378309e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3264574402533561,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.0467287633852247e-14
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32638869404475007,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 1.0373653914830163e-14
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.326317957812358,
+          "minimum_dissipation": 0.0,
+          "objective": 1.0261483696256287e-14
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32606040958909094,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.0474321996300943e-14
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3262274818412337,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.017591790072938e-14
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3261249326551322,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 1.0041307855811898e-14
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32600276746975604,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 9.949274845394659e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3258339024054847,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 9.831297136473095e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3257464516670817,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 9.740902220262334e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32563882490463186,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 9.627615215927819e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32548902049436723,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 9.547033690126568e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3253940057821878,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 9.452761718610183e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3253379985319254,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 9.35997115707528e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32518405730674343,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 9.197651101827284e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3249818714092963,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 9.094969885049698e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3249783094387757,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 8.98964950208579e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3249389166904649,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.913658668205363e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3248845852100129,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.85977394709555e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3248176047584457,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.815446015399938e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32480223285303517,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.75360337923382e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.324796854401914,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 8.7238953081744e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32479236638596376,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.683874867387364e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3247799996940272,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 8.640235587030553e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32475814115216917,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 8.561728323082996e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3247354415746045,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.514639244859835e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3246956655709497,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 8.452229587430961e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32463698107290856,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.356367762875162e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32449121215529847,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 8.218223163189996e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32435386702910557,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 8.13900236762666e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3243762109708293,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 8.071338549906215e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3243720676517355,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 8.03603118403682e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32434504783165113,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 8.005288253372784e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32426185403608243,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.954487540609739e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32418757856093844,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 7.892213074842371e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.324063369630873,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.79983012121467e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32397245720112267,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.740589757718764e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3238816761507548,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.691131285750027e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32390532477470263,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.662848062089223e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32391471473569033,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.632126564935815e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.323880932483919,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.585726899924404e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3237786724663523,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 7.511655029719722e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3235684185286489,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.454617021104037e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32355128632421953,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.405838763294876e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32352252976398677,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 7.370348751090037e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3234449372649273,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 7.345977117366727e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3234013097791272,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 7.317719980159427e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32331589916002973,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.269331326667649e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3232667318093363,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.237771129502517e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32312940810218405,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.245519013528038e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3232034029584529,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 7.217156707191875e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32317283549572434,
+          "minimum_dissipation": -5.421010862427522e-19,
+          "objective": 7.186694339868435e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3231375343561062,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 7.157836879883287e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32308001915114504,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.127477004330705e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3229870195025866,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.080895202798504e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3227443205735605,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 7.07838476825815e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32286308310483086,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 7.0445588638381085e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3227389034117809,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 6.9912236574742734e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3226702758513518,
+          "minimum_dissipation": 0.0,
+          "objective": 6.96195844355735e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32259347475454564,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 6.936611831281546e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.32256615642650927,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.908773488728601e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3225100485682523,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 6.8723511374675896e-15
+        },
+        {
+          "active_fraction": 0.001220703125,
+          "gauge_relative_error": 0.3224268125604088,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.840940497581763e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32230826374456245,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.806242749857236e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3222313288813526,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.7843878835675455e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3222010690908206,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.769790696015453e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.32219614514581413,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.755989197111148e-15
+        },
+        {
+          "active_fraction": 0.0010986328125,
+          "gauge_relative_error": 0.3221324807711539,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 6.7226186606723704e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.322026231042094,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.690763288323646e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3218556503442942,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.653781038817926e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3217616335974226,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.622989177991045e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.321691415178619,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.591438043862841e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32165572753926486,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.582286933701031e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3216769045414615,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.562887849913279e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3216845361431502,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.550461401765709e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32167646004409733,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.537699007034985e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32163887480920306,
+          "minimum_dissipation": 0.0,
+          "objective": 6.5069324516163056e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3214405288699681,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.4780232258727094e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3213574764020141,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.435478019620877e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32138444629422375,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.408976285833503e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32135382594935624,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.3951774291571135e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3213097222910765,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.382303376277666e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32119326461234493,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.352021731583485e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.321104233988546,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.366697760067784e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3211566181884408,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 6.33810146313024e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3210998911114545,
+          "minimum_dissipation": -1.6263032587282567e-19,
+          "objective": 6.322190169612045e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32107124061767256,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.311513934236843e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3210460057728145,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.298348462832329e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3210149656832009,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 6.281701889116513e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32094780478921664,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.2548607730682925e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32089687244222626,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 6.239352574143508e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3207786216300494,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.211915980600676e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32068281809318455,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.194845308438971e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32067500690270423,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.1771216447501995e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3206521631936609,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.162777469095881e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3206130848958549,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 6.142824132436288e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32043563276853454,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 6.081068482760102e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3202167682081145,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 6.0454880461260476e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3201625794377886,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.99202763898672e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3201152324499407,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.963577405882091e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3200751630892248,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.9456520422207534e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.32003719401455627,
+          "minimum_dissipation": 0.0,
+          "objective": 5.930825133914868e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31989102539469344,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.878651640999546e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31974991637865247,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.837402961490331e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.319529983158414,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.819231964254504e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3195696914904153,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.78402044734332e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31959479655066114,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.774512191738492e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31958339175716977,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 5.754073419616913e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3194800609092893,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.706795004143225e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3193115567763356,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.738229736251074e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3194146891449732,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.686059373223251e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31925818641758563,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.646929758653723e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31910937695190766,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.616270568950848e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31889124119505846,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.625351375747801e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3190101953101491,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.596436035766225e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3189556070310957,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.573081318836537e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3188828273265558,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.530783717510999e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3188089198688253,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.489839552443612e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31860704377334814,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.4715308663967846e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3186082371559576,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.411800226186663e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3185892018525713,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.3864440211222975e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.31849061159848274,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.3632868817763114e-15
+        },
+        {
+          "active_fraction": 0.0009765625,
+          "gauge_relative_error": 0.3183955648802508,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.342572507868925e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.31834660918583985,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.32568992476049e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3181965122935969,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.286335007292988e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3180986074500904,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.2583218440137735e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3177908073777309,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.397858912183988e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.31801867451502863,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.239248923169537e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3178676269962207,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.192561262607298e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.317812659583829,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.16469385597537e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3177648706179292,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.130748655185893e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3177066125821098,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 5.097319109684536e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3175662311315676,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 5.05249878049521e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3174047345410196,
+          "minimum_dissipation": 0.0,
+          "objective": 5.013249984980635e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.31732232777061264,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 4.9885040600557935e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3172282268794025,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.959420288581922e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.317157764141525,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 4.939101522882843e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3169131054258828,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.90145289190235e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.316864031104309,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.869867535180821e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3168540321848922,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.8538790010069944e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.31682997652712797,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.831560731770196e-15
+        },
+        {
+          "active_fraction": 0.0008544921875,
+          "gauge_relative_error": 0.3167167563864355,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.7839271752628636e-15
+        },
+        {
+          "active_fraction": 0.000732421875,
+          "gauge_relative_error": 0.3166155515205809,
+          "minimum_dissipation": 0.0,
+          "objective": 4.749552501258703e-15
+        },
+        {
+          "active_fraction": 0.000732421875,
+          "gauge_relative_error": 0.31656392465087113,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.734052504360725e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.31651342655762815,
+          "minimum_dissipation": -4.336808689942018e-19,
+          "objective": 4.710943550129178e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.3164275380727316,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.6854817071274185e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.3164163530491876,
+          "minimum_dissipation": 0.0,
+          "objective": 4.660403097710149e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.3164269307785672,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.6496706745220485e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.3164371586537368,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.640272634304013e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.31643388917055176,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.6169491585872846e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.31635977395439013,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.585369545794197e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.31632618180882904,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.554158531674089e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.3162796588679628,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.537739725470503e-15
+        },
+        {
+          "active_fraction": 0.0006103515625,
+          "gauge_relative_error": 0.3162070022701544,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.5271110819910535e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31617221652589905,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.507998900665499e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31615505215027917,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 4.4952198340398156e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3161140900131406,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.474119305658575e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3160716006624361,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.453112782521569e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31593437503725713,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.432226132966298e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31590727554132025,
+          "minimum_dissipation": 0.0,
+          "objective": 4.398583113335121e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3159162376173827,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.38793276739784e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.315906539219877,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.377907973342994e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31586132558545194,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.3601845920807655e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3158071642220817,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.3444627111281325e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31569935283214084,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.322615427400483e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3155977310997214,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.3044280063666195e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31559797340234624,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.288441802534427e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31560214706040646,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.277508278632635e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3155823178486177,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.264482955749368e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31548161129082336,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.239890688430257e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31538378910930426,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.2213104425993494e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3153811516129429,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.20643924538169e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3153489396283705,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.193267149408721e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31530319492895403,
+          "minimum_dissipation": 0.0,
+          "objective": 4.187313131403013e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31528898515821896,
+          "minimum_dissipation": 0.0,
+          "objective": 4.172569437913729e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31525926812156047,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.158387205607813e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3152333574705786,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.150012735756026e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3151889064018931,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.132602540188365e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31507934921728,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 4.151953246766065e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31515092805400224,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.1250961437915335e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3151293644068616,
+          "minimum_dissipation": 0.0,
+          "objective": 4.116476905700193e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3151175624398354,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.111145830315287e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3150730278264922,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.09543475842643e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31500317138926215,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 4.079308717035451e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3148848780994256,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 4.060154293474604e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3148458739598091,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 4.041731061613607e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31480053041966605,
+          "minimum_dissipation": 0.0,
+          "objective": 4.021581784837227e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31472773574141727,
+          "minimum_dissipation": 0.0,
+          "objective": 4.011952521115489e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3147042866525202,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.9912244101061264e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31465570298002,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.974737870967259e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31460533825982556,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.96393072674103e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31453789400345744,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.950350319640023e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3143963050953477,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.9556567340551536e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31447372906874715,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.939098092941366e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31445172069894584,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.927591496306828e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31443564538354024,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.917396413704378e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31441800413253784,
+          "minimum_dissipation": 0.0,
+          "objective": 3.909052783487254e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31433788645380195,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.882435666376178e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31416868579589774,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.88368503747719e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31425454876181536,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.865743360230817e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31416325684885144,
+          "minimum_dissipation": 0.0,
+          "objective": 3.838389183320694e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31406074009250623,
+          "minimum_dissipation": 0.0,
+          "objective": 3.811212213852242e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3139536587022254,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.7937411088793535e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3138742355001408,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.774143095580122e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3138539959550936,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.7599051414741405e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3137676333713806,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.730770740852e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3136623407497976,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 3.704687792494338e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31346215829141827,
+          "minimum_dissipation": 0.0,
+          "objective": 3.719242491314581e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3135784080576517,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.6893317540187675e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3134654460437541,
+          "minimum_dissipation": 0.0,
+          "objective": 3.668784163504853e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31341662174414914,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.655320373204162e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31327801972568803,
+          "minimum_dissipation": 0.0,
+          "objective": 3.622446434697685e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.313120374820287,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.60793822809957e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3131290908570741,
+          "minimum_dissipation": 0.0,
+          "objective": 3.5859242918590065e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3131205338238694,
+          "minimum_dissipation": 0.0,
+          "objective": 3.567092063645464e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3130674559139643,
+          "minimum_dissipation": 0.0,
+          "objective": 3.5458704675607033e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31283195160606286,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.579027775034511e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3129869555517338,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.5339400407884507e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31290234162421815,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.5159981135962937e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3128203188021002,
+          "minimum_dissipation": 0.0,
+          "objective": 3.502150916026073e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3127601700991743,
+          "minimum_dissipation": 0.0,
+          "objective": 3.4891843519469446e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3126296334245399,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.4787414199092762e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31260163164288707,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.450194291221533e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31258911941455086,
+          "minimum_dissipation": 0.0,
+          "objective": 3.4296728998420553e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31253747224952,
+          "minimum_dissipation": 0.0,
+          "objective": 3.4019302444144988e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3124314850298776,
+          "minimum_dissipation": 0.0,
+          "objective": 3.3633513587766983e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31204679337835717,
+          "minimum_dissipation": 0.0,
+          "objective": 3.3611330634160956e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.312234139259209,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.328316948098995e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3121111601524405,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.2847883990770507e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3120598918122425,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.260466605815294e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3119554069550218,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 3.2350689215786536e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31185008315396645,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.2185909063294885e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31180750760585707,
+          "minimum_dissipation": 0.0,
+          "objective": 3.192187067758029e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3117702698233276,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.1784637687456868e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31172617001385405,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.1677321965991815e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3115993286045576,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.151697111106867e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3115533900607937,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 3.1318747635437518e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3115530711853035,
+          "minimum_dissipation": 0.0,
+          "objective": 3.126106081337866e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3115333377221072,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.1186261612455647e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3114852458320481,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 3.1050867238278067e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3113984951723728,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.0857953379519998e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31128181329864496,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.072871267808756e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31122075803267113,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 3.047303749184452e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.311201224202865,
+          "minimum_dissipation": 0.0,
+          "objective": 3.0321511726529053e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31115803625938265,
+          "minimum_dissipation": 0.0,
+          "objective": 3.0202557815440495e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31114728518327606,
+          "minimum_dissipation": 0.0,
+          "objective": 3.0046751462775443e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3111259519994173,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.9926615421803048e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31108521951514084,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.978655464298858e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3110478582307782,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.961897687616511e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3109662085934281,
+          "minimum_dissipation": 0.0,
+          "objective": 2.9594461448559133e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3110047681742673,
+          "minimum_dissipation": 0.0,
+          "objective": 2.9489946429249264e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31094709258398434,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.930632294753961e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3109285532856661,
+          "minimum_dissipation": 0.0,
+          "objective": 2.9232653484529774e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31089679159415834,
+          "minimum_dissipation": 0.0,
+          "objective": 2.9117065489823875e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.3108477389436673,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.8972699977010616e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31075371011808617,
+          "minimum_dissipation": 0.0,
+          "objective": 2.878047565993403e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31070731603595864,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.8637237101110007e-15
+        },
+        {
+          "active_fraction": 0.00048828125,
+          "gauge_relative_error": 0.31069152008982814,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.8510111685007923e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.31067717824192526,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.839779604129069e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.31061610252181127,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.841211260820735e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.3106480766945309,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.8332245128715834e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.31062907265288325,
+          "minimum_dissipation": 0.0,
+          "objective": 2.8231880278880273e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.3105880217771924,
+          "minimum_dissipation": 0.0,
+          "objective": 2.8085956658171628e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.3105629948513516,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.800663295140745e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.310515408114802,
+          "minimum_dissipation": 0.0,
+          "objective": 2.7965475622677255e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.31052212543819124,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.7869658010928342e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.3105259011039439,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.7831218343325067e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.31051717158508685,
+          "minimum_dissipation": 0.0,
+          "objective": 2.7768197543202568e-15
+        },
+        {
+          "active_fraction": 0.0003662109375,
+          "gauge_relative_error": 0.3104845925390304,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.764984490770338e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3104019411903605,
+          "minimum_dissipation": 0.0,
+          "objective": 2.7682161051839953e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3104472332198664,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.758360243022635e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31040087951676876,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.7470677376302645e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3103720443980384,
+          "minimum_dissipation": 0.0,
+          "objective": 2.740006218537497e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3103375466165815,
+          "minimum_dissipation": 0.0,
+          "objective": 2.729580661345917e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31027297905099277,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.730149023906985e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31030598705129253,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.7241818128397416e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31028995329842024,
+          "minimum_dissipation": 0.0,
+          "objective": 2.7153686943890296e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3102803541565913,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.7075442690461148e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31026946613258427,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.6994829351416866e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3101805549361865,
+          "minimum_dissipation": 0.0,
+          "objective": 2.740086870285986e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.310249804041432,
+          "minimum_dissipation": 0.0,
+          "objective": 2.6959783868599983e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3102347376110385,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.6875922368860374e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3101980522998998,
+          "minimum_dissipation": 0.0,
+          "objective": 2.675472303719049e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31016191027738493,
+          "minimum_dissipation": 0.0,
+          "objective": 2.665873420056746e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3101234885176966,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.6590561687918695e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3100797333643591,
+          "minimum_dissipation": 0.0,
+          "objective": 2.652116070148112e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3100780152847755,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.645587007529325e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31006566757705106,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.6367013988339537e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.31004642215812805,
+          "minimum_dissipation": 0.0,
+          "objective": 2.6330209688175706e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3100223602393086,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.627457109067134e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30996736705568323,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.617752065964234e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30993439185710564,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.6112941009573166e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30986621491270994,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.598842675548057e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3097923631323188,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.588176218201776e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30979509843727043,
+          "minimum_dissipation": 0.0,
+          "objective": 2.5785535022174306e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30978499199854415,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.5706704868507264e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3097763008167065,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.565623605087179e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30975700659623134,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.5612909825278196e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3096739715579452,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.548612549922323e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3096254414341836,
+          "minimum_dissipation": 0.0,
+          "objective": 2.5404808875593224e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3095566165798378,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.5333028156641505e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3095616407658409,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.5293534869531065e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3095797755350087,
+          "minimum_dissipation": 0.0,
+          "objective": 2.5258781194002408e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3095931388202098,
+          "minimum_dissipation": 0.0,
+          "objective": 2.52168004449778e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3095899136087229,
+          "minimum_dissipation": -3.2526065174565133e-19,
+          "objective": 2.516576630146141e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3095661969895509,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.5084130332382664e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30951921997061327,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4996808814070173e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3094656846398595,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4923958184608716e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30946535425159666,
+          "minimum_dissipation": -2.168404344971009e-19,
+          "objective": 2.485741202009456e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3094623433501679,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4816927943522196e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30945307409063016,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4771711956929403e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30938210959390317,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4672780028826793e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30937128597900315,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4599699468102287e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3093607097507461,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.4565761879556907e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3093387440162825,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.452739216752807e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30930796166172797,
+          "minimum_dissipation": 2.168404344971009e-19,
+          "objective": 2.4518896354909907e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3093099786884049,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.446742902669923e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.3093004550408947,
+          "minimum_dissipation": 0.0,
+          "objective": 2.4424382097406445e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.30927943420092396,
+          "minimum_dissipation": -1.0842021724855044e-19,
+          "objective": 2.4384334830997727e-15
+        },
+        {
+          "active_fraction": 0.000244140625,
+          "gauge_relative_error": 0.309252365174223,
+          "minimum_dissipation": 1.0842021724855044e-19,
+          "objective": 2.4332630718953285e-15
+        }
+      ],
+      "initial_objective": 1.9172863160305565e-09,
+      "maximum_active_fraction": 0.003173828125,
+      "minimum_dissipation": -1.951563910473908e-18,
+      "seconds": 15.66110110282898
+    },
+    "truth_minimum_dissipation": 0.013502394977119586
+  }
+}

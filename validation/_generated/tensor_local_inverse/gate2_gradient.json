@@ -1,0 +1,94 @@
+{
+  "gate_2_gradient": {
+    "base_active_fraction": 0.0,
+    "directions": [
+      {
+        "analytic": 8.751377739359072e-12,
+        "best_relative_error": 3.4337359882495184e-14,
+        "sweep": [
+          {
+            "activity_crossings": 0,
+            "relative_error": 3.950642481104285e-14,
+            "step": 0.01
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 3.4337359882495184e-14,
+            "step": 0.001
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 6.117957561859625e-13,
+            "step": 0.0001
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 1.508000849119087e-11,
+            "step": 1e-05
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 1.3507615861819015e-10,
+            "step": 1e-06
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 4.387855653861014e-09,
+            "step": 1e-07
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 9.457853976177366e-09,
+            "step": 1e-08
+          }
+        ],
+        "v_shaped": true
+      },
+      {
+        "analytic": 7.32138122170514e-12,
+        "best_relative_error": 1.0371348382712561e-14,
+        "sweep": [
+          {
+            "activity_crossings": 0,
+            "relative_error": 1.0371348382712561e-14,
+            "step": 0.01
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 9.996214505039979e-14,
+            "step": 0.001
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 6.719971751037141e-12,
+            "step": 0.0001
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 4.6440029386957586e-11,
+            "step": 1e-05
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 5.272941364652266e-10,
+            "step": 1e-06
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 1.900042719063245e-09,
+            "step": 1e-07
+          },
+          {
+            "activity_crossings": 0,
+            "relative_error": 3.941343048632144e-08,
+            "step": 1e-08
+          }
+        ],
+        "v_shaped": false
+      }
+    ],
+    "passed": false,
+    "v_shaped": false,
+    "worst_best_relative_error": 3.4337359882495184e-14
+  }
+}

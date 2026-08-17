@@ -166,6 +166,8 @@ dans le générateur plastique sépare proprement les deux effets.
 | fichier | contenu |
 |---|---|
 | `validation/dic_driven_plastic_identification.md` | **le document de reprise à froid** |
+| `validation/tensor_local_inverse_results.md` | **jalon 3 : la famille tensorielle libre ajuste 5,19 décades mieux et n'est pas identifiable** — eigenstrain uniforme rigoureusement invisible, plancher 52-80 % |
+| `validation/tensor_local_inverse_preregistration.md` | seuils du jalon 3, et la correction inline sur l'ordre de la branche D |
 | `validation/local_coefficient_inverse_results.md` | **jalon 2 : la représentation locale est identifiable** — 0,021 % au jumeau, conditionnement 200, et la base enrichie déficiente en rang |
 | `validation/local_coefficient_inverse_preregistration.md` | seuils du jalon 2, et **la condition enregistrée de réouverture du RID** |
 | `validation/full_field_operator_gate.md` | jalons 0, 1.0, 1A, 1B : opérateur, préconditionneur, non linéaire, coefficients locaux |
@@ -183,25 +185,28 @@ Scripts vivants : `qualify_full_field_plastic_operator.py` (le portique),
 `stencil_kernel.py`, `qualify_preconditioner_under_plasticity.py`,
 `bench_ludwik_plastic_fraction.py`, `bench_local_coefficients_nonlinear.py`,
 `bench_warm_start_coefficients.py`, `qualify_local_coefficient_inverse.py`,
+`qualify_tensor_local_inverse.py`,
 `learn_flow_direction_p43.py`.
 Paquets : `src/fem_inhouse/hyperreduction/`,
-`src/fem_inhouse/identification/local_coefficient_inverse.py`.
+`src/fem_inhouse/identification/local_coefficient_inverse.py`,
+`src/fem_inhouse/identification/tensor_local_inverse.py`.
 
 ### Ce qui reste ouvert, par ordre
 
-1. **Orthogonaliser la base locale enrichie.** À `q = 1` le conditionnement de
-   la base vaut 3,4 ; au degré 1 il vaut 5,9e17 avec 23 directions exactement
-   nulles, et au degré 2, 68. La cause est mesurée et n'est pas la mécanique :
-   une partition de l'unité reproduit exactement les fonctions linéaires, donc
-   `sum_j w_j(x)(x - x_j) = 0`, et l'enrichir par les polynômes qu'elle
-   reproduit déjà donne une base liée. Tant que ce n'est pas corrigé, `q = 1`
-   est la seule richesse exploitable.
+1. **Caractériser explicitement le noyau de la famille tensorielle et décider
+   ce qui fournit l'information manquante.** Une eigenstrain uniforme produit un
+   déplacement rigoureusement nul, et plus généralement toute contrainte propre
+   auto-équilibrée est invisible : 19 directions sur 192, conditionnement 3,5e16,
+   plancher de reconstruction 52 à 80 % quelle que soit la méthode. Ce n'est pas
+   un défaut d'optimisation. La décision d'architecture vit désormais là.
 2. **Reconstruire le relèvement élastique** avec conversion assertée, puis la
-   porte 6 : le vrai objectif DIC. Aucun chiffre des `scripts/*_p43.py`
-   historiques n'est réutilisable pour cela.
-3. **Le générateur**, `a_jk = g_theta(z, S_n)`, une fois 1 et 2 faits. La chaîne
-   inverse qu'il traversera est désormais qualifiée, donc un échec lui sera
-   imputable et non à la mécanique, à l'adjoint ou à la paramétrisation.
+   comparaison des familles sur la **vraie** DIC. Aucun chiffre des
+   `scripts/*_p43.py` historiques n'est réutilisable pour cela.
+3. **Le générateur**, conçu *contre* le noyau mesuré et non autour. Le jalon 3
+   change son statut : la structure apprise partagée n'est pas un dispositif
+   d'efficacité, c'est ce qui rend la représentation locale identifiable.
+   L'orthogonalisation de la base enrichie `q > 1` est abandonnée — elle
+   enrichirait l'amplitude, pas la direction tensorielle.
 4. **Le calcul global plein champ**, volontairement différé : `T_A = 52 s` et
    ~78 min pour trois incréments.
 5. **La cristallographie**, qui déclenchera le RID — dont la condition de
