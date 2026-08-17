@@ -113,7 +113,10 @@ def project_transpose(
     denom = np.einsum("pi,pi->p", stress, direction)
     scalar = np.einsum("pi,pi->p", stress, np.einsum("ij,pj->pi", metric, dual)) / denom
     result = dual.copy()
-    result[active] -= (scalar[:, None] * direction)[active]
+    # The transpose corrects along sigma, not along G_p^{-1} sigma: the
+    # forward moves along G_p^{-1} sigma, so its adjoint pulls the dual along
+    # sigma with the metric-contracted scalar. The Euclidean case coincides.
+    result[active] -= (scalar[:, None] * stress)[active]
     return result
 
 
@@ -125,6 +128,8 @@ def main() -> int:
     parser.add_argument("--origin", nargs=2, type=int, default=list(ORIGIN))
     parser.add_argument("--pixels", type=int, default=PIXELS)
     parser.add_argument("--maxiter", type=int, default=200)
+    parser.add_argument("--gradient-check", action="store_true",
+                        help="FD sweep of the projected chain gradient at one state, then exit")
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     pixels = arguments.pixels
@@ -232,6 +237,57 @@ def main() -> int:
             total += addition.shape[1]
         return np.concatenate(columns, axis=1)[:, :size]
 
+    if arguments.gradient_check:
+        # Plumbing, not a milestone: central FD against the exact gradient of
+        # the projected chain, four decades, at one state of the first rank.
+        rank = arguments.ranks[0]
+        basis = krylov_basis(rank)
+        modes = basis.reshape(points, 3, rank)
+        stress = reference_stress.copy()
+        target = measured[21] - elastic[21]
+        rng = np.random.default_rng(20260817)
+        a0 = rng.normal(size=rank)
+
+        def objective_and_gradient_check(a):
+            increment = modes @ a
+            projected, active = project(increment, stress, arguments.projector)
+            response = apply_numpy(projected)
+            residual = response - target
+            dual = transpose_numpy(residual)
+            dual = project_transpose(dual, stress, arguments.projector, active)
+            gradient = modes.reshape(-1, rank).T @ dual.ravel()
+            return 0.5 * float(np.sum(residual**2)), gradient
+
+        base_value, analytic = objective_and_gradient_check(a0)
+        sweep = {}
+        for h in (1e-3, 1e-4, 1e-5, 1e-6):
+            scale = max(float(np.abs(a0).max()), 1e-9)
+            step = h * scale
+            worst = 0.0
+            for k in range(rank):
+                delta = np.zeros(rank)
+                delta[k] = step
+                plus, _ = objective_and_gradient_check(a0 + delta)
+                minus, _ = objective_and_gradient_check(a0 - delta)
+                fd = (plus - minus) / 2
+                denom = abs(analytic[k] * step)
+                if denom > 0:
+                    worst = max(worst, abs(analytic[k] * step - fd) / denom)
+            sweep[h] = worst
+        payload = {
+            "schema_version": 1,
+            "projector": arguments.projector,
+            "rank": rank,
+            "sweep": sweep,
+            "projection_active_fraction": float(
+                np.mean(project(modes @ a0, stress, arguments.projector)[1])
+            ),
+        }
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
+        arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+
     results: dict[str, dict] = {}
     for rank in arguments.ranks:
         basis = krylov_basis(rank)
@@ -244,6 +300,8 @@ def main() -> int:
         per_state: dict[int, dict] = {}
         total_power_positive = 0.0
         total_power_negative = 0.0
+        total_predictor_negative = 0.0
+        total_predictor_positive = 0.0
         accumulated_gauge = 0.0
         chi_active: list[float] = []
         activities: list[float] = []
@@ -308,6 +366,7 @@ def main() -> int:
             plastic = plastic + increment
             new_stress = reference_stress + stress_of(simulated - plastic)
             power = (0.5 * (previous_stress + new_stress) * increment).sum(axis=1)
+            power_pred = (stress * increment).sum(axis=1)
             frobenius = np.sqrt(np.maximum(
                 np.einsum("pi,ij,pj->p", increment, 1.5 * GAUGE, increment), 0.0))
             stress_norm = np.sqrt((new_stress**2).sum(axis=1))
@@ -318,6 +377,8 @@ def main() -> int:
                 chi_active.append(float(cosine[active_points].mean()))
             total_power_positive += float(np.maximum(power, 0.0).sum())
             total_power_negative += float(np.abs(np.minimum(power, 0.0)).sum())
+            total_predictor_positive += float(np.maximum(power_pred, 0.0).sum())
+            total_predictor_negative += float(np.abs(np.minimum(power_pred, 0.0)).sum())
             accumulated_gauge += float(gauge.sum())
             activities.append(float(np.mean(active)))
             previous_stress = new_stress
@@ -348,6 +409,13 @@ def main() -> int:
             "negative_power_share": float(
                 total_power_negative / max(total_power_positive + total_power_negative, 1e-300)
             ),
+            "positive_work": total_power_positive,
+            "negative_work_midpoint": total_power_negative,
+            "predictor_negative_share": float(
+                total_predictor_negative
+                / max(total_predictor_positive + total_predictor_negative, 1e-300)
+            ),
+            "predictor_negative_work": total_predictor_negative,
             "projected_fraction_mean": float(np.mean(activities)),
             "start_spread_relative_mean": float(np.mean(starts_spread)),
         }
