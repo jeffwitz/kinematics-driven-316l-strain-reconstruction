@@ -169,6 +169,7 @@ dans le générateur plastique sépare proprement les deux effets.
 | `validation/tensor_local_inverse_results.md` | **jalon 3 : la famille tensorielle libre ajuste 5,19 décades mieux et n'est pas identifiable** — eigenstrain uniforme rigoureusement invisible, plancher 52-80 % |
 | `validation/tensor_local_inverse_preregistration.md` | seuils du jalon 3, et la correction inline sur l'ordre de la branche D |
 | `validation/local_coefficient_inverse_results.md` | **jalon 2 : la représentation locale est identifiable** — 0,021 % au jumeau, conditionnement 200, et la base enrichie déficiente en rang |
+| `validation/shared_tensor_generator_preregistration.md` | **jalon 4 : le générateur tensoriel partagé contre le noyau mesuré, seuils figés avant exécution** |
 | `validation/local_coefficient_inverse_preregistration.md` | seuils du jalon 2, et **la condition enregistrée de réouverture du RID** |
 | `validation/full_field_operator_gate.md` | jalons 0, 1.0, 1A, 1B : opérateur, préconditionneur, non linéaire, coefficients locaux |
 | `validation/reduced_integration_domain_rationale.md` | **le RID : principe, arithmétique, et pourquoi il attend la cristallographie** |
@@ -193,8 +194,12 @@ Paquets : `src/fem_inhouse/hyperreduction/`,
 
 ### Ce qui reste ouvert, par ordre
 
-1. **Caractériser explicitement le noyau de la famille tensorielle et décider
-   ce qui fournit l'information manquante.** Une eigenstrain uniforme produit un
+1. **Le noyau ne fait plus l'objet d'une campagne d'énumération ; la décision
+   d'architecture est prise et pré-enregistrée le 2026-08-17** dans
+   `validation/shared_tensor_generator_preregistration.md` : la structure
+   apprise partagée est le candidat, testé contre le noyau mesuré par des
+   portes figées (transversalité, jumeau à part invisible contrôlée, stabilité
+   de la composante noyau entre graines). Une eigenstrain uniforme produit un
    déplacement rigoureusement nul, et plus généralement toute contrainte propre
    auto-équilibrée est invisible : 19 directions sur 192, conditionnement 3,5e16,
    plancher de reconstruction 52 à 80 % quelle que soit la méthode. Ce n'est pas
@@ -205,6 +210,10 @@ Paquets : `src/fem_inhouse/hyperreduction/`,
 3. **Le générateur**, conçu *contre* le noyau mesuré et non autour. Le jalon 3
    change son statut : la structure apprise partagée n'est pas un dispositif
    d'efficacité, c'est ce qui rend la représentation locale identifiable.
+   **Jalon 4 pré-enregistré le 2026-08-17** : quatre bras (A1 J2 imposé,
+   A2 appris libre, A3 appris dissipatif, A4 tenseur libre), holdout temporel
+   {24, 28, 32, 36, 40}, huit portes figées dont la stabilité de la composante
+   noyau entre graines.
    L'orthogonalisation de la base enrichie `q > 1` est abandonnée — elle
    enrichirait l'amplitude, pas la direction tensorielle.
 4. **Le calcul global plein champ**, volontairement différé : `T_A = 52 s` et
