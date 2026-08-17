@@ -49,10 +49,14 @@ All saved under `validation/_generated/shared_tensor_generator/`:
 
 ## Conclusion
 
-Not a curve, not clean branches, not clusters: **a cloud with a faint
-amplitude trend and an exactly isotropic direction**. The registered next
-step is unchanged and is now the only one consistent with all four analyses
-(conditional variance, clusters, geometry, `f_0`): decompose
-`Delta eps^inel = Delta eps_D + Delta eps_0` and rerun this geometry on the
-dissipative component alone — the closure mass is what hides any law
-structure that may exist in these data.
+Not a curve, not clean branches, not clusters — **no discrete constitutive
+regimes, but a continuous geometry**: the `p_eq -> Delta p` fan carries
+about a quarter of the amplitude variance in-sample, the direction is
+exactly isotropic, and the visited `(sigma_eq, p_eq)` domain is a genuine
+two-dimensional region. The corrected reading, confirmed by the continuous
+conditioning analysis (`validation/phase_space_conditioning_results.md`):
+the state `(sigma_eq, p_eq)` conditions the amplitude weakly and
+state-specifically (LOSO `R^2 = 0.13`), orientation conditions nothing, and
+the direction is conditioned by no tested state. The decisive next step
+remains the `Delta eps^inel = Delta eps_D + Delta eps_0` decomposition,
+with this same geometry rerun on the dissipative component alone.
