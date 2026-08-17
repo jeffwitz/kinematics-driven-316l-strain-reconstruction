@@ -109,6 +109,13 @@ def stress_3d(stress: np.ndarray) -> np.ndarray:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUT / "fcc_slip_decomposition.json")
+    parser.add_argument(
+        "--save-fields",
+        type=Path,
+        default=None,
+        help="save tau, gamma (constrained L2), cumulative Gamma and the "
+        "state indices for the slip-geometry figures",
+    )
     arguments = parser.parse_args()
 
     tr = np.load(OUT / "krylov_trajectories.r16.npz", allow_pickle=False)
@@ -211,6 +218,19 @@ def main() -> int:
     l2 = metrics(d3, gamma_l2)
     l1 = metrics(d3, gamma_l1)
     raw_field = metrics(d3_raw, ceiling)
+
+    if arguments.save_fields is not None:
+        cumulative_gamma = np.cumsum(
+            np.abs(gamma_l2).reshape(n_states, n_points, N_SYSTEMS), axis=0
+        ).reshape(-1, N_SYSTEMS)
+        np.savez_compressed(
+            arguments.save_fields,
+            tau=tau,
+            gamma=gamma_l2,
+            gamma_cumulative=cumulative_gamma,
+            states=states,
+        )
+        print(f"saved slip fields: {arguments.save_fields}", flush=True)
 
     rep_l2 = represented(gamma_l2)
     rep_l1 = represented(gamma_l1)

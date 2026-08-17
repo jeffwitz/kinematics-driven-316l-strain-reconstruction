@@ -57,3 +57,32 @@ The next discriminator stays the one the analyses point to: separating the
 dissipative-representable part from the closure before any law fit —
 equivalently, decomposing the increment into its FCC-dissipative component
 and the rest, which this experiment now computes at every point.
+
+## Slip-coordinate geometry (the figures)
+
+The slip fields were saved and plotted as the counterpart of the
+tensor-phase figures (`fcc_geometry_*.png` beside the phase-space
+artifacts): per-system and pooled hexbins of `tau^alpha` vs
+`Delta gamma^alpha` and `Gamma^alpha` vs `Delta gamma^alpha`, plus the
+pooled view colored by state.
+
+Measured, not eyeballed:
+
+* **The driving force organises the activity — the strongest relation in
+  any coordinate system so far.** `Spearman(tau^alpha, Delta gamma^alpha)`
+  is `+0.70..+0.83` per system, `+0.76` pooled, against `0.35` for the
+  tensor-phase `sigma_eq -> Delta p`. Absorbing the orientation into the
+  resolved shears works exactly as proposed: the material's response is far
+  better organised in slip coordinates than in Euler angles.
+* **But it remains a thick band, not a law.** The within-`tau`-bin
+  coefficient of variation of the activity stays `1.8-3.4`, and the kNN
+  LOSO score is `~0`: the `tau -> gamma` relation drifts across increments
+  (the missing hardening variable again), so the structure is
+  in-sample real and cross-increment weak.
+* **The accumulated history does not organise the activity**
+  (`Spearman(Gamma^alpha, Delta gamma^alpha) ~ 0` pooled): the scalar
+  history is not the missing variable.
+* **The dissipation splits 50/50 between positively and negatively
+  resolved systems.** Half the dissipative activity sits on systems whose
+  `tau^alpha < 0` — the compensating-systems picture of the tangential
+  mass, confirmed from the driving-force side.
