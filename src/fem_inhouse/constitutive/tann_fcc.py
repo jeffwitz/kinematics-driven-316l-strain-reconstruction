@@ -125,9 +125,12 @@ class TannFCCNetwork(nn.Module):
             layers.append(nn.SiLU())
         self.embedding = nn.Sequential(*layers)
         self.head = nn.Linear(width * 2, self.n_entries, dtype=torch.float64)
-        # Tiny weights: the untrained law is near-elastic.
+        # Tiny weights: the untrained law is near-elastic. The dedicated
+        # generator makes the initialisation reproducible per config seed,
+        # independent of the process-wide torch RNG state -- two batches
+        # built in the same process must start from identical weights.
         for parameter in self.parameters():
-            nn.init.normal_(parameter, mean=0.0, std=1e-2)
+            nn.init.normal_(parameter, mean=0.0, std=1e-2, generator=generator)
 
     def forward(
         self,
@@ -218,6 +221,7 @@ class TannFCCBatch:
         self._trial_state: torch.Tensor | None = None
         self._trial_strain: torch.Tensor | None = None
         self._latest_trial: TannFCCTrial | None = None
+        self._last_committed_tangent: FloatArray | None = None
 
     # -- geometry helpers ---------------------------------------------------
 
@@ -611,6 +615,14 @@ class TannFCCBatch:
         self._committed_state = self._trial_state.clone()
         assert self._trial_strain is not None
         self._committed_strain = self._trial_strain.clone()
+        # Keep the accepted tangent for the discrete trajectory adjoint:
+        # the mechanical transpose action uses the converged C_alg.
+        if self._latest_trial is not None and self._latest_trial.consistent_tangent_mpa is not None:
+            self._last_committed_tangent = np.array(
+                self._latest_trial.consistent_tangent_mpa, copy=True
+            )
+        else:
+            self._last_committed_tangent = None
         self._trial_state = None
         self._trial_strain = None
         self._latest_trial = None
@@ -621,5 +633,96 @@ class TannFCCBatch:
         self._latest_trial = None
 
     @property
+    def last_committed_tangent(self) -> FloatArray | None:
+        return self._last_committed_tangent
+
+    # -- trajectory-adjoint VJPs ---------------------------------------------
+
+    def increment_vjp(
+        self,
+        strain_prev: FloatArray,
+        state_prev: FloatArray,
+        strain_trial: FloatArray,
+        cotangent_state: FloatArray,
+        cotangent_stress: FloatArray,
+    ) -> tuple[FloatArray, FloatArray, list[FloatArray]]:
+        """VJPs of one material increment `(strain_prev, state_prev) -> strain_trial`.
+
+        With `q_trial = Q(strain_trial; state_prev, theta)` and
+        `sigma = S(strain_trial, q_trial)`, returns
+
+            v_strain = (dQ/deps)^T c_state + (dS/deps)^T c_stress
+            v_qprev  = (dQ/dq_prev)^T c_state + (dS/dq_prev)^T c_stress
+            dtheta   = (dQ/dtheta)^T c_state + (dS/dtheta)^T c_stress
+
+        chunked like the tangent so the autograd graph of one chunk is freed
+        before the next is built.
+        """
+
+        chunk = 2048
+        v_strain = np.zeros((self.point_count, 3), dtype=np.float64)
+        v_qprev = np.zeros(
+            (self.point_count, 12, 1 + self.config.latent_dim), dtype=np.float64
+        )
+        dtheta: list[FloatArray] | None = None
+        for start in range(0, self.point_count, chunk):
+            stop = min(start + chunk, self.point_count)
+            s_prev = torch.from_numpy(np.ascontiguousarray(strain_prev[start:stop]))
+            q_prev = torch.from_numpy(
+                np.ascontiguousarray(state_prev[start:stop])
+            ).requires_grad_(True)
+            s_trial = torch.from_numpy(
+                np.ascontiguousarray(strain_trial[start:stop])
+            ).requires_grad_(True)
+            systems = self._systems[start:stop]
+            q_trial, _, _ = self._integrate(
+                s_prev, s_trial, q_prev, systems=systems, include_work=False
+            )
+            stress = self._stress_from(s_trial, q_trial[..., 0], systems)
+            c_state = torch.from_numpy(
+                np.ascontiguousarray(cotangent_state[start:stop])
+            )
+            c_stress = torch.from_numpy(
+                np.ascontiguousarray(cotangent_stress[start:stop])
+            )
+            parameters = list(self._network.parameters())
+            grads_state = torch.autograd.grad(
+                q_trial,
+                (s_trial, q_prev, *parameters),
+                grad_outputs=c_state,
+                retain_graph=True,
+            )
+            grads_stress = torch.autograd.grad(
+                stress,
+                (s_trial, q_prev, *parameters),
+                grad_outputs=c_stress,
+                retain_graph=False,
+            )
+            v_strain[start:stop] = (
+                grads_state[0] + grads_stress[0]
+            ).detach().numpy()
+            v_qprev[start:stop] = (
+                grads_state[1] + grads_stress[1]
+            ).detach().numpy()
+            if dtheta is None:
+                dtheta = [
+                    (g_state + g_stress).detach().numpy()
+                    for g_state, g_stress in zip(
+                        grads_state[2:], grads_stress[2:], strict=True
+                    )
+                ]
+            else:
+                for target, g_state, g_stress in zip(
+                    dtheta, grads_state[2:], grads_stress[2:], strict=True
+                ):
+                    target += (g_state + g_stress).detach().numpy()
+        assert dtheta is not None
+        return v_strain, v_qprev, dtheta
+
+    @property
     def committed_state(self) -> FloatArray:
         return self._committed_state.numpy()
+
+    @property
+    def committed_strain(self) -> FloatArray:
+        return self._committed_strain.numpy()
