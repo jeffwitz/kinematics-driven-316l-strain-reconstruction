@@ -1,0 +1,87 @@
+{
+  "amplitude_global": {
+    "mean": 0.0003282246104689308,
+    "raw_over_observable_mean_ratio": 1.0576660047665263,
+    "std": 0.00027922267255744076
+  },
+  "cos_histogram": {
+    "counts": [
+      21903,
+      24696,
+      26184,
+      25373,
+      24263,
+      21569,
+      19527,
+      18498,
+      17253,
+      16579,
+      15937,
+      15878,
+      16323,
+      16940,
+      17937,
+      18958,
+      19786,
+      20466,
+      21244,
+      20685
+    ],
+    "edges": [
+      -1.0,
+      -0.9,
+      -0.8,
+      -0.7,
+      -0.6,
+      -0.5,
+      -0.3999999999999999,
+      -0.29999999999999993,
+      -0.19999999999999996,
+      -0.09999999999999998,
+      0.0,
+      0.10000000000000009,
+      0.20000000000000018,
+      0.30000000000000004,
+      0.40000000000000013,
+      0.5,
+      0.6000000000000001,
+      0.7000000000000002,
+      0.8,
+      0.9000000000000001,
+      1.0
+    ]
+  },
+  "coverage": {
+    "active_samples": 399999,
+    "boundary_samples_1e3": 304,
+    "interior_samples": 299531
+  },
+  "n_points": 20000,
+  "n_states": 20,
+  "primary": {
+    "chosen_bins": 9,
+    "chosen_share": 0.10005275013187533,
+    "circular_std_degrees_mean": 42.63615522339724,
+    "label": "primary_all_active",
+    "mean_angle_degrees_mean": 86.58516894454591,
+    "mean_cos_mean": 0.045552507967138826,
+    "participation_ratio": 177.9726664424257,
+    "populated_bins": 251,
+    "r2_cond_amplitude": 0.24364491549133582,
+    "samples_in_chosen": 40021
+  },
+  "schema_version": 1,
+  "secondary_interior": {
+    "chosen_bins": 9,
+    "chosen_share": 0.10098787771549522,
+    "circular_std_degrees_mean": 63.641225753254844,
+    "label": "secondary_interior",
+    "mean_angle_degrees_mean": 85.84074848148222,
+    "mean_cos_mean": 0.056210976395991055,
+    "participation_ratio": 176.4177204704341,
+    "populated_bins": 252,
+    "r2_cond_amplitude": 0.25698671700647435,
+    "samples_in_chosen": 30249
+  },
+  "trajectories": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz"
+}

@@ -300,16 +300,18 @@ def main() -> int:
         # the 192-coefficient tensor family (degree zero, patches 8) and the
         # measured null directions of the displacement operator, the same
         # convention as the milestone-3 observability and gate 6.
-        basis = TensorLocalBasis.build(pixels, pixels, PATCHES_TRAJECTORY)
-        count = basis.coefficient_count
+        trajectory_basis = TensorLocalBasis.build(pixels, pixels, PATCHES_TRAJECTORY)
+        count = trajectory_basis.coefficient_count
         columns = np.empty((pixels * pixels * 3, count))
         unit = np.zeros(count)
         for index in range(count):
             unit[:] = 0.0
             unit[index] = 1.0
-            columns[:, index] = basis.assemble(unit.reshape(basis.coefficient_shape)).ravel()
-        gram = columns.T @ columns
-        ridge = 1e-12 * max(float(np.trace(gram)) / count, 1e-300)
+            columns[:, index] = trajectory_basis.assemble(
+                unit.reshape(trajectory_basis.coefficient_shape)
+            ).ravel()
+        trajectory_gram = columns.T @ columns
+        trajectory_ridge = 1e-12 * max(float(np.trace(trajectory_gram)) / count, 1e-300)
         twin = np.load(
             ROOT / "validation/_generated/shared_tensor_generator/twin_gate4.npz",
             allow_pickle=False,
@@ -319,11 +321,13 @@ def main() -> int:
         def observable_part(field_points: np.ndarray) -> np.ndarray:
             pixel = field_points.reshape(pixels, pixels, SUBCELLS_TRAJECTORY, 3).mean(axis=2)
             coefficients = np.linalg.solve(
-                gram + ridge * np.eye(count),
-                basis.assemble_transpose(pixel).ravel(),
+                trajectory_gram + trajectory_ridge * np.eye(count),
+                trajectory_basis.assemble_transpose(pixel).ravel(),
             )
             projected = coefficients - null_vectors.T @ (null_vectors @ coefficients)
-            assembled = basis.assemble(projected.reshape(basis.coefficient_shape))
+            assembled = trajectory_basis.assemble(
+                projected.reshape(trajectory_basis.coefficient_shape)
+            )
             return np.repeat(assembled[:, :, None, :], SUBCELLS_TRAJECTORY, axis=2).reshape(-1, 3)
 
         trajectory_machinery = observable_part
@@ -458,7 +462,7 @@ def main() -> int:
             if arguments.trajectories is not None:
                 trajectory_stress.append(stress.copy())
                 trajectory_eps_elastic.append(
-                    np.einsum("ij,pj->pi", inv_elasticity, stress)
+                    np.einsum("pij,pj->pi", inv_elasticity, stress)
                 )
                 trajectory_eps_inel.append(plastic.copy())
                 trajectory_d_eps_inel.append(increment.copy())
