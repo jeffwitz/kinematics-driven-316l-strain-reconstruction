@@ -190,3 +190,31 @@ No frozen threshold is moved by this amendment. It changes the network
 input scaling only; `latent_dim`, width, layers, activation, integrator,
 substeps, holdout, seeds and all bars of the preregistration remain
 exactly as registered.
+
+## Amendment 2 — noise margin on the split (2026-08-18, before any training run)
+
+The preregistered protocol requires the noise margin on the split to be
+inscribed here before the first training run, using the existing margin
+machinery. The machinery is the archived 95 % surrogate-sensitivity
+interval of `dic_uncertainty_propagation_p0043` (the same crop, states
+and measurement chain): on the displacement-relative-L2 family of
+metrics -- the family the primary metric
+
+```text
+E_n = ||u_model - u_DIC|| / ||u_elastic - u_DIC||
+```
+
+belongs to -- the archived interval width is **0.0202**
+(`dic_multistep_p0043_observed_path_comparison_preregistration.md`,
+archived interval `[0.4763, 0.4965]`).
+
+Inscripted rule: a difference of `E_n` (or of its aggregate
+`median(E_holdout)`) smaller than **0.0202** between two models is inside
+the sensitivity of the metric to DIC noise alone and is recorded as
+indistinguishable; the viability bars 1 and 2 are read with this margin
+in mind (an `E < 1` claim below `1 - 0.0202` is not a significant
+improvement over elasticity). The bars themselves are unchanged. A full
+recomputation of the surrogate intervals was not rerun: the archived
+campaign covers the same crop, states and measurement chain, and this
+inscription states that correspondence explicitly rather than implying a
+fresh computation.

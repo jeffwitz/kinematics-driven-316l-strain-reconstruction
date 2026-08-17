@@ -44,6 +44,7 @@ class TannFCCStateRecord:
     plastic_strain_tensor: FloatArray | None  # (nx, ny, 2, 3, 3)
     committed_state: FloatArray  # q_n after commit, (P, 12, 1+d)
     strain_in_plane_mpa: FloatArray  # committed strain eps_n, (P, 3)
+    committed_tangent_mpa: FloatArray | None  # accepted C_alg, (P, 3, 3)
     loss_raw: float
     loss_whitened: float | None
     equilibrium_residual: float
@@ -140,6 +141,11 @@ class TannFCCSequence:
                     committed_state=np.array(self.material.committed_state, copy=True),
                     strain_in_plane_mpa=np.array(
                         self.material.committed_strain, copy=True
+                    ),
+                    committed_tangent_mpa=(
+                        None
+                        if self.material.last_committed_tangent is None
+                        else np.array(self.material.last_committed_tangent, copy=True)
                     ),
                     loss_raw=loss_raw,
                     loss_whitened=loss_whitened,
