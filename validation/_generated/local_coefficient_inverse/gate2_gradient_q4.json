@@ -1,0 +1,96 @@
+{
+  "gate_2_gradient": {
+    "q4": {
+      "coefficients": 64,
+      "directions": [
+        {
+          "analytic": 1.8377583401699145e-11,
+          "best_relative_error": 5.506280662611338e-09,
+          "sweep": [
+            {
+              "finite_difference": 1.8377547836078683e-11,
+              "relative_error": 1.93527188448305e-06,
+              "step": 0.01
+            },
+            {
+              "finite_difference": 1.8377587048350085e-11,
+              "relative_error": 1.9842929618942714e-07,
+              "step": 0.001
+            },
+            {
+              "finite_difference": 1.837757165450677e-11,
+              "relative_error": 6.392131173986441e-07,
+              "step": 0.0001
+            },
+            {
+              "finite_difference": 1.837758222464715e-11,
+              "relative_error": 6.404824663393593e-08,
+              "step": 1e-05
+            },
+            {
+              "finite_difference": 1.8377583300507013e-11,
+              "relative_error": 5.506280662611338e-09,
+              "step": 1e-06
+            },
+            {
+              "finite_difference": 1.8377583112291112e-11,
+              "relative_error": 1.5747882998699208e-08,
+              "step": 1e-07
+            },
+            {
+              "finite_difference": 0.0,
+              "relative_error": 1.0,
+              "step": 1e-08
+            }
+          ],
+          "v_shaped": true
+        },
+        {
+          "analytic": 2.2822126797081975e-12,
+          "best_relative_error": 7.565920215765861e-09,
+          "sweep": [
+            {
+              "finite_difference": 2.2822058005203623e-12,
+              "relative_error": 3.0142623850958057e-06,
+              "step": 0.01
+            },
+            {
+              "finite_difference": 2.2821948199994415e-12,
+              "relative_error": 7.825611046145288e-06,
+              "step": 0.001
+            },
+            {
+              "finite_difference": 2.2822108993024516e-12,
+              "relative_error": 7.80122624727845e-07,
+              "step": 0.0001
+            },
+            {
+              "finite_difference": 2.2822125031038774e-12,
+              "relative_error": 7.738293705073219e-08,
+              "step": 1e-05
+            },
+            {
+              "finite_difference": 2.2822126624411584e-12,
+              "relative_error": 7.565920215765861e-09,
+              "step": 1e-06
+            },
+            {
+              "finite_difference": 2.2822127650309414e-12,
+              "relative_error": 3.738597402018204e-08,
+              "step": 1e-07
+            },
+            {
+              "finite_difference": 0.0,
+              "relative_error": 1.0,
+              "step": 1e-08
+            }
+          ],
+          "v_shaped": true
+        }
+      ],
+      "passed": true,
+      "v_shaped": true,
+      "worst_best_relative_error": 7.565920215765861e-09
+    }
+  }
+}

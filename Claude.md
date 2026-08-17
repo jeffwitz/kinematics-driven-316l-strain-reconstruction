@@ -166,6 +166,8 @@ dans le générateur plastique sépare proprement les deux effets.
 | fichier | contenu |
 |---|---|
 | `validation/dic_driven_plastic_identification.md` | **le document de reprise à froid** |
+| `validation/local_coefficient_inverse_results.md` | **jalon 2 : la représentation locale est identifiable** — 0,021 % au jumeau, conditionnement 200, et la base enrichie déficiente en rang |
+| `validation/local_coefficient_inverse_preregistration.md` | seuils du jalon 2, et **la condition enregistrée de réouverture du RID** |
 | `validation/full_field_operator_gate.md` | jalons 0, 1.0, 1A, 1B : opérateur, préconditionneur, non linéaire, coefficients locaux |
 | `validation/reduced_integration_domain_rationale.md` | **le RID : principe, arithmétique, et pourquoi il attend la cristallographie** |
 | `validation/constitutive_hyperreduction_preregistration.md` | seuils préenregistrés de l'hyper-réduction, trois régimes de certification |
@@ -180,19 +182,31 @@ dans le générateur plastique sépare proprement les deux effets.
 Scripts vivants : `qualify_full_field_plastic_operator.py` (le portique),
 `stencil_kernel.py`, `qualify_preconditioner_under_plasticity.py`,
 `bench_ludwik_plastic_fraction.py`, `bench_local_coefficients_nonlinear.py`,
-`bench_warm_start_coefficients.py`, `learn_flow_direction_p43.py`.
-Paquet : `src/fem_inhouse/hyperreduction/`.
+`bench_warm_start_coefficients.py`, `qualify_local_coefficient_inverse.py`,
+`learn_flow_direction_p43.py`.
+Paquets : `src/fem_inhouse/hyperreduction/`,
+`src/fem_inhouse/identification/local_coefficient_inverse.py`.
 
 ### Ce qui reste ouvert, par ordre
 
-1. **L'identifiabilité de la représentation locale.** Tout ce qui précède
-   démontre que la mécanique tient ; rien ne dit que les coefficients locaux
-   sont identifiables depuis la DIC, ni qu'ils prédisent un incrément jamais vu.
-   C'est l'objet du bras D et du découpage temporel extrapolant, tous deux
-   interrompus.
-2. **Le calcul global plein champ**, volontairement différé : `T_A = 52 s` et
+1. **Orthogonaliser la base locale enrichie.** À `q = 1` le conditionnement de
+   la base vaut 3,4 ; au degré 1 il vaut 5,9e17 avec 23 directions exactement
+   nulles, et au degré 2, 68. La cause est mesurée et n'est pas la mécanique :
+   une partition de l'unité reproduit exactement les fonctions linéaires, donc
+   `sum_j w_j(x)(x - x_j) = 0`, et l'enrichir par les polynômes qu'elle
+   reproduit déjà donne une base liée. Tant que ce n'est pas corrigé, `q = 1`
+   est la seule richesse exploitable.
+2. **Reconstruire le relèvement élastique** avec conversion assertée, puis la
+   porte 6 : le vrai objectif DIC. Aucun chiffre des `scripts/*_p43.py`
+   historiques n'est réutilisable pour cela.
+3. **Le générateur**, `a_jk = g_theta(z, S_n)`, une fois 1 et 2 faits. La chaîne
+   inverse qu'il traversera est désormais qualifiée, donc un échec lui sera
+   imputable et non à la mécanique, à l'adjoint ou à la paramétrisation.
+4. **Le calcul global plein champ**, volontairement différé : `T_A = 52 s` et
    ~78 min pour trois incréments.
-3. **La cristallographie**, qui déclenchera le RID.
+5. **La cristallographie**, qui déclenchera le RID — dont la condition de
+   réouverture est enregistrée et chiffrée, et qu'aucune mesure du jalon 2
+   n'a modifiée.
 
 ### Deux défauts consignés, non réparés
 

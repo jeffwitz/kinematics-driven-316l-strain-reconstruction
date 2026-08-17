@@ -1,0 +1,34 @@
+{
+  "gauss_newton": {
+    "q1": {
+      "coefficients": 36,
+      "final_field_relative_error": 2.001950174707238e-09,
+      "steps": [
+        {
+          "field_relative_error": 0.07596214363469571,
+          "iteration": 1,
+          "objective_after": 4.625382719836189e-14,
+          "objective_before": 3.473584833114161e-10
+        },
+        {
+          "field_relative_error": 0.0009796987634080527,
+          "iteration": 2,
+          "objective_after": 1.392257361142521e-16,
+          "objective_before": 4.625382719836189e-14
+        },
+        {
+          "field_relative_error": 1.725450513197663e-07,
+          "iteration": 3,
+          "objective_after": 1.5704943468983957e-24,
+          "objective_before": 1.392257361142521e-16
+        },
+        {
+          "field_relative_error": 2.001950174707238e-09,
+          "iteration": 4,
+          "objective_after": 5.339803984159617e-29,
+          "objective_before": 1.5704943468983957e-24
+        }
+      ]
+    }
+  }
+}
