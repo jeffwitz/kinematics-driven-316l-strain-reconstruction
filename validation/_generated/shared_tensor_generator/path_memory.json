@@ -1,0 +1,38 @@
+{
+  "bars": {
+    "closure": 0.3,
+    "partial": 0.1
+  },
+  "best_window": "W1-tau",
+  "jump_over_baseline": -0.053024705191254504,
+  "loading_vs_response_gap": -0.03463582821266764,
+  "reading": "nothing",
+  "results": {
+    "W1": {
+      "predicted_samples": 380000,
+      "r2_mean": -0.05193463331142019,
+      "r2_std": 0.13808593571340577
+    },
+    "W1-tau": {
+      "predicted_samples": 380000,
+      "r2_mean": -0.017298805098752545,
+      "r2_std": 0.07238411080241035
+    },
+    "W2": {
+      "predicted_samples": 360000,
+      "r2_mean": -0.10859434804172054,
+      "r2_std": 0.3385099326389658
+    },
+    "W4": {
+      "predicted_samples": 320000,
+      "r2_mean": -0.19114630371308494,
+      "r2_std": 0.3707588735784725
+    },
+    "baseline": {
+      "predicted_samples": 400000,
+      "r2_mean": 0.03572590009250196,
+      "r2_std": 0.1527934041167543
+    }
+  },
+  "schema_version": 1
+}
