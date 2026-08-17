@@ -420,38 +420,42 @@ such.
 
 ### Milestones, in order
 
-**P43 is a qualification bench, not the scientific object.** The 100x100
-demonstrator answered its hypothesis and does not prepare the full field: the
-sparse direct mechanics costs about `N^1.5` and would need ~460 s per solve at
-22.3 million degrees of freedom, and sixteen global coefficients describe a few
-grains plausibly and thousands of grains not at all. The computational wall and
-the modelling flaw are the same wall. Everything below is superseded as a *line
-of campaigns*; the results stand as measurements.
+**P43 is a qualification bench, not the scientific object.** Everything below
+the line has been measured; what remains open is scientific rather than
+numerical.
 
-Done and archived: hand-built adaptive bases and the free-field ceiling
-(`adaptive_reduced_basis_first_rung.md`); the learned flow direction,
-unconstrained and then dissipative by construction
-(`adaptive_reduced_basis_learned_flow.md`); the free-sign arm, which showed the
-positive orthant was not the constriction -- 0.6209, 0.6461, 0.6255 against
-0.6209, 0.6511, 0.5869; and the feasibility LP showing the raw-mode cone is
-exactly `{0}`.
+Done, in `validation/full_field_operator_gate.md`:
 
-0. **The full-field mechanical operator** --
-   `validation/full_field_operator_gate.md`. Lifting of the measured Dirichlet
-   data, `A` and `A^T` matrix-free and separately implemented, dot product below
-   1e-8, timings, spectral fusion, two Dirichlet strategies compared. Isotropic
-   homogeneous elasticity only, no network. A correctness gate: nothing is built
-   until it passes.
-1. Assembled-field projection at full field with the generator **frozen**,
-   evaluated by tiles with a halo of the receptive radius.
-2. Local coefficients under a partition of unity with a **single global
-   mechanics**, sweeping the coefficient density to trace `E_DIC` against `N_a`.
-3. Matrix-free training, temporal mini-batches, warm-started `a`, tiled forward
-   and backward. Then `theta` frozen and temporal extrapolation, which is the
-   only test that makes the generator a scientific claim.
-4. Crystallography, after the above and not before, and with isotropic
-   elasticity first so the plastic geometry is separated from elastic
-   anisotropy.
+* **0 — the full-field operator.** Adjoint 4.4e-17 over 22 293 208 unknowns,
+  29 iterations, `T_A` 52 s, 1.8 GB. The lock this gate existed for is open.
+* **1.0 — the preconditioner under a plastic tangent.** Saturates near 79
+  iterations even at a contrast of 10 000; the feared collapse does not happen.
+* **1A — a real yield criterion.** 14 to 44 GMRES per Newton from elastic to
+  fully plastic, a factor of three, saturating and mesh independent.
+* **1B — local coefficients.** 64 or 4096 of them give the same 8 Newton and the
+  same ~170 Krylov. In the warm regime a perturbation costs **1 Newton and 19
+  Krylov**.
+
+Also settled: the constitutive backend is **MFront with eight threads**, 1.9
+times the vectorised Python batch on the plastic branch, and the reduced
+integration domain is built but *not adopted* --
+`validation/reduced_integration_domain_rationale.md` gives the arithmetic and
+the condition under which it becomes worthwhile, which is crystal plasticity.
+
+Open, in order:
+
+1. **Identifiability of the local representation.** Everything above shows the
+   mechanics holds. Nothing yet shows the local coefficients are identifiable
+   from the DIC, nor that they predict an increment never seen. That is arm D
+   and the extrapolating temporal split, both interrupted.
+2. **The extrapolating split**, training on 21-33 and testing on 34-40. The
+   interleaved split tests interpolation, which a residual-driven basis passes
+   almost by construction.
+3. **The full-field calculation**, deliberately deferred: 52 s per `A`, about
+   78 minutes for three increments.
+4. **Crystallography**, which is also what triggers the reduced integration
+   domain. Isotropic elasticity first, so slip geometry stays separable from
+   elastic anisotropy.
 5. **Repair the elastic lifting** across `scripts/*_p43.py`, and re-derive any
    quoted residual that depends on it.
 

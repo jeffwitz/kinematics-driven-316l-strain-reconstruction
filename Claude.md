@@ -93,14 +93,58 @@ pénalité de dissipation (poids `1e-2`) brisent l'identité. Cette dernière es
 construction ; en la retirant le théorème de l'enveloppe s'applique et le budget
 est divisé par deux.
 
-### Ce qui tourne
+### Ce qui tourne, et ce qui est acquis
 
-Rien. La chaîne P43 est arrêtée, ses points de reprise conservés dans
-`validation/_generated/adaptive_reduced_basis/*.weights` (non versionnés). La
-campagne suivante est le **jalon 0**, décrit dans
-`validation/full_field_operator_gate.md` : opérateur mécanique plein champ sous
-données de Dirichlet mesurées, adjoint implémenté séparément et qualifié sous
-1e-8. Verrou de correction, pas de vitesse. Ni CNN, ni entraînement, ni EBSD.
+Rien en permanence. Les jalons 0, 1.0, 1A et 1B sont **franchis et mesurés** ;
+la suite est scientifique, plus numérique.
+
+| jalon | verdict |
+|---|---|
+| **0** — opérateur plein champ | adjoint **4,4e-17** sur 22,3 M d'inconnues, 29 itérations, `T_A = 52 s`, 1,8 Go |
+| **1.0** — préconditionneur sous tangent plastique | sature à 79 itérations même à contraste 10⁴ ; le verrou redouté n'existe pas |
+| **1A** — vrai critère de plasticité | 14 → 44 GMRES/Newton de l'élastique au tout-plastique, ×3 et saturant |
+| **1B** — coefficients locaux | 64 ou 4096 coefficients : mêmes 8 Newton, mêmes ~170 Krylov |
+| **1B chaud** | une perturbation coûte **1 Newton et 19 Krylov**, contre 8 à froid |
+
+Le goulot a changé quatre fois, désigné à chaque fois par la mesure et non par
+l'intuition : cinématique FEM générique (réglé par le stencil, ×345), puis la
+transformée (padding et plan mesuré, ×3,7), puis le nombre d'itérations
+(warm start et tolérance, ×2,4), et enfin **l'intégration constitutive, 76 %
+du temps**.
+
+### Le constitutif : MFront threadé, décidé par la mesure
+
+MFront mono-thread est deux à six fois plus lent que le batch NumPy vectorisé ;
+à **huit threads il est 1,9× plus rapide** sur la branche plastique, et perd
+encore d'un facteur deux sur la branche élastique où le travail par point est
+trivial. Bout en bout à 256² sur huit incréments : **73,6 s contre 160,6**, soit
+**×2,18 sur le run complet** et ×3,5 sur le terme constitutif, dont la part
+tombe de 71 % à 45 %. Le point de bascule est le coût du problème local — d'où son évidence
+en plasticité cristalline et sa marginalité en J2 élastique. Les bancs sont
+basculés sur `--backend mfront --mfront-threads 8`.
+
+Et pour mémoire : aucune campagne antérieure n'a comparé une loi Python à
+MFront. Dans `p43_m100_backend_comparison_latest.json`, le run `python_condensed`
+a pour backend `mfront-3d-condensed-plane-stress` — « python » y désigne où
+tourne la boucle de condensation hôte, pas la loi.
+
+### L'hyper-réduction RID : construite, non adoptée, et pourquoi
+
+Voir **`validation/reduced_integration_domain_rationale.md`**, qui explique en
+détail le principe, son arithmétique et la condition de son intérêt.
+
+En bref : un domaine d'intégration réduit évalue la loi coûteuse sur une
+fraction des points et la reconstruit ailleurs, l'équilibre restant plein champ.
+Son plafond est fixé par la part que la loi occupe dans le run. Pour J2 c'est
+76 %, ce qui borne la méthode vers **×4** — et MFront threadé en rend déjà 2,18
+pour le prix d'un paramètre, ramenant la part à 45 % et le plafond restant à
+**×1,68**, trop peu pour justifier la machinerie.
+Pour la plasticité cristalline, où un point coûte trois ordres de grandeur de
+plus, la part approche 95 % et le plafond approche `1/r`. **La méthode est
+juste ; J2 est le mauvais problème sur lequel la dépenser.**
+
+Le split exact `sigma = sigma_n + C_0:d eps + h` est implémenté et testé, prêt
+pour ce jour-là.
 
 ### Deux erreurs à ne pas refaire
 
@@ -122,15 +166,32 @@ dans le générateur plastique sépare proprement les deux effets.
 | fichier | contenu |
 |---|---|
 | `validation/dic_driven_plastic_identification.md` | **le document de reprise à froid** |
-| `validation/adaptive_reduced_basis_learned_flow.md` | la campagne courante et son tableau complet |
+| `validation/full_field_operator_gate.md` | jalons 0, 1.0, 1A, 1B : opérateur, préconditionneur, non linéaire, coefficients locaux |
+| `validation/reduced_integration_domain_rationale.md` | **le RID : principe, arithmétique, et pourquoi il attend la cristallographie** |
+| `validation/constitutive_hyperreduction_preregistration.md` | seuils préenregistrés de l'hyper-réduction, trois régimes de certification |
+| `validation/adaptive_reduced_basis_learned_flow.md` | direction d'écoulement apprise, tableau complet |
 | `validation/adaptive_reduced_basis_preregistration.md` | seuils préenregistrés, dont le critère déclaré inatteignable |
 | `validation/adaptive_reduced_basis_first_rung.md` | bases construites à la main, plafond du champ libre |
-| `validation/full_field_operator_gate.md` | **le jalon 0 et la campagne à venir** |
+| `docs/explanation/spectral_mechanics/plastic_inverse_reuse.md` | la page-pont : ce que le solveur spectral fournit déjà |
 | `validation/morphology_reduction_findings.md` | la ligne base fixe, réfutée |
 | `validation/ludwik_on_the_measured_p43_history.md` | le verdict Ludwik |
 
-Scripts vivants : `scripts/learn_flow_direction_p43.py` (le principal) et
-`scripts/adaptive_reduced_basis_p43.py`.
+Scripts vivants : `qualify_full_field_plastic_operator.py` (le portique),
+`stencil_kernel.py`, `qualify_preconditioner_under_plasticity.py`,
+`bench_ludwik_plastic_fraction.py`, `bench_local_coefficients_nonlinear.py`,
+`bench_warm_start_coefficients.py`, `learn_flow_direction_p43.py`.
+Paquet : `src/fem_inhouse/hyperreduction/`.
+
+### Ce qui reste ouvert, par ordre
+
+1. **L'identifiabilité de la représentation locale.** Tout ce qui précède
+   démontre que la mécanique tient ; rien ne dit que les coefficients locaux
+   sont identifiables depuis la DIC, ni qu'ils prédisent un incrément jamais vu.
+   C'est l'objet du bras D et du découpage temporel extrapolant, tous deux
+   interrompus.
+2. **Le calcul global plein champ**, volontairement différé : `T_A = 52 s` et
+   ~78 min pour trois incréments.
+3. **La cristallographie**, qui déclenchera le RID.
 
 ### Deux défauts consignés, non réparés
 

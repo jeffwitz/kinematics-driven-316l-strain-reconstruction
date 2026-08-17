@@ -48,6 +48,7 @@ from pathlib import Path
 
 import numpy as np
 
+from fem_inhouse.core.mfront_native import MFrontNativePlaneStressBatch
 from fem_inhouse.core.plane_stress_material import PythonJ2PlaneStressBatch
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.newton_ebi import EBISpectralSolverConfig
@@ -92,6 +93,13 @@ def main() -> int:
     # to 1.78e-3, so increments crossing that band take the plastic fraction up
     # gradually, which is the whole object of the experiment.
     parser.add_argument("--spread", type=float, default=0.40)
+    # MFront overtakes the vectorised Python batch at four threads and is 1.9x
+    # faster at eight on the plastic branch, which is where the time goes. It
+    # loses on the elastic branch, where the per-point work is trivial.
+    parser.add_argument("--backend", default="mfront", choices=("mfront", "python"))
+    parser.add_argument("--mfront-threads", type=int, default=8)
+    parser.add_argument("--library", type=Path,
+                        default=Path("build/mfront/src/libBehaviour.so"))
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
 
@@ -101,13 +109,20 @@ def main() -> int:
             pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels
         )
         yield_map = smooth_yield_map(grid, arguments.spread, 20260817)
-        material = PythonJ2PlaneStressBatch(
-            np.repeat(yield_map, 2),
-            np.repeat(np.full(grid.nx * grid.ny, HARDENING_MPA), 2),
-            LUDWIK_EXPONENT,
-            young_modulus_mpa=YOUNG_MPA,
-            poisson_ratio=POISSON,
-        )
+        yields = np.repeat(yield_map, 2)
+        hardening = np.repeat(np.full(grid.nx * grid.ny, HARDENING_MPA), 2)
+        if arguments.backend == "mfront":
+            material = MFrontNativePlaneStressBatch(
+                arguments.library, yields, hardening,
+                np.full(yields.size, LUDWIK_EXPONENT),
+                behaviour_name="PixelLudwikJ2Plasticity",
+                thread_count=arguments.mfront_threads,
+            )
+        else:
+            material = PythonJ2PlaneStressBatch(
+                yields, hardening, LUDWIK_EXPONENT,
+                young_modulus_mpa=YOUNG_MPA, poisson_ratio=POISSON,
+            )
         columns = np.arange(grid.ny + 1, dtype=np.float64) * (grid.length_y / grid.ny)
         rows = np.arange(grid.nx + 1, dtype=np.float64) * (grid.length_x / grid.nx)
         history = np.zeros((arguments.increments + 1, *grid.node_shape, 2))
@@ -165,7 +180,10 @@ def main() -> int:
                 payload[name] = list(value)
         report["cases"][str(pixels)] = payload
         fractions = " ".join(f"{o['plastic_fraction']:.2f}" for o in observations)
-        print(f"{pixels:>5}px  {seconds:7.1f} s   plastic fraction per increment: {fractions}",
+        payload["backend"] = arguments.backend
+        payload["mfront_threads"] = arguments.mfront_threads
+        print(f"{pixels:>5}px  {arguments.backend}  {seconds:7.1f} s   "
+              f"plastic fraction per increment: {fractions}",
               flush=True)
         if "gmres_per_newton" in payload:
             # GMRES per increment, beside the plastic fraction it was paid for.
