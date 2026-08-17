@@ -592,6 +592,60 @@ materialised as a dense `(pixels, patches^2)` matrix, which at that size is
 is now two small contractions -- agreeing with the dense route to 4.4e-16 and
 summing to one to 2.2e-16.
 
+## Milestone 1A proper: a real yield criterion, and where the time actually goes
+
+Ludwik return mapping, yield criterion deciding point by point, ten increments
+taking the plastic fraction from nothing to everything. GMRES per Newton:
+
+| plastic fraction | 256 square | 512 square |
+|---|---|---|
+| 0.00 | 14 | 16 |
+| 0.06 | 19 | 20 |
+| 0.56 | 24 | 26 |
+| 0.95 | 30 | 30 |
+| 1.00 | **44** | **49** |
+
+**A factor of three from elastic to fully plastic, and it saturates.** The
+homogeneous reference holds against a real moving elastoplastic front, not only
+against milestone 1.0's randomly scattered softening, and the count is still
+essentially mesh independent -- 44 against 49 for a quadrupling of the points.
+
+**But the time split answers the question the other way round.** At 512 square,
+1056.9 s in total, of which GMRES accounts for 256.2 -- and that 256.2 is
+exactly its jacobian 143.2, preconditioner 59.3 and overhead 53.7. So **76 % of
+the run is outside the linear solves entirely**: the return mapping and the
+residual assembly. At 256 square it is 74 %, so the proportion is robust.
+
+The expectation was the reverse -- that Krylov would dominate and the
+constitutive law would be a rounding error. It is the constitutive integration
+that dominates, the preconditioner costing 6 % of the total. The next
+bottleneck is therefore neither the preconditioner, nor the stencil, nor the
+coefficient count, but the Python return mapping, and the remedy already exists
+in the repository as the compiled `PixelLudwikJ2Plasticity` MFront behaviour.
+
+## Milestone 1B: the warm regime, which is the one training lives in
+
+An optimiser perturbs the coefficients and re-solves from a state that is
+already nearly right. Measured at a fixed load step, the committed material
+state deliberately not advanced:
+
+| | 256 square | 512 square |
+|---|---|---|
+| reference solve | 3 Newton, 57 Krylov | 3 Newton, 57 Krylov |
+| perturbation, warm | **1 Newton, 19 Krylov** | **1 Newton, 20 Krylov** |
+| perturbation, cold | 2 Newton, 38 Krylov | 2 Newton, 39 Krylov |
+
+One Newton, where a cold solve from an undeformed start took eight. The cold
+column is itself flattered, starting from the boundary displacement, so the gain
+against a genuinely cold solve is larger. Time follows: 25.0 s against 44.1 at
+512 square.
+
+Together with the envelope theorem removing the inner adjoint, and the adjoint
+at a converged state being one linear solve rather than a Newton loop replayed
+backwards, the budget for a training step is a small multiple of a single
+preconditioned solve -- not the eight-Newton cold cost every earlier estimate
+of mine was built on.
+
 ## Registered acceptance criteria
 
 * The adjoint identity holds below 1e-8 relative. **This is the gate.** A
