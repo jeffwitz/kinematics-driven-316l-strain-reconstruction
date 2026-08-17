@@ -153,3 +153,40 @@ the exact configuration. Figures are generated from that artifact only.
 ## Frozen seeds
 
 `20260817` for the primary run, `+1` per rerun; recorded in the artifact.
+
+## Amendment 1 — force normalisation (2026-08-18, before any P43 run)
+
+The first material-gate execution (seed `20260817`, before any training
+run) exposed that the preregistered dynamics as first written are not
+integrable at `n_constitutive_substeps = 4`. With the generalised force
+`A = -dPsi/dq` fed unscaled into the mobility network, the elastic
+feedback rate is
+
+```text
+c = ||Delta eps|| M (2 mu) (P : P) ~ 1e2 per substep
+```
+
+against the RK4 stability limit `c h <= 2.785` at `h = 1/4` — a factor
+~50 over the limit. The measured symptom was the first RK4 substeps
+growing `1e0 -> 1e10 -> 1e57 -> NaN` from the zero state at a
+`2e-3` strain increment, i.e. divergence, not a coding defect. The
+substep-invariance gate (D) could not converge on that formulation.
+
+**The amendment.** The generalised force is normalised by
+`sigma_ref = 2 mu = E/(1 + nu)` before entering the network:
+
+```text
+dq_alpha/ds = ||Delta eps|| M_alpha (A_alpha / sigma_ref),
+M_alpha = L_alpha L_alpha^T
+```
+
+The GENERIC structure is unchanged — the mobility simply carries units
+of `1/MPa`, and `D = sum_alpha A^T M (A/sigma_ref) >= 0` still holds
+identically. The elastic feedback rate becomes `O(||d eps|| M)` and the
+preregistered four-substep RK4 is stable by a wide margin. The
+dissipation quadrature reports the true `A^T dq`, not a rescaled one.
+
+No frozen threshold is moved by this amendment. It changes the network
+input scaling only; `latent_dim`, width, layers, activation, integrator,
+substeps, holdout, seeds and all bars of the preregistration remain
+exactly as registered.
