@@ -1,0 +1,64 @@
+{
+  "git_sha": "98b58e1679a844bb3ea8224ebcd6d1730c65a50e",
+  "dirty": true,
+  "date": "2026-08-18T01:26:33",
+  "machine": "jeff-HP-EliteBook-X-G1i",
+  "seed": 20260817,
+  "states": [
+    21,
+    22
+  ],
+  "holdout": [
+    24,
+    28,
+    32,
+    36,
+    39
+  ],
+  "architecture": {
+    "latent_dim": 2,
+    "context_dim": 0,
+    "hidden_width": 32,
+    "n_layers": 2,
+    "n_substeps": 4,
+    "young_modulus_mpa": 205000.0,
+    "poisson_ratio": 0.3,
+    "sigma_ref_mpa": null,
+    "seed": 20260817
+  },
+  "optimizer": {
+    "name": "adam",
+    "lr": 0.001
+  },
+  "steps": [
+    {
+      "step": 0,
+      "loss_raw": 1.8789961086422245e-10,
+      "loss_whitened": 1.3610326504482452e-10,
+      "e_train": {
+        "21": 1.4401477385356019,
+        "22": 1.3603924235273253
+      },
+      "e_holdout": {},
+      "median_e_holdout": NaN,
+      "gradient_norm": 5.3489197758037264e-14,
+      "rollout_seconds": 23.272438699030317,
+      "adjoint_seconds": 7.043822234030813,
+      "newton_iterations": [
+        3,
+        3
+      ],
+      "dissipation_min": 2.0666603105472655e-07,
+      "dissipation_total": 0.00449113848596358,
+      "slip_activity": 0.0002725229126401032
+    }
+  ],
+  "total_seconds": 33.76595708495006,
+  "ebsd_validity_fraction": 1.0,
+  "source_report_solve_bounds": [
+    1290,
+    1950,
+    780,
+    1390
+  ]
+}

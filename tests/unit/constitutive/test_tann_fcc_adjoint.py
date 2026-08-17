@@ -19,7 +19,7 @@ from fem_inhouse.identification.tann_fcc_sequence import TannFCCSequence
 from fem_inhouse.spectral2d import EBISpectralSolverConfig, StructuredGrid2D
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
-STATES = [21, 22, 23]
+STATES = [21, 22]
 HOLDOUT = {22}
 SEED_LOCAL = 20260817
 
@@ -57,7 +57,7 @@ def _histories(grid: StructuredGrid2D) -> tuple[np.ndarray, np.ndarray]:
         boundary[state, ..., 1] = state * (
             0.002 * y[None, :] + 0.003 * x[:, None] * y[None, :] / span_x
         )
-    measured = boundary.copy()
+    measured = boundary[1:].copy()  # aligned to the increments
     measured[:, 1:-1, 1:-1, 0] += 0.001 * x[1:-1, None] * y[None, 1:-1] / span_x
     return boundary, measured
 

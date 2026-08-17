@@ -17,7 +17,7 @@ from fem_inhouse.identification.tann_fcc_sequence import TannFCCSequence
 from fem_inhouse.spectral2d import EBISpectralSolverConfig, StructuredGrid2D
 from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
-STATES = [21, 22, 23]
+STATES = [21, 22]
 HOLDOUT = {22}
 
 
@@ -45,9 +45,10 @@ def _histories(grid: StructuredGrid2D) -> tuple[np.ndarray, np.ndarray]:
     for state in (1, 2):
         boundary[state, ..., 0] = state * 0.01 * x[:, None]
         boundary[state, ..., 1] = state * 0.005 * y[None, :]
-    # measured interior: an independent smooth field, not derivable from
-    # the boundary (it exists to be modified and to be scored)
-    measured = boundary.copy()
+    # measured interior aligned to the increments (no zero-reference entry):
+    # an independent smooth field, not derivable from the boundary (it
+    # exists to be modified and to be scored)
+    measured = boundary[1:].copy()
     measured[:, 1:-1, 1:-1, 0] += 0.003 * x[1:-1, None] * y[None, 1:-1]
     measured[:, 1:-1, 1:-1, 1] -= 0.002 * x[1:-1, None]
     return boundary, measured

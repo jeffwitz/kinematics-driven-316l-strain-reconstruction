@@ -222,6 +222,8 @@ class TannFCCBatch:
         self._trial_strain: torch.Tensor | None = None
         self._latest_trial: TannFCCTrial | None = None
         self._last_committed_tangent: FloatArray | None = None
+        self._last_committed_dissipation: FloatArray | None = None
+        self._last_committed_slip_work: FloatArray | None = None
 
     # -- geometry helpers ---------------------------------------------------
 
@@ -616,13 +618,25 @@ class TannFCCBatch:
         assert self._trial_strain is not None
         self._committed_strain = self._trial_strain.clone()
         # Keep the accepted tangent for the discrete trajectory adjoint:
-        # the mechanical transpose action uses the converged C_alg.
+        # the mechanical transpose action uses the converged C_alg. The
+        # accepted dissipation and slip work are kept for the diagnostics
+        # the run artifact reports per state.
         if self._latest_trial is not None and self._latest_trial.consistent_tangent_mpa is not None:
             self._last_committed_tangent = np.array(
                 self._latest_trial.consistent_tangent_mpa, copy=True
             )
         else:
             self._last_committed_tangent = None
+        if self._latest_trial is not None:
+            self._last_committed_dissipation = np.array(
+                self._latest_trial.generalised_dissipation, copy=True
+            )
+            self._last_committed_slip_work = np.array(
+                self._latest_trial.slip_work, copy=True
+            )
+        else:
+            self._last_committed_dissipation = None
+            self._last_committed_slip_work = None
         self._trial_state = None
         self._trial_strain = None
         self._latest_trial = None
@@ -635,6 +649,14 @@ class TannFCCBatch:
     @property
     def last_committed_tangent(self) -> FloatArray | None:
         return self._last_committed_tangent
+
+    @property
+    def last_committed_dissipation(self) -> FloatArray | None:
+        return self._last_committed_dissipation
+
+    @property
+    def last_committed_slip_work(self) -> FloatArray | None:
+        return self._last_committed_slip_work
 
     # -- trajectory-adjoint VJPs ---------------------------------------------
 

@@ -50,7 +50,7 @@ HOLDOUT = {24, 28, 32, 36, 39}
 SEED = 20260817
 
 
-def load_crop() -> tuple[np.ndarray, dict]:
+def load_crop(pixels: int) -> tuple[np.ndarray, dict]:
     """The repaired P43 displacement history, cropped like the live script."""
 
     report = json.loads((HISTORY / "report.json").read_text(encoding="utf-8"))
@@ -60,8 +60,8 @@ def load_crop() -> tuple[np.ndarray, dict]:
     history = np.asarray(
         source[
             :,
-            x0 - bounds[0] : x0 + PIXELS - bounds[0] + 1,
-            y0 - bounds[2] : y0 + PIXELS - bounds[2] + 1,
+            x0 - bounds[0] : x0 + pixels - bounds[0] + 1,
+            y0 - bounds[2] : y0 + pixels - bounds[2] + 1,
             :,
         ],
         dtype=np.float64,
@@ -69,7 +69,7 @@ def load_crop() -> tuple[np.ndarray, dict]:
     return history, report
 
 
-def load_ebsd_systems() -> tuple[np.ndarray, np.ndarray]:
+def load_ebsd_systems(pixels: int) -> tuple[np.ndarray, np.ndarray]:
     """Per-material-point specimen-frame Schmid tensors from the EBSD map."""
 
     import h5py
@@ -79,14 +79,14 @@ def load_ebsd_systems() -> tuple[np.ndarray, np.ndarray]:
         angles = np.stack(
             [
                 np.asarray(handle[f"/orientation/{name}"])[
-                    x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1
+                    x0 : x0 + pixels + 1, y0 : y0 + pixels + 1
                 ]
                 for name in ("phi1", "Phi", "phi2")
             ],
             axis=-1,
         )
         schmid = np.asarray(handle["/schmid/max_schmid_factor"])[
-            x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1
+            x0 : x0 + pixels + 1, y0 : y0 + pixels + 1
         ]
     return systems_from_bunge_node_grid(angles, max_schmid_factor=schmid)
 
@@ -108,7 +108,9 @@ class StepReport:
     slip_activity: float
 
 
-def elastic_reference(grid: StructuredGrid2D, history: np.ndarray) -> dict[int, np.ndarray]:
+def elastic_reference(
+    grid: StructuredGrid2D, history: np.ndarray, pixels: int
+) -> dict[int, np.ndarray]:
     """The conversion-corrected elastic lift, per state (the live script's)."""
 
     from fem_inhouse.core.kelvin import KELVIN_SCALE_2D
@@ -141,7 +143,7 @@ def elastic_reference(grid: StructuredGrid2D, history: np.ndarray) -> dict[int, 
         voigt = stress_kelvin.reshape(-1, 3) / KELVIN_SCALE_2D
         return pack_interior(
             operator.kinematics.divergence_from_sample_stress(
-                voigt.reshape((PIXELS, PIXELS, 2, 3))
+                voigt.reshape((pixels, pixels, 2, 3))
             )
         )
 
@@ -152,7 +154,7 @@ def elastic_reference(grid: StructuredGrid2D, history: np.ndarray) -> dict[int, 
         forcing = -divergence(stress_of(kelvin_strain(field))) / operator.quadrature_weight
         lifted = field.copy()
         lifted[1:-1, 1:-1, :] -= operator.solve_stiffness(forcing).reshape(
-            PIXELS - 1, PIXELS - 1, 2
+            pixels - 1, pixels - 1, 2
         )
         elastic[state] = lifted
     return elastic
@@ -173,19 +175,19 @@ def main() -> int:
                         help="limit the trajectory to the first N states (development)")
     arguments = parser.parse_args()
     pixels = arguments.pixels
-    global PIXELS
-    PIXELS = pixels
 
     started = time.perf_counter()
-    history, report = load_crop()
-    systems, validity = load_ebsd_systems()
+    history, report = load_crop(pixels)
+    systems, validity = load_ebsd_systems(pixels)
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     reference = history[REFERENCE_STATE]
-    boundary = np.stack([history[s] - reference for s in STATES], axis=0)
-    measured = boundary.copy()
+    measured = np.stack([history[s] - reference for s in STATES], axis=0)
+    boundary = np.concatenate(
+        [np.zeros_like(measured[:1]), measured], axis=0
+    )  # zero reference + one entry per increment
     state_indices = STATES
     if arguments.max_increments is not None:
-        boundary = boundary[: arguments.max_increments]
+        boundary = boundary[: arguments.max_increments + 1]
         measured = measured[: arguments.max_increments]
         state_indices = STATES[: arguments.max_increments]
 
@@ -196,7 +198,7 @@ def main() -> int:
     )
     material = TannFCCBatch(
         TannFCCConfig(seed=SEED),
-        point_count=2 * PIXELS * PIXELS,
+        point_count=2 * pixels * pixels,
         systems_global=systems,
     )
     sequence = TannFCCSequence(
@@ -209,7 +211,7 @@ def main() -> int:
         whitener=lambda field: whitener.apply_without_wrap(field),
         solver_config=solver_config,
     )
-    elastic = elastic_reference(grid, history)
+    elastic = elastic_reference(grid, history, pixels)
 
     optimizer = torch.optim.Adam(material._network.parameters(), lr=arguments.learning_rate)
     steps: list[dict] = []
@@ -265,8 +267,8 @@ def main() -> int:
                 attempt.newton_iterations
                 for attempt in result.solver_diagnostics.load_step_attempts
             ],
-            "dissipation_min": float(min(r.generalised_dissipation.min() for r in records)),
-            "dissipation_total": float(sum(r.generalised_dissipation.sum() for r in records)),
+            "dissipation_min": float(min(r.dissipation.min() for r in records)),
+            "dissipation_total": float(sum(r.dissipation.sum() for r in records)),
             "slip_activity": float(
                 sum(np.abs(r.committed_state[..., 0]).sum() for r in records)
             ),

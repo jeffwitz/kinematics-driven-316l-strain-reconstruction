@@ -45,6 +45,8 @@ class TannFCCStateRecord:
     committed_state: FloatArray  # q_n after commit, (P, 12, 1+d)
     strain_in_plane_mpa: FloatArray  # committed strain eps_n, (P, 3)
     committed_tangent_mpa: FloatArray | None  # accepted C_alg, (P, 3, 3)
+    dissipation: FloatArray  # accepted generalised dissipation, (P,)
+    slip_work: FloatArray  # accepted slip-channel work, (P,)
     loss_raw: float
     loss_whitened: float | None
     equilibrium_residual: float
@@ -83,10 +85,18 @@ class TannFCCSequence:
     ) -> None:
         history = np.asarray(boundary_history, dtype=np.float64)
         measured = np.asarray(measured_interior, dtype=np.float64)
-        if history.shape != measured.shape:
-            raise ValueError("boundary and interior histories must share a shape")
-        if history.ndim != 4 or history.shape[0] != len(state_indices):
-            raise ValueError("expected (S, nx+1, ny+1, 2) histories")
+        # The boundary history carries the zero reference plus one entry per
+        # increment; the measured interior is aligned to the increments.
+        if history.ndim != 4 or history.shape[0] != len(state_indices) + 1:
+            raise ValueError(
+                "expected a boundary history with len(state_indices) + 1 states"
+            )
+        if measured.ndim != 4 or measured.shape[0] != len(state_indices):
+            raise ValueError(
+                "expected the measured interior aligned to the increments"
+            )
+        if history.shape[1:] != measured.shape[1:]:
+            raise ValueError("boundary and interior histories must share the field shape")
         if not np.allclose(history[0], 0.0):
             raise ValueError("the first boundary state must be the zero reference")
         self.grid = grid
@@ -147,6 +157,10 @@ class TannFCCSequence:
                         if self.material.last_committed_tangent is None
                         else np.array(self.material.last_committed_tangent, copy=True)
                     ),
+                    dissipation=np.array(
+                        self.material.last_committed_dissipation, copy=True
+                    ),
+                    slip_work=np.array(self.material.last_committed_slip_work, copy=True),
                     loss_raw=loss_raw,
                     loss_whitened=loss_whitened,
                     equilibrium_residual=0.0,  # filled after the solve
