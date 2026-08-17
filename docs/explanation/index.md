@@ -17,6 +17,7 @@ commands, tensor layouts and solver implementation details live elsewhere.
 9. {doc}`scope_and_prediction` — distinguish reconstruction, identification and prediction.
 10. {doc}`forest_rubin_srix` — the rate-independent crystal law, and the limits of its transposition.
 11. {doc}`reduced_integration_hourglass` — accelerate constitutive integration without hiding numerical stabilisation.
+12. {doc}`femu_identification` — the forward identification loop: the law inside the equilibrium problem, judged by the displacement it predicts.
 
 The operational entry points are {doc}`../how-to/index`; stable contracts are
 in {doc}`../reference/index`.
@@ -38,5 +39,6 @@ current_evidence
 scope_and_prediction
 forest_rubin_srix
 reduced_integration_hourglass
+femu_identification
 spectral_mechanics/index
 ```
