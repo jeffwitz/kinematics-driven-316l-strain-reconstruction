@@ -1,0 +1,132 @@
+{
+  "ebsd": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "loaded_samples": 400000,
+  "results": {
+    "frozen_bars": {
+      "ami_kernel_raw_vs_observable": 0.1503688753902646,
+      "ami_kernel_threshold": 0.5,
+      "ami_rank": {
+        "F1": 0.4483410635292454,
+        "F2": 0.1161870699187329,
+        "F3": 0.6710445547581674,
+        "F4": 0.9776752420875738
+      },
+      "ami_rank_threshold": 0.5,
+      "direction_gain_threshold": 1.4,
+      "r2_cluster_threshold": 0.5
+    },
+    "r16_F1": {
+      "direction_improvement": 0.9990083503053193,
+      "global_circular_std_degrees": 45.72510333894101,
+      "n_clusters": 2,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.0035864922651115405,
+      "silhouette": 0.03625501882088731,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.77049163299426,
+      "worst_single_state_share": 0.07026052511299578
+    },
+    "r16_F2": {
+      "direction_improvement": 1.0014107837266462,
+      "global_circular_std_degrees": 45.72510333894101,
+      "n_clusters": 2,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.041042582093781865,
+      "silhouette": -0.23727187389973572,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.66068598620418,
+      "worst_single_state_share": 0.11473302419539966
+    },
+    "r16_F2_raw_peq": {
+      "direction_improvement": 1.0040743619237191,
+      "global_circular_std_degrees": 45.72510333894101,
+      "n_clusters": 3,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.13609087093943883,
+      "silhouette": -0.22506096414957105,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.539558694971255,
+      "worst_single_state_share": 0.1266120474556179
+    },
+    "r16_F3": {
+      "direction_improvement": 1.000429667310437,
+      "global_circular_std_degrees": 45.72510333894101,
+      "n_clusters": 2,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.001959096846591901,
+      "silhouette": 0.18465800438962837,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.70546519463856,
+      "worst_single_state_share": 0.052264313846081066
+    },
+    "r16_F4": {
+      "direction_improvement": 1.0079526978669615,
+      "global_circular_std_degrees": 45.48240886844253,
+      "n_clusters": 12,
+      "noise_share": 0.0820325,
+      "r2_cluster_amplitude": 0.06612679851349579,
+      "silhouette": 0.11767390035396756,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.12355486987912,
+      "worst_single_state_share": 0.1843950733690848
+    },
+    "r8_F1": {
+      "direction_improvement": 1.0006827946681105,
+      "global_circular_std_degrees": 45.69061604216745,
+      "n_clusters": 3,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.0027467890274561757,
+      "silhouette": -0.055069405991149165,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.659440019972905,
+      "worst_single_state_share": 0.1978481488442022
+    },
+    "r8_F2": {
+      "direction_improvement": 0.9998553920040528,
+      "global_circular_std_degrees": 45.69061604216745,
+      "n_clusters": 2,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.021078767301460632,
+      "silhouette": -0.0991552858925706,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.697224226183145,
+      "worst_single_state_share": 0.09874472890183669
+    },
+    "r8_F2_raw_peq": {
+      "direction_improvement": 1.0000664405309514,
+      "global_circular_std_degrees": 45.69061604216745,
+      "n_clusters": 2,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.00032385001124668467,
+      "silhouette": 0.22742144372653303,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.687580535058814,
+      "worst_single_state_share": 0.08660455861070912
+    },
+    "r8_F3": {
+      "direction_improvement": 1.0001912899757313,
+      "global_circular_std_degrees": 45.69061604216745,
+      "n_clusters": 2,
+      "noise_share": 0.0,
+      "r2_cluster_amplitude": 0.0004692321941854871,
+      "silhouette": 0.1877989367030358,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.68187755691823,
+      "worst_single_state_share": 0.05265085723063108
+    },
+    "r8_F4": {
+      "direction_improvement": 1.0013888988448472,
+      "global_circular_std_degrees": 45.330897390566875,
+      "n_clusters": 11,
+      "noise_share": 0.0834175,
+      "r2_cluster_amplitude": 0.06697844578798384,
+      "silhouette": 0.14077354160833808,
+      "time_mixed": true,
+      "within_cluster_circular_std_degrees": 45.26802468337563,
+      "worst_single_state_share": 0.1883866710656549
+    }
+  },
+  "schema_version": 1,
+  "trajectories_r16": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz",
+  "trajectories_r8": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/_generated/shared_tensor_generator/krylov_trajectories.r8.npz"
+}
