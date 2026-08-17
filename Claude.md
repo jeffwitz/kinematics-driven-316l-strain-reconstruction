@@ -170,6 +170,7 @@ dans le générateur plastique sépare proprement les deux effets.
 | `validation/tensor_local_inverse_preregistration.md` | seuils du jalon 3, et la correction inline sur l'ordre de la branche D |
 | `validation/local_coefficient_inverse_results.md` | **jalon 2 : la représentation locale est identifiable** — 0,021 % au jumeau, conditionnement 200, et la base enrichie déficiente en rang |
 | `validation/shared_tensor_generator_preregistration.md` | **jalon 4 : le générateur tensoriel partagé contre le noyau mesuré, seuils figés avant exécution** |
+| `validation/krylov_projected_control_results.md` | **contrôle Krylov projeté P_H^{G_p} (2026-08-17) : la géométrie Krylov + thermodynamique bat le réseau dissipatif de 0,19–0,25 à rang égal, utile mais pas « strategy-changing » (0,400 vs barre 0,386)** |
 | `validation/local_coefficient_inverse_preregistration.md` | seuils du jalon 2, et **la condition enregistrée de réouverture du RID** |
 | `validation/full_field_operator_gate.md` | jalons 0, 1.0, 1A, 1B : opérateur, préconditionneur, non linéaire, coefficients locaux |
 | `validation/reduced_integration_domain_rationale.md` | **le RID : principe, arithmétique, et pourquoi il attend la cristallographie** |

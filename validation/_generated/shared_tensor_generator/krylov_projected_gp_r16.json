@@ -1,0 +1,168 @@
+{
+  "elastic_lifting_residual_guard": 1.4718107031476103e-10,
+  "krylov": "predictive",
+  "origin": [
+    1580,
+    1030
+  ],
+  "pixels": 100,
+  "projector": "gp",
+  "ranks": [
+    16
+  ],
+  "results": {
+    "r16": {
+      "accumulated_equivalent_plastic_strain": 0.006888814372747909,
+      "chi_active_mean": 0.18809069871593517,
+      "chi_global_work_weighted": 0.8649817566888811,
+      "fitted_mean_E": 0.2698968161737771,
+      "heldout_median_E": 0.40400521769378106,
+      "negative_power_share": 0.06750912165555943,
+      "per_state": {
+        "21": {
+          "E": 0.13555853171629823,
+          "active_fraction": 0.2995,
+          "chi_active_mean": 0.2745607762570182,
+          "objective": 1.6495415420557794e-06,
+          "start_spread": 5.355559069287251e-05
+        },
+        "22": {
+          "E": 0.15699149110358324,
+          "active_fraction": 0.39215,
+          "chi_active_mean": 0.21814664886256704,
+          "objective": 1.4939138707329999e-05,
+          "start_spread": 0.00023862450247437742
+        },
+        "23": {
+          "E": 0.1881537522221098,
+          "active_fraction": 0.45625,
+          "chi_active_mean": 0.1913335625018016,
+          "objective": 1.9886266288941905e-05,
+          "start_spread": 4.110995484748646e-05
+        },
+        "24": {
+          "E": 0.5320900348369352,
+          "active_fraction": 0.59285,
+          "chi_active_mean": 0.1275337849987043,
+          "objective": 0.0001364784590149246,
+          "start_spread": 0.0007538632284041936
+        },
+        "25": {
+          "E": 0.34706864945266636,
+          "active_fraction": 0.3532,
+          "chi_active_mean": 0.29638559734397335,
+          "objective": 5.972261974850669e-05,
+          "start_spread": 0.00011639626865674173
+        },
+        "26": {
+          "E": 0.2871842422229218,
+          "active_fraction": 0.49,
+          "chi_active_mean": 0.18972040466972806,
+          "objective": 8.979083906496744e-05,
+          "start_spread": 0.00013819770655929743
+        },
+        "27": {
+          "E": 0.21993440728786223,
+          "active_fraction": 0.4443,
+          "chi_active_mean": 0.16080209318749097,
+          "objective": 0.0001896615822664307,
+          "start_spread": 0.0006193728146467666
+        },
+        "28": {
+          "E": 0.3888684180282114,
+          "active_fraction": 0.4632,
+          "chi_active_mean": 0.18066946467058434,
+          "objective": 0.00047130240319960727,
+          "start_spread": 0.002899197547665424
+        },
+        "29": {
+          "E": 0.28791105327518624,
+          "active_fraction": 0.40475,
+          "chi_active_mean": 0.2189330864263608,
+          "objective": 0.0003243790112640551,
+          "start_spread": 0.0014202586640965895
+        },
+        "30": {
+          "E": 0.1859024887940308,
+          "active_fraction": 0.37305,
+          "chi_active_mean": 0.1632960417579171,
+          "objective": 0.0005343807613034431,
+          "start_spread": 0.0005299972292210985
+        },
+        "31": {
+          "E": 0.2127806208761144,
+          "active_fraction": 0.5602,
+          "chi_active_mean": 0.1498540544992459,
+          "objective": 0.0005435474357394246,
+          "start_spread": 0.00047058214927009177
+        },
+        "32": {
+          "E": 0.2543696834483243,
+          "active_fraction": 0.56645,
+          "chi_active_mean": 0.1533559878483054,
+          "objective": 0.0006296627685295128,
+          "start_spread": 0.0006860332703283795
+        },
+        "33": {
+          "E": 0.29849804900554217,
+          "active_fraction": 0.5812,
+          "chi_active_mean": 0.14775645795014364,
+          "objective": 0.0007698925246306349,
+          "start_spread": 0.0023072782347860533
+        },
+        "34": {
+          "E": 0.34756413621991267,
+          "active_fraction": 0.46335,
+          "chi_active_mean": 0.20117563996650034,
+          "objective": 0.0009160957175209887,
+          "start_spread": 0.001924868218545582
+        },
+        "35": {
+          "E": 0.27846118719365326,
+          "active_fraction": 0.51895,
+          "chi_active_mean": 0.17518077574607568,
+          "objective": 0.0011158112907672848,
+          "start_spread": 0.002072771854549842
+        },
+        "36": {
+          "E": 0.4227848208541599,
+          "active_fraction": 0.517,
+          "chi_active_mean": 0.15922578896519235,
+          "objective": 0.001891090371272914,
+          "start_spread": 0.00256165438240659
+        },
+        "37": {
+          "E": 0.3402743494962312,
+          "active_fraction": 0.4741,
+          "chi_active_mean": 0.1844743501179024,
+          "objective": 0.001402071032648475,
+          "start_spread": 8.51684998596823e-05
+        },
+        "38": {
+          "E": 0.36385271007175873,
+          "active_fraction": 0.4951,
+          "chi_active_mean": 0.1913696140472402,
+          "objective": 0.001576816758483451,
+          "start_spread": 0.0007299305935114142
+        },
+        "39": {
+          "E": 0.398316573668786,
+          "active_fraction": 0.4522,
+          "chi_active_mean": 0.19915988307435514,
+          "objective": 0.001893066820600725,
+          "start_spread": 0.00016458793781646053
+        },
+        "40": {
+          "E": 0.40400521769378106,
+          "active_fraction": 0.51345,
+          "chi_active_mean": 0.17887996142759674,
+          "objective": 0.002138615709078211,
+          "start_spread": 0.001039100173130459
+        }
+      },
+      "projected_fraction_mean": 0.47056250000000005,
+      "start_spread_relative_mean": 0.00094262744107347
+    }
+  },
+  "schema_version": 1
+}
