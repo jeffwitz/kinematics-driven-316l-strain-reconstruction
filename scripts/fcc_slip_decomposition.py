@@ -194,6 +194,40 @@ def main() -> int:
     scale = float(np.median(np.abs(ceiling)[active]))
     gamma_l1 = solve_chunked(rhs, LAMBDA_SPARSE * max(scale, 1e-300))
 
+    # Third admissible decomposition: causally time-regularised. The penalty
+    # (gamma_n - gamma_{n-1})^2 ties each increment to its predecessor, the
+    # previous solution already computed -- a gauge variant, not a law change.
+    LAMBDA_TIME = 1e-2
+
+    def fista_temporal(
+        objective_gram: np.ndarray, objective_rhs: np.ndarray,
+        objective_tau: np.ndarray, previous: np.ndarray, lam_t: float,
+    ) -> np.ndarray:
+        gamma = previous.copy()
+        gamma_prev = gamma.copy()
+        steps = np.einsum("pab->p", objective_gram)
+        for _iteration in range(FISTA_ITERATIONS):
+            momentum = gamma + 0.5 * (gamma - gamma_prev)
+            gradient = np.einsum("pab,pb->pa", objective_gram, momentum) - objective_rhs
+            gradient = gradient + lam_t * (momentum - previous)
+            step = 1.0 / np.maximum(steps + lam_t, 1e-300)
+            proposal = momentum - step[:, None] * gradient
+            positive = objective_tau >= 0.0
+            proposal = np.where(positive, np.maximum(proposal, 0.0), np.minimum(proposal, 0.0))
+            gamma_prev, gamma = gamma, proposal
+        return gamma
+
+    print("solving the time-regularised variant (state by state)...", flush=True)
+    gamma_time = np.empty_like(rhs)
+    previous = np.zeros((n_points, N_SYSTEMS))
+    for state in range(n_states):
+        mask = np.arange(state * n_points, (state + 1) * n_points)
+        previous = fista_temporal(
+            gram[mask], rhs[mask], tau[mask], previous, LAMBDA_TIME
+        )
+        gamma_time[mask] = previous
+        print(f"  state {state + 1}/{n_states} done", flush=True)
+
     def represented(gamma: np.ndarray) -> np.ndarray:
         return np.einsum("pc,pijc->pij", gamma, systems_global)
 
@@ -217,17 +251,23 @@ def main() -> int:
     unconstrained = metrics(d3, ceiling)
     l2 = metrics(d3, gamma_l2)
     l1 = metrics(d3, gamma_l1)
+    temporal = metrics(d3, gamma_time)
     raw_field = metrics(d3_raw, ceiling)
 
     if arguments.save_fields is not None:
         cumulative_gamma = np.cumsum(
             np.abs(gamma_l2).reshape(n_states, n_points, N_SYSTEMS), axis=0
         ).reshape(-1, N_SYSTEMS)
+        cumulative_time = np.cumsum(
+            np.abs(gamma_time).reshape(n_states, n_points, N_SYSTEMS), axis=0
+        ).reshape(-1, N_SYSTEMS)
         np.savez_compressed(
             arguments.save_fields,
             tau=tau,
             gamma=gamma_l2,
             gamma_cumulative=cumulative_gamma,
+            gamma_temporal=gamma_time,
+            gamma_temporal_cumulative=cumulative_time,
             states=states,
         )
         print(f"saved slip fields: {arguments.save_fields}", flush=True)
@@ -295,6 +335,7 @@ def main() -> int:
         "unconstrained": unconstrained,
         "constrained_l2": l2,
         "constrained_l1": l1,
+        "constrained_temporal": temporal,
         "raw_field_unconstrained": raw_field,
         "variant_correlation": correlation,
         "per_system_conditioning": per_system,
