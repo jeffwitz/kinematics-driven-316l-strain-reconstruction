@@ -1,9 +1,67 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-16
+Dernière mise à jour : 2026-08-18
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
-## ÉTAT COURANT — identification plastique pilotée par la DIC (2026-08-16)
+## ÉTAT COURANT — TANN-FCC causal piloté par la DIC (2026-08-18)
+
+**Point d'entrée unique : `validation/tann_fcc_preregistration.md`**
+(architecture figée + amendements 1-4, barres, holdout, marge de bruit)
+et `mission_tann.md` à la racine. Les résultats : `validation/tann_fcc_primary_run_results.md`
+(verdict du run enregistré), `validation/tann_fcc_amended_run_status.md`
+(état du run amendé), artefact `validation/_generated/shared_tensor_generator/tann_fcc_p43_run.json`
++ figures `validation/figures/tann_fcc_p43/`.
+
+### La voie en cours
+
+Krylov est clos comme piste constitutive (inverse cinématique ≠ état
+constitutif : noyau non trivial, 19 directions nulles sur 192, échec
+phase-space/mémoire/fermeture multi-estimateurs). Les 12 systèmes FCC
+restent la représentation. L'architecture est le **TANN-FCC causal** :
+état interne `q = [gamma; z]` par point et système, évolution
+`Y_{n+1} = Integrate(F_theta, Y_n, Delta eps)` (GENERIC : `M = L L^T`,
+`D >= 0` par construction), équilibre par le solveur spectral existant,
+DIC uniquement dans la perte. Chaîne complète construite, qualifiée et
+committée : matériau (portes A-G vertes), séquence masquée (fuite DIC
+testée bitwise), adjoint discret (vérifié FD 1e-8..1e-4 aux rayons
+5x/20x/50x), figures A-G.
+
+### Verdict T0 enregistré (run primaire, seed 20260817)
+
+`median(E_holdout) = 1.052` — barres 1 et 2 **échouées**. Diagnostic
+structurel quantifié : à `sigma_ref = 2 mu` (Amendement 1) la force
+normalisée `A/sigma_ref ~ 8e-4` colle la mobilité softplus à son
+plancher 0.693, le slip par incrément est `~8e-7` contre `~1e-3`
+requis, et le gradient adjoint exact (`3.8e-9`) colle à l'estimation
+par règle de chaîne : la loi est inerte quelle que soit la capacité.
+Amendement 3 inscrit et testé : `sigma_ref = 200 MPa` (échelle
+plastique) — les portes restent vertes, la loi bouge.
+
+### État du run amendé
+
+25x25 complet converge (E_holdout = 1.34 à l'init — la plasticité forte
+non entraînée fait pire que l'élastique, mais la loi répond). Le
+100x100 converge 1-16 (le 16 passe grâce au limiteur de pente de
+l'Amendement 4) puis bute au 17 : l'équilibre des états tardifs à forte
+plasticité ne converge pas dans le budget de subdivisions du solveur.
+À suivre (leviers solveur, pas de changement de loi ni de seuil) :
+tolérance 1e-8 (partiellement testée, insuffisante seule), refresh du
+préconditionneur par incrément, budget de cutbacks.
+
+### Architecture du code (commits a1284ab → 91d4caa)
+
+`src/fem_inhouse/constitutive/tann_fcc.py` (matériau, tangente AD
+chunkée, VJP d'incrément), `tann_fcc_geometry.py` (EBSD → systèmes,
+remplissage sentinelle), `identification/tann_fcc_sequence.py`
+(trajectoire masquée), `tann_fcc_adjoint.py` (adjoint discret),
+`identification/spatial_context.py` (extension T1/T2, contexte nul en
+T0). Scripts : `qualify_tann_fcc_material.py`,
+`train_tann_fcc_p43.py`, `figure_tann_fcc_p43.py`. Tests :
+`tests/unit/constitutive/` (14 tests verts).
+
+---
+
+## [SUPERSEDÉ le 2026-08-18 — voir l'état courant ci-dessus] identification plastique pilotée par la DIC (2026-08-16)
 
 **Point d'entrée unique pour reprendre à froid :
 `validation/dic_driven_plastic_identification.md`.** Ce document porte le

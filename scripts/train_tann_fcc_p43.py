@@ -176,6 +176,8 @@ def main() -> int:
     parser.add_argument("--sigma-ref", type=float, default=None,
                         help="force reference in MPa (None -> 2 mu per Amendment 1; "
                              "200.0 is Amendment 3)")
+    parser.add_argument("--equilibrium-tolerance", type=float, default=1.0e-10,
+                        help="solver equilibrium tolerance (recorded in the artifact)")
     arguments = parser.parse_args()
     pixels = arguments.pixels
 
@@ -196,18 +198,31 @@ def main() -> int:
 
     whitener = DICSpectralTransfer.from_sinusoidal_csv(WHITENER_CSV)
     solver_config = EBISpectralSolverConfig(
-        relative_equilibrium_tolerance=1.0e-10,
+        relative_equilibrium_tolerance=arguments.equilibrium_tolerance,
         transform=SpectralTransformConfig(backend="fftw", fftw_planner_effort="estimate"),
         # The strongly plastic operating point (Amendment 3) makes some
         # increments hard for plain Newton: the solver's own adaptive
         # stepping subdivides them, which also keeps the RK4 trial
         # excursions inside the integrator's stability margin.
         adaptive_stepping_enabled=True,
-        progress_callback=lambda event: print(
-            f"  [{event.get('event', '?')}] "
-            f"{event.get('increment', '')}{event.get('newton_iteration', '')}",
-            flush=True,
-        ) if event.get("event") in {"increment_converged", "increment_failed"} else None,
+        progress_callback=lambda event: (
+            print(
+                f"  [{event.get('event', '?')}] "
+                f"{event.get('increment', '')}{event.get('newton_iteration', '')}",
+                flush=True,
+            )
+            if event.get("event") in {"increment_converged", "increment_failed"}
+            else (
+                print(
+                    f"  [newton_residual] {event.get('increment', '')}."
+                    f"{event.get('newton_iteration', '')} {event.get('relative_residual', 0.0):.3e}",
+                    flush=True,
+                )
+                if event.get("event") == "newton_residual"
+                and int(event.get("newton_iteration", 0) or 0) >= 25
+                else None
+            )
+        ),
     )
     run_config = TannFCCConfig(seed=SEED, sigma_ref_mpa=arguments.sigma_ref)
     material = TannFCCBatch(
