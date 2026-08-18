@@ -252,3 +252,24 @@ increments -- stable by an order of magnitude -- and the material gates
 are re-run at `sigma_ref = 200 MPa` before the amended run. The GENERIC
 identity, all bars, the holdout, the seeds and the margin of Amendment 2
 are unchanged.
+
+## Amendment 4 — slope limiter on the substep flow (2026-08-18, before the amended rerun)
+
+The first amended rollout diverged at increment 16: a Newton excursion
+presented the integrator with a trial strain whose stiff elastic descent
+(`rate (2 mu / sigma_ref) M (P : P) h` beyond the RK4 stability limit)
+overflowed the stress to infinity, and neither the line search nor the
+adaptive subdivision rescued it (every retrial hit the same excursion).
+The fix is a smooth per-point slope limiter on the RK4 right-hand side:
+
+```text
+flow -> flow / sqrt(1 + ||flow||^2 / (kappa ||d eps||)^2),   kappa = 128
+```
+
+At the operating point the flow is `||d eps|| * O(1)` against
+`kappa = 128`, so the law is unchanged there to better than `1e-3`;
+a positive per-point scalar on the mobility preserves the GENERIC
+structure, so `D >= 0` holds identically and the zero-increment property
+stays exact. The limiter only binds on excursions far outside the
+equilibrium envelope. The material gates and the full unit suite are
+re-run with the limiter before the amended rerun. No bar moves.

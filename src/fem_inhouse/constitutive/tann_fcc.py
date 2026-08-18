@@ -319,7 +319,24 @@ class TannFCCBatch:
         lower = self._network(force_gamma / self._sigma_ref, z, context)
         mobility = lower @ lower.transpose(-1, -2)
         flow = torch.einsum("...ab,...b->...a", mobility, force_norm)
-        return flow * rate_scale[..., None]
+        flow_scaled = flow * rate_scale[..., None]
+        # Smooth per-point slope limiter: the per-substep flow is bounded
+        # by kappa * ||d eps||. At the operating point the flow is
+        # ||d eps|| * O(1) against kappa = 128, so the law is untouched
+        # to better than 1e-3 there; on Newton excursions far from
+        # equilibrium the stiff elastic descent (rate ~ (2 mu / sigma_ref)
+        # * M * gram) is what overflows RK4, and the limiter holds the
+        # substep bounded instead. A positive scalar on M preserves the
+        # GENERIC structure, so D >= 0 is untouched.
+        kappa = 128.0
+        flow_power = torch.sum(flow_scaled**2, dim=(-2, -1))
+        # the clamp keeps the zero-increment limit exact: flow_power = 0
+        # at Delta eps = 0, and 0/1e-30 = 0 gives scale 1 and flow 0.
+        denominator = (kappa * rate_scale[..., 0]) ** 2
+        scale = torch.rsqrt(
+            1.0 + flow_power / torch.clamp(denominator, min=1e-30)
+        )
+        return flow_scaled * scale[..., None, None]
 
     def _integrate(
         self,
