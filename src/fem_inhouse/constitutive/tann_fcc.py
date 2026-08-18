@@ -79,6 +79,9 @@ class TannFCCConfig:
     hidden_width: int = 32
     n_layers: int = 2
     n_substeps: int = 4
+    integrator: str = "rk4"  # "rk4" (registered) or "implicit_euler" (stiff-capable)
+    implicit_newton_iterations: int = 10
+    implicit_newton_tolerance: float = 1e-12
     young_modulus_mpa: float = 205_000.0
     poisson_ratio: float = 0.30
     sigma_ref_mpa: float | None = None  # force scale; None -> 2 mu (E/(1+nu))
@@ -299,6 +302,22 @@ class TannFCCBatch:
         force_z = -z
         return force_gamma, force_z
 
+    def _mobility_flow(
+        self,
+        force_gamma: torch.Tensor,
+        z: torch.Tensor,
+        context: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """`(lower, flow)` -- the unlimited GENERIC flow `M (A / sigma_ref)`."""
+
+        force_z = -z
+        force_norm_gamma = force_gamma / self._sigma_ref
+        force_norm = torch.cat([force_norm_gamma, force_z / self._sigma_ref], dim=-1)
+        lower = self._network(force_norm_gamma, z, context)
+        mobility = lower @ lower.transpose(-1, -2)
+        flow = torch.einsum("...ab,...b->...a", mobility, force_norm)
+        return lower, flow
+
     def _rhs(
         self,
         strain_at_s: torch.Tensor,
@@ -309,16 +328,8 @@ class TannFCCBatch:
     ) -> torch.Tensor:
         gamma = q[..., 0:1]
         z = q[..., 1:]
-        force_gamma, force_z = self._forces(strain_at_s, gamma[..., 0], z, systems)
-        force = torch.cat([force_gamma, force_z], dim=-1)  # (..., 12, 1+d)
-        # The force is normalised by sigma_ref = 2 mu before entering the
-        # network: the GENERIC structure is unchanged (the mobility then
-        # carries units of 1/MPa) but the elastic feedback rate drops to
-        # O(||d eps|| * M), which RK4 with four substeps integrates stably.
-        force_norm = force / self._sigma_ref
-        lower = self._network(force_gamma / self._sigma_ref, z, context)
-        mobility = lower @ lower.transpose(-1, -2)
-        flow = torch.einsum("...ab,...b->...a", mobility, force_norm)
+        force_gamma, _ = self._forces(strain_at_s, gamma[..., 0], z, systems)
+        _, flow = self._mobility_flow(force_gamma, z, context)
         flow_scaled = flow * rate_scale[..., None]
         # Smooth per-point slope limiter: the per-substep flow is bounded
         # by kappa * ||d eps||. At the operating point the flow is
@@ -327,7 +338,8 @@ class TannFCCBatch:
         # equilibrium the stiff elastic descent (rate ~ (2 mu / sigma_ref)
         # * M * gram) is what overflows RK4, and the limiter holds the
         # substep bounded instead. A positive scalar on M preserves the
-        # GENERIC structure, so D >= 0 is untouched.
+        # GENERIC structure, so D >= 0 is untouched. The limiter is an
+        # RK4-only guard: the implicit integrator does not need it.
         kappa = 128.0
         flow_power = torch.sum(flow_scaled**2, dim=(-2, -1))
         # the clamp keeps the zero-increment limit exact: flow_power = 0
@@ -348,15 +360,25 @@ class TannFCCBatch:
         context: torch.Tensor | None = None,
         include_work: bool = True,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """RK4 over `s in [0, 1]` along the linear strain path.
+        """One increment over `s in [0, 1]` along the linear strain path.
 
         Returns the trial state, the integrated generalised dissipation and
         the integrated slip-channel work (the `tau dgamma` channel).
         `include_work=False` skips the dissipation/slip-work quadrature (the
-        algorithmic tangent does not need it)."""
+        algorithmic tangent does not need it). The integrator is the
+        registered RK4 unless `config.integrator == "implicit_euler"` --
+        the L-stable one-step alternative for the stiff operating point
+        (Amendment 3), where the numerical memory stays exactly the
+        physical state `q`.
+        """
 
         if systems is None:
             systems = self._systems
+        if self.config.integrator == "implicit_euler":
+            return self._integrate_implicit_euler(
+                strain_n, strain_trial, q_n, systems=systems, context=context,
+                include_work=include_work,
+            )
         delta = strain_trial - strain_n
         # `sqrt` has no derivative at zero, and the solver evaluates the
         # reference tangent at a zero increment. The clamp keeps the
@@ -410,6 +432,95 @@ class TannFCCBatch:
                     * torch.sum(force_gamma[..., 0] * (step_q[..., 0] - q[..., 0]), dim=-1)
                 )
             q = step_q
+        return q, dissipation, slip_work
+
+    def _integrate_implicit_euler(
+        self,
+        strain_n: torch.Tensor,
+        strain_trial: torch.Tensor,
+        q_n: torch.Tensor,
+        *,
+        systems: torch.Tensor,
+        context: torch.Tensor | None,
+        include_work: bool,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """One implicit-Euler step: `q_new = q_n + rate M(q_new) A(q_new)/sigma_ref`.
+
+        Batched per-point Newton with the exact local Jacobian via
+        `vmap(jacrev)`. The forces and the mobility are evaluated at the
+        NEW state -- for convex gradient flows this is where the
+        unconditional-stability property of the scheme lives; the scheme
+        is one-step, so the integrator carries no memory of its own and
+        the latent state keeps its physical interpretation.
+        """
+
+        from torch.func import jacrev, vmap
+
+        delta = strain_trial - strain_n
+        norm_sq = torch.sum(delta**2, dim=-1, keepdim=True)
+        rate_scale = torch.where(
+            norm_sq > 0.0,
+            torch.sqrt(torch.clamp(norm_sq, min=1e-30)),
+            torch.zeros_like(norm_sq),
+        )
+
+        def residual_point(
+            q_pt: torch.Tensor,
+            q0_pt: torch.Tensor,
+            rate_pt: torch.Tensor,
+            strain_pt: torch.Tensor,
+            systems_pt: torch.Tensor,
+        ) -> torch.Tensor:
+            gamma = q_pt[..., 0:1]
+            z = q_pt[..., 1:]
+            force_gamma, _ = self._forces(strain_pt, gamma[..., 0], z, systems_pt)
+            _, flow = self._mobility_flow(force_gamma, z, None)
+            return q_pt - q0_pt - rate_pt[..., None] * flow
+
+        q = q_n.clone()
+        point_count, n_systems, state_dim = q.shape
+        flat_dim = n_systems * state_dim
+        for _ in range(self.config.implicit_newton_iterations):
+            gamma = q[..., 0:1]
+            z = q[..., 1:]
+            force_gamma, _ = self._forces(strain_trial, gamma[..., 0], z, systems)
+            _, flow = self._mobility_flow(force_gamma, z, context)
+            residual = q - q_n - rate_scale[..., None] * flow
+            jac = vmap(jacrev(residual_point))(
+                q, q_n, rate_scale, strain_trial, systems
+            )
+            jac = jac.reshape(point_count, flat_dim, flat_dim)
+            step = torch.linalg.solve(
+                jac, residual.reshape(point_count, flat_dim, 1)
+            )[..., 0]
+            q = q - step.reshape(point_count, n_systems, state_dim)
+            tolerance = self.config.implicit_newton_tolerance
+            if float(torch.max(torch.abs(step))) <= tolerance * float(
+                torch.max(torch.abs(q)) + 1.0
+            ):
+                break
+
+        dissipation = torch.zeros(
+            (point_count,), dtype=torch.float64, device=q.device
+        )
+        slip_work = torch.zeros_like(dissipation)
+        if include_work:
+            gamma = q[..., 0:1]
+            z = q[..., 1:]
+            force_gamma, force_z = self._forces(strain_trial, gamma[..., 0], z, systems)
+            _, flow = self._mobility_flow(force_gamma, z, context)
+            force_norm = torch.cat(
+                [force_gamma / self._sigma_ref, force_z / self._sigma_ref], dim=-1
+            )
+            # D = sigma_ref ||d eps|| A_norm^T M A_norm at the converged state.
+            dissipation = (
+                rate_scale[..., 0]
+                * self._sigma_ref
+                * torch.sum(force_norm * flow, dim=(-2, -1))
+            )
+            slip_work = rate_scale[..., 0] * torch.sum(
+                force_gamma[..., 0] * (gamma[..., 0] - q_n[..., 0]), dim=-1
+            )
         return q, dissipation, slip_work
 
     # -- the transactional contract -----------------------------------------
@@ -757,6 +868,18 @@ class TannFCCBatch:
                     target += (g_state + g_stress).detach().numpy()
         assert dtheta is not None
         return v_strain, v_qprev, dtheta
+
+    def reset_committed(self, state: FloatArray, strain: FloatArray) -> None:
+        """Replace the committed state and strain (benchmarks, adjoint)."""
+
+        committed = np.asarray(state, dtype=np.float64)
+        committed_strain = np.asarray(strain, dtype=np.float64)
+        if committed.shape != (self.point_count, 12, 1 + self.config.latent_dim):
+            raise ValueError(f"state must have shape {(self.point_count, 12, 1 + self.config.latent_dim)}")
+        if committed_strain.shape != (self.point_count, 3):
+            raise ValueError(f"strain must have shape {(self.point_count, 3)}")
+        self._committed_state = torch.from_numpy(committed.copy())
+        self._committed_strain = torch.from_numpy(committed_strain.copy())
 
     @property
     def committed_state(self) -> FloatArray:

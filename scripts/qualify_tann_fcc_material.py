@@ -47,9 +47,11 @@ def main() -> int:
     parser.add_argument("--sigma-ref", type=float, default=None,
                         help="force reference in MPa (None -> 2 mu, Amendment 1; "
                              "200.0 is Amendment 3)")
+    parser.add_argument("--integrator", type=str, default="rk4",
+                        help="rk4 (registered) or implicit_euler")
     arguments = parser.parse_args()
 
-    config = TannFCCConfig(sigma_ref_mpa=arguments.sigma_ref)
+    config = TannFCCConfig(sigma_ref_mpa=arguments.sigma_ref, integrator=arguments.integrator)
     batch = TannFCCBatch(config, point_count=POINTS, systems_global=systems_identity())
     report: dict[str, object] = {}
 
