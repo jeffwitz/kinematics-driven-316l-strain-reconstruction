@@ -173,6 +173,9 @@ def main() -> int:
                         help="crop size (100 is the registered run; smaller only for smoke tests)")
     parser.add_argument("--max-increments", type=int, default=None,
                         help="limit the trajectory to the first N states (development)")
+    parser.add_argument("--sigma-ref", type=float, default=None,
+                        help="force reference in MPa (None -> 2 mu per Amendment 1; "
+                             "200.0 is Amendment 3)")
     arguments = parser.parse_args()
     pixels = arguments.pixels
 
@@ -196,8 +199,9 @@ def main() -> int:
         relative_equilibrium_tolerance=1.0e-10,
         transform=SpectralTransformConfig(backend="fftw", fftw_planner_effort="estimate"),
     )
+    run_config = TannFCCConfig(seed=SEED, sigma_ref_mpa=arguments.sigma_ref)
     material = TannFCCBatch(
-        TannFCCConfig(seed=SEED),
+        run_config,
         point_count=2 * pixels * pixels,
         systems_global=systems,
     )
@@ -288,7 +292,7 @@ def main() -> int:
             "seed": SEED,
             "states": state_indices,
             "holdout": sorted(HOLDOUT),
-            "architecture": asdict(TannFCCConfig(seed=SEED)),
+            "architecture": asdict(run_config),
             "optimizer": {"name": "adam", "lr": arguments.learning_rate},
             "steps": steps,
             "total_seconds": time.perf_counter() - started,
@@ -306,7 +310,7 @@ def main() -> int:
         "seed": SEED,
         "states": state_indices,
         "holdout": sorted(HOLDOUT),
-        "architecture": asdict(TannFCCConfig(seed=SEED)),
+        "architecture": asdict(run_config),
         "optimizer": {"name": "adam", "lr": arguments.learning_rate},
         "steps": steps,
         "total_seconds": time.perf_counter() - started,
@@ -324,6 +328,21 @@ def main() -> int:
         )
     except Exception:  # pragma: no cover - provenance only
         pass
+    # Per-state fields of the final trajectory, beside the JSON: the
+    # figures (B, C, D, F) are generated from these, never from copied
+    # values. The elastic reference is included for E_n.
+    fields_path = arguments.output.with_suffix(".npz")
+    field_dict: dict[str, np.ndarray] = {}
+    for record in records:
+        prefix = f"state_{record.state}"
+        field_dict[f"{prefix}_u_sim"] = record.displacement
+        field_dict[f"{prefix}_u_meas"] = record.measured_displacement
+        field_dict[f"{prefix}_stress"] = record.stress_in_plane_mpa
+        field_dict[f"{prefix}_committed_state"] = record.committed_state
+        field_dict[f"{prefix}_dissipation"] = record.dissipation
+        field_dict[f"{prefix}_u_elastic"] = elastic[record.state]
+    np.savez_compressed(fields_path, **field_dict)
+    artifact["fields_path"] = str(fields_path)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(artifact, indent=2, default=str) + "\n")
     print(f"artifact: {arguments.output}", flush=True)

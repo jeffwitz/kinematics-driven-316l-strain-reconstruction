@@ -44,9 +44,12 @@ def systems_identity() -> np.ndarray:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUT / "tann_fcc_material_qualification.json")
+    parser.add_argument("--sigma-ref", type=float, default=None,
+                        help="force reference in MPa (None -> 2 mu, Amendment 1; "
+                             "200.0 is Amendment 3)")
     arguments = parser.parse_args()
 
-    config = TannFCCConfig()
+    config = TannFCCConfig(sigma_ref_mpa=arguments.sigma_ref)
     batch = TannFCCBatch(config, point_count=POINTS, systems_global=systems_identity())
     report: dict[str, object] = {}
 
@@ -138,7 +141,7 @@ def main() -> int:
 
     sweep = {}
     richardson = {}
-    for h in (1e-4, 1e-5, 1e-6):
+    for h in (1e-4, 1e-5, 1e-6, 1e-7):
         worst_plain = 0.0
         worst_rich = 0.0
         for component in range(3):

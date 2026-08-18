@@ -218,3 +218,37 @@ recomputation of the surrogate intervals was not rerun: the archived
 campaign covers the same crop, states and measurement chain, and this
 inscription states that correspondence explicitly rather than implying a
 fresh computation.
+
+## Amendment 3 — plastic-scale force reference (2026-08-18, inscribed from the first steps of the registered run, before any amended run)
+
+The first two Adam steps of the registered run (seed `20260817`,
+`sigma_ref = 2 mu` per Amendment 1) moved the whitened loss by
+`4.518841e-05 -> 4.518777e-05` and `E_holdout` by `1.0519 -> 1.0520`:
+the objective is flat. The cause is structural, and the measured numbers
+close it: with the generalised force normalised by the ELASTIC modulus,
+`A/sigma_ref ~ 1e-3` at the operating point, so the softplus mobility
+sits on its `0.69` floor, the per-increment slip is
+`||d eps|| M A_norm ~ 2e-6` against the `~1e-3` the measured elastic
+defect requires, and the exact adjoint gradient is `3.8e-9` -- the
+network cannot influence the response at this operating point, at any
+capacity. The registered run continues to completion and its verdict is
+recorded as the primary; the characterisation above is what makes it
+interpretable rather than merely negative.
+
+**The amendment.** The reference stress is a characteristic PLASTIC
+stress, not the elastic modulus:
+
+```text
+sigma_ref = 200 MPa
+```
+
+(a yield-scale resolved stress for 316L, one order below the SRIX
+thresholds of the earlier campaigns, chosen so the resolved stresses of
+the P43 history operate the mobility away from its floor). The stability
+argument of Amendment 1 is re-checked at this value, not assumed: the
+RK4 stability condition `c h <= 2.785` becomes
+`||d eps|| M (2 mu / sigma_ref) (P : P) h ~ 0.25` at the largest P43
+increments -- stable by an order of magnitude -- and the material gates
+are re-run at `sigma_ref = 200 MPa` before the amended run. The GENERIC
+identity, all bars, the holdout, the seeds and the margin of Amendment 2
+are unchanged.
