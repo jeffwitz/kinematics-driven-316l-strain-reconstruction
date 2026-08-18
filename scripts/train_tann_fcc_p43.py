@@ -198,6 +198,16 @@ def main() -> int:
     solver_config = EBISpectralSolverConfig(
         relative_equilibrium_tolerance=1.0e-10,
         transform=SpectralTransformConfig(backend="fftw", fftw_planner_effort="estimate"),
+        # The strongly plastic operating point (Amendment 3) makes some
+        # increments hard for plain Newton: the solver's own adaptive
+        # stepping subdivides them, which also keeps the RK4 trial
+        # excursions inside the integrator's stability margin.
+        adaptive_stepping_enabled=True,
+        progress_callback=lambda event: print(
+            f"  [{event.get('event', '?')}] "
+            f"{event.get('increment', '')}{event.get('newton_iteration', '')}",
+            flush=True,
+        ) if event.get("event") in {"increment_converged", "increment_failed"} else None,
     )
     run_config = TannFCCConfig(seed=SEED, sigma_ref_mpa=arguments.sigma_ref)
     material = TannFCCBatch(
@@ -294,6 +304,10 @@ def main() -> int:
             "holdout": sorted(HOLDOUT),
             "architecture": asdict(run_config),
             "optimizer": {"name": "adam", "lr": arguments.learning_rate},
+            "solver": {
+                "relative_equilibrium_tolerance": solver_config.relative_equilibrium_tolerance,
+                "adaptive_stepping_enabled": solver_config.adaptive_stepping_enabled,
+            },
             "steps": steps,
             "total_seconds": time.perf_counter() - started,
             "ebsd_validity_fraction": float(np.mean(validity)),
@@ -312,6 +326,10 @@ def main() -> int:
         "holdout": sorted(HOLDOUT),
         "architecture": asdict(run_config),
         "optimizer": {"name": "adam", "lr": arguments.learning_rate},
+        "solver": {
+            "relative_equilibrium_tolerance": solver_config.relative_equilibrium_tolerance,
+            "adaptive_stepping_enabled": solver_config.adaptive_stepping_enabled,
+        },
         "steps": steps,
         "total_seconds": time.perf_counter() - started,
         "ebsd_validity_fraction": float(np.mean(validity)),
