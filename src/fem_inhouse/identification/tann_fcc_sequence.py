@@ -82,6 +82,7 @@ class TannFCCSequence:
         holdout: set[int],
         whitener: Callable[[FloatArray], FloatArray] | None = None,
         solver_config: EBISpectralSolverConfig | None = None,
+        checkpoint_path: object | None = None,
     ) -> None:
         history = np.asarray(boundary_history, dtype=np.float64)
         measured = np.asarray(measured_interior, dtype=np.float64)
@@ -107,6 +108,7 @@ class TannFCCSequence:
         self.holdout = set(holdout)
         self.whitener = whitener
         self.solver_config = solver_config
+        self.checkpoint_path = checkpoint_path
 
     @staticmethod
     def _interior_mask(shape: tuple[int, ...]) -> np.ndarray:
@@ -138,6 +140,26 @@ class TannFCCSequence:
                 if fields.plastic_strain_tensor is None
                 else np.array(fields.plastic_strain_tensor, copy=True)
             )
+            if self.checkpoint_path is not None:
+                # Per-increment restart point: the committed state and
+                # strain after THIS increment, keyed by the increment index
+                # over the played states. A killed run replays nothing.
+                from pathlib import Path
+
+                archive: dict[str, FloatArray] = {}
+                target = Path(self.checkpoint_path)
+                if target.exists():
+                    archive = {
+                        key: np.asarray(value)
+                        for key, value in np.load(target, allow_pickle=False).items()
+                    }
+                archive[f"increment_{index}_state"] = np.array(
+                    self.material.committed_state, copy=True
+                )
+                archive[f"increment_{index}_strain"] = np.array(
+                    self.material.committed_strain, copy=True
+                )
+                np.savez_compressed(target, **archive)
             records.append(
                 TannFCCStateRecord(
                     state=state,

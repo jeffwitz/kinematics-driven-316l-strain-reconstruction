@@ -178,6 +178,10 @@ def main() -> int:
                              "200.0 is Amendment 3)")
     parser.add_argument("--equilibrium-tolerance", type=float, default=1.0e-10,
                         help="solver equilibrium tolerance (recorded in the artifact)")
+    parser.add_argument("--resume-increment", type=int, default=None,
+                        help="resume the trajectory after increment N from the trajectory checkpoint")
+    parser.add_argument("--trajectory-checkpoint", type=Path, default=None,
+                        help="per-increment restart archive (defaults to <output>.trajectory.npz)")
     arguments = parser.parse_args()
     pixels = arguments.pixels
 
@@ -205,10 +209,9 @@ def main() -> int:
         # stepping subdivides them, which also keeps the RK4 trial
         # excursions inside the integrator's stability margin.
         adaptive_stepping_enabled=True,
-        # The nonsymmetric plastic tangent drifts far from the elastic
-        # reference; refreshing the preconditioner reference per increment
-        # keeps GMRES converging when the equilibrium is hardest.
-        reference_update_mode="per_increment",
+        # NOTE: reference_update_mode="per_increment" was tried and is a
+        # measured REGRESSION (the 25x25 run that converged 17/17 with the
+        # initial reference failed at increment 3 with it) -- kept out.
         progress_callback=lambda event: (
             print(
                 f"  [{event.get('event', '?')}] "
@@ -234,6 +237,36 @@ def main() -> int:
         point_count=2 * pixels * pixels,
         systems_global=systems,
     )
+    trajectory_checkpoint = arguments.trajectory_checkpoint or arguments.output.with_suffix(
+        ".trajectory.npz"
+    )
+    if arguments.resume_increment is None and trajectory_checkpoint.exists():
+        # A fresh trajectory must not inherit another run's increments:
+        # the key space is per-run, so a stale archive would mix states.
+        trajectory_checkpoint.unlink()
+    if arguments.resume_increment is not None:
+        # Continue the trajectory after increment N: the committed state
+        # and strain are restored, the boundary history is truncated to
+        # the remaining increments (the zero reference is a dummy -- the
+        # material starts from the restored committed state).
+        restart = arguments.resume_increment
+        archive = dict(np.load(trajectory_checkpoint, allow_pickle=False))
+        state_key = f"increment_{restart}_state"
+        strain_key = f"increment_{restart}_strain"
+        if state_key not in archive or strain_key not in archive:
+            raise ValueError(
+                f"trajectory checkpoint has no {state_key}/{strain_key}"
+            )
+        material.reset_committed(archive[state_key], archive[strain_key])
+        state_indices = state_indices[restart + 1 :]
+        # boundary[0] is the zero reference; the next trial is the state
+        # N + 1 field, which lives at boundary index N + 2.
+        boundary = np.concatenate([np.zeros_like(boundary[:1]), boundary[restart + 2 :]], axis=0)
+        measured = measured[restart + 1 :]
+        print(
+            f"resuming after increment {restart}: {len(state_indices)} increments left",
+            flush=True,
+        )
     sequence = TannFCCSequence(
         grid=grid,
         material=material,
@@ -243,6 +276,7 @@ def main() -> int:
         holdout=HOLDOUT,
         whitener=lambda field: whitener.apply_without_wrap(field),
         solver_config=solver_config,
+        checkpoint_path=trajectory_checkpoint,
     )
     elastic = elastic_reference(grid, history, pixels)
 
