@@ -37,3 +37,14 @@ right tool and RK4 is not). States: the committed state after increment
   correction), not the constitutive integrator. `sigma_ref` stays 200 MPa;
   the integrator adapts to the law, not the reverse -- and the benchmark
   shows the law does not require it to.
+
+## Implicit-Euler material gates (for the record)
+
+The implicit path passes the zero-increment (exact) and dissipation
+gates, but its algorithmic tangent **fails**: differentiating through
+the unrolled local Newton amplifies the convergence residual (Richardson
+errors ~5e9 against the 1e-5 bar). Making the implicit route
+production-ready requires the implicit-function-theorem tangent
+`dq/deps = -(dg/dq)^{-1} dg/deps` at the converged point -- a separate
+piece of work. The fallback stays implemented but is not adopted; the
+registered RK4 + limiter remains the T0 integrator.

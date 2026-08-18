@@ -205,6 +205,10 @@ def main() -> int:
         # stepping subdivides them, which also keeps the RK4 trial
         # excursions inside the integrator's stability margin.
         adaptive_stepping_enabled=True,
+        # The nonsymmetric plastic tangent drifts far from the elastic
+        # reference; refreshing the preconditioner reference per increment
+        # keeps GMRES converging when the equilibrium is hardest.
+        reference_update_mode="per_increment",
         progress_callback=lambda event: (
             print(
                 f"  [{event.get('event', '?')}] "
