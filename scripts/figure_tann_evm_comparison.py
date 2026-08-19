@@ -28,14 +28,23 @@ ARCHIVE = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/p0043_evm_history
 DEFAULT_ARTIFACT = ROOT / "validation/_generated/shared_tensor_generator/tann_fcc_p43_run.npz"
 ORIGIN = (1580, 1030)
 PIXELS = 100
+PIXEL_MM = 1.84e-3
 STATES = (25, 32, 40)
 
 
 def computed_evm(displacement: np.ndarray) -> np.ndarray:
-    """The archived definition on a nodal `(nx+1, ny+1, 2)` field in mm."""
+    """The archived definition on a nodal `(nx+1, ny+1, 2)` field in mm.
 
-    along_rows = displacement[..., 1]  # u_y
-    along_columns = displacement[..., 0]  # u_x
+    The first difference of a mm field gives mm/pixel; the strain is the
+    difference divided by the pixel size -- the archived pipeline stores
+    pixel displacements, so its first difference is already dimensionless.
+    Omitting the pixel size makes the computed EVM ~550x too small, which
+    a Dirichlet comparison forbids (the boundary strains must be of the
+    same order by construction).
+    """
+
+    along_rows = displacement[..., 1] / PIXEL_MM  # u_y -> pixels
+    along_columns = displacement[..., 0] / PIXEL_MM  # u_x -> pixels
     return equivalent_strain(along_rows, along_columns)
 
 
