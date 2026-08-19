@@ -37,16 +37,21 @@ par règle de chaîne : la loi est inerte quelle que soit la capacité.
 Amendement 3 inscrit et testé : `sigma_ref = 200 MPa` (échelle
 plastique) — les portes restent vertes, la loi bouge.
 
-### État du run amendé
+### État du run amendé — campagne arrêtée (2026-08-19)
 
 25x25 complet converge (E_holdout = 1.34 à l'init — la plasticité forte
 non entraînée fait pire que l'élastique, mais la loi répond). Le
-100x100 converge 1-16 (le 16 passe grâce au limiteur de pente de
-l'Amendement 4) puis bute au 17 : l'équilibre des états tardifs à forte
-plasticité ne converge pas dans le budget de subdivisions du solveur.
-À suivre (leviers solveur, pas de changement de loi ni de seuil) :
-tolérance 1e-8 (partiellement testée, insuffisante seule), refresh du
-préconditionneur par incrément, budget de cutbacks.
+100x100 converge 1-17 (limiteur + tolérance 1e-8) puis bute au 18 :
+problème d'équilibre du solveur global, PAS de raideur de l'intégrateur
+(benchmark Radau vs RK4 vs Euler implicite : hypothèse raide réfutée,
+`validation/tann_fcc_integrator_benchmark.md`). Checkpointing par
+incrément disponible (`--resume-increment`, reprise approximative
+documentée). Figure EVM expé/calcul (`validation/figures/tann_fcc_p43/EVM_exp_vs_calc.png`) :
+accord 1 % à l'état 40 (normalisation pixel corrigée), états faibles
+dominés par le plancher métrologique — l'élastique est indépendant du
+module en Dirichlet, l'écart EST la signature plastique à expliquer.
+Prochain levier ouvert pour une session future : convergence des
+incréments tardifs du solveur (line search, GMRES, trust region).
 
 ### Architecture du code (commits a1284ab → 91d4caa)
 

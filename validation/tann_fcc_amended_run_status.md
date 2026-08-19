@@ -34,3 +34,33 @@ own machinery, are: equilibrium tolerance `1e-8` (partially tested,
 insufficient alone at 17), preconditioner reference refresh per
 increment, and a larger adaptive cutback budget. The law, the
 integrator, the holdout, the seeds and all bars stay as registered.
+
+## Final state of the campaign (2026-08-19, campaign stopped by decision)
+
+* With the Amendment-4 limiter at `1e-8` the 100x100 run now converges
+  increments 1-17 (16 and 17 previously impossible) and stalls at 18
+  with the adaptive cutback budget exhausted at the finest subdivision.
+* The integrator benchmark (`validation/tann_fcc_integrator_benchmark.md`)
+  refuted the stiff-regime hypothesis: RK4 + limiter matches Radau at
+  the operating scales; the one-step implicit Euler is first-order and
+  its unrolled-Newton tangent fails (needs IFT); Radau itself gives up
+  at extreme excursions. The failure is a global-solver equilibrium
+  problem, not an integrator one.
+* Per-increment trajectory checkpointing exists
+  (`scripts/train_tann_fcc_p43.py --resume-increment`); the resume is
+  approximate (Newton warm-start not restored) and is documented as an
+  exploration tool.
+* `reference_update_mode="per_increment"` is a measured regression.
+* The EVM comparison figure (DIC archive vs elastic/TANN, same von Mises
+  definition both sides) validates the elastic mechanics at state 40
+  (1 % agreement) and shows the early-state ratio is metrology-floor
+  dominated (positive-definite EVM under noise), not an elastic failure:
+  on a full-Dirichlet problem the elastic field is modulus-independent,
+  so no calibration could close the gap -- the gap IS the plastic
+  signature to explain.
+* Decision recorded: the campaign stops here. The primary verdict stands
+  (`median(E_holdout) = 1.052`, bars 1-2 failed, structural diagnosis in
+  Amendment 3); the amended operating point is qualified at the material
+  level and blocked at the 100x100 equilibrium -- the honest open item
+  for a future session is the solver's late-increment convergence, not
+  the law.
