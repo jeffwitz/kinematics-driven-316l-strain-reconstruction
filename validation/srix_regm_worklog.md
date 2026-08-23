@@ -2,7 +2,7 @@
 
 Date opened: 2026-08-23  
 Branch: `agent/plastic-observability`  
-Status: **Gates 0--3 passed; transfer/noise and REGM/FEMU ranking pending**
+Status: **Gates 0--3 passed; Gate 4 negative; REGM/FEMU ranking running next**
 
 This file is the single cold-start entry point for the reconditioned
 equilibrium-gap identification of the FCC SRIX law. It is deliberately kept
@@ -81,7 +81,7 @@ it.
 | 1 | equilibrium-gap core and mechanical sign tests | passed |
 | 2 | exact small SRIX twin, FD plateau and SVD | passed on M8 |
 | 3 | deterministic theta4 recovery in identifiable subspace | passed on M8 |
-| 4 | qualified transfer and noise degradation | pending |
+| 4 | qualified transfer and noise degradation | negative: truth is not the objective minimum |
 | 5 | REGM/FEMU ranking and timing comparison | pending |
 | 6 | P43 authorization | blocked until Gate 5 GO |
 
@@ -136,6 +136,17 @@ before attempting any new optimization.
 
 ## Next action
 
-Implement Gate 4 using the already-qualified DIC transfer and whitener, then
-Gate 5 with a preregistered small parameter population. Do not start P43 unless
-the REGM/FEMU Spearman, log-Pearson and top-five gates all pass.
+Gate 4 is archived in `validation/srix_regm_transfer_noise_results.md`. With
+transfer alone, the true/initial/lowest-reached RMS values are respectively
+`2.132e-7`, `2.310e-7`, and `1.300e-7 mm`; with measured noise and whitening
+they are `1.741e-3`, `1.894e-3`, and `1.346e-3 mm`. The lower points are far
+from the true SRIX parameters. The observation chain therefore preserves
+sensitivity but biases the objective away from the generating parameters.
+
+Run Gate 5 exactly as frozen in
+`validation/srix_regm_femu_ranking_preregistration.md`. This gate asks whether
+the exact-kinematics REGM objective still ranks laws like complete FEMU; it
+does not retroactively repair the negative transferred/noisy recovery. Do not
+start P43 unless the Spearman, log-Pearson and top-five gates all pass, and do
+not use transferred/noisy REGM for unique parameter recovery without a revised
+mechanically consistent observation treatment.

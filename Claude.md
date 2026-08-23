@@ -7141,3 +7141,29 @@ jamais donner `(x,y)` au réseau, sinon il apprend une carte de l'éprouvette.
 Et le rappel qui gouverne tout : **`A` est surjectif sur les champs à bord nul**,
 donc ajuster la DIC est garanti et ne prouve rien. Ce qui brise la
 dégénérescence est le partage des poids, pas l'équilibre.
+
+### 2026-08-23 — SRIX-REGM : jumeau exact positif, transfert DIC négatif
+
+Point de reprise unique : `validation/srix_regm_worklog.md`. La méthode rejoue
+causalement SRIX sur la cinématique imposée, assemble le défaut faible intérieur
+et calcule `delta_u = -K0^-1 f`, sans Newton global dans l'objectif.
+
+Le jumeau exact M8 passe : vérité/initial/identifié = `1.474e-13`, `3.143e-8`,
+`1.412e-13 mm`, erreur projetée `0.248 %`, gain mesuré `43x` sur une trajectoire
+forward. M20/M100 confirment que MFront domine le coût et que `K0^-1` est déjà
+négligeable. Ne pas développer de FFT maintenant.
+
+Le Gate 4 est en revanche **négatif**. Après le transfert DIC qualifié, la
+vérité vaut `2.132e-7 mm` mais un point très éloigné descend à `1.300e-7 mm`.
+Avec bruit mesuré et whitening : `1.741e-3` contre `1.346e-3 mm`. Le transfert
+préserve quatre directions sensibles mais ne préserve pas l'équilibre et
+décale le minimum hors de la vérité. Voir
+`validation/srix_regm_transfer_noise_results.md`.
+
+La prochaine et dernière porte avant P43 est le classement de 20 lois par
+REGM exact contre 20 vrais solves FEMU, pré-enregistré dans
+`validation/srix_regm_femu_ranking_preregistration.md`. Aucun P43 si Spearman
+`< 0.80`, Pearson logarithmique `< 0.70`, recouvrement top-5 `< 3`, ou moins de
+15 solves convergés. Même si ce classement passe, ne pas utiliser le REGM
+transféré/bruité actuel pour une identification unique sans reformulation
+mécaniquement cohérente de l'observation.
