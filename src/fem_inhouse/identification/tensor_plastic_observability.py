@@ -104,7 +104,8 @@ class TensorPlasticObservabilityOperator:
     ) -> TensorPlasticObservabilityOperator:
         """Build the operator, optionally with a per-point elastic reference.
 
-        `point_elasticity` carries `(points, 3, 3)` plane-stress stiffnesses, so
+        `point_elasticity` carries engineering-strain/Voigt-stress
+        `(points, 3, 3)` plane-stress stiffnesses, so
         the reference model against which the mechanical defect is measured can
         be the real crystallographic elasticity rather than a homogeneous
         isotropic one. Everything else -- the gauge, the measurement chain, the
@@ -125,12 +126,13 @@ class TensorPlasticObservabilityOperator:
                 (kinematics.material_point_count, 3, 3),
             ).copy()
         else:
-            elasticity = np.asarray(point_elasticity, dtype=np.float64)
-            if elasticity.shape != (kinematics.material_point_count, 3, 3):
+            point_engineering = np.asarray(point_elasticity, dtype=np.float64)
+            if point_engineering.shape != (kinematics.material_point_count, 3, 3):
                 raise ValueError(
                     "point_elasticity must have shape "
                     f"{(kinematics.material_point_count, 3, 3)}"
                 )
+            elasticity = stiffness_from_engineering(point_engineering)
         weight = float(kinematics.sample_quadrature_weight)
         stiffness = _assemble_sparse_stiffness(grid, kinematics, elasticity, weight)
         return cls(

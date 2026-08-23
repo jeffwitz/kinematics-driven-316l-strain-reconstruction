@@ -54,7 +54,13 @@ time. No global Newton or Krylov solve is permitted in `residual_vector`.
 | light response | `evaluate_in_plane_response(..., response_level="residual")` | no reconstructed tensors or returned tangent |
 | transactions | `evaluate` / `commit` / `revert` | a fresh material batch per parameter evaluation |
 
-The Kelvin boundary is already centralized. `TwoSubcellDiagnostic2D` exchanges
+The Phase-0 audit found and repaired one boundary bug before any twin result:
+`rotated_plane_stress_stiffness` supplies engineering/Voigt stiffness, whereas
+`TensorPlasticObservabilityOperator` stores Kelvin stiffness internally. The
+public `point_elasticity` path now performs the same centralized conversion as
+the isotropic path, and a dedicated test pins it.
+
+The Kelvin boundary is now centralized. `TwoSubcellDiagnostic2D` exchanges
 engineering strain and Voigt stress. `TensorPlasticObservabilityOperator`
 converts only inside its Kelvin-specific plastic observability actions. The
 new equilibrium-gap driver must therefore pass engineering strain directly to

@@ -105,6 +105,33 @@ def test_the_coloured_sparse_stiffness_reproduces_the_assembled_residual() -> No
     np.testing.assert_allclose(recovered, displacement, rtol=1e-8, atol=1e-16)
 
 
+def test_point_elasticity_is_converted_from_engineering_at_the_public_boundary() -> None:
+    """An EBSD stiffness follows the same contract as the mechanical solver."""
+
+    from fem_inhouse.core.kelvin import stiffness_from_engineering
+
+    pixels = 4
+    grid = _grid(pixels)
+    engineering = plane_stress_elasticity(YOUNG, POISSON)
+    engineering = np.broadcast_to(
+        engineering, (2 * pixels * pixels, 3, 3)
+    ).copy()
+    operator = TensorPlasticObservabilityOperator.build(
+        grid,
+        young_modulus_mpa=1.0,
+        poisson_ratio=0.0,
+        transfer=_Identity(),
+        whitener=_Identity(),
+        point_elasticity=engineering,
+    )
+    np.testing.assert_allclose(
+        operator.elasticity,
+        stiffness_from_engineering(engineering),
+        rtol=0.0,
+        atol=0.0,
+    )
+
+
 def test_the_operator_and_its_adjoint_are_a_transpose_pair() -> None:
     """Without this, a partial SVD converges to a well-formed wrong answer."""
 
