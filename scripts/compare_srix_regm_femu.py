@@ -82,17 +82,29 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
 def _summarize_diagnostics(diagnostics: dict[str, Any]) -> dict[str, Any]:
     attempts = diagnostics.get("load_step_attempts", [])
     accepted = [item for item in attempts if item.get("accepted", False)]
+    linear_solves = diagnostics.get("linear_solves", [])
     return {
         "accepted_steps": len(accepted),
         "attempts": len(attempts),
         "cutbacks": diagnostics.get("cutbacks"),
-        "linear_solves": diagnostics.get("linear_solves"),
+        "linear_solves": (
+            len(linear_solves) if isinstance(linear_solves, list) else linear_solves
+        ),
         "newton_iterations": int(sum(diagnostics.get("iterations_per_increment", []))),
         "maximum_plane_stress_residual_mpa": diagnostics.get(
             "maximum_plane_stress_residual_mpa"
         ),
         "timings": diagnostics.get("timings", {}),
     }
+
+
+def _compact_record(record: dict[str, Any]) -> dict[str, Any]:
+    """Drop accidentally archived per-solve diagnostics from old checkpoints."""
+    forward = record.get("forward", {})
+    linear_solves = forward.get("linear_solves")
+    if isinstance(linear_solves, list):
+        forward["linear_solves"] = len(linear_solves)
+    return record
 
 
 def _femu_rms(
@@ -211,7 +223,7 @@ def main() -> None:
     candidates: list[dict[str, Any]] = []
     for index, (candidate_id, theta, log_offset) in enumerate(_population(), start=1):
         if candidate_id in existing and existing[candidate_id].get("status") == "complete":
-            candidates.append(existing[candidate_id])
+            candidates.append(_compact_record(existing[candidate_id]))
             print(f"[{index:02d}/20] {candidate_id}: reused", flush=True)
             continue
         regm_started = time.perf_counter()
@@ -263,6 +275,14 @@ def main() -> None:
         )
 
     statistics = _statistics(candidates)
+    _atomic_json(
+        checkpoint_path,
+        {
+            "schema_version": 1,
+            "source_git_sha": source_report["git_sha"],
+            "candidates": candidates,
+        },
+    )
     report = {
         "schema_version": 1,
         "method": "SRIX-REGM versus complete adaptive FEMU ranking",
