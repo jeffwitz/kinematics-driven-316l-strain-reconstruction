@@ -2,7 +2,7 @@
 
 Date opened: 2026-08-23  
 Branch: `agent/plastic-observability`  
-Status: **Phase 0 audit complete; implementation gates in progress**
+Status: **Gates 0--1 passed; exact SRIX twin pending**
 
 This file is the single cold-start entry point for the reconditioned
 equilibrium-gap identification of the FCC SRIX law. It is deliberately kept
@@ -72,7 +72,7 @@ it.
 | Gate | Required evidence | Status |
 |---|---|---|
 | 0 | operator audit and cold-start record | passed |
-| 1 | equilibrium-gap core and mechanical sign tests | pending |
+| 1 | equilibrium-gap core and mechanical sign tests | passed |
 | 2 | exact small SRIX twin, FD plateau and SVD | pending |
 | 3 | deterministic theta4 recovery in identifiable subspace | pending |
 | 4 | qualified transfer and noise degradation | pending |
@@ -109,6 +109,14 @@ SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY=build/srix-generic/src/libBehaviour.so
 
 ## Next action
 
-Implement Gate 1 in `src/fem_inhouse/identification/srix_equilibrium_gap.py`,
-with unit tests independent of P43 and a thin twin qualification script. Do
-not start an experimental identification campaign.
+Gate 1 is implemented in
+`src/fem_inhouse/identification/srix_equilibrium_gap.py`. The public weak
+residual and once-factorised correction live on
+`TensorPlasticObservabilityOperator`; nine targeted tests pass. They include a
+uniform-stress patch, an affine elastic patch, exact sparse reconditioning, an
+explicit wrong-sign rejection, deterministic replay, runtime-parameter
+sensitivity, logarithmic coordinates, central-FD convergence and sensitivity
+rank. Ruff and mypy are clean on the touched identification package.
+
+Next: preregister and run the exact small SRIX twin. Do not start an
+experimental identification campaign.

@@ -171,6 +171,40 @@ class TensorPlasticObservabilityOperator:
         )
         return -pack_interior(nodal) / self.quadrature_weight
 
+    def weak_equilibrium_residual(self, sample_stress_voigt_mpa: ArrayLike) -> FloatArray:
+        """Return the interior weak residual ``B^T sigma``.
+
+        The qualified TRI2 divergence carries the opposite sign and the
+        constant sub-cell quadrature weight.  Removing both here makes this
+        method the public mechanics boundary for inverse methods; callers do
+        not need to duplicate either convention.
+        """
+
+        stress = np.asarray(sample_stress_voigt_mpa, dtype=np.float64)
+        expected = (*self.grid.pixel_shape, 2, 3)
+        if stress.shape != expected:
+            raise ValueError(f"sample stress must have shape {expected}")
+        if not np.isfinite(stress).all():
+            raise ValueError("sample stress must be finite")
+        nodal = self.kinematics.divergence_from_sample_stress(stress)
+        return -pack_interior(nodal) / self.quadrature_weight
+
+    def reconditioned_correction(self, sample_stress_voigt_mpa: ArrayLike) -> FloatArray:
+        """Return ``-K0^-1 B^T sigma`` as a zero-boundary nodal field."""
+
+        residual = self.weak_equilibrium_residual(sample_stress_voigt_mpa)
+        return self.correction_from_weak_residual(residual)
+
+    def correction_from_weak_residual(self, residual: ArrayLike) -> FloatArray:
+        """Apply the already-factorised ``-K0^-1`` to an interior force."""
+
+        force = np.asarray(residual, dtype=np.float64)
+        if force.shape != (self.free_size,):
+            raise ValueError(f"weak residual must have shape {(self.free_size,)}")
+        if not np.isfinite(force).all():
+            raise ValueError("weak residual must be finite")
+        return unpack_interior(-self.solve_stiffness(force), self.grid)
+
     def kelvin_strain(self, displacement: ArrayLike) -> FloatArray:
         """The kinematics returns engineering shear; divide it into Kelvin."""
 

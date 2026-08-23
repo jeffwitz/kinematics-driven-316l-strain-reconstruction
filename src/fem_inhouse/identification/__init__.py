@@ -24,6 +24,12 @@ from fem_inhouse.identification.plastic_observability import (
     PlasticObservabilityOperator,
     PlasticObservabilityState,
 )
+from fem_inhouse.identification.srix_equilibrium_gap import (
+    EquilibriumGapEvaluation,
+    SensitivitySVD,
+    SrixEquilibriumGapProblem,
+    SrixTheta4,
+)
 
 __all__ = [
     "AmplitudeMetricConfig",
@@ -31,11 +37,15 @@ __all__ = [
     "DICObservationOperatorConfig",
     "DICSpectralTransfer",
     "DICSpectralWhitener",
+    "EquilibriumGapEvaluation",
     "NonlocalIdentificationPoint",
     "ObservationResult",
     "PlasticMetric",
     "PlasticObservabilityOperator",
     "PlasticObservabilityState",
+    "SensitivitySVD",
+    "SrixEquilibriumGapProblem",
+    "SrixTheta4",
     "evaluate_identification_metrics",
     "from_h_chi_and_a_chi",
     "peeq_diagnostic_metrics",
