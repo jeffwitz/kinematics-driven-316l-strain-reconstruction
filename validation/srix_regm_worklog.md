@@ -2,7 +2,7 @@
 
 Date opened: 2026-08-23  
 Branch: `agent/plastic-observability`  
-Status: **Gates 0--3 passed; Gate 4 negative; REGM/FEMU ranking running next**
+Status: **STOP/NO-GO before P43: exact ranking passes, observed ranking fails**
 
 This file is the single cold-start entry point for the reconditioned
 equilibrium-gap identification of the FCC SRIX law. It is deliberately kept
@@ -82,8 +82,9 @@ it.
 | 2 | exact small SRIX twin, FD plateau and SVD | passed on M8 |
 | 3 | deterministic theta4 recovery in identifiable subspace | passed on M8 |
 | 4 | qualified transfer and noise degradation | negative: truth is not the objective minimum |
-| 5 | REGM/FEMU ranking and timing comparison | pending |
-| 6 | P43 authorization | blocked until Gate 5 GO |
+| 5 | exact REGM/FEMU ranking | passed: `rho=0.866`, log-`r=0.878`, top-5 `3/5` |
+| 5b | observed-space REGM/FEMU ranking | failed at transfer-only level |
+| 6 | P43 authorization | **NO-GO** under the frozen observed-space rule |
 
 ## Required artefacts
 
@@ -143,10 +144,19 @@ they are `1.741e-3`, `1.894e-3`, and `1.346e-3 mm`. The lower points are far
 from the true SRIX parameters. The observation chain therefore preserves
 sensitivity but biases the objective away from the generating parameters.
 
-Run Gate 5 exactly as frozen in
-`validation/srix_regm_femu_ranking_preregistration.md`. This gate asks whether
-the exact-kinematics REGM objective still ranks laws like complete FEMU; it
-does not retroactively repair the negative transferred/noisy recovery. Do not
-start P43 unless the Spearman, log-Pearson and top-five gates all pass, and do
-not use transferred/noisy REGM for unique parameter recovery without a revised
-mechanically consistent observation treatment.
+Gate 5 exact passes on all 20 forward candidates: Spearman `0.866`, logarithmic
+Pearson `0.878`, top-five overlap `3/5`. Median REGM/FEMU cost is
+`2.643/13.047 s`, or `4.94x`; complete-forward cost varies from `6.44` to
+`146.75 s` with adaptive convergence.
+
+The necessary observed-space repeat is negative. Transfer-only gives
+Spearman `0.326`, log-Pearson `0.276`, and top-five overlap `2/5`; transfer,
+noise and whitening formally passes, but its FEMU objective has coefficient of
+variation only `9.1e-5` because noise dominates. The frozen rule required both
+levels to pass. See `validation/srix_regm_femu_observed_ranking_results.md`.
+
+**Stop here.** Do not launch P43-A/M100 or optimize SRIX on measured data with
+this objective. Exact-space REGM remains a qualified diagnostic/proposal
+surrogate. Any future observation-aware reformulation must first restore the
+truth minimum on the digital twin and then pass the same observed ranking
+gate. No sequentially reconditioned variant is justified yet.

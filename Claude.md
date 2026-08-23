@@ -7160,10 +7160,18 @@ préserve quatre directions sensibles mais ne préserve pas l'équilibre et
 décale le minimum hors de la vérité. Voir
 `validation/srix_regm_transfer_noise_results.md`.
 
-La prochaine et dernière porte avant P43 est le classement de 20 lois par
-REGM exact contre 20 vrais solves FEMU, pré-enregistré dans
-`validation/srix_regm_femu_ranking_preregistration.md`. Aucun P43 si Spearman
-`< 0.80`, Pearson logarithmique `< 0.70`, recouvrement top-5 `< 3`, ou moins de
-15 solves convergés. Même si ce classement passe, ne pas utiliser le REGM
-transféré/bruité actuel pour une identification unique sans reformulation
-mécaniquement cohérente de l'observation.
+Le classement exact de 20 lois contre 20 vrais solves FEMU passe : Spearman
+`0,866`, Pearson logarithmique `0,878`, top-5 `3/5`, avec un gain médian
+`4,94x`. Mais le classement après observation est **négatif** : le transfert
+seul donne `0,326`, `0,276`, `2/5`. Le niveau bruité passe formellement alors
+que son coût FEMU a un coefficient de variation de seulement `9,1e-5` : le
+bruit domine, il ne sauve pas l'échec sans bruit. La règle pré-enregistrée
+exigeait les deux niveaux.
+
+**NO-GO avant P43.** Ne lancer ni P43-A ni M100 et ne publier aucun paramètre
+SRIX identifié avec cet objectif. Point de reprise :
+`validation/srix_regm_worklog.md`, résultats décisifs dans
+`validation/srix_regm_femu_observed_ranking_results.md`. Toute reformulation
+doit d'abord restaurer le minimum vrai sur le jumeau puis repasser le classement
+observé. Ne pas développer le reconditionnement séquentiel avant d'avoir réglé
+l'incohérence de l'opérateur d'observation.
