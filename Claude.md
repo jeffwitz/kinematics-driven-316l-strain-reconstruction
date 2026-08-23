@@ -3,6 +3,24 @@
 Dernière mise à jour : 2026-08-23
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
+## REPRISE À FROID PRIORITAIRE — SRIX-REGM
+
+**Commencer par lire `validation/srix_regm_worklog.md`.** Ce fichier est le
+journal autoritatif du nouveau chantier d'identification SRIX par défaut
+d'équilibre faible reconditionné. Il contient les gates, les contrats
+mécaniques réutilisés, les artefacts et la décision GO/NO-GO. Aucun calcul P43
+ni apprentissage TANN n'est autorisé avant validation du jumeau numérique et
+du classement REGM/FEMU.
+
+Le chemin nominal est : histoire de déplacement connue depuis l'état 0,
+cinématique `TwoSubcellDiagnostic2D`, replay SRIX causal sans tangente de sortie,
+résidu intérieur faible `B^T sigma`, correction `-K0^-1 f`, observation et
+whitening DIC. `K0` est assemblé et factorisé une seule fois par problème. La
+SVD de la jacobienne résiduelle en coordonnées logarithmiques est un résultat
+scientifique central, pas un diagnostic facultatif.
+
+---
+
 ## REPRISE À FROID PRIORITAIRE — TANN-FCC corrigé, apprentissage suspendu
 
 **Commencer par lire `validation/tann_fcc_recovery_strategy.md`.** C'est la
