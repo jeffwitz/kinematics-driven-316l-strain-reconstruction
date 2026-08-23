@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "current_conclusion": "Micromorphic coupling is the only change tested that measurably brings the reconstruction closer to DIC: under symmetric image-level observation it improves relative L2 by 9.6 times the metric's noise margin and correlation by 3.2 times, and it brings the over-active q90 area from +61 % down to +2.6 % of the DIC reference. It does so while degrading where the localisation sits, by 2.4 and 2.5 margins on the two overlap measures, so the ranking depends on the objective and neither Hchi nor ell is identified. By contrast the measured 40-state loading path, which now replays end to end after a defect in the elastic predictor was fixed, changes core PEEQ by 15.8 % yet moves no DIC metric beyond its margin. The local and coupled mechanics are numerically verified; no transferable material internal length is claimed.",
+  "current_conclusion": "Micromorphic coupling is the only change tested that measurably brings the reconstruction closer to DIC: under symmetric image-level observation it improves relative L2 by 9.6 times the metric's noise margin and correlation by 3.2 times, and it brings the over-active q90 area from +61 % down to +2.6 % of the DIC reference. It does so while degrading where the localisation sits, by 2.4 and 2.5 margins on the two overlap measures, so the ranking depends on the objective and neither Hchi nor ell is identified. By contrast the measured 40-state loading path, which now replays end to end after a defect in the elastic predictor was fixed, changes core PEEQ by 15.8 % yet moves no DIC metric beyond its margin. A fast SRIX equilibrium-gap surrogate recovers and ranks exact digital twins, but its ranking fails after the qualified DIC transfer, so SRIX parameter identification on P43 is currently blocked. The local and coupled mechanics are numerically verified; no transferable material internal length is claimed.",
   "claims": [
     {
       "question": "Micromorphic coupling measurably improves agreement with DIC",
@@ -276,6 +276,15 @@
       "boundary": "Only the 16-increment point was retained; 32 and 64 were not completed, and the path is proportional rather than measured DIC chronology",
       "evidence_ids": [
         "E-MERIC-P43-001"
+      ]
+    },
+    {
+      "question": "Can the present SRIX-REGM objective identify parameters on observed P43 kinematics?",
+      "status": "not qualified; NO-GO before P43",
+      "boundary": "Exact M8 twin recovery and ranking pass, but transfer-only observed ranking fails the frozen correlation and top-five thresholds",
+      "evidence_ids": [
+        "E-SRIX-REGM-001",
+        "E-SRIX-REGM-002"
       ]
     }
   ],
@@ -1632,6 +1641,95 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-REGM-001",
+      "question": "Does SRIX-REGM recover and rank SRIX laws on an exact digital twin?",
+      "fidelity": "exact M8 SRIX twin plus 20 complete adaptive forward simulations",
+      "parameters": "tau0, R, Q and b varied in fixed log coordinates; identity observation; EBSD-cubic K0",
+      "status": "verified in exact kinematic space",
+      "conclusion": "The truth is recovered in the identifiable subspace, and REGM/FEMU ranking passes with Spearman 0.866, log-Pearson 0.878 and top-five overlap 3/5.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_twin_v1/report.json",
+          "role": "exact-twin recovery",
+          "assertions": [
+            {
+              "path": "/evaluations/truth/residual_rms",
+              "operator": "less_than",
+              "expected": 1.0e-8
+            },
+            {
+              "path": "/identifiable_log_error_rms",
+              "operator": "less_than",
+              "expected": 0.1
+            }
+          ]
+        },
+        {
+          "path": "validation/reference_data/srix_regm_femu_ranking_v1/report.json",
+          "role": "exact-space ranking",
+          "assertions": [
+            {
+              "path": "/statistics/gate_passed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/statistics/spearman",
+              "operator": "greater_than_or_equal",
+              "expected": 0.8
+            },
+            {
+              "path": "/statistics/log_pearson",
+              "operator": "greater_than_or_equal",
+              "expected": 0.7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-REGM-002",
+      "question": "Does SRIX-REGM remain centred and correctly ranked after the qualified DIC observation chain?",
+      "fidelity": "M8 transfer/noise twin and the same 20 complete forward candidates in observed space",
+      "parameters": "qualified affine-preserving transfer; deterministic measured-noise realization; qualified spectral whitener",
+      "status": "negative result",
+      "conclusion": "No. Transfer alone moves the objective below the truth and reduces REGM/FEMU ranking to Spearman 0.326, log-Pearson 0.276 and top-five overlap 2/5. P43 identification is blocked.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_transfer_noise_v1/report.json",
+          "role": "truth-centering test",
+          "assertions": [
+            {
+              "path": "/levels/0/evaluations/identified/residual_rms",
+              "operator": "less_than",
+              "expected_path": "/levels/0/evaluations/truth/residual_rms"
+            }
+          ]
+        },
+        {
+          "path": "validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json",
+          "role": "observed ranking gate",
+          "assertions": [
+            {
+              "path": "/claims/p43_regm_identification_authorized",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/statistics/T1_transfer/gate_passed",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/statistics/T1_transfer/spearman",
+              "operator": "less_than",
+              "expected": 0.8
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -2646,6 +2744,14 @@
     {
       "source": "validation/figures/dic_multistep_p0043_boundary_outlier_v1/p0043_measured_vs_proportional_path.png",
       "target": "evidence/p43_measured_vs_proportional_path.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_femu_ranking_v1/srix_regm_femu_ranking.png",
+      "target": "evidence/srix_regm_femu_ranking.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_femu_observed_ranking_v1/srix_regm_femu_observed_ranking.png",
+      "target": "evidence/srix_regm_femu_observed_ranking.png"
     }
   ]
 }

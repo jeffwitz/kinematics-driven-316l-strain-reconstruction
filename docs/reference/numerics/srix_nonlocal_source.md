@@ -45,7 +45,9 @@ coverage is in `tests/integration/test_fcc_crystal_fem.py`.
 This is a numerical transposition of the J2 scalar architecture, not a
 physical identification of a non-local SRIX law. The monolithic SRIX path is
 not qualified yet: it requires constitutive cross-tangent blocks for
-(sigma_{,chi}), (Gamma_{,arepsilon}), and (Gamma_{,chi}). Until those
+$\partial\boldsymbol\sigma/\partial\chi$,
+$\partial\boldsymbol\Gamma/\partial\boldsymbol\varepsilon$, and
+$\partial\boldsymbol\Gamma/\partial\chi$. Until those
 blocks are exposed coherently, SRIX non-local validation must use the nested
 reference path.
 

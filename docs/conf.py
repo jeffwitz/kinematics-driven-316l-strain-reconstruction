@@ -92,6 +92,14 @@ intersphinx_mapping = {
     ),
 }
 
+# These publishers return HTTP 403 to automated HEAD/GET requests although the
+# registered DOI links resolve correctly in a browser. Keep linkcheck strict
+# for every other URL and ignore only the access-protected publisher families.
+linkcheck_ignore = [
+    r"https://doi\.org/10\.(1002|1115|1126|1287)/.*",
+    r"https://onlinelibrary\.wiley\.com/doi/.*",
+]
+
 templates_path = ["_templates"]
 html_theme = "sphinx_rtd_theme"
 html_title = project

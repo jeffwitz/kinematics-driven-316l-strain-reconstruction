@@ -203,3 +203,15 @@
 : Status: **supported**.
 : Conclusion: Yes. The filter removes 0.00972 px RMS against a measured noise floor of 0.0511 px, so 5.3 times below it, and the stage-0 roughness rule independently selects the same three modes. The filtered history converges in 245 Newton iterations with no cutback, against 469 iterations and 3 cutbacks unfiltered, while perturbing core PEEQ by only 1.63 % and leaving DIC agreement indistinguishable. The gain is numerical, not evidential.
 : Sources: primary boundary filter: `validation/reference_data/dic_multistep_history_p0043_modal3_v1/report.json`<br>primary filtered-history mechanics: `validation/reference_data/dic_multistep_modal3_p0043_v1/report.json`.
+
+**E-SRIX-REGM-001 — Does SRIX-REGM recover and rank SRIX laws on an exact digital twin?**
+: Fidelity: exact M8 SRIX twin plus 20 complete adaptive forward simulations. Parameters: tau0, R, Q and b varied in fixed log coordinates; identity observation; EBSD-cubic K0.
+: Status: **verified in exact kinematic space**.
+: Conclusion: The truth is recovered in the identifiable subspace, and REGM/FEMU ranking passes with Spearman 0.866, log-Pearson 0.878 and top-five overlap 3/5.
+: Sources: exact-twin recovery: `validation/reference_data/srix_regm_twin_v1/report.json`<br>exact-space ranking: `validation/reference_data/srix_regm_femu_ranking_v1/report.json`.
+
+**E-SRIX-REGM-002 — Does SRIX-REGM remain centred and correctly ranked after the qualified DIC observation chain?**
+: Fidelity: M8 transfer/noise twin and the same 20 complete forward candidates in observed space. Parameters: qualified affine-preserving transfer; deterministic measured-noise realization; qualified spectral whitener.
+: Status: **negative result**.
+: Conclusion: No. Transfer alone moves the objective below the truth and reduces REGM/FEMU ranking to Spearman 0.326, log-Pearson 0.276 and top-five overlap 2/5. P43 identification is blocked.
+: Sources: truth-centering test: `validation/reference_data/srix_regm_transfer_noise_v1/report.json`<br>observed ranking gate: `validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json`.

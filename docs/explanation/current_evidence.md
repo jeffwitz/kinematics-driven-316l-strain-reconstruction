@@ -60,6 +60,21 @@ that the constitutive parameters are identified uniquely from DIC, that a
 two-dimensional model resolves through-thickness physics, or that every
 experimental observable is reproduced without model discrepancy.
 
+## Fast SRIX identification gate
+
+The reconditioned weak-equilibrium gap recovers the known SRIX parameter
+valley on an exact digital twin and ranks 20 nearby laws similarly to complete
+FEMU in exact kinematic space. The corresponding Spearman and logarithmic
+Pearson correlations are `0.866` and `0.878`.
+
+That qualification does not transfer through the present DIC observation
+operator. With the measured transfer and no noise, the ranking correlations
+fall to `0.326` and `0.276`, below the frozen `0.80` and `0.70` thresholds.
+Consequently no P43 parameter optimization is authorized with the current
+objective. This negative gate is explained in {doc}`srix_regm_identification`;
+it is an observation-model limitation, not a failure of the SRIX transaction
+or weak-equilibrium assembly.
+
 ## Reading the results
 
 Use the evidence registry and the case-specific result artefact for numerical

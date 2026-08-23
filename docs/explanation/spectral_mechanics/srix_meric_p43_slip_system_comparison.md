@@ -51,7 +51,13 @@ same systems are active.
 
 ## Global system distribution
 
+:::{only} html
 ![Relative contribution of the twelve FCC slip systems.](../../_static/spectral_mechanics/srix_meric_p43/slip_system_global_fractions.svg)
+:::
+
+:::{only} latex
+![Relative contribution of the twelve FCC slip systems.](../../_static/spectral_mechanics/srix_meric_p43/slip_system_global_fractions.pdf)
+:::
 
 The principal system is system 01 for both laws. The top three systems are
 the same (01, 07 and 11). The 95-percent cumulative sets are:
@@ -66,7 +72,13 @@ overlap is `3/3`. The total-variation distance between the twelve-component
 fraction vectors is `0.2565`, the cosine similarity is `0.9441`, and the
 Spearman rank correlation, computed with numerical-zero ties, is `0.9385`.
 
+:::{only} html
 ![Cumulative contribution of the systems in each law.](../../_static/spectral_mechanics/srix_meric_p43/slip_system_cumulative_contributions.svg)
+:::
+
+:::{only} latex
+![Cumulative contribution of the systems in each law.](../../_static/spectral_mechanics/srix_meric_p43/slip_system_cumulative_contributions.pdf)
+:::
 
 The common principal systems indicate a shared dominant hierarchy, while the
 non-zero distribution distance and the additional SRIX system in `S95` show
@@ -74,7 +86,13 @@ that the activity is not related by one global scale factor.
 
 ## Spatial localization
 
+:::{only} html
 ![Mechanism similarity versus amplitude ratio for each slip system.](../../_static/spectral_mechanics/srix_meric_p43/mechanism_amplitude_summary.svg)
+:::
+
+:::{only} latex
+![Mechanism similarity versus amplitude ratio for each slip system.](../../_static/spectral_mechanics/srix_meric_p43/mechanism_amplitude_summary.pdf)
+:::
 
 For the total accumulated system-slip field, the absolute relative L2 difference is
 `0.1745`. After independent normalization by each field integral, the cosine
