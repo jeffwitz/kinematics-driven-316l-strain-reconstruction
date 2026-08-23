@@ -18,6 +18,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.optimize import least_squares
 
+from fem_inhouse.core.mfront_runtime import MFrontIntegrationError
 from fem_inhouse.identification.dic_whitening import DICSpectralTransfer, DICSpectralWhitener
 from fem_inhouse.identification.srix_equilibrium_gap import (
     SrixEquilibriumGapProblem,
@@ -148,9 +149,16 @@ def _run_level(
     jacobian = problem.jacobian_fd(truth_theta.log_coordinates(), relative_step=3.0e-3)
     svd = problem.sensitivity_svd(jacobian, relative_threshold=1.0e-6)
     scale = max(initial.residual_rms, np.finfo(float).tiny)
+    invalid_evaluations = 0
+    residual_size = initial.residual_vector.size
 
     def residual(eta: NDArray[np.float64]) -> NDArray[np.float64]:
-        return problem.residual_vector(SrixTheta4.from_log_coordinates(eta)) / scale
+        nonlocal invalid_evaluations
+        try:
+            return problem.residual_vector(SrixTheta4.from_log_coordinates(eta)) / scale
+        except MFrontIntegrationError:
+            invalid_evaluations += 1
+            return np.full(residual_size, 1.0e6, dtype=np.float64)
 
     def derivative(eta: NDArray[np.float64]) -> NDArray[np.float64]:
         return problem.jacobian_fd(eta, relative_step=3.0e-3) / scale
@@ -205,6 +213,7 @@ def _run_level(
             "njev": int(fit.njev or 0),
             "seconds": fit_seconds,
             "residual_scale": scale,
+            "invalid_material_evaluations": invalid_evaluations,
         },
     }
 
