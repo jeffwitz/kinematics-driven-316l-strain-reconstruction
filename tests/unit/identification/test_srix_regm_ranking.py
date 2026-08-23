@@ -6,6 +6,12 @@ import numpy as np
 import pytest
 
 from scripts.compare_srix_regm_femu import _femu_rms, _population, _statistics
+from scripts.compare_srix_regm_femu_observed import _observed_rms
+
+
+class _Identity:
+    def apply(self, values: np.ndarray) -> np.ndarray:
+        return values
 
 
 def test_preregistered_population_is_fixed_and_off_truth() -> None:
@@ -41,3 +47,12 @@ def test_ranking_statistics_apply_all_preregistered_gates() -> None:
     assert result["gate_passed"] is True
     assert result["best_five_overlap_count"] == 5
     assert result["median_speedup"] == pytest.approx(10.0)
+
+
+def test_observed_rms_excludes_boundary_reactions() -> None:
+    target = np.zeros((2, 5, 5, 2))
+    candidate = target.copy()
+    candidate[:, 1:-1, 1:-1, :] = 3.0
+    candidate[:, (0, -1), :, :] = 1.0e6
+    candidate[:, :, (0, -1), :] = 1.0e6
+    assert _observed_rms(candidate, target, _Identity()) == pytest.approx(3.0)
