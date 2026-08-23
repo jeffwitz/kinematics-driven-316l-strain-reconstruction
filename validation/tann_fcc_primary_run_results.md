@@ -1,5 +1,10 @@
 # Causal TANN-FCC on P43 — primary run verdict (registered seed 20260817)
 
+> **Historical and invalid for constitutive claims.** The response is retained
+> for provenance only. The forward trajectory was not reset between Adam
+> steps and the loss applied the DIC transfer to the measured field a second
+> time. See `tann_fcc_recovery_strategy.md`.
+
 Run artifact: `validation/_generated/shared_tensor_generator/tann_fcc_p43_run.json`
 (+ companion `tann_fcc_p43_run.npz`), figures
 `validation/figures/tann_fcc_p43/`. Commit `e367ce0`.

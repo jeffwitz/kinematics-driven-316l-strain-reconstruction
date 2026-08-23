@@ -1,5 +1,9 @@
 # Causal TANN-FCC on P43 — amended run status (sigma_ref = 200 MPa)
 
+> **Historical incomplete run, superseded on 2026-08-23.** It never completed
+> a qualified 100 x 100 training trajectory and predates the corrections in
+> `tann_fcc_recovery_strategy.md`.
+
 Amendments 3 and 4 registered before the run; the material gates and the
 full unit suite green at the new operating point.
 

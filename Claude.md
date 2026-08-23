@@ -1,13 +1,89 @@
 # Plan de mise à niveau de `fem_inhouse`
 
-Dernière mise à jour : 2026-08-18
+Dernière mise à jour : 2026-08-23
 Objectif de maturité : **au moins 4/5 sur tous les axes**
 
-## ÉTAT COURANT — TANN-FCC causal piloté par la DIC (2026-08-18)
+## REPRISE À FROID PRIORITAIRE — TANN-FCC corrigé, apprentissage suspendu
+
+**Commencer par lire `validation/tann_fcc_recovery_strategy.md`.** C'est la
+source autoritative sur le TANN-FCC. Les anciens fichiers
+`tann_fcc_preregistration.md`, `tann_fcc_primary_run_results.md` et
+`tann_fcc_amended_run_status.md` sont conservés comme preuves historiques,
+mais leurs conclusions opérationnelles sont supersédées.
+
+### Verdict actuel
+
+Il n'existe pas encore de TANN-FCC entraîné et scientifiquement qualifié. Le
+run primaire était presque élastique ; le run amendé 100 x 100 n'a pas terminé
+une trajectoire d'apprentissage. En outre, l'audit du 23 août a trouvé quatre
+défauts invalidant l'interprétation des anciens artefacts : état constitutif
+non remis au départ entre pas Adam, observation de la DIC une seconde fois,
+interface engineering/Kelvin incorrecte en cisaillement et fermeture transverse
+hybride. La figure EVM mélangeait également DIC absolue et FEM incrémentale.
+
+Ces défauts sont corrigés dans le code courant et couverts par des tests :
+
+- chaque rollout repart du même état exact et chaque record porte son vrai
+  état précédent ;
+- la perte est `O(u_FEM) - u_DIC` et utilise l'adjoint exact du transfert
+  affine-préservant ;
+- le profil différentiable provient de `legacy_script_2021`, pas du profil V4 ;
+- les conversions engineering/Kelvin portent déformation, contrainte, tangente
+  et cotangentes de l'adjoint ; la tangente acceptée est archivée dans la
+  convention engineering attendue par l'adjoint mécanique ;
+- la fermeture plane-stress élimine les cisaillements élastiques transverses et
+  est testée contre Hooke 3D et la dérivée de l'énergie condensée ;
+- l'histoire mécanique est rejouée depuis l'état 0 ; 1--20 sont warm-up et les
+  états interpolés 31--32 ne sont jamais scorés ;
+- poids et état Adam sont checkpointés après chaque étape ; un restart partiel
+  de trajectoire est interdit pour l'apprentissage car il perdrait la
+  sensibilité de l'état initial aux paramètres.
+
+### Prochaine action autorisée
+
+**Gate B : jumeau numérique constitutif**, sur petit domaine, avec SRIX/Méric
+comme vérité connue, plusieurs orientations et chemins incluant du cisaillement,
+observation DIC et bruit qualifiés, puis holdout d'un chemin/orientation. Aucun
+nouveau run P43 long n'est autorisé avant ce gate.
+
+La stratégie nominale n'est plus d'apprendre une mobilité entièrement libre
+depuis une seule histoire de déplacements. Elle est : loi FCC physique
+qualifiée + correction TANN bornée et sans dimension ; paramètres d'échelle
+fixés indépendamment ; contexte spatial seulement si le modèle local passe les
+gates d'histoire/amplitude mais échoue sur une morphologie observable. P43 ne
+fournissant pas de force, l'échelle absolue de contrainte/mobilité n'y est pas
+identifiable seule. `sigma_ref` est donc un paramètre de dynamique constitutive,
+pas une simple normalisation numérique.
+
+### Fichiers à lire, dans cet ordre
+
+1. `validation/tann_fcc_recovery_strategy.md` ;
+2. `src/fem_inhouse/constitutive/tann_fcc.py` ;
+3. `src/fem_inhouse/identification/tann_fcc_sequence.py` ;
+4. `src/fem_inhouse/identification/tann_fcc_adjoint.py` ;
+5. `src/fem_inhouse/identification/dic_whitening.py` ;
+6. `scripts/train_tann_fcc_p43.py` ;
+7. les trois tests `test_tann_fcc*.py` sous `tests/unit/constitutive/` ;
+8. `validation/reference_data/dic_multistep_history_p0043_repaired_v1/report.json`.
+
+### Environnement local
+
+Utiliser directement `.venv/bin/python` et `.venv/bin/fem-inhouse`. Pour les
+tests MFront/MGIS, sourcer `/home/jeff/.local/share/tfel/env/env.sh`; l'installation
+est sous `/home/jeff/.local`. Définir ensuite
+`MFRONT_BEHAVIOUR_LIBRARY=$PWD/build/mfront/src/libBehaviour.so` et
+`SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY=$PWD/build/srix-generic/src/libBehaviour.so`.
+Ces bibliothèques sont distinctes : la bibliothèque principale ne contient pas
+le symbole `Fcc316LForestRubinSrixGeneric3D`. La section détaillée
+« environnement scientifique installé » plus bas reste autoritative.
+
+---
+
+## [HISTORIQUE SUPERSEDÉ] ÉTAT TANN-FCC causal au 2026-08-18
 
 **Point d'entrée unique : `validation/tann_fcc_preregistration.md`**
 (architecture figée + amendements 1-4, barres, holdout, marge de bruit)
-et `mission_tann.md` à la racine. Les résultats : `validation/tann_fcc_primary_run_results.md`
+et `validation/archive/tann_fcc_initial_mission.md`. Les résultats : `validation/tann_fcc_primary_run_results.md`
 (verdict du run enregistré), `validation/tann_fcc_amended_run_status.md`
 (état du run amendé), artefact `validation/_generated/shared_tensor_generator/tann_fcc_p43_run.json`
 + figures `validation/figures/tann_fcc_p43/`.

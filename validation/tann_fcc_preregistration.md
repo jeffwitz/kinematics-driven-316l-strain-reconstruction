@@ -1,5 +1,10 @@
 # Causal TANN-FCC identification from DIC — preregistration (T0)
 
+> **Historical preregistration, superseded on 2026-08-23.** The implementation
+> used by this campaign contained trajectory-reset, observation, tensor-
+> convention and plane-stress defects. Do not relaunch it or interpret its
+> thresholds without first reading `tann_fcc_recovery_strategy.md`.
+
 Registered before any run. Thresholds frozen. Negative results kept.
 
 ## The scientific question
