@@ -139,4 +139,5 @@ def hookean_plane_stress_relative_error(
     )
     predicted = np.einsum("...ij,...j->...i", tangent, strain)
     stress = np.asarray(trial.stress_in_plane_mpa, dtype=np.float64).reshape(predicted.shape)
-    return float(np.linalg.norm(stress - predicted) / max(np.linalg.norm(stress), 1.0))
+    denominator = max(float(np.linalg.norm(stress)), 1.0)
+    return float(np.linalg.norm(stress - predicted) / denominator)

@@ -113,11 +113,12 @@ class DirectionalDrivenJ2PlaneStressBatch:
         stress = trial_stress.copy() if initial is None else initial.copy()
         for iteration in range(1, 61):
             residual = self._residual(stress, trial_stress, increment, point)
-            if np.linalg.norm(residual) <= 1.0e-8 + 1.0e-10 * max(np.linalg.norm(stress), 1.0):
+            stress_norm = float(np.linalg.norm(stress))
+            if np.linalg.norm(residual) <= 1.0e-8 + 1.0e-10 * max(stress_norm, 1.0):
                 flow, _ = self._flow(stress, point)
                 return stress, flow, iteration
             jacobian = np.empty((3, 3))
-            step = 1.0e-7 * max(np.linalg.norm(stress), 1.0)
+            step = 1.0e-7 * max(stress_norm, 1.0)
             for component in range(3):
                 perturbation = np.zeros(3)
                 perturbation[component] = step

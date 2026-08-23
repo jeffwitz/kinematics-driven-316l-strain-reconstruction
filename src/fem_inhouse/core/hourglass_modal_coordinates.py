@@ -160,7 +160,7 @@ def modal_coordinates(
     # inverse so a nearly degenerate geometry degrades instead of exploding.
     pseudo_inverse = np.linalg.pinv(reduction)
     gram = amplitude @ amplitude.T
-    projector = np.linalg.solve(gram, amplitude)
+    projector = np.asarray(np.linalg.solve(gram, amplitude), dtype=np.float64)
     return ModalCoordinates(
         amplitude_operator=amplitude,
         reduction=reduction,

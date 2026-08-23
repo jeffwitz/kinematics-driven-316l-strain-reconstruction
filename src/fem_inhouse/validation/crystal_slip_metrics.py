@@ -178,9 +178,12 @@ def _dominant_indices(fractions: FloatArray, threshold: float) -> tuple[int, ...
 
 
 def _system_distribution(field: FloatArray, config: SlipMetricConfig) -> dict[str, Any]:
-    totals = np.sum(field, axis=(1, 2), dtype=np.float64)
+    totals = np.asarray(np.sum(field, axis=(1, 2), dtype=np.float64), dtype=np.float64)
     total = float(np.sum(totals))
-    fractions = totals / total if not _zero(total, config) else np.zeros_like(totals)
+    fractions = np.asarray(
+        totals / total if not _zero(total, config) else np.zeros_like(totals),
+        dtype=np.float64,
+    )
     order = np.argsort(-fractions, kind="stable")
     ranks = np.empty(12, dtype=int)
     ranks[order] = np.arange(1, 13)
