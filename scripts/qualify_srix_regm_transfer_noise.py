@@ -161,7 +161,15 @@ def _run_level(
             return np.full(residual_size, 1.0e6, dtype=np.float64)
 
     def derivative(eta: NDArray[np.float64]) -> NDArray[np.float64]:
-        return problem.jacobian_fd(eta, relative_step=3.0e-3) / scale
+        step = 3.0e-3
+        columns = []
+        for index in range(4):
+            plus = eta.copy()
+            minus = eta.copy()
+            plus[index] += step
+            minus[index] -= step
+            columns.append((residual(plus) - residual(minus)) / (2.0 * step))
+        return np.column_stack(columns)
 
     true_eta = truth_theta.log_coordinates()
     started = time.perf_counter()
