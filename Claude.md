@@ -28,6 +28,13 @@ contraste `Q/b`, est toutefois très faible (`conditionnement 2.15e4`). Les
 prochains gates sont transfert/bruit puis classement REGM/FEMU ; P43 reste
 interdit avant leur résultat.
 
+Le benchmark 32 états (`validation/srix_regm_scaling_results.md`) donne
+`1.270 s` sur M20 et `19.708 s` sur M100. À M100, `18.693 s` sont dans le replay
+matériau contre `0.447 s` dans `K0^-1` : ne pas développer un nouvel inverse
+FFT. La condensation 3D externe demande encore des tangentes localement pour
+fermer la contrainte plane ; comparer le backend GPS déjà qualifié avant toute
+optimisation supplémentaire.
+
 ---
 
 ## REPRISE À FROID PRIORITAIRE — TANN-FCC corrigé, apprentissage suspendu

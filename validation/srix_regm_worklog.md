@@ -127,6 +127,13 @@ trajectory, a measured factor `43.0`. Constitutive replay consumes `94 %` of
 the REGM time; `K0^-1` consumes about `1.5 %`. Optimizing the elastic inverse is
 therefore not justified now.
 
+The separate 32-state scaling benchmark in
+`validation/srix_regm_scaling_results.md` measures `1.270 s` on M20 and
+`19.708 s` on M100. M100 spends `18.693 s` in material replay and `0.447 s` in
+`K0^-1`. The external 3D condensation still needs tangents internally for its
+local plane-stress closure; compare the already-qualified native/GPS path
+before attempting any new optimization.
+
 ## Next action
 
 Implement Gate 4 using the already-qualified DIC transfer and whitener, then
