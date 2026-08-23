@@ -23,9 +23,20 @@ Gate: 4, before any P43 identification
    affine-preserving measured transfer; REGM corrections pass through the same
    transfer; no noise and identity whitener.
 3. `T2 transfer_noise`: T1 plus independent deterministic `9 x 9` patches from
-   the measured repeat-frame displacement noise at every non-initial state;
-   the initial state stays exactly zero. Corrections are whitened with the
-   stationary displacement whitener fitted from 256 independent patches.
+   the measured repeat-frame displacement noise at the eight observed macro
+   endpoints; the initial state stays exactly zero. Noise is interpolated
+   linearly and causally across the solver-only adaptive substeps. Corrections
+   are whitened with the stationary displacement whitener fitted from 256
+   independent patches.
+
+## Protocol amendment after the first failed attempt
+
+The initial wording assigned an independent noise patch to every one of the
+338 adaptive solver substeps. Those substeps are not camera observations. The
+result created a high-frequency temporal random walk and made the true SRIX
+trajectory itself non-integrable. No result file was produced. The amended
+rule above attaches noise only to the pre-registered observation times and
+interpolates it on hidden substeps; it changes no parameter bound or metric.
 
 No displacement is observed twice. The measured-noise realisation is added in
 physical millimetres after the image-flow-to-canonical axis conversion.
@@ -41,4 +52,3 @@ physical millimetres after the image-flow-to-canonical axis conversion.
 This gate is descriptive: loss of rank under measured transfer/noise is a valid
 negative result and must not be repaired by changing thresholds. P43 remains
 blocked until the independent REGM/FEMU ranking gate passes.
-

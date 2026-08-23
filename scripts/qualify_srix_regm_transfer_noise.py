@@ -88,14 +88,29 @@ def _operator(
 
 
 def _sample_noise(
-    noise: NDArray[np.float64], state_count: int, node_shape: tuple[int, int]
+    noise: NDArray[np.float64],
+    time_increments: NDArray[np.float64],
+    scored_states: tuple[int, ...],
+    node_shape: tuple[int, int],
 ) -> NDArray[np.float64]:
     rng = np.random.default_rng(20260823)
-    result = np.zeros((state_count, *node_shape, 2), dtype=np.float64)
-    for state in range(1, state_count):
+    endpoint_states = (0, *scored_states)
+    endpoint_noise = np.zeros((len(endpoint_states), *node_shape, 2), dtype=np.float64)
+    for endpoint in range(1, len(endpoint_states)):
         x0 = int(rng.integers(0, noise.shape[0] - node_shape[0] + 1))
         y0 = int(rng.integers(0, noise.shape[1] - node_shape[1] + 1))
-        result[state] = noise[x0 : x0 + node_shape[0], y0 : y0 + node_shape[1]]
+        endpoint_noise[endpoint] = noise[
+            x0 : x0 + node_shape[0], y0 : y0 + node_shape[1]
+        ]
+    fractions = np.concatenate(([0.0], np.cumsum(time_increments)))
+    endpoint_fractions = fractions[np.asarray(endpoint_states)]
+    result = np.empty((len(fractions), *node_shape, 2), dtype=np.float64)
+    for state, fraction in enumerate(fractions):
+        upper = min(int(np.searchsorted(endpoint_fractions, fraction, side="right")), 8)
+        lower = max(0, upper - 1)
+        span = endpoint_fractions[upper] - endpoint_fractions[lower]
+        weight = 0.0 if span <= 0.0 else (fraction - endpoint_fractions[lower]) / span
+        result[state] = (1.0 - weight) * endpoint_noise[lower] + weight * endpoint_noise[upper]
     return result
 
 
@@ -269,7 +284,9 @@ def main() -> int:
         remove_spatial_mean=False,
         support_mask=support,
     )
-    noisy = transferred + _sample_noise(noise_mm, len(transferred), raw_history.shape[1:3])
+    noisy = transferred + _sample_noise(
+        noise_mm, time_increments, scored_states, raw_history.shape[1:3]
+    )
     levels = [
         _run_level(
             name="T1_transfer",
