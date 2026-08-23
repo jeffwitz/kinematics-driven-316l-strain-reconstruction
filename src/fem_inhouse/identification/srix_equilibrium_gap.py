@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -77,6 +77,7 @@ class SrixTheta4:
 
 @dataclass(frozen=True, slots=True)
 class EquilibriumGapTiming:
+    material_setup_seconds: float
     material_seconds: float
     weak_residual_seconds: float
     reconditioner_seconds: float
@@ -106,6 +107,7 @@ class EquilibriumGapEvaluation:
     states: tuple[EquilibriumGapState, ...]
     timing: EquilibriumGapTiming
     material_evaluations: int
+    backend_timing: Mapping[str, object]
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,7 +171,9 @@ class SrixEquilibriumGapProblem:
 
     def replay(self, theta: SrixTheta4) -> EquilibriumGapEvaluation:
         started_total = time.perf_counter()
+        setup_started = time.perf_counter()
         material = self.material_factory(theta.as_runtime_overrides())
+        setup_seconds = time.perf_counter() - setup_started
         if material.point_count != self.operator.kinematics.material_point_count:
             raise ValueError("material point count does not match the TRI2 kinematics")
         residual_blocks: list[FloatArray] = []
@@ -248,6 +252,12 @@ class SrixEquilibriumGapProblem:
         )
         cost = 0.5 * float(residual @ residual)
         total_seconds = time.perf_counter() - started_total
+        timing_statistics = getattr(material, "timing_statistics", None)
+        backend_timing = (
+            asdict(timing_statistics)
+            if timing_statistics is not None and is_dataclass(timing_statistics)
+            else {}
+        )
         return EquilibriumGapEvaluation(
             theta=theta,
             residual_vector=residual,
@@ -257,6 +267,7 @@ class SrixEquilibriumGapProblem:
             ),
             states=tuple(state_records),
             timing=EquilibriumGapTiming(
+                material_setup_seconds=setup_seconds,
                 material_seconds=material_seconds,
                 weak_residual_seconds=weak_seconds,
                 reconditioner_seconds=reconditioner_seconds,
@@ -264,6 +275,7 @@ class SrixEquilibriumGapProblem:
                 total_seconds=total_seconds,
             ),
             material_evaluations=len(self.state_indices),
+            backend_timing=backend_timing,
         )
 
     def evaluate(self, theta: SrixTheta4) -> EquilibriumGapEvaluation:

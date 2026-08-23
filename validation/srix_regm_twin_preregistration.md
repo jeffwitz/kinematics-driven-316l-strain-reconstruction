@@ -14,9 +14,14 @@ same qualified SRIX law and full nonlinear mechanical solver?
 - structured `8 x 8` development grid, followed by timing-only `20 x 20` and
   `100 x 100` local replays;
 - two independent TRI2 material states per pixel;
-- four prescribed FCC orientations tiled spatially, fixed before results;
+- four prescribed FCC orientations arranged as four contiguous quadrants,
+  fixed before results (no pixel-scale checkerboard);
 - non-proportional affine boundary path containing tension, transverse strain
-  and shear, replayed in eight increments;
+  and shear, defined by eight macro-segments and replayed initially with four
+  causal substeps per segment; the full solver may cut a substep back down to
+  `1/4096` of the normalized path without crossing a prescribed path node;
+  every accepted substep and its exact time increment are replayed, while only
+  the eight macro endpoints are scored;
 - truth: registered default SRIX preset;
 - plane stress: qualified 3D condensed SRIX backend;
 - observations: exact nodal displacement, identity transfer and identity
@@ -36,6 +41,12 @@ fixed. Positive parameters are optimized in log coordinates. Bounds are a
 factor four below and above the registered truth; they will not be changed
 after seeing the result.
 
+Inside `least_squares`, the residual vector is divided by one fixed numerical
+scale: the REGM RMS at the frozen initial point. This uniform scaling changes
+neither the minimizer nor the normalized sensitivity SVD and is recorded in
+the result JSON. It prevents absolute displacement units from triggering a
+spurious gradient-tolerance stop.
+
 ## Finite differences and SVD
 
 Central differences are compared at log-coordinate steps
@@ -54,7 +65,8 @@ unique value is assigned along a null direction.
    quantitatively explained by the forward-solver tolerance.
 2. At least two theta4 sensitivity directions are non-null.
 3. Moving along every retained singular direction increases the objective on
-   at least one side of the truth.
+   at least one side of the truth. The probe is fixed at `+/- 0.05` in log
+   coordinates along each normalized right-singular vector.
 4. Deterministic least squares from the frozen initial point reduces the
    residual norm by at least a factor ten.
 5. The relative error projected onto the identifiable right-singular subspace
