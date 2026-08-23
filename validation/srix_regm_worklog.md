@@ -2,7 +2,7 @@
 
 Date opened: 2026-08-23  
 Branch: `agent/plastic-observability`  
-Status: **Gates 0--1 passed; exact SRIX twin pending**
+Status: **Gates 0--3 passed; transfer/noise and REGM/FEMU ranking pending**
 
 This file is the single cold-start entry point for the reconditioned
 equilibrium-gap identification of the FCC SRIX law. It is deliberately kept
@@ -79,8 +79,8 @@ it.
 |---|---|---|
 | 0 | operator audit and cold-start record | passed |
 | 1 | equilibrium-gap core and mechanical sign tests | passed |
-| 2 | exact small SRIX twin, FD plateau and SVD | pending |
-| 3 | deterministic theta4 recovery in identifiable subspace | pending |
+| 2 | exact small SRIX twin, FD plateau and SVD | passed on M8 |
+| 3 | deterministic theta4 recovery in identifiable subspace | passed on M8 |
 | 4 | qualified transfer and noise degradation | pending |
 | 5 | REGM/FEMU ranking and timing comparison | pending |
 | 6 | P43 authorization | blocked until Gate 5 GO |
@@ -113,16 +113,22 @@ MFRONT_BEHAVIOUR_LIBRARY=build/mfront/src/libBehaviour.so
 SRIX_GENERIC_MFRONT_BEHAVIOUR_LIBRARY=build/srix-generic/src/libBehaviour.so
 ```
 
+## Current quantitative result
+
+Read `validation/srix_regm_twin_results.md` and its primary JSON. On the clean
+M8 exact twin, the true/initial/identified REGM RMS values are respectively
+`1.474e-13`, `3.143e-8` and `1.412e-13 mm`. The four parameters return to the
+true valley with `0.248 %` projected log error. The four singular values span
+`3.58e-6` to `1.66e-10`: the weakest direction is predominantly the
+opposite-sign `Q/b` combination and is likely to be lost first under noise.
+
+One REGM evaluation costs `2.90 s` versus `124.48 s` for the full twin
+trajectory, a measured factor `43.0`. Constitutive replay consumes `94 %` of
+the REGM time; `K0^-1` consumes about `1.5 %`. Optimizing the elastic inverse is
+therefore not justified now.
+
 ## Next action
 
-Gate 1 is implemented in
-`src/fem_inhouse/identification/srix_equilibrium_gap.py`. The public weak
-residual and once-factorised correction live on
-`TensorPlasticObservabilityOperator`; nine targeted tests pass. They include a
-uniform-stress patch, an affine elastic patch, exact sparse reconditioning, an
-explicit wrong-sign rejection, deterministic replay, runtime-parameter
-sensitivity, logarithmic coordinates, central-FD convergence and sensitivity
-rank. Ruff and mypy are clean on the touched identification package.
-
-Next: preregister and run the exact small SRIX twin. Do not start an
-experimental identification campaign.
+Implement Gate 4 using the already-qualified DIC transfer and whitener, then
+Gate 5 with a preregistered small parameter population. Do not start P43 unless
+the REGM/FEMU Spearman, log-Pearson and top-five gates all pass.

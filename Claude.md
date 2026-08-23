@@ -19,6 +19,15 @@ whitening DIC. `K0` est assemblé et factorisé une seule fois par problème. La
 SVD de la jacobienne résiduelle en coordonnées logarithmiques est un résultat
 scientifique central, pas un diagnostic facultatif.
 
+Le jumeau exact M8 est maintenant positif et documenté dans
+`validation/srix_regm_twin_results.md` : résidu RMS vrai `1.474e-13 mm`, résidu
+initial `3.143e-8 mm`, résidu identifié `1.412e-13 mm`, erreur logarithmique
+projetée `0.248 %`. Une évaluation REGM coûte `2.90 s` contre `124.48 s` pour
+la trajectoire directe (`43.0 x`). La quatrième direction, essentiellement le
+contraste `Q/b`, est toutefois très faible (`conditionnement 2.15e4`). Les
+prochains gates sont transfert/bruit puis classement REGM/FEMU ; P43 reste
+interdit avant leur résultat.
+
 ---
 
 ## REPRISE À FROID PRIORITAIRE — TANN-FCC corrigé, apprentissage suspendu
