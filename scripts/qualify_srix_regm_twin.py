@@ -92,6 +92,18 @@ def _git_head() -> str:
     ).stdout.strip()
 
 
+def _git_dirty() -> bool:
+    return bool(
+        subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+
+
 def _orientation_map(pixels: int) -> np.ndarray:
     rows, columns = np.indices((pixels, pixels))
     indices = 2 * (rows >= pixels // 2) + (columns >= pixels // 2)
@@ -380,6 +392,8 @@ def main() -> int:
     )
     parser.add_argument("--overwrite", action="store_true")
     arguments = parser.parse_args()
+    source_git_sha = _git_head()
+    source_git_dirty = _git_dirty()
     output = arguments.output if arguments.output.is_absolute() else ROOT / arguments.output
     if output.exists() and any(output.iterdir()) and not arguments.overwrite:
         raise SystemExit(f"refusing to overwrite non-empty {output}")
@@ -520,16 +534,8 @@ def main() -> int:
     report = {
         "schema_version": 1,
         "method": "SRIX-REGM exact digital twin",
-        "git_sha": _git_head(),
-        "dirty": bool(
-            subprocess.run(
-                ["git", "status", "--porcelain"],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip()
-        ),
+        "git_sha": source_git_sha,
+        "dirty": source_git_dirty,
         "machine": platform.node(),
         "python": platform.python_version(),
         "mesh": [arguments.pixels, arguments.pixels],
