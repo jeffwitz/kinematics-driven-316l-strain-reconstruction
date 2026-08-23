@@ -23,6 +23,7 @@ from fem_inhouse.measurement import image_flow_to_canonical
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from scripts.compare_srix_regm_femu import (
     _atomic_json,
+    _compact_record,
     _population,
     _statistics,
     _summarize_diagnostics,
@@ -212,7 +213,7 @@ def main() -> None:
     candidates: list[dict[str, Any]] = []
     for index, (candidate_id, theta, log_offset) in enumerate(_population(), start=1):
         if candidate_id in existing and existing[candidate_id].get("status") == "complete":
-            candidates.append(existing[candidate_id])
+            candidates.append(_compact_record(existing[candidate_id]))
             print(f"[{index:02d}/20] {candidate_id}: reused", flush=True)
             continue
         level_values: dict[str, dict[str, float]] = {}
@@ -264,6 +265,10 @@ def main() -> None:
         for level in ("T1_transfer", "T2_transfer_noise")
     }
     overall_gate = all(values.get("gate_passed", False) for values in statistics.values())
+    _atomic_json(
+        checkpoint_path,
+        {"schema_version": 1, "candidates": candidates},
+    )
     report = {
         "schema_version": 1,
         "method": "observed-space SRIX-REGM versus full-FEMU ranking",

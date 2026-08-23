@@ -88,7 +88,9 @@ def _summarize_diagnostics(diagnostics: dict[str, Any]) -> dict[str, Any]:
         "attempts": len(attempts),
         "cutbacks": diagnostics.get("cutbacks"),
         "linear_solves": (
-            len(linear_solves) if isinstance(linear_solves, list) else linear_solves
+            len(linear_solves)
+            if isinstance(linear_solves, (list, tuple))
+            else linear_solves
         ),
         "newton_iterations": int(sum(diagnostics.get("iterations_per_increment", []))),
         "maximum_plane_stress_residual_mpa": diagnostics.get(
