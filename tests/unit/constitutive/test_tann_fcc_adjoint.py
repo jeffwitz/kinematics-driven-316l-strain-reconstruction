@@ -117,6 +117,7 @@ def test_tann_sequence_adjoint_fd() -> None:
         return trial
 
     def loss_of(material: TannFCCBatch) -> tuple[float, tuple]:
+        scale = 0.7
         sequence = TannFCCSequence(
             grid=grid,
             material=material,
@@ -124,10 +125,13 @@ def test_tann_sequence_adjoint_fd() -> None:
             measured_interior=measured,
             state_indices=STATES,
             holdout=HOLDOUT,
+            observation=lambda field: scale * field,
+            observation_adjoint=lambda field: scale * field,
             solver_config=_solver_config(),
         )
         result = sequence.rollout()
-        return result.total_loss_raw, result.records
+        assert result.total_loss_observation is not None
+        return result.total_loss_observation, result.records
 
     # The gate compares DIRECTIONAL derivatives along random directions in
     # theta space, per the preregistration ("plusieurs parametres/rayons
@@ -141,7 +145,10 @@ def test_tann_sequence_adjoint_fd() -> None:
         loss, records = loss_of(material)
         assert np.isfinite(loss)
         adjoint = TannFCCTrajectoryAdjoint(
-            grid=grid, material=material, records=records
+            grid=grid,
+            material=material,
+            records=records,
+            observation_adjoint=lambda field: 0.7 * field,
         )
         dtheta, _ = adjoint.sweep()
         scaled_template = [base * radius for base in template]
@@ -182,7 +189,7 @@ def test_tann_global_jacobian_transpose() -> None:
     pytest.importorskip("pyfftw")
     grid = StructuredGrid2D(8, 8, 1.0, 1.0)
     boundary, measured = _histories(grid)
-    _, material, sequence, records = _rollout_loss(grid, boundary, measured)
+    _, material, _sequence, records = _rollout_loss(grid, boundary, measured)
     adjoint = TannFCCTrajectoryAdjoint(
         grid=grid, material=material, records=records
     )

@@ -261,9 +261,7 @@ class PlasticObservabilityOperator:
         value = self._plastic(plastic)
         result = np.zeros_like(value)
         total_weight = sum(state.weight for state in self.states)
-        normalization = (
-            total_weight if self.normalize_state_weights and total_weight > 0.0 else 1.0
-        )
+        normalization = total_weight if self.normalize_state_weights and total_weight > 0.0 else 1.0
         for state in self.states:
             result += (state.weight / normalization) * self.observation_transpose(
                 state,
@@ -338,9 +336,7 @@ class PlasticObservabilityOperator:
             - np.vdot(plastic, self.observation_transpose(state, observation_dual))
         )
         gp_scale = max(float(abs(np.vdot(self.gp(state, plastic), dual))), 1.0e-30)
-        observation_scale = max(
-            float(abs(np.vdot(observed, observation_dual))), 1.0e-30
-        )
+        observation_scale = max(float(abs(np.vdot(observed, observation_dual))), 1.0e-30)
         return {
             "gp_relative_error": float(gp_error / gp_scale),
             "observation_relative_error": float(observation_error / observation_scale),
@@ -378,9 +374,7 @@ class DirectionObservabilityOperator(PlasticObservabilityOperator):
     ) -> FloatArray:
         """Return the physical tangent perturbation ``P_n direction``."""
         value = self._plastic(direction).reshape(-1, 3)
-        return state.linearisation.trial.project_direction(value).reshape(
-            self.direction_shape
-        )
+        return state.linearisation.trial.project_direction(value).reshape(self.direction_shape)
 
     def gp_transpose(self, state: PlasticObservabilityState, dual: ArrayLike) -> FloatArray:
         field = self._displacement_field(dual)
@@ -392,16 +386,18 @@ class DirectionObservabilityOperator(PlasticObservabilityOperator):
         direction = rng.normal(size=self.direction_shape)
         dual = rng.normal(size=self.displacement_shape)
         gp_value = self.gp(state, direction)
-        gp_error = abs(np.vdot(gp_value, dual) - np.vdot(direction, self.gp_transpose(state, dual)))
+        gp_pairing = float(np.vdot(gp_value, dual))
+        gp_error = abs(gp_pairing - float(np.vdot(direction, self.gp_transpose(state, dual))))
         observed = self.observation(state, direction)
         observation_dual = rng.normal(size=observed.shape)
+        observation_pairing = float(np.vdot(observed, observation_dual))
         observation_error = abs(
-            np.vdot(observed, observation_dual)
-            - np.vdot(direction, self.observation_transpose(state, observation_dual))
+            observation_pairing
+            - float(np.vdot(direction, self.observation_transpose(state, observation_dual)))
         )
         return {
-            "gp_relative_error": float(gp_error / max(abs(np.vdot(gp_value, dual)), 1.0e-30)),
+            "gp_relative_error": float(gp_error / max(abs(gp_pairing), 1.0e-30)),
             "observation_relative_error": float(
-                observation_error / max(abs(np.vdot(observed, observation_dual)), 1.0e-30)
+                observation_error / max(abs(observation_pairing), 1.0e-30)
             ),
         }

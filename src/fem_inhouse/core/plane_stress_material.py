@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, cast, runtime_checkable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -555,8 +555,7 @@ def _create_fcc_single_crystal_batch(
     elif parameter_set is not None or explicit_parameters is not None:
         if behaviour.crystal_flow_rule == "meric_cailletaud" and parameter_set is not None:
             raise ValueError(
-                "parameter_set is not supported for Méric-Cailletaud; use "
-                "paired_parameter_set"
+                "parameter_set is not supported for Méric-Cailletaud; use paired_parameter_set"
             )
         raise ValueError(
             f"MFront behaviour {behaviour.identifier!r} exposes no selectable "
@@ -766,10 +765,13 @@ def create_plane_stress_material_batch(
                 behaviour_parameters=overrides,
                 thread_count=mfront_threads,
             )
-            return SrixGeneric3DCondensedPlaneStressBatch(
-                bridge,
-                local_tolerance_mpa=local_options.get("local_tolerance_mpa", 1.0e-8),
-                maximum_local_iterations=local_options.get("maximum_local_iterations", 15),
+            return cast(
+                PlaneStressMaterialBatch,
+                SrixGeneric3DCondensedPlaneStressBatch(
+                    bridge,
+                    local_tolerance_mpa=local_options.get("local_tolerance_mpa", 1.0e-8),
+                    maximum_local_iterations=local_options.get("maximum_local_iterations", 15),
+                ),
             )
         if behaviour.bridge_profile == "fcc_single_crystal_v1":
             return _create_fcc_single_crystal_batch(

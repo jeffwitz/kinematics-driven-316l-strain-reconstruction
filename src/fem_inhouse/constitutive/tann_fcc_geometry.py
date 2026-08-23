@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     pass
 
 FloatArray = NDArray[np.float64]
+BoolArray = NDArray[np.bool_]
 
 EBSD_SENTINEL = 1449
 #: The largest of the twelve Schmid factors lies in this interval for any
@@ -47,7 +48,7 @@ def material_slip_tensors() -> FloatArray:
     return tensors
 
 
-def _nearest_valid_fill(node_field: FloatArray, validity: FloatArray) -> FloatArray:
+def _nearest_valid_fill(node_field: FloatArray, validity: BoolArray) -> FloatArray:
     """Refill invalid nodes from the nearest valid neighbour (scipy EDT)."""
 
     from scipy.ndimage import distance_transform_edt
@@ -67,7 +68,7 @@ def systems_from_bunge_node_grid(
     angles_bunge_deg: FloatArray,
     *,
     max_schmid_factor: FloatArray | None = None,
-) -> tuple[FloatArray, FloatArray]:
+) -> tuple[FloatArray, BoolArray]:
     """Per-node rotations to per-point specimen-frame systems.
 
     `angles_bunge_deg` is the `(nx + 1, ny + 1, 3)` node map of Bunge
@@ -103,17 +104,10 @@ def systems_from_bunge_node_grid(
     nx, ny = angles.shape[0] - 1, angles.shape[1] - 1
     node_grid = node_systems.reshape(nx + 1, ny + 1, 12, 3, 3)
     element_mean = 0.25 * (
-        node_grid[1:, 1:]
-        + node_grid[:-1, :-1]
-        + node_grid[1:, :-1]
-        + node_grid[:-1, 1:]
+        node_grid[1:, 1:] + node_grid[:-1, :-1] + node_grid[1:, :-1] + node_grid[:-1, 1:]
     )  # (nx, ny, 12, 3, 3)
-    systems = np.repeat(element_mean[:, :, None, :, :], 2, axis=2).reshape(
-        -1, 12, 3, 3
-    )
+    systems = np.repeat(element_mean[:, :, None, :, :], 2, axis=2).reshape(-1, 12, 3, 3)
     # An element is valid iff its four corners are; both subcells inherit.
-    element_valid = (
-        validity[:-1, :-1] & validity[1:, 1:] & validity[1:, :-1] & validity[:-1, 1:]
-    )
+    element_valid = validity[:-1, :-1] & validity[1:, 1:] & validity[1:, :-1] & validity[:-1, 1:]
     element_validity = np.repeat(element_valid[:, :, None], 2, axis=2).reshape(-1)
     return systems, element_validity

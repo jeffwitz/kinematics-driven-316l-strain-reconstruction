@@ -37,7 +37,7 @@ class FullDirichletDSTIFFTWPlan2D:
 
     def __post_init__(self) -> None:
         try:
-            import pyfftw  # type: ignore[import-not-found]
+            import pyfftw  # type: ignore[import-untyped]
         except ImportError as error:
             raise ImportError(
                 "FFTW transform backend requested, but pyFFTW is not installed. "

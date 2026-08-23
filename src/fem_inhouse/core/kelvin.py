@@ -96,6 +96,21 @@ def stiffness_from_engineering(matrix: ArrayLike) -> FloatArray:
     return scale[:, None] * array * scale[None, :]
 
 
+def stiffness_to_engineering(matrix: ArrayLike) -> FloatArray:
+    """Convert a Kelvin stiffness to engineering-strain/Voigt-stress form.
+
+    This is the inverse of :func:`stiffness_from_engineering`.  It belongs at
+    the material/solver boundary: the qualified two-dimensional mechanics
+    core exchanges ``[eps_xx, eps_yy, gamma_xy]`` and
+    ``[sigma_xx, sigma_yy, sigma_xy]``, while constitutive implementations may
+    use the metric-free Kelvin representation internally.
+    """
+
+    array = np.asarray(matrix, dtype=np.float64)
+    scale = _scale(array.shape[-1])
+    return array / scale[:, None] / scale[None, :]
+
+
 def strain_operator_from_engineering(matrix: ArrayLike) -> FloatArray:
     """Convert a `B` producing engineering strain into one producing Kelvin strain."""
 

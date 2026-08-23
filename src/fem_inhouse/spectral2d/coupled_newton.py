@@ -109,11 +109,22 @@ def solve_coupled_newton(
         if evaluate_residual is not None and controls.evaluate_initial_residual
         else None
     )
-    initial = evaluate(state) if initial_residual is None else None
-    initial_norm = norm(initial) if initial_residual is None else residual_norm(initial_residual)
+    if initial_residual is None:
+        initial = evaluate(state)
+        initial_norm = norm(initial)
+    else:
+        initial = None
+        initial_norm = residual_norm(initial_residual)
     residual_scale = max(initial_norm, 1.0)
     krylov_iterations: list[int] = []
     if initial_norm <= controls.absolute_tolerance:
+        if initial_residual is not None:
+            mechanical_residual_norm = float(np.linalg.norm(initial_residual[0]))
+            nonlocal_residual_norm = float(np.linalg.norm(initial_residual[1]))
+        else:
+            assert initial is not None
+            mechanical_residual_norm = float(np.linalg.norm(initial.mechanical_residual))
+            nonlocal_residual_norm = float(np.linalg.norm(initial.nonlocal_residual))
         return CoupledNewtonResult(
             mechanical=mechanical,
             nonlocal_field=nonlocal_field,
@@ -121,16 +132,8 @@ def solve_coupled_newton(
             iterations=0,
             initial_residual_norm=initial_norm,
             final_residual_norm=initial_norm,
-            final_mechanical_residual_norm=(
-                float(np.linalg.norm(initial_residual[0]))
-                if initial_residual is not None
-                else float(np.linalg.norm(initial.mechanical_residual))
-            ),
-            final_nonlocal_residual_norm=(
-                float(np.linalg.norm(initial_residual[1]))
-                if initial_residual is not None
-                else float(np.linalg.norm(initial.nonlocal_residual))
-            ),
+            final_mechanical_residual_norm=mechanical_residual_norm,
+            final_nonlocal_residual_norm=nonlocal_residual_norm,
             krylov_iterations=(),
         )
 

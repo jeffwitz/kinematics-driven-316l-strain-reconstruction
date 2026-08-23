@@ -75,7 +75,7 @@ def _sequence(grid: StructuredGrid2D, measured: np.ndarray) -> TannFCCSequence:
 def test_tann_sequence_masked_state_no_dic_leak() -> None:
     pytest.importorskip("pyfftw")
     grid = StructuredGrid2D(4, 4, 2.0, 2.0)
-    boundary, measured = _histories(grid)
+    _boundary, measured = _histories(grid)
     result = _sequence(grid, measured).rollout()
 
     # Arbitrarily corrupt the interior DIC of the holdout state, boundary
@@ -99,7 +99,7 @@ def test_tann_sequence_masked_state_no_dic_leak() -> None:
 def test_tann_sequence_state_not_reset_at_holdout() -> None:
     pytest.importorskip("pyfftw")
     grid = StructuredGrid2D(4, 4, 2.0, 2.0)
-    boundary, measured = _histories(grid)
+    _boundary, measured = _histories(grid)
     sequence = _sequence(grid, measured)
     result = sequence.rollout()
     # Played once, no reinitialisation: the material ends at q_N, and the
@@ -113,5 +113,24 @@ def test_tann_sequence_state_not_reset_at_holdout() -> None:
     assert np.max(np.abs(result.records[-1].strain_in_plane_mpa)) > 0.0
     # Every record differs from the previous one's state: no increment was
     # silently skipped or reset (holds across the holdout boundary too).
-    for previous, current in zip(result.records, result.records[1:]):
+    for previous, current in zip(result.records, result.records[1:], strict=False):
         assert not np.array_equal(previous.committed_state, current.committed_state)
+
+
+def test_repeated_rollouts_restart_from_the_same_constitutive_state() -> None:
+    """Two optimiser evaluations must represent the same experiment."""
+
+    pytest.importorskip("pyfftw")
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    _boundary, measured = _histories(grid)
+    sequence = _sequence(grid, measured)
+
+    first = sequence.rollout()
+    second = sequence.rollout()
+
+    assert np.max(np.abs(first.records[0].previous_committed_state)) == 0.0
+    assert np.max(np.abs(first.records[0].previous_strain_in_plane)) == 0.0
+    for left, right in zip(first.records, second.records, strict=True):
+        np.testing.assert_array_equal(left.displacement, right.displacement)
+        np.testing.assert_array_equal(left.stress_in_plane_mpa, right.stress_in_plane_mpa)
+        np.testing.assert_array_equal(left.committed_state, right.committed_state)

@@ -16,13 +16,16 @@ Newton/GMRES iterations.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from os import PathLike
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
 
 from fem_inhouse.constitutive.tann_fcc import TannFCCBatch
+from fem_inhouse.core.plane_stress_material import PlaneStressMaterialBatch
 from fem_inhouse.spectral2d import EBISpectralSolverConfig, StructuredGrid2D
 from fem_inhouse.spectral2d.newton_two_state import (
     TwoStateIncrementFields,
@@ -37,6 +40,7 @@ class TannFCCStateRecord:
     """Everything one converged increment needs for loss and adjoint."""
 
     state: int  # absolute DIC state index
+    training: bool
     holdout: bool
     displacement: FloatArray  # simulated, (nx+1, ny+1, 2)
     measured_displacement: FloatArray  # measured DIC, same layout
@@ -44,11 +48,14 @@ class TannFCCStateRecord:
     plastic_strain_tensor: FloatArray | None  # (nx, ny, 2, 3, 3)
     committed_state: FloatArray  # q_n after commit, (P, 12, 1+d)
     strain_in_plane_mpa: FloatArray  # committed strain eps_n, (P, 3)
+    previous_committed_state: FloatArray  # q_{n-1}, exact trajectory start
+    previous_strain_in_plane: FloatArray  # eps_{n-1}, exact trajectory start
     committed_tangent_mpa: FloatArray | None  # accepted C_alg, (P, 3, 3)
     dissipation: FloatArray  # accepted generalised dissipation, (P,)
     slip_work: FloatArray  # accepted slip-channel work, (P,)
     loss_raw: float
-    loss_whitened: float | None
+    loss_observation: float | None
+    observation_residual: FloatArray | None
     equilibrium_residual: float
 
 
@@ -57,7 +64,7 @@ class TannFCCSequenceResult:
     records: tuple[TannFCCStateRecord, ...]
     solver_diagnostics: object
     total_loss_raw: float
-    total_loss_whitened: float | None
+    total_loss_observation: float | None
 
 
 class TannFCCSequence:
@@ -67,8 +74,9 @@ class TannFCCSequence:
     units as the measurement; its first state must be all-zero (the
     reference). `measured_interior` is the measured interior displacement
     per state, same layout -- only the interior degrees of freedom are
-    scored. `holdout` holds absolute DIC state indices; their loss is
-    computed but must never enter the training objective.
+    scored. `holdout` holds absolute DIC state indices used only for
+    validation. `training_states` may select a strict subset of the remaining
+    states; states in neither set are replay-only warm-up states.
     """
 
     def __init__(
@@ -80,22 +88,20 @@ class TannFCCSequence:
         measured_interior: FloatArray,
         state_indices: list[int],
         holdout: set[int],
-        whitener: Callable[[FloatArray], FloatArray] | None = None,
+        training_states: set[int] | None = None,
+        observation: Callable[[FloatArray], FloatArray] | None = None,
+        observation_adjoint: Callable[[FloatArray], FloatArray] | None = None,
         solver_config: EBISpectralSolverConfig | None = None,
-        checkpoint_path: object | None = None,
+        checkpoint_path: str | PathLike[str] | None = None,
     ) -> None:
         history = np.asarray(boundary_history, dtype=np.float64)
         measured = np.asarray(measured_interior, dtype=np.float64)
         # The boundary history carries the zero reference plus one entry per
         # increment; the measured interior is aligned to the increments.
         if history.ndim != 4 or history.shape[0] != len(state_indices) + 1:
-            raise ValueError(
-                "expected a boundary history with len(state_indices) + 1 states"
-            )
+            raise ValueError("expected a boundary history with len(state_indices) + 1 states")
         if measured.ndim != 4 or measured.shape[0] != len(state_indices):
-            raise ValueError(
-                "expected the measured interior aligned to the increments"
-            )
+            raise ValueError("expected the measured interior aligned to the increments")
         if history.shape[1:] != measured.shape[1:]:
             raise ValueError("boundary and interior histories must share the field shape")
         if not np.allclose(history[0], 0.0):
@@ -106,9 +112,25 @@ class TannFCCSequence:
         self.measured_interior = measured
         self.state_indices = list(state_indices)
         self.holdout = set(holdout)
-        self.whitener = whitener
+        if not self.holdout.issubset(self.state_indices):
+            raise ValueError("holdout states must belong to state_indices")
+        self.training_states = (
+            set(self.state_indices) - self.holdout
+            if training_states is None
+            else set(training_states)
+        )
+        if not self.training_states.issubset(self.state_indices):
+            raise ValueError("training states must belong to state_indices")
+        if self.training_states & self.holdout:
+            raise ValueError("training and holdout states must be disjoint")
+        if (observation is None) != (observation_adjoint is None):
+            raise ValueError("observation and observation_adjoint must be provided together")
+        self.observation = observation
+        self.observation_adjoint = observation_adjoint
         self.solver_config = solver_config
         self.checkpoint_path = checkpoint_path
+        self._initial_state = np.array(material.committed_state, copy=True)
+        self._initial_strain = np.array(material.committed_strain, copy=True)
 
     @staticmethod
     def _interior_mask(shape: tuple[int, ...]) -> np.ndarray:
@@ -117,6 +139,9 @@ class TannFCCSequence:
         return interior
 
     def rollout(self) -> TannFCCSequenceResult:
+        # Optimiser iterations are repeated experiments with new weights, not
+        # a continuation of the previous experiment.
+        self.material.reset_committed(self._initial_state, self._initial_strain)
         records: list[TannFCCStateRecord] = []
 
         def observe(fields: TwoStateIncrementFields) -> None:
@@ -126,14 +151,17 @@ class TannFCCSequence:
             state = self.state_indices[index]
             displacement = np.array(fields.displacement, copy=True)
             measured = self.measured_interior[index]
+            training = state in self.training_states
             holdout = state in self.holdout
             interior = self._interior_mask(displacement.shape)
             residual_field = displacement - measured
             loss_raw = 0.5 * float(np.sum(residual_field[interior] ** 2))
-            loss_whitened = None
-            if self.whitener is not None:
-                weighted = self.whitener(residual_field[1:-1, 1:-1])
-                loss_whitened = 0.5 * float(np.sum(weighted**2))
+            observation_residual = None
+            loss_observation = None
+            if self.observation is not None:
+                simulated_observed = self.observation(displacement[1:-1, 1:-1])
+                observation_residual = simulated_observed - measured[1:-1, 1:-1]
+                loss_observation = 0.5 * float(np.sum(observation_residual**2))
             stress = np.array(fields.stress_in_plane_mpa, copy=True)
             plastic = (
                 None
@@ -159,10 +187,13 @@ class TannFCCSequence:
                 archive[f"increment_{index}_strain"] = np.array(
                     self.material.committed_strain, copy=True
                 )
-                np.savez_compressed(target, **archive)
+                # NumPy's stub models arbitrary keyword arrays too narrowly
+                # (as the reserved ``allow_pickle`` boolean keyword).
+                np.savez_compressed(str(target), **archive)  # type: ignore[arg-type]
             records.append(
                 TannFCCStateRecord(
                     state=state,
+                    training=training,
                     holdout=holdout,
                     displacement=displacement,
                     measured_displacement=measured,
@@ -171,42 +202,53 @@ class TannFCCSequence:
                     # the observer runs after the converged commit, so these
                     # are exactly the q_n / eps_n the next increment starts from
                     committed_state=np.array(self.material.committed_state, copy=True),
-                    strain_in_plane_mpa=np.array(
-                        self.material.committed_strain, copy=True
+                    strain_in_plane_mpa=np.array(self.material.committed_strain, copy=True),
+                    previous_committed_state=(
+                        self._initial_state.copy()
+                        if not records
+                        else records[-1].committed_state.copy()
+                    ),
+                    previous_strain_in_plane=(
+                        self._initial_strain.copy()
+                        if not records
+                        else records[-1].strain_in_plane_mpa.copy()
                     ),
                     committed_tangent_mpa=(
                         None
                         if self.material.last_committed_tangent is None
                         else np.array(self.material.last_committed_tangent, copy=True)
                     ),
-                    dissipation=np.array(
-                        self.material.last_committed_dissipation, copy=True
-                    ),
+                    dissipation=np.array(self.material.last_committed_dissipation, copy=True),
                     slip_work=np.array(self.material.last_committed_slip_work, copy=True),
                     loss_raw=loss_raw,
-                    loss_whitened=loss_whitened,
+                    loss_observation=loss_observation,
+                    observation_residual=(
+                        None
+                        if observation_residual is None
+                        else np.array(observation_residual, copy=True)
+                    ),
                     equilibrium_residual=0.0,  # filled after the solve
                 )
             )
 
         result = solve_two_state_dirichlet_plane_stress(
             grid=self.grid,
-            material=self.material,
+            material=cast(PlaneStressMaterialBatch, self.material),
             boundary_displacement_history=self.boundary_history,
-            config=self.solver_config,
+            config=self.solver_config or EBISpectralSolverConfig(),
             increment_observer=observe,
         )
-        total_raw = sum(record.loss_raw for record in records if not record.holdout)
-        total_whitened = (
-            None
-            if self.whitener is None
-            else sum(
-                record.loss_whitened for record in records if not record.holdout
+        total_raw = sum(record.loss_raw for record in records if record.training)
+        total_observation = None
+        if self.observation is not None:
+            total_observation = sum(
+                float(record.loss_observation)
+                for record in records
+                if record.training and record.loss_observation is not None
             )
-        )
         return TannFCCSequenceResult(
             records=tuple(records),
             solver_diagnostics=result.diagnostics,
             total_loss_raw=total_raw,
-            total_loss_whitened=total_whitened,
+            total_loss_observation=total_observation,
         )

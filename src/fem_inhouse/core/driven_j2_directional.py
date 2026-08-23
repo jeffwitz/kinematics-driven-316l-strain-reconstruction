@@ -183,7 +183,8 @@ class DirectionalDrivenJ2PlaneStressBatch:
         plastic = self._committed_plastic_strain + increment[:, None] * flow
         full = reconstruct_python_plane_stress_state(strain, plastic, stress, 0.30)
         self._trial_plastic_strain = plastic
-        self._trial_peeq = self._committed_peeq + increment
+        trial_peeq = self._committed_peeq + increment
+        self._trial_peeq = trial_peeq
         return DirectionalDrivenJ2Trial(
             stress_in_plane_mpa=stress,
             tangent_in_plane_mpa=tangents if consistent_tangent else None,
@@ -197,7 +198,7 @@ class DirectionalDrivenJ2PlaneStressBatch:
             plane_stress_residual_mpa=full.plane_stress_residual_vector_mpa,
             observables={
                 "plastic_strain_2d": plastic,
-                "equivalent_plastic_strain": self._trial_peeq,
+                "equivalent_plastic_strain": trial_peeq,
                 "equivalent_plastic_increment": increment,
                 "flow_direction": flow,
             },

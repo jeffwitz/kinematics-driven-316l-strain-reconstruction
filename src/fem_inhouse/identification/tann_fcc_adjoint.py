@@ -19,13 +19,14 @@ against central differences before any training run is allowed.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
 
 from fem_inhouse.constitutive.tann_fcc import TannFCCBatch
+from fem_inhouse.core.kelvin import KELVIN_SCALE_2D
 from fem_inhouse.identification.tann_fcc_sequence import TannFCCStateRecord
 from fem_inhouse.spectral2d import StructuredGrid2D
 from fem_inhouse.spectral2d.kinematics import TwoSubcellDiagnostic2D
@@ -51,14 +52,14 @@ class TannFCCTrajectoryAdjoint:
         grid: StructuredGrid2D,
         material: TannFCCBatch,
         records: tuple[TannFCCStateRecord, ...],
-        whitener: Callable[[FloatArray], FloatArray] | None = None,
+        observation_adjoint: Callable[[FloatArray], FloatArray] | None = None,
         gmres_tolerance: float = 1.0e-10,
     ) -> None:
         self.grid = grid
         self.material = material
         self.records = records
         self.kinematics = TwoSubcellDiagnostic2D(grid)
-        self.whitener = whitener
+        self.observation_adjoint = observation_adjoint
         self.gmres_tolerance = gmres_tolerance
         # The solver's divergence operator carries the per-triangle area
         # while `strain_samples` is the plain strain operator. The discrete
@@ -91,15 +92,14 @@ class TannFCCTrajectoryAdjoint:
         record = self.records[record_index]
         if record.committed_tangent_mpa is None:
             raise ValueError("the record has no committed tangent")
-        from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
         size = 2 * (self.grid.nx - 1) * (self.grid.ny - 1)
         v = rng.normal(size=size)
         w = rng.normal(size=size)
-        J_v = self._tangent_action(v, record.committed_tangent_mpa, transpose=False)
-        Jt_w = self._tangent_action(w, record.committed_tangent_mpa, transpose=True)
-        left = float(np.dot(J_v, w))
-        right = float(np.dot(v, Jt_w))
+        j_v = self._tangent_action(v, record.committed_tangent_mpa, transpose=False)
+        jt_w = self._tangent_action(w, record.committed_tangent_mpa, transpose=True)
+        left = float(np.dot(j_v, w))
+        right = float(np.dot(v, jt_w))
         scale = max(abs(left), abs(right), 1.0)
         return abs(left - right) / scale
 
@@ -128,16 +128,8 @@ class TannFCCTrajectoryAdjoint:
             record = self.records[n]
             if record.committed_tangent_mpa is None:
                 raise ValueError(f"record of state {record.state} has no committed tangent")
-            strain_prev = (
-                np.zeros((point_count, 3), dtype=np.float64)
-                if n == 0
-                else self.records[n - 1].strain_in_plane_mpa
-            )
-            state_prev = (
-                np.zeros((point_count, 12, state_dim), dtype=np.float64)
-                if n == 0
-                else self.records[n - 1].committed_state
-            )
+            strain_prev = record.previous_strain_in_plane
+            state_prev = record.previous_committed_state
             strain_trial = record.strain_in_plane_mpa
 
             started = time.perf_counter()
@@ -155,25 +147,33 @@ class TannFCCTrajectoryAdjoint:
             # with J = D C B the solver's tangent operator (D carries the
             # per-triangle area, B is the plain strain operator), so
             # (dQ/du)^T v_n = B^T (dQ/deps)^T v_n = D(v_eps) / area.
-            if record.holdout:
+            if not record.training:
                 rhs_field = np.zeros(interior_shape, dtype=np.float64)
             else:
-                residual = (
-                    record.displacement[1:-1, 1:-1]
-                    - record.measured_displacement[1:-1, 1:-1]
-                )
-                if self.whitener is not None:
-                    rhs_field = self.whitener(self.whitener(residual))
+                if self.observation_adjoint is not None:
+                    if record.observation_residual is None:
+                        raise ValueError(
+                            f"record of state {record.state} has no observation residual"
+                        )
+                    rhs_field = self.observation_adjoint(record.observation_residual)
                 else:
-                    rhs_field = residual
+                    rhs_field = (
+                        record.displacement[1:-1, 1:-1]
+                        - record.measured_displacement[1:-1, 1:-1]
+                    )
             rhs = -(rhs_field.reshape(-1).copy())
             rhs = rhs - pack_interior(
                 self.kinematics.divergence_from_sample_stress(
-                    v_strain_q.reshape(*self.grid.pixel_shape, 2, 3)
+                    (v_strain_q / KELVIN_SCALE_2D).reshape(
+                        *self.grid.pixel_shape, 2, 3
+                    )
                 )
             ) / self.triangle_area
 
             counter = [0]
+
+            def count_iteration(_: object, *, count: list[int] = counter) -> None:
+                count[0] += 1
             # The solver's equilibrium residual is R = -D sigma (external
             # minus internal forces; its Newton operator is the documented
             # J v = -B^T C_alg B v), so the mechanical adjoint operator is
@@ -188,11 +188,13 @@ class TannFCCTrajectoryAdjoint:
             )
             lam, info = gmres(
                 operator, rhs, rtol=self.gmres_tolerance, atol=0.0,
-                callback=lambda _: counter.__setitem__(0, counter[0] + 1),
+                callback=count_iteration,
                 callback_type="pr_norm",
             )
             if info != 0:
-                raise RuntimeError(f"mechanical adjoint GMRES failed at state {record.state}: info={info}")
+                raise RuntimeError(
+                    f"mechanical adjoint GMRES failed at state {record.state}: info={info}"
+                )
             # The stress cotangent is the adjoint of the divergence:
             # w = D^T lam = area * B lam.
             w_n = (
@@ -200,6 +202,7 @@ class TannFCCTrajectoryAdjoint:
                 * self._strain_of_nodal(unpack_interior(lam, self.grid)).reshape(
                     point_count, 3
                 )
+                / KELVIN_SCALE_2D
             )
 
             # stress-channel VJPs with the mechanical cotangent:

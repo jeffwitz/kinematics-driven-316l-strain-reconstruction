@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -25,7 +26,15 @@ VectorAction = Callable[[FloatArray], FloatArray]
 CoupledAction = Callable[[FloatArray, FloatArray], tuple[FloatArray, FloatArray]]
 
 
-def make_dst_b0_inverse(transform_plan: TransformPlan2D, green_operator: object) -> VectorAction:
+class SpectralGreenOperator(Protocol):
+    """Minimal inverse action required by the block preconditioner."""
+
+    def apply(self, transformed: FloatArray) -> FloatArray: ...
+
+
+def make_dst_b0_inverse(
+    transform_plan: TransformPlan2D, green_operator: SpectralGreenOperator
+) -> VectorAction:
     """Create a flat-vector action for the DST-I/$B_0^{-1}$ inverse."""
 
     interior_shape = tuple(transform_plan.diagnostics.interior_shape)
@@ -98,6 +107,7 @@ def make_dct_helmholtz_operator(
     if min(shape) < 1 or length_scale < 0.0 or spacing_x <= 0.0 or spacing_y <= 0.0:
         raise ValueError("invalid Helmholtz operator geometry or length scale")
     nx, ny = shape
+
     def apply(value: FloatArray) -> FloatArray:
         vector = np.asarray(value, dtype=np.float64)
         expected_size = nx * ny

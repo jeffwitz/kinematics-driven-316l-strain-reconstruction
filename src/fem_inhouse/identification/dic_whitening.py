@@ -119,6 +119,36 @@ class DICSpectralTransfer:
         affine = (basis @ coefficients).reshape(field.shape)
         return np.asarray(affine + self.apply(field - affine), dtype=np.float64)
 
+    def adjoint_without_wrap(self, values: ArrayLike) -> FloatArray:
+        """Exact adjoint of :meth:`apply_without_wrap`.
+
+        Let ``P`` be the orthogonal least-squares projector onto affine
+        displacement fields and ``F`` the self-adjoint spectral transfer.
+        The forward operator is ``A = P + F (I-P)``.  Although both ``P`` and
+        ``F`` are self-adjoint, they do not generally commute, so applying the
+        forward map a second time is *not* its adjoint.  The required action is
+        ``A^T = P + (I-P) F``.
+        """
+
+        field = np.asarray(values, dtype=np.float64)
+        if field.ndim != 3 or not np.isfinite(field).all():
+            raise ValueError("values must be a finite field with shape (nx, ny, components)")
+        rows, columns = field.shape[:2]
+        x, y = np.meshgrid(np.arange(rows), np.arange(columns), indexing="ij")
+        basis = np.stack([np.ones_like(x), x, y], axis=-1).reshape(-1, 3).astype(np.float64)
+
+        def project(candidate: FloatArray) -> FloatArray:
+            coefficients, *_ = np.linalg.lstsq(
+                basis,
+                candidate.reshape(-1, candidate.shape[2]),
+                rcond=None,
+            )
+            return np.asarray((basis @ coefficients).reshape(candidate.shape), dtype=np.float64)
+
+        affine = project(field)
+        filtered = self.apply(field)
+        return np.asarray(affine + filtered - project(filtered), dtype=np.float64)
+
 
 def _opposite_frequency_indices(size: int) -> NDArray[np.int64]:
     return (-np.arange(size, dtype=np.int64)) % size

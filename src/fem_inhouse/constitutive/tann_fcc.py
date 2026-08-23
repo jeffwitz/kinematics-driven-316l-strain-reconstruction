@@ -34,14 +34,13 @@ With the force scaled by `2 mu` the rate is `O(||d eps|| M)` and the
 preregistered integrator is stable.
 
 Plane stress is the analytic closure: `sigma_zz = sigma_xz = sigma_yz = 0`
-determines the out-of-plane total strain, and the out-of-plane plastic
-shears are compensated elastically — their energy contributes to the
-generalised forces exactly (no approximation).
+determines the unobserved out-of-plane total strains.  The elastic transverse
+shears vanish while the total transverse shears follow the plastic slips.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import torch
@@ -93,7 +92,8 @@ class TannFCCTrial:
     """One transaction-safe material evaluation."""
 
     stress_in_plane_mpa: FloatArray  # (points, 3) Kelvin [xx, yy, sqrt2 xy]
-    consistent_tangent_mpa: FloatArray | None  # (points, 3, 3) in-plane Kelvin, None when not requested
+    # (points, 3, 3) in-plane Kelvin, None when not requested
+    consistent_tangent_mpa: FloatArray | None
     plastic_slip: FloatArray  # (points, 12) signed slip
     latent_state: FloatArray  # (points, 12, d)
     generalised_dissipation: FloatArray  # (points,) per-increment D
@@ -120,7 +120,7 @@ class TannFCCNetwork(nn.Module):
         self.matrix_size = d + 1
         self.n_entries = self.matrix_size * (self.matrix_size + 1) // 2
         generator = torch.Generator().manual_seed(config.seed)
-        layers = []
+        layers: list[nn.Module] = []
         width = config.hidden_width
         sizes = [1 + d + config.context_dim] + [width] * config.n_layers
         for index in range(config.n_layers):
@@ -243,15 +243,13 @@ class TannFCCBatch:
         p_xy = systems[..., 0, 1]
         xx = torch.sum(gamma * p_xx, dim=-1)
         yy = torch.sum(gamma * p_yy, dim=-1)
-        xy = torch.sqrt(torch.tensor(2.0, dtype=torch.float64)) * torch.sum(
-            gamma * p_xy, dim=-1
-        )
+        xy = torch.sqrt(torch.tensor(2.0, dtype=torch.float64)) * torch.sum(gamma * p_xy, dim=-1)
         return torch.stack([xx, yy, xy], dim=-1)
 
     def _out_of_plane_plastic(
         self, gamma: torch.Tensor, systems: torch.Tensor
-    ) -> torch.Tensor:
-        """Out-of-plane plastic shears `(xz, yz)`, compensated elastically."""
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return the out-of-plane plastic shears ``(xz, yz)``."""
 
         if gamma.ndim >= 3:
             gamma = gamma[..., 0]
@@ -277,8 +275,17 @@ class TannFCCBatch:
         z: torch.Tensor,
         systems: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Generalised forces: `A_gamma` (with the out-of-plane compensation)
-        and `A_z = -z`."""
+        """Generalised forces of the plane-stress-condensed free energy.
+
+        The unobserved transverse total strains are eliminated by imposing
+        ``sigma_zz = sigma_xz = sigma_yz = 0``.  Consequently the reduced
+        elastic energy is independent of the plastic ``xz`` and ``yz``
+        components: their total-strain counterparts follow the slip and the
+        elastic transverse shears remain zero.  The slip force is therefore
+        exactly the in-plane resolved shear ``sigma:P``; adding a transverse
+        compensation would instead describe a plane-*strain* constraint while
+        reporting plane stress.
+        """
 
         stress = self._stress_from(strain_in, gamma, systems)  # (..., 3)
         # tau_alpha = sigma_in : P_alpha, in-plane only (sigma_zz/xz/yz = 0);
@@ -289,16 +296,9 @@ class TannFCCBatch:
         tau = (
             stress[..., 0:1] * p_xx
             + stress[..., 1:2] * p_yy
-            + stress[..., 2:3]
-            * (p_xy * torch.sqrt(torch.tensor(2.0, dtype=torch.float64)))
+            + stress[..., 2:3] * (p_xy * torch.sqrt(torch.tensor(2.0, dtype=torch.float64)))
         )  # (..., 12)
-        # out-of-plane compensation energy: 2 mu eps_p,xz P_xz + 2 mu eps_p,yz P_yz
-        eps_xz, eps_yz = self._out_of_plane_plastic(gamma, systems)
-        compensation = self._two_mu * (
-            eps_xz[..., None] * systems[..., 0, 2]
-            + eps_yz[..., None] * systems[..., 1, 2]
-        )
-        force_gamma = (tau + compensation)[..., None]  # (..., 12, 1)
+        force_gamma = tau[..., None]  # (..., 12, 1)
         force_z = -z
         return force_gamma, force_z
 
@@ -345,9 +345,7 @@ class TannFCCBatch:
         # the clamp keeps the zero-increment limit exact: flow_power = 0
         # at Delta eps = 0, and 0/1e-30 = 0 gives scale 1 and flow 0.
         denominator = (kappa * rate_scale[..., 0]) ** 2
-        scale = torch.rsqrt(
-            1.0 + flow_power / torch.clamp(denominator, min=1e-30)
-        )
+        scale = torch.rsqrt(1.0 + flow_power / torch.clamp(denominator, min=1e-30))
         return flow_scaled * scale[..., None, None]
 
     def _integrate(
@@ -376,7 +374,11 @@ class TannFCCBatch:
             systems = self._systems
         if self.config.integrator == "implicit_euler":
             return self._integrate_implicit_euler(
-                strain_n, strain_trial, q_n, systems=systems, context=context,
+                strain_n,
+                strain_trial,
+                q_n,
+                systems=systems,
+                context=context,
                 include_work=include_work,
             )
         delta = strain_trial - strain_n
@@ -395,16 +397,26 @@ class TannFCCBatch:
         h = 1.0 / steps
         q = q_n
         point_count = q_n.shape[0]
-        dissipation = torch.zeros(
-            (point_count,), dtype=torch.float64, device=strain_n.device
-        )
+        dissipation = torch.zeros((point_count,), dtype=torch.float64, device=strain_n.device)
         slip_work = torch.zeros_like(dissipation)
         for step in range(steps):
             s0 = step / steps
             strain_0 = strain_n + s0 * delta
             k1 = self._rhs(strain_0, q, rate_scale, systems, context)
-            k2 = self._rhs(strain_0 + 0.5 * h * delta, q + 0.5 * h * k1, rate_scale, systems, context)
-            k3 = self._rhs(strain_0 + 0.5 * h * delta, q + 0.5 * h * k2, rate_scale, systems, context)
+            k2 = self._rhs(
+                strain_0 + 0.5 * h * delta,
+                q + 0.5 * h * k1,
+                rate_scale,
+                systems,
+                context,
+            )
+            k3 = self._rhs(
+                strain_0 + 0.5 * h * delta,
+                q + 0.5 * h * k2,
+                rate_scale,
+                systems,
+                context,
+            )
             k4 = self._rhs(strain_n + (s0 + h) * delta, q + h * k3, rate_scale, systems, context)
             step_q = q + (h / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
             if include_work:
@@ -486,13 +498,9 @@ class TannFCCBatch:
             force_gamma, _ = self._forces(strain_trial, gamma[..., 0], z, systems)
             _, flow = self._mobility_flow(force_gamma, z, context)
             residual = q - q_n - rate_scale[..., None] * flow
-            jac = vmap(jacrev(residual_point))(
-                q, q_n, rate_scale, strain_trial, systems
-            )
+            jac = vmap(jacrev(residual_point))(q, q_n, rate_scale, strain_trial, systems)
             jac = jac.reshape(point_count, flat_dim, flat_dim)
-            step = torch.linalg.solve(
-                jac, residual.reshape(point_count, flat_dim, 1)
-            )[..., 0]
+            step = torch.linalg.solve(jac, residual.reshape(point_count, flat_dim, 1))[..., 0]
             q = q - step.reshape(point_count, n_systems, state_dim)
             tolerance = self.config.implicit_newton_tolerance
             if float(torch.max(torch.abs(step))) <= tolerance * float(
@@ -500,9 +508,7 @@ class TannFCCBatch:
             ):
                 break
 
-        dissipation = torch.zeros(
-            (point_count,), dtype=torch.float64, device=q.device
-        )
+        dissipation = torch.zeros((point_count,), dtype=torch.float64, device=q.device)
         slip_work = torch.zeros_like(dissipation)
         if include_work:
             gamma = q[..., 0:1]
@@ -514,9 +520,7 @@ class TannFCCBatch:
             )
             # D = sigma_ref ||d eps|| A_norm^T M A_norm at the converged state.
             dissipation = (
-                rate_scale[..., 0]
-                * self._sigma_ref
-                * torch.sum(force_norm * flow, dim=(-2, -1))
+                rate_scale[..., 0] * self._sigma_ref * torch.sum(force_norm * flow, dim=(-2, -1))
             )
             slip_work = rate_scale[..., 0] * torch.sum(
                 force_gamma[..., 0] * (gamma[..., 0] - q_n[..., 0]), dim=-1
@@ -525,7 +529,7 @@ class TannFCCBatch:
 
     # -- the transactional contract -----------------------------------------
 
-    def copy_weights_from(self, other: "TannFCCBatch") -> None:
+    def copy_weights_from(self, other: TannFCCBatch) -> None:
         """Copy the network parameters from another batch (same architecture)."""
 
         with torch.no_grad():
@@ -536,7 +540,7 @@ class TannFCCBatch:
 
     def _algorithmic_tangent(
         self, strain: torch.Tensor, context: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    ) -> FloatArray:
         """Per-point algorithmic tangent `d sigma / d eps_trial`, `(P, 3, 3)`.
 
         The integration has no cross-point coupling, so the Jacobian of the
@@ -563,9 +567,7 @@ class TannFCCBatch:
                 context=context_chunk,
                 include_work=False,
             )
-            stress = self._stress_from(
-                strain_chunk, q_trial[..., 0], self._systems[start:stop]
-            )
+            stress = self._stress_from(strain_chunk, q_trial[..., 0], self._systems[start:stop])
             # `row[i]` is `d sigma_i / d eps` (the VJP with the i-th unit
             # cotangent), so stacking over the last axis gives
             # `stack[p, j, i] = d sigma_i / d eps_j`; the transpose turns it
@@ -581,9 +583,7 @@ class TannFCCBatch:
                 )[0]
                 for component in range(3)
             ]
-            tangent[start:stop] = (
-                torch.stack(rows, dim=-1).transpose(-1, -2).detach().numpy()
-            )
+            tangent[start:stop] = torch.stack(rows, dim=-1).transpose(-1, -2).detach().numpy()
         return tangent
 
     def evaluate(
@@ -620,9 +620,7 @@ class TannFCCBatch:
         gamma = q_trial[..., 0:1]
         z = q_trial[..., 1:]
         stress = self._stress_from(strain, gamma[..., 0], self._systems)
-        tangent = (
-            self._algorithmic_tangent(strain, context_tensor) if compute_tangent else None
-        )
+        tangent = self._algorithmic_tangent(strain, context_tensor) if compute_tangent else None
         self._trial_state = q_trial.detach()
         self._trial_strain = strain.detach()
         if tangent is None:
@@ -659,6 +657,12 @@ class TannFCCBatch:
 
         return PlaneStressBatchStatistics()
 
+    @property
+    def linear_system_matrix_type(self) -> str:
+        """The learned algorithmic tangent is not assumed symmetric."""
+
+        return "nonsymmetric"
+
     def evaluate_in_plane(
         self,
         in_plane_strain: FloatArray,
@@ -672,12 +676,24 @@ class TannFCCBatch:
         the TANN evolves along the strain path `s in [0, 1]`, not in time.
         """
 
+        from fem_inhouse.core.kelvin import (
+            stiffness_to_engineering,
+            strain_from_engineering,
+            stress_to_voigt,
+        )
         from fem_inhouse.core.plane_stress_material import InPlaneConstitutiveTrial
 
-        trial = self.evaluate(in_plane_strain, compute_tangent=consistent_tangent)
+        trial = self.evaluate(
+            strain_from_engineering(in_plane_strain),
+            compute_tangent=consistent_tangent,
+        )
         return InPlaneConstitutiveTrial(
-            stress_in_plane_mpa=trial.stress_in_plane_mpa,
-            tangent_in_plane_mpa=trial.consistent_tangent_mpa,
+            stress_in_plane_mpa=stress_to_voigt(trial.stress_in_plane_mpa),
+            tangent_in_plane_mpa=(
+                None
+                if trial.consistent_tangent_mpa is None
+                else stiffness_to_engineering(trial.consistent_tangent_mpa)
+            ),
             observables={
                 "generalised_dissipation": trial.generalised_dissipation,
                 "slip_work": trial.slip_work,
@@ -689,10 +705,11 @@ class TannFCCBatch:
     def complete_trial(self, trial):
         """Reconstruct the complete three-dimensional trial state.
 
-        The out-of-plane part is the analytic plane-stress closure: `eps_e_zz`
-        from the trace, the out-of-plane plastic shears compensated
-        elastically, and `sigma_zz = sigma_xz = sigma_yz = 0` by
-        construction, so the plane-stress residual is exactly zero.
+        The out-of-plane part is the analytic plane-stress closure: ``eps_e_zz``
+        follows from the in-plane elastic trace and the unobserved total
+        transverse shears follow the plastic shears, leaving
+        ``eps_e_xz = eps_e_yz = 0``.  Re-evaluating isotropic Hooke elasticity
+        then gives ``sigma_zz = sigma_xz = sigma_yz = 0``.
         """
 
         from fem_inhouse.core.plane_stress_material import ConstitutiveTrial
@@ -710,22 +727,30 @@ class TannFCCBatch:
         elastic[..., 1, 1] = strain_kelvin[..., 1] - plastic[..., 1, 1]
         elastic[..., 0, 1] = strain_kelvin[..., 2] / sqrt_two - plastic[..., 0, 1]
         elastic[..., 1, 0] = elastic[..., 0, 1]
-        elastic[..., 2, 2] = -(
-            self._lam / (self._lam + 2.0 * self._two_mu / 2.0)
-        ) * (elastic[..., 0, 0] + elastic[..., 1, 1])
-        elastic[..., 0, 2] = -plastic[..., 0, 2]
-        elastic[..., 2, 0] = elastic[..., 0, 2]
-        elastic[..., 1, 2] = -plastic[..., 1, 2]
-        elastic[..., 2, 1] = elastic[..., 1, 2]
+        elastic[..., 2, 2] = -(self._lam / (self._lam + 2.0 * self._two_mu / 2.0)) * (
+            elastic[..., 0, 0] + elastic[..., 1, 1]
+        )
+        # Plane stress eliminates the unobserved transverse *elastic* shears.
+        # Their total-strain values are therefore the plastic values, not zero.
+        elastic[..., 0, 2] = 0.0
+        elastic[..., 2, 0] = 0.0
+        elastic[..., 1, 2] = 0.0
+        elastic[..., 2, 1] = 0.0
         total = elastic + plastic
         stress_tensor = np.zeros_like(plastic)
         stress_tensor[..., 0, 0] = latest.stress_in_plane_mpa[..., 0]
         stress_tensor[..., 1, 1] = latest.stress_in_plane_mpa[..., 1]
         stress_tensor[..., 0, 1] = latest.stress_in_plane_mpa[..., 2] / sqrt_two
         stress_tensor[..., 1, 0] = stress_tensor[..., 0, 1]
+        from fem_inhouse.core.kelvin import stiffness_to_engineering, stress_to_voigt
+
         return ConstitutiveTrial(
-            stress_in_plane_mpa=latest.stress_in_plane_mpa,
-            tangent_in_plane_mpa=latest.consistent_tangent_mpa,
+            stress_in_plane_mpa=stress_to_voigt(latest.stress_in_plane_mpa),
+            tangent_in_plane_mpa=(
+                None
+                if latest.consistent_tangent_mpa is None
+                else stiffness_to_engineering(latest.consistent_tangent_mpa)
+            ),
             observables={
                 "generalised_dissipation": latest.generalised_dissipation,
                 "slip_work": latest.slip_work,
@@ -750,8 +775,11 @@ class TannFCCBatch:
         # accepted dissipation and slip work are kept for the diagnostics
         # the run artifact reports per state.
         if self._latest_trial is not None and self._latest_trial.consistent_tangent_mpa is not None:
+            from fem_inhouse.core.kelvin import stiffness_to_engineering
+
             self._last_committed_tangent = np.array(
-                self._latest_trial.consistent_tangent_mpa, copy=True
+                stiffness_to_engineering(self._latest_trial.consistent_tangent_mpa),
+                copy=True,
             )
         else:
             self._last_committed_tangent = None
@@ -759,9 +787,7 @@ class TannFCCBatch:
             self._last_committed_dissipation = np.array(
                 self._latest_trial.generalised_dissipation, copy=True
             )
-            self._last_committed_slip_work = np.array(
-                self._latest_trial.slip_work, copy=True
-            )
+            self._last_committed_slip_work = np.array(self._latest_trial.slip_work, copy=True)
         else:
             self._last_committed_dissipation = None
             self._last_committed_slip_work = None
@@ -811,16 +837,14 @@ class TannFCCBatch:
 
         chunk = 2048
         v_strain = np.zeros((self.point_count, 3), dtype=np.float64)
-        v_qprev = np.zeros(
-            (self.point_count, 12, 1 + self.config.latent_dim), dtype=np.float64
-        )
+        v_qprev = np.zeros((self.point_count, 12, 1 + self.config.latent_dim), dtype=np.float64)
         dtheta: list[FloatArray] | None = None
         for start in range(0, self.point_count, chunk):
             stop = min(start + chunk, self.point_count)
             s_prev = torch.from_numpy(np.ascontiguousarray(strain_prev[start:stop]))
-            q_prev = torch.from_numpy(
-                np.ascontiguousarray(state_prev[start:stop])
-            ).requires_grad_(True)
+            q_prev = torch.from_numpy(np.ascontiguousarray(state_prev[start:stop])).requires_grad_(
+                True
+            )
             s_trial = torch.from_numpy(
                 np.ascontiguousarray(strain_trial[start:stop])
             ).requires_grad_(True)
@@ -829,12 +853,8 @@ class TannFCCBatch:
                 s_prev, s_trial, q_prev, systems=systems, include_work=False
             )
             stress = self._stress_from(s_trial, q_trial[..., 0], systems)
-            c_state = torch.from_numpy(
-                np.ascontiguousarray(cotangent_state[start:stop])
-            )
-            c_stress = torch.from_numpy(
-                np.ascontiguousarray(cotangent_stress[start:stop])
-            )
+            c_state = torch.from_numpy(np.ascontiguousarray(cotangent_state[start:stop]))
+            c_stress = torch.from_numpy(np.ascontiguousarray(cotangent_stress[start:stop]))
             parameters = list(self._network.parameters())
             grads_state = torch.autograd.grad(
                 q_trial,
@@ -848,18 +868,12 @@ class TannFCCBatch:
                 grad_outputs=c_stress,
                 retain_graph=False,
             )
-            v_strain[start:stop] = (
-                grads_state[0] + grads_stress[0]
-            ).detach().numpy()
-            v_qprev[start:stop] = (
-                grads_state[1] + grads_stress[1]
-            ).detach().numpy()
+            v_strain[start:stop] = (grads_state[0] + grads_stress[0]).detach().numpy()
+            v_qprev[start:stop] = (grads_state[1] + grads_stress[1]).detach().numpy()
             if dtheta is None:
                 dtheta = [
                     (g_state + g_stress).detach().numpy()
-                    for g_state, g_stress in zip(
-                        grads_state[2:], grads_stress[2:], strict=True
-                    )
+                    for g_state, g_stress in zip(grads_state[2:], grads_stress[2:], strict=True)
                 ]
             else:
                 for target, g_state, g_stress in zip(
@@ -875,11 +889,18 @@ class TannFCCBatch:
         committed = np.asarray(state, dtype=np.float64)
         committed_strain = np.asarray(strain, dtype=np.float64)
         if committed.shape != (self.point_count, 12, 1 + self.config.latent_dim):
-            raise ValueError(f"state must have shape {(self.point_count, 12, 1 + self.config.latent_dim)}")
+            expected = (self.point_count, 12, 1 + self.config.latent_dim)
+            raise ValueError(f"state must have shape {expected}")
         if committed_strain.shape != (self.point_count, 3):
             raise ValueError(f"strain must have shape {(self.point_count, 3)}")
         self._committed_state = torch.from_numpy(committed.copy())
         self._committed_strain = torch.from_numpy(committed_strain.copy())
+        self._trial_state = None
+        self._trial_strain = None
+        self._latest_trial = None
+        self._last_committed_tangent = None
+        self._last_committed_dissipation = None
+        self._last_committed_slip_work = None
 
     @property
     def committed_state(self) -> FloatArray:

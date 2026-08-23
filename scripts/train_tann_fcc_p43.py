@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-"""Train the causal TANN-FCC (T0) on the P43 100x100 masked-state sequence.
+"""Train the corrected causal TANN-FCC T0 on the P43 displacement history.
 
-The first real run of `validation/tann_fcc_preregistration.md`: one causal
-trajectory over states 21-40, holdout {24, 28, 32, 36, 39}, whitened
-displacement loss on the interior DOF, gradients by the discrete
-trajectory adjoint (`fem_inhouse.identification.tann_fcc_adjoint`), and
-the per-state metric E_n relative to the elastic reference. The elastic
-reference is the conversion-corrected lift of `learn_flow_direction_p43.py`
-(the only current construction of it). Every real run writes one
-self-contained JSON artifact; figures are generated from that artifact,
-never from copied values.
+The material is replayed causally from experimental state 0.  States 1--20
+are warm-up states, states 31--32 are replayed but never scored because their
+displacements are interpolated, and the measured DIC is not passed through a
+second low-pass.  The FEM displacement alone is mapped through the declared
+legacy-profile observation approximation before comparison.
 """
 
 from __future__ import annotations
@@ -33,8 +29,10 @@ from fem_inhouse.spectral2d.transforms import SpectralTransformConfig
 
 ROOT = Path(__file__).resolve().parents[1]
 HISTORY = ROOT / "validation/reference_data/dic_multistep_history_p0043_repaired_v1"
-WHITENER_CSV = (
-    ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
+OBSERVATION_CSV = (
+    ROOT
+    / "validation/reference_data/dic_legacy_profile_comparison_v1"
+    / "case_c_legacy_corrected_warp/sinusoidal_transfer.csv"
 )
 EBSD_PATH = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5")
 OUT = ROOT / "validation/_generated/shared_tensor_generator"
@@ -44,9 +42,11 @@ YOUNG_MPA = 205_000.0
 POISSON = 0.30
 ORIGIN = (1580, 1030)
 PIXELS = 100
-REFERENCE_STATE = 20
-STATES = list(range(21, 41))
-HOLDOUT = {24, 28, 32, 36, 39}
+REFERENCE_STATE = 0
+STATES = list(range(1, 41))
+LOSS_STATES = set(range(21, 41)) - {31, 32}
+HOLDOUT = {24, 28, 36, 39}
+TRAINING_STATES = LOSS_STATES - HOLDOUT
 SEED = 20260817
 
 
@@ -95,7 +95,7 @@ def load_ebsd_systems(pixels: int) -> tuple[np.ndarray, np.ndarray]:
 class StepReport:
     step: int
     loss_raw: float
-    loss_whitened: float | None
+    loss_observation: float | None
     e_train: dict[int, float]
     e_holdout: dict[int, float]
     median_e_holdout: float
@@ -178,10 +178,16 @@ def main() -> int:
                              "200.0 is Amendment 3)")
     parser.add_argument("--equilibrium-tolerance", type=float, default=1.0e-10,
                         help="solver equilibrium tolerance (recorded in the artifact)")
-    parser.add_argument("--resume-increment", type=int, default=None,
-                        help="resume the trajectory after increment N from the trajectory checkpoint")
     parser.add_argument("--trajectory-checkpoint", type=Path, default=None,
                         help="per-increment restart archive (defaults to <output>.trajectory.npz)")
+    parser.add_argument("--training-checkpoint", type=Path, default=None,
+                        help="Adam/model checkpoint (defaults to <output>.weights)")
+    parser.add_argument("--resume-training", action="store_true",
+                        help="resume model and Adam state from --training-checkpoint")
+    parser.add_argument("--gmres-tolerance", type=float, default=None,
+                        help="GMRES relative tolerance (None -> solver default 1e-8)")
+    parser.add_argument("--line-search-reductions", type=int, default=None,
+                        help="maximum line-search halvings (None -> solver default 8)")
     arguments = parser.parse_args()
     pixels = arguments.pixels
 
@@ -199,11 +205,23 @@ def main() -> int:
         boundary = boundary[: arguments.max_increments + 1]
         measured = measured[: arguments.max_increments]
         state_indices = STATES[: arguments.max_increments]
+    active_holdout = HOLDOUT & set(state_indices)
+    active_training = TRAINING_STATES & set(state_indices)
+    if not active_training or not active_holdout:
+        raise ValueError(
+            "the truncated trajectory must include at least one training and one holdout state"
+        )
 
-    whitener = DICSpectralTransfer.from_sinusoidal_csv(WHITENER_CSV)
+    observation = DICSpectralTransfer.from_sinusoidal_csv(OBSERVATION_CSV)
+    solver_kwargs: dict = {}
+    if arguments.gmres_tolerance is not None:
+        solver_kwargs["gmres_relative_tolerance"] = arguments.gmres_tolerance
+    if arguments.line_search_reductions is not None:
+        solver_kwargs["maximum_line_search_reductions"] = arguments.line_search_reductions
     solver_config = EBISpectralSolverConfig(
         relative_equilibrium_tolerance=arguments.equilibrium_tolerance,
         transform=SpectralTransformConfig(backend="fftw", fftw_planner_effort="estimate"),
+        **solver_kwargs,
         # The strongly plastic operating point (Amendment 3) makes some
         # increments hard for plain Newton: the solver's own adaptive
         # stepping subdivides them, which also keeps the RK4 trial
@@ -222,7 +240,8 @@ def main() -> int:
             else (
                 print(
                     f"  [newton_residual] {event.get('increment', '')}."
-                    f"{event.get('newton_iteration', '')} {event.get('relative_residual', 0.0):.3e}",
+                    f"{event.get('newton_iteration', '')} "
+                    f"{event.get('relative_residual', 0.0):.3e}",
                     flush=True,
                 )
                 if event.get("event") == "newton_residual"
@@ -240,49 +259,45 @@ def main() -> int:
     trajectory_checkpoint = arguments.trajectory_checkpoint or arguments.output.with_suffix(
         ".trajectory.npz"
     )
-    if arguments.resume_increment is None and trajectory_checkpoint.exists():
-        # A fresh trajectory must not inherit another run's increments:
-        # the key space is per-run, so a stale archive would mix states.
+    if trajectory_checkpoint.exists():
+        # A fresh trajectory must not inherit another run's increments.  A
+        # partial constitutive trajectory cannot be resumed during training:
+        # its initial state also depends on the network parameters, and that
+        # missing sensitivity would invalidate the adjoint gradient.
         trajectory_checkpoint.unlink()
-    if arguments.resume_increment is not None:
-        # Continue the trajectory after increment N: the committed state
-        # and strain are restored, the boundary history is truncated to
-        # the remaining increments (the zero reference is a dummy -- the
-        # material starts from the restored committed state).
-        restart = arguments.resume_increment
-        archive = dict(np.load(trajectory_checkpoint, allow_pickle=False))
-        state_key = f"increment_{restart}_state"
-        strain_key = f"increment_{restart}_strain"
-        if state_key not in archive or strain_key not in archive:
-            raise ValueError(
-                f"trajectory checkpoint has no {state_key}/{strain_key}"
-            )
-        material.reset_committed(archive[state_key], archive[strain_key])
-        state_indices = state_indices[restart + 1 :]
-        # boundary[0] is the zero reference; the next trial is the state
-        # N + 1 field, which lives at boundary index N + 2.
-        boundary = np.concatenate([np.zeros_like(boundary[:1]), boundary[restart + 2 :]], axis=0)
-        measured = measured[restart + 1 :]
-        print(
-            f"resuming after increment {restart}: {len(state_indices)} increments left",
-            flush=True,
-        )
     sequence = TannFCCSequence(
         grid=grid,
         material=material,
         boundary_history=boundary,
         measured_interior=measured,
         state_indices=state_indices,
-        holdout=HOLDOUT,
-        whitener=lambda field: whitener.apply_without_wrap(field),
+        holdout=active_holdout,
+        training_states=active_training,
+        observation=observation.apply_without_wrap,
+        observation_adjoint=observation.adjoint_without_wrap,
         solver_config=solver_config,
         checkpoint_path=trajectory_checkpoint,
     )
     elastic = elastic_reference(grid, history, pixels)
 
     optimizer = torch.optim.Adam(material._network.parameters(), lr=arguments.learning_rate)
+    training_checkpoint = arguments.training_checkpoint or arguments.output.with_suffix(
+        ".weights"
+    )
+    training_checkpoint.parent.mkdir(parents=True, exist_ok=True)
     steps: list[dict] = []
-    for step in range(arguments.steps):
+    first_step = 0
+    if arguments.resume_training:
+        checkpoint = torch.load(training_checkpoint, map_location="cpu", weights_only=False)
+        material._network.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        first_step = int(checkpoint["completed_step"]) + 1
+        if arguments.output.exists():
+            previous = json.loads(arguments.output.read_text(encoding="utf-8"))
+            steps = list(previous.get("steps", []))
+    elif training_checkpoint.exists():
+        training_checkpoint.unlink()
+    for step in range(first_step, arguments.steps):
         rollout_started = time.perf_counter()
         result = sequence.rollout()
         rollout_seconds = time.perf_counter() - rollout_started
@@ -295,17 +310,17 @@ def main() -> int:
             )
             return model_residual / max(elastic_residual, 1e-30)
 
-        e_train = {record.state: e_metric(record) for record in records if not record.holdout}
+        e_train = {record.state: e_metric(record) for record in records if record.training}
         e_holdout = {record.state: e_metric(record) for record in records if record.holdout}
 
         adjoint = TannFCCTrajectoryAdjoint(
             grid=grid,
             material=material,
             records=records,
-            whitener=lambda field: whitener.apply_without_wrap(field),
+            observation_adjoint=observation.adjoint_without_wrap,
         )
         adjoint_started = time.perf_counter()
-        dtheta, diagnostics = adjoint.sweep()
+        dtheta, _diagnostics = adjoint.sweep()
         adjoint_seconds = time.perf_counter() - adjoint_started
 
         optimizer.zero_grad(set_to_none=True)
@@ -319,11 +334,26 @@ def main() -> int:
             np.sqrt(sum(float(np.sum(g**2)) for g in dtheta))
         )
         optimizer.step()
+        temporary_checkpoint = training_checkpoint.with_suffix(
+            training_checkpoint.suffix + ".tmp"
+        )
+        torch.save(
+            {
+                "completed_step": step,
+                "model_state_dict": material._network.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "seed": SEED,
+                "history_reference_state": REFERENCE_STATE,
+                "states": state_indices,
+            },
+            temporary_checkpoint,
+        )
+        temporary_checkpoint.replace(training_checkpoint)
 
         report_step = {
             "step": step,
             "loss_raw": result.total_loss_raw,
-            "loss_whitened": result.total_loss_whitened,
+            "loss_observation": result.total_loss_observation,
             "e_train": e_train,
             "e_holdout": e_holdout,
             "median_e_holdout": float(np.median(list(e_holdout.values()))),
@@ -342,7 +372,7 @@ def main() -> int:
         }
         steps.append(report_step)
         print(
-            f"step {step}: loss_whit {result.total_loss_whitened:.6e} "
+            f"step {step}: loss_observation {result.total_loss_observation:.6e} "
             f"E_holdout {report_step['median_e_holdout']:.4f} "
             f"grad {gradient_norm:.3e} ({rollout_seconds:.0f}s + {adjoint_seconds:.0f}s)",
             flush=True,
@@ -354,9 +384,20 @@ def main() -> int:
             "machine": __import__("platform").node(),
             "seed": SEED,
             "states": state_indices,
-            "holdout": sorted(HOLDOUT),
+            "holdout": sorted(active_holdout),
+            "training_states": sorted(active_training),
+            "replay_only_states": sorted(
+                set(state_indices) - active_holdout - active_training
+            ),
+            "history_reference_state": REFERENCE_STATE,
+            "observation": {
+                "kind": "legacy_profile_spectral_approximation",
+                "source_csv": str(OBSERVATION_CSV),
+                "loss": "O(u_fem) - u_dic",
+            },
             "architecture": asdict(run_config),
             "optimizer": {"name": "adam", "lr": arguments.learning_rate},
+            "training_checkpoint": str(training_checkpoint),
             "solver": {
                 "relative_equilibrium_tolerance": solver_config.relative_equilibrium_tolerance,
                 "adaptive_stepping_enabled": solver_config.adaptive_stepping_enabled,
@@ -376,9 +417,20 @@ def main() -> int:
         "machine": __import__("platform").node(),
         "seed": SEED,
         "states": state_indices,
-        "holdout": sorted(HOLDOUT),
+        "holdout": sorted(active_holdout),
+        "training_states": sorted(active_training),
+        "replay_only_states": sorted(
+            set(state_indices) - active_holdout - active_training
+        ),
+        "history_reference_state": REFERENCE_STATE,
+        "observation": {
+            "kind": "legacy_profile_spectral_approximation",
+            "source_csv": str(OBSERVATION_CSV),
+            "loss": "O(u_fem) - u_dic",
+        },
         "architecture": asdict(run_config),
         "optimizer": {"name": "adam", "lr": arguments.learning_rate},
+        "training_checkpoint": str(training_checkpoint),
         "solver": {
             "relative_equilibrium_tolerance": solver_config.relative_equilibrium_tolerance,
             "adaptive_stepping_enabled": solver_config.adaptive_stepping_enabled,
@@ -395,7 +447,12 @@ def main() -> int:
             ["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT
         ).stdout.strip()
         artifact["dirty"] = bool(
-            subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+            subprocess.run(
+                ["git", "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            ).stdout.strip()
         )
     except Exception:  # pragma: no cover - provenance only
         pass

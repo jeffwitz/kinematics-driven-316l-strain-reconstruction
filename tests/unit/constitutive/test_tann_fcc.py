@@ -10,9 +10,15 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+import torch
 
 from fem_inhouse.constitutive.tann_fcc import TannFCCBatch, TannFCCConfig
 from fem_inhouse.core.fcc_interaction_matrix import SLIP_SYSTEMS
+from fem_inhouse.core.kelvin import (
+    stiffness_to_engineering,
+    strain_from_engineering,
+    stress_to_voigt,
+)
 from fem_inhouse.core.srix_canonical import ACTIVE_SYSTEMS_001, SCHMID_FACTOR_001
 from fem_inhouse.identification.spatial_context import ZeroSpatialContext
 
@@ -174,3 +180,81 @@ def test_zero_spatial_context_no_effect() -> None:
     assert np.allclose(
         plain.stress_in_plane_mpa, with_context.stress_in_plane_mpa, rtol=1e-12, atol=1e-10
     )
+
+
+def test_plane_stress_protocol_converts_engineering_shear_at_the_boundary() -> None:
+    batch = _batch()
+    engineering = RNG.normal(scale=1.0e-3, size=(POINTS, 3))
+    engineering[:, 2] += 3.0e-3
+
+    kelvin_trial = batch.evaluate(
+        strain_from_engineering(engineering), compute_tangent=True
+    )
+    protocol_trial = batch.evaluate_in_plane(
+        engineering, time_increment=1.0, consistent_tangent=True
+    )
+
+    np.testing.assert_allclose(
+        protocol_trial.stress_in_plane_mpa,
+        stress_to_voigt(kelvin_trial.stress_in_plane_mpa),
+        rtol=2.0e-13,
+        atol=2.0e-12,
+    )
+    assert kelvin_trial.consistent_tangent_mpa is not None
+    np.testing.assert_allclose(
+        protocol_trial.tangent_in_plane_mpa,
+        stiffness_to_engineering(kelvin_trial.consistent_tangent_mpa),
+        rtol=2.0e-13,
+        atol=2.0e-10,
+    )
+
+
+def test_plane_stress_completion_reproduces_zero_transverse_hooke_stress() -> None:
+    batch = _batch()
+    engineering = RNG.normal(scale=2.0e-3, size=(POINTS, 3))
+    trial = batch.evaluate_in_plane(
+        engineering, time_increment=1.0, consistent_tangent=False
+    )
+    complete = batch.complete_trial(trial)
+
+    elastic = complete.elastic_strain_tensor
+    mu = batch.config.young_modulus_mpa / (2.0 * (1.0 + batch.config.poisson_ratio))
+    lam = (
+        batch.config.young_modulus_mpa
+        * batch.config.poisson_ratio
+        / ((1.0 + batch.config.poisson_ratio) * (1.0 - 2.0 * batch.config.poisson_ratio))
+    )
+    stress = 2.0 * mu * elastic + lam * np.trace(elastic, axis1=-2, axis2=-1)[
+        ..., None, None
+    ] * np.eye(3)
+    np.testing.assert_allclose(stress[..., 2, 2], 0.0, atol=2.0e-12)
+    np.testing.assert_allclose(stress[..., 0, 2], 0.0, atol=0.0)
+    np.testing.assert_allclose(stress[..., 1, 2], 0.0, atol=0.0)
+    np.testing.assert_allclose(
+        complete.full_strain_tensor[..., 0, 2],
+        complete.plastic_strain_tensor[..., 0, 2],
+        atol=0.0,
+    )
+
+
+def test_slip_force_is_the_negative_gradient_of_condensed_free_energy() -> None:
+    batch = _batch()
+    strain = torch.from_numpy(RNG.normal(scale=2.0e-3, size=(POINTS, 3)))
+    gamma = torch.from_numpy(
+        RNG.normal(scale=5.0e-4, size=(POINTS, 12))
+    ).requires_grad_(True)
+    z = torch.from_numpy(RNG.normal(scale=1.0e-3, size=(POINTS, 12, 2)))
+
+    stress = batch._stress_from(strain, gamma, batch._systems)
+    elastic = strain - batch._inplane_plastic(gamma, batch._systems)
+    energy = 0.5 * torch.sum(elastic * stress) + 0.5 * torch.sum(z * z)
+    derivative = torch.autograd.grad(energy, gamma)[0]
+    force_gamma, force_z = batch._forces(strain, gamma, z, batch._systems)
+
+    np.testing.assert_allclose(
+        force_gamma[..., 0].detach().numpy(),
+        -derivative.detach().numpy(),
+        rtol=3.0e-13,
+        atol=2.0e-12,
+    )
+    np.testing.assert_allclose(force_z.detach().numpy(), -z.detach().numpy())

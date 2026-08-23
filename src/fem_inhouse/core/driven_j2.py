@@ -47,6 +47,8 @@ class DrivenJ2Trial(ConstitutiveTrial):
         if raw.shape != expected:
             raise ValueError(f"raw_direction must have shape {expected}")
         tangent_direction = self.project_direction(raw)
+        if self.tangent_in_plane_mpa is None:
+            raise RuntimeError("stress-direction action requires a constitutive tangent")
         return -self.observables["equivalent_plastic_increment"][:, None] * np.einsum(
             "pij,pj->pi", self.tangent_in_plane_mpa, tangent_direction
         )
@@ -61,9 +63,7 @@ class DrivenJ2Trial(ConstitutiveTrial):
         q = von_mises(stress)
         direction = np.asarray(self.observables["flow_direction"], dtype=np.float64)
         safe = np.where(q > 0.0, q, 1.0)
-        projected = raw - direction * (
-            np.einsum("pi,pi->p", stress, raw) / safe
-        )[:, None]
+        projected = raw - direction * (np.einsum("pi,pi->p", stress, raw) / safe)[:, None]
         projected[q <= 0.0] = 0.0
         return projected
 
@@ -194,9 +194,7 @@ class DrivenJ2PlaneStressBatch:
         #: ``a_i / Delta_p`` of the scalar reduction, and the coefficients of the
         #: closed-form admissibility bound.
         self._modal_relaxation = self._modal_elasticity * _MODAL_METRIC_EIGENVALUES
-        self._modal_bound_weights = 1.0 / (
-            self._modal_elasticity**2 * _MODAL_METRIC_EIGENVALUES
-        )
+        self._modal_bound_weights = 1.0 / (self._modal_elasticity**2 * _MODAL_METRIC_EIGENVALUES)
         self._committed_plastic_strain = np.zeros((point_count, 3), dtype=np.float64)
         self._committed_peeq = np.zeros(point_count, dtype=np.float64)
         self._trial_plastic_strain: FloatArray | None = None

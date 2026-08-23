@@ -209,3 +209,18 @@ def test_the_periodic_transfer_distorts_an_affine_field_and_the_wrap_free_one_do
     np.testing.assert_allclose(
         transfer.apply_without_wrap(rough), transfer.apply(rough), rtol=0.0, atol=2e-6
     )
+
+
+def test_wrap_free_transfer_has_the_declared_exact_adjoint() -> None:
+    transfer = DICSpectralTransfer(
+        wavelengths_pixels=np.array([2.0, 4.0, 8.0, 16.0, 64.0]),
+        gains=np.array([0.03, 0.2, 0.55, 0.82, 0.98]),
+    )
+    rng = np.random.default_rng(93)
+    left = rng.normal(size=(19, 17, 2))
+    right = rng.normal(size=(19, 17, 2))
+
+    lhs = float(np.vdot(transfer.apply_without_wrap(left), right).real)
+    rhs = float(np.vdot(left, transfer.adjoint_without_wrap(right)).real)
+
+    np.testing.assert_allclose(lhs, rhs, rtol=2.0e-13, atol=2.0e-12)

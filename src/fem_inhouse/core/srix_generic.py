@@ -82,8 +82,7 @@ class SrixGeneric3DMaterialPointBatch:
         )
         if behaviour_parameters:
             available_parameters = {
-                getattr(parameter, "name", str(parameter))
-                for parameter in behaviour.parameters
+                getattr(parameter, "name", str(parameter)) for parameter in behaviour.parameters
             }
             filtered_parameters = {
                 name: value
@@ -147,9 +146,7 @@ class SrixGeneric3DMaterialPointBatch:
         storage_mode = mgis.MaterialStateManagerStorageMode.ExternalStorage
         for state in (manager.s0, manager.s1):
             if np.all(coupling == coupling[0]):
-                mgis.setMaterialProperty(
-                    state, "MicromorphicCouplingModulus", float(coupling[0])
-                )
+                mgis.setMaterialProperty(state, "MicromorphicCouplingModulus", float(coupling[0]))
             else:
                 mgis.setMaterialProperty(
                     state, "MicromorphicCouplingModulus", coupling, storage_mode
@@ -175,9 +172,7 @@ class SrixGeneric3DMaterialPointBatch:
         cursor = 0
         for variable in behaviour.isvs:
             offsets[variable.name] = cursor
-            cursor += int(
-                mgis.getVariableSize(variable, mgis.Hypothesis.Tridimensional)
-            )
+            cursor += int(mgis.getVariableSize(variable, mgis.Hypothesis.Tridimensional))
         resolved_offsets: list[int] = []
         for name in slip_names:
             head = name if name in offsets else f"{name}[0]"
@@ -188,9 +183,7 @@ class SrixGeneric3DMaterialPointBatch:
             resolved_offsets.append(offsets[head])
         self._plastic_slip_offset, self._equivalent_slip_offset = resolved_offsets
         self._thread_count = thread_count
-        self._thread_pool = (
-            _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
-        )
+        self._thread_pool = _load_mgis_root().ThreadPool(thread_count) if thread_count > 1 else None
         self._has_trial_state = False
         self._rotations = (
             None
@@ -249,13 +242,9 @@ class SrixGeneric3DMaterialPointBatch:
             gradients[:, :] = global_gradients
         else:
             material_gradients = np.ascontiguousarray(global_gradients.reshape(-1).copy())
-            self._mgis.rotateGradients(
-                material_gradients, self._behaviour, self._mgis_rotations
-            )
+            self._mgis.rotateGradients(material_gradients, self._behaviour, self._mgis_rotations)
             gradients[:, :] = material_gradients.reshape(self._point_count, 7)
-        integration_type = (
-            self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
-        )
+        integration_type = self._mgis.IntegrationType.IntegrationWithConsistentTangentOperator
         if self._thread_pool is None:
             status = self._mgis.integrate(
                 self._manager,
@@ -279,6 +268,7 @@ class SrixGeneric3DMaterialPointBatch:
         self._has_trial_state = True
         forces = np.asarray(self._manager.s1.thermodynamic_forces, dtype=float).copy()
         state = np.asarray(self._manager.s1.internal_state_variables, dtype=float)
+        assert self._elastic_offset is not None
         elastic_strain = state[:, self._elastic_offset : self._elastic_offset + 6].copy()
         plastic_slip = state[:, self._plastic_slip_offset : self._plastic_slip_offset + 12].copy()
         equivalent_plastic_slip = state[
@@ -287,9 +277,7 @@ class SrixGeneric3DMaterialPointBatch:
         tangent = np.asarray(self._manager.K, dtype=float).copy()
         if self._mgis_rotations is not None:
             flat_forces = np.ascontiguousarray(forces.reshape(-1))
-            self._mgis.rotateThermodynamicForces(
-                flat_forces, self._behaviour, self._mgis_rotations
-            )
+            self._mgis.rotateThermodynamicForces(flat_forces, self._behaviour, self._mgis_rotations)
             forces = flat_forces.reshape(self._point_count, 7)
             flat_tangent = np.ascontiguousarray(tangent.reshape(-1))
             self._mgis.rotateTangentOperatorBlocks(
@@ -467,11 +455,11 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         assert final is not None
         c_ps, stress_chi_ps, accumulated_slip_strain_ps, accumulated_slip_chi_ps, _ = (
             condense_kelvin_tangent_blocks(
-            final.stress_strain_tangent,
-            final.stress_chi_tangent,
-            final.accumulated_slip_strain_tangent,
-            final.accumulated_slip_chi_tangent,
-            check_condition=False,
+                final.stress_strain_tangent,
+                final.stress_chi_tangent,
+                final.accumulated_slip_strain_tangent,
+                final.accumulated_slip_chi_tangent,
+                check_condition=False,
             )
         )
         tangent = (
@@ -479,21 +467,16 @@ class SrixGeneric3DCondensedPlaneStressBatch:
             * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
             * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
         )
-        stress_chi_tangent = stress_chi_ps * _KELVIN_TO_ENGINEERING_STRESS_SCALE[
-            None, :, None
-        ]
+        stress_chi_tangent = stress_chi_ps * _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
         accumulated_slip_strain_tangent = (
             accumulated_slip_strain_ps * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
         )
         self._trial_transverse = total[:, _TRANSVERSE].copy()
-        self._maximum_iterations_observed = max(
-            self._maximum_iterations_observed, iteration
-        )
+        self._maximum_iterations_observed = max(self._maximum_iterations_observed, iteration)
         self._has_trial = True
         return SrixGenericPlaneStressTrial(
             stress_in_plane_mpa=(
-                final.stress_kelvin_mpa[:, _PLANE]
-                * _KELVIN_TO_ENGINEERING_STRESS_SCALE
+                final.stress_kelvin_mpa[:, _PLANE] * _KELVIN_TO_ENGINEERING_STRESS_SCALE
             ),
             accumulated_slip=final.accumulated_slip.copy(),
             plastic_slip=final.plastic_slip.copy(),
@@ -528,9 +511,7 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         self._latest_plane_trial = trial
         return InPlaneConstitutiveTrial(
             stress_in_plane_mpa=trial.stress_in_plane_mpa,
-            tangent_in_plane_mpa=(
-                trial.tangent_in_plane_mpa if consistent_tangent else None
-            ),
+            tangent_in_plane_mpa=(trial.tangent_in_plane_mpa if consistent_tangent else None),
             observables={
                 "accumulated_slip": trial.accumulated_slip,
                 "plastic_slip": trial.plastic_slip,
@@ -570,9 +551,7 @@ class SrixGeneric3DCondensedPlaneStressBatch:
         latest = self._latest_plane_trial
         stress_tensor = kelvin_3d_to_tensor(latest.full_stress_kelvin_mpa, quantity="stress")
         total_tensor = kelvin_3d_to_tensor(latest.total_strain_kelvin, quantity="strain")
-        elastic_tensor = kelvin_3d_to_tensor(
-            latest.elastic_strain_kelvin, quantity="strain"
-        )
+        elastic_tensor = kelvin_3d_to_tensor(latest.elastic_strain_kelvin, quantity="strain")
         return ConstitutiveTrial(
             stress_in_plane_mpa=latest.stress_in_plane_mpa,
             tangent_in_plane_mpa=latest.tangent_in_plane_mpa,
