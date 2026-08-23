@@ -41,7 +41,10 @@ def load_increment_16_states(npz_path: Path, point_count: int):
     norms = np.linalg.norm(increment, axis=1)
     order = np.argsort(-norms)
     chosen = np.concatenate(
-        [order[: point_count // 2], order[np.linspace(0, len(order) - 1, point_count // 2, dtype=int)]]
+        [
+            order[: point_count // 2],
+            order[np.linspace(0, len(order) - 1, point_count // 2, dtype=int)],
+        ]
     )
     return (
         committed_state[chosen],
@@ -52,13 +55,16 @@ def load_increment_16_states(npz_path: Path, point_count: int):
 
 
 def radau_reference(
-    batch: TannFCCBatch, systems_pt: np.ndarray, q0: np.ndarray, eps_n: np.ndarray, delta: np.ndarray
+    batch: TannFCCBatch,
+    systems_pt: np.ndarray,
+    q0: np.ndarray,
+    eps_n: np.ndarray,
+    delta: np.ndarray,
 ) -> dict:
     """Per-point Radau IIA-5 (scipy) on the linear strain path."""
 
     from scipy.integrate import solve_ivp
 
-    q0_t = torch.from_numpy(q0)
     eps_n_t = torch.from_numpy(eps_n)
     delta_t = torch.from_numpy(delta)
     rate = float(np.linalg.norm(delta))
@@ -123,7 +129,8 @@ def main() -> int:
         )
         ie_batch = TannFCCBatch(
             TannFCCConfig(sigma_ref_mpa=SIGMA_REF, integrator="implicit_euler"),
-            point_count=point_count, systems_global=systems,
+            point_count=point_count,
+            systems_global=systems,
         )
         ie_batch.copy_weights_from(rk4_batch)
         rk4_batch.reset_committed(q0_all, eps_n_all)
@@ -143,7 +150,10 @@ def main() -> int:
         for index in range(min(3, point_count)):
             radau_q.append(
                 radau_reference(
-                    rk4_batch, systems[index], q0_all[index], eps_n_all[index],
+                    rk4_batch,
+                    systems[index],
+                    q0_all[index],
+                    eps_n_all[index],
                     scale * delta_all[index],
                 )
             )

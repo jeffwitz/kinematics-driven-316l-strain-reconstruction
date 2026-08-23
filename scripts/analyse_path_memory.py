@@ -75,12 +75,20 @@ def main() -> int:
             axis=1,
         ),
         "W4": np.stack(
-            [tau_n, at_state(-1), at_state(-2), at_state(-3), at_state(-4),
-             gamma_at_state(-1), gamma_at_state(-2), gamma_at_state(-3), gamma_at_state(-4)],
+            [
+                tau_n,
+                at_state(-1),
+                at_state(-2),
+                at_state(-3),
+                at_state(-4),
+                gamma_at_state(-1),
+                gamma_at_state(-2),
+                gamma_at_state(-3),
+                gamma_at_state(-4),
+            ],
             axis=1,
         ),
     }
-    depth = {"W1-tau": 1, "W1": 1, "W2": 2, "W4": 4}
     gamma_abs = np.abs(gamma_full[sample_idx, system_idx])
     tau_abs = np.abs(tau_n)
 
@@ -89,9 +97,10 @@ def main() -> int:
     gamma_history = cumulative[state_num, point_idx, system_idx]
 
     report: dict[str, dict] = {}
-    for name, features in [("baseline", np.stack([tau_abs, gamma_history], axis=1)),
-                           *windows.items()]:
-        need_depth = depth.get(name, 1)
+    for name, features in [
+        ("baseline", np.stack([tau_abs, gamma_history], axis=1)),
+        *windows.items(),
+    ]:
         r2s = []
         predicted = 0
         for state in range(N_STATES):
@@ -131,17 +140,15 @@ def main() -> int:
         "best_window": best_window,
         "jump_over_baseline": best_r2 - baseline_r2,
         "reading": (
-            "closure candidate"
-            if best_r2 >= 0.30
-            else "partial"
-            if best_r2 >= 0.10
-            else "nothing"
+            "closure candidate" if best_r2 >= 0.30 else "partial" if best_r2 >= 0.10 else "nothing"
         ),
         "loading_vs_response_gap": report["W1"]["r2_mean"] - report["W1-tau"]["r2_mean"],
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True))
+    print(
+        json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True)
+    )
     return 0
 
 

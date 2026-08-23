@@ -67,7 +67,11 @@ def figure_a(artifact: dict, output: Path) -> None:
 
 def _state_triplet(artifact: dict) -> list[int]:
     return sorted(
-        {min(artifact["states"]), artifact["states"][len(artifact["states"]) // 2], max(artifact["states"])}
+        {
+            min(artifact["states"]),
+            artifact["states"][len(artifact["states"]) // 2],
+            max(artifact["states"]),
+        }
     )
 
 
@@ -81,7 +85,11 @@ def figure_b(artifact: dict, fields: dict, output: Path) -> None:
         u_meas = fields[f"{prefix}_u_meas"]
         vmax = np.abs(u_meas).max()
         for row, (name, field) in enumerate(
-            (("DIC", u_meas), ("elastic", fields[f"{prefix}_u_elastic"]), ("TANN", fields[f"{prefix}_u_sim"]))
+            (
+                ("DIC", u_meas),
+                ("elastic", fields[f"{prefix}_u_elastic"]),
+                ("TANN", fields[f"{prefix}_u_sim"]),
+            )
         ):
             axis = axes[row, column]
             axis.imshow(field[..., 1].T, origin="lower", cmap="viridis", vmin=-vmax, vmax=vmax)
@@ -168,11 +176,19 @@ def figure_f(artifact: dict, fields: dict, output: Path) -> None:
     """Latent components per state (no physical interpretation attached)."""
 
     states = sorted(artifact["states"])
-    means = [fields[f"state_{state}_committed_state"][..., 1:].reshape(-1, 2).mean(axis=0) for state in states]
+    means = [
+        fields[f"state_{state}_committed_state"][..., 1:].reshape(-1, 2).mean(axis=0)
+        for state in states
+    ]
     fig, axis = plt.subplots(figsize=(7.2, 4.0))
     for component in range(2):
-        axis.plot(states, [m[component] for m in means], linewidth=2,
-                  color=(BLUE, ORANGE)[component], label=f"z_{component} mean")
+        axis.plot(
+            states,
+            [m[component] for m in means],
+            linewidth=2,
+            color=(BLUE, ORANGE)[component],
+            label=f"z_{component} mean",
+        )
     axis.set_xlabel("state")
     axis.set_ylabel("mean latent component")
     axis.set_title("Figure F -- latent evolution (diagnostic only)")
@@ -191,8 +207,9 @@ def figure_g(qualification_path: Path, output: Path) -> None:
     labels = sorted(values, key=int)
     errors = [values[label] for label in labels]
     fig, axis = plt.subplots(figsize=(7.2, 4.0))
-    axis.semilogy([int(label) for label in labels], errors, color=BLUE,
-                  linewidth=2, marker="o", markersize=5)
+    axis.semilogy(
+        [int(label) for label in labels], errors, color=BLUE, linewidth=2, marker="o", markersize=5
+    )
     axis.set_xlabel("substeps")
     axis.set_ylabel("max |state difference| from 8 substeps")
     axis.set_title("Figure G -- substep invariance")
@@ -204,10 +221,12 @@ def figure_g(qualification_path: Path, output: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--artifact", type=Path,
-                        default=ROOT / "validation/_generated/shared_tensor_generator/tann_fcc_p43_run.json")
-    parser.add_argument("--output-dir", type=Path,
-                        default=ROOT / "validation/figures/tann_fcc_p43")
+    parser.add_argument(
+        "--artifact",
+        type=Path,
+        default=ROOT / "validation/_generated/shared_tensor_generator/tann_fcc_p43_run.json",
+    )
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "validation/figures/tann_fcc_p43")
     arguments = parser.parse_args()
     artifact = json.loads(arguments.artifact.read_text(encoding="utf-8"))
     fields_path = Path(artifact["fields_path"])

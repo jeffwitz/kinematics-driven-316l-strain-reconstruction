@@ -67,9 +67,7 @@ def orientation_maps() -> np.ndarray:
         phi2 = np.asarray(handle["/orientation/phi2"])[x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1]
 
     def to_points(field: np.ndarray) -> np.ndarray:
-        element_mean = 0.25 * (
-            field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:]
-        )
+        element_mean = 0.25 * (field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:])
         return np.repeat(element_mean[:, :, None], SUBCELLS, axis=2).reshape(-1)
 
     return np.stack([to_points(phi1), to_points(phi), to_points(phi2)], axis=1)
@@ -148,8 +146,6 @@ def main() -> int:
     # Gram and RHS of the unconstrained problem, per point.
     gram = np.einsum("pija,pijb->pab", systems_global, systems_global)
     rhs = np.einsum("pij,pijc->pc", d3, systems_global)
-    gram_raw_rhs = np.einsum("pij,pijc->pc", d3_raw, systems_global)
-
     # Unconstrained least squares (representability ceiling). The 12 systems
     # span only the 5-D deviatoric space, so the Gram is rank-deficient; a
     # 1e-12 ridge makes the batched solve well-posed without moving the ceiling.
@@ -157,8 +153,10 @@ def main() -> int:
     ceiling = np.linalg.solve(gram + ridge, rhs[..., None])[..., 0]
 
     def fista(
-        objective_gram: np.ndarray, objective_rhs: np.ndarray,
-        objective_tau: np.ndarray, lam: float,
+        objective_gram: np.ndarray,
+        objective_rhs: np.ndarray,
+        objective_tau: np.ndarray,
+        lam: float,
     ) -> np.ndarray:
         """Projected FISTA: sign cone per tau, optional L1 sparsity term."""
 
@@ -197,11 +195,14 @@ def main() -> int:
     # Third admissible decomposition: causally time-regularised. The penalty
     # (gamma_n - gamma_{n-1})^2 ties each increment to its predecessor, the
     # previous solution already computed -- a gauge variant, not a law change.
-    LAMBDA_TIME = 1e-2
+    lambda_time = 1e-2
 
     def fista_temporal(
-        objective_gram: np.ndarray, objective_rhs: np.ndarray,
-        objective_tau: np.ndarray, previous: np.ndarray, lam_t: float,
+        objective_gram: np.ndarray,
+        objective_rhs: np.ndarray,
+        objective_tau: np.ndarray,
+        previous: np.ndarray,
+        lam_t: float,
     ) -> np.ndarray:
         gamma = previous.copy()
         gamma_prev = gamma.copy()
@@ -222,9 +223,7 @@ def main() -> int:
     previous = np.zeros((n_points, N_SYSTEMS))
     for state in range(n_states):
         mask = np.arange(state * n_points, (state + 1) * n_points)
-        previous = fista_temporal(
-            gram[mask], rhs[mask], tau[mask], previous, LAMBDA_TIME
-        )
+        previous = fista_temporal(gram[mask], rhs[mask], tau[mask], previous, lambda_time)
         gamma_time[mask] = previous
         print(f"  state {state + 1}/{n_states} done", flush=True)
 
@@ -243,7 +242,9 @@ def main() -> int:
             "e_fcc_q25": float(np.quantile(e_fcc[active], 0.25)),
             "e_fcc_q75": float(np.quantile(e_fcc[active], 0.75)),
             "rho_median": float(np.median(rho[active])),
-            "negative_work_share": float(np.minimum(work, 0).sum() / max(np.abs(work).sum(), 1e-300)),
+            "negative_work_share": float(
+                np.minimum(work, 0).sum() / max(np.abs(work).sum(), 1e-300)
+            ),
             "per_system_work_share": shares.tolist(),
             "active_fraction": float(np.mean(np.abs(gamma[active]).sum(axis=1) > 1e-12)),
         }
@@ -275,9 +276,7 @@ def main() -> int:
     rep_l2 = represented(gamma_l2)
     rep_l1 = represented(gamma_l1)
     correlation = float(
-        np.corrcoef(
-            gauge_norm_3d(rep_l2)[active], gauge_norm_3d(rep_l1)[active]
-        )[0, 1]
+        np.corrcoef(gauge_norm_3d(rep_l2)[active], gauge_norm_3d(rep_l1)[active])[0, 1]
     )
     print(
         f"ceiling: e {unconstrained['e_fcc_median']:.3f} rho {unconstrained['rho_median']:.3f}  "
@@ -327,7 +326,9 @@ def main() -> int:
             "work_share": l2["per_system_work_share"][alpha],
         }
         system_r2[str(alpha)] = r2
-        print(f"  system {alpha:2d}: R2 {r2:+.3f}  n {per_system[alpha]['n_significant']}", flush=True)
+        print(
+            f"  system {alpha:2d}: R2 {r2:+.3f}  n {per_system[alpha]['n_significant']}", flush=True
+        )
 
     payload = {
         "schema_version": 1,
@@ -348,8 +349,14 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({k: v for k, v in payload.items() if k != "per_system_conditioning"},
-                     indent=2, sort_keys=True, default=str))
+    print(
+        json.dumps(
+            {k: v for k, v in payload.items() if k != "per_system_conditioning"},
+            indent=2,
+            sort_keys=True,
+            default=str,
+        )
+    )
     return 0
 
 

@@ -56,14 +56,10 @@ def orientation_features() -> np.ndarray:
         ]
 
     def to_points(field: np.ndarray) -> np.ndarray:
-        element_mean = 0.25 * (
-            field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:]
-        )
+        element_mean = 0.25 * (field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:])
         return np.repeat(element_mean[:, :, None], SUBCELLS, axis=2).reshape(-1)
 
-    return np.stack(
-        [to_points(phi1), to_points(phi), to_points(phi2), to_points(schmid)], axis=1
-    )
+    return np.stack([to_points(phi1), to_points(phi), to_points(phi2), to_points(schmid)], axis=1)
 
 
 def circular_mean(angles: np.ndarray, axis: int | None = None) -> np.ndarray:
@@ -108,12 +104,22 @@ def main() -> int:
     ladders = {
         "A": np.stack([sigma_eq, p_eq], axis=1),
         "B": np.stack([sigma_eq, p_eq, p, np.sin(angle_s), np.cos(angle_s)], axis=1),
-        "C": np.stack(
-            [sigma_eq, p_eq, p, np.sin(angle_s), np.cos(angle_s), schmid], axis=1
-        ),
+        "C": np.stack([sigma_eq, p_eq, p, np.sin(angle_s), np.cos(angle_s), schmid], axis=1),
         "D": np.stack(
-            [sigma_eq, p_eq, p, np.sin(angle_s), np.cos(angle_s), schmid,
-             np.sin(phi1), np.cos(phi1), np.sin(phi), np.cos(phi), np.sin(phi2), np.cos(phi2)],
+            [
+                sigma_eq,
+                p_eq,
+                p,
+                np.sin(angle_s),
+                np.cos(angle_s),
+                schmid,
+                np.sin(phi1),
+                np.cos(phi1),
+                np.sin(phi),
+                np.cos(phi),
+                np.sin(phi2),
+                np.cos(phi2),
+            ],
             axis=1,
         ),
     }
@@ -123,7 +129,7 @@ def main() -> int:
     def evaluate(features: np.ndarray, train_mask: np.ndarray, test_mask: np.ndarray) -> dict:
         scaler = StandardScaler().fit(features[train_mask])
         tree = cKDTree(scaler.transform(features[train_mask]))
-        distances, indices = tree.query(scaler.transform(features[test_mask]), k=K)
+        _distances, indices = tree.query(scaler.transform(features[test_mask]), k=K)
         neighbour_log = log_dp[train_mask][indices]
         amplitude_pred = neighbour_log.mean(axis=1)
         residual = log_dp[test_mask] - amplitude_pred
@@ -161,9 +167,7 @@ def main() -> int:
             key: float(np.mean([row[key] for row in loso])) for key in loso[0]
         }
         report[f"loso_{name}"]["per_state_r2_log_dp"] = [row["r2_log_dp"] for row in loso]
-        report[f"loso_{name}"]["per_state_r2_circ"] = [
-            row["r2_circular_direction"] for row in loso
-        ]
+        report[f"loso_{name}"]["per_state_r2_circ"] = [row["r2_circular_direction"] for row in loso]
         print(
             f"loso {name}: R2_amp {report[f'loso_{name}']['r2_log_dp']:.3f}  "
             f"R2_circ {report[f'loso_{name}']['r2_circular_direction']:.3f}  "
@@ -180,7 +184,9 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True))
+    print(
+        json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True)
+    )
 
     # Direction panels, per the registered outputs: wrapped Delta theta against
     # sigma_eq for each p_eq quantile, and against the max Schmid factor.
@@ -194,8 +200,12 @@ def main() -> int:
     for ax, q in zip(axes.ravel(), range(4), strict=True):
         mask = active & (quantile == q)
         hb = ax.hexbin(
-            sigma_eq[mask], delta_theta[mask], gridsize=90, bins="log",
-            cmap="viridis", extent=(sigma_eq.min(), sigma_eq.max(), -np.pi, np.pi),
+            sigma_eq[mask],
+            delta_theta[mask],
+            gridsize=90,
+            bins="log",
+            cmap="viridis",
+            extent=(sigma_eq.min(), sigma_eq.max(), -np.pi, np.pi),
             linewidths=0,
         )
         ax.axhline(0.0, color="white", lw=0.8, ls="--")
@@ -211,8 +221,12 @@ def main() -> int:
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
     hb = ax.hexbin(
-        schmid[active], delta_theta[active], gridsize=80, bins="log",
-        cmap="viridis", extent=(schmid.min(), schmid.max(), -np.pi, np.pi),
+        schmid[active],
+        delta_theta[active],
+        gridsize=80,
+        bins="log",
+        cmap="viridis",
+        extent=(schmid.min(), schmid.max(), -np.pi, np.pi),
         linewidths=0,
     )
     ax.axhline(0.0, color="white", lw=0.8, ls="--")

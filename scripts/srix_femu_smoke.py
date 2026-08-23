@@ -28,36 +28,61 @@ STATES = list(range(21, 41))
 def run_partition(output: Path, parameters: dict[str, float]) -> float:
     """One FEM run; returns the final-state displacement misfit to the measured."""
 
-    options = json.dumps(
-        {"parameter_set": DEFAULT_PARAMETER_SET, "parameters": parameters}
-    )
+    options = json.dumps({"parameter_set": DEFAULT_PARAMETER_SET, "parameters": parameters})
     base = [
-        str(ROOT / ".venv/bin/python"), "-m", "fem_inhouse", "partition",
-        "--input", str(CASE), "--output", str(output),
-        "--count", "25", "--padding", "0", "--increments", "20",
+        str(ROOT / ".venv/bin/python"),
+        "-m",
+        "fem_inhouse",
+        "partition",
+        "--input",
+        str(CASE),
+        "--output",
+        str(output),
+        "--count",
+        "25",
+        "--padding",
+        "0",
+        "--increments",
+        "20",
     ]
     solve = subprocess.run(
-        base + [
+        [
+            *base,
             "--solve-pending",
-            "--constitutive-backend", "mfront-3d-condensed-plane-stress",
-            "--mfront-library", "build/mfront/src/libBehaviour.so",
-            "--mfront-behaviour-id", "fcc_forest_rubin_srix",
-            "--constitutive-options", options,
+            "--constitutive-backend",
+            "mfront-3d-condensed-plane-stress",
+            "--mfront-library",
+            "build/mfront/src/libBehaviour.so",
+            "--mfront-behaviour-id",
+            "fcc_forest_rubin_srix",
+            "--constitutive-options",
+            options,
         ],
-        capture_output=True, text=True, timeout=900,
+        capture_output=True,
+        text=True,
+        timeout=900,
     )
     if solve.returncode != 0:
         raise RuntimeError(f"partition failed: {solve.stderr[-600:]}")
     stitch = subprocess.run(
-        base + [
-            "--stitch", "U",
-            "--constitutive-backend", "mfront-3d-condensed-plane-stress",
-            "--mfront-library", "build/mfront/src/libBehaviour.so",
-            "--mfront-behaviour-id", "fcc_forest_rubin_srix",
-            "--constitutive-options", options,
-            "--field-output", str(output / "U.npz"),
+        [
+            *base,
+            "--stitch",
+            "U",
+            "--constitutive-backend",
+            "mfront-3d-condensed-plane-stress",
+            "--mfront-library",
+            "build/mfront/src/libBehaviour.so",
+            "--mfront-behaviour-id",
+            "fcc_forest_rubin_srix",
+            "--constitutive-options",
+            options,
+            "--field-output",
+            str(output / "U.npz"),
         ],
-        capture_output=True, text=True, timeout=900,
+        capture_output=True,
+        text=True,
+        timeout=900,
     )
     if stitch.returncode != 0:
         raise RuntimeError(f"stitch failed: {stitch.stderr[-600:]}")
@@ -66,9 +91,7 @@ def run_partition(output: Path, parameters: dict[str, float]) -> float:
         [np.load(CASE / "displacement_x_mm.npy"), np.load(CASE / "displacement_y_mm.npy")],
         axis=-1,
     )
-    return float(
-        np.sum((simulated - measured) ** 2) / max(np.sum(measured**2), 1e-300)
-    )
+    return float(np.sum((simulated - measured) ** 2) / max(np.sum(measured**2), 1e-300))
 
 
 def main() -> int:
@@ -81,8 +104,12 @@ def main() -> int:
     # parameters, so they are cleared before every run.
     import shutil
 
-    for pattern in ("femu_smoke_theta_*", "femu_smoke_fitted", "femu_smoke_default",
-                    "femu_smoke_j2"):
+    for pattern in (
+        "femu_smoke_theta_*",
+        "femu_smoke_fitted",
+        "femu_smoke_default",
+        "femu_smoke_j2",
+    ):
         for stale in OUT.glob(pattern):
             if stale.is_dir():
                 shutil.rmtree(stale)
@@ -129,24 +156,56 @@ def main() -> int:
     if not (j2_output / "U.npz").exists():
         j2_solve = subprocess.run(
             [
-                str(ROOT / ".venv/bin/python"), "-m", "fem_inhouse", "partition",
-                "--input", str(CASE), "--output", str(j2_output),
-                "--count", "25", "--padding", "0", "--increments", "20",
-                "--solve-pending", "--constitutive-backend", "python",
+                str(ROOT / ".venv/bin/python"),
+                "-m",
+                "fem_inhouse",
+                "partition",
+                "--input",
+                str(CASE),
+                "--output",
+                str(j2_output),
+                "--count",
+                "25",
+                "--padding",
+                "0",
+                "--increments",
+                "20",
+                "--solve-pending",
+                "--constitutive-backend",
+                "python",
             ],
-            capture_output=True, text=True, timeout=900,
+            capture_output=True,
+            text=True,
+            timeout=900,
         )
         if j2_solve.returncode != 0:
             raise RuntimeError(f"j2 solve failed: {j2_solve.stderr[-600:]}")
         j2_stitch = subprocess.run(
             [
-                str(ROOT / ".venv/bin/python"), "-m", "fem_inhouse", "partition",
-                "--input", str(CASE), "--output", str(j2_output),
-                "--count", "25", "--padding", "0", "--increments", "20",
-                "--stitch", "U", "--constitutive-backend", "python",
-                "--field-output", str(j2_output / "U.npz"),
+                str(ROOT / ".venv/bin/python"),
+                "-m",
+                "fem_inhouse",
+                "partition",
+                "--input",
+                str(CASE),
+                "--output",
+                str(j2_output),
+                "--count",
+                "25",
+                "--padding",
+                "0",
+                "--increments",
+                "20",
+                "--stitch",
+                "U",
+                "--constitutive-backend",
+                "python",
+                "--field-output",
+                str(j2_output / "U.npz"),
             ],
-            capture_output=True, text=True, timeout=900,
+            capture_output=True,
+            text=True,
+            timeout=900,
         )
         if j2_stitch.returncode != 0:
             raise RuntimeError(f"j2 stitch failed: {j2_stitch.stderr[-600:]}")
@@ -165,7 +224,8 @@ def main() -> int:
         "bars": {"beats_j2_by": 0.9, "beats_default_by": 0.1},
         "reading": (
             "helps"
-            if fitted_misfit <= 0.9 * j2_misfit and default_misfit - fitted_misfit >= 0.1 * default_misfit
+            if fitted_misfit <= 0.9 * j2_misfit
+            and default_misfit - fitted_misfit >= 0.1 * default_misfit
             else "negative"
         ),
     }

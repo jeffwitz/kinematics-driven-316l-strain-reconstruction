@@ -131,18 +131,23 @@ def main() -> int:
     parser.add_argument("--origin", nargs=2, type=int, default=list(ORIGIN))
     parser.add_argument("--pixels", type=int, default=PIXELS)
     parser.add_argument("--maxiter", type=int, default=200)
-    parser.add_argument("--gradient-check", action="store_true",
-                        help="FD sweep of the projected chain gradient at one state, then exit")
-    parser.add_argument("--trajectories", type=Path, default=None,
-                        help="save per-state, per-point constitutive trajectories for the phase-space analysis")
+    parser.add_argument(
+        "--gradient-check",
+        action="store_true",
+        help="FD sweep of the projected chain gradient at one state, then exit",
+    )
+    parser.add_argument(
+        "--trajectories",
+        type=Path,
+        default=None,
+        help="save per-state, per-point constitutive trajectories for the phase-space analysis",
+    )
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     pixels = arguments.pixels
     x0, y0 = arguments.origin
 
-    grid = StructuredGrid2D(
-        pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels
-    )
+    grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     operator = TensorPlasticObservabilityOperator.build(
         grid,
         young_modulus_mpa=YOUNG_MPA,
@@ -162,9 +167,7 @@ def main() -> int:
     def divergence(stress_kelvin: np.ndarray) -> np.ndarray:
         voigt = stress_kelvin.reshape(-1, 3) / KELVIN_SCALE_2D
         return pack_interior(
-            operator.kinematics.divergence_from_sample_stress(
-                voigt.reshape((pixels, pixels, 2, 3))
-            )
+            operator.kinematics.divergence_from_sample_stress(voigt.reshape((pixels, pixels, 2, 3)))
         )
 
     def elastic_lift(field: np.ndarray) -> np.ndarray:
@@ -184,8 +187,10 @@ def main() -> int:
         solved = operator.solve_stiffness(loads if columns > 1 else loads[:, 0])
         solved = solved.reshape(-1, columns) if columns > 1 else solved[:, None]
         return np.stack(
-            [kelvin_strain(np.asarray(unpack_interior(solved[:, k], grid)))
-             for k in range(columns)],
+            [
+                kelvin_strain(np.asarray(unpack_interior(solved[:, k], grid)))
+                for k in range(columns)
+            ],
             axis=2,
         )
 
@@ -197,7 +202,9 @@ def main() -> int:
     def transpose_numpy(values: np.ndarray) -> np.ndarray:
         flat = values.reshape(points, 3, -1)
         strained = batched_green(flat)
-        return np.stack([stress_of(strained[:, :, k]) for k in range(strained.shape[2])], axis=2).reshape(values.shape)
+        return np.stack(
+            [stress_of(strained[:, :, k]) for k in range(strained.shape[2])], axis=2
+        ).reshape(values.shape)
 
     report = json.loads((HISTORY.with_name("report.json")).read_text(encoding="utf-8"))
     bounds = list(map(int, report["solve_bounds"]))
@@ -232,8 +239,10 @@ def main() -> int:
         columns, total = [basis], basis.shape[1]
         while total < size:
             grown = np.asarray(
-                [transpose_numpy(apply_numpy(columns[-1][:, k].reshape(points, 3))).reshape(-1)
-                 for k in range(columns[-1].shape[1])]
+                [
+                    transpose_numpy(apply_numpy(columns[-1][:, k].reshape(points, 3))).reshape(-1)
+                    for k in range(columns[-1].shape[1])
+                ]
             ).T
             orthonormal, _ = np.linalg.qr(np.concatenate([*columns, grown], axis=1))
             addition = orthonormal[:, total:]
@@ -264,7 +273,7 @@ def main() -> int:
             gradient = modes.reshape(-1, rank).T @ dual.ravel()
             return 0.5 * float(np.sum(residual**2)), gradient
 
-        base_value, analytic = objective_and_gradient_check(a0)
+        _base_value, analytic = objective_and_gradient_check(a0)
         sweep = {}
         for h in (1e-3, 1e-4, 1e-5, 1e-6):
             scale = max(float(np.abs(a0).max()), 1e-9)
@@ -363,14 +372,20 @@ def main() -> int:
             stress = reference_stress + stress_of(predictor - plastic)
             target = measured[state] - predictor
 
-            def objective_and_gradient(a):
-                increment = modes @ a
-                projected, active = project(increment, stress, arguments.projector)
+            def objective_and_gradient(
+                a: np.ndarray,
+                active_modes: np.ndarray = modes,
+                active_stress: np.ndarray = stress,
+                active_target: np.ndarray = target,
+                active_rank: int = rank,
+            ) -> tuple[float, np.ndarray]:
+                increment = active_modes @ a
+                projected, active = project(increment, active_stress, arguments.projector)
                 response = apply_numpy(projected)
-                residual = response - target
+                residual = response - active_target
                 dual = transpose_numpy(residual)
-                dual = project_transpose(dual, stress, arguments.projector, active)
-                gradient = modes.reshape(-1, rank).T @ dual.ravel()
+                dual = project_transpose(dual, active_stress, arguments.projector, active)
+                gradient = active_modes.reshape(-1, active_rank).T @ dual.ravel()
                 return 0.5 * float(np.sum(residual**2)), gradient
 
             if arguments.projector == "none":
@@ -392,9 +407,7 @@ def main() -> int:
                 starts.append(linear)
                 rng = np.random.default_rng(20260817 + rank)
                 starts.append(
-                    rng.normal(
-                        scale=max(float(np.linalg.norm(starts[0])), 1e-6), size=rank
-                    )
+                    rng.normal(scale=max(float(np.linalg.norm(starts[0])), 1e-6), size=rank)
                 )
                 best_value, best_solution = np.inf, None
                 values = []
@@ -419,8 +432,9 @@ def main() -> int:
             new_stress = reference_stress + stress_of(simulated - plastic)
             power = (0.5 * (previous_stress + new_stress) * increment).sum(axis=1)
             power_pred = (stress * increment).sum(axis=1)
-            frobenius = np.sqrt(np.maximum(
-                np.einsum("pi,ij,pj->p", increment, 1.5 * GAUGE, increment), 0.0))
+            frobenius = np.sqrt(
+                np.maximum(np.einsum("pi,ij,pj->p", increment, 1.5 * GAUGE, increment), 0.0)
+            )
             stress_norm = np.sqrt((new_stress**2).sum(axis=1))
             gauge = np.sqrt(np.maximum(np.einsum("pi,ij,pj->p", increment, GAUGE, increment), 0.0))
             active_points = gauge > 0.1 * max(gauge.mean(), 1e-300)
@@ -461,9 +475,7 @@ def main() -> int:
             }
             if arguments.trajectories is not None:
                 trajectory_stress.append(stress.copy())
-                trajectory_eps_elastic.append(
-                    np.einsum("pij,pj->pi", inv_elasticity, stress)
-                )
+                trajectory_eps_elastic.append(np.einsum("pij,pj->pi", inv_elasticity, stress))
                 trajectory_eps_inel.append(plastic.copy())
                 trajectory_d_eps_inel.append(increment.copy())
                 trajectory_eps_inel_obs.append(trajectory_machinery(plastic))

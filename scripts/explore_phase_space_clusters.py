@@ -62,16 +62,13 @@ def load_orientation() -> np.ndarray:
         schmid = np.asarray(handle["/schmid/max_schmid_factor"])[
             x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1
         ]
+
     def to_points(field: np.ndarray) -> np.ndarray:
         # Node grid (101x101) -> element mean (100x100) -> the two subcells.
-        element_mean = 0.25 * (
-            field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:]
-        )
+        element_mean = 0.25 * (field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:])
         return np.repeat(element_mean[:, :, None], SUBCELLS, axis=2).reshape(-1)
 
-    return np.stack(
-        [to_points(phi1), to_points(phi), to_points(phi2), to_points(schmid)], axis=1
-    )
+    return np.stack([to_points(phi1), to_points(phi), to_points(phi2), to_points(schmid)], axis=1)
 
 
 def build_features(trajectory: dict, orientation: np.ndarray) -> dict[str, np.ndarray]:
@@ -79,7 +76,6 @@ def build_features(trajectory: dict, orientation: np.ndarray) -> dict[str, np.nd
     eps_inel_obs = trajectory["eps_inel_observable"].reshape(-1, 3)
     eps_inel_raw = trajectory["eps_inel"].reshape(-1, 3)
     s = deviator(stress)
-    s_norm = np.sqrt(s[:, 0] ** 2 + s[:, 1] ** 2 + s[:, 2] ** 2 + (s[:, 0] + s[:, 1]) ** 2)
     q = np.sqrt(1.5) * np.sqrt(
         s[:, 0] ** 2 + s[:, 1] ** 2 + s[:, 2] ** 2 + (s[:, 0] + s[:, 1]) ** 2
     )
@@ -89,7 +85,6 @@ def build_features(trajectory: dict, orientation: np.ndarray) -> dict[str, np.nd
     p_eq_obs = gauge_norm(eps_inel_obs)
     p_eq_raw = gauge_norm(eps_inel_raw)
     n_states = trajectory["stress"].shape[0]
-    n_points = trajectory["stress"].shape[1]
     orientation_rep = np.tile(orientation, (n_states, 1))
     phi1, phi, phi2, schmid = orientation_rep.T
     common = {
@@ -108,26 +103,55 @@ def build_features(trajectory: dict, orientation: np.ndarray) -> dict[str, np.nd
         "cos_phi2": np.cos(phi2),
     }
     feature_sets = {
-        "F1": np.stack([common["q"], common["p"], common["sin_angle"], common["cos_angle"]], axis=1),
+        "F1": np.stack(
+            [common["q"], common["p"], common["sin_angle"], common["cos_angle"]], axis=1
+        ),
         "F2": np.stack(
-            [common["q"], common["p"], common["sin_angle"], common["cos_angle"],
-             common["p_eq_obs"]],
+            [
+                common["q"],
+                common["p"],
+                common["sin_angle"],
+                common["cos_angle"],
+                common["p_eq_obs"],
+            ],
             axis=1,
         ),
         "F3": np.stack(
-            [common["q"], common["p"], common["sin_angle"], common["cos_angle"],
-             common["p_eq_obs"], common["schmid"]],
+            [
+                common["q"],
+                common["p"],
+                common["sin_angle"],
+                common["cos_angle"],
+                common["p_eq_obs"],
+                common["schmid"],
+            ],
             axis=1,
         ),
         "F4": np.stack(
-            [common["q"], common["p"], common["sin_angle"], common["cos_angle"],
-             common["p_eq_obs"], common["schmid"], common["sin_phi1"], common["cos_phi1"],
-             common["sin_Phi"], common["cos_Phi"], common["sin_phi2"], common["cos_phi2"]],
+            [
+                common["q"],
+                common["p"],
+                common["sin_angle"],
+                common["cos_angle"],
+                common["p_eq_obs"],
+                common["schmid"],
+                common["sin_phi1"],
+                common["cos_phi1"],
+                common["sin_Phi"],
+                common["cos_Phi"],
+                common["sin_phi2"],
+                common["cos_phi2"],
+            ],
             axis=1,
         ),
         "F2_raw_peq": np.stack(
-            [common["q"], common["p"], common["sin_angle"], common["cos_angle"],
-             common["p_eq_raw"]],
+            [
+                common["q"],
+                common["p"],
+                common["sin_angle"],
+                common["cos_angle"],
+                common["p_eq_raw"],
+            ],
             axis=1,
         ),
     }
@@ -138,8 +162,10 @@ def cluster_and_score(features: np.ndarray, states: np.ndarray, response: dict) 
     n_total = features.shape[0]
     rng = np.random.default_rng(20260817)
     indices = np.concatenate(
-        [np.where(states == s)[0][rng.permutation(np.sum(states == s))[:SUBSAMPLE_PER_STATE]]
-         for s in np.unique(states)]
+        [
+            np.where(states == s)[0][rng.permutation(np.sum(states == s))[:SUBSAMPLE_PER_STATE]]
+            for s in np.unique(states)
+        ]
     )
     scaler = StandardScaler().fit(features[indices])
     scaled_all = scaler.transform(features)
@@ -154,17 +180,13 @@ def cluster_and_score(features: np.ndarray, states: np.ndarray, response: dict) 
     )
     labels_full = np.full(n_total, -1, dtype=int)
     if len(unique_labels):
-        distances = np.stack(
-            [np.linalg.norm(scaled_all - m, axis=1) for m in medoids], axis=1
-        )
-        labels_full = np.where(
-            distances.min(axis=1) < np.inf, distances.argmin(axis=1), -1
-        )
+        distances = np.stack([np.linalg.norm(scaled_all - m, axis=1) for m in medoids], axis=1)
+        labels_full = np.where(distances.min(axis=1) < np.inf, distances.argmin(axis=1), -1)
     # Merge small clusters into noise.
     counts = np.bincount(labels_full[labels_full >= 0], minlength=len(unique_labels))
     keep = np.where(counts >= 0.005 * n_total)[0]
     remap = {old: new for new, old in enumerate(keep.tolist())}
-    labels_full = np.asarray([remap.get(l, -1) for l in labels_full], dtype=int)
+    labels_full = np.asarray([remap.get(label, -1) for label in labels_full], dtype=int)
     n_clusters = len(keep)
 
     # Time-mixing: max single-state share per cluster.
@@ -267,7 +289,8 @@ def main() -> int:
             print(
                 f"{name} {set_name}: clusters {result['n_clusters']}  noise "
                 f"{result['noise_share']:.2f}  silhouette {result['silhouette']:.3f}  "
-                f"time_mixed {result['time_mixed']}  dir_gain {result['direction_improvement']:.2f}  "
+                f"time_mixed {result['time_mixed']}  "
+                f"dir_gain {result['direction_improvement']:.2f}  "
                 f"r2_amp {result['r2_cluster_amplitude']:.2f}",
                 flush=True,
             )
@@ -282,9 +305,7 @@ def main() -> int:
         for set_name in ("F1", "F2", "F3", "F4")
     }
     ami_kernel = float(
-        adjusted_mutual_info_score(
-            labels_by_set["r16_F2"], labels_by_set["r16_F2_raw_peq"]
-        )
+        adjusted_mutual_info_score(labels_by_set["r16_F2"], labels_by_set["r16_F2_raw_peq"])
     )
     report["frozen_bars"] = {
         "ami_rank": ami_rank,

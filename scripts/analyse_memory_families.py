@@ -48,7 +48,9 @@ def binned_r2(features: np.ndarray, gamma_abs: np.ndarray) -> float:
     return 1.0 - within / max(total * global_var, 1e-300)
 
 
-def evolve(memory_kind: str, params: tuple, gamma_full: np.ndarray, sigma_gamma: float) -> np.ndarray:
+def evolve(
+    memory_kind: str, params: tuple, gamma_full: np.ndarray, sigma_gamma: float
+) -> np.ndarray:
     """Causal evolution of the memory over all states, per (point, system).
 
     Returns the memory at the state *before* each increment (aligned like
@@ -90,7 +92,7 @@ def main() -> int:
     gamma_full = fields["gamma"]  # flat (samples, 12)
     gamma_states = gamma_full.reshape(N_STATES, -1, N_SYSTEMS)  # for the causal evolution
     states_full = fields["states"]
-    n_states, n_points, _ = gamma_states.shape
+    _n_states, n_points, _ = gamma_states.shape
 
     rng = np.random.default_rng(20260817)
     sample_idx = np.concatenate(
@@ -110,9 +112,12 @@ def main() -> int:
     point_idx = sample_idx % n_points
     state_num = sample_idx // n_points
 
-    families = {"F0": [(1.0, 0.0)], "F1": [(z, 0.0) for z in GRID_SAT],
-                "F2": [(1.0, d) for d in GRID_D],
-                "F3": [(z, d) for z in (1.0, 2.0) for d in (0.5, 2.0)]}
+    families = {
+        "F0": [(1.0, 0.0)],
+        "F1": [(z, 0.0) for z in GRID_SAT],
+        "F2": [(1.0, d) for d in GRID_D],
+        "F3": [(z, d) for z in (1.0, 2.0) for d in (0.5, 2.0)],
+    }
 
     fold_rows: dict[str, list] = {name: [] for name in families}
     for state in range(N_STATES):
@@ -120,7 +125,9 @@ def main() -> int:
         train = ~test
         train_indices = np.where(train)[0]
         tune_mask = train_indices[
-            rng.choice(len(train_indices), size=min(TUNE_SUBSAMPLE, len(train_indices)), replace=False)
+            rng.choice(
+                len(train_indices), size=min(TUNE_SUBSAMPLE, len(train_indices)), replace=False
+            )
         ]
         sigma_gamma = max(float(np.std(gamma_abs[tune_mask])), 1e-300)
 
@@ -130,10 +137,6 @@ def main() -> int:
         tree = cKDTree(scaler.transform(baseline_train))
         _, idx = tree.query(scaler.transform(baseline_features[test]), k=K)
         pred = gamma_abs[train][idx].mean(axis=1)
-        baseline_r2 = 1.0 - float(np.sum((gamma_abs[test] - pred) ** 2)) / max(
-            float(np.sum((gamma_abs[test] - np.mean(gamma_abs[train])) ** 2)), 1e-300
-        )
-
         # Gamma baseline as the F0 family (no tuning).
         memory_gamma = np.abs(gamma_states).cumsum(axis=0) - np.abs(gamma_states)
         mem_features = np.stack([tau_abs, memory_gamma[state_num, point_idx, system_idx]], axis=1)
@@ -186,9 +189,7 @@ def main() -> int:
             "r2_std": float(np.std(r2s)),
             "params": [row["params"] for row in rows],
         }
-    best_family = max(
-        ("F1", "F2", "F3"), key=lambda f: summary[f]["r2_mean"]
-    )
+    best_family = max(("F1", "F2", "F3"), key=lambda f: summary[f]["r2_mean"])
     payload = {
         "schema_version": 1,
         "bars": {"memory_bar": 0.30, "jump_bar": 0.10},
@@ -202,7 +203,14 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n")
-    print(json.dumps({k: v for k, v in payload.items() if k != "summary"}, indent=2, sort_keys=True, default=str))
+    print(
+        json.dumps(
+            {k: v for k, v in payload.items() if k != "summary"},
+            indent=2,
+            sort_keys=True,
+            default=str,
+        )
+    )
     print(json.dumps(summary, indent=2, sort_keys=True, default=str))
     return 0
 

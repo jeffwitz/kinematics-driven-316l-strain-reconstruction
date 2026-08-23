@@ -79,21 +79,30 @@ def main() -> int:
             [np.abs(t0), np.abs(tm1), np.abs(t0 - tm1), (t0 * tm1 < 0).astype(float)], axis=1
         ),
         "W1mg": np.stack(
-            [np.abs(t0), np.abs(tm1), np.abs(t0 - tm1), (t0 * tm1 < 0).astype(float),
-             np.abs(gamma_at(-1))],
+            [
+                np.abs(t0),
+                np.abs(tm1),
+                np.abs(t0 - tm1),
+                (t0 * tm1 < 0).astype(float),
+                np.abs(gamma_at(-1)),
+            ],
             axis=1,
         ),
         "W2m": np.stack(
-            [np.abs(t0), np.abs(tm1), np.abs(at(-2)),
-             (t0 * tm1 < 0).astype(float), (tm1 * at(-2) < 0).astype(float),
-             np.abs(gamma_at(-1)), np.abs(gamma_at(-2))],
+            [
+                np.abs(t0),
+                np.abs(tm1),
+                np.abs(at(-2)),
+                (t0 * tm1 < 0).astype(float),
+                (tm1 * at(-2) < 0).astype(float),
+                np.abs(gamma_at(-1)),
+                np.abs(gamma_at(-2)),
+            ],
             axis=1,
         ),
     }
     cumulative = np.abs(gamma_states).cumsum(axis=0) - np.abs(gamma_states)
-    baseline_features = np.stack(
-        [np.abs(t0), cumulative[state_num, point_idx, system_idx]], axis=1
-    )
+    baseline_features = np.stack([np.abs(t0), cumulative[state_num, point_idx, system_idx]], axis=1)
     windows["baseline"] = baseline_features
 
     target = np.abs(gamma_full[sample_idx, system_idx])
@@ -119,8 +128,9 @@ def main() -> int:
                     pred = Ridge(alpha=1.0).fit(x_train, target[train]).predict(x_test)
                 else:
                     pred = (
-                        HistGradientBoostingRegressor(max_iter=100, early_stopping=False,
-                                                      random_state=20260817)
+                        HistGradientBoostingRegressor(
+                            max_iter=100, early_stopping=False, random_state=20260817
+                        )
                         .fit(x_train, target[train])
                         .predict(x_test)
                     )
@@ -145,7 +155,9 @@ def main() -> int:
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True))
+    print(
+        json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True)
+    )
     return 0
 
 

@@ -24,8 +24,8 @@ from fem_inhouse.core.fcc_interaction_matrix import SLIP_SYSTEMS
 from fem_inhouse.core.mfront_3d import MFront3DMaterialPointBatch
 from fem_inhouse.core.mfront_behaviours import MFRONT_BEHAVIOURS
 from fem_inhouse.core.srix_parameters import (
-    SRIX_PARAMETER_SETS,
     DEFAULT_PARAMETER_SET,
+    SRIX_PARAMETER_SETS,
     resolve_srix_parameters,
 )
 
@@ -58,15 +58,13 @@ def slip_tensors() -> np.ndarray:
 
 def orientation_maps() -> np.ndarray:
     x0, y0 = ORIGIN
-    with h5py.File(EBSD_PATH, "r") as handle:  # noqa: F821
+    with h5py.File(EBSD_PATH, "r") as handle:
         phi1 = np.asarray(handle["/orientation/phi1"])[x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1]
         phi = np.asarray(handle["/orientation/Phi"])[x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1]
         phi2 = np.asarray(handle["/orientation/phi2"])[x0 : x0 + PIXELS + 1, y0 : y0 + PIXELS + 1]
 
     def to_points(field: np.ndarray) -> np.ndarray:
-        element_mean = 0.25 * (
-            field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:]
-        )
+        element_mean = 0.25 * (field[1:, 1:] + field[:-1, :-1] + field[1:, :-1] + field[:-1, 1:])
         return np.repeat(element_mean[:, :, None], SUBCELLS, axis=2).reshape(-1)
 
     return np.stack([to_points(phi1), to_points(phi), to_points(phi2)], axis=1)
@@ -97,7 +95,6 @@ def main() -> int:
 
     # Total strain per state, 6-component Kelvin: [xx, yy, zz, sqrt2 yz, sqrt2 xz, sqrt2 xy]
     nu = 0.30
-    e_mod = 205000.0
     def zz_elastic(eps_el: np.ndarray, stress_k: np.ndarray) -> np.ndarray:
         xx, yy = eps_el[..., 0], eps_el[..., 1]
         return -(nu / (1.0 - nu)) * (xx + yy)
@@ -117,7 +114,11 @@ def main() -> int:
 
     # Experimental power per increment (predictor-stress power of the observable increment).
     def inplane_power(sigma_k: np.ndarray, deps_k: np.ndarray) -> np.ndarray:
-        return sigma_k[..., 0] * deps_k[..., 0] + sigma_k[..., 1] * deps_k[..., 1] + sigma_k[..., 2] * deps_k[..., 2]
+        return (
+            sigma_k[..., 0] * deps_k[..., 0]
+            + sigma_k[..., 1] * deps_k[..., 1]
+            + sigma_k[..., 2] * deps_k[..., 2]
+        )
 
     d_exp = np.stack(
         [inplane_power(stress[n], d_eps_inel[n]) for n in range(n_states)]
@@ -130,14 +131,14 @@ def main() -> int:
     rotations = rotations_from_euler_bunge_deg(angles)  # Q_global_to_material
     material = slip_tensors()
     material_to_global = np.swapaxes(rotations, 1, 2)
-    systems_global = np.einsum("pia,cab,pjb->pijc", material_to_global, material, material_to_global)
+    systems_global = np.einsum(
+        "pia,cab,pjb->pijc", material_to_global, material, material_to_global
+    )
 
     default = SRIX_PARAMETER_SETS[DEFAULT_PARAMETER_SET]
     base_props, _ = resolve_srix_parameters(parameter_set=DEFAULT_PARAMETER_SET)
-    ATTRIBUTES = ("tau0_mpa", "overstress_modulus_mpa", "q_mpa", "b", "c_mpa", "d")
-    theta0 = np.log(
-        np.asarray([getattr(default, attr) for attr in ATTRIBUTES], dtype=np.float64)
-    )
+    attributes = ("tau0_mpa", "overstress_modulus_mpa", "q_mpa", "b", "c_mpa", "d")
+    theta0 = np.log(np.asarray([getattr(default, attr) for attr in attributes], dtype=np.float64))
 
     spec = MFRONT_BEHAVIOURS.get(BEHAVIOUR_IDENTIFIER)
 
@@ -163,7 +164,9 @@ def main() -> int:
         previous_strain = np.zeros((n_points, 6))
         for n in range(n_states):
             try:
-                trial = batch.evaluate(total_strain[n], time_increment=1.0, collect_observables=True)
+                trial = batch.evaluate(
+                    total_strain[n], time_increment=1.0, collect_observables=True
+                )
                 batch.commit()
             except Exception:
                 # Uniform substepping: the reconstructed path can exceed what
@@ -222,7 +225,9 @@ def main() -> int:
             minus = theta_log.copy()
             plus[index] += step
             minus[index] -= step
-            gradient[index] = (objective(plus, mask_states) - objective(minus, mask_states)) / (2 * step)
+            gradient[index] = (objective(plus, mask_states) - objective(minus, mask_states)) / (
+                2 * step
+            )
         return gradient
 
     bounds = [(value - 1.5, value + 1.5) for value in theta0]
@@ -237,7 +242,7 @@ def main() -> int:
     )
     fitted = np.exp(result.x)
     names = ("tau0", "R", "Q", "b", "C", "d")
-    defaults = np.asarray([getattr(default, attr) for attr in ATTRIBUTES])
+    defaults = np.asarray([getattr(default, attr) for attr in attributes])
     fitted_powers, final_failures = integrate(result.x)
     heldout_r2 = {}
     for s in heldout:
@@ -248,8 +253,12 @@ def main() -> int:
     payload = {
         "schema_version": 1,
         "bars": {"explains": 0.30, "partial": 0.10},
-        "fitted_parameters": {name: float(value) for name, value in zip(names, fitted, strict=True)},
-        "default_parameters": {name: float(value) for name, value in zip(names, defaults, strict=True)},
+        "fitted_parameters": {
+            name: float(value) for name, value in zip(names, fitted, strict=True)
+        },
+        "default_parameters": {
+            name: float(value) for name, value in zip(names, defaults, strict=True)
+        },
         "ratios_to_default": {name: float(fitted[i] / defaults[i]) for i, name in enumerate(names)},
         "optimization_success": bool(result.success),
         "final_objective": float(result.fun),

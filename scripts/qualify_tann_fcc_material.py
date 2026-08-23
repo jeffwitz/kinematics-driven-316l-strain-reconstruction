@@ -20,7 +20,7 @@ import numpy as np
 
 from fem_inhouse.constitutive.tann_fcc import TannFCCBatch, TannFCCConfig
 from fem_inhouse.core.fcc_interaction_matrix import SLIP_SYSTEMS
-from fem_inhouse.core.srix_canonical import SCHMID_FACTOR_001, ACTIVE_SYSTEMS_001
+from fem_inhouse.core.srix_canonical import ACTIVE_SYSTEMS_001, SCHMID_FACTOR_001
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "validation/_generated/shared_tensor_generator"
@@ -44,11 +44,15 @@ def systems_identity() -> np.ndarray:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUT / "tann_fcc_material_qualification.json")
-    parser.add_argument("--sigma-ref", type=float, default=None,
-                        help="force reference in MPa (None -> 2 mu, Amendment 1; "
-                             "200.0 is Amendment 3)")
-    parser.add_argument("--integrator", type=str, default="rk4",
-                        help="rk4 (registered) or implicit_euler")
+    parser.add_argument(
+        "--sigma-ref",
+        type=float,
+        default=None,
+        help="force reference in MPa (None -> 2 mu, Amendment 1; 200.0 is Amendment 3)",
+    )
+    parser.add_argument(
+        "--integrator", type=str, default="rk4", help="rk4 (registered) or implicit_euler"
+    )
     arguments = parser.parse_args()
 
     config = TannFCCConfig(sigma_ref_mpa=arguments.sigma_ref, integrator=arguments.integrator)
@@ -83,9 +87,7 @@ def main() -> int:
     # only valid on fresh batches that start from zero.
     permutation = RNG.permutation(12)
     strain = RNG.normal(scale=2e-3, size=(POINTS, 3))
-    batch_c = TannFCCBatch(
-        config, point_count=POINTS, systems_global=systems_identity()
-    )
+    batch_c = TannFCCBatch(config, point_count=POINTS, systems_global=systems_identity())
     batch_perm = TannFCCBatch(
         config,
         point_count=POINTS,
@@ -97,7 +99,9 @@ def main() -> int:
     trial_perm = batch_perm.evaluate(strain)
     stress_permuted_back = trial_perm.stress_in_plane_mpa  # stress is permutation-free
     report["permutation_equivariance"] = {
-        "stress_max_abs_diff": float(np.max(np.abs(trial.stress_in_plane_mpa - stress_permuted_back))),
+        "stress_max_abs_diff": float(
+            np.max(np.abs(trial.stress_in_plane_mpa - stress_permuted_back))
+        ),
         "tangent_max_abs_diff": float(
             np.max(np.abs(trial.consistent_tangent_mpa - trial_perm.consistent_tangent_mpa))
         ),
@@ -109,15 +113,11 @@ def main() -> int:
     previous_state = None
     for substeps in (1, 2, 4, 8):
         sub_config = TannFCCConfig(n_substeps=substeps)
-        sub_batch = TannFCCBatch(
-            sub_config, point_count=POINTS, systems_global=systems_identity()
-        )
+        sub_batch = TannFCCBatch(sub_config, point_count=POINTS, systems_global=systems_identity())
         sub_batch.copy_weights_from(batch)
         trial = sub_batch.evaluate(strain, compute_tangent=False)
         if previous_state is not None:
-            substep_errors[substeps] = float(
-                np.max(np.abs(trial.trial_state - previous_state))
-            )
+            substep_errors[substeps] = float(np.max(np.abs(trial.trial_state - previous_state)))
         previous_state = trial.trial_state
     report["substepping"] = substep_errors
 
@@ -137,9 +137,7 @@ def main() -> int:
         minus[:, component] -= step
         trial_plus = batch.evaluate(plus, compute_tangent=False)
         trial_minus = batch.evaluate(minus, compute_tangent=False)
-        return (
-            trial_plus.stress_in_plane_mpa - trial_minus.stress_in_plane_mpa
-        ) / (2.0 * step)
+        return (trial_plus.stress_in_plane_mpa - trial_minus.stress_in_plane_mpa) / (2.0 * step)
 
     sweep = {}
     richardson = {}

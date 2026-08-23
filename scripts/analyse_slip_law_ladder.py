@@ -47,12 +47,13 @@ def main() -> int:
     def build_variant(gamma_name: str, cumulative_name: str) -> dict:
         gamma_full = fields[gamma_name]
         cumulative_full = fields[cumulative_name]
-        n_samples = tau_full.shape[0]
         rng = np.random.default_rng(20260817)
         sample_idx = np.concatenate(
             [
                 np.where(states_full == state)[0][
-                    rng.choice(np.sum(states_full == state), size=SUBSAMPLE_PER_STATE, replace=False)
+                    rng.choice(
+                        np.sum(states_full == state), size=SUBSAMPLE_PER_STATE, replace=False
+                    )
                 ]
                 for state in range(N_STATES)
             ]
@@ -137,8 +138,7 @@ def main() -> int:
             report["l2_S5"]["r2"] - report["l2_S2"]["r2"],
         )
         >= 0.10,
-        "invariance": report["l2_S2"]["r2"]
-        >= 0.8 * report["l2_S2"]["best_per_system_r2"],
+        "invariance": report["l2_S2"]["r2"] >= 0.8 * report["l2_S2"]["best_per_system_r2"],
     }
     payload = {
         "schema_version": 1,

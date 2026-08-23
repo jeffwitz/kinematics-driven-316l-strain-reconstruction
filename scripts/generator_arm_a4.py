@@ -72,12 +72,15 @@ class _Identity:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=int, default=600)
+    parser.add_argument("--origin", nargs=2, type=int, default=list(ORIGIN))
+    parser.add_argument("--pixels", type=int, default=PIXELS)
     parser.add_argument("--output", type=Path, default=OUT / "arm_a4.json")
     arguments = parser.parse_args()
+    pixels = arguments.pixels
+    x0, y0 = arguments.origin
+    out = arguments.output
 
-    grid = StructuredGrid2D(
-        PIXELS, PIXELS, PIXEL_SIZE_MM * PIXELS, PIXEL_SIZE_MM * PIXELS
-    )
+    grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     operator = TensorPlasticObservabilityOperator.build(
         grid,
         young_modulus_mpa=YOUNG_MPA,
@@ -97,40 +100,32 @@ def main() -> int:
     def divergence(stress_kelvin: np.ndarray) -> np.ndarray:
         voigt = stress_kelvin.reshape(-1, 3) / KELVIN_SCALE_2D
         return pack_interior(
-            operator.kinematics.divergence_from_sample_stress(
-                voigt.reshape((PIXELS, PIXELS, 2, 3))
-            )
+            operator.kinematics.divergence_from_sample_stress(voigt.reshape((pixels, pixels, 2, 3)))
         )
 
     def elastic_lift(field: np.ndarray) -> np.ndarray:
         forcing = -divergence(stress_of(kelvin_strain(field))) / operator.quadrature_weight
         lifted = field.copy()
         lifted[1:-1, 1:-1, :] -= operator.solve_stiffness(forcing).reshape(
-            PIXELS - 1, PIXELS - 1, 2
+            pixels - 1, pixels - 1, 2
         )
         return lifted
 
     def apply_numpy(plastic: np.ndarray) -> np.ndarray:
         flat = plastic.reshape(points, 3, -1)
-        stressed = np.stack(
-            [stress_of(flat[:, :, k]) for k in range(flat.shape[2])], axis=2
-        )
+        stressed = np.stack([stress_of(flat[:, :, k]) for k in range(flat.shape[2])], axis=2)
         loads = np.stack(
-            [operator._strain_transpose(stressed[:, :, k].reshape(-1))
-             for k in range(stressed.shape[2])],
+            [
+                operator._strain_transpose(stressed[:, :, k].reshape(-1))
+                for k in range(stressed.shape[2])
+            ],
             axis=1,
         )
         solved = operator.solve_stiffness(loads)
         solved = solved.reshape(-1, stressed.shape[2]) if solved.ndim == 2 else solved
         return np.stack(
             [
-                kelvin_strain(
-                    np.asarray(
-                        operator.kinematics.unpack_interior(
-                            solved[:, k], grid
-                        )
-                    )
-                )
+                kelvin_strain(np.asarray(operator.kinematics.unpack_interior(solved[:, k], grid)))
                 for k in range(stressed.shape[2])
             ],
             axis=2,
@@ -139,12 +134,11 @@ def main() -> int:
     report = json.loads((HISTORY.with_name("report.json")).read_text(encoding="utf-8"))
     bounds = list(map(int, report["solve_bounds"]))
     source = np.load(HISTORY, mmap_mode="r", allow_pickle=False)
-    x0, y0 = ORIGIN
     history = np.asarray(
         source[
             :,
-            x0 - bounds[0] : x0 + PIXELS - bounds[0] + 1,
-            y0 - bounds[2] : y0 + PIXELS - bounds[2] + 1,
+            x0 - bounds[0] : x0 + pixels - bounds[0] + 1,
+            y0 - bounds[2] : y0 + pixels - bounds[2] + 1,
             :,
         ],
         dtype=np.float64,
@@ -173,23 +167,30 @@ def main() -> int:
         stress = reference_stress + stress_of(predictor - cumulative)
         projection = DissipativeProjection(stress=stress)
 
-        def assemble(coefficients: np.ndarray) -> np.ndarray:
+        def assemble(
+            coefficients: np.ndarray,
+            active_projection: DissipativeProjection = projection,
+        ) -> np.ndarray:
             field = basis.assemble(coefficients)
             raw = np.repeat(field[:, :, None, :], SUBCELLS, axis=2).reshape(-1, 3)
-            projected, active = projection.apply(raw)
+            projected, active = active_projection.apply(raw)
             return projected, active
 
-        def objective_and_gradient(coefficients):
+        def objective_and_gradient(
+            coefficients: np.ndarray,
+            active_target: np.ndarray = target,
+            active_projection: DissipativeProjection = projection,
+        ) -> tuple[float, np.ndarray]:
             projected, active = assemble(coefficients)
             response = apply_numpy(projected)
-            residual = response - target
+            residual = response - active_target
             dual = apply_numpy(residual)
-            dual = projection.transpose_action(dual, active)
+            dual = active_projection.transpose_action(dual, active)
             dual = np.repeat(
-                dual.reshape(PIXELS, PIXELS, SUBCELLS, 3).sum(axis=2), 1, axis=0
+                dual.reshape(pixels, pixels, SUBCELLS, 3).sum(axis=2), 1, axis=0
             )
             gradient = basis.assemble_transpose(
-                dual.reshape(PIXELS, PIXELS, SUBCELLS, 3).sum(axis=2)
+                dual.reshape(pixels, pixels, SUBCELLS, 3).sum(axis=2)
             ).ravel()
             return 0.5 * float(np.sum(residual**2)), gradient
 
@@ -226,14 +227,16 @@ def main() -> int:
     payload = {
         "schema_version": 1,
         "arm": "A4",
+        "origin": [x0, y0],
+        "pixels": pixels,
         "moved": moved,
         "heldout_median_E": float(np.median([scores[s] for s in HELDOUT])),
         "final_state_E": scores[STATES[-1]],
         "per_state": per_state,
         "elastic_lifting_residual_guard": residual_guard,
     }
-    arguments.output.parent.mkdir(parents=True, exist_ok=True)
-    arguments.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 

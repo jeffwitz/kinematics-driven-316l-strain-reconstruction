@@ -89,7 +89,9 @@ def main() -> int:
         train = ~test
         train_indices = np.where(train)[0]
         tune_mask = train_indices[
-            rng.choice(len(train_indices), size=min(TUNE_SUBSAMPLE, len(train_indices)), replace=False)
+            rng.choice(
+                len(train_indices), size=min(TUNE_SUBSAMPLE, len(train_indices)), replace=False
+            )
         ]
         tau_ref = float(np.median(np.abs(tau[tune_mask])))
         gamma_ref = max(float(np.median(history_self[tune_mask])), 1e-300)
@@ -108,14 +110,20 @@ def main() -> int:
         a, b, c = best[1]
         xi = tau_abs - tau_ref * (a + b * h_self + c * h_others)
 
-        def knn_r2(features_train: np.ndarray, features_test: np.ndarray) -> float:
+        def knn_r2(
+            features_train: np.ndarray,
+            features_test: np.ndarray,
+            train_mask: np.ndarray = train,
+            test_mask: np.ndarray = test,
+        ) -> float:
             scaler = StandardScaler().fit(features_train)
             tree = cKDTree(scaler.transform(features_train))
             _, idx = tree.query(scaler.transform(features_test), k=K)
-            prediction = gamma_abs[train][idx].mean(axis=1)
-            residual = gamma_abs[test] - prediction
+            prediction = gamma_abs[train_mask][idx].mean(axis=1)
+            residual = gamma_abs[test_mask] - prediction
             return 1.0 - float(np.sum(residual**2)) / max(
-                float(np.sum((gamma_abs[test] - np.mean(gamma_abs[train])) ** 2)), 1e-300
+                float(np.sum((gamma_abs[test_mask] - np.mean(gamma_abs[train_mask])) ** 2)),
+                1e-300,
             )
 
         baseline_features = np.stack([tau_abs, h_self], axis=1)

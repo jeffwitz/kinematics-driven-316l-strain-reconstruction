@@ -51,8 +51,14 @@ def main() -> int:
     for system in range(n_systems):
         ax = axes.flat[system]
         sample = RNG.choice(tau.shape[0], size=100000, replace=False)
-        ax.hexbin(tau[sample, system], gamma[sample, system], gridsize=80,
-                  bins="log", cmap="viridis", linewidths=0)
+        ax.hexbin(
+            tau[sample, system],
+            gamma[sample, system],
+            gridsize=80,
+            bins="log",
+            cmap="viridis",
+            linewidths=0,
+        )
         ax.axhline(0.0, color="white", lw=0.8, ls="--")
         ax.axvline(0.0, color="white", lw=0.8, ls="--")
         ax.set_title(f"system {system + 1}")
@@ -60,7 +66,10 @@ def main() -> int:
             ax.set_xlabel(r"$\tau^\alpha$ [MPa]")
         if system % 4 == 0:
             ax.set_ylabel(r"$\Delta\gamma^\alpha$")
-    fig.suptitle(r"driving force vs activity, per system (sign cone: activity only where $\tau^\alpha \Delta\gamma^\alpha \geq 0$)")
+    fig.suptitle(
+        r"driving force vs activity, per system "
+        r"(sign cone: activity only where $\tau^\alpha \Delta\gamma^\alpha \geq 0$)"
+    )
     fig.tight_layout()
     fig.savefig(OUT / "fcc_geometry_tau_gamma_panels.png")
     plt.close(fig)
@@ -69,8 +78,14 @@ def main() -> int:
     for system in range(n_systems):
         ax = axes.flat[system]
         sample = RNG.choice(tau.shape[0], size=100000, replace=False)
-        ax.hexbin(cumulative[sample, system], gamma[sample, system], gridsize=80,
-                  bins="log", cmap="viridis", linewidths=0)
+        ax.hexbin(
+            cumulative[sample, system],
+            gamma[sample, system],
+            gridsize=80,
+            bins="log",
+            cmap="viridis",
+            linewidths=0,
+        )
         ax.axhline(0.0, color="white", lw=0.8, ls="--")
         ax.set_title(f"system {system + 1}")
         if system >= 8:
@@ -83,16 +98,18 @@ def main() -> int:
     plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-    hb = axes[0].hexbin(tau.ravel(), gamma.ravel(), gridsize=120, bins="log",
-                        cmap="viridis", linewidths=0)
+    hb = axes[0].hexbin(
+        tau.ravel(), gamma.ravel(), gridsize=120, bins="log", cmap="viridis", linewidths=0
+    )
     axes[0].axhline(0.0, color="white", lw=0.8, ls="--")
     axes[0].axvline(0.0, color="white", lw=0.8, ls="--")
     axes[0].set_title(r"pooled: $\tau^\alpha$ vs $\Delta\gamma^\alpha$ (4.8M system-samples)")
     axes[0].set_xlabel(r"$\tau^\alpha$ [MPa]")
     axes[0].set_ylabel(r"$\Delta\gamma^\alpha$")
     fig.colorbar(hb, ax=axes[0], label="log count")
-    hb = axes[1].hexbin(cumulative.ravel(), gamma.ravel(), gridsize=120, bins="log",
-                        cmap="viridis", linewidths=0)
+    hb = axes[1].hexbin(
+        cumulative.ravel(), gamma.ravel(), gridsize=120, bins="log", cmap="viridis", linewidths=0
+    )
     axes[1].axhline(0.0, color="white", lw=0.8, ls="--")
     axes[1].set_title(r"pooled: $\Gamma^\alpha$ vs $\Delta\gamma^\alpha$")
     axes[1].set_xlabel(r"$\Gamma^\alpha$")
@@ -105,8 +122,13 @@ def main() -> int:
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
     sample_systems = RNG.choice(n_systems, size=SUBSAMPLE, replace=True)
     scatter = ax.scatter(
-        tau[subsample, sample_systems], gamma[subsample, sample_systems],
-        s=1.5, c=states[subsample], cmap="viridis", linewidths=0, alpha=0.7,
+        tau[subsample, sample_systems],
+        gamma[subsample, sample_systems],
+        s=1.5,
+        c=states[subsample],
+        cmap="viridis",
+        linewidths=0,
+        alpha=0.7,
     )
     ax.axhline(0.0, color="white", lw=0.8, ls="--")
     ax.axvline(0.0, color="white", lw=0.8, ls="--")

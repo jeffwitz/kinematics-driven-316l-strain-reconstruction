@@ -1,0 +1,114 @@
+{
+ "schema_version": 1,
+ "case_study": "Kinematics-driven reconstruction of microscale strain localization in 316L",
+ "source": {
+  "article": "ArticleSource/ArticleAdil.pdf",
+  "legacy_generator": "references/legacy_abaqus/Case5.py",
+  "received_directory": "../input_data",
+  "received_on": "2026-07-24"
+ },
+ "raw_conventions": {
+  "array_axes": {
+   "axis_0": "physical x, transverse direction",
+   "axis_1": "physical y, tensile direction"
+  },
+  "displacement_mapping": {
+   "U_40.npy": "u_y",
+   "V_40.npy": "u_x"
+  },
+  "displacement_units": "pixel",
+  "pixel_size_um": 1.84,
+  "material_map_location": "element",
+  "hardening_map_representation": "dimensionless multiplier requiring a macroscopic K scale"
+ },
+ "known_ambiguities": {
+  "displacement_grid": "The 3600x3100 displacement grid needs an explicit completion rule for a 3600x3100 element mesh.",
+  "hardening_scale_mpa": {
+   "article": 380.0,
+   "legacy_generator": 396.0
+  },
+  "hardening_nonfinite_values": {
+   "count": 9,
+   "indices_axis_0_axis_1": [
+    [
+     273,
+     3096
+    ],
+    [
+     904,
+     2
+    ],
+    [
+     933,
+     5
+    ],
+    [
+     933,
+     6
+    ],
+    [
+     1591,
+     2
+    ],
+    [
+     1602,
+     6
+    ],
+    [
+     1949,
+     0
+    ],
+    [
+     1949,
+     1
+    ],
+    [
+     3599,
+     357
+    ]
+   ]
+  }
+ },
+ "files": {
+  "Hardening_coeff_el_Thresh50.npy": {
+   "bytes": 3656,
+   "dtype": "float64",
+   "role": "local hardening multiplier (cropped historical window 1600:1621 x 1050:1071)",
+   "sha256": "12f7758fb7bd2af565366027cb82c2a09a832cc57106d5b19143312bed45f08d",
+   "shape": [
+    21,
+    21
+   ]
+  },
+  "U_40.npy": {
+   "bytes": 1892,
+   "dtype": "float32",
+   "role": "DIC displacement u_y at step 40 (cropped historical window 1600:1621 x 1050:1071)",
+   "sha256": "1273d298b998a40664e1bffd795798863616a8e435b19209f9f5928ef10f85aa",
+   "shape": [
+    21,
+    21
+   ]
+  },
+  "V_40.npy": {
+   "bytes": 1892,
+   "dtype": "float32",
+   "role": "DIC displacement u_x at step 40 (cropped historical window 1600:1621 x 1050:1071)",
+   "sha256": "41a4b3837b32f8a98f25922f6c5da960e6d48e877ca875b50238d0708dce0ec7",
+   "shape": [
+    21,
+    21
+   ]
+  },
+  "el_thresh50.npy": {
+   "bytes": 3656,
+   "dtype": "float64",
+   "role": "local yield stress in MPa, lower-thresholded at 50 MPa (cropped historical window 1600:1621 x 1050:1071)",
+   "sha256": "3d7ccfe0957824de2383d46d0457294253fb15e78b027908a688aad7b2fca0cb",
+   "shape": [
+    21,
+    21
+   ]
+  }
+ }
+}

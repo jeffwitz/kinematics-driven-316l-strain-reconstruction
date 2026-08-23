@@ -85,7 +85,9 @@ def main() -> int:
     eps_inel = tr["eps_inel_observable"].reshape(-1, 3)
     states = np.repeat(np.arange(n_states), n_points)
     schmid = np.tile(orientation_features(), n_states)
-    position = np.tile(np.repeat(np.arange(PIXELS * SUBCELLS), n_points // (PIXELS * SUBCELLS)), n_states)
+    position = np.tile(
+        np.repeat(np.arange(PIXELS * SUBCELLS), n_points // (PIXELS * SUBCELLS)), n_states
+    )
 
     s = deviator(stress)
     sigma_eq = np.sqrt(1.5) * np.sqrt(
@@ -107,7 +109,14 @@ def main() -> int:
         return hb
 
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
-    hb = hexbin(ax, sigma_eq, dp, r"$\sigma_{\rm eq}$ vs $\Delta p$ (400k experiments, observable part)", r"$\sigma_{\rm eq}$ [MPa]", r"$\Delta p$ [gauge]")
+    hb = hexbin(
+        ax,
+        sigma_eq,
+        dp,
+        r"$\sigma_{\rm eq}$ vs $\Delta p$ (400k experiments, observable part)",
+        r"$\sigma_{\rm eq}$ [MPa]",
+        r"$\Delta p$ [gauge]",
+    )
     fig.colorbar(hb, ax=ax, label="log count")
     fig.tight_layout()
     fig.savefig(OUT / "phase_geometry_sigmaeq_dp.png")
@@ -120,8 +129,13 @@ def main() -> int:
     ):
         fig, ax = plt.subplots(figsize=(7.5, 5.5))
         scatter = ax.scatter(
-            sigma_eq[idx], dp[idx], s=1.5, c=values[idx], cmap="viridis",
-            linewidths=0, alpha=0.7,
+            sigma_eq[idx],
+            dp[idx],
+            s=1.5,
+            c=values[idx],
+            cmap="viridis",
+            linewidths=0,
+            alpha=0.7,
         )
         ax.set_title(f"colored by {label}")
         ax.set_xlabel(r"$\sigma_{\rm eq}$ [MPa]")
@@ -132,14 +146,23 @@ def main() -> int:
         plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
-    hb = hexbin(ax, p_eq, dp, r"$p_{\rm eq}$ vs $\Delta p$", r"$p_{\rm eq}$ [gauge]", r"$\Delta p$ [gauge]")
+    hb = hexbin(
+        ax, p_eq, dp, r"$p_{\rm eq}$ vs $\Delta p$", r"$p_{\rm eq}$ [gauge]", r"$\Delta p$ [gauge]"
+    )
     fig.colorbar(hb, ax=ax, label="log count")
     fig.tight_layout()
     fig.savefig(OUT / "phase_geometry_peq_dp.png")
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
-    hb = hexbin(ax, sigma_eq, p_eq, r"$\sigma_{\rm eq}$ vs $p_{\rm eq}$ (visited domain)", r"$\sigma_{\rm eq}$ [MPa]", r"$p_{\rm eq}$ [gauge]")
+    hb = hexbin(
+        ax,
+        sigma_eq,
+        p_eq,
+        r"$\sigma_{\rm eq}$ vs $p_{\rm eq}$ (visited domain)",
+        r"$\sigma_{\rm eq}$ [MPa]",
+        r"$p_{\rm eq}$ [gauge]",
+    )
     fig.colorbar(hb, ax=ax, label="log count")
     fig.tight_layout()
     fig.savefig(OUT / "phase_geometry_sigmaeq_peq.png")
@@ -147,8 +170,13 @@ def main() -> int:
 
     fig, ax = plt.subplots(figsize=(6.4, 5.5))
     hb = ax.hexbin(
-        theta_s, theta_n, gridsize=140, bins="log", cmap="viridis",
-        extent=(-np.pi, np.pi, -np.pi, np.pi), linewidths=0,
+        theta_s,
+        theta_n,
+        gridsize=140,
+        bins="log",
+        cmap="viridis",
+        extent=(-np.pi, np.pi, -np.pi, np.pi),
+        linewidths=0,
     )
     ax.plot([-np.pi, np.pi], [-np.pi, np.pi], color="white", lw=1.0, ls="--")
     ax.set_title(r"flow direction vs stress direction (J2 would lie on the dashed line)")
@@ -164,10 +192,19 @@ def main() -> int:
     edges = np.quantile(p_eq, np.linspace(0, 1, 6))
     p_eq_quantile = np.digitize(p_eq, edges[1:-1])
     scatter = ax.scatter(
-        sigma_eq[idx], dp[idx], s=1.5, c=p_eq_quantile[idx], cmap="viridis",
-        linewidths=0, alpha=0.7, vmin=0, vmax=5,
+        sigma_eq[idx],
+        dp[idx],
+        s=1.5,
+        c=p_eq_quantile[idx],
+        cmap="viridis",
+        linewidths=0,
+        alpha=0.7,
+        vmin=0,
+        vmax=5,
     )
-    ax.set_title(r"branches test: $\Delta p$ vs $\sigma_{\rm eq}$, colored by $p_{\rm eq}$ quantile")
+    ax.set_title(
+        r"branches test: $\Delta p$ vs $\sigma_{\rm eq}$, colored by $p_{\rm eq}$ quantile"
+    )
     ax.set_xlabel(r"$\sigma_{\rm eq}$ [MPa]")
     ax.set_ylabel(r"$\Delta p$ [gauge]")
     fig.colorbar(scatter, ax=ax, label=r"$p_{\rm eq}$ quantile")
