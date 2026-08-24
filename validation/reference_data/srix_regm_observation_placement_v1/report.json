@@ -1,0 +1,2072 @@
+{
+  "claims": {
+    "new_mechanics_launched": false,
+    "p43_identification_authorized": false,
+    "truth_bias_probe_available": true
+  },
+  "date": "2026-08-24",
+  "dirty": false,
+  "exact_ranking_source": "validation/reference_data/srix_regm_femu_ranking_v1/report.json",
+  "femu_target_level": "T1_transfer",
+  "git_sha": "8ee33b0c29229ead47f0f99328e4459373dceab3",
+  "input_history": "raw exact twin or affine-preserving transfer of raw exact twin",
+  "machine": "jeff-HP-EliteBook-X-G1i",
+  "method": "SRIX-REGM observation-placement A/B/C/D ablation",
+  "observed_femu_target": "validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json",
+  "schema_version": 1,
+  "source_git_sha": "7fa920c11b56d5fee7010b7187d99ad4e5aaa0a2",
+  "transfer_csv": "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv",
+  "variants": {
+    "A-archived": {
+      "description": "raw_input/identity_score",
+      "records": [
+        {
+          "femu_rms_mm": 7.030987054003445e-08,
+          "femu_seconds": 9.485724659985863,
+          "id": "initial",
+          "regm_rms_mm": 3.142749641611361e-08,
+          "regm_seconds": 2.140215786988847,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.0,
+            "R_mpa": 15.025528056421036,
+            "b": 2.25,
+            "tau0_mpa": 50.0
+          }
+        },
+        {
+          "femu_rms_mm": 3.846701256643001e-08,
+          "femu_seconds": 8.299539317027666,
+          "id": "lhs_01",
+          "regm_rms_mm": 1.72935562354231e-08,
+          "regm_seconds": 2.1109126339433715,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.261208150249114,
+            "R_mpa": 22.840634767050222,
+            "b": 3.5417228468909046,
+            "tau0_mpa": 35.95774338340646
+          }
+        },
+        {
+          "femu_rms_mm": 7.370484900605898e-08,
+          "femu_seconds": 123.91890644095838,
+          "id": "lhs_02",
+          "regm_rms_mm": 2.8875844888440937e-08,
+          "regm_seconds": 2.489909469964914,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.583835493439143,
+            "R_mpa": 24.523164883820193,
+            "b": 3.692103274169932,
+            "tau0_mpa": 30.569795738398586
+          }
+        },
+        {
+          "femu_rms_mm": 1.614027036120276e-08,
+          "femu_seconds": 14.625459044007584,
+          "id": "lhs_03",
+          "regm_rms_mm": 8.563189387688094e-09,
+          "regm_seconds": 2.272932091029361,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.8577326114078145,
+            "R_mpa": 21.751618668461234,
+            "b": 2.6111227171451348,
+            "tau0_mpa": 39.87822573919911
+          }
+        },
+        {
+          "femu_rms_mm": 1.1856032422229667e-08,
+          "femu_seconds": 41.60686940397136,
+          "id": "lhs_04",
+          "regm_rms_mm": 4.493553576476742e-09,
+          "regm_seconds": 2.0338709780480713,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.556380943490119,
+            "R_mpa": 16.995237815348688,
+            "b": 2.9449100951299627,
+            "tau0_mpa": 38.10781785446173
+          }
+        },
+        {
+          "femu_rms_mm": 2.907984405764294e-08,
+          "femu_seconds": 9.544525958946906,
+          "id": "lhs_05",
+          "regm_rms_mm": 1.6808722238745563e-08,
+          "regm_seconds": 2.0268386229872704,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.735754158646825,
+            "R_mpa": 21.097850775310032,
+            "b": 3.092331350112634,
+            "tau0_mpa": 48.070633192212036
+          }
+        },
+        {
+          "femu_rms_mm": 2.5279143576616008e-08,
+          "femu_seconds": 121.52398272801656,
+          "id": "lhs_06",
+          "regm_rms_mm": 1.3702777380704276e-08,
+          "regm_seconds": 2.503350693034008,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.052792466617078,
+            "R_mpa": 18.338490853878977,
+            "b": 3.318123089796836,
+            "tau0_mpa": 33.46337155111241
+          }
+        },
+        {
+          "femu_rms_mm": 6.018094120158221e-08,
+          "femu_seconds": 5.8386906259693205,
+          "id": "lhs_07",
+          "regm_rms_mm": 2.9154655318995786e-08,
+          "regm_seconds": 2.0634679140057415,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.851023419841649,
+            "R_mpa": 17.870801436231535,
+            "b": 3.656996889725988,
+            "tau0_mpa": 51.50971620831392
+          }
+        },
+        {
+          "femu_rms_mm": 4.012973757286425e-08,
+          "femu_seconds": 6.44211628602352,
+          "id": "lhs_08",
+          "regm_rms_mm": 1.843123916431664e-08,
+          "regm_seconds": 2.9181297679897398,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.506484008431475,
+            "R_mpa": 25.102242287323516,
+            "b": 2.7267687187705234,
+            "tau0_mpa": 38.79523594290796
+          }
+        },
+        {
+          "femu_rms_mm": 2.6728602724844196e-08,
+          "femu_seconds": 116.11503670504317,
+          "id": "lhs_09",
+          "regm_rms_mm": 1.5117267766871885e-08,
+          "regm_seconds": 3.3487918879836798,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.194891820889083,
+            "R_mpa": 16.787728554213082,
+            "b": 2.5442814918482464,
+            "tau0_mpa": 31.96435750660866
+          }
+        },
+        {
+          "femu_rms_mm": 5.2029849432659696e-08,
+          "femu_seconds": 11.444586617057212,
+          "id": "lhs_10",
+          "regm_rms_mm": 1.9085536047657936e-08,
+          "regm_seconds": 3.1045875360723585,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.991808607060946,
+            "R_mpa": 14.23167588327539,
+            "b": 2.4259963079856153,
+            "tau0_mpa": 43.32182086369025
+          }
+        },
+        {
+          "femu_rms_mm": 4.362823377919786e-08,
+          "femu_seconds": 145.01808128505945,
+          "id": "lhs_11",
+          "regm_rms_mm": 1.9680729327116358e-08,
+          "regm_seconds": 4.407726026955061,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.974814897571067,
+            "R_mpa": 19.41216975404326,
+            "b": 2.3020413865761307,
+            "tau0_mpa": 31.15094102084029
+          }
+        },
+        {
+          "femu_rms_mm": 1.7877338925043504e-08,
+          "femu_seconds": 24.509117600042373,
+          "id": "lhs_12",
+          "regm_rms_mm": 1.1652624662473879e-08,
+          "regm_seconds": 2.790480602066964,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.372614303185408,
+            "R_mpa": 15.264367280651523,
+            "b": 2.241881096481784,
+            "tau0_mpa": 33.76522592531282
+          }
+        },
+        {
+          "femu_rms_mm": 1.4899080769508646e-08,
+          "femu_seconds": 8.334515757043846,
+          "id": "lhs_13",
+          "regm_rms_mm": 1.2461430782877674e-08,
+          "regm_seconds": 3.1017201310023665,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.36834902795897,
+            "R_mpa": 23.387534723535605,
+            "b": 3.3930807640855996,
+            "tau0_mpa": 45.47944447572602
+          }
+        },
+        {
+          "femu_rms_mm": 4.175276934426815e-08,
+          "femu_seconds": 11.592241963022389,
+          "id": "lhs_14",
+          "regm_rms_mm": 2.241422880645735e-08,
+          "regm_seconds": 2.69283032102976,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.450833647350597,
+            "R_mpa": 20.075640733383658,
+            "b": 2.97847757371144,
+            "tau0_mpa": 50.15441037017598
+          }
+        },
+        {
+          "femu_rms_mm": 5.843409556350389e-08,
+          "femu_seconds": 7.223082690965384,
+          "id": "lhs_15",
+          "regm_rms_mm": 2.9988874092886994e-08,
+          "regm_seconds": 2.5940064300084487,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.925340100053331,
+            "R_mpa": 18.761711604014167,
+            "b": 3.191682759950759,
+            "tau0_mpa": 52.49702252154417
+          }
+        },
+        {
+          "femu_rms_mm": 4.369055396832814e-08,
+          "femu_seconds": 18.56415441108402,
+          "id": "lhs_16",
+          "regm_rms_mm": 1.706283485921458e-08,
+          "regm_seconds": 3.4868466450134292,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.174688616491139,
+            "R_mpa": 14.579875337501342,
+            "b": 4.0412913769969245,
+            "tau0_mpa": 42.39953749806594
+          }
+        },
+        {
+          "femu_rms_mm": 2.8472410468857085e-08,
+          "femu_seconds": 7.339108822052367,
+          "id": "lhs_17",
+          "regm_rms_mm": 1.417273579274415e-08,
+          "regm_seconds": 2.728023382020183,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.809734740371635,
+            "R_mpa": 20.536774894068508,
+            "b": 2.824141116086498,
+            "tau0_mpa": 35.09916896967621
+          }
+        },
+        {
+          "femu_rms_mm": 2.991360992664439e-08,
+          "femu_seconds": 121.0010347039206,
+          "id": "lhs_18",
+          "regm_rms_mm": 1.0432738812300015e-08,
+          "regm_seconds": 2.5810458241030574,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.193696121880457,
+            "R_mpa": 15.809407532657541,
+            "b": 2.4772232822874938,
+            "tau0_mpa": 41.14059940960526
+          }
+        },
+        {
+          "femu_rms_mm": 4.939892340786463e-08,
+          "femu_seconds": 13.910441517014988,
+          "id": "lhs_19",
+          "regm_rms_mm": 2.1334603912387112e-08,
+          "regm_seconds": 2.862754798028618,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.442062982430587,
+            "R_mpa": 15.68615029634112,
+            "b": 3.908994925563449,
+            "tau0_mpa": 46.209733333569126
+          }
+        }
+      ],
+      "statistics": {
+        "best_five_femu": [
+          "lhs_04",
+          "lhs_13",
+          "lhs_03",
+          "lhs_12",
+          "lhs_06"
+        ],
+        "best_five_overlap": [
+          "lhs_03",
+          "lhs_04",
+          "lhs_12",
+          "lhs_13"
+        ],
+        "best_five_overlap_count": 4,
+        "best_five_regm": [
+          "lhs_04",
+          "lhs_03",
+          "lhs_18",
+          "lhs_12",
+          "lhs_13"
+        ],
+        "gate_components": {
+          "best_five_overlap": true,
+          "log_pearson": true,
+          "minimum_valid_candidates": true,
+          "spearman": true
+        },
+        "gate_passed": true,
+        "interpretable": true,
+        "log_pearson": 0.9160463823101895,
+        "log_pearson_pvalue": 1.446403508958442e-08,
+        "median_femu_seconds": 12.751341740018688,
+        "median_regm_seconds": 2.6434183755191043,
+        "median_speedup": 4.823807634126259,
+        "spearman": 0.9172932330827066,
+        "spearman_pvalue": 1.2700580723125721e-08,
+        "valid_candidates": 20
+      }
+    },
+    "B-affine": {
+      "description": "raw_input/affine_score",
+      "records": [
+        {
+          "femu_rms_mm": 7.030987054003445e-08,
+          "femu_seconds": 9.485724659985863,
+          "id": "initial",
+          "pseudo_trajectory_rms_mm": 3.142749641611361e-08,
+          "regm_rms_mm": 1.880780122536507e-08,
+          "regm_seconds": 3.022071731975302,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.0,
+            "R_mpa": 15.025528056421036,
+            "b": 2.25,
+            "tau0_mpa": 50.0
+          }
+        },
+        {
+          "femu_rms_mm": 3.846701256643001e-08,
+          "femu_seconds": 8.299539317027666,
+          "id": "lhs_01",
+          "pseudo_trajectory_rms_mm": 1.72935562354231e-08,
+          "regm_rms_mm": 1.079255414278717e-08,
+          "regm_seconds": 2.9082028470002115,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.261208150249114,
+            "R_mpa": 22.840634767050222,
+            "b": 3.5417228468909046,
+            "tau0_mpa": 35.95774338340646
+          }
+        },
+        {
+          "femu_rms_mm": 7.370484900605898e-08,
+          "femu_seconds": 123.91890644095838,
+          "id": "lhs_02",
+          "pseudo_trajectory_rms_mm": 2.8875844888440937e-08,
+          "regm_rms_mm": 1.7646851139046194e-08,
+          "regm_seconds": 2.908312640967779,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.583835493439143,
+            "R_mpa": 24.523164883820193,
+            "b": 3.692103274169932,
+            "tau0_mpa": 30.569795738398586
+          }
+        },
+        {
+          "femu_rms_mm": 1.614027036120276e-08,
+          "femu_seconds": 14.625459044007584,
+          "id": "lhs_03",
+          "pseudo_trajectory_rms_mm": 8.563189387688094e-09,
+          "regm_rms_mm": 5.378848177772003e-09,
+          "regm_seconds": 2.84505799098406,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.8577326114078145,
+            "R_mpa": 21.751618668461234,
+            "b": 2.6111227171451348,
+            "tau0_mpa": 39.87822573919911
+          }
+        },
+        {
+          "femu_rms_mm": 1.1856032422229667e-08,
+          "femu_seconds": 41.60686940397136,
+          "id": "lhs_04",
+          "pseudo_trajectory_rms_mm": 4.493553576476742e-09,
+          "regm_rms_mm": 2.5063996812580095e-09,
+          "regm_seconds": 2.968217057059519,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.556380943490119,
+            "R_mpa": 16.995237815348688,
+            "b": 2.9449100951299627,
+            "tau0_mpa": 38.10781785446173
+          }
+        },
+        {
+          "femu_rms_mm": 2.907984405764294e-08,
+          "femu_seconds": 9.544525958946906,
+          "id": "lhs_05",
+          "pseudo_trajectory_rms_mm": 1.6808722238745563e-08,
+          "regm_rms_mm": 9.305415250052459e-09,
+          "regm_seconds": 2.8566441260045394,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.735754158646825,
+            "R_mpa": 21.097850775310032,
+            "b": 3.092331350112634,
+            "tau0_mpa": 48.070633192212036
+          }
+        },
+        {
+          "femu_rms_mm": 2.5279143576616008e-08,
+          "femu_seconds": 121.52398272801656,
+          "id": "lhs_06",
+          "pseudo_trajectory_rms_mm": 1.3702777380704276e-08,
+          "regm_rms_mm": 7.857659638532178e-09,
+          "regm_seconds": 3.0265939719974995,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.052792466617078,
+            "R_mpa": 18.338490853878977,
+            "b": 3.318123089796836,
+            "tau0_mpa": 33.46337155111241
+          }
+        },
+        {
+          "femu_rms_mm": 6.018094120158221e-08,
+          "femu_seconds": 5.8386906259693205,
+          "id": "lhs_07",
+          "pseudo_trajectory_rms_mm": 2.9154655318995786e-08,
+          "regm_rms_mm": 1.6872830134188267e-08,
+          "regm_seconds": 2.1865458979737014,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.851023419841649,
+            "R_mpa": 17.870801436231535,
+            "b": 3.656996889725988,
+            "tau0_mpa": 51.50971620831392
+          }
+        },
+        {
+          "femu_rms_mm": 4.012973757286425e-08,
+          "femu_seconds": 6.44211628602352,
+          "id": "lhs_08",
+          "pseudo_trajectory_rms_mm": 1.8431239164316638e-08,
+          "regm_rms_mm": 1.1622855160999709e-08,
+          "regm_seconds": 1.8314626389183104,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.506484008431475,
+            "R_mpa": 25.102242287323516,
+            "b": 2.7267687187705234,
+            "tau0_mpa": 38.79523594290796
+          }
+        },
+        {
+          "femu_rms_mm": 2.6728602724844196e-08,
+          "femu_seconds": 116.11503670504317,
+          "id": "lhs_09",
+          "pseudo_trajectory_rms_mm": 1.5117267766871885e-08,
+          "regm_rms_mm": 8.272200652272758e-09,
+          "regm_seconds": 1.9245118020335212,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.194891820889083,
+            "R_mpa": 16.787728554213082,
+            "b": 2.5442814918482464,
+            "tau0_mpa": 31.96435750660866
+          }
+        },
+        {
+          "femu_rms_mm": 5.2029849432659696e-08,
+          "femu_seconds": 11.444586617057212,
+          "id": "lhs_10",
+          "pseudo_trajectory_rms_mm": 1.9085536047657936e-08,
+          "regm_rms_mm": 1.2001545207501454e-08,
+          "regm_seconds": 1.8901443830691278,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.991808607060946,
+            "R_mpa": 14.23167588327539,
+            "b": 2.4259963079856153,
+            "tau0_mpa": 43.32182086369025
+          }
+        },
+        {
+          "femu_rms_mm": 4.362823377919786e-08,
+          "femu_seconds": 145.01808128505945,
+          "id": "lhs_11",
+          "pseudo_trajectory_rms_mm": 1.9680729327116358e-08,
+          "regm_rms_mm": 1.1495723478258653e-08,
+          "regm_seconds": 1.9128251910442486,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.974814897571067,
+            "R_mpa": 19.41216975404326,
+            "b": 2.3020413865761307,
+            "tau0_mpa": 31.15094102084029
+          }
+        },
+        {
+          "femu_rms_mm": 1.7877338925043504e-08,
+          "femu_seconds": 24.509117600042373,
+          "id": "lhs_12",
+          "pseudo_trajectory_rms_mm": 1.1652624662473879e-08,
+          "regm_rms_mm": 6.097743584984416e-09,
+          "regm_seconds": 2.6925952050369233,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.372614303185408,
+            "R_mpa": 15.264367280651523,
+            "b": 2.241881096481784,
+            "tau0_mpa": 33.76522592531282
+          }
+        },
+        {
+          "femu_rms_mm": 1.4899080769508646e-08,
+          "femu_seconds": 8.334515757043846,
+          "id": "lhs_13",
+          "pseudo_trajectory_rms_mm": 1.2461430782877674e-08,
+          "regm_rms_mm": 6.961864470429893e-09,
+          "regm_seconds": 2.8251207089051604,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.36834902795897,
+            "R_mpa": 23.387534723535605,
+            "b": 3.3930807640855996,
+            "tau0_mpa": 45.47944447572602
+          }
+        },
+        {
+          "femu_rms_mm": 4.175276934426815e-08,
+          "femu_seconds": 11.592241963022389,
+          "id": "lhs_14",
+          "pseudo_trajectory_rms_mm": 2.241422880645735e-08,
+          "regm_rms_mm": 1.2654783850746183e-08,
+          "regm_seconds": 2.8828222840093076,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.450833647350597,
+            "R_mpa": 20.075640733383658,
+            "b": 2.97847757371144,
+            "tau0_mpa": 50.15441037017598
+          }
+        },
+        {
+          "femu_rms_mm": 5.843409556350389e-08,
+          "femu_seconds": 7.223082690965384,
+          "id": "lhs_15",
+          "pseudo_trajectory_rms_mm": 2.9988874092886994e-08,
+          "regm_rms_mm": 1.7174598302835323e-08,
+          "regm_seconds": 2.887273065978661,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.925340100053331,
+            "R_mpa": 18.761711604014167,
+            "b": 3.191682759950759,
+            "tau0_mpa": 52.49702252154417
+          }
+        },
+        {
+          "femu_rms_mm": 4.369055396832814e-08,
+          "femu_seconds": 18.56415441108402,
+          "id": "lhs_16",
+          "pseudo_trajectory_rms_mm": 1.706283485921458e-08,
+          "regm_rms_mm": 1.0667329510613298e-08,
+          "regm_seconds": 2.9814090069849044,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.174688616491139,
+            "R_mpa": 14.579875337501342,
+            "b": 4.0412913769969245,
+            "tau0_mpa": 42.39953749806594
+          }
+        },
+        {
+          "femu_rms_mm": 2.8472410468857085e-08,
+          "femu_seconds": 7.339108822052367,
+          "id": "lhs_17",
+          "pseudo_trajectory_rms_mm": 1.417273579274415e-08,
+          "regm_rms_mm": 8.563337712288673e-09,
+          "regm_seconds": 2.8656359360320494,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.809734740371635,
+            "R_mpa": 20.536774894068508,
+            "b": 2.824141116086498,
+            "tau0_mpa": 35.09916896967621
+          }
+        },
+        {
+          "femu_rms_mm": 2.991360992664439e-08,
+          "femu_seconds": 121.0010347039206,
+          "id": "lhs_18",
+          "pseudo_trajectory_rms_mm": 1.0432738812300015e-08,
+          "regm_rms_mm": 6.612086622596436e-09,
+          "regm_seconds": 3.0487357100937515,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.193696121880457,
+            "R_mpa": 15.809407532657541,
+            "b": 2.4772232822874938,
+            "tau0_mpa": 41.14059940960526
+          }
+        },
+        {
+          "femu_rms_mm": 4.939892340786463e-08,
+          "femu_seconds": 13.910441517014988,
+          "id": "lhs_19",
+          "pseudo_trajectory_rms_mm": 2.1334603912387112e-08,
+          "regm_rms_mm": 1.2961727458710856e-08,
+          "regm_seconds": 2.9416779060848057,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.442062982430587,
+            "R_mpa": 15.68615029634112,
+            "b": 3.908994925563449,
+            "tau0_mpa": 46.209733333569126
+          }
+        }
+      ],
+      "seconds": 53.427887427969836,
+      "statistics": {
+        "best_five_femu": [
+          "lhs_04",
+          "lhs_13",
+          "lhs_03",
+          "lhs_12",
+          "lhs_06"
+        ],
+        "best_five_overlap": [
+          "lhs_03",
+          "lhs_04",
+          "lhs_12",
+          "lhs_13"
+        ],
+        "best_five_overlap_count": 4,
+        "best_five_regm": [
+          "lhs_04",
+          "lhs_03",
+          "lhs_12",
+          "lhs_18",
+          "lhs_13"
+        ],
+        "gate_components": {
+          "best_five_overlap": true,
+          "log_pearson": true,
+          "minimum_valid_candidates": true,
+          "spearman": true
+        },
+        "gate_passed": true,
+        "interpretable": true,
+        "log_pearson": 0.9406673608895666,
+        "log_pearson_pvalue": 6.970373900220885e-10,
+        "median_femu_seconds": 12.751341740018688,
+        "median_regm_seconds": 2.8742291100206785,
+        "median_speedup": 4.436438868273431,
+        "spearman": 0.9398496240601503,
+        "spearman_pvalue": 7.860443387804441e-10,
+        "valid_candidates": 20
+      }
+    },
+    "B-periodic": {
+      "description": "raw_input/periodic_score",
+      "records": [
+        {
+          "femu_rms_mm": 7.030987054003445e-08,
+          "femu_seconds": 9.485724659985863,
+          "id": "initial",
+          "pseudo_trajectory_rms_mm": 3.142749641611361e-08,
+          "regm_rms_mm": 1.8191540507053292e-08,
+          "regm_seconds": 2.1305088789667934,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.0,
+            "R_mpa": 15.025528056421036,
+            "b": 2.25,
+            "tau0_mpa": 50.0
+          }
+        },
+        {
+          "femu_rms_mm": 3.846701256643001e-08,
+          "femu_seconds": 8.299539317027666,
+          "id": "lhs_01",
+          "pseudo_trajectory_rms_mm": 1.72935562354231e-08,
+          "regm_rms_mm": 1.0460986690796784e-08,
+          "regm_seconds": 1.87669955403544,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.261208150249114,
+            "R_mpa": 22.840634767050222,
+            "b": 3.5417228468909046,
+            "tau0_mpa": 35.95774338340646
+          }
+        },
+        {
+          "femu_rms_mm": 7.370484900605898e-08,
+          "femu_seconds": 123.91890644095838,
+          "id": "lhs_02",
+          "pseudo_trajectory_rms_mm": 2.8875844888440937e-08,
+          "regm_rms_mm": 1.6862248017664586e-08,
+          "regm_seconds": 1.9056048420025036,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.583835493439143,
+            "R_mpa": 24.523164883820193,
+            "b": 3.692103274169932,
+            "tau0_mpa": 30.569795738398586
+          }
+        },
+        {
+          "femu_rms_mm": 1.614027036120276e-08,
+          "femu_seconds": 14.625459044007584,
+          "id": "lhs_03",
+          "pseudo_trajectory_rms_mm": 8.563189387688094e-09,
+          "regm_rms_mm": 5.236553615332892e-09,
+          "regm_seconds": 2.13323820696678,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.8577326114078145,
+            "R_mpa": 21.751618668461234,
+            "b": 2.6111227171451348,
+            "tau0_mpa": 39.87822573919911
+          }
+        },
+        {
+          "femu_rms_mm": 1.1856032422229667e-08,
+          "femu_seconds": 41.60686940397136,
+          "id": "lhs_04",
+          "pseudo_trajectory_rms_mm": 4.493553576476742e-09,
+          "regm_rms_mm": 2.327194773703062e-09,
+          "regm_seconds": 2.050740886013955,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.556380943490119,
+            "R_mpa": 16.995237815348688,
+            "b": 2.9449100951299627,
+            "tau0_mpa": 38.10781785446173
+          }
+        },
+        {
+          "femu_rms_mm": 2.907984405764294e-08,
+          "femu_seconds": 9.544525958946906,
+          "id": "lhs_05",
+          "pseudo_trajectory_rms_mm": 1.6808722238745563e-08,
+          "regm_rms_mm": 8.738913694376901e-09,
+          "regm_seconds": 2.832248379010707,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.735754158646825,
+            "R_mpa": 21.097850775310032,
+            "b": 3.092331350112634,
+            "tau0_mpa": 48.070633192212036
+          }
+        },
+        {
+          "femu_rms_mm": 2.5279143576616008e-08,
+          "femu_seconds": 121.52398272801656,
+          "id": "lhs_06",
+          "pseudo_trajectory_rms_mm": 1.3702777380704276e-08,
+          "regm_rms_mm": 7.358961276475425e-09,
+          "regm_seconds": 2.9999050779733807,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.052792466617078,
+            "R_mpa": 18.338490853878977,
+            "b": 3.318123089796836,
+            "tau0_mpa": 33.46337155111241
+          }
+        },
+        {
+          "femu_rms_mm": 6.018094120158221e-08,
+          "femu_seconds": 5.8386906259693205,
+          "id": "lhs_07",
+          "pseudo_trajectory_rms_mm": 2.9154655318995786e-08,
+          "regm_rms_mm": 1.617345154297537e-08,
+          "regm_seconds": 3.013998401002027,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.851023419841649,
+            "R_mpa": 17.870801436231535,
+            "b": 3.656996889725988,
+            "tau0_mpa": 51.50971620831392
+          }
+        },
+        {
+          "femu_rms_mm": 4.012973757286425e-08,
+          "femu_seconds": 6.44211628602352,
+          "id": "lhs_08",
+          "pseudo_trajectory_rms_mm": 1.8431239164316638e-08,
+          "regm_rms_mm": 1.1302686967166533e-08,
+          "regm_seconds": 2.5616375249810517,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.506484008431475,
+            "R_mpa": 25.102242287323516,
+            "b": 2.7267687187705234,
+            "tau0_mpa": 38.79523594290796
+          }
+        },
+        {
+          "femu_rms_mm": 2.6728602724844196e-08,
+          "femu_seconds": 116.11503670504317,
+          "id": "lhs_09",
+          "pseudo_trajectory_rms_mm": 1.5117267766871885e-08,
+          "regm_rms_mm": 7.612530157863387e-09,
+          "regm_seconds": 2.0938271870836616,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.194891820889083,
+            "R_mpa": 16.787728554213082,
+            "b": 2.5442814918482464,
+            "tau0_mpa": 31.96435750660866
+          }
+        },
+        {
+          "femu_rms_mm": 5.2029849432659696e-08,
+          "femu_seconds": 11.444586617057212,
+          "id": "lhs_10",
+          "pseudo_trajectory_rms_mm": 1.9085536047657936e-08,
+          "regm_rms_mm": 1.1725892967228796e-08,
+          "regm_seconds": 2.315014680963941,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.991808607060946,
+            "R_mpa": 14.23167588327539,
+            "b": 2.4259963079856153,
+            "tau0_mpa": 43.32182086369025
+          }
+        },
+        {
+          "femu_rms_mm": 4.362823377919786e-08,
+          "femu_seconds": 145.01808128505945,
+          "id": "lhs_11",
+          "pseudo_trajectory_rms_mm": 1.9680729327116358e-08,
+          "regm_rms_mm": 1.0870158150995733e-08,
+          "regm_seconds": 2.9258219390176237,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.974814897571067,
+            "R_mpa": 19.41216975404326,
+            "b": 2.3020413865761307,
+            "tau0_mpa": 31.15094102084029
+          }
+        },
+        {
+          "femu_rms_mm": 1.7877338925043504e-08,
+          "femu_seconds": 24.509117600042373,
+          "id": "lhs_12",
+          "pseudo_trajectory_rms_mm": 1.1652624662473879e-08,
+          "regm_rms_mm": 5.491030664609007e-09,
+          "regm_seconds": 3.079036199953407,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.372614303185408,
+            "R_mpa": 15.264367280651523,
+            "b": 2.241881096481784,
+            "tau0_mpa": 33.76522592531282
+          }
+        },
+        {
+          "femu_rms_mm": 1.4899080769508646e-08,
+          "femu_seconds": 8.334515757043846,
+          "id": "lhs_13",
+          "pseudo_trajectory_rms_mm": 1.2461430782877674e-08,
+          "regm_rms_mm": 6.466077258882704e-09,
+          "regm_seconds": 2.8396501298993826,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.36834902795897,
+            "R_mpa": 23.387534723535605,
+            "b": 3.3930807640855996,
+            "tau0_mpa": 45.47944447572602
+          }
+        },
+        {
+          "femu_rms_mm": 4.175276934426815e-08,
+          "femu_seconds": 11.592241963022389,
+          "id": "lhs_14",
+          "pseudo_trajectory_rms_mm": 2.241422880645735e-08,
+          "regm_rms_mm": 1.2005955643122662e-08,
+          "regm_seconds": 3.046523630968295,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.450833647350597,
+            "R_mpa": 20.075640733383658,
+            "b": 2.97847757371144,
+            "tau0_mpa": 50.15441037017598
+          }
+        },
+        {
+          "femu_rms_mm": 5.843409556350389e-08,
+          "femu_seconds": 7.223082690965384,
+          "id": "lhs_15",
+          "pseudo_trajectory_rms_mm": 2.9988874092886994e-08,
+          "regm_rms_mm": 1.6404262013202636e-08,
+          "regm_seconds": 2.908301749965176,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.925340100053331,
+            "R_mpa": 18.761711604014167,
+            "b": 3.191682759950759,
+            "tau0_mpa": 52.49702252154417
+          }
+        },
+        {
+          "femu_rms_mm": 4.369055396832814e-08,
+          "femu_seconds": 18.56415441108402,
+          "id": "lhs_16",
+          "pseudo_trajectory_rms_mm": 1.706283485921458e-08,
+          "regm_rms_mm": 1.0420201877522538e-08,
+          "regm_seconds": 2.9429127459879965,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.174688616491139,
+            "R_mpa": 14.579875337501342,
+            "b": 4.0412913769969245,
+            "tau0_mpa": 42.39953749806594
+          }
+        },
+        {
+          "femu_rms_mm": 2.8472410468857085e-08,
+          "femu_seconds": 7.339108822052367,
+          "id": "lhs_17",
+          "pseudo_trajectory_rms_mm": 1.417273579274415e-08,
+          "regm_rms_mm": 8.23001083589925e-09,
+          "regm_seconds": 2.8382294750772417,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.809734740371635,
+            "R_mpa": 20.536774894068508,
+            "b": 2.824141116086498,
+            "tau0_mpa": 35.09916896967621
+          }
+        },
+        {
+          "femu_rms_mm": 2.991360992664439e-08,
+          "femu_seconds": 121.0010347039206,
+          "id": "lhs_18",
+          "pseudo_trajectory_rms_mm": 1.0432738812300015e-08,
+          "regm_rms_mm": 6.466994283328852e-09,
+          "regm_seconds": 2.906667659059167,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.193696121880457,
+            "R_mpa": 15.809407532657541,
+            "b": 2.4772232822874938,
+            "tau0_mpa": 41.14059940960526
+          }
+        },
+        {
+          "femu_rms_mm": 4.939892340786463e-08,
+          "femu_seconds": 13.910441517014988,
+          "id": "lhs_19",
+          "pseudo_trajectory_rms_mm": 2.1334603912387112e-08,
+          "regm_rms_mm": 1.2579676390739341e-08,
+          "regm_seconds": 2.9561263889772817,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.442062982430587,
+            "R_mpa": 15.68615029634112,
+            "b": 3.908994925563449,
+            "tau0_mpa": 46.209733333569126
+          }
+        }
+      ],
+      "seconds": 52.376866605947725,
+      "statistics": {
+        "best_five_femu": [
+          "lhs_04",
+          "lhs_13",
+          "lhs_03",
+          "lhs_12",
+          "lhs_06"
+        ],
+        "best_five_overlap": [
+          "lhs_03",
+          "lhs_04",
+          "lhs_12",
+          "lhs_13"
+        ],
+        "best_five_overlap_count": 4,
+        "best_five_regm": [
+          "lhs_04",
+          "lhs_03",
+          "lhs_12",
+          "lhs_13",
+          "lhs_18"
+        ],
+        "gate_components": {
+          "best_five_overlap": true,
+          "log_pearson": true,
+          "minimum_valid_candidates": true,
+          "spearman": true
+        },
+        "gate_passed": true,
+        "interpretable": true,
+        "log_pearson": 0.9466527081939141,
+        "log_pearson_pvalue": 2.736575431749736e-10,
+        "median_femu_seconds": 12.751341740018688,
+        "median_regm_seconds": 2.838939802488312,
+        "median_speedup": 4.491585812718615,
+        "spearman": 0.9503759398496241,
+        "spearman_pvalue": 1.446690176570298e-10,
+        "valid_candidates": 20
+      }
+    },
+    "C": {
+      "description": "affine_input/identity_score",
+      "diagnostics": {
+        "bias_to_spread_ratio": 11.637631993143117,
+        "candidate_spread_rms_mm": 3.494940739001485e-08
+      },
+      "records": [
+        {
+          "femu_rms_mm": 7.030987054003445e-08,
+          "femu_seconds": 9.485724659985863,
+          "id": "initial",
+          "pseudo_trajectory_rms_mm": 4.4504658151724693e-07,
+          "regm_rms_mm": 4.4504658151724693e-07,
+          "regm_seconds": 2.6213593599386513,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.0,
+            "R_mpa": 15.025528056421036,
+            "b": 2.25,
+            "tau0_mpa": 50.0
+          }
+        },
+        {
+          "femu_rms_mm": 3.846701256643001e-08,
+          "femu_seconds": 8.299539317027666,
+          "id": "lhs_01",
+          "pseudo_trajectory_rms_mm": 3.994102536858158e-07,
+          "regm_rms_mm": 3.994102536858157e-07,
+          "regm_seconds": 2.539177836966701,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.261208150249114,
+            "R_mpa": 22.840634767050222,
+            "b": 3.5417228468909046,
+            "tau0_mpa": 35.95774338340646
+          }
+        },
+        {
+          "femu_rms_mm": 7.370484900605898e-08,
+          "femu_seconds": 123.91890644095838,
+          "id": "lhs_02",
+          "pseudo_trajectory_rms_mm": 3.7680289509230643e-07,
+          "regm_rms_mm": 3.7680289509230643e-07,
+          "regm_seconds": 2.6129936940269545,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.583835493439143,
+            "R_mpa": 24.523164883820193,
+            "b": 3.692103274169932,
+            "tau0_mpa": 30.569795738398586
+          }
+        },
+        {
+          "femu_rms_mm": 1.614027036120276e-08,
+          "femu_seconds": 14.625459044007584,
+          "id": "lhs_03",
+          "pseudo_trajectory_rms_mm": 4.125670504401505e-07,
+          "regm_rms_mm": 4.1256705044015044e-07,
+          "regm_seconds": 2.5352888189954683,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.8577326114078145,
+            "R_mpa": 21.751618668461234,
+            "b": 2.6111227171451348,
+            "tau0_mpa": 39.87822573919911
+          }
+        },
+        {
+          "femu_rms_mm": 1.1856032422229667e-08,
+          "femu_seconds": 41.60686940397136,
+          "id": "lhs_04",
+          "pseudo_trajectory_rms_mm": 3.922972491122164e-07,
+          "regm_rms_mm": 3.922972491122164e-07,
+          "regm_seconds": 2.5495485509745777,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.556380943490119,
+            "R_mpa": 16.995237815348688,
+            "b": 2.9449100951299627,
+            "tau0_mpa": 38.10781785446173
+          }
+        },
+        {
+          "femu_rms_mm": 2.907984405764294e-08,
+          "femu_seconds": 9.544525958946906,
+          "id": "lhs_05",
+          "pseudo_trajectory_rms_mm": 4.548363273866593e-07,
+          "regm_rms_mm": 4.548363273866593e-07,
+          "regm_seconds": 2.488838535035029,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.735754158646825,
+            "R_mpa": 21.097850775310032,
+            "b": 3.092331350112634,
+            "tau0_mpa": 48.070633192212036
+          }
+        },
+        {
+          "femu_rms_mm": 2.5279143576616008e-08,
+          "femu_seconds": 121.52398272801656,
+          "id": "lhs_06",
+          "pseudo_trajectory_rms_mm": 3.7499336250399786e-07,
+          "regm_rms_mm": 3.7499336250399786e-07,
+          "regm_seconds": 2.549382149009034,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.052792466617078,
+            "R_mpa": 18.338490853878977,
+            "b": 3.318123089796836,
+            "tau0_mpa": 33.46337155111241
+          }
+        },
+        {
+          "femu_rms_mm": 6.018094120158221e-08,
+          "femu_seconds": 5.8386906259693205,
+          "id": "lhs_07",
+          "pseudo_trajectory_rms_mm": 4.6130919955607247e-07,
+          "regm_rms_mm": 4.613091995560724e-07,
+          "regm_seconds": 2.516714278026484,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.851023419841649,
+            "R_mpa": 17.870801436231535,
+            "b": 3.656996889725988,
+            "tau0_mpa": 51.50971620831392
+          }
+        },
+        {
+          "femu_rms_mm": 4.012973757286425e-08,
+          "femu_seconds": 6.44211628602352,
+          "id": "lhs_08",
+          "pseudo_trajectory_rms_mm": 4.16862330272168e-07,
+          "regm_rms_mm": 4.16862330272168e-07,
+          "regm_seconds": 2.4689502010587603,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.506484008431475,
+            "R_mpa": 25.102242287323516,
+            "b": 2.7267687187705234,
+            "tau0_mpa": 38.79523594290796
+          }
+        },
+        {
+          "femu_rms_mm": 2.6728602724844196e-08,
+          "femu_seconds": 116.11503670504317,
+          "id": "lhs_09",
+          "pseudo_trajectory_rms_mm": 3.609155667134639e-07,
+          "regm_rms_mm": 3.609155667134639e-07,
+          "regm_seconds": 1.822357474011369,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.194891820889083,
+            "R_mpa": 16.787728554213082,
+            "b": 2.5442814918482464,
+            "tau0_mpa": 31.96435750660866
+          }
+        },
+        {
+          "femu_rms_mm": 5.2029849432659696e-08,
+          "femu_seconds": 11.444586617057212,
+          "id": "lhs_10",
+          "pseudo_trajectory_rms_mm": 4.1015821575484315e-07,
+          "regm_rms_mm": 4.1015821575484315e-07,
+          "regm_seconds": 1.7151682049734518,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.991808607060946,
+            "R_mpa": 14.23167588327539,
+            "b": 2.4259963079856153,
+            "tau0_mpa": 43.32182086369025
+          }
+        },
+        {
+          "femu_rms_mm": 4.362823377919786e-08,
+          "femu_seconds": 145.01808128505945,
+          "id": "lhs_11",
+          "pseudo_trajectory_rms_mm": 3.638087627128886e-07,
+          "regm_rms_mm": 3.638087627128886e-07,
+          "regm_seconds": 1.6675411349860951,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.974814897571067,
+            "R_mpa": 19.41216975404326,
+            "b": 2.3020413865761307,
+            "tau0_mpa": 31.15094102084029
+          }
+        },
+        {
+          "femu_rms_mm": 1.7877338925043504e-08,
+          "femu_seconds": 24.509117600042373,
+          "id": "lhs_12",
+          "pseudo_trajectory_rms_mm": 3.657376912390975e-07,
+          "regm_rms_mm": 3.657376912390974e-07,
+          "regm_seconds": 1.7542825670680031,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.372614303185408,
+            "R_mpa": 15.264367280651523,
+            "b": 2.241881096481784,
+            "tau0_mpa": 33.76522592531282
+          }
+        },
+        {
+          "femu_rms_mm": 1.4899080769508646e-08,
+          "femu_seconds": 8.334515757043846,
+          "id": "lhs_13",
+          "pseudo_trajectory_rms_mm": 4.4798540114855573e-07,
+          "regm_rms_mm": 4.4798540114855573e-07,
+          "regm_seconds": 1.6435669700149447,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.36834902795897,
+            "R_mpa": 23.387534723535605,
+            "b": 3.3930807640855996,
+            "tau0_mpa": 45.47944447572602
+          }
+        },
+        {
+          "femu_rms_mm": 4.175276934426815e-08,
+          "femu_seconds": 11.592241963022389,
+          "id": "lhs_14",
+          "pseudo_trajectory_rms_mm": 4.609157920933937e-07,
+          "regm_rms_mm": 4.6091579209339376e-07,
+          "regm_seconds": 1.6429643289884552,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.450833647350597,
+            "R_mpa": 20.075640733383658,
+            "b": 2.97847757371144,
+            "tau0_mpa": 50.15441037017598
+          }
+        },
+        {
+          "femu_rms_mm": 5.843409556350389e-08,
+          "femu_seconds": 7.223082690965384,
+          "id": "lhs_15",
+          "pseudo_trajectory_rms_mm": 4.68558327874311e-07,
+          "regm_rms_mm": 4.68558327874311e-07,
+          "regm_seconds": 1.6591876558959484,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.925340100053331,
+            "R_mpa": 18.761711604014167,
+            "b": 3.191682759950759,
+            "tau0_mpa": 52.49702252154417
+          }
+        },
+        {
+          "femu_rms_mm": 4.369055396832814e-08,
+          "femu_seconds": 18.56415441108402,
+          "id": "lhs_16",
+          "pseudo_trajectory_rms_mm": 4.10027863205233e-07,
+          "regm_rms_mm": 4.10027863205233e-07,
+          "regm_seconds": 1.7049078339478,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.174688616491139,
+            "R_mpa": 14.579875337501342,
+            "b": 4.0412913769969245,
+            "tau0_mpa": 42.39953749806594
+          }
+        },
+        {
+          "femu_rms_mm": 2.8472410468857085e-08,
+          "femu_seconds": 7.339108822052367,
+          "id": "lhs_17",
+          "pseudo_trajectory_rms_mm": 3.872162354641198e-07,
+          "regm_rms_mm": 3.872162354641198e-07,
+          "regm_seconds": 1.674935573944822,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.809734740371635,
+            "R_mpa": 20.536774894068508,
+            "b": 2.824141116086498,
+            "tau0_mpa": 35.09916896967621
+          }
+        },
+        {
+          "femu_rms_mm": 2.991360992664439e-08,
+          "femu_seconds": 121.0010347039206,
+          "id": "lhs_18",
+          "pseudo_trajectory_rms_mm": 4.038595876518887e-07,
+          "regm_rms_mm": 4.0385958765188863e-07,
+          "regm_seconds": 1.706139726913534,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.193696121880457,
+            "R_mpa": 15.809407532657541,
+            "b": 2.4772232822874938,
+            "tau0_mpa": 41.14059940960526
+          }
+        },
+        {
+          "femu_rms_mm": 4.939892340786463e-08,
+          "femu_seconds": 13.910441517014988,
+          "id": "lhs_19",
+          "pseudo_trajectory_rms_mm": 4.296393708572629e-07,
+          "regm_rms_mm": 4.2963937085726285e-07,
+          "regm_seconds": 1.7012729609850794,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.442062982430587,
+            "R_mpa": 15.68615029634112,
+            "b": 3.908994925563449,
+            "tau0_mpa": 46.209733333569126
+          }
+        }
+      ],
+      "seconds": 41.59578569896985,
+      "statistics": {
+        "best_five_femu": [
+          "lhs_04",
+          "lhs_13",
+          "lhs_03",
+          "lhs_12",
+          "lhs_06"
+        ],
+        "best_five_overlap": [
+          "lhs_06",
+          "lhs_12"
+        ],
+        "best_five_overlap_count": 2,
+        "best_five_regm": [
+          "lhs_09",
+          "lhs_11",
+          "lhs_12",
+          "lhs_06",
+          "lhs_02"
+        ],
+        "gate_components": {
+          "best_five_overlap": false,
+          "log_pearson": false,
+          "minimum_valid_candidates": true,
+          "spearman": false
+        },
+        "gate_passed": false,
+        "interpretable": true,
+        "log_pearson": 0.2821320722179086,
+        "log_pearson_pvalue": 0.22813999811581928,
+        "median_femu_seconds": 12.751341740018688,
+        "median_regm_seconds": 1.788320020539686,
+        "median_speedup": 7.130346690504834,
+        "spearman": 0.3383458646616541,
+        "spearman_pvalue": 0.14452609966359922,
+        "valid_candidates": 20
+      },
+      "truth_probe": {
+        "pseudo_trajectory_rms_mm": 4.067283415834293e-07,
+        "residual_rms": 4.067283415834293e-07
+      }
+    },
+    "D-affine": {
+      "description": "affine_input/affine_score",
+      "records": [
+        {
+          "femu_rms_mm": 7.030987054003445e-08,
+          "femu_seconds": 9.485724659985863,
+          "id": "initial",
+          "pseudo_trajectory_rms_mm": 4.4504658151724693e-07,
+          "regm_rms_mm": 2.3100878188209852e-07,
+          "regm_seconds": 1.6678907999303192,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.0,
+            "R_mpa": 15.025528056421036,
+            "b": 2.25,
+            "tau0_mpa": 50.0
+          }
+        },
+        {
+          "femu_rms_mm": 3.846701256643001e-08,
+          "femu_seconds": 8.299539317027666,
+          "id": "lhs_01",
+          "pseudo_trajectory_rms_mm": 3.994102536858158e-07,
+          "regm_rms_mm": 2.1042716764960186e-07,
+          "regm_seconds": 1.6583519539562985,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.261208150249114,
+            "R_mpa": 22.840634767050222,
+            "b": 3.5417228468909046,
+            "tau0_mpa": 35.95774338340646
+          }
+        },
+        {
+          "femu_rms_mm": 7.370484900605898e-08,
+          "femu_seconds": 123.91890644095838,
+          "id": "lhs_02",
+          "pseudo_trajectory_rms_mm": 3.7680289509230643e-07,
+          "regm_rms_mm": 1.9947625476086595e-07,
+          "regm_seconds": 1.7239099740982056,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.583835493439143,
+            "R_mpa": 24.523164883820193,
+            "b": 3.692103274169932,
+            "tau0_mpa": 30.569795738398586
+          }
+        },
+        {
+          "femu_rms_mm": 1.614027036120276e-08,
+          "femu_seconds": 14.625459044007584,
+          "id": "lhs_03",
+          "pseudo_trajectory_rms_mm": 4.125670504401505e-07,
+          "regm_rms_mm": 2.167687971395364e-07,
+          "regm_seconds": 1.975791422999464,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.8577326114078145,
+            "R_mpa": 21.751618668461234,
+            "b": 2.6111227171451348,
+            "tau0_mpa": 39.87822573919911
+          }
+        },
+        {
+          "femu_rms_mm": 1.1856032422229667e-08,
+          "femu_seconds": 41.60686940397136,
+          "id": "lhs_04",
+          "pseudo_trajectory_rms_mm": 3.922972491122164e-07,
+          "regm_rms_mm": 2.0567550018794733e-07,
+          "regm_seconds": 1.966867181006819,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.556380943490119,
+            "R_mpa": 16.995237815348688,
+            "b": 2.9449100951299627,
+            "tau0_mpa": 38.10781785446173
+          }
+        },
+        {
+          "femu_rms_mm": 2.907984405764294e-08,
+          "femu_seconds": 9.544525958946906,
+          "id": "lhs_05",
+          "pseudo_trajectory_rms_mm": 4.548363273866593e-07,
+          "regm_rms_mm": 2.3725877255640098e-07,
+          "regm_seconds": 1.8683038000017405,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.735754158646825,
+            "R_mpa": 21.097850775310032,
+            "b": 3.092331350112634,
+            "tau0_mpa": 48.070633192212036
+          }
+        },
+        {
+          "femu_rms_mm": 2.5279143576616008e-08,
+          "femu_seconds": 121.52398272801656,
+          "id": "lhs_06",
+          "pseudo_trajectory_rms_mm": 3.7499336250399786e-07,
+          "regm_rms_mm": 1.9730247609347766e-07,
+          "regm_seconds": 1.9374688549432904,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.052792466617078,
+            "R_mpa": 18.338490853878977,
+            "b": 3.318123089796836,
+            "tau0_mpa": 33.46337155111241
+          }
+        },
+        {
+          "femu_rms_mm": 6.018094120158221e-08,
+          "femu_seconds": 5.8386906259693205,
+          "id": "lhs_07",
+          "pseudo_trajectory_rms_mm": 4.6130919955607247e-07,
+          "regm_rms_mm": 2.3951533181624374e-07,
+          "regm_seconds": 2.1724477529060096,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.851023419841649,
+            "R_mpa": 17.870801436231535,
+            "b": 3.656996889725988,
+            "tau0_mpa": 51.50971620831392
+          }
+        },
+        {
+          "femu_rms_mm": 4.012973757286425e-08,
+          "femu_seconds": 6.44211628602352,
+          "id": "lhs_08",
+          "pseudo_trajectory_rms_mm": 4.16862330272168e-07,
+          "regm_rms_mm": 2.1965190769616759e-07,
+          "regm_seconds": 2.401188866002485,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.506484008431475,
+            "R_mpa": 25.102242287323516,
+            "b": 2.7267687187705234,
+            "tau0_mpa": 38.79523594290796
+          }
+        },
+        {
+          "femu_rms_mm": 2.6728602724844196e-08,
+          "femu_seconds": 116.11503670504317,
+          "id": "lhs_09",
+          "pseudo_trajectory_rms_mm": 3.609155667134639e-07,
+          "regm_rms_mm": 1.8990323629988274e-07,
+          "regm_seconds": 1.7677231719717383,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.194891820889083,
+            "R_mpa": 16.787728554213082,
+            "b": 2.5442814918482464,
+            "tau0_mpa": 31.96435750660866
+          }
+        },
+        {
+          "femu_rms_mm": 5.2029849432659696e-08,
+          "femu_seconds": 11.444586617057212,
+          "id": "lhs_10",
+          "pseudo_trajectory_rms_mm": 4.1015821575484315e-07,
+          "regm_rms_mm": 2.137272886707975e-07,
+          "regm_seconds": 1.7197622059611604,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.991808607060946,
+            "R_mpa": 14.23167588327539,
+            "b": 2.4259963079856153,
+            "tau0_mpa": 43.32182086369025
+          }
+        },
+        {
+          "femu_rms_mm": 4.362823377919786e-08,
+          "femu_seconds": 145.01808128505945,
+          "id": "lhs_11",
+          "pseudo_trajectory_rms_mm": 3.638087627128886e-07,
+          "regm_rms_mm": 1.9188050316413941e-07,
+          "regm_seconds": 1.7479741519782692,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.974814897571067,
+            "R_mpa": 19.41216975404326,
+            "b": 2.3020413865761307,
+            "tau0_mpa": 31.15094102084029
+          }
+        },
+        {
+          "femu_rms_mm": 1.7877338925043504e-08,
+          "femu_seconds": 24.509117600042373,
+          "id": "lhs_12",
+          "pseudo_trajectory_rms_mm": 3.657376912390975e-07,
+          "regm_rms_mm": 1.9199333575797227e-07,
+          "regm_seconds": 1.7711003880249336,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.372614303185408,
+            "R_mpa": 15.264367280651523,
+            "b": 2.241881096481784,
+            "tau0_mpa": 33.76522592531282
+          }
+        },
+        {
+          "femu_rms_mm": 1.4899080769508646e-08,
+          "femu_seconds": 8.334515757043846,
+          "id": "lhs_13",
+          "pseudo_trajectory_rms_mm": 4.4798540114855573e-07,
+          "regm_rms_mm": 2.3454457589531516e-07,
+          "regm_seconds": 1.827201437088661,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.36834902795897,
+            "R_mpa": 23.387534723535605,
+            "b": 3.3930807640855996,
+            "tau0_mpa": 45.47944447572602
+          }
+        },
+        {
+          "femu_rms_mm": 4.175276934426815e-08,
+          "femu_seconds": 11.592241963022389,
+          "id": "lhs_14",
+          "pseudo_trajectory_rms_mm": 4.609157920933937e-07,
+          "regm_rms_mm": 2.3989474229273407e-07,
+          "regm_seconds": 1.8663836490595713,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.450833647350597,
+            "R_mpa": 20.075640733383658,
+            "b": 2.97847757371144,
+            "tau0_mpa": 50.15441037017598
+          }
+        },
+        {
+          "femu_rms_mm": 5.843409556350389e-08,
+          "femu_seconds": 7.223082690965384,
+          "id": "lhs_15",
+          "pseudo_trajectory_rms_mm": 4.68558327874311e-07,
+          "regm_rms_mm": 2.432479081412313e-07,
+          "regm_seconds": 1.7400288769276813,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.925340100053331,
+            "R_mpa": 18.761711604014167,
+            "b": 3.191682759950759,
+            "tau0_mpa": 52.49702252154417
+          }
+        },
+        {
+          "femu_rms_mm": 4.369055396832814e-08,
+          "femu_seconds": 18.56415441108402,
+          "id": "lhs_16",
+          "pseudo_trajectory_rms_mm": 4.10027863205233e-07,
+          "regm_rms_mm": 2.1373323990632334e-07,
+          "regm_seconds": 1.8365092109888792,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.174688616491139,
+            "R_mpa": 14.579875337501342,
+            "b": 4.0412913769969245,
+            "tau0_mpa": 42.39953749806594
+          }
+        },
+        {
+          "femu_rms_mm": 2.8472410468857085e-08,
+          "femu_seconds": 7.339108822052367,
+          "id": "lhs_17",
+          "pseudo_trajectory_rms_mm": 3.872162354641198e-07,
+          "regm_rms_mm": 2.0388538801244546e-07,
+          "regm_seconds": 1.7374965830240399,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.809734740371635,
+            "R_mpa": 20.536774894068508,
+            "b": 2.824141116086498,
+            "tau0_mpa": 35.09916896967621
+          }
+        },
+        {
+          "femu_rms_mm": 2.991360992664439e-08,
+          "femu_seconds": 121.0010347039206,
+          "id": "lhs_18",
+          "pseudo_trajectory_rms_mm": 4.038595876518887e-07,
+          "regm_rms_mm": 2.1108585798462625e-07,
+          "regm_seconds": 1.8301523540867493,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.193696121880457,
+            "R_mpa": 15.809407532657541,
+            "b": 2.4772232822874938,
+            "tau0_mpa": 41.14059940960526
+          }
+        },
+        {
+          "femu_rms_mm": 4.939892340786463e-08,
+          "femu_seconds": 13.910441517014988,
+          "id": "lhs_19",
+          "pseudo_trajectory_rms_mm": 4.296393708572629e-07,
+          "regm_rms_mm": 2.2365092532000475e-07,
+          "regm_seconds": 1.7459951820783317,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.442062982430587,
+            "R_mpa": 15.68615029634112,
+            "b": 3.908994925563449,
+            "tau0_mpa": 46.209733333569126
+          }
+        }
+      ],
+      "seconds": 36.981733574997634,
+      "statistics": {
+        "best_five_femu": [
+          "lhs_04",
+          "lhs_13",
+          "lhs_03",
+          "lhs_12",
+          "lhs_06"
+        ],
+        "best_five_overlap": [
+          "lhs_06",
+          "lhs_12"
+        ],
+        "best_five_overlap_count": 2,
+        "best_five_regm": [
+          "lhs_09",
+          "lhs_11",
+          "lhs_12",
+          "lhs_06",
+          "lhs_02"
+        ],
+        "gate_components": {
+          "best_five_overlap": false,
+          "log_pearson": false,
+          "minimum_valid_candidates": true,
+          "spearman": false
+        },
+        "gate_passed": false,
+        "interpretable": true,
+        "log_pearson": 0.2755652553534226,
+        "log_pearson_pvalue": 0.2396127979597181,
+        "median_femu_seconds": 12.751341740018688,
+        "median_regm_seconds": 1.7991509125567973,
+        "median_speedup": 7.087421989463678,
+        "spearman": 0.32631578947368417,
+        "spearman_pvalue": 0.1602745510791006,
+        "valid_candidates": 20
+      }
+    },
+    "D-periodic": {
+      "description": "affine_input/periodic_score",
+      "records": [
+        {
+          "femu_rms_mm": 7.030987054003445e-08,
+          "femu_seconds": 9.485724659985863,
+          "id": "initial",
+          "pseudo_trajectory_rms_mm": 4.4504658151724693e-07,
+          "regm_rms_mm": 1.6556455076732434e-07,
+          "regm_seconds": 1.6621971880085766,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.0,
+            "R_mpa": 15.025528056421036,
+            "b": 2.25,
+            "tau0_mpa": 50.0
+          }
+        },
+        {
+          "femu_rms_mm": 3.846701256643001e-08,
+          "femu_seconds": 8.299539317027666,
+          "id": "lhs_01",
+          "pseudo_trajectory_rms_mm": 3.994102536858158e-07,
+          "regm_rms_mm": 1.5792977656657657e-07,
+          "regm_seconds": 1.6563722239807248,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.261208150249114,
+            "R_mpa": 22.840634767050222,
+            "b": 3.5417228468909046,
+            "tau0_mpa": 35.95774338340646
+          }
+        },
+        {
+          "femu_rms_mm": 7.370484900605898e-08,
+          "femu_seconds": 123.91890644095838,
+          "id": "lhs_02",
+          "pseudo_trajectory_rms_mm": 3.7680289509230643e-07,
+          "regm_rms_mm": 1.520045811984058e-07,
+          "regm_seconds": 1.6979794249637052,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.583835493439143,
+            "R_mpa": 24.523164883820193,
+            "b": 3.692103274169932,
+            "tau0_mpa": 30.569795738398586
+          }
+        },
+        {
+          "femu_rms_mm": 1.614027036120276e-08,
+          "femu_seconds": 14.625459044007584,
+          "id": "lhs_03",
+          "pseudo_trajectory_rms_mm": 4.125670504401505e-07,
+          "regm_rms_mm": 1.613810068210795e-07,
+          "regm_seconds": 1.664636266999878,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.8577326114078145,
+            "R_mpa": 21.751618668461234,
+            "b": 2.6111227171451348,
+            "tau0_mpa": 39.87822573919911
+          }
+        },
+        {
+          "femu_rms_mm": 1.1856032422229667e-08,
+          "femu_seconds": 41.60686940397136,
+          "id": "lhs_04",
+          "pseudo_trajectory_rms_mm": 3.922972491122164e-07,
+          "regm_rms_mm": 1.5207955102985374e-07,
+          "regm_seconds": 1.6857866740319878,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.556380943490119,
+            "R_mpa": 16.995237815348688,
+            "b": 2.9449100951299627,
+            "tau0_mpa": 38.10781785446173
+          }
+        },
+        {
+          "femu_rms_mm": 2.907984405764294e-08,
+          "femu_seconds": 9.544525958946906,
+          "id": "lhs_05",
+          "pseudo_trajectory_rms_mm": 4.548363273866593e-07,
+          "regm_rms_mm": 1.730508403439022e-07,
+          "regm_seconds": 1.6429633790394291,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.735754158646825,
+            "R_mpa": 21.097850775310032,
+            "b": 3.092331350112634,
+            "tau0_mpa": 48.070633192212036
+          }
+        },
+        {
+          "femu_rms_mm": 2.5279143576616008e-08,
+          "femu_seconds": 121.52398272801656,
+          "id": "lhs_06",
+          "pseudo_trajectory_rms_mm": 3.7499336250399786e-07,
+          "regm_rms_mm": 1.4763475490799612e-07,
+          "regm_seconds": 1.636954546906054,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 13.052792466617078,
+            "R_mpa": 18.338490853878977,
+            "b": 3.318123089796836,
+            "tau0_mpa": 33.46337155111241
+          }
+        },
+        {
+          "femu_rms_mm": 6.018094120158221e-08,
+          "femu_seconds": 5.8386906259693205,
+          "id": "lhs_07",
+          "pseudo_trajectory_rms_mm": 4.6130919955607247e-07,
+          "regm_rms_mm": 1.7213430143220574e-07,
+          "regm_seconds": 1.6726473879534751,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.851023419841649,
+            "R_mpa": 17.870801436231535,
+            "b": 3.656996889725988,
+            "tau0_mpa": 51.50971620831392
+          }
+        },
+        {
+          "femu_rms_mm": 4.012973757286425e-08,
+          "femu_seconds": 6.44211628602352,
+          "id": "lhs_08",
+          "pseudo_trajectory_rms_mm": 4.16862330272168e-07,
+          "regm_rms_mm": 1.6492955976305296e-07,
+          "regm_seconds": 1.6598921529948711,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.506484008431475,
+            "R_mpa": 25.102242287323516,
+            "b": 2.7267687187705234,
+            "tau0_mpa": 38.79523594290796
+          }
+        },
+        {
+          "femu_rms_mm": 2.6728602724844196e-08,
+          "femu_seconds": 116.11503670504317,
+          "id": "lhs_09",
+          "pseudo_trajectory_rms_mm": 3.609155667134639e-07,
+          "regm_rms_mm": 1.423276775334838e-07,
+          "regm_seconds": 1.6900064259534702,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.194891820889083,
+            "R_mpa": 16.787728554213082,
+            "b": 2.5442814918482464,
+            "tau0_mpa": 31.96435750660866
+          }
+        },
+        {
+          "femu_rms_mm": 5.2029849432659696e-08,
+          "femu_seconds": 11.444586617057212,
+          "id": "lhs_10",
+          "pseudo_trajectory_rms_mm": 4.1015821575484315e-07,
+          "regm_rms_mm": 1.550780270609814e-07,
+          "regm_seconds": 1.7252417699201033,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.991808607060946,
+            "R_mpa": 14.23167588327539,
+            "b": 2.4259963079856153,
+            "tau0_mpa": 43.32182086369025
+          }
+        },
+        {
+          "femu_rms_mm": 4.362823377919786e-08,
+          "femu_seconds": 145.01808128505945,
+          "id": "lhs_11",
+          "pseudo_trajectory_rms_mm": 3.638087627128886e-07,
+          "regm_rms_mm": 1.4483260515642674e-07,
+          "regm_seconds": 1.6462778920540586,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.974814897571067,
+            "R_mpa": 19.41216975404326,
+            "b": 2.3020413865761307,
+            "tau0_mpa": 31.15094102084029
+          }
+        },
+        {
+          "femu_rms_mm": 1.7877338925043504e-08,
+          "femu_seconds": 24.509117600042373,
+          "id": "lhs_12",
+          "pseudo_trajectory_rms_mm": 3.657376912390975e-07,
+          "regm_rms_mm": 1.4279815609622656e-07,
+          "regm_seconds": 1.7173680749256164,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.372614303185408,
+            "R_mpa": 15.264367280651523,
+            "b": 2.241881096481784,
+            "tau0_mpa": 33.76522592531282
+          }
+        },
+        {
+          "femu_rms_mm": 1.4899080769508646e-08,
+          "femu_seconds": 8.334515757043846,
+          "id": "lhs_13",
+          "pseudo_trajectory_rms_mm": 4.4798540114855573e-07,
+          "regm_rms_mm": 1.7286663002212822e-07,
+          "regm_seconds": 1.6449485699413344,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 11.36834902795897,
+            "R_mpa": 23.387534723535605,
+            "b": 3.3930807640855996,
+            "tau0_mpa": 45.47944447572602
+          }
+        },
+        {
+          "femu_rms_mm": 4.175276934426815e-08,
+          "femu_seconds": 11.592241963022389,
+          "id": "lhs_14",
+          "pseudo_trajectory_rms_mm": 4.609157920933937e-07,
+          "regm_rms_mm": 1.7390694222834033e-07,
+          "regm_seconds": 1.6855330939870328,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.450833647350597,
+            "R_mpa": 20.075640733383658,
+            "b": 2.97847757371144,
+            "tau0_mpa": 50.15441037017598
+          }
+        },
+        {
+          "femu_rms_mm": 5.843409556350389e-08,
+          "femu_seconds": 7.223082690965384,
+          "id": "lhs_15",
+          "pseudo_trajectory_rms_mm": 4.68558327874311e-07,
+          "regm_rms_mm": 1.7483243839399802e-07,
+          "regm_seconds": 1.6443936920259148,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 9.925340100053331,
+            "R_mpa": 18.761711604014167,
+            "b": 3.191682759950759,
+            "tau0_mpa": 52.49702252154417
+          }
+        },
+        {
+          "femu_rms_mm": 4.369055396832814e-08,
+          "femu_seconds": 18.56415441108402,
+          "id": "lhs_16",
+          "pseudo_trajectory_rms_mm": 4.10027863205233e-07,
+          "regm_rms_mm": 1.5508349881161836e-07,
+          "regm_seconds": 1.7627725430065766,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 12.174688616491139,
+            "R_mpa": 14.579875337501342,
+            "b": 4.0412913769969245,
+            "tau0_mpa": 42.39953749806594
+          }
+        },
+        {
+          "femu_rms_mm": 2.8472410468857085e-08,
+          "femu_seconds": 7.339108822052367,
+          "id": "lhs_17",
+          "pseudo_trajectory_rms_mm": 3.872162354641198e-07,
+          "regm_rms_mm": 1.5287587867442982e-07,
+          "regm_seconds": 1.70815625495743,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 10.809734740371635,
+            "R_mpa": 20.536774894068508,
+            "b": 2.824141116086498,
+            "tau0_mpa": 35.09916896967621
+          }
+        },
+        {
+          "femu_rms_mm": 2.991360992664439e-08,
+          "femu_seconds": 121.0010347039206,
+          "id": "lhs_18",
+          "pseudo_trajectory_rms_mm": 4.038595876518887e-07,
+          "regm_rms_mm": 1.5461948176312053e-07,
+          "regm_seconds": 1.6755372360348701,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 8.193696121880457,
+            "R_mpa": 15.809407532657541,
+            "b": 2.4772232822874938,
+            "tau0_mpa": 41.14059940960526
+          }
+        },
+        {
+          "femu_rms_mm": 4.939892340786463e-08,
+          "femu_seconds": 13.910441517014988,
+          "id": "lhs_19",
+          "pseudo_trajectory_rms_mm": 4.296393708572629e-07,
+          "regm_rms_mm": 1.6182411059056776e-07,
+          "regm_seconds": 1.6974449940025806,
+          "status": "complete",
+          "theta": {
+            "Q_mpa": 7.442062982430587,
+            "R_mpa": 15.68615029634112,
+            "b": 3.908994925563449,
+            "tau0_mpa": 46.209733333569126
+          }
+        }
+      ],
+      "seconds": 33.59575087798294,
+      "statistics": {
+        "best_five_femu": [
+          "lhs_04",
+          "lhs_13",
+          "lhs_03",
+          "lhs_12",
+          "lhs_06"
+        ],
+        "best_five_overlap": [
+          "lhs_06",
+          "lhs_12"
+        ],
+        "best_five_overlap_count": 2,
+        "best_five_regm": [
+          "lhs_09",
+          "lhs_12",
+          "lhs_11",
+          "lhs_06",
+          "lhs_02"
+        ],
+        "gate_components": {
+          "best_five_overlap": false,
+          "log_pearson": false,
+          "minimum_valid_candidates": true,
+          "spearman": false
+        },
+        "gate_passed": false,
+        "interpretable": true,
+        "log_pearson": 0.24276703006548703,
+        "log_pearson_pvalue": 0.302394247828782,
+        "median_femu_seconds": 12.751341740018688,
+        "median_regm_seconds": 1.6740923119941726,
+        "median_speedup": 7.616868943642263,
+        "spearman": 0.2902255639097744,
+        "spearman_pvalue": 0.21449998226074232,
+        "valid_candidates": 20
+      }
+    }
+  }
+}

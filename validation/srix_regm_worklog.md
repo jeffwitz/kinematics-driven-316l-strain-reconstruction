@@ -160,3 +160,24 @@ this objective. Exact-space REGM remains a qualified diagnostic/proposal
 surrogate. Any future observation-aware reformulation must first restore the
 truth minimum on the digital twin and then pass the same observed ranking
 gate. No sequentially reconditioned variant is justified yet.
+
+## Observation-placement ablation (2026-08-24)
+
+The suspected placement error was tested before any new P43 work. The
+pre-registration is `validation/srix_regm_observation_placement_preregistration.md`;
+the machine-readable result is
+`validation/reference_data/srix_regm_observation_placement_v1/report.json`.
+
+The 20 existing candidates were replayed with raw or affine-preserving-
+transferred histories, and the pseudo-displacement was scored with identity,
+periodic FFT, or affine-preserving transfer. Against the same observed FEMU
+target, raw replay retained the ranking (`rho=0.950` periodic,
+`rho=0.940` affine), while transferred replay failed before scoring
+(`rho=0.338` identity). The existing combined path was `rho=0.326`; its
+periodic-score counterpart was `rho=0.290`.
+
+At the true parameters, the transferred-input path generated a pseudo-
+displacement RMS of `4.067e-7 mm`. The candidate trajectory spread was
+`3.495e-8 mm`, ratio `11.64`. This localizes the dominant failure to
+replaying `O(u*)` through the nonlinear SRIX history, rather than applying `O`
+to the correction. The NO-GO before P43 remains in force.

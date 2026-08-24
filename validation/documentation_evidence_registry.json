@@ -284,7 +284,8 @@
       "boundary": "Exact M8 twin recovery and ranking pass, but transfer-only observed ranking fails the frozen correlation and top-five thresholds",
       "evidence_ids": [
         "E-SRIX-REGM-001",
-        "E-SRIX-REGM-002"
+        "E-SRIX-REGM-002",
+        "E-SRIX-REGM-003"
       ]
     }
   ],
@@ -1730,6 +1731,42 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-REGM-003",
+      "question": "Does the observed SRIX-REGM ranking fail because observation is applied before constitutive replay?",
+      "fidelity": "M8 twin; frozen 20-candidate ranking; raw versus affine-preserving replay histories; periodic and affine-preserving score transfers",
+      "parameters": "same SRIX theta4 population, EBSD-cubic K0 and observed FEMU target as E-SRIX-REGM-002",
+      "status": "verified diagnosis; observed-input formulation remains NO-GO",
+      "conclusion": "Raw replay retains the observed FEMU ranking (Spearman 0.940-0.950), while transferred replay fails before scoring (Spearman 0.338). The truth pseudo-displacement bias is 11.64 times the candidate spread.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_observation_placement_v1/report.json",
+          "role": "A/B/C/D ablation and truth-bias diagnostic",
+          "assertions": [
+            {
+              "path": "/variants/B-affine/statistics/spearman",
+              "operator": "greater_than_or_equal",
+              "expected": 0.8
+            },
+            {
+              "path": "/variants/C/statistics/spearman",
+              "operator": "less_than",
+              "expected": 0.8
+            },
+            {
+              "path": "/variants/C/diagnostics/bias_to_spread_ratio",
+              "operator": "greater_than",
+              "expected": 10.0
+            },
+            {
+              "path": "/claims/p43_identification_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -2752,6 +2789,10 @@
     {
       "source": "validation/reference_data/srix_regm_femu_observed_ranking_v1/srix_regm_femu_observed_ranking.png",
       "target": "evidence/srix_regm_femu_observed_ranking.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_observation_placement_v1/srix_regm_observation_placement.png",
+      "target": "evidence/srix_regm_observation_placement.png"
     }
   ]
 }

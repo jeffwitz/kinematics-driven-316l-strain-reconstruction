@@ -78,8 +78,9 @@ bottleneck.
 
 ## What the observation chain changes
 
-The same twin becomes a negative identification test after the measured DIC
-transfer. The true parameters no longer minimize the REGM objective:
+The same twin becomes a negative identification test if the measured DIC
+transfer is injected into the constitutive replay. The true parameters no
+longer minimize the REGM objective:
 
 | observation | truth RMS | lower admissible RMS reached |
 |---|---:|---:|
@@ -87,10 +88,33 @@ transfer. The true parameters no longer minimize the REGM objective:
 | transfer, measured noise and whitening | `1.741e-3` | `1.346e-3` |
 
 This does not mean that SRIX integration has failed. The exact test uses the
-same constitutive backend and recovers the truth. The issue is structural: a
-spatial observation operator applied to a mechanically equilibrated
-displacement does not generally preserve equilibrium. Sensitivity survives,
-but the minimum is biased.
+same constitutive backend and recovers the truth. The issue is the placement of
+the observation operator: `B O(u*)` is replayed by a nonlinear, history-dependent
+threshold law, so a small displacement transfer can change active systems and
+all subsequent internal variables.
+
+The preregistered A/B/C/D ablation makes this distinction quantitative. With
+the raw mechanical twin as replay input (B), scoring the correction through
+either periodic or affine-preserving observation retains the observed FEMU
+ranking (`rho=0.950` and `0.940`). With the transferred history as replay input
+(C), the ranking collapses to `rho=0.338` even when the correction is scored by
+the identity. The current combined path (D-affine) gives `rho=0.326`.
+
+At the truth, the transferred-input path creates a pseudo-displacement RMS of
+`4.067e-7 mm`, `11.64` times the candidate spread. The periodic-versus-
+affine-preserving scoring difference is therefore secondary for this failure.
+
+```{figure} ../_static/evidence/srix_regm_observation_placement.png
+:alt: A/B/C/D ablation showing preserved rankings for raw replay and collapsed rankings for transferred replay.
+:width: 95%
+
+Observation-placement ablation on the frozen twenty-candidate population.
+```
+
+The complete table and provenance are in
+`validation/srix_regm_observation_placement_results.md`. The current NO-GO for
+observed-input identification remains, but its cause is now localized to the
+constitutive-input side of the observation operator.
 
 ## Relation to complete FEMU
 

@@ -7175,3 +7175,31 @@ SRIX identifié avec cet objectif. Point de reprise :
 doit d'abord restaurer le minimum vrai sur le jumeau puis repasser le classement
 observé. Ne pas développer le reconditionnement séquentiel avant d'avoir réglé
 l'incohérence de l'opérateur d'observation.
+
+### 2026-08-24 — SRIX-REGM : placement de l'opérateur d'observation
+
+Une ablation pré-enregistrée a été exécutée sans nouveau solveur mécanique sur
+les 20 candidats existants. Voir
+`validation/srix_regm_observation_placement_preregistration.md`,
+`validation/srix_regm_observation_placement_results.md` et le JSON primaire
+`validation/reference_data/srix_regm_observation_placement_v1/report.json`.
+
+Résultats contre le même classement FEMU observé :
+
+- replay brut + score périodique : Spearman `0,950` ;
+- replay brut + score affine-preserving : `0,940` ;
+- replay transféré + score identité : `0,338` ;
+- replay transféré + score périodique : `0,290` ;
+- replay transféré + score affine-preserving (chemin actuel) : `0,326`.
+
+Le biais à la vérité du replay transféré vaut `4,067e-7 mm`, contre une
+dispersion paramétrique de `3,495e-8 mm`, soit un rapport `11,64`. Le défaut
+dominant est donc l'injection de `O(u*)` avant le replay SRIX, qui modifie la
+trajectoire constitutive non linéaire. L'application de `O` au pseudo-
+déplacement est secondaire sur ce jumeau ; la variante périodique n'améliore
+pas la conclusion scientifique.
+
+**Décision :** le NO-GO avant P43 reste inchangé. Toute reformulation future
+doit conserver une histoire mécanique latente pour le replay constitutif et
+qualifier séparément sa reconstruction depuis la DIC sur le jumeau. Ne pas
+lancer P43 ni ajuster SRIX avant de repasser le classement observé.

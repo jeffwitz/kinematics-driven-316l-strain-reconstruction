@@ -215,3 +215,9 @@
 : Status: **negative result**.
 : Conclusion: No. Transfer alone moves the objective below the truth and reduces REGM/FEMU ranking to Spearman 0.326, log-Pearson 0.276 and top-five overlap 2/5. P43 identification is blocked.
 : Sources: truth-centering test: `validation/reference_data/srix_regm_transfer_noise_v1/report.json`<br>observed ranking gate: `validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json`.
+
+**E-SRIX-REGM-003 — Does the observed SRIX-REGM ranking fail because observation is applied before constitutive replay?**
+: Fidelity: M8 twin; frozen 20-candidate ranking; raw versus affine-preserving replay histories; periodic and affine-preserving score transfers. Parameters: same SRIX theta4 population, EBSD-cubic K0 and observed FEMU target as E-SRIX-REGM-002.
+: Status: **verified diagnosis; observed-input formulation remains NO-GO**.
+: Conclusion: Raw replay retains the observed FEMU ranking (Spearman 0.940-0.950), while transferred replay fails before scoring (Spearman 0.338). The truth pseudo-displacement bias is 11.64 times the candidate spread.
+: Sources: A/B/C/D ablation and truth-bias diagnostic: `validation/reference_data/srix_regm_observation_placement_v1/report.json`.
