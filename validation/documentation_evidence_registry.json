@@ -287,7 +287,8 @@
         "E-SRIX-REGM-002",
         "E-SRIX-REGM-003",
         "E-SRIX-REGM-004",
-        "E-SRIX-REGM-005"
+        "E-SRIX-REGM-005",
+        "E-SRIX-REGM-006"
       ]
     }
   ],
@@ -1822,6 +1823,42 @@
               "path": "/rows/5/statistics/spearman",
               "operator": "less_than",
               "expected": 0.8
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-REGM-006",
+      "question": "Does exact-space SRIX-REGM preserve the local information geometry of observed FEMU?",
+      "fidelity": "M8 twin; exact and transferred REGM finite differences versus eight complete observed FEMU perturbations",
+      "parameters": "log tau0, R, Q, b; central step 3e-3; eight macro endpoints; affine-preserving transfer",
+      "status": "negative surrogate-geometry result",
+      "conclusion": "Observed FEMU has normalized spectrum (1, 0.542, 0.407, 0.0679), whereas exact REGM has (1, 0.422, 0.0324, 4.65e-5). REGM is therefore not information-preserving for four-parameter identification.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_information_geometry_v1/report.json",
+          "role": "Fisher/Gauss-Newton geometry comparison",
+          "assertions": [
+            {
+              "path": "/geometries/FEMU_observed/numerical_rank",
+              "operator": "equals",
+              "expected": 4
+            },
+            {
+              "path": "/geometries/REGM_exact/normalized_singular_values/3",
+              "operator": "less_than",
+              "expected": 0.001
+            },
+            {
+              "path": "/geometries/FEMU_observed/normalized_singular_values/3",
+              "operator": "greater_than",
+              "expected": 0.05
             },
             {
               "path": "/claims/p43_authorized",

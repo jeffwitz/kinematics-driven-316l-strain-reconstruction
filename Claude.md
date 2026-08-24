@@ -7246,3 +7246,26 @@ Artefacts :
 production. Une projection contrainte par l'écart d'observation, le résidu
 mécanique et la covariance DIC reste éventuellement testable sur un jumeau,
 mais P43 demeure bloqué.
+
+### 2026-08-24 — Géométrie locale d'information REGM/FEMU
+
+Le diagnostic suivant a comparé les Jacobiennes en coordonnées
+`(log(tau0), log(R), log(Q), log(b))` au point vrai du jumeau M8 : REGM sur la
+cinématique exacte, REGM après transfert DIC, et FEMU directe observée obtenue
+par huit résolutions perturbées. Les spectres normalisés sont :
+
+- REGM exact : `1, .422, .0324, 4.65e-5` ;
+- REGM observé : `1, .337, .0178, 1.27e-5` ;
+- FEMU observée : `1, .542, .407, .0679`.
+
+Le conditionnement FEMU vaut `14,7`, contre `2,15e4` et `7,90e4` pour REGM.
+L'angle entre les sous-espaces dominants de dimension deux REGM exact/FEMU est
+`67,2 degrés`, alors qu'il n'est que `0,81 degré` entre REGM exact et REGM
+observé. La chaîne DIC déforme donc la géométrie REGM, mais REGM exact ne
+reproduit déjà pas la géométrie locale de la FEMU.
+
+La corrélation FEMU `Q/b` est forte (`0,933`) sans être une disparition
+complète : la quatrième direction reste à `6,8 %` de la première. Il faut donc
+éviter de conclure trop vite que P43 ne porte que deux paramètres. Le rapport
+complet est `validation/srix_regm_information_geometry_results.md`; aucun
+calcul P43 n'est autorisé avant une reformulation qui repasse ce gate.

@@ -233,3 +233,9 @@
 : Status: **negative result; simple projection rejected**.
 : Conclusion: The projection lowers the reference residual but does not restore the candidate ordering: Spearman remains 0.326-0.341 and top-five overlap remains 2/5.
 : Sources: projection ranking and truth-distance test: `validation/reference_data/srix_regm_mechanical_projection_v1/report.json`.
+
+**E-SRIX-REGM-006 — Does exact-space SRIX-REGM preserve the local information geometry of observed FEMU?**
+: Fidelity: M8 twin; exact and transferred REGM finite differences versus eight complete observed FEMU perturbations. Parameters: log tau0, R, Q, b; central step 3e-3; eight macro endpoints; affine-preserving transfer.
+: Status: **negative surrogate-geometry result**.
+: Conclusion: Observed FEMU has normalized spectrum (1, 0.542, 0.407, 0.0679), whereas exact REGM has (1, 0.422, 0.0324, 4.65e-5). REGM is therefore not information-preserving for four-parameter identification.
+: Sources: Fisher/Gauss-Newton geometry comparison: `validation/reference_data/srix_regm_information_geometry_v1/report.json`.

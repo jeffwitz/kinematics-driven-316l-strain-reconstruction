@@ -170,6 +170,38 @@ It does not reject a constrained projection: the next formulation would have
 to balance observation mismatch, mechanical residual and DIC uncertainty, and
 must be tested with several reference laws on the twin before any P43 use.
 
+## REGM does not preserve the full FEMU information geometry
+
+The next twin experiment compared the residual Jacobians at the true SRIX
+preset. The direct observed FEMU Jacobian has normalized singular values
+`(1.000, 0.542, 0.407, 0.0679)`, while REGM gives `(1.000, 0.422, 0.0324,
+4.65e-5)` with the exact history and `(1.000, 0.337, 0.0178, 1.27e-5)` after
+the DIC transfer. The direct FEMU geometry is therefore much better
+conditioned (`14.7` versus `2.15e4` and `7.90e4`).
+
+The leading two-dimensional REGM-exact/FEMU subspaces differ by `67.2 deg`,
+whereas exact and transferred REGM differ by only `0.81 deg` at the same rank.
+The DIC transfer changes the REGM sensitivity directions, but the more
+important limitation is already present in exact-space REGM: the weak-gap
+surrogate compresses directions that remain visible to complete FEMU.
+
+The FEMU geometry also shows strong but not complete hardening correlation,
+with `rho(Q,b)=0.933` and a fourth singular value still at `6.8 %` of the
+leading one. This distinguishes a genuine correlation from a formally lost
+parameter direction.
+
+```{figure} ../_static/evidence/srix_regm_information_geometry.png
+:alt: Singular spectra, parameter sensitivity vectors and Gauss-Newton correlations for REGM and FEMU.
+:width: 95%
+
+Local information geometry on the exact M8 twin. The FEMU Jacobian is obtained
+from complete forward solves; REGM uses only local causal replay.
+```
+
+The detailed report is in `validation/srix_regm_information_geometry_results.md`.
+This result rules out treating REGM as an information-preserving four-parameter
+surrogate, even though its exact-space ranking remains useful diagnostically.
+
 ## Relation to complete FEMU
 
 On twenty preregistered off-truth exact-twin candidates, REGM and full FEMU

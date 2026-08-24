@@ -210,3 +210,21 @@ Conclusion: a simple equilibrium projection reduces the residual but does not
 restore the parameter-discriminating information. It is rejected as the next
 P43 method. A constrained observation/mechanics projection remains a possible
 twin-only experiment; P43 remains blocked.
+
+## Information geometry diagnostic (2026-08-24)
+
+The preregistered comparison is in
+`validation/srix_regm_information_geometry_preregistration.md`; the primary
+artifact is `validation/reference_data/srix_regm_information_geometry_v1/report.json`.
+Three Jacobians were compared at the M8 truth: exact REGM, transferred REGM and
+complete observed FEMU. The normalized spectra are respectively
+`(1, .422, .0324, 4.65e-5)`, `(1, .337, .0178, 1.27e-5)` and
+`(1, .542, .407, .0679)`. The FEMU condition number is `14.7`, against
+`2.15e4` and `7.90e4` for REGM.
+
+The leading two-dimensional exact-REGM/FEMU subspaces differ by `67.2 deg`,
+while exact and transferred REGM differ by `0.81 deg`. Therefore the
+observation operator is not the sole problem: REGM already loses local FEMU
+sensitivity directions in exact kinematic space. P43 remains blocked; any
+future REGM reformulation must pass this information-geometry gate before
+identification.

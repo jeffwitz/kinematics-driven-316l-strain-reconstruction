@@ -152,7 +152,7 @@ def _cumulative_geometry(matrix: np.ndarray, block_size: int) -> list[dict[str, 
 
 def _plot(geometries: dict[str, dict[str, Any]], output: Path) -> None:
     labels = tuple(geometries)
-    figure, axes = plt.subplots(2, 3, figsize=(13, 7), constrained_layout=True)
+    figure, axes = plt.subplots(2, 4, figsize=(16, 7), constrained_layout=True)
     for label in labels:
         values = np.asarray(geometries[label]["normalized_singular_values"])
         axes[0, 0].semilogy(np.arange(1, len(values) + 1), values, marker="o", label=label)
@@ -160,15 +160,19 @@ def _plot(geometries: dict[str, dict[str, Any]], output: Path) -> None:
     axes[0, 0].legend()
     for index, label in enumerate(labels):
         vectors = np.asarray(geometries[label]["right_singular_vectors"])
-        image = axes[0, index + 1].imshow(vectors, aspect="auto", cmap="coolwarm", vmin=-1, vmax=1)
+        image = axes[0, index + 1].imshow(
+            vectors, aspect="auto", cmap="coolwarm", vmin=-1, vmax=1
+        )
         axes[0, index + 1].set_title(label)
         axes[0, index + 1].set_xticks(range(4), PARAMETER_NAMES, rotation=45, ha="right")
         axes[0, index + 1].set_ylabel("right singular vector")
-    figure.colorbar(image, ax=axes[0, 1:], shrink=0.8)
+    figure.colorbar(image, ax=axes[0, 1:4], shrink=0.8)
     for label in labels:
         cumulative = geometries[label]["cumulative"]
         minimum = [row["normalized_singular_values"][-1] for row in cumulative]
-        axes[1, 0].semilogy(np.arange(1, len(minimum) + 1), minimum, marker="o", label=label)
+        axes[1, 0].semilogy(
+            np.arange(1, len(minimum) + 1), minimum, marker="o", label=label
+        )
     axes[1, 0].set(xlabel="number of scored states", ylabel="smallest normalized singular value")
     axes[1, 0].legend()
     for index, label in enumerate(labels):
@@ -252,14 +256,14 @@ def main() -> None:
     for left, right in pairs:
         left_rank = geometries[left]["numerical_rank"]
         right_rank = geometries[right]["numerical_rank"]
-        count = min(left_rank, right_rank)
-        left_vectors = np.asarray(geometries[left]["right_singular_vectors"])[:, :count]
-        right_vectors = np.asarray(geometries[right]["right_singular_vectors"])[:, :count]
-        angles[f"{left}__{right}"] = (
-            np.degrees(subspace_angles(left_vectors, right_vectors)).tolist()
-            if count
-            else []
-        )
+        maximum = min(left_rank, right_rank, 3)
+        angles[f"{left}__{right}"] = {}
+        for count in range(1, maximum + 1):
+            left_vectors = np.asarray(geometries[left]["right_singular_vectors"])[:, :count]
+            right_vectors = np.asarray(geometries[right]["right_singular_vectors"])[:, :count]
+            angles[f"{left}__{right}"][str(count)] = np.degrees(
+                subspace_angles(left_vectors, right_vectors)
+            ).tolist()
 
     report = {
         "schema_version": 1,
