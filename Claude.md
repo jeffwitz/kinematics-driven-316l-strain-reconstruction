@@ -7426,3 +7426,17 @@ réhabilite pas l'ancienne géométrie et n'autorise toujours ni P43 ni
 l'identification. L'artefact principal est
 `validation/reference_data/srix_femu_common_path_gate_v9/` (rapport propre,
 `dirty=false`).
+
+### PATH-002 : raffinement bloqué (2026-08-24)
+
+Le gate `E-SRIX-FEMU-PATH-002` a été implémenté pour comparer les chemins
+emboîtés 57, 114 et 228 pas. Le niveau 57 est recalculé avec succès, mais le
+forward de base échoue au pas 34 du chemin 114, sur l'intervalle de fraction
+`[0.236328125, 0.23828125]`. Les essais isolés avec 80, 120 et 160 itérations
+Newton échouent au même endroit : ce n'est pas un simple plafond d'itérations.
+
+Le résultat est enregistré comme `blocked_path_level`, sans extrapolation du
+spectre et sans autorisation d'identification :
+`validation/reference_data/srix_femu_path_convergence_v2/`. Le prochain travail
+doit diagnostiquer cette branche ou définir une subdivision locale
+préréférencée qui converge avant de comparer les limites 57/114/228.
