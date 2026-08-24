@@ -7470,3 +7470,32 @@ Statut : `path_convergence_authorized=false`, `identification_authorized=false`
 et `p43_authorized=false`. Ne pas lancer de campagne 228, d'identification ou
 de P43 avant une qualification de convergence et un diagnostic constitutif
 local plus complet.
+
+### BRANCH-002B : localisation causale de la divergence (2026-08-24)
+
+Le gate `scripts/qualify_srix_femu_branch_causal.py` expose désormais les
+observables SRIX déjà disponibles dans le bridge MFront : `plastic_slip`,
+`equivalent_plastic_slip`, `back_strain` et `elastic_strain`. Il compare les
+endpoints communs 57/114 et teste les préfixes dont les `k` premiers intervalles
+sont raffinés (`k=8,16,24,32,40,48,57`).
+
+Ce diagnostic a d'abord révélé un bug de plomberie : une initialisation pleine
+du champ `initial_displacement` annulait aussi les valeurs de bord du premier
+pas. Le solveur ne doit appliquer cette initialisation qu'aux inconnues
+intérieures. La correction est couverte par un test unitaire ; les campagnes
+historiques restent inchangées.
+
+Avec l'initialisation corrigée, le chemin 57 échoue à l'incrément 5
+(`f=0.15625`) et le chemin entièrement raffiné à l'incrément 28
+(`f=0.2421875`). Seuls quatre endpoints communs sont donc comparables. La
+divergence est négligeable à `f=0.03125` et `0.0625`, puis devient visible à
+`f=0.09375` (`1.90e-3` en contrainte, `0.331` en `g`) ; un changement
+d'activité est observé à `f=0.125`. Il s'agit d'un candidat de transition
+d'ensemble actif, pas encore d'une bifurcation constitutive démontrée.
+
+Tous les préfixes testés échouent dans la configuration corrigée. Le statut
+reste donc `unresolved` : aucune reprise de PATH-002, identification ou P43
+n'est autorisée. Artefacts :
+`validation/srix_femu_branch_causal_preregistration.md`,
+`validation/srix_femu_branch_causal_results.md` et
+`validation/reference_data/srix_femu_branch_causal_v2/`.

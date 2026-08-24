@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Literal, cast
 
 import numpy as np
@@ -616,6 +616,8 @@ class TwoStateIncrementFields:
     stress_in_plane_mpa: FloatArray
     algorithmic_tangent_in_plane_mpa: FloatArray
     plastic_strain_tensor: FloatArray | None
+    elastic_strain_tensor: FloatArray | None = None
+    observables: dict[str, FloatArray] = field(default_factory=dict)
 
 
 def solve_two_state_dirichlet_plane_stress(
@@ -920,7 +922,15 @@ def solve_two_state_dirichlet_plane_stress(
             fluctuation[...] = callback_guess - applied
             initial_guess_applied = True
         elif not initial_guess_applied and initial_displacement_array is not None:
-            fluctuation[...] = initial_displacement_array - applied
+            # ``fluctuation`` is an interior unknown.  Boundary values are
+            # supplied by ``applied`` at every Newton iteration and must not
+            # be cancelled by copying a full-field initial displacement.  The
+            # previous full-array assignment made a non-zero first load step
+            # appear one increment late in recorded histories.
+            fluctuation[...] = 0.0
+            fluctuation[1:-1, 1:-1] = (
+                initial_displacement_array[1:-1, 1:-1] - applied[1:-1, 1:-1]
+            )
             initial_guess_applied = True
         increment_start_fluctuation = fluctuation.copy()
         converged = False
@@ -1324,6 +1334,13 @@ def solve_two_state_dirichlet_plane_stress(
                     plastic_strain_tensor=_reshape_two_state(
                         final_trial.plastic_strain_tensor, grid
                     ),
+                    elastic_strain_tensor=_reshape_two_state(
+                        final_trial.elastic_strain_tensor, grid
+                    ),
+                    observables={
+                        name: _reshape_two_state(values, grid)
+                        for name, values in final_trial.observables.items()
+                    },
                 )
             )
         if not converged:

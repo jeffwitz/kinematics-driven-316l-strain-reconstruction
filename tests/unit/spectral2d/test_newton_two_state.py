@@ -467,6 +467,37 @@ def test_increment_observer_sees_every_converged_state() -> None:
         np.testing.assert_allclose(seen[stop], truncated.displacement, atol=1.0e-12)
 
 
+def test_initial_displacement_guess_does_not_cancel_first_boundary_step() -> None:
+    """A full-field zero initial guess must preserve the first prescribed boundary."""
+
+    grid = StructuredGrid2D(4, 4, 2.0, 2.0)
+    x, _ = grid.coordinates
+    boundary = np.zeros((3, *grid.node_shape, 2))
+    boundary[1, ..., 0] = 0.01 * x[:, None]
+    boundary[2, ..., 0] = 0.02 * x[:, None]
+    common = dict(
+        relative_equilibrium_tolerance=1.0e-10,
+        transform=SpectralTransformConfig(backend="scipy"),
+    )
+    reference = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common),
+    )
+    guessed = solve_two_state_dirichlet_plane_stress(
+        grid=grid,
+        material=NonlinearStateBatch(32),
+        boundary_displacement_history=boundary,
+        config=EBISpectralSolverConfig(**common),
+        initial_displacement=np.zeros_like(boundary[0]),
+    )
+    np.testing.assert_allclose(guessed.displacement, reference.displacement, atol=1.0e-12)
+    np.testing.assert_allclose(
+        guessed.stress_in_plane_mpa, reference.stress_in_plane_mpa, atol=1.0e-12
+    )
+
+
 def test_increment_observer_is_refused_with_step_doubling() -> None:
     grid = StructuredGrid2D(4, 4, 2.0, 2.0)
     boundary = np.zeros((2, *grid.node_shape, 2))
