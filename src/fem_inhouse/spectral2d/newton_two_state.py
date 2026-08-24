@@ -628,6 +628,7 @@ def solve_two_state_dirichlet_plane_stress(
     time_increment_override: float | None = None,
     load_path_override: Sequence[LoadPathStep] | None = None,
     initial_displacement: ArrayLike | None = None,
+    initial_guess_callback: Callable[[LoadPathStep, FloatArray], ArrayLike] | None = None,
     increment_observer: Callable[[TwoStateIncrementFields], None] | None = None,
 ) -> Spectral2DResult:
     """Solve the direct two-state TRI2 oracle with the EBI Newton machinery.
@@ -907,7 +908,18 @@ def solve_two_state_dirichlet_plane_stress(
         )
         krylov_recycle.reset()
         applied = extension.extend(boundary_state, grid)
-        if not initial_guess_applied and initial_displacement_array is not None:
+        if initial_guess_callback is not None:
+            callback_guess = np.asarray(
+                initial_guess_callback(path_item, applied + fluctuation), dtype=np.float64
+            )
+            if callback_guess.shape != (*grid.node_shape, 2):
+                raise ValueError(
+                    "initial_guess_callback must return nodal displacement shape "
+                    f"{(*grid.node_shape, 2)}"
+                )
+            fluctuation[...] = callback_guess - applied
+            initial_guess_applied = True
+        elif not initial_guess_applied and initial_displacement_array is not None:
             fluctuation[...] = initial_displacement_array - applied
             initial_guess_applied = True
         increment_start_fluctuation = fluctuation.copy()

@@ -93,6 +93,7 @@ def _fixed_path_trajectory(
     library: str,
     threads: int,
     config: Any | None = None,
+    initial_guess_callback: Any | None = None,
 ) -> list[TwoStateIncrementFields]:
     orientations = _orientation_map(pixels)
     material = _material_factory(
@@ -126,6 +127,7 @@ def _fixed_path_trajectory(
         config=config,
         load_path_override=path,
         initial_displacement=np.asarray(initial_displacement),
+        initial_guess_callback=initial_guess_callback,
         increment_observer=observe,
     )
     if len(collected) != len(path):
