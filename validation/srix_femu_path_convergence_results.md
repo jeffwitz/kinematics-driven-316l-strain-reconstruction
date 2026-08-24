@@ -1,4 +1,10 @@
-# E-SRIX-FEMU-PATH-002 — result
+# E-SRIX-FEMU-PATH-002 — historical result
+
+> **Superseded for scientific interpretation.** This experiment depends on
+> the pre-fix v9 common path and is retained only to document discovery of the
+> initial-Dirichlet bug. The corrected re-baseline is
+> `validation/reference_data/srix_femu_common_path_gate_v16/`, currently
+> blocked by the strict oracle.
 
 The nested-path experiment was run from the clean v9 common path. The 57-step
 forward and direct Jacobian were recomputed successfully. Its normalized

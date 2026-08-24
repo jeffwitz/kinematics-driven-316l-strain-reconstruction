@@ -1,4 +1,11 @@
-# Synchronized common-path gate — adaptive trajectory blocker
+# Synchronized common-path gate — historical results
+
+> **Superseded for scientific interpretation by**
+> `validation/reference_data/srix_femu_common_path_gate_v16/` and
+> `validation/srix_femu_common_path_rebaseline_results.md`. The v9 run below
+> predates the corrected first-step Dirichlet initialization contract. It is
+> retained as a reproducibility/history artifact only; its spectrum is not a
+> qualified result for the corrected forward problem.
 
 The synchronized gate is implemented in
 `scripts/qualify_srix_femu_common_path_gate.py`. It first runs the nine
