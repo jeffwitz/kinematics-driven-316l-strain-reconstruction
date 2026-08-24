@@ -7,7 +7,7 @@
     9,
     2
   ],
-  "dirty": true,
+  "dirty": false,
   "end_fractions": [
     0.03125,
     0.0625,
@@ -43,7 +43,7 @@
     1.0
   ],
   "fd_step_log": 0.003,
-  "git_sha": "c2cb2dc301a9616d3cef6852babe2f6a9de0d080",
+  "git_sha": "15e2256a8537a1b15b48aad841e770db7ce0adcb",
   "library": "build/mfront/src/libBehaviour.so",
   "library_sha256": "ff7f739003c1793b5b542b2fc05b40fbea40a52458543aba77fd955416379357",
   "name": "tau0_minus",
@@ -647,5 +647,5 @@
     1.0986122886681098
   ],
   "threads": 4,
-  "timing": 4.893267993000336
+  "timing": 5.386568591929972
 }
