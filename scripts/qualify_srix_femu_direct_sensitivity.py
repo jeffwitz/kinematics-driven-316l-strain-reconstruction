@@ -273,6 +273,15 @@ def _direct_jacobian(
                     response_level="tangent",
                     consistent_tangent=True,
                 )
+            except Exception as error:
+                raise RuntimeError(
+                    "direct shadow integration failed at accepted increment "
+                    f"{state_index} (fraction {accepted.start_fraction:.12g}"
+                    f"->{accepted.end_fraction:.12g}), parameter {parameter_name}, "
+                    "sign plus, phase fixed_current_strain: "
+                    f"{error}"
+                ) from error
+            try:
                 minus_trial = evaluate_in_plane_response(
                     minus,
                     base_strain.reshape(-1, 3),
@@ -283,8 +292,10 @@ def _direct_jacobian(
             except Exception as error:
                 raise RuntimeError(
                     "direct shadow integration failed at accepted increment "
-                    f"{state_index}, parameter {parameter_name}, sign pair "
-                    f"plus/minus, phase fixed_current_strain: {error}"
+                    f"{state_index} (fraction {accepted.start_fraction:.12g}"
+                    f"->{accepted.end_fraction:.12g}), parameter {parameter_name}, "
+                    "sign minus, phase fixed_current_strain: "
+                    f"{error}"
                 ) from error
             stress_difference = (
                 np.asarray(plus_trial.stress_in_plane_mpa)
@@ -329,7 +340,8 @@ def _direct_jacobian(
             except Exception as error:
                 raise RuntimeError(
                     "direct shadow history advance failed at accepted increment "
-                    f"{state_index}, parameter {parameter_name}, sign plus, "
+                    f"{state_index} (fraction {accepted.start_fraction:.12g}"
+                    f"->{accepted.end_fraction:.12g}), parameter {parameter_name}, sign plus, "
                     f"phase history_advance: {error}"
                 ) from error
             try:
@@ -343,7 +355,8 @@ def _direct_jacobian(
             except Exception as error:
                 raise RuntimeError(
                     "direct shadow history advance failed at accepted increment "
-                    f"{state_index}, parameter {parameter_name}, sign minus, "
+                    f"{state_index} (fraction {accepted.start_fraction:.12g}"
+                    f"->{accepted.end_fraction:.12g}), parameter {parameter_name}, sign minus, "
                     f"phase history_advance: {error}"
                 ) from error
             try:
@@ -352,7 +365,8 @@ def _direct_jacobian(
             except Exception as error:
                 raise RuntimeError(
                     "direct shadow history commit failed at accepted increment "
-                    f"{state_index}, parameter {parameter_name}: {error}"
+                    f"{state_index} (fraction {accepted.start_fraction:.12g}"
+                    f"->{accepted.end_fraction:.12g}), parameter {parameter_name}: {error}"
                 ) from error
 
     matrix = np.column_stack([np.concatenate(values) for values in scored_vectors])
