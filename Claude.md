@@ -7523,3 +7523,16 @@ fail-fast, puis exige la convergence stricte de la base et des huit perturbation
 avant de recalculer la Jacobienne directe et sa FD commune. Aucun P43 ni aucune
 identification n'est autorisé avant ce passage. Le résultat courant est suivi
 dans `validation/srix_femu_common_path_rebaseline_results.md`.
+
+Le premier rejeu corrigé (`validation/reference_data/srix_femu_common_path_gate_v16/`)
+est terminé avec `dirty=false` sur le commit `73a08be`. Il a utilisé v9
+uniquement comme proposition non qualifiée, a ajouté 12 subdivisions locales et
+a atteint 69 pas. L'oracle strict est resté bloqué sur `R_plus` à l'incrément
+23 (fraction voisine de `0.21875`) après plusieurs échecs stricts de la base et
+de `tau0_plus`. Aucun chemin commun des neuf trajectoires n'est donc qualifié.
+Il n'y a pas de Jacobienne directe-vs-FD nouvelle ni de nouveau spectre à
+interpréter. Le statut scientifique reste `direct_femu_qualified=false`,
+`path_convergence_authorized=false`, `identification_authorized=false` et
+`p43_authorized=false`. Le prochain travail doit diagnostiquer cette branche
+locale ou améliorer la continuation sous le contrat corrigé, sans assouplir
+l'oracle.
