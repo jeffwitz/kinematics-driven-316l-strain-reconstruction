@@ -7269,3 +7269,20 @@ complète : la quatrième direction reste à `6,8 %` de la première. Il faut do
 éviter de conclure trop vite que P43 ne porte que deux paramètres. Le rapport
 complet est `validation/srix_regm_information_geometry_results.md`; aucun
 calcul P43 n'est autorisé avant une reformulation qui repasse ce gate.
+
+### Tangente algorithmique : résultat et suite obligatoire (2026-08-24)
+
+Le diagnostic `validation/reference_data/srix_regm_algorithmic_tangent_v1/report.json`
+remplace `K0` par la tangente algorithmique consistante de SRIX à chaque état,
+sans Newton global. Résultat : spectre normalisé `(1, .37594, .03469,
+8.62e-5)`, conditionnement `1.16e4`, angle principal avec FEMU `73.9 deg`.
+Le `K0` fixe donnait `(1, .42199, .03240, 4.65e-5)`, `2.15e4` et `68.4 deg`.
+La tangente seule ne rétablit donc pas les directions FEMU manquantes.
+
+Suite autorisée, et uniquement sur le twin : tester un rejeu séquentiel à une
+correction par incrément. À chaque incrément, utiliser la tangente d'essai pour
+calculer une correction, réévaluer SRIX sur le déplacement corrigé, puis
+committer avant l'incrément suivant. Ne pas converger Newton, ne pas lancer
+P43, et comparer les quatre géométries `REGM-K0`, `REGM-Kalg`, `SREGM-1Newton`
+et `FEMU`. Si cette variante ne rejoint pas la géométrie FEMU, arrêter les
+surrogates REGM et documenter le NO-GO.

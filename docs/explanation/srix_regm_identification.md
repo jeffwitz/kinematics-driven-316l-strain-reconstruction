@@ -202,6 +202,31 @@ The detailed report is in `validation/srix_regm_information_geometry_results.md`
 This result rules out treating REGM as an information-preserving four-parameter
 surrogate, even though its exact-space ranking remains useful diagnostically.
 
+## Algorithmic-tangent diagnostic
+
+The next frozen test replaced the constant elastic reconditioner by the
+statewise consistent SRIX algorithmic tangent. This isolates the hypothesis
+that REGM loses FEMU directions only because it uses `K0` instead of the
+plastic tangent. On the exact M8 twin, the normalized singular values were
+`(1, .3759, .0347, 8.62e-5)`, with condition number `1.16e4`. The leading
+angle to the observed FEMU sensitivity subspace was `73.9 degrees`, compared
+with `68.4 degrees` for fixed `K0`; the rank-two angles were `67.75` and
+`11.50 degrees`.
+
+Thus a better local reconditioner alone does not restore the missing FEMU
+directions. The remaining diagnostic is a sequential one-correction replay,
+which re-evaluates and commits SRIX after one tangent correction at each
+increment. It is still a surrogate test, not a production identification
+method, and P43 remains blocked.
+
+```{figure} ../_static/evidence/srix_regm_algorithmic_tangent.png
+:alt: Information geometry for algorithmic-tangent REGM compared with observed FEMU.
+:width: 95%
+
+Statewise algorithmic tangents improve conditioning modestly but do not recover
+the FEMU sensitivity geometry.
+```
+
 ## Relation to complete FEMU
 
 On twenty preregistered off-truth exact-twin candidates, REGM and full FEMU

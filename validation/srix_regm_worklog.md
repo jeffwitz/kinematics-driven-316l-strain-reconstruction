@@ -228,3 +228,21 @@ observation operator is not the sole problem: REGM already loses local FEMU
 sensitivity directions in exact kinematic space. P43 remains blocked; any
 future REGM reformulation must pass this information-geometry gate before
 identification.
+
+### 2026-08-24 — Reconditionnement par tangente algorithmique
+
+Le preregistrement est `validation/srix_regm_algorithmic_tangent_preregistration.md`;
+l'artefact primaire est
+`validation/reference_data/srix_regm_algorithmic_tangent_v1/report.json`.
+Le résidu faible a été reconditionné à chaque état par la tangente
+algorithmique consistante de SRIX, sans Newton global. Le spectre normalisé est
+`(1, .37594, .03469, 8.62e-5)`, avec un conditionnement `1,16e4`, contre
+`(1, .42199, .03240, 4.65e-5)` et `2,15e4` pour le `K0` élastique.
+
+L'angle principal avec la géométrie FEMU observée passe de `68,4` à `73,9`
+degrés; les angles de rang deux sont `67,75` et `11,50` degrés. Le remplacement
+de `K0` par `K_alg` améliore donc modestement le conditionnement mais ne
+restaure pas les directions paramétriques faibles. L'hypothèse « le défaut
+vient seulement du préconditionneur élastique » est rejetée sur ce jumeau.
+Le prochain diagnostic est le rejeu séquentiel à une correction par incrément,
+avec réévaluation et commit causal; P43 reste bloqué.

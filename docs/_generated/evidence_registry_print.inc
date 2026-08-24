@@ -239,3 +239,9 @@
 : Status: **negative surrogate-geometry result**.
 : Conclusion: Observed FEMU has normalized spectrum (1, 0.542, 0.407, 0.0679), whereas exact REGM has (1, 0.422, 0.0324, 4.65e-5). REGM is therefore not information-preserving for four-parameter identification.
 : Sources: Fisher/Gauss-Newton geometry comparison: `validation/reference_data/srix_regm_information_geometry_v1/report.json`.
+
+**E-SRIX-REGM-007 — Does a statewise SRIX algorithmic tangent restore the missing REGM/FEMU sensitivity geometry?**
+: Fidelity: exact M8 twin; statewise consistent tangent reconditioning; no global Newton solve. Parameters: log tau0, R, Q, b; central step 3e-3; EBSD-cubic tangent assembled at each scored state.
+: Status: **negative reconditioner result**.
+: Conclusion: No. The algorithmic tangent changes the REGM spectrum only modestly and does not recover the FEMU weak directions: normalized spectrum (1, 0.37594, 0.03469, 8.62e-5), condition number 1.16e4, and leading angle 73.9 degrees.
+: Sources: statewise algorithmic-tangent geometry: `validation/reference_data/srix_regm_algorithmic_tangent_v1/report.json`.

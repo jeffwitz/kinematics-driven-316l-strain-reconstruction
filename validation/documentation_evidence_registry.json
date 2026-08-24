@@ -288,7 +288,8 @@
         "E-SRIX-REGM-003",
         "E-SRIX-REGM-004",
         "E-SRIX-REGM-005",
-        "E-SRIX-REGM-006"
+        "E-SRIX-REGM-006",
+        "E-SRIX-REGM-007"
       ]
     }
   ],
@@ -1859,6 +1860,42 @@
               "path": "/geometries/FEMU_observed/normalized_singular_values/3",
               "operator": "greater_than",
               "expected": 0.05
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-REGM-007",
+      "question": "Does a statewise SRIX algorithmic tangent restore the missing REGM/FEMU sensitivity geometry?",
+      "fidelity": "exact M8 twin; statewise consistent tangent reconditioning; no global Newton solve",
+      "parameters": "log tau0, R, Q, b; central step 3e-3; EBSD-cubic tangent assembled at each scored state",
+      "status": "negative reconditioner result",
+      "conclusion": "No. The algorithmic tangent changes the REGM spectrum only modestly and does not recover the FEMU weak directions: normalized spectrum (1, 0.37594, 0.03469, 8.62e-5), condition number 1.16e4, and leading angle 73.9 degrees.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_algorithmic_tangent_v1/report.json",
+          "role": "statewise algorithmic-tangent geometry",
+          "assertions": [
+            {
+              "path": "/geometry/numerical_rank",
+              "operator": "equals",
+              "expected": 4
+            },
+            {
+              "path": "/geometry/normalized_singular_values/3",
+              "operator": "less_than",
+              "expected": 0.001
+            },
+            {
+              "path": "/principal_angles_to_femu_degrees/1/0",
+              "operator": "greater_than",
+              "expected": 60.0
             },
             {
               "path": "/claims/p43_authorized",
