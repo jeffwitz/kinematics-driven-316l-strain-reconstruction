@@ -286,7 +286,8 @@
         "E-SRIX-REGM-001",
         "E-SRIX-REGM-002",
         "E-SRIX-REGM-003",
-        "E-SRIX-REGM-004"
+        "E-SRIX-REGM-004",
+        "E-SRIX-REGM-005"
       ]
     }
   ],
@@ -1790,6 +1791,37 @@
               "path": "/rows/5/cumulative_energy",
               "operator": "greater_than",
               "expected": 0.999
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-REGM-005",
+      "question": "Can a damped first-order mechanical projection recover the observed-space SRIX ranking?",
+      "fidelity": "M8 transferred twin; one or two causal projection passes; same 20 candidates and observed FEMU target",
+      "parameters": "preset SRIX reference law; EBSD-cubic K0; damping 0.25, 0.50 and 1.00",
+      "status": "negative result; simple projection rejected",
+      "conclusion": "The projection lowers the reference residual but does not restore the candidate ordering: Spearman remains 0.326-0.341 and top-five overlap remains 2/5.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_mechanical_projection_v1/report.json",
+          "role": "projection ranking and truth-distance test",
+          "assertions": [
+            {
+              "path": "/rows/1/statistics/spearman",
+              "operator": "less_than",
+              "expected": 0.8
+            },
+            {
+              "path": "/rows/5/statistics/spearman",
+              "operator": "less_than",
+              "expected": 0.8
             },
             {
               "path": "/claims/p43_authorized",

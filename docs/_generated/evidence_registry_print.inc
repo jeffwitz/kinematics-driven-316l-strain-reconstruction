@@ -227,3 +227,9 @@
 : Status: **supported as a twin upper bound; not a real-data method**.
 : Conclusion: Rank five recovers 99.9897% of missing-history energy and reaches Spearman 0.859, log-Pearson 0.888 and top-five overlap 4/5. The basis uses the exact twin truth and therefore does not authorize P43.
 : Sources: latent-mode rank curve: `validation/reference_data/srix_regm_latent_modes_v1/report.json`.
+
+**E-SRIX-REGM-005 — Can a damped first-order mechanical projection recover the observed-space SRIX ranking?**
+: Fidelity: M8 transferred twin; one or two causal projection passes; same 20 candidates and observed FEMU target. Parameters: preset SRIX reference law; EBSD-cubic K0; damping 0.25, 0.50 and 1.00.
+: Status: **negative result; simple projection rejected**.
+: Conclusion: The projection lowers the reference residual but does not restore the candidate ordering: Spearman remains 0.326-0.341 and top-five overlap remains 2/5.
+: Sources: projection ranking and truth-distance test: `validation/reference_data/srix_regm_mechanical_projection_v1/report.json`.

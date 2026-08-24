@@ -142,6 +142,34 @@ experimentally. The next legitimate gate is to construct candidate weak modes
 from `O`, `K0` and the qualified observation/noise model alone, then repeat the
 same twin ranking and transfer tests without using `u*` to define the basis.
 
+## A first mechanical projection is not sufficient
+
+The first implementation of that idea was also tested on the transferred M8
+twin. At each state, the existing weak-equilibrium correction was added to the
+observed history with a fixed damping, once or twice, before replaying SRIX.
+This is a causal one-step projection, not a global nonlinear solve.
+
+The correction reduced the reference residual and the distance to the latent
+twin, but it did not recover the parameter ranking. The best Spearman value was
+`0.341`, compared with `0.326` without projection; the best-five overlap stayed
+at `2/5` for every tested damping and pass count. The full table is recorded in
+`validation/srix_regm_mechanical_projection_results.md` and the primary JSON
+report.
+
+```{figure} ../_static/evidence/srix_regm_mechanical_projection.png
+:alt: Ranking and truth residual after one or two damped mechanical projection passes.
+:width: 95%
+
+Mechanical projection reduces the reference residual but does not restore the
+observed FEMU ranking on the transferred twin.
+```
+
+This negative result rejects the simple update
+`u_observed + damping * (-K0^-1 R)` as a production latent-history estimator.
+It does not reject a constrained projection: the next formulation would have
+to balance observation mismatch, mechanical residual and DIC uncertainty, and
+must be tested with several reference laws on the twin before any P43 use.
+
 ## Relation to complete FEMU
 
 On twenty preregistered off-truth exact-twin candidates, REGM and full FEMU

@@ -195,3 +195,18 @@ This is a twin upper bound, not a real-DIC reconstruction: the POD basis uses
 the exact latent history. The next gate must construct weak modes from the
 observation, elastic reconditioner and noise model without using `u*`, then
 repeat the ranking test. P43 remains blocked.
+
+## Mechanical projection test (2026-08-24)
+
+The preregistered first-order projection test is in
+`validation/srix_regm_mechanical_projection_preregistration.md`; its primary
+report is `validation/reference_data/srix_regm_mechanical_projection_v1/report.json`.
+The transferred M8 history was corrected once or twice with the existing
+`-K0^-1 B^T sigma` update, using damping 0.25, 0.50 and 1.00. The ranking stayed
+at Spearman 0.326--0.341 and top-five overlap 2/5, although the truth replay
+RMS decreased from `2.132e-7` to `1.381e-7 mm` at the most aggressive case.
+
+Conclusion: a simple equilibrium projection reduces the residual but does not
+restore the parameter-discriminating information. It is rejected as the next
+P43 method. A constrained observation/mechanics projection remains a possible
+twin-only experiment; P43 remains blocked.

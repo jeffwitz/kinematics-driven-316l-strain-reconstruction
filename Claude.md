@@ -7222,3 +7222,27 @@ mais c'est une **borne supérieure** : la base et ses coefficients utilisent
 prochain gate doit construire les modes à partir de `O`, `K0` et du modèle de
 bruit uniquement, puis repasser le même test twin sans utiliser `u*` pour
 définir la base. Le NO-GO P43 reste inchangé.
+
+### 2026-08-24 — Test de projection mécanique avant replay SRIX
+
+Une première voie de reconstruction sans vérité latente a été testée sur le
+jumeau transféré. À chaque état, le replay SRIX du preset fournit la correction
+existante `-K0^-1 B^T sigma`; cette correction est ajoutée à l'histoire observée
+avec amortissement `0,25`, `0,50` ou `1,00`, une ou deux fois. Les bords restent
+inchangés et l'état constitutif est rejoué causalement.
+
+Le résultat est négatif pour cette formulation simple : Spearman reste entre
+`0,326` et `0,341`, le recouvrement top-5 reste `2/5`, alors que le résidu à la
+vérité diminue de `2,132e-7` à `1,381e-7 mm`. La correction rend donc la
+cinématique plus équilibrée selon la loi de référence, mais ne restaure pas
+l'information nécessaire au classement des paramètres.
+
+Artefacts :
+`validation/srix_regm_mechanical_projection_preregistration.md`,
+`validation/srix_regm_mechanical_projection_results.md` et
+`validation/reference_data/srix_regm_mechanical_projection_v1/report.json`.
+
+**Décision :** rejeter `u_observed + damping * (-K0^-1 R)` comme méthode de
+production. Une projection contrainte par l'écart d'observation, le résidu
+mécanique et la covariance DIC reste éventuellement testable sur un jumeau,
+mais P43 demeure bloqué.
