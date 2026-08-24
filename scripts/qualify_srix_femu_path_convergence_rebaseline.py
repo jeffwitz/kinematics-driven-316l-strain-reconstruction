@@ -26,6 +26,7 @@ from scripts.qualify_srix_femu_direct_sensitivity import (
     _direct_jacobian,
     _geometry,
     _oracle_config,
+    _path_search_config,
 )
 from scripts.qualify_srix_femu_fixed_path_gate import _fixed_path_trajectory
 from scripts.qualify_srix_regm_transfer_noise import _WrapFreeTransfer
@@ -60,18 +61,26 @@ def _repair_base_path(
     max_repairs: int,
 ) -> tuple[list[LoadPathStep], list[TwoStateIncrementFields], list[dict[str, Any]]]:
     repairs: list[dict[str, Any]] = []
+    search_config = _path_search_config()
+
+    def run(config: Any) -> list[TwoStateIncrementFields]:
+        return _fixed_path_trajectory(
+            theta=_theta_from_preset(),
+            path=path,
+            initial_displacement=None,
+            pixels=pixels,
+            library=library,
+            threads=threads,
+            config=config,
+        )
+
     while True:
         try:
-            fields = _fixed_path_trajectory(
-                theta=_theta_from_preset(),
-                path=path,
-                initial_displacement=None,
-                pixels=pixels,
-                library=library,
-                threads=threads,
-                config=_oracle_config(),
-            )
-            return path, fields, repairs
+            # Search only with the fail-fast policy.  The strict oracle is
+            # applied below after the partition no longer needs repairs.
+            run(search_config)
+            strict_fields = run(_oracle_config())
+            return path, strict_fields, repairs
         except RuntimeError as error:
             text = str(error)
             marker = "increment "
