@@ -43,7 +43,7 @@
     1.0
   ],
   "fd_step_log": 0.003,
-  "git_sha": "29f6002346306a8d7b865c116e88b3bb3c688a57",
+  "git_sha": "c2cb2dc301a9616d3cef6852babe2f6a9de0d080",
   "library": "build/mfront/src/libBehaviour.so",
   "library_sha256": "ff7f739003c1793b5b542b2fc05b40fbea40a52458543aba77fd955416379357",
   "name": "b_plus",
@@ -647,5 +647,5 @@
     1.1016122886681097
   ],
   "threads": 4,
-  "timing": 4.29306130099576
+  "timing": 4.662364246090874
 }

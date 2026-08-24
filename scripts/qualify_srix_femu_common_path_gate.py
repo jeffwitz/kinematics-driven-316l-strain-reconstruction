@@ -69,13 +69,20 @@ def _sha256_file(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def _seed_metadata(*, pixels: int, library: str, threads: int) -> dict[str, Any]:
+def _seed_metadata(
+    *,
+    pixels: int,
+    library: str,
+    threads: int,
+    git_sha: str | None = None,
+    dirty: bool | None = None,
+) -> dict[str, Any]:
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     history = np.asarray(_boundary_history(grid), dtype=np.float64)
     return {
         "schema_version": 1,
-        "git_sha": _git("rev-parse HEAD"),
-        "dirty": bool(_git("status --porcelain")),
+        "git_sha": _git("rev-parse HEAD") if git_sha is None else git_sha,
+        "dirty": bool(_git("status --porcelain")) if dirty is None else dirty,
         "pixels": pixels,
         "threads": threads,
         "library": library,
@@ -515,6 +522,8 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
+    run_git_sha = _git("rev-parse HEAD")
+    run_dirty = bool(_git("status --porcelain"))
     output = args.output if args.output.is_absolute() else ROOT / args.output
     if output.exists() and any(output.iterdir()):
         raise SystemExit(f"refusing to overwrite non-empty {output}")
@@ -523,7 +532,13 @@ def main() -> None:
     theta = _theta_from_preset()
     adaptive: dict[str, list[float]] = {}
     adaptive_diagnostics: dict[str, Any] = {}
-    seed_metadata = _seed_metadata(pixels=args.pixels, library=args.library, threads=args.threads)
+    seed_metadata = _seed_metadata(
+        pixels=args.pixels,
+        library=args.library,
+        threads=args.threads,
+        git_sha=run_git_sha,
+        dirty=run_dirty,
+    )
     skipped = set() if args.include_b_minus_seed else set(SEED_SKIP_DEFAULT)
     for name, direction in _variants(theta):
         if name in skipped:
@@ -630,8 +645,8 @@ def main() -> None:
     report: dict[str, Any] = {
         "schema_version": 1,
         "method": "direct FEMU sensitivity versus synchronized common-path FD",
-        "git_sha": _git("rev-parse HEAD"),
-        "dirty": bool(_git("status --porcelain")),
+        "git_sha": run_git_sha,
+        "dirty": run_dirty,
         "machine": platform.node(),
         "fd_step_log": FD_STEP,
         "policies": {
