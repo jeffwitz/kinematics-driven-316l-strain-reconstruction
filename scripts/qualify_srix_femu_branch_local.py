@@ -12,6 +12,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
@@ -92,7 +93,7 @@ def _run(
             "end_fraction": attempt.load_fraction_end,
             "failure_reason": attempt.failure_reason,
             "newton_iterations": attempt.newton_iterations,
-            "gmres_iterations": attempt.gmres_iterations,
+            "krylov_outer_callbacks": attempt.krylov_outer_callbacks,
             "minimum_line_search_factor": attempt.minimum_line_search_factor,
             "material_evaluations": attempt.material_evaluations,
             "material_seconds": attempt.material_seconds,
@@ -109,6 +110,19 @@ def _endpoint(fields: list[TwoStateIncrementFields], fraction: float) -> TwoStat
 
 def _relative(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.linalg.norm(left - right) / max(np.linalg.norm(right), 1.0e-30))
+
+
+def _endpoint_spread(endpoints: list[dict[str, Any]]) -> dict[str, float]:
+    """Range of endpoint discrepancies across converged local partitions."""
+    keys = (
+        "displacement_relative_to_coarse",
+        "stress_relative_to_coarse",
+        "plastic_strain_relative_to_coarse",
+    )
+    return {
+        key: float(max(item[key] for item in endpoints) - min(item[key] for item in endpoints))
+        for key in keys
+    }
 
 
 def main() -> None:
@@ -228,6 +242,12 @@ def main() -> None:
                 {"kind": "predictor", "name": name, "status": "failed", "error": str(error)}
             )
 
+    converged_partitions = [
+        run["endpoint"] for run in all_runs
+        if run["kind"] == "partition" and run["status"] == "converged"
+    ]
+    endpoint_spread = _endpoint_spread(converged_partitions) if converged_partitions else {}
+
     report = {
         "schema_version": 1,
         "method": "local SRIX branch continuation diagnostic",
@@ -242,6 +262,7 @@ def main() -> None:
             "endpoint_fraction": coarse_endpoint.end_fraction,
         },
         "runs": all_runs,
+        "endpoint_spread_across_converged_partitions": endpoint_spread,
         "claims": {
             "branch_diagnostic_complete": True,
             "numerical_continuation_issue_demonstrated": False,
@@ -259,6 +280,27 @@ def main() -> None:
         "elapsed_seconds": time.perf_counter() - started,
     }
     (output / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    if converged_partitions:
+        fig, ax = plt.subplots(figsize=(7.0, 4.2))
+        for key, label in (
+            ("displacement_relative_to_coarse", "displacement"),
+            ("stress_relative_to_coarse", "stress"),
+            ("plastic_strain_relative_to_coarse", "plastic strain"),
+        ):
+            ax.plot(
+                [run["alpha"] for run in all_runs if run["kind"] == "partition"],
+                [run["endpoint"][key] for run in all_runs if run["kind"] == "partition"],
+                marker="o",
+                label=label,
+            )
+        ax.set_xlabel("local midpoint fraction alpha")
+        ax.set_ylabel("relative difference at f = 0.23828125 vs coarse path")
+        ax.set_title("Local SRIX continuation: endpoint sensitivity to partition")
+        ax.grid(True, alpha=0.25)
+        ax.legend()
+        fig.tight_layout()
+        fig.savefig(output / "endpoint_partition_sensitivity.png", dpi=160)
+        plt.close(fig)
     print(json.dumps({"claims": report["claims"], "runs": all_runs}, sort_keys=True))
 
 
