@@ -199,8 +199,17 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     source_report = json.loads((SOURCE / "report.json").read_text())
-    targets = source_report["target_fractions_normalized_from_archived_indices"]
+    archived_targets = source_report["target_fractions_normalized_from_archived_indices"]
     source_fractions = np.asarray(np.load(SOURCE / "common_path.npz")["end_fractions"])
+    # Two archived target fractions map to the same L0 endpoint.  Score the
+    # physical fractions actually represented by L0; nested levels preserve
+    # every L0 endpoint exactly.
+    targets = list(
+        dict.fromkeys(
+            float(source_fractions[int(np.argmin(np.abs(source_fractions - target)))])
+            for target in archived_targets
+        )
+    )
     transfer = _WrapFreeTransfer(DICSpectralTransfer.from_sinusoidal_csv(TRANSFER))
     levels: list[dict[str, Any]] = []
     path = _common_path(source_fractions.tolist(), pixels=args.pixels)
@@ -272,6 +281,7 @@ def main() -> None:
         "threads": args.threads,
         "source_common_path": str(SOURCE / "common_path.npz"),
         "fd_step_log": FD_STEP,
+        "archived_target_fractions": archived_targets,
         "scored_target_fractions": targets,
         "levels": [
             {
