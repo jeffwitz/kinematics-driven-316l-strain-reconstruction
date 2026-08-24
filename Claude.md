@@ -7537,3 +7537,27 @@ conditionnement `1.58e4`. Cela valide la différentiation directe sur ce chemin
 discret, mais pas encore la convergence de la géométrie quand le chemin est
 raffiné. L'identification et P43 restent interdits jusqu'au gate de convergence
 de chemin.
+
+### PATH-002R : convergence imbriquée après re-baselining (2026-08-24)
+
+Le gate `E-SRIX-FEMU-PATH-002R` est archivé dans
+`validation/reference_data/srix_femu_path_convergence_v3/` et préréférencé dans
+`validation/srix_femu_path_convergence_rebaseline_preregistration.md`. Il
+compare uniquement un forward de base et une Jacobienne directe aux niveaux
+L0/L1/L2 ; aucune nouvelle FD globale n'est utilisée.
+
+L0 est le chemin v17 de 94 pas. L1 impose les 94 midpoints et converge à 188
+pas. L2 impose ensuite les midpoints de L1 et converge à 392 pas après 16
+réparations locales strictes. Le forward observé varie de `2.176e-4` entre L0
+et L1, puis `9.514e-5` entre L1 et L2.
+
+Le gate principal L1→L2 est toutefois négatif : les colonnes `log(tau0)` et
+`log(R)` varient encore de `3.67 %` et `4.20 %`, et l'angle maximal du
+sous-espace de rang 3 vaut `2.606°` (seuils préenregistrés : 2 % et 2°). Les
+trois premiers rapports singuliers changent de `0 %`, `0.95 %` et `3.11 %` ; le
+quatrième reste de l'ordre de `6.2e-5` et aligné à `0.999987` sur le contraste
+`Q-b`.
+
+Le forward est donc proche de la convergence, mais la géométrie différentielle
+ne l'est pas encore selon les seuils fixés. Le résultat est documenté comme
+négatif, sans ajustement des seuils. Identification et P43 restent interdits.

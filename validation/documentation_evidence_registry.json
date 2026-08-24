@@ -2013,6 +2013,47 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-FEMU-PATH-002R",
+      "question": "Does the corrected FEMU sensitivity geometry converge under nested loading-path refinement?",
+      "fidelity": "M8 SRIX twin; corrected Dirichlet contract 2; L0/L1/L2 nested paths with strict local repairs",
+      "parameters": "log tau0, R, Q, b; direct sensitivity; same physical L0 scoring fractions",
+      "status": "negative primary gate",
+      "conclusion": "The observed forward is stable (2.18e-4 then 9.51e-5 relative changes), but L1-to-L2 sensitivity changes remain 3.67% and 4.20% for log(tau0) and log(R), with a 2.606 degree rank-3 angle. The pre-registered path-convergence gate is false; no identification or P43 is authorized.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_femu_path_convergence_v3/report.json",
+          "role": "nested corrected path convergence",
+          "assertions": [
+            {
+              "path": "/levels/2/steps",
+              "operator": "equals",
+              "expected": 392
+            },
+            {
+              "path": "/levels/2/actual_local_repair_count",
+              "operator": "equals",
+              "expected": 16
+            },
+            {
+              "path": "/claims/path_convergence_primary_gate",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/identification_authorized",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [

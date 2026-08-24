@@ -1,5 +1,10 @@
 # E-SRIX-FEMU-PATH-002 — historical result
 
+> This document is retained for discovery history only. The corrected nested
+> study is now in
+> `validation/srix_femu_path_convergence_rebaseline_results.md` with primary
+> artefact `validation/reference_data/srix_femu_path_convergence_v3/`.
+
 > **Superseded for scientific interpretation.** This experiment depends on
 > the pre-fix v9 common path and is retained only to document discovery of the
 > initial-Dirichlet bug. The corrected re-baseline is
