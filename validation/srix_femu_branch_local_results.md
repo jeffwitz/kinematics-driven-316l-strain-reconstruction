@@ -40,7 +40,7 @@ par raffinement global n'est pas établie. Le chemin 114 reste bloqué et aucun
 calcul 228 pas, aucune identification et aucun calcul P43 ne sont autorisés.
 
 Le rapport machine-readable et la figure sont dans
-[`srix_femu_branch_local_v2`](reference_data/srix_femu_branch_local_v2/).
+[`srix_femu_branch_local_v3`](reference_data/srix_femu_branch_local_v3/).
 La figure compare les écarts d'endpoint aux cinq partitions et ne remplace
 pas une qualification de convergence.
 

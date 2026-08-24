@@ -7464,7 +7464,8 @@ permettent pas de conclure sur une bifurcation matérielle. Les tableaux SRIX
 bruts `g/p/a` ne sont pas encore exposés par `TwoStateIncrementFields`.
 
 Artefacts : `validation/srix_femu_branch_local_results.md` et
-`validation/reference_data/srix_femu_branch_local_v2/` (rapport et figure).
+`validation/reference_data/srix_femu_branch_local_v3/` (rapport et figure,
+`dirty=false`).
 Statut : `path_convergence_authorized=false`, `identification_authorized=false`
 et `p43_authorized=false`. Ne pas lancer de campagne 228, d'identification ou
 de P43 avant une qualification de convergence et un diagnostic constitutif
