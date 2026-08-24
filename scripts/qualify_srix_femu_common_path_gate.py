@@ -81,6 +81,7 @@ def _seed_metadata(
     history = np.asarray(_boundary_history(grid), dtype=np.float64)
     return {
         "schema_version": 1,
+        "fixed_path_initialization_contract": 2,
         "git_sha": _git("rev-parse HEAD") if git_sha is None else git_sha,
         "dirty": bool(_git("status --porcelain")) if dirty is None else dirty,
         "pixels": pixels,
@@ -253,7 +254,7 @@ def _fixed_path_with_timeout(
         return _fixed_path_trajectory(
             theta=theta,
             path=path,
-            initial_displacement=np.zeros_like(path[0].boundary),
+            initial_displacement=None,
             pixels=pixels,
             library=library,
             threads=threads,
@@ -269,7 +270,7 @@ def _fixed_path_with_timeout(
         return _fixed_path_trajectory(
             theta=theta,
             path=path,
-            initial_displacement=np.zeros_like(path[0].boundary),
+            initial_displacement=None,
             pixels=pixels,
             library=library,
             threads=threads,
@@ -299,7 +300,6 @@ def _synchronise(
     ]
     path = _common_path(fractions, pixels=pixels)
     history: list[dict[str, Any]] = []
-    grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     search_config = _path_search_config()
     search_order = [
         name
@@ -413,7 +413,7 @@ def _synchronise(
                 fields = _fixed_path_trajectory(
                     theta=theta,
                     path=path,
-                    initial_displacement=np.zeros((*grid.node_shape, 2)),
+                    initial_displacement=None,
                     pixels=pixels,
                     library=library,
                     threads=threads,
@@ -612,16 +612,10 @@ def main() -> None:
             path_file = ROOT / path_file
         fractions = np.asarray(np.load(path_file)["end_fractions"], dtype=np.float64)
         common = _common_path(fractions.tolist(), pixels=args.pixels)
-        grid = StructuredGrid2D(
-            args.pixels,
-            args.pixels,
-            PIXEL_SIZE_MM * args.pixels,
-            PIXEL_SIZE_MM * args.pixels,
-        )
         base_fields = _fixed_path_trajectory(
             theta=theta,
             path=common,
-            initial_displacement=np.zeros((*grid.node_shape, 2)),
+            initial_displacement=None,
             pixels=args.pixels,
             library=args.library,
             threads=args.threads,
@@ -670,6 +664,11 @@ def main() -> None:
             "direct_femu_qualified": False,
             "p43_authorized": False,
         },
+        "supersedes": [
+            "validation/reference_data/srix_femu_common_path_gate_v9",
+            "validation/reference_data/srix_femu_path_convergence_v2",
+        ],
+        "initialization_contract": 2,
         "elapsed_seconds": time.perf_counter() - started,
     }
     np.savez_compressed(

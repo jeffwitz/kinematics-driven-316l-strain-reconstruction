@@ -88,7 +88,7 @@ def _fixed_path_trajectory(
     *,
     theta: SrixTheta4,
     path: list[LoadPathStep],
-    initial_displacement: np.ndarray,
+    initial_displacement: np.ndarray | None,
     pixels: int,
     library: str,
     threads: int,
@@ -126,7 +126,11 @@ def _fixed_path_trajectory(
         boundary_displacement_history=boundary_history,
         config=config,
         load_path_override=path,
-        initial_displacement=np.asarray(initial_displacement),
+        initial_displacement=(
+            None
+            if initial_displacement is None
+            else np.asarray(initial_displacement)
+        ),
         initial_guess_callback=initial_guess_callback,
         increment_observer=observe,
     )
@@ -258,16 +262,10 @@ def main() -> None:
     if args.path_refinement == 1:
         base_fields = adaptive_fields
     else:
-        grid = StructuredGrid2D(
-            args.pixels,
-            args.pixels,
-            PIXEL_SIZE_MM * args.pixels,
-            PIXEL_SIZE_MM * args.pixels,
-        )
         base_fields = _fixed_path_trajectory(
             theta=_theta_from_preset(),
             path=path,
-            initial_displacement=np.zeros((*grid.node_shape, 2)),
+            initial_displacement=None,
             pixels=args.pixels,
             library=args.library,
             threads=args.threads,
