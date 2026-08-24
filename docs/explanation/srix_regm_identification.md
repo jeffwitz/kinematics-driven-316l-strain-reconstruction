@@ -116,6 +116,32 @@ The complete table and provenance are in
 observed-input identification remains, but its cause is now localized to the
 constitutive-input side of the observation operator.
 
+## A twin-only latent-history upper bound
+
+The next diagnostic did not alter REGM or SRIX. On the exact twin, the missing
+history `u* - O(u*)` was decomposed by snapshot POD and progressively added back
+before the constitutive replay. The score always used `O(delta_u)`, so this
+experiment tests only how much latent kinematics is needed by the replay.
+
+The observed-input ranking starts at `rho=0.326`. It reaches `0.577` at rank
+three, `0.708` at rank four and `0.859` at rank five; the first five modes carry
+`99.9897 %` of the missing-history energy. The full rank is `162` and gives
+`rho=0.940`. The mode-by-mode curve is not monotone, so energy alone is not a
+sufficient selection rule.
+
+```{figure} ../_static/evidence/srix_regm_latent_modes.png
+:alt: Spearman ranking, truth residual and recovered missing-history energy versus latent POD rank.
+:width: 95%
+
+Twin-only latent-mode upper bound. No new FEMU solve was launched.
+```
+
+This is strong evidence for a low-dimensional latent-history mechanism, not a
+validated reconstruction of real DIC. The basis used `u*`, which is unavailable
+experimentally. The next legitimate gate is to construct candidate weak modes
+from `O`, `K0` and the qualified observation/noise model alone, then repeat the
+same twin ranking and transfer tests without using `u*` to define the basis.
+
 ## Relation to complete FEMU
 
 On twenty preregistered off-truth exact-twin candidates, REGM and full FEMU

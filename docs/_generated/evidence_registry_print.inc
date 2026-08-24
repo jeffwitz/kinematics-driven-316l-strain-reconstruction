@@ -221,3 +221,9 @@
 : Status: **verified diagnosis; observed-input formulation remains NO-GO**.
 : Conclusion: Raw replay retains the observed FEMU ranking (Spearman 0.940-0.950), while transferred replay fails before scoring (Spearman 0.338). The truth pseudo-displacement bias is 11.64 times the candidate spread.
 : Sources: A/B/C/D ablation and truth-bias diagnostic: `validation/reference_data/srix_regm_observation_placement_v1/report.json`.
+
+**E-SRIX-REGM-004 — Can a low-dimensional latent-history correction restore observed-space REGM ranking on an exact twin?**
+: Fidelity: M8 exact twin; snapshot-POD reconstruction of u*-O(u*); no new FEMU solves. Parameters: ranks 0,1,2,3,4,5 and full rank 162; affine-preserving score transfer; same 20 candidates.
+: Status: **supported as a twin upper bound; not a real-data method**.
+: Conclusion: Rank five recovers 99.9897% of missing-history energy and reaches Spearman 0.859, log-Pearson 0.888 and top-five overlap 4/5. The basis uses the exact twin truth and therefore does not authorize P43.
+: Sources: latent-mode rank curve: `validation/reference_data/srix_regm_latent_modes_v1/report.json`.

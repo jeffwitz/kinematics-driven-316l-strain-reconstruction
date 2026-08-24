@@ -7203,3 +7203,22 @@ pas la conclusion scientifique.
 doit conserver une histoire mécanique latente pour le replay constitutif et
 qualifier séparément sa reconstruction depuis la DIC sur le jumeau. Ne pas
 lancer P43 ni ajuster SRIX avant de repasser le classement observé.
+
+### 2026-08-24 — Borne supérieure twin par modes cinématiques latents
+
+Le test suivant a utilisé uniquement le jumeau exact M8. La différence
+`u* - O(u*)` a été décomposée par POD sur les états, puis réintroduite par rang
+avant le replay SRIX. Le score est resté `O(delta_u)` et aucun nouveau FEMU
+n'a été lancé.
+
+La corrélation observée REGM/FEMU évolue ainsi : `k=0: 0,326`, `k=3: 0,577`,
+`k=4: 0,708`, `k=5: 0,859`, rang complet `162: 0,940`. Les cinq premiers modes
+portent `99,9897 %` de l'énergie de la différence et donnent aussi un
+Pearson logarithmique `0,888` et un recouvrement top-5 `4/5`.
+
+Ce résultat soutient une hypothèse de cinématique latente de faible dimension,
+mais c'est une **borne supérieure** : la base et ses coefficients utilisent
+`u*`, inconnu sur P43. Il ne s'agit pas encore d'une reconstruction DIC. Le
+prochain gate doit construire les modes à partir de `O`, `K0` et du modèle de
+bruit uniquement, puis repasser le même test twin sans utiliser `u*` pour
+définir la base. Le NO-GO P43 reste inchangé.

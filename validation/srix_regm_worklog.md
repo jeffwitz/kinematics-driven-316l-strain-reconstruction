@@ -181,3 +181,17 @@ displacement RMS of `4.067e-7 mm`. The candidate trajectory spread was
 `3.495e-8 mm`, ratio `11.64`. This localizes the dominant failure to
 replaying `O(u*)` through the nonlinear SRIX history, rather than applying `O`
 to the correction. The NO-GO before P43 remains in force.
+
+## Latent-mode upper bound (2026-08-24)
+
+On the exact M8 twin, a snapshot POD of `u* - O(u*)` was progressively added
+back before the SRIX replay, while the score remained `O(delta_u)`. No new
+FEMU solve was launched. The observed ranking rose from `rho=0.326` at rank
+zero to `0.577`, `0.708` and `0.859` at ranks 3, 4 and 5; full rank 162 gave
+`0.940`. Rank 5 recovered `99.9897 %` of the missing-history energy,
+log-Pearson `0.888` and top-five overlap `4/5`.
+
+This is a twin upper bound, not a real-DIC reconstruction: the POD basis uses
+the exact latent history. The next gate must construct weak modes from the
+observation, elastic reconditioner and noise model without using `u*`, then
+repeat the ranking test. P43 remains blocked.

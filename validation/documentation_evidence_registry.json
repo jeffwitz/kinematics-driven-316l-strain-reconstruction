@@ -285,7 +285,8 @@
       "evidence_ids": [
         "E-SRIX-REGM-001",
         "E-SRIX-REGM-002",
-        "E-SRIX-REGM-003"
+        "E-SRIX-REGM-003",
+        "E-SRIX-REGM-004"
       ]
     }
   ],
@@ -1767,6 +1768,37 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-REGM-004",
+      "question": "Can a low-dimensional latent-history correction restore observed-space REGM ranking on an exact twin?",
+      "fidelity": "M8 exact twin; snapshot-POD reconstruction of u*-O(u*); no new FEMU solves",
+      "parameters": "ranks 0,1,2,3,4,5 and full rank 162; affine-preserving score transfer; same 20 candidates",
+      "status": "supported as a twin upper bound; not a real-data method",
+      "conclusion": "Rank five recovers 99.9897% of missing-history energy and reaches Spearman 0.859, log-Pearson 0.888 and top-five overlap 4/5. The basis uses the exact twin truth and therefore does not authorize P43.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_latent_modes_v1/report.json",
+          "role": "latent-mode rank curve",
+          "assertions": [
+            {
+              "path": "/rows/5/statistics/spearman",
+              "operator": "greater_than_or_equal",
+              "expected": 0.8
+            },
+            {
+              "path": "/rows/5/cumulative_energy",
+              "operator": "greater_than",
+              "expected": 0.999
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -2793,6 +2825,10 @@
     {
       "source": "validation/reference_data/srix_regm_observation_placement_v1/srix_regm_observation_placement.png",
       "target": "evidence/srix_regm_observation_placement.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_latent_modes_v1/srix_regm_latent_modes.png",
+      "target": "evidence/srix_regm_latent_modes.png"
     }
   ]
 }
