@@ -245,3 +245,9 @@
 : Status: **negative reconditioner result**.
 : Conclusion: No. The algorithmic tangent changes the REGM spectrum only modestly and does not recover the FEMU weak directions: normalized spectrum (1, 0.37594, 0.03469, 8.62e-5), condition number 1.16e4, and leading angle 73.9 degrees.
 : Sources: statewise algorithmic-tangent geometry: `validation/reference_data/srix_regm_algorithmic_tangent_v1/report.json`.
+
+**E-SRIX-REGM-008 — Does one causal tangent correction per increment restore REGM/FEMU sensitivity geometry?**
+: Fidelity: exact M8 twin; sequential one-correction replay with constitutive re-evaluation and commit. Parameters: log tau0, R, Q, b; central step 3e-3; affine-preserving score transfer.
+: Status: **negative sequential-surrogate result**.
+: Conclusion: No. The sequential replay improves conditioning but leaves the rank-two angle at 67.9 degrees and the normalized weak directions at 0.0576 and 2.30e-4, far below observed FEMU values 0.4067 and 0.0679.
+: Sources: sequential causal replay geometry: `validation/reference_data/srix_regm_sequential_one_newton_v2/report.json`.

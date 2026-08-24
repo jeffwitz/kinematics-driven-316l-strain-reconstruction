@@ -1905,6 +1905,42 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-REGM-008",
+      "question": "Does one causal tangent correction per increment restore REGM/FEMU sensitivity geometry?",
+      "fidelity": "exact M8 twin; sequential one-correction replay with constitutive re-evaluation and commit",
+      "parameters": "log tau0, R, Q, b; central step 3e-3; affine-preserving score transfer",
+      "status": "negative sequential-surrogate result",
+      "conclusion": "No. The sequential replay improves conditioning but leaves the rank-two angle at 67.9 degrees and the normalized weak directions at 0.0576 and 2.30e-4, far below observed FEMU values 0.4067 and 0.0679.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_sequential_one_newton_v2/report.json",
+          "role": "sequential causal replay geometry",
+          "assertions": [
+            {
+              "path": "/geometry/normalized_singular_values/2",
+              "operator": "less_than",
+              "expected": 0.1
+            },
+            {
+              "path": "/geometry/normalized_singular_values/3",
+              "operator": "less_than",
+              "expected": 0.001
+            },
+            {
+              "path": "/principal_angles_to_femu_degrees/2/0",
+              "operator": "greater_than",
+              "expected": 60.0
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -2935,6 +2971,14 @@
     {
       "source": "validation/reference_data/srix_regm_latent_modes_v1/srix_regm_latent_modes.png",
       "target": "evidence/srix_regm_latent_modes.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_algorithmic_tangent_v1/srix_regm_information_geometry.png",
+      "target": "evidence/srix_regm_algorithmic_tangent.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_sequential_one_newton_v2/srix_regm_information_geometry.png",
+      "target": "evidence/srix_regm_sequential_one_newton.png"
     }
   ]
 }

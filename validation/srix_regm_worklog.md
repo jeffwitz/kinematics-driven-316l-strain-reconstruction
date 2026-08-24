@@ -246,3 +246,21 @@ restaure pas les directions paramétriques faibles. L'hypothèse « le défaut
 vient seulement du préconditionneur élastique » est rejetée sur ce jumeau.
 Le prochain diagnostic est le rejeu séquentiel à une correction par incrément,
 avec réévaluation et commit causal; P43 reste bloqué.
+
+### 2026-08-24 — Rejeu séquentiel à une correction par incrément
+
+Le preregistrement est `validation/srix_regm_sequential_one_newton_preregistration.md`;
+l'artefact primaire est
+`validation/reference_data/srix_regm_sequential_one_newton_v2/report.json`.
+À chaque incrément, le prédicteur est avancé depuis l'état corrigé précédent,
+une correction avec la tangente algorithmique est calculée, puis le matériau
+est réévalué et committé sur le déplacement corrigé. Il n'y a pas de Newton
+global convergé.
+
+Le spectre normalisé devient `(1, .56251, .05764, 2.30e-4)` et le
+conditionnement `4,35e3`. C'est une amélioration par rapport au REGM à histoire
+fixe, mais l'angle de rang deux avec FEMU reste `67,91` degrés et les deux
+directions faibles FEMU (`.4067, .0679`) ne sont pas retrouvées. Le gate de
+géométrie est donc négatif. La séquence des diagnostics REGM peu coûteux est
+close : ne pas lancer P43; toute méthode suivante doit repasser un jumeau et un
+classement REGM/FEMU indépendants.

@@ -7286,3 +7286,19 @@ committer avant l'incrément suivant. Ne pas converger Newton, ne pas lancer
 P43, et comparer les quatre géométries `REGM-K0`, `REGM-Kalg`, `SREGM-1Newton`
 et `FEMU`. Si cette variante ne rejoint pas la géométrie FEMU, arrêter les
 surrogates REGM et documenter le NO-GO.
+
+### Rejeu séquentiel : gate final des surrogates REGM (2026-08-24)
+
+Le diagnostic `validation/reference_data/srix_regm_sequential_one_newton_v2/report.json`
+applique exactement cette variante sur le twin M8 : une seule correction
+tangentielle, réévaluation SRIX, commit causal, puis incrément suivant. Le
+spectre obtenu est `(1, .56251, .05764, 2.30e-4)`, conditionnement `4.35e3`,
+angle principal FEMU `45.24 deg`, mais angles de rang deux `67.91 deg` et
+`12.38 deg`. Les directions faibles FEMU restent absentes.
+
+Conclusion : amélioration réelle mais gate négatif. La chaîne `REGM-K0` →
+`REGM-Kalg` → `SREGM-1Newton` ne reproduit pas la géométrie locale FEMU.
+Ne pas lancer P43 ni présenter un paramètre SRIX identifié. Toute suite doit
+être une méthode de sensibilité tangentielle validée ou un objectif réduit
+explicitement justifié, avec nouveau jumeau et corrélation FEMU avant les
+données expérimentales.

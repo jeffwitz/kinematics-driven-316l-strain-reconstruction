@@ -227,6 +227,32 @@ Statewise algorithmic tangents improve conditioning modestly but do not recover
 the FEMU sensitivity geometry.
 ```
 
+## Sequential one-correction diagnostic
+
+The final low-cost twin test restored a limited form of causal feedback. At
+each increment, the previous corrected displacement was advanced, one
+algorithmic-tangent correction was applied, and SRIX was re-evaluated and
+committed before the next increment. The normalized spectrum became
+`(1, .5625, .0576, 2.30e-4)` and the condition number improved to `4.35e3`.
+This is a real improvement over fixed-history REGM, but the rank-two angle to
+FEMU remained `67.9 degrees`, and the FEMU weak directions
+`(.4067, .0679)` were not recovered.
+
+The sequential surrogate therefore fails the preregistered geometry gate.
+The combined evidence rejects the idea that either `K0` alone or one causal
+Newton-like correction is sufficient. REGM identification on P43 remains
+blocked; the next scientifically meaningful route is a validated direct
+tangent-sensitivity method or a new, explicitly reduced objective, each
+requiring a fresh digital-twin/FEMU ranking test.
+
+```{figure} ../_static/evidence/srix_regm_sequential_one_newton.png
+:alt: Sequential one-correction SRIX information geometry versus observed FEMU.
+:width: 95%
+
+One causal correction raises some REGM sensitivities but does not align the
+surrogate with FEMU.
+```
+
 ## Relation to complete FEMU
 
 On twenty preregistered off-truth exact-twin candidates, REGM and full FEMU
