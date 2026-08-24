@@ -291,6 +291,14 @@
         "E-SRIX-REGM-006",
         "E-SRIX-REGM-007"
       ]
+    },
+    {
+      "question": "Can direct FEMU sensitivities recover a known SRIX truth on a synthetic P43 crop?",
+      "status": "smoke positive; not yet fully qualified",
+      "boundary": "P43 M20, no noise, identity observation, one nearby start and a six-evaluation cap; experimental P43 remains out of scope",
+      "evidence_ids": [
+        "E-SRIX-P43-SYNTH-001"
+      ]
     }
   ],
   "evidence": [
@@ -2228,6 +2236,42 @@
               "path": "/claims/identification_authorized",
               "operator": "equals",
               "expected": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-P43-SYNTH-001",
+      "question": "La chaîne de sensibilité FEMU directe retrouve-t-elle une vérité SRIX connue sur un crop P43 synthétique ?",
+      "fidelity": "P43 M20 réel avec EBSD réel, histoire DIC réparée, 32 incréments, observation identité, sans bruit",
+      "parameters": "theta4 log-paramètres; shadow FD h=0.0015; départ proche; six évaluations préenregistrées",
+      "status": "smoke positif; qualification multi-départs non terminée",
+      "conclusion": "Le résidu RMS passe de 8.8502e-8 à 1.2693e-13 et les paramètres finaux sont tau0=40.000004 MPa, R=18.781912 MPa, Q=10.006888 MPa, b=2.997907. La SVD vaut (1, 0.135725, 0.036116, 1.031e-4), avec rho(Q,b)=0.999999997; Q et b ne sont donc pas revendiqués séparément. L'optimiseur a atteint la limite de six évaluations, et aucun P43 expérimental n'est autorisé.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_synthetic_identification_v1/report.json",
+          "role": "machine-readable synthetic smoke result",
+          "assertions": [
+            {
+              "path": "/claims/synthetic_smoke_completed",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/claims/four_parameter_recovery_claimed",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/experimental_p43_authorized",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/sensitivity/correlation/2/3",
+              "operator": "greater_than",
+              "expected": 0.999
             }
           ]
         }

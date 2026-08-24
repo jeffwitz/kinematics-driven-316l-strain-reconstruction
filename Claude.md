@@ -7642,3 +7642,31 @@ La stabilité L3 autorise l'adoption de `h=0.0015` comme pas principal du
 shadow FD ; `h=0.001` reste le contrôle. Cette adoption ne lève pas le blocage
 PATH-002S : son angle de rang 3 reste légèrement au-dessus du seuil
 pré-enregistré.
+
+### P43-SYNTH-001/A : premier smoke test synthétique (2026-08-25)
+
+Le premier test synthétique P43 autorisé après SHADOW-003C utilise un crop M20
+réel (`[1610:1630,1075:1095]`), l'EBSD P43 réel, l'histoire DIC réparée, une
+partition fixe de 32 incréments, une observation identité et aucun bruit. Il
+ne concerne pas le P43 expérimental. Le script est
+`scripts/qualify_srix_p0043_synthetic_smoke.py`, le preregister est
+`validation/p0043_synthetic_identification_preregistration.md` et le résultat
+machine-readable est
+`validation/reference_data/p0043_synthetic_identification_v1/report.json`.
+
+Avec la vérité `(tau0,R,Q,b)=(40,18.781910,10,3)`, un départ
+`(42,17.842815,10.8,2.76)` atteint un RMS whitened de `1.269e-13` contre
+`8.850e-8` initial. Après 7 forwards et 7 Jacobiennes (`438.9 s`), les
+paramètres sont `(40.000004,18.781912,10.006888,2.997907)`. L'optimiseur
+signale `maximum number of function evaluations exceeded` car la limite
+préenregistrée de six évaluations est atteinte ; ce n'est pas une preuve de
+convergence globale multi-départs.
+
+La SVD finale est `(1,0.135725,0.036116,1.031e-4)`, conditionnement `9696.6`.
+La corrélation `Q/b` vaut `0.999999997` et le quatrième vecteur est le contraste
+`Q-b`. La réponse synthétique et les trois directions robustes sont donc
+retrouvées dans ce smoke test, mais `Q` et `b` ne sont pas revendiqués comme
+identifiés séparément. La suite autorisée est uniquement P43 synthétique :
+départs plus éloignés, puis tests à trois et quatre paramètres et mismatch
+contrôlé. Aucun transfert/bruit DIC ni P43 expérimental n'est autorisé à ce
+stade.
