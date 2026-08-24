@@ -2095,6 +2095,57 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-FEMU-SHADOW-003",
+      "question": "Where does the L3 direct FEMU shadow replay fail, and does reducing h remove the failure?",
+      "fidelity": "M8 SRIX twin; corrected Dirichlet contract 2; exact 809-step L3 path",
+      "parameters": "log tau0, R, Q, b; h in {0.003, 0.0015, 0.001}",
+      "status": "L3 shadow failure localized; L2 h diagnostic passes",
+      "conclusion": "The L3 forward converges, but fixed-current-strain shadow tau0-minus fails at accepted increment 271, fraction 0.232177734375 to 0.2322998046875, with MFront status -1. On L2 all three preregistered h values complete. No h is adopted and no L2-to-L3 sensitivity convergence is claimed.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_femu_shadow_diagnostic_v1/report.json",
+          "role": "machine-readable shadow diagnostic",
+          "assertions": [
+            {
+              "path": "/l3/steps",
+              "operator": "equals",
+              "expected": 809
+            },
+            {
+              "path": "/l3/forward_converged",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/l3/shadow_failure/parameter",
+              "operator": "equals",
+              "expected": "tau0"
+            },
+            {
+              "path": "/l3/shadow_failure/sign",
+              "operator": "equals",
+              "expected": "minus"
+            },
+            {
+              "path": "/l3/shadow_failure/phase",
+              "operator": "equals",
+              "expected": "fixed_current_strain"
+            },
+            {
+              "path": "/l2_h_diagnostic/results/0/status",
+              "operator": "equals",
+              "expected": "ok"
+            },
+            {
+              "path": "/claims/identification_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [

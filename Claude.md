@@ -7581,3 +7581,32 @@ Ce résultat est archivé dans
 niveau de raffinement pré-enregistré : aucun L4 ne doit être lancé. La prochaine
 étape autorisée est un diagnostic ciblé du replay shadow/MFront, puis seulement
 une décision sur l'identification.
+
+### SHADOW-003 : localisation du blocage L3 (2026-08-24)
+
+Le diagnostic pré-enregistré dans
+`validation/srix_femu_shadow_diagnostic_preregistration.md` a instrumenté
+séparément les deux phases du calcul direct : `fixed_current_strain` et
+`history_advance`. Le chemin L3 exact de 809 incréments converge pour le
+forward, mais le premier shadow fautif est maintenant localisé :
+
+- incrément accepté 271 ;
+- fraction `[0.232177734375, 0.2322998046875]` ;
+- paramètre `tau0`, signe `minus` ;
+- phase `fixed_current_strain` ;
+- MFront `status -1`.
+
+La phase `history_advance` n'est pas atteinte dans ce run. Sur L2 (392 pas),
+les trois valeurs diagnostiques `h = 0.003`, `0.0015` et `0.001` passent toutes
+avec 1568 résolutions GMRES ; réduire `h` ne répare donc pas le phénomène.
+Cette étude ne compare pas les matrices des trois essais et n'adopte aucun
+nouveau `h`.
+
+L'artefact machine-readable est
+`validation/reference_data/srix_femu_shadow_diagnostic_v1/report.json` et la
+note d'interprétation est
+`validation/srix_femu_shadow_diagnostic_results.md`. Le résultat est classé
+comme limitation locale du replay shadow sur chemin très raffiné, pas comme
+échec du forward mécanique. Aucun L4, aucune identification et aucun P43 ne
+sont autorisés ; la suite possible est un rejeu local de `tau0−` avec
+télémétrie MFront ou le provider de sensibilité constitutive analytique.
