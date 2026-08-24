@@ -2,7 +2,7 @@
 
 Date opened: 2026-08-23  
 Branch: `agent/plastic-observability`  
-Status: **STOP/NO-GO before P43: exact ranking passes, observed ranking fails**
+Status: **CLOSED/NO-GO: REGM surrogate branch stopped; direct FEMU sensitivity is next**
 
 This file is the single cold-start entry point for the reconditioned
 equilibrium-gap identification of the FCC SRIX law. It is deliberately kept
@@ -156,10 +156,12 @@ variation only `9.1e-5` because noise dominates. The frozen rule required both
 levels to pass. See `validation/srix_regm_femu_observed_ranking_results.md`.
 
 **Stop here.** Do not launch P43-A/M100 or optimize SRIX on measured data with
-this objective. Exact-space REGM remains a qualified diagnostic/proposal
-surrogate. Any future observation-aware reformulation must first restore the
-truth minimum on the digital twin and then pass the same observed ranking
-gate. No sequentially reconditioned variant is justified yet.
+this objective. The REGM surrogate branch is now closed: `K0`, `K_alg`,
+causal one-correction replay, and the corrected cumulative endpoint observable
+all fail to reproduce the FEMU sensitivity geometry. The next method must use
+the exact forward FEMU residual and tangent action; it must not reuse
+`TensorPlasticObservabilityOperator`, `weak_equilibrium_residual`, or
+`_assemble_sparse_stiffness` as its global sensitivity operator.
 
 ## Observation-placement ablation (2026-08-24)
 
@@ -280,3 +282,23 @@ sont pas retrouvées et l'angle principal cumulé est `74.67 degrés`. La
 correction méthodologique est donc réelle, mais elle ne change pas le
 NO-GO du rejeu séquentiel. L'artefact détaillé est
 `validation/srix_regm_sequential_one_newton_cumulative_results.md`.
+
+## Final REGM decision and next gate (2026-08-24)
+
+`E-SRIX-REGM-009` closes the surrogate branch. The cumulative endpoint score
+was the correct observable for comparison with FEMU, but its spectrum was
+`(1, .4646, .0938, 2.17e-4)` versus FEMU `(1, .5415, .4067, .0679)`.
+
+The reason the theoretical one-Newton argument cannot be applied to that test
+is now explicit: the sequential script uses the REGM mechanical discretization
+(`TensorPlasticObservabilityOperator`, `weak_equilibrium_residual`, and
+`_assemble_sparse_stiffness`), not the matrix-free residual/tangent action of
+the M8 forward solver. Exact constitutive tangents and causal state updates do
+not repair a different global operator.
+
+The next and only authorized gate is `E-SRIX-FEMU-DIRECT-001`: one converged
+M8 FEMU trajectory, persistent constitutive shadow histories, and four
+right-hand sides solved with the exact `TraditionalTwoStateTriangleBatch` /
+`solve_two_state_dirichlet_plane_stress` tangent action and boundary packing.
+No P43, optimization, new REGM variant, or analytical MFront derivative is
+authorized before the shadow method reproduces the archived FEMU FD columns.

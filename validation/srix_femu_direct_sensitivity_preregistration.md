@@ -41,5 +41,25 @@ REGM operator, not automatically the reference FEMU tangent. This distinction
 is an audit requirement: using the sparse operator is allowed only as a
 separately labelled diagnostic and cannot be claimed to reproduce FEMU.
 
+For the M8 gate, the direct implementation must therefore reuse the exact
+`TraditionalTwoStateTriangleBatch.tangent_action_into`,
+`TwoSubcellDiagnostic2D.divergence_from_sample_stress_into`, Dirichlet
+extension, packing and matrix-free Krylov conventions used by
+`solve_two_state_dirichlet_plane_stress`. It must not call
+`TensorPlasticObservabilityOperator`, `weak_equilibrium_residual`,
+`_assemble_sparse_stiffness`, or any other REGM mechanical surrogate for the
+global sensitivity operator. A dense or sparse `K_II` may be introduced only
+after an explicit equivalence test against the reference matrix-free action.
+
+The primary qualification is raw-column equality to the archived FEMU FD
+Jacobian, before any SVD interpretation. The four column relative L2 errors and
+cosines are the first gate; the singular spectrum is a consequence, not a
+replacement for this test.
+
 Analytical SRIX/MFront directional derivatives are explicitly out of scope
 until the shadow provider passes these gates.
+
+The preceding REGM diagnostics are now closed. In particular, the corrected
+cumulative endpoint audit is recorded as `E-SRIX-REGM-009` and does not
+authorize another REGM variant or any P43 identification. The next gate is
+`E-SRIX-FEMU-DIRECT-001`: direct differentiated FEMU on the exact M8 solver.

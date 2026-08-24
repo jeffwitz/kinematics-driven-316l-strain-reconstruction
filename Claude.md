@@ -12,7 +12,7 @@ mécaniques réutilisés, les artefacts et la décision GO/NO-GO. Aucun calcul P
 ni apprentissage TANN n'est autorisé avant validation du jumeau numérique et
 du classement REGM/FEMU.
 
-Le chemin nominal est : histoire de déplacement connue depuis l'état 0,
+Le chemin historique REGM était : histoire de déplacement connue depuis l'état 0,
 cinématique `TwoSubcellDiagnostic2D`, replay SRIX causal sans tangente de sortie,
 résidu intérieur faible `B^T sigma`, correction `-K0^-1 f`, observation et
 whitening DIC. `K0` est assemblé et factorisé une seule fois par problème. La
@@ -25,8 +25,9 @@ initial `3.143e-8 mm`, résidu identifié `1.412e-13 mm`, erreur logarithmique
 projetée `0.248 %`. Une évaluation REGM coûte `2.90 s` contre `124.48 s` pour
 la trajectoire directe (`43.0 x`). La quatrième direction, essentiellement le
 contraste `Q/b`, est toutefois très faible (`conditionnement 2.15e4`). Les
-prochains gates sont transfert/bruit puis classement REGM/FEMU ; P43 reste
-interdit avant leur résultat.
+diagnostics REGM sont désormais clos : les prochains développements doivent
+différencier le vrai résidu/tangent du solveur FEMU, sans réutiliser les
+opérateurs REGM ; P43 reste interdit.
 
 Le benchmark 32 états (`validation/srix_regm_scaling_results.md`) donne
 `1.270 s` sur M20 et `19.708 s` sur M100. À M100, `18.693 s` sont dans le replay
@@ -7318,3 +7319,20 @@ relève le troisième mode mais pas le quatrième et son angle principal FEMU es
 de scoring était nécessaire, mais le rejeu séquentiel reste un échec du gate
 de géométrie; P43 demeure interdit. Voir
 `validation/srix_regm_sequential_one_newton_cumulative_results.md`.
+
+### Clôture REGM et prochain gate FEMU direct (2026-08-24)
+
+`E-SRIX-REGM-009` clôt définitivement la voie REGM comme voie
+d'identification. Le test cumulatif était le bon observable, mais il utilisait
+encore le discretisé mécanique REGM :
+`TensorPlasticObservabilityOperator`, `weak_equilibrium_residual` et
+`_assemble_sparse_stiffness`. Il ne différenciait donc pas le résidu du
+solveur FEMU M8.
+
+Le prochain gate est `E-SRIX-FEMU-DIRECT-001`. Il doit réutiliser exactement
+le chemin matrix-free de `solve_two_state_dirichlet_plane_stress` :
+`TraditionalTwoStateTriangleBatch.tangent_action_into`, la divergence de
+`TwoSubcellDiagnostic2D`, le packing des DOFs libres, l'extension de Dirichlet
+et le Krylov/EBI du forward. Aucune routine REGM ne doit intervenir dans la
+sensibilité globale. La première comparaison est l'égalité des quatre
+colonnes à la Jacobienne FEMU FD archivée, avant toute SVD.
