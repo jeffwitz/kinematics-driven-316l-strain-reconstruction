@@ -7367,3 +7367,18 @@ par incrément accepté) à h=`1e-3` a également bloqué à l'incrément 407/67
 L'artefact est `validation/reference_data/srix_femu_fixed_path_gate_ref2_h1e3_v1/report.json`.
 La prochaine investigation doit donc qualifier la branche Newton et la
 continuité du chemin, plutôt que réduire encore aveuglément le pas FD.
+
+### Chemin commun synchronisé : premier diagnostic (2026-08-24)
+
+Le driver `scripts/qualify_srix_femu_common_path_gate.py` implémente l'union
+des fractions acceptées par les neuf trajectoires puis la bisection synchronisée
+des intervalles en échec. Le premier lancement M8 a terminé les directions
+jusqu'à `b_plus`, mais `b_minus` est resté plus de 40 minutes dans le solveur
+adaptatif sans fournir son chemin. Il a été interrompu proprement : ce n'est
+pas une conclusion sur la sensibilité directe, mais un diagnostic de coût/
+branche du chemin adaptatif.
+
+Le driver possède maintenant un timeout par trajectoire et produit un rapport
+`blocked_adaptive_trajectory_timeout` au lieu de rester indéfini. Aucun chemin
+commun ni aucune comparaison FD n'est déclaré tant que les neuf trajectoires ne
+sont pas disponibles.

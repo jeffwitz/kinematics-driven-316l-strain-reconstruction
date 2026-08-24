@@ -333,3 +333,17 @@ but failed at step 407. This is recorded in
 `validation/reference_data/srix_femu_fixed_path_gate_ref2_h1e3_v1/report.json`.
 The next action is branch/continuation diagnosis, not an arbitrary change of
 the FD step or a scientific conclusion about direct sensitivities.
+
+## Synchronized common-path gate (2026-08-24)
+
+`scripts/qualify_srix_femu_common_path_gate.py` now implements the requested
+union of the nine adaptive endpoint partitions and synchronized bisection of a
+failing interval. The first M8 run completed the adaptive directions through
+`b_plus`, but `b_minus` remained in the adaptive solver for more than 40
+minutes without returning a path and was interrupted. No common path was
+therefore accepted and no Jacobian comparison was produced.
+
+This is recorded as an adaptive-trajectory branch/cost diagnostic, not as a
+failure of direct sensitivities. A per-trajectory timeout was added so future
+runs produce a machine-readable blocked report instead of an unbounded job.
+P43 and identification remain blocked.
