@@ -2146,6 +2146,51 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-FEMU-SHADOW-003B",
+      "question": "Does reducing h allow the failing tau0-minus shadow to pass the L3 failure increment, and are L2 Jacobians stable?",
+      "fidelity": "M8 SRIX twin; L3 exact-path prefix through increment 271; L2 392-step Jacobian comparison",
+      "parameters": "h = 0.003, 0.0015, 0.001",
+      "status": "diagnostic positive at the local prefix; full L3 adoption pending",
+      "conclusion": "On the L3 prefix, h=0.003 fails at tau0-minus while h=0.0015 and h=0.001 pass increment 271. On L2, maximum column changes are 0.204% and 0.246%, with minimum cosines 0.9999981 and 0.9999973; the normalized spectrum remains stable. The smaller h values are candidates, not yet adopted.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_femu_shadow_diagnostic_v1/report.json",
+          "role": "prefix and L2 h comparison",
+          "assertions": [
+            {
+              "path": "/l3_prefix_h_gate/results/0/status",
+              "operator": "equals",
+              "expected": "failed"
+            },
+            {
+              "path": "/l3_prefix_h_gate/results/1/status",
+              "operator": "equals",
+              "expected": "passed_through_increment_271"
+            },
+            {
+              "path": "/l3_prefix_h_gate/results/2/status",
+              "operator": "equals",
+              "expected": "passed_through_increment_271"
+            },
+            {
+              "path": "/claims/l2_jacobian_stable_across_h",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/claims/identification_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        },
+        {
+          "path": "validation/reference_data/srix_femu_shadow_diagnostic_v1/l2_jacobian_h_sweep.json",
+          "role": "machine-readable Jacobian comparison"
+        }
+      ]
     }
   ],
   "tables": [

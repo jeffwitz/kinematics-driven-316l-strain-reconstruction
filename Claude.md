@@ -7610,3 +7610,13 @@ comme limitation locale du replay shadow sur chemin très raffiné, pas comme
 échec du forward mécanique. Aucun L4, aucune identification et aucun P43 ne
 sont autorisés ; la suite possible est un rejeu local de `tau0−` avec
 télémétrie MFront ou le provider de sensibilité constitutive analytique.
+
+Le sous-gate `SHADOW-003B` a ensuite rejoué le préfixe L3 jusqu'au pas 271. Avec
+`h=0.003`, `tau0−` échoue encore au même appel ; avec `h=0.0015` et `h=0.001`,
+le pas 271 passe. Le contrôle L2 complet est favorable aux deux valeurs : par
+rapport à `h=0.003`, l'erreur maximale de colonne est respectivement `0.204 %`
+et `0.246 %`, avec des cosinus minimaux `0.9999981` et `0.9999973`; le spectre
+normalisé et le conditionnement (`1.60e4`) restent stables. Ces valeurs sont
+donc des candidates pour un rejeu L3 complet, mais aucune n'est adoptée avant
+ce rejeu. Les matrices et le détail sont dans
+`validation/reference_data/srix_femu_shadow_diagnostic_v1/l2_jacobian_h_sweep.*`.

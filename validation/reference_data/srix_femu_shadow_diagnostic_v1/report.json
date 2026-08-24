@@ -20,6 +20,29 @@
       "message": "3D MFront integration failed with status -1"
     }
   },
+  "l3_prefix_h_gate": {
+    "prefix_steps": 271,
+    "results": [
+      {
+        "h": 0.003,
+        "status": "failed",
+        "failure": "tau0 minus, fixed_current_strain, accepted increment 271, MFront status -1",
+        "elapsed_seconds": 62.91
+      },
+      {
+        "h": 0.0015,
+        "status": "passed_through_increment_271",
+        "shape": [162, 4],
+        "elapsed_seconds": 82.69
+      },
+      {
+        "h": 0.001,
+        "status": "passed_through_increment_271",
+        "shape": [162, 4],
+        "elapsed_seconds": 81.53
+      }
+    ]
+  },
   "l2_h_diagnostic": {
     "steps": 392,
     "forward_converged": true,
@@ -29,10 +52,34 @@
       {"h": 0.0015, "status": "ok", "elapsed_seconds": 123.76066945295315, "gmres_solves": 1568},
       {"h": 0.001, "status": "ok", "elapsed_seconds": 121.36651943298057, "gmres_solves": 1568}
     ],
-    "interpretation": "Reducing h does not restore a convergence failure on L2; this sweep is diagnostic only and no h was adopted."
+    "interpretation": "All three h values pass on L2. The L2 Jacobian comparison is archived separately; h=0.0015 and h=0.001 are candidates for a full L3 replay, but no h is adopted before that replay."
+  },
+  "l2_jacobian_h_comparison": {
+    "reference_h": 0.003,
+    "h_values_compared": [0.003, 0.0015, 0.001],
+    "column_relative_l2_vs_reference": {
+      "0.0015": [0.001545052548268725, 0.0020405075003913065, 0.00017346553185187705, 0.00017496417080678905],
+      "0.001": [0.00212520762782431, 0.0024633140166042304, 0.0002065128122687638, 0.000206637172769539]
+    },
+    "column_cosines_vs_reference": {
+      "0.0015": [0.9999988202923579, 0.9999981055092719, 0.999999993059891, 0.999999992947796],
+      "0.001": [0.9999977506211865, 0.9999972708336808, 0.9999999891730991, 0.9999999891772453]
+    },
+    "normalized_singular_values": {
+      "0.003": [1.0, 0.18245544849051756, 0.04357558462848987, 6.234398466288036e-05],
+      "0.0015": [1.0, 0.1824433913912237, 0.04356146734376038, 6.233082621238525e-05],
+      "0.001": [1.0, 0.18256880752749435, 0.04354843381336513, 6.231878504046953e-05]
+    },
+    "condition_numbers": {"0.003": 16040.039875657812, "0.0015": 16043.426034376842, "0.001": 16046.525928748524},
+    "artefacts": [
+      "validation/reference_data/srix_femu_shadow_diagnostic_v1/l2_jacobian_h_sweep.npz",
+      "validation/reference_data/srix_femu_shadow_diagnostic_v1/l2_jacobian_h_sweep.json"
+    ]
   },
   "claims": {
     "l3_shadow_failure_localized": true,
+    "l3_shadow_failure_is_reduced_by_h": true,
+    "l2_jacobian_stable_across_h": true,
     "l3_sensitivity_converged": false,
     "shadow_fd_limitation_proven": false,
     "identification_authorized": false,
