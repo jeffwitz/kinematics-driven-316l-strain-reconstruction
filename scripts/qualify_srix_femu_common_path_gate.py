@@ -520,6 +520,12 @@ def main() -> None:
         default=None,
         help="reuse a previously qualified common_path.npz and skip path search",
     )
+    parser.add_argument(
+        "--proposal-path",
+        type=Path,
+        default=None,
+        help="use fractions from an unqualified historical path only as a search proposal",
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     run_git_sha = _git("rev-parse HEAD")
@@ -540,7 +546,22 @@ def main() -> None:
         dirty=run_dirty,
     )
     skipped = set() if args.include_b_minus_seed else set(SEED_SKIP_DEFAULT)
+    if args.proposal_path is not None:
+        proposal_file = args.proposal_path
+        if not proposal_file.is_absolute():
+            proposal_file = ROOT / proposal_file
+        proposal_fractions = np.asarray(np.load(proposal_file)["end_fractions"], dtype=float)
+        adaptive["proposal"] = proposal_fractions.tolist()
+        adaptive_diagnostics["proposal"] = {
+            "status": "unqualified_proposal",
+            "source": str(proposal_file),
+            "accepted_increments": int(proposal_fractions.size),
+        }
+        skipped = {name for name, _ in _variants(theta)}
+        print(f"using unqualified proposal path: {proposal_file}", flush=True)
     for name, direction in _variants(theta):
+        if args.proposal_path is not None:
+            continue
         if name in skipped:
             adaptive_diagnostics[name] = {"status": "seed_skipped", "reason": "known_expensive"}
             print(f"seed path: {name} skipped", flush=True)
@@ -591,7 +612,7 @@ def main() -> None:
             "end_fractions": fractions,
             "solver": diagnostics["solver"],
         }
-    if "base" not in adaptive:
+    if "base" not in adaptive and args.proposal_path is None:
         raise SystemExit("base seed path is required to define scored endpoints")
     CACHE_ROOT.mkdir(parents=True, exist_ok=True)
     (CACHE_ROOT / "manifest.json").write_text(
