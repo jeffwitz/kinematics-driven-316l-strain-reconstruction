@@ -191,8 +191,11 @@ def main() -> None:
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--library", default="build/mfront/src/libBehaviour.so")
     parser.add_argument("--max-local-repairs", type=int, default=MAX_LOCAL_REPAIRS)
+    parser.add_argument("--levels", type=int, default=3)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
+    if args.levels < 2:
+        raise SystemExit("--levels must be at least 2")
     output = args.output if args.output.is_absolute() else ROOT / args.output
     if output.exists() and any(output.iterdir()):
         raise SystemExit(f"refusing to overwrite non-empty {output}")
@@ -213,7 +216,7 @@ def main() -> None:
     transfer = _WrapFreeTransfer(DICSpectralTransfer.from_sinusoidal_csv(TRANSFER))
     levels: list[dict[str, Any]] = []
     path = _common_path(source_fractions.tolist(), pixels=args.pixels)
-    for level_index in range(3):
+    for level_index in range(args.levels):
         if level_index > 0:
             path = _mandatory_refine(path, pixels=args.pixels)
         label = f"L{level_index}"
@@ -341,7 +344,7 @@ def main() -> None:
     axes[1].set(xlabel="level", ylabel="sigma / sigma1")
     axes[1].legend(fontsize=8)
     axes[2].semilogy(
-        ["L0-L1", "L1-L2"],
+        [f"L{index}-L{index + 1}" for index in range(len(comparisons))],
         [comparison["forward_observed_relative_l2"] for comparison in comparisons],
         "o-",
     )
