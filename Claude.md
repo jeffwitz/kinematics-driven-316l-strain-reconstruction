@@ -7561,3 +7561,23 @@ quatrième reste de l'ordre de `6.2e-5` et aligné à `0.999987` sur le contrast
 Le forward est donc proche de la convergence, mais la géométrie différentielle
 ne l'est pas encore selon les seuils fixés. Le résultat est documenté comme
 négatif, sans ajustement des seuils. Identification et P43 restent interdits.
+
+### PATH-002S : extension L3 finale (2026-08-24)
+
+L'extension finale a été pré-enregistrée dans
+`validation/srix_femu_path_convergence_extension_preregistration.md`. Elle
+réutilise L0--L2 qualifiés et ne recalcule que L3. Le chemin L3 converge avec
+809 pas effectifs, dont 25 réparations locales.
+
+Le forward L3 est donc encore stable, mais la construction de la Jacobienne
+directe échoue pendant le replay d'une histoire constitutive shadow :
+`MFrontIntegrationError: 3D MFront integration failed with status -1`. Il n'y a
+donc pas de métrique L2→L3 de sensibilité et le gate est bloqué au stade
+constitutif, sans conclusion de convergence ou de non-identifiabilité.
+
+Ce résultat est archivé dans
+`validation/reference_data/srix_femu_path_convergence_v4/report.json` et
+`validation/srix_femu_path_convergence_extension_results.md`. C'était le dernier
+niveau de raffinement pré-enregistré : aucun L4 ne doit être lancé. La prochaine
+étape autorisée est un diagnostic ciblé du replay shadow/MFront, puis seulement
+une décision sur l'identification.

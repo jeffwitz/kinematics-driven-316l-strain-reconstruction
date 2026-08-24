@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "method": "final L2-to-L3 nested direct FEMU path refinement extension",
+  "git_sha": "289a018e1a641550b062438674ef2c17bf9a9f1c",
+  "dirty": false,
+  "source": "validation/reference_data/srix_femu_path_convergence_v3",
+  "levels_reused": ["L0", "L1", "L2"],
+  "L3": {
+    "steps": 809,
+    "local_repair_count": 25,
+    "forward_converged": true,
+    "direct_sensitivity_available": false
+  },
+  "direct_sensitivity_failure": {
+    "stage": "L3 direct shadow sensitivity",
+    "type": "MFrontIntegrationError",
+    "message": "3D MFront integration failed with status -1",
+    "interpretation": "The L3 forward path converged, but the constitutive shadow replay required by the direct Jacobian did not. No L2-to-L3 sensitivity metric is claimed."
+  },
+  "comparison_L2_to_L3": null,
+  "claims": {
+    "path_convergence_extension_gate": false,
+    "fourth_mode_identifiable": false,
+    "identification_authorized": false,
+    "p43_authorized": false
+  }
+}

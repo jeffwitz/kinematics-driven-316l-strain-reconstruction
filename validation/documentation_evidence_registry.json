@@ -2054,6 +2054,47 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-FEMU-PATH-002S",
+      "question": "Does one final L3 refinement stabilize the direct FEMU sensitivity geometry?",
+      "fidelity": "M8 SRIX twin; corrected Dirichlet contract 2; L3 nested path with strict local repairs",
+      "parameters": "log tau0, R, Q, b; direct sensitivity; L2 artefact reused",
+      "status": "blocked at direct sensitivity evaluation",
+      "conclusion": "The L3 forward converged with 809 steps and 25 repairs, but a constitutive shadow replay failed with MFront status -1 while constructing the direct Jacobian. No L2-to-L3 sensitivity metric is claimed; no L4, identification or P43 is authorized.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_femu_path_convergence_v4/report.json",
+          "role": "final path extension diagnostic",
+          "assertions": [
+            {
+              "path": "/L3/steps",
+              "operator": "equals",
+              "expected": 809
+            },
+            {
+              "path": "/L3/forward_converged",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/L3/direct_sensitivity_available",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/path_convergence_extension_gate",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/identification_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
