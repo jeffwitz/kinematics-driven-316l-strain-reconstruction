@@ -2,6 +2,7 @@
   "claims": {
     "both_l3_complete": true,
     "h_0015_stable_against_h_001": true,
+    "h_0015_adopted_for_shadow_fd": true,
     "path_002s_gate": false,
     "identification_authorized": false,
     "p43_authorized": false

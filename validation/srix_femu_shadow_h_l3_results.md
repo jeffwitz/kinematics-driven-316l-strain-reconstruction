@@ -13,6 +13,9 @@ La stabilité entre les deux valeurs est validée : erreurs de colonnes
 et angle maximal du sous-espace de rang 3 `0.136°`. Le mode faible reste le
 contraste `Q-b`.
 
+`h=0.0015` est adopté comme pas principal du shadow FD ; `h=0.001` reste le
+contrôle indépendant.
+
 Le calcul L2→L3 reste cependant négatif selon le seuil pré-enregistré
 PATH-002S, uniquement à cause de l’angle de rang 3 :
 

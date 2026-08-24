@@ -7637,3 +7637,8 @@ géométrie L2→L3 ne l'est pas ; aucune identification ni P43 n'est autorisée
 Le résultat est archivé dans
 `validation/reference_data/srix_femu_shadow_h_l3_v1/report.json` et
 `validation/srix_femu_shadow_h_l3_results.md`.
+
+La stabilité L3 autorise l'adoption de `h=0.0015` comme pas principal du
+shadow FD ; `h=0.001` reste le contrôle. Cette adoption ne lève pas le blocage
+PATH-002S : son angle de rang 3 reste légèrement au-dessus du seuil
+pré-enregistré.
