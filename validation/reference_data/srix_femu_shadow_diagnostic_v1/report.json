@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "method": "FEMU direct shadow failure diagnostic",
+  "git_sha": "fe61fc3184029145453be54c28b100b73f291a7b",
+  "dirty": false,
+  "path_source": "validation/reference_data/srix_femu_path_convergence_v3 plus exact L3 repair fractions",
+  "l3": {
+    "steps": 809,
+    "forward_converged": true,
+    "forward_seconds": 115.77072037209291,
+    "shadow_failure": {
+      "accepted_increment": 271,
+      "start_fraction": 0.232177734375,
+      "end_fraction": 0.2322998046875,
+      "time_increment": 0.0001220703125,
+      "parameter": "tau0",
+      "sign": "minus",
+      "phase": "fixed_current_strain",
+      "status": -1,
+      "message": "3D MFront integration failed with status -1"
+    }
+  },
+  "l2_h_diagnostic": {
+    "steps": 392,
+    "forward_converged": true,
+    "h_values": [0.003, 0.0015, 0.001],
+    "results": [
+      {"h": 0.003, "status": "ok", "elapsed_seconds": 123.86854488798417, "gmres_solves": 1568},
+      {"h": 0.0015, "status": "ok", "elapsed_seconds": 123.76066945295315, "gmres_solves": 1568},
+      {"h": 0.001, "status": "ok", "elapsed_seconds": 121.36651943298057, "gmres_solves": 1568}
+    ],
+    "interpretation": "Reducing h does not restore a convergence failure on L2; this sweep is diagnostic only and no h was adopted."
+  },
+  "claims": {
+    "l3_shadow_failure_localized": true,
+    "l3_sensitivity_converged": false,
+    "shadow_fd_limitation_proven": false,
+    "identification_authorized": false,
+    "p43_authorized": false
+  }
+}
