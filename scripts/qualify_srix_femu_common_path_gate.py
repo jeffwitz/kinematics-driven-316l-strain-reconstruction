@@ -334,22 +334,45 @@ def _synchronise(
     by_name = dict(variants)
     bisections_by_interval: dict[tuple[float, float], int] = {}
     total_bisections = 0
+    bisection_stop_reason: str | None = None
+
+    def sync_diagnostics(
+        status: str,
+        *,
+        failed_variant: str | None = None,
+        **extra: Any,
+    ) -> dict[str, Any]:
+        return {
+            "status": status,
+            "bisections": history,
+            "failed_variant": failed_variant,
+            "max_bisections": max_bisections,
+            "max_local_bisections": max_local_bisections,
+            "min_common_interval": min_interval,
+            "total_bisections": total_bisections,
+            "bisection_stop_reason": bisection_stop_reason,
+            **extra,
+        }
 
     def bisect(failure: dict[str, Any]) -> bool:
-        nonlocal path, total_bisections
+        nonlocal bisection_stop_reason, path, total_bisections
         failed = failure["failed_increment"]
         if failed is None or not 1 <= failed <= len(path):
+            bisection_stop_reason = "invalid_failure_increment"
             return False
         left = path[failed - 1].start_fraction
         right = path[failed - 1].end_fraction
         width = right - left
         key = (left, right)
         count = bisections_by_interval.get(key, 0)
-        if (
-            count >= max_local_bisections
-            or width <= min_interval
-            or total_bisections >= max_bisections
-        ):
+        if total_bisections >= max_bisections:
+            bisection_stop_reason = "global_budget_exhausted"
+            return False
+        if count >= max_local_bisections:
+            bisection_stop_reason = "local_budget_exhausted"
+            return False
+        if width <= min_interval:
+            bisection_stop_reason = "minimum_interval_reached"
             return False
         midpoint = 0.5 * (left + right)
         bisections_by_interval[key] = count + 1
@@ -381,9 +404,9 @@ def _synchronise(
         while True:
             if deadline is not None and time.perf_counter() >= deadline:
                 return path, [], {
-                    "status": "blocked_path_search_timeout",
-                    "bisections": history,
-                    "failed_variant": name,
+                    **sync_diagnostics(
+                        "blocked_path_search_timeout", failed_variant=name
+                    ),
                     "timeout_seconds": path_search_timeout,
                 }
             try:
@@ -409,11 +432,10 @@ def _synchronise(
                     "path_steps": len(path),
                 }
                 if not bisect(failure):
-                    return path, [], {
-                        "status": "blocked_path_search",
-                        "bisections": [*history, failure],
-                        "failed_variant": name,
-                    }
+                    history.append(failure)
+                    return path, [], sync_diagnostics(
+                        "blocked_path_search", failed_variant=name
+                    )
                 continue
             break
 
@@ -447,17 +469,14 @@ def _synchronise(
                 break
         if strict_failure is None:
             assert strict_base is not None
-            return path, strict_base, {
-                "status": "converged",
-                "bisections": history,
-                "search_order": search_order,
-            }
+            return path, strict_base, sync_diagnostics(
+                "converged", search_order=search_order
+            )
         if not bisect(strict_failure):
-            return path, [], {
-                "status": "blocked_oracle",
-                "bisections": [*history, strict_failure],
-                "failed_variant": strict_failure["direction"],
-            }
+            history.append(strict_failure)
+            return path, [], sync_diagnostics(
+                "blocked_oracle", failed_variant=strict_failure["direction"]
+            )
         # Qualify the new interval for the failing variant before another
         # strict replay.  This keeps the expensive oracle as a final check.
         name = str(strict_failure["direction"])
@@ -469,9 +488,9 @@ def _synchronise(
         while True:
             if deadline is not None and time.perf_counter() >= deadline:
                 return path, [], {
-                    "status": "blocked_path_search_timeout",
-                    "bisections": history,
-                    "failed_variant": name,
+                    **sync_diagnostics(
+                        "blocked_path_search_timeout", failed_variant=name
+                    ),
                     "timeout_seconds": path_search_timeout,
                 }
             try:
@@ -497,11 +516,10 @@ def _synchronise(
                     "path_steps": len(path),
                 }
                 if not bisect(failure):
-                    return path, [], {
-                        "status": "blocked_path_search",
-                        "bisections": [*history, failure],
-                        "failed_variant": name,
-                    }
+                    history.append(failure)
+                    return path, [], sync_diagnostics(
+                        "blocked_path_search", failed_variant=name
+                    )
                 continue
             break
 
@@ -697,6 +715,15 @@ def main() -> None:
             "steps": len(common),
             "end_fractions": [step.end_fraction for step in common],
             "bisections": sync["bisections"],
+            "max_bisections": sync.get("max_bisections", args.max_bisections),
+            "max_local_bisections": sync.get(
+                "max_local_bisections", MAX_LOCAL_BISECTIONS
+            ),
+            "min_common_interval": sync.get(
+                "min_common_interval", MIN_COMMON_INTERVAL
+            ),
+            "total_bisections": sync.get("total_bisections", len(sync["bisections"])),
+            "bisection_stop_reason": sync.get("bisection_stop_reason"),
             **({"reused_from": sync["reused_from"]} if "reused_from" in sync else {}),
         },
         "claims": {
