@@ -240,6 +240,7 @@ def _direct_jacobian(
         pixels=pixels, orientations=orientations, library=library, threads=threads
     )
     eta = theta.log_coordinates()
+    parameter_names = ("tau0", "R", "Q", "b")
     shadows: list[tuple[Any, Any]] = []
     for index in range(4):
         plus = eta.copy()
@@ -263,6 +264,7 @@ def _direct_jacobian(
         )
         forcings: list[np.ndarray] = []
         for parameter_index, (plus, minus) in enumerate(shadows):
+            parameter_name = parameter_names[parameter_index]
             try:
                 plus_trial = evaluate_in_plane_response(
                     plus,
@@ -281,7 +283,8 @@ def _direct_jacobian(
             except Exception as error:
                 raise RuntimeError(
                     "direct shadow integration failed at accepted increment "
-                    f"{state_index}, parameter index {parameter_index}: {error}"
+                    f"{state_index}, parameter {parameter_name}, sign pair "
+                    f"plus/minus, phase fixed_current_strain: {error}"
                 ) from error
             stress_difference = (
                 np.asarray(plus_trial.stress_in_plane_mpa)
@@ -311,25 +314,46 @@ def _direct_jacobian(
                 )
 
         for index, (plus, minus) in enumerate(shadows):
+            parameter_name = parameter_names[index]
             sensitivity_strain = kinematics.strain_samples(sensitivities[index])
             plus_strain = base_strain + h * sensitivity_strain
             minus_strain = base_strain - h * sensitivity_strain
-            evaluate_in_plane_response(
-                plus,
-                plus_strain.reshape(-1, 3),
-                time_increment=accepted.time_increment,
-                response_level="residual",
-                consistent_tangent=False,
-            )
-            evaluate_in_plane_response(
-                minus,
-                minus_strain.reshape(-1, 3),
-                time_increment=accepted.time_increment,
-                response_level="residual",
-                consistent_tangent=False,
-            )
-            plus.commit()
-            minus.commit()
+            try:
+                evaluate_in_plane_response(
+                    plus,
+                    plus_strain.reshape(-1, 3),
+                    time_increment=accepted.time_increment,
+                    response_level="residual",
+                    consistent_tangent=False,
+                )
+            except Exception as error:
+                raise RuntimeError(
+                    "direct shadow history advance failed at accepted increment "
+                    f"{state_index}, parameter {parameter_name}, sign plus, "
+                    f"phase history_advance: {error}"
+                ) from error
+            try:
+                evaluate_in_plane_response(
+                    minus,
+                    minus_strain.reshape(-1, 3),
+                    time_increment=accepted.time_increment,
+                    response_level="residual",
+                    consistent_tangent=False,
+                )
+            except Exception as error:
+                raise RuntimeError(
+                    "direct shadow history advance failed at accepted increment "
+                    f"{state_index}, parameter {parameter_name}, sign minus, "
+                    f"phase history_advance: {error}"
+                ) from error
+            try:
+                plus.commit()
+                minus.commit()
+            except Exception as error:
+                raise RuntimeError(
+                    "direct shadow history commit failed at accepted increment "
+                    f"{state_index}, parameter {parameter_name}: {error}"
+                ) from error
 
     matrix = np.column_stack([np.concatenate(values) for values in scored_vectors])
     return matrix, {"elapsed_seconds": time.perf_counter() - started, "gmres_solves": gmres_calls}
