@@ -1977,6 +1977,42 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-FEMU-COMMON-PATH-001R",
+      "question": "Does the corrected Dirichlet contract yield one strict common path for the FEMU base and all eight parameter perturbations?",
+      "fidelity": "M8 SRIX twin; corrected free-DOF initial predictor; unqualified v9 proposal with synchronized local bisection",
+      "parameters": "log tau0, R, Q, b; central step 3e-3; strict oracle replay",
+      "status": "blocked oracle",
+      "conclusion": "No qualified common path was obtained. The candidate reached 69 steps after 12 local insertions, then the strict oracle blocked on R_plus at increment 23. No direct-vs-FD Jacobian or identification claim is authorized.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_femu_common_path_gate_v16/report.json",
+          "role": "corrected common-path rebaseline",
+          "assertions": [
+            {
+              "path": "/initialization_contract",
+              "operator": "equals",
+              "expected": 2
+            },
+            {
+              "path": "/common_path/status",
+              "operator": "equals",
+              "expected": "blocked_oracle"
+            },
+            {
+              "path": "/claims/direct_femu_qualified",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
