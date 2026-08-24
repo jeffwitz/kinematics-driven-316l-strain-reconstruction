@@ -7499,3 +7499,27 @@ n'est autorisée. Artefacts :
 `validation/srix_femu_branch_causal_preregistration.md`,
 `validation/srix_femu_branch_causal_results.md` et
 `validation/reference_data/srix_femu_branch_causal_v5/` (`dirty=false`).
+
+### COMMON-PATH-001R : re-baselining après correction des Dirichlet (2026-08-24)
+
+Un bug sémantique a été corrigé dans `solve_two_state_dirichlet_plane_stress` :
+`initial_displacement` ne doit jamais remplacer les DOF de bord prescrits au
+premier incrément. Le prédicteur est maintenant appliqué uniquement aux DOF
+intérieurs ; les bords viennent toujours de `boundary_state`. Le test
+`test_initial_displacement_guess_does_not_cancel_first_boundary_step` verrouille
+ce contrat, ainsi que l'équivalence du cas sans prédicteur pour un petit cas
+élastique.
+
+Le cache `validation/reference_data/srix_femu_common_path_cache/` a été
+explicitement invalidé par `fixed_path_initialization_contract=2`. Les chemins
+v9 et PATH-002 v2 ne sont pas supprimés, mais sont superseded pour toute
+interprétation scientifique. Leur spectre, notamment `(1, 0.187, 0.0405,
+5.35e-5)`, ne doit plus être cité comme propriété du forward corrigé.
+
+Le nouveau gate est preregistré dans
+`validation/srix_femu_common_path_rebaseline_preregistration.md`. Il reconstruit
+un chemin commun depuis une proposition non qualifiée, par bisection locale
+fail-fast, puis exige la convergence stricte de la base et des huit perturbations
+avant de recalculer la Jacobienne directe et sa FD commune. Aucun P43 ni aucune
+identification n'est autorisé avant ce passage. Le résultat courant est suivi
+dans `validation/srix_femu_common_path_rebaseline_results.md`.

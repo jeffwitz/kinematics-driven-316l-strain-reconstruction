@@ -95,6 +95,19 @@ def _fixed_path_trajectory(
     config: Any | None = None,
     initial_guess_callback: Any | None = None,
 ) -> list[TwoStateIncrementFields]:
+    # Material/solver calls must receive an owned, immutable-in-practice path
+    # snapshot.  In particular, do not pass views or arrays retaining the
+    # proposal-path container: MGIS can retain references during a trial.
+    path = [
+        LoadPathStep(
+            index=int(step.index),
+            start_fraction=float(step.start_fraction),
+            end_fraction=float(step.end_fraction),
+            boundary=np.asarray(step.boundary, dtype=np.float64).copy(),
+            time_increment=float(step.time_increment),
+        )
+        for step in path
+    ]
     orientations = _orientation_map(pixels)
     material = _material_factory(
         pixels=pixels, orientations=orientations, library=library, threads=threads

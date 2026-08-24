@@ -12,6 +12,7 @@ import re
 import signal
 import subprocess
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -300,19 +301,33 @@ def _synchronise(
     ]
     path = _common_path(fractions, pixels=pixels)
     history: list[dict[str, Any]] = []
-    search_config = _path_search_config()
+    # Search is only a partition proposal mechanism.  Keep its equilibrium
+    # tolerance strict, but fail fast on a stubborn interval instead of
+    # spending the oracle's generous Newton/line-search budget before
+    # bisecting it.  The final oracle below remains unchanged.
+    search_config = replace(
+        _path_search_config(),
+        maximum_newton_iterations=6,
+        maximum_line_search_reductions=3,
+        gmres_maximum_iterations=20,
+        gmres_restart=10,
+    )
+    # Qualify the unperturbed base first after a semantic change in the
+    # initial-Dirichlet contract.  This localises failures on the corrected
+    # physical path before spending a long fail-fast attempt on b_minus.
+    # The final oracle still validates all nine variants strictly.
     search_order = [
         name
         for name in (
-            "b_minus",
-            "b_plus",
-            "Q_minus",
-            "Q_plus",
-            "R_minus",
-            "R_plus",
-            "tau0_minus",
-            "tau0_plus",
             "base",
+            "tau0_plus",
+            "tau0_minus",
+            "R_plus",
+            "R_minus",
+            "Q_plus",
+            "Q_minus",
+            "b_plus",
+            "b_minus",
         )
         if name in dict(variants)
     ]
@@ -614,19 +629,23 @@ def main() -> None:
         }
     if "base" not in adaptive and args.proposal_path is None:
         raise SystemExit("base seed path is required to define scored endpoints")
-    CACHE_ROOT.mkdir(parents=True, exist_ok=True)
-    (CACHE_ROOT / "manifest.json").write_text(
-        json.dumps(
-            {
-                **seed_metadata,
-                "seed_skipped_directions": sorted(skipped),
-                "seed_status": adaptive_diagnostics,
-            },
-            indent=2,
-            sort_keys=True,
+    # A historical proposal is deliberately unqualified.  Do not overwrite
+    # the persistent seed cache while replaying it; its provenance must remain
+    # immutable until a corrected adaptive seed is independently validated.
+    if args.proposal_path is None:
+        CACHE_ROOT.mkdir(parents=True, exist_ok=True)
+        (CACHE_ROOT / "manifest.json").write_text(
+            json.dumps(
+                {
+                    **seed_metadata,
+                    "seed_skipped_directions": sorted(skipped),
+                    "seed_status": adaptive_diagnostics,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
         )
-        + "\n"
-    )
     if args.reuse_common_path is not None:
         path_file = args.reuse_common_path
         if not path_file.is_absolute():
