@@ -496,6 +496,21 @@ def test_initial_displacement_guess_does_not_cancel_first_boundary_step() -> Non
     np.testing.assert_allclose(
         guessed.stress_in_plane_mpa, reference.stress_in_plane_mpa, atol=1.0e-12
     )
+    # The prescribed components are not merely close in the final norm: each
+    # boundary component must equal the last load-step value exactly within
+    # the solver tolerance.
+    np.testing.assert_allclose(
+        guessed.displacement[0, :, :], boundary[-1, 0, :, :], atol=1.0e-12
+    )
+    np.testing.assert_allclose(
+        guessed.displacement[-1, :, :], boundary[-1, -1, :, :], atol=1.0e-12
+    )
+    np.testing.assert_allclose(
+        guessed.displacement[:, 0, :], boundary[-1, :, 0, :], atol=1.0e-12
+    )
+    np.testing.assert_allclose(
+        guessed.displacement[:, -1, :], boundary[-1, :, -1, :], atol=1.0e-12
+    )
 
 
 def test_increment_observer_is_refused_with_step_doubling() -> None:
