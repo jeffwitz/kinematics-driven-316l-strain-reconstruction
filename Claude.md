@@ -7424,4 +7424,5 @@ Le spectre commun reste `(1, 0.1871, 0.04053, 5.35e-5)`, différent du spectre
 de l'ancienne FD adaptative `(1, 0.542, 0.407, 0.0679)` : ce résultat ne
 réhabilite pas l'ancienne géométrie et n'autorise toujours ni P43 ni
 l'identification. L'artefact principal est
-`validation/reference_data/srix_femu_common_path_gate_v7/`.
+`validation/reference_data/srix_femu_common_path_gate_v9/` (rapport propre,
+`dirty=false`).

@@ -26,7 +26,7 @@ uses its historical line-search threshold of `1.0`; only the exploratory seed
 uses `0.25`.
 
 The strict M8 replay was then resumed from the qualified 57-step partition in
-`validation/reference_data/srix_femu_common_path_gate_v7/common_path.npz`.
+`validation/reference_data/srix_femu_common_path_gate_v9/common_path.npz`.
 The direct sensitivity and the fixed-path central FD use the same seven unique
 common-path endpoints (the historical index list contains one duplicate after
 normalization). The raw column comparison is:
@@ -49,5 +49,5 @@ older adaptive-path spectrum `(1, 0.542, 0.407, 0.0679)`: the two are different
 discrete load-path experiments. The gate therefore establishes tangent/FD
 consistency, not recovery of the historical adaptive FEMU information
 geometry. The complete machine-readable evidence is
-`validation/reference_data/srix_femu_common_path_gate_v7/report.json` and
-`jacobians.npz`; `p43_authorized` remains false.
+`validation/reference_data/srix_femu_common_path_gate_v9/report.json` and
+`jacobians.npz`; the report has `dirty=false` and `p43_authorized=false`.
