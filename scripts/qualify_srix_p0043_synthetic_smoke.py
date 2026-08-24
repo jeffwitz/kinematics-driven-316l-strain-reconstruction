@@ -61,9 +61,11 @@ def _git(command: str) -> str:
     ).stdout.strip()
 
 
-def _load_inputs() -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+def _load_inputs(
+    crop: tuple[int, int, int, int] = CROP,
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
     report = json.loads(HISTORY_REPORT.read_text(encoding="utf-8"))
-    x0, x1, y0, y1 = CROP
+    x0, x1, y0, y1 = crop
     bx0, _, by0, _ = map(int, report["solve_bounds"])
     source = np.load(HISTORY, mmap_mode="r", allow_pickle=False)
     local = np.asarray(
@@ -85,7 +87,7 @@ def _load_inputs() -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
     if macro.shape[0] != 9:
         raise ValueError("expected repaired P43 states 0,5,...,40")
     return macro, angles, {
-        "crop_absolute": list(CROP),
+        "crop_absolute": list(crop),
         "solve_bounds": report["solve_bounds"],
         "history_sha256": hashlib.sha256(np.ascontiguousarray(macro).tobytes()).hexdigest(),
         "ebsd_sha256": hashlib.sha256(np.ascontiguousarray(angles).tobytes()).hexdigest(),
