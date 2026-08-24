@@ -73,8 +73,61 @@ def _reference_config() -> EBISpectralSolverConfig:
     )
 
 
+def _seed_config() -> EBISpectralSolverConfig:
+    """Fast, non-scientific policy used only to propose path nodes."""
+
+    return EBISpectralSolverConfig(
+        relative_equilibrium_tolerance=1.0e-5,
+        maximum_newton_iterations=12,
+        verify_final_state=False,
+        adaptive_stepping_enabled=True,
+        adaptive_step=AdaptiveStepConfig(
+            initial_increment_fraction=1.0 / (8 * SUBSTEPS_PER_SEGMENT),
+            minimum_increment_fraction=1.0 / 1024.0,
+            maximum_increment_fraction=1.0 / (8 * SUBSTEPS_PER_SEGMENT),
+            increment_growth_factor=2.0,
+            increment_cutback_factor=0.5,
+            target_newton_iterations_min=4,
+            target_newton_iterations_max=10,
+            line_search_difficult_threshold=0.25,
+            maximum_cutbacks_per_step=3,
+        ),
+    )
+
+
+def _path_search_config() -> EBISpectralSolverConfig:
+    """Strict-but-fail-fast policy used only to qualify a common path."""
+
+    return EBISpectralSolverConfig(
+        relative_equilibrium_tolerance=1.0e-6,
+        maximum_newton_iterations=12,
+        gmres_maximum_iterations=40,
+        gmres_restart=20,
+        verify_final_state=False,
+        adaptive_stepping_enabled=False,
+        maximum_line_search_reductions=6,
+    )
+
+
+def _oracle_config() -> EBISpectralSolverConfig:
+    """Scientific fixed-path policy used for the final common-path replay."""
+
+    return EBISpectralSolverConfig(
+        relative_equilibrium_tolerance=1.0e-6,
+        maximum_newton_iterations=80,
+        verify_final_state=True,
+        adaptive_stepping_enabled=False,
+        maximum_line_search_reductions=20,
+    )
+
+
 def _reference_trajectory(
-    *, pixels: int, library: str, threads: int, theta: SrixTheta4
+    *,
+    pixels: int,
+    library: str,
+    threads: int,
+    theta: SrixTheta4,
+    config: EBISpectralSolverConfig | None = None,
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any], float]:
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     orientations = _orientation_map(pixels)
@@ -110,7 +163,7 @@ def _reference_trajectory(
         grid=grid,
         material=material,
         boundary_displacement_history=_boundary_history(grid),
-        config=_reference_config(),
+        config=_reference_config() if config is None else config,
         increment_observer=observe,
     )
     elapsed = time.perf_counter() - started

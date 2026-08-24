@@ -32,6 +32,20 @@ def test_controller_keeps_normal_steps_and_cuts_back_difficult_steps() -> None:
     assert difficult.next_increment_fraction == pytest.approx(0.125)
 
 
+def test_seed_threshold_does_not_penalize_a_half_line_search() -> None:
+    controller = AdaptiveLoadStepController(
+        AdaptiveStepConfig(
+            initial_increment_fraction=0.25,
+            line_search_difficult_threshold=0.25,
+        )
+    )
+    decision = controller.accept(
+        LoadStepObservation(converged=True, newton_iterations=6, minimum_line_search_factor=0.5)
+    )
+    assert decision.reason == "accepted_normal_step"
+    assert decision.next_increment_fraction == pytest.approx(0.25)
+
+
 def test_controller_rejects_with_bounded_cutbacks_and_resets_after_acceptance() -> None:
     controller = AdaptiveLoadStepController(
         AdaptiveStepConfig(initial_increment_fraction=0.25, maximum_cutbacks_per_step=2)

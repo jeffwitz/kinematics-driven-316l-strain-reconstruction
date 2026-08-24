@@ -92,6 +92,7 @@ def _fixed_path_trajectory(
     pixels: int,
     library: str,
     threads: int,
+    config: Any | None = None,
 ) -> list[TwoStateIncrementFields]:
     orientations = _orientation_map(pixels)
     material = _material_factory(
@@ -109,12 +110,13 @@ def _fixed_path_trajectory(
     # interval.  The path is the object being frozen; the iteration cap is not
     # part of the physical discrete load path and must not turn the FD oracle
     # into a failure oracle.
-    config = replace(
-        _reference_config(),
-        adaptive_stepping_enabled=False,
-        maximum_newton_iterations=80,
-        maximum_line_search_reductions=20,
-    )
+    if config is None:
+        config = replace(
+            _reference_config(),
+            adaptive_stepping_enabled=False,
+            maximum_newton_iterations=80,
+            maximum_line_search_reductions=20,
+        )
     solve_two_state_dirichlet_plane_stress(
         grid=StructuredGrid2D(
             pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels

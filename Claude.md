@@ -7382,3 +7382,46 @@ Le driver possède maintenant un timeout par trajectoire et produit un rapport
 `blocked_adaptive_trajectory_timeout` au lieu de rester indéfini. Aucun chemin
 commun ni aucune comparaison FD n'est déclaré tant que les neuf trajectoires ne
 sont pas disponibles.
+
+### Recherche de chemin commune à trois niveaux (2026-08-24)
+
+Le prochain rejeu du gate utilise trois politiques explicitement séparées dans
+`scripts/qualify_srix_femu_common_path_gate.py` :
+
+* `_seed_config` est exploratoire uniquement (tolérance `1e-5`, Newton 12,
+  croissance `2`, seuil de line-search difficile `0.25`, timeout 60 s par
+  trajectoire) ;
+* `_path_search_config` est fail-fast et strict sur l'équilibre (tolérance
+  `1e-6`, Newton 12, six réductions de line-search) ;
+* `_oracle_config` est la seule configuration scientifique (tolérance `1e-6`,
+  vérification finale, Newton 80, vingt réductions de line-search).
+
+Le défaut historique du contrôleur reste inchangé :
+`line_search_difficult_threshold=1.0`. Le seuil `0.25` n'est autorisé que pour
+le seed et ne peut donc pas modifier les résultats de production.
+
+Les fractions seed sont mises en cache avec validation stricte de la SHA Git,
+de la bibliothèque MFront, de l'historique de bord, du maillage, des threads,
+du pas FD et de la configuration seed, sous
+`validation/reference_data/srix_femu_common_path_cache/`. Le seed `b_minus`,
+identifié comme trajectoire très coûteuse, est ignoré par défaut : il est
+qualifié directement dans la recherche de chemin commun, puis dans le rejeu
+oracle strict. Utiliser `--include-b-minus-seed` seulement pour une expérience
+exploratoire explicite.
+
+La recherche bissecte un seul intervalle en échec à la fois et ne rejoue pas les
+neuf variantes après chaque bisection. Les limites sont dix bisections locales,
+`1/65536` par intervalle et un budget global configurable. Un échec de seed ou
+de recherche reste un diagnostic de branche/coût ; aucune comparaison FD ni
+aucun résultat scientifique n'est déclaré avant le rejeu strict des neuf
+variantes sur une partition identique.
+
+Le rejeu v7 a finalement passé ce gate sur M8 après reprise du chemin strict
+qualifié : erreurs L2 des quatre colonnes `1.656e-3`, `6.964e-4`, `6.105e-4`
+et `6.166e-4`, cosinus tous supérieurs à `0.9999989`. Cela valide la
+différentiation directe contre une FD construite sur le **même chemin discret**.
+Le spectre commun reste `(1, 0.1871, 0.04053, 5.35e-5)`, différent du spectre
+de l'ancienne FD adaptative `(1, 0.542, 0.407, 0.0679)` : ce résultat ne
+réhabilite pas l'ancienne géométrie et n'autorise toujours ni P43 ni
+l'identification. L'artefact principal est
+`validation/reference_data/srix_femu_common_path_gate_v7/`.

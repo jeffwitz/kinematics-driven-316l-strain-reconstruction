@@ -26,6 +26,7 @@ class AdaptiveStepConfig:
     increment_cutback_factor: float = 0.5
     target_newton_iterations_min: int = 4
     target_newton_iterations_max: int = 7
+    line_search_difficult_threshold: float = 1.0
     maximum_cutbacks_per_step: int = 8
     slip_error_control: Literal["disabled", "predictive"] = "disabled"
     slip_error_relative_tolerance: float = 5.0e-3
@@ -50,6 +51,8 @@ class AdaptiveStepConfig:
             raise ValueError("minimum target Newton iterations must be positive")
         if self.target_newton_iterations_max < self.target_newton_iterations_min:
             raise ValueError("maximum target Newton iterations must not be below minimum")
+        if not 0.0 < self.line_search_difficult_threshold <= 1.0:
+            raise ValueError("line-search difficult threshold must be in (0, 1]")
         if self.maximum_cutbacks_per_step < 0:
             raise ValueError("maximum cutbacks per step must be non-negative")
         if self.slip_error_control not in {"disabled", "predictive"}:
@@ -161,7 +164,8 @@ class AdaptiveLoadStepController:
             raise ValueError("an accepted decision requires a converged observation")
         difficult = (
             observation.newton_iterations > self.config.target_newton_iterations_max
-            or observation.minimum_line_search_factor < 1.0
+            or observation.minimum_line_search_factor
+            < self.config.line_search_difficult_threshold
             or observation.maximum_local_iterations > 0
             or (
                 observation.slip_error_ratio is not None
@@ -171,7 +175,8 @@ class AdaptiveLoadStepController:
         )
         easy = (
             observation.newton_iterations <= self.config.target_newton_iterations_min
-            and observation.minimum_line_search_factor >= 1.0
+            and observation.minimum_line_search_factor
+            >= self.config.line_search_difficult_threshold
             and observation.maximum_local_iterations == 0
             and (
                 observation.slip_error_ratio is None
