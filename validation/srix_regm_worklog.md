@@ -319,7 +319,8 @@ respectively, despite Newton-80, twenty line-search reductions, and a base
 trajectory initial predictor. These are recorded as a numerical oracle
 blocker, not as a scientific NO-GO for direct sensitivities.
 
-The first direct-versus-adaptive artifact (`srix_femu_direct_sensitivity_v1`)
+The clean-tree direct-versus-adaptive artifact
+(`srix_femu_direct_sensitivity_v2`)
 has column errors `(0.942, 0.967, 0.997, 0.998)`, but this comparison is
 explicitly non-primary because the adaptive paths differ. The next authorized
 step is a common refined path or branch diagnostic, followed by raw-column

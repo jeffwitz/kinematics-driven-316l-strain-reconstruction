@@ -26,7 +26,9 @@ displacement as an initial predictor. The failures are therefore reported as a
 numerical robustness problem of the fixed-path FD oracle, not converted into a
 claim that the derivative is wrong.
 
-The already archived direct-versus-adaptive comparison is explicitly secondary:
+The clean-tree direct-versus-adaptive comparison
+(`validation/reference_data/srix_femu_direct_sensitivity_v2/report.json`) is
+explicitly secondary:
 its raw column relative errors are `(0.942, 0.967, 0.997, 0.998)` and its
 cosines are `(0.406, 0.307, 0.168, 0.258)`. Those numbers are not a direct
 sensitivity gate because the reference perturbations change the accepted path.

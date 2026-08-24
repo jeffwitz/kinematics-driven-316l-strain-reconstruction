@@ -7354,8 +7354,9 @@ Newton-80, vingt réductions de line-search et un prédicteur initial issu de la
 base. Ce résultat est enregistré comme blocage numérique, pas comme NO-GO
 scientifique de la sensibilité directe.
 
-Conséquence : le résultat direct déjà archivé contre la FD adaptative (erreurs
-de colonnes `0.942, 0.967, 0.997, 0.998`) ne constitue pas un gate valide. Le
+Conséquence : le rejeu propre `validation/reference_data/srix_femu_direct_sensitivity_v2/report.json`
+contre la FD adaptative (erreurs de colonnes `0.942, 0.967, 0.997, 0.998`) ne
+constitue pas un gate valide. Le
 prochain travail autorisé est de rendre l'oracle commun numériquement robuste
 (chemin raffiné commun ou diagnostic de branche), puis seulement de comparer
 les colonnes brutes. P43, optimisation et dérivée analytique MFront restent
