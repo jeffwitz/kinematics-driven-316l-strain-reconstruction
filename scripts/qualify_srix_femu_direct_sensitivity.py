@@ -232,12 +232,17 @@ def _direct_jacobian(
     threads: int,
     transfer: Any,
     h: float,
+    material_factory: Any | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     pixels = fields[0].displacement.shape[0] - 1
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     kinematics = TwoSubcellDiagnostic2D(grid)
-    factory = _material_factory(
-        pixels=pixels, orientations=orientations, library=library, threads=threads
+    factory = (
+        _material_factory(
+            pixels=pixels, orientations=orientations, library=library, threads=threads
+        )
+        if material_factory is None
+        else material_factory
     )
     eta = theta.log_coordinates()
     parameter_names = ("tau0", "R", "Q", "b")
