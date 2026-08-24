@@ -1941,6 +1941,42 @@
           ]
         }
       ]
+    },
+    {
+      "id": "E-SRIX-REGM-009",
+      "question": "Does scoring the cumulative accepted endpoint displacement repair the sequential REGM/FEMU geometry?",
+      "fidelity": "exact M8 twin; sequential one-correction replay; incremental and cumulative endpoint observables",
+      "parameters": "log tau0, R, Q, b; central step 3e-3; affine-preserving score transfer",
+      "status": "negative corrected-observable result",
+      "conclusion": "No. The cumulative endpoint observable raises the third direction to 0.0938 but leaves the fourth at 2.17e-4; the leading angle to FEMU is 74.7 degrees and P43 remains blocked.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_regm_sequential_one_newton_v3/report.json",
+          "role": "corrected cumulative endpoint geometry",
+          "assertions": [
+            {
+              "path": "/geometries/SREGM_cumulative_displacement/normalized_singular_values/2",
+              "operator": "less_than",
+              "expected": 0.1
+            },
+            {
+              "path": "/geometries/SREGM_cumulative_displacement/normalized_singular_values/3",
+              "operator": "less_than",
+              "expected": 0.001
+            },
+            {
+              "path": "/principal_angles_to_femu_degrees/SREGM_cumulative_displacement/1/0",
+              "operator": "greater_than",
+              "expected": 60.0
+            },
+            {
+              "path": "/claims/p43_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [
@@ -2979,6 +3015,10 @@
     {
       "source": "validation/reference_data/srix_regm_sequential_one_newton_v2/srix_regm_information_geometry.png",
       "target": "evidence/srix_regm_sequential_one_newton.png"
+    },
+    {
+      "source": "validation/reference_data/srix_regm_sequential_one_newton_v3/srix_regm_information_geometry.png",
+      "target": "evidence/srix_regm_sequential_one_newton_cumulative.png"
     }
   ]
 }

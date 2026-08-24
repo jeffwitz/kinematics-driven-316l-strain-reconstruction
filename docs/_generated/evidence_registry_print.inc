@@ -251,3 +251,9 @@
 : Status: **negative sequential-surrogate result**.
 : Conclusion: No. The sequential replay improves conditioning but leaves the rank-two angle at 67.9 degrees and the normalized weak directions at 0.0576 and 2.30e-4, far below observed FEMU values 0.4067 and 0.0679.
 : Sources: sequential causal replay geometry: `validation/reference_data/srix_regm_sequential_one_newton_v2/report.json`.
+
+**E-SRIX-REGM-009 — Does scoring the cumulative accepted endpoint displacement repair the sequential REGM/FEMU geometry?**
+: Fidelity: exact M8 twin; sequential one-correction replay; incremental and cumulative endpoint observables. Parameters: log tau0, R, Q, b; central step 3e-3; affine-preserving score transfer.
+: Status: **negative corrected-observable result**.
+: Conclusion: No. The cumulative endpoint observable raises the third direction to 0.0938 but leaves the fourth at 2.17e-4; the leading angle to FEMU is 74.7 degrees and P43 remains blocked.
+: Sources: corrected cumulative endpoint geometry: `validation/reference_data/srix_regm_sequential_one_newton_v3/report.json`.

@@ -7302,3 +7302,19 @@ Ne pas lancer P43 ni présenter un paramètre SRIX identifié. Toute suite doit
 être une méthode de sensibilité tangentielle validée ou un objectif réduit
 explicitement justifié, avec nouveau jumeau et corrélation FEMU avant les
 données expérimentales.
+
+### Correction de l'observable séquentielle (2026-08-24)
+
+Le rejeu séquentiel a été audité après le résultat v2 : le script score la
+correction du dernier incrément, alors que la comparaison à une Jacobienne FEMU
+doit utiliser l'écart de déplacement accepté cumulé à chaque endpoint. Un
+rejeu v3 conserve les deux observables, sans modifier v2 :
+`validation/reference_data/srix_regm_sequential_one_newton_v3/report.json`.
+
+Résultats : correction seule `(1, .56251, .05764, 2.30e-4)`; écart cumulé
+`(1, .46460, .09381, 2.17e-4)`; FEMU `(1, .54152, .40668, .06787)`. Le cumul
+relève le troisième mode mais pas le quatrième et son angle principal FEMU est
+`74.67 degrés` (contre `45.24 degrés` pour la correction seule). La correction
+de scoring était nécessaire, mais le rejeu séquentiel reste un échec du gate
+de géométrie; P43 demeure interdit. Voir
+`validation/srix_regm_sequential_one_newton_cumulative_results.md`.

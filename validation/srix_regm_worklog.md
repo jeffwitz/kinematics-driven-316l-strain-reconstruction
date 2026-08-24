@@ -264,3 +264,19 @@ directions faibles FEMU (`.4067, .0679`) ne sont pas retrouvées. Le gate de
 géométrie est donc négatif. La séquence des diagnostics REGM peu coûteux est
 close : ne pas lancer P43; toute méthode suivante doit repasser un jumeau et un
 classement REGM/FEMU indépendants.
+
+### 2026-08-24 — Correction de l'observable séquentielle
+
+Le premier rejeu séquentiel ne score que la correction du dernier incrément.
+Cette quantité n'est pas l'écart de déplacement à un endpoint FEMU. Le test
+complémentaire `validation/reference_data/srix_regm_sequential_one_newton_v3/report.json`
+conserve donc cette observable et ajoute
+`accepted - displacement_history` avant le même transfert affine-preserving.
+
+Le spectre de la correction seule reste `(1, .56251, .05764, 2.30e-4)`;
+celui de l'écart cumulé devient `(1, .46460, .09381, 2.17e-4)`. Le troisième
+mode est partiellement relevé, mais les directions FEMU `(0.4067, .0679)` ne
+sont pas retrouvées et l'angle principal cumulé est `74.67 degrés`. La
+correction méthodologique est donc réelle, mais elle ne change pas le
+NO-GO du rejeu séquentiel. L'artefact détaillé est
+`validation/srix_regm_sequential_one_newton_cumulative_results.md`.

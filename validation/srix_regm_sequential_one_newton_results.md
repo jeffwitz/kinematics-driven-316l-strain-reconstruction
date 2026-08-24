@@ -41,3 +41,12 @@ gate; it must not be presented as SRIX parameter identification yet.
 The causal correction improves conditioning and one sensitivity direction, but
 does not reproduce the observed FEMU sensitivity subspace.
 ```
+
+## Observable audit
+
+The v2 diagnostic scores the correction of the last increment. A follow-up
+rerun also scores the cumulative accepted endpoint displacement, which is the
+quantity directly comparable to an endpoint FEMU sensitivity. The corrected
+comparison is in
+`validation/srix_regm_sequential_one_newton_cumulative_results.md`; it remains
+negative and does not authorize P43.

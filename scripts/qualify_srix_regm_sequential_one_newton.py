@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "validation/reference_data/srix_regm_twin_v1"
 FEMU_GEOMETRY = ROOT / "validation/reference_data/srix_regm_information_geometry_v1"
 TRANSFER = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
-DEFAULT_OUTPUT = ROOT / "validation/reference_data/srix_regm_sequential_one_newton_v1"
+DEFAULT_OUTPUT = ROOT / "validation/reference_data/srix_regm_sequential_one_newton_v3"
 
 
 def _git(command: str) -> str:
@@ -67,7 +67,7 @@ def _replay(
     transfer: Any,
     library: str,
     threads: int,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     pixels = history.shape[1] - 1
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
     operator = _operator(grid, orientations, transfer)
@@ -75,7 +75,8 @@ def _replay(
         pixels=pixels, orientations=orientations, library=library, threads=threads
     )(theta.as_runtime_overrides())
     current = np.asarray(history[0], dtype=np.float64).copy()
-    corrections: list[np.ndarray] = []
+    incremental: list[np.ndarray] = []
+    cumulative: list[np.ndarray] = []
     for offset, increment in enumerate(increments):
         predictor = current + (history[offset + 1] - history[offset])
         trial = evaluate_in_plane_response(
@@ -111,8 +112,18 @@ def _replay(
         material.commit()
         current = accepted
         if offset + 1 in scored:
-            corrections.append(np.asarray(transfer.apply(correction), dtype=np.float64).reshape(-1))
-    return np.concatenate(corrections)
+            # The historical diagnostic scored only the last Newton correction.
+            # FEMU sensitivities, however, are sensitivities of the accepted
+            # displacement at each endpoint.  Keep both observables so that the
+            # correction is auditable and the old result remains reproducible.
+            incremental.append(
+                np.asarray(transfer.apply(correction), dtype=np.float64).reshape(-1)
+            )
+            displacement_gap = accepted - history[offset + 1]
+            cumulative.append(
+                np.asarray(transfer.apply(displacement_gap), dtype=np.float64).reshape(-1)
+            )
+    return np.concatenate(incremental), np.concatenate(cumulative)
 
 
 def _jacobian(
@@ -124,27 +135,29 @@ def _jacobian(
     transfer: Any,
     library: str,
     threads: int,
-) -> np.ndarray:
-    columns = []
+) -> tuple[np.ndarray, np.ndarray]:
+    incremental_columns = []
+    cumulative_columns = []
     for index in range(4):
         plus = eta.copy()
         minus = eta.copy()
         plus[index] += FD_STEP
         minus[index] -= FD_STEP
-        columns.append(
-            (
-                _replay(
-                    SrixTheta4.from_log_coordinates(plus), history, orientations,
-                    increments, scored, transfer, library, threads
-                )
-                - _replay(
-                    SrixTheta4.from_log_coordinates(minus), history, orientations,
-                    increments, scored, transfer, library, threads
-                )
-            )
-            / (2.0 * FD_STEP)
+        plus_incremental, plus_cumulative = _replay(
+            SrixTheta4.from_log_coordinates(plus), history, orientations,
+            increments, scored, transfer, library, threads
         )
-    return np.column_stack(columns)
+        minus_incremental, minus_cumulative = _replay(
+            SrixTheta4.from_log_coordinates(minus), history, orientations,
+            increments, scored, transfer, library, threads
+        )
+        incremental_columns.append(
+            (plus_incremental - minus_incremental) / (2.0 * FD_STEP)
+        )
+        cumulative_columns.append(
+            (plus_cumulative - minus_cumulative) / (2.0 * FD_STEP)
+        )
+    return np.column_stack(incremental_columns), np.column_stack(cumulative_columns)
 
 
 def main() -> None:
@@ -165,22 +178,34 @@ def main() -> None:
     scored = tuple(int(value) for value in report["states_scored"])
     transfer = _WrapFreeTransfer(DICSpectralTransfer.from_sinusoidal_csv(TRANSFER))
     started = time.perf_counter()
-    matrix = _jacobian(
+    incremental_matrix, cumulative_matrix = _jacobian(
         _theta_from_preset().log_coordinates(), history, orientations, increments,
         scored, transfer, args.library, args.threads
     )
     elapsed = time.perf_counter() - started
-    geometry = _geometry(matrix)
-    geometry["cumulative"] = []
     femu = json.loads((FEMU_GEOMETRY / "report.json").read_text())["geometries"]["FEMU_observed"]
+    geometries = {
+        "SREGM_incremental_correction": _geometry(incremental_matrix),
+        "SREGM_cumulative_displacement": _geometry(cumulative_matrix),
+    }
+    for geometry in geometries.values():
+        # Reuse the established information-geometry plotting helper, whose
+        # lower panels expect per-state cumulative entries.  This diagnostic
+        # has no state-wise geometry table yet, so make that absence explicit.
+        geometry["cumulative"] = []
     angles = {}
-    for count in (1, 2, 3):
-        left = np.asarray(geometry["right_singular_vectors"])[:, :count]
-        right = np.asarray(femu["right_singular_vectors"])[:, :count]
-        angles[str(count)] = np.degrees(subspace_angles(left, right)).tolist()
+    for label, geometry in geometries.items():
+        angles[label] = {}
+        for count in (1, 2, 3):
+            left = np.asarray(geometry["right_singular_vectors"])[:, :count]
+            right = np.asarray(femu["right_singular_vectors"])[:, :count]
+            angles[label][str(count)] = np.degrees(subspace_angles(left, right)).tolist()
     result = {
-        "schema_version": 1,
-        "method": "sequential one algorithmic-tangent correction per increment",
+        "schema_version": 2,
+        "method": (
+            "sequential one algorithmic-tangent correction per increment; "
+            "incremental and cumulative endpoint observables"
+        ),
         "git_sha": _git("rev-parse HEAD"),
         "dirty": bool(_git("status --porcelain")),
         "machine": platform.node(),
@@ -189,15 +214,29 @@ def main() -> None:
         "fd_step_log": FD_STEP,
         "states_scored": list(scored),
         "timing_seconds": elapsed,
-        "geometry": geometry,
+        "geometries": geometries,
         "femu_geometry": femu,
         "principal_angles_to_femu_degrees": angles,
-        "claims": {"new_global_mechanics": False, "p43_authorized": False},
+        "claims": {
+            "new_global_mechanics": False,
+            "p43_authorized": False,
+            "cumulative_observable_tested": True,
+        },
     }
     (output / "report.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    np.savez_compressed(output / "jacobian.npz", SREGM_one_newton=matrix)
-    _plot({"SREGM_1Newton": geometry, "FEMU_observed": femu}, output)
-    print(geometry["normalized_singular_values"], geometry["condition_number"], flush=True)
+    np.savez_compressed(
+        output / "jacobian.npz",
+        SREGM_incremental_correction=incremental_matrix,
+        SREGM_cumulative_displacement=cumulative_matrix,
+    )
+    _plot({**geometries, "FEMU_observed": femu}, output)
+    for label, geometry in geometries.items():
+        print(
+            label,
+            geometry["normalized_singular_values"],
+            geometry["condition_number"],
+            flush=True,
+        )
 
 
 if __name__ == "__main__":
