@@ -7524,15 +7524,16 @@ avant de recalculer la Jacobienne directe et sa FD commune. Aucun P43 ni aucune
 identification n'est autorisé avant ce passage. Le résultat courant est suivi
 dans `validation/srix_femu_common_path_rebaseline_results.md`.
 
-Le premier rejeu corrigé (`validation/reference_data/srix_femu_common_path_gate_v16/`)
-est terminé avec `dirty=false` sur le commit `73a08be`. Il a utilisé v9
-uniquement comme proposition non qualifiée, a ajouté 12 subdivisions locales et
-a atteint 69 pas. L'oracle strict est resté bloqué sur `R_plus` à l'incrément
-23 (fraction voisine de `0.21875`) après plusieurs échecs stricts de la base et
-de `tau0_plus`. Aucun chemin commun des neuf trajectoires n'est donc qualifié.
-Il n'y a pas de Jacobienne directe-vs-FD nouvelle ni de nouveau spectre à
-interpréter. Le statut scientifique reste `direct_femu_qualified=false`,
-`path_convergence_authorized=false`, `identification_authorized=false` et
-`p43_authorized=false`. Le prochain travail doit diagnostiquer cette branche
-locale ou améliorer la continuation sous le contrat corrigé, sans assouplir
-l'oracle.
+Le rejeu corrigé v16 était limité par son budget de 12 bisections. La reprise
+v17 (`validation/reference_data/srix_femu_common_path_gate_v17/`) a utilisé v16
+comme proposition non qualifiée, inséré 25 nœuds et obtenu un chemin commun de
+94 pas. Les neuf trajectoires convergent sous l'oracle strict (`dirty=false`,
+commit `387af84`).
+
+La Jacobienne directe est qualifiée contre la FD du même chemin : erreurs L2
+relatives `(3.95e-4, 9.71e-4, 7.94e-5, 7.96e-5)` et cosinus tous supérieurs à
+`0.9999995`. Le spectre corrigé est `(1, 0.18020, 0.04029, 6.32e-5)` et le
+conditionnement `1.58e4`. Cela valide la différentiation directe sur ce chemin
+discret, mais pas encore la convergence de la géométrie quand le chemin est
+raffiné. L'identification et P43 restent interdits jusqu'au gate de convergence
+de chemin.

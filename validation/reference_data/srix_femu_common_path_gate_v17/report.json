@@ -1,0 +1,719 @@
+{
+  "adaptive_paths": {
+    "proposal": {
+      "accepted_increments": 69,
+      "source": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/srix_femu_common_path_gate_v16/common_path.npz",
+      "status": "unqualified_proposal"
+    }
+  },
+  "claims": {
+    "common_path_fd_available": true,
+    "direct_femu_qualified": true,
+    "p43_authorized": false
+  },
+  "common_path": {
+    "bisection_stop_reason": null,
+    "bisections": [
+      {
+        "direction": "R_plus",
+        "end_fraction": 0.23046875,
+        "failed_increment": 23,
+        "failure": "two-state increment 23 did not converge",
+        "inserted_fraction": 0.228515625,
+        "local_bisections": 1,
+        "path_steps": 69,
+        "phase": "oracle",
+        "start_fraction": 0.2265625
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.234375,
+        "failed_increment": 25,
+        "failure": "two-state increment 25 did not converge",
+        "inserted_fraction": 0.232421875,
+        "local_bisections": 1,
+        "path_steps": 70,
+        "phase": "oracle",
+        "start_fraction": 0.23046875
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.236328125,
+        "failed_increment": 27,
+        "failure": "two-state increment 27 did not converge",
+        "inserted_fraction": 0.2353515625,
+        "local_bisections": 1,
+        "path_steps": 71,
+        "phase": "oracle",
+        "start_fraction": 0.234375
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.23828125,
+        "failed_increment": 29,
+        "failure": "two-state increment 29 did not converge",
+        "inserted_fraction": 0.2373046875,
+        "local_bisections": 1,
+        "path_steps": 72,
+        "phase": "oracle",
+        "start_fraction": 0.236328125
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.2421875,
+        "failed_increment": 32,
+        "failure": "two-state increment 32 did not converge",
+        "inserted_fraction": 0.2412109375,
+        "local_bisections": 1,
+        "path_steps": 73,
+        "phase": "oracle",
+        "start_fraction": 0.240234375
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.24609375,
+        "failed_increment": 35,
+        "failure": "two-state increment 35 did not converge",
+        "inserted_fraction": 0.2451171875,
+        "local_bisections": 1,
+        "path_steps": 74,
+        "phase": "oracle",
+        "start_fraction": 0.244140625
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.28125,
+        "failed_increment": 41,
+        "failure": "two-state increment 41 did not converge",
+        "inserted_fraction": 0.265625,
+        "local_bisections": 1,
+        "path_steps": 75,
+        "phase": "oracle",
+        "start_fraction": 0.25
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.625,
+        "failed_increment": 62,
+        "failure": "two-state increment 62 did not converge",
+        "inserted_fraction": 0.6171875,
+        "local_bisections": 1,
+        "path_steps": 76,
+        "phase": "oracle",
+        "start_fraction": 0.609375
+      },
+      {
+        "direction": "tau0_plus",
+        "end_fraction": 0.234375,
+        "failed_increment": 26,
+        "failure": "two-state increment 26 did not converge",
+        "inserted_fraction": 0.2333984375,
+        "local_bisections": 1,
+        "path_steps": 77,
+        "phase": "oracle",
+        "start_fraction": 0.232421875
+      },
+      {
+        "direction": "tau0_minus",
+        "end_fraction": 0.23046875,
+        "failed_increment": 24,
+        "failure": "two-state increment 24 did not converge",
+        "inserted_fraction": 0.2294921875,
+        "local_bisections": 1,
+        "path_steps": 78,
+        "phase": "oracle",
+        "start_fraction": 0.228515625
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.244140625,
+        "failed_increment": 36,
+        "failure": "two-state increment 36 did not converge",
+        "inserted_fraction": 0.2431640625,
+        "local_bisections": 1,
+        "path_steps": 79,
+        "phase": "oracle",
+        "start_fraction": 0.2421875
+      },
+      {
+        "direction": "tau0_minus",
+        "end_fraction": 0.232421875,
+        "failed_increment": 26,
+        "failure": "two-state increment 26 did not converge",
+        "inserted_fraction": 0.2314453125,
+        "local_bisections": 1,
+        "path_steps": 80,
+        "phase": "oracle",
+        "start_fraction": 0.23046875
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.46875,
+        "failed_increment": 55,
+        "failure": "two-state increment 55 did not converge",
+        "inserted_fraction": 0.4609375,
+        "local_bisections": 1,
+        "path_steps": 81,
+        "phase": "oracle",
+        "start_fraction": 0.453125
+      },
+      {
+        "direction": "tau0_plus",
+        "end_fraction": 0.240234375,
+        "failed_increment": 34,
+        "failure": "two-state increment 34 did not converge",
+        "inserted_fraction": 0.2392578125,
+        "local_bisections": 1,
+        "path_steps": 82,
+        "phase": "oracle",
+        "start_fraction": 0.23828125
+      },
+      {
+        "direction": "tau0_plus",
+        "end_fraction": 0.8125,
+        "failed_increment": 77,
+        "failure": "two-state increment 77 did not converge",
+        "inserted_fraction": 0.8046875,
+        "local_bisections": 1,
+        "path_steps": 83,
+        "phase": "oracle",
+        "start_fraction": 0.796875
+      },
+      {
+        "direction": "R_plus",
+        "end_fraction": 0.484375,
+        "failed_increment": 58,
+        "failure": "two-state increment 58 did not converge",
+        "inserted_fraction": 0.4765625,
+        "local_bisections": 1,
+        "path_steps": 84,
+        "phase": "oracle",
+        "start_fraction": 0.46875
+      },
+      {
+        "direction": "Q_minus",
+        "end_fraction": 0.228515625,
+        "failed_increment": 23,
+        "failure": "two-state increment 23 did not converge",
+        "inserted_fraction": 0.2275390625,
+        "local_bisections": 1,
+        "path_steps": 85,
+        "phase": "oracle",
+        "start_fraction": 0.2265625
+      },
+      {
+        "direction": "tau0_minus",
+        "end_fraction": 0.71875,
+        "failed_increment": 74,
+        "failure": "two-state increment 74 did not converge",
+        "inserted_fraction": 0.703125,
+        "local_bisections": 1,
+        "path_steps": 86,
+        "phase": "oracle",
+        "start_fraction": 0.6875
+      },
+      {
+        "direction": "R_minus",
+        "end_fraction": 0.453125,
+        "failed_increment": 56,
+        "failure": "two-state increment 56 did not converge",
+        "inserted_fraction": 0.4453125,
+        "local_bisections": 1,
+        "path_steps": 87,
+        "phase": "oracle",
+        "start_fraction": 0.4375
+      },
+      {
+        "direction": "b_plus",
+        "end_fraction": 0.21484375,
+        "failed_increment": 18,
+        "failure": "two-state increment 18 did not converge",
+        "inserted_fraction": 0.212890625,
+        "local_bisections": 1,
+        "path_steps": 88,
+        "phase": "oracle",
+        "start_fraction": 0.2109375
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.2265625,
+        "failed_increment": 23,
+        "failure": "two-state increment 23 did not converge",
+        "inserted_fraction": 0.224609375,
+        "local_bisections": 1,
+        "path_steps": 89,
+        "phase": "oracle",
+        "start_fraction": 0.22265625
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.224609375,
+        "failed_increment": 23,
+        "failure": "two-state increment 23 did not converge",
+        "inserted_fraction": 0.2236328125,
+        "local_bisections": 1,
+        "path_steps": 90,
+        "phase": "oracle",
+        "start_fraction": 0.22265625
+      },
+      {
+        "direction": "tau0_minus",
+        "end_fraction": 0.22265625,
+        "failed_increment": 22,
+        "failure": "two-state increment 22 did not converge",
+        "inserted_fraction": 0.220703125,
+        "local_bisections": 1,
+        "path_steps": 91,
+        "phase": "oracle",
+        "start_fraction": 0.21875
+      },
+      {
+        "direction": "base",
+        "end_fraction": 0.22265625,
+        "failed_increment": 23,
+        "failure": "two-state increment 23 did not converge",
+        "inserted_fraction": 0.2216796875,
+        "local_bisections": 1,
+        "path_steps": 92,
+        "phase": "oracle",
+        "start_fraction": 0.220703125
+      },
+      {
+        "direction": "b_minus",
+        "end_fraction": 0.2265625,
+        "failed_increment": 27,
+        "failure": "two-state increment 27 did not converge",
+        "inserted_fraction": 0.2255859375,
+        "local_bisections": 1,
+        "path_steps": 93,
+        "phase": "oracle",
+        "start_fraction": 0.224609375
+      }
+    ],
+    "end_fractions": [
+      0.03125,
+      0.0625,
+      0.09375,
+      0.125,
+      0.140625,
+      0.1484375,
+      0.15625,
+      0.171875,
+      0.17578125,
+      0.1796875,
+      0.1875,
+      0.1953125,
+      0.19921875,
+      0.203125,
+      0.20703125,
+      0.208984375,
+      0.2109375,
+      0.212890625,
+      0.21484375,
+      0.216796875,
+      0.21875,
+      0.220703125,
+      0.2216796875,
+      0.22265625,
+      0.2236328125,
+      0.224609375,
+      0.2255859375,
+      0.2265625,
+      0.2275390625,
+      0.228515625,
+      0.2294921875,
+      0.23046875,
+      0.2314453125,
+      0.232421875,
+      0.2333984375,
+      0.234375,
+      0.2353515625,
+      0.236328125,
+      0.2373046875,
+      0.23828125,
+      0.2392578125,
+      0.240234375,
+      0.2412109375,
+      0.2421875,
+      0.2431640625,
+      0.244140625,
+      0.2451171875,
+      0.24609375,
+      0.2470703125,
+      0.248046875,
+      0.2490234375,
+      0.25,
+      0.265625,
+      0.28125,
+      0.3125,
+      0.34375,
+      0.375,
+      0.390625,
+      0.40625,
+      0.421875,
+      0.4375,
+      0.4453125,
+      0.453125,
+      0.4609375,
+      0.46875,
+      0.4765625,
+      0.484375,
+      0.4921875,
+      0.5,
+      0.515625,
+      0.53125,
+      0.546875,
+      0.5625,
+      0.578125,
+      0.59375,
+      0.609375,
+      0.6171875,
+      0.625,
+      0.65625,
+      0.6875,
+      0.703125,
+      0.71875,
+      0.734375,
+      0.75,
+      0.78125,
+      0.796875,
+      0.8046875,
+      0.8125,
+      0.84375,
+      0.875,
+      0.90625,
+      0.9375,
+      0.96875,
+      1.0
+    ],
+    "max_bisections": 64,
+    "max_local_bisections": 10,
+    "min_common_interval": 1.52587890625e-05,
+    "status": "converged",
+    "steps": 94,
+    "total_bisections": 25
+  },
+  "comparison_direct_vs_common_fd": {
+    "column_cosines": [
+      0.9999999219927201,
+      0.9999995850952474,
+      0.9999999976411713,
+      0.9999999976346728
+    ],
+    "geometry": {
+      "condition_number": 15828.491484046162,
+      "correlation": [
+        [
+          0.9999999999999998,
+          0.9406103830592392,
+          -0.41210407390271464,
+          -0.4120572278004119
+        ],
+        [
+          0.9406103830592404,
+          1.0,
+          -0.4505363567003512,
+          -0.4504905063982469
+        ],
+        [
+          -0.4121040739027101,
+          -0.45053635670034625,
+          0.9999999999999999,
+          0.9999999986304942
+        ],
+        [
+          -0.41205722780041637,
+          -0.45049050639825183,
+          0.9999999986305149,
+          0.9999999999999999
+        ]
+      ],
+      "covariance_pseudoinverse": [
+        [
+          150227201383.81082,
+          210962629010.8894,
+          -308657517279.72485,
+          -305523544002.31464
+        ],
+        [
+          210962629010.88968,
+          334844326133.7634,
+          -503787024093.4322,
+          -498677729683.00275
+        ],
+        [
+          -308657517279.72144,
+          -503787024093.4267,
+          3734146262195.164,
+          3696651589481.369
+        ],
+        [
+          -305523544002.318,
+          -498677729683.0082,
+          3696651589481.446,
+          3659533411905.265
+        ]
+      ],
+      "cumulative": [],
+      "fisher": [
+        [
+          5.784258033970041e-11,
+          -3.6698391642698025e-11,
+          -8.829579802701845e-14,
+          -8.250442236443022e-14
+        ],
+        [
+          -3.6698391642698025e-11,
+          2.7030353932035584e-11,
+          3.1112946042155074e-13,
+          3.052642555572478e-13
+        ],
+        [
+          -8.829579802701845e-14,
+          3.1112946042155074e-13,
+          8.58100490346052e-14,
+          8.496757901749037e-14
+        ],
+        [
+          -8.250442236443022e-14,
+          3.052642555572478e-13,
+          8.496757901749037e-14,
+          8.413447852656282e-14
+        ]
+      ],
+      "normalized_singular_values": [
+        1.0,
+        0.18020135554946531,
+        0.04028642099113183,
+        6.317721439266143e-05
+      ],
+      "numerical_rank": 4,
+      "right_singular_vectors": [
+        [
+          -0.8327742223813113,
+          0.5501726430852621,
+          -0.06162099071158272,
+          0.0001041225374909102
+        ],
+        [
+          0.553597089511948,
+          0.8267384086205394,
+          -0.10016916402761647,
+          6.909043308018532e-05
+        ],
+        [
+          0.002994615671545838,
+          0.08344406208626107,
+          0.7057344454551921,
+          0.7035389209401114
+        ],
+        [
+          0.0028964285047632134,
+          0.08276928787116623,
+          0.6986471817589932,
+          -0.7106567181891922
+        ]
+      ],
+      "singular_values": [
+        9.068566593410636e-06,
+        1.6341679930231935e-06,
+        3.653400915682551e-07,
+        5.72926775906031e-10
+      ]
+    },
+    "principal_angles_degrees": {
+      "1": [
+        0.009833096690157868
+      ],
+      "2": [
+        0.009513737639988615,
+        1.9093729867457866e-06
+      ],
+      "3": [
+        1.9693705808627316e-05,
+        1.581958718661959e-14,
+        7.855696188944969e-15
+      ]
+    },
+    "relative_column_l2_errors": [
+      0.0003953921363790315,
+      0.0009711990329718461,
+      7.937494786248119e-05,
+      7.958154606564776e-05
+    ],
+    "target_geometry": {
+      "condition_number": 15833.681933291402,
+      "correlation": [
+        [
+          1.0,
+          0.9405709866827037,
+          -0.4116592239332942,
+          -0.411612311241667
+        ],
+        [
+          0.9405709866827049,
+          1.0,
+          -0.45007856105358396,
+          -0.4500326432563834
+        ],
+        [
+          -0.4116592239332892,
+          -0.45007856105357896,
+          1.0000000000000002,
+          0.9999999986271759
+        ],
+        [
+          -0.4116123112416714,
+          -0.45003264325638853,
+          0.9999999986271975,
+          1.0
+        ]
+      ],
+      "covariance_pseudoinverse": [
+        [
+          150135620625.99008,
+          210742355846.91644,
+          -308162636171.3108,
+          -305033411535.6177
+        ],
+        [
+          210742355846.91672,
+          334377280539.6242,
+          -502813540962.7298,
+          -497713684283.38354
+        ],
+        [
+          -308162636171.30707,
+          -502813540962.7242,
+          3732506010284.139,
+          3695025513777.2183
+        ],
+        [
+          -305033411535.621,
+          -497713684283.3892,
+          3695025513777.298,
+          3657921393115.763
+        ]
+      ],
+      "cumulative": [],
+      "fisher": [
+        [
+          5.7840518724416675e-11,
+          -3.67095129399206e-11,
+          -8.821576928259646e-14,
+          -8.242457090338265e-14
+        ],
+        [
+          -3.67095129399206e-11,
+          2.704859194748581e-11,
+          3.10940045470555e-13,
+          3.0507603702292033e-13
+        ],
+        [
+          -8.821576928259646e-14,
+          3.10940045470555e-13,
+          8.580322220585483e-14,
+          8.496079808076302e-14
+        ],
+        [
+          -8.242457090338265e-14,
+          3.0507603702292033e-13,
+          8.496079808076302e-14,
+          8.412774317073482e-14
+        ]
+      ],
+      "normalized_singular_values": [
+        1.0,
+        0.18024239780826914,
+        0.04029249887363922,
+        6.31565042302278e-05
+      ],
+      "numerical_rank": 4,
+      "right_singular_vectors": [
+        [
+          -0.8326792267473785,
+          0.5503243701763878,
+          -0.06154983405450353,
+          0.00010421714251571007
+        ],
+        [
+          0.5537399875577012,
+          0.826660717224622,
+          -0.10002039786164738,
+          6.92016543446543e-05
+        ],
+        [
+          0.0029924391291815938,
+          0.0833274407632901,
+          0.7057484543462562,
+          0.7035386997967978
+        ],
+        [
+          0.0028942755644539775,
+          0.08265400052917239,
+          0.6986606165566591,
+          -0.710656937092821
+        ]
+      ],
+      "singular_values": [
+        9.069361297406891e-06,
+        1.6346834268341329e-06,
+        3.654272298603943e-07,
+        5.727891551451427e-10
+      ]
+    }
+  },
+  "direct_timing": {
+    "elapsed_seconds": 34.369470341014676,
+    "gmres_solves": 376
+  },
+  "dirty": false,
+  "elapsed_seconds": 1151.5528118070215,
+  "fd_step_log": 0.003,
+  "git_sha": "387af84160dc8668a0c0b106842d670b4e0507df",
+  "initialization_contract": 2,
+  "machine": "jeff-HP-EliteBook-X-G1i",
+  "method": "direct FEMU sensitivity versus synchronized common-path FD",
+  "policies": {
+    "oracle": "_oracle_config",
+    "path_search": "_path_search_config",
+    "path_search_timeout_seconds": 0.0,
+    "seed": "_seed_config",
+    "seed_skipped_directions": [
+      "Q_minus",
+      "Q_plus",
+      "R_minus",
+      "R_plus",
+      "b_minus",
+      "b_plus",
+      "base",
+      "tau0_minus",
+      "tau0_plus"
+    ],
+    "seed_timeout_seconds": 60.0
+  },
+  "schema_version": 1,
+  "states_scored": [
+    1,
+    3,
+    57,
+    88,
+    92,
+    93,
+    94
+  ],
+  "supersedes": [
+    "validation/reference_data/srix_femu_common_path_gate_v9",
+    "validation/reference_data/srix_femu_path_convergence_v2"
+  ],
+  "target_fractions_normalized_from_archived_indices": [
+    0.011834319526627219,
+    0.10650887573964497,
+    0.3698224852071006,
+    0.8136094674556213,
+    0.9230769230769231,
+    0.9349112426035503,
+    0.9644970414201184,
+    1.0
+  ]
+}

@@ -1983,11 +1983,11 @@
       "question": "Does the corrected Dirichlet contract yield one strict common path for the FEMU base and all eight parameter perturbations?",
       "fidelity": "M8 SRIX twin; corrected free-DOF initial predictor; unqualified v9 proposal with synchronized local bisection",
       "parameters": "log tau0, R, Q, b; central step 3e-3; strict oracle replay",
-      "status": "blocked oracle",
-      "conclusion": "No qualified common path was obtained. The candidate reached 69 steps after 12 local insertions, then the strict oracle blocked on R_plus at increment 23. No direct-vs-FD Jacobian or identification claim is authorized.",
+      "status": "demonstrated on corrected discrete path",
+      "conclusion": "The corrected common path converged for all nine trajectories after 25 local insertions (94 steps). Direct-vs-FD relative column errors are 3.95e-4, 9.71e-4, 7.94e-5 and 7.96e-5, with cosines above 0.9999995. This qualifies direct FEMU differentiation on the 94-step path, but not path-refinement convergence or parameter identification.",
       "sources": [
         {
-          "path": "validation/reference_data/srix_femu_common_path_gate_v16/report.json",
+          "path": "validation/reference_data/srix_femu_common_path_gate_v17/report.json",
           "role": "corrected common-path rebaseline",
           "assertions": [
             {
@@ -1998,12 +1998,12 @@
             {
               "path": "/common_path/status",
               "operator": "equals",
-              "expected": "blocked_oracle"
+              "expected": "converged"
             },
             {
               "path": "/claims/direct_femu_qualified",
               "operator": "equals",
-              "expected": false
+              "expected": true
             },
             {
               "path": "/claims/p43_authorized",
