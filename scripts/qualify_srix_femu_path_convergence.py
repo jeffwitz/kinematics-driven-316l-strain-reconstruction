@@ -112,19 +112,27 @@ def main() -> None:
     transfer = _WrapFreeTransfer(DICSpectralTransfer.from_sinusoidal_csv(TRANSFER))
     theta = _theta_from_preset()
     levels: list[dict[str, Any]] = []
+    failure: dict[str, Any] | None = None
     paths: list[list[LoadPathStep]] = [base_path]
     paths.append(_refine_path(paths[-1]))
     paths.append(_refine_path(paths[-1]))
     for path in paths:
-        fields = _fixed_path_trajectory(
-            theta=theta,
-            path=path,
-            initial_displacement=np.zeros_like(path[0].boundary),
-            pixels=args.pixels,
-            library=args.library,
-            threads=args.threads,
-            config=_oracle_config(),
-        )
+        try:
+            fields = _fixed_path_trajectory(
+                theta=theta,
+                path=path,
+                initial_displacement=np.zeros_like(path[0].boundary),
+                pixels=args.pixels,
+                library=args.library,
+                threads=args.threads,
+                config=_oracle_config(),
+            )
+        except RuntimeError as error:
+            failure = {
+                "steps": len(path),
+                "error": str(error),
+            }
+            break
         scored = _nearest_indices(fields, targets)
         direct, timing = _direct_jacobian(
             fields=fields,
@@ -184,9 +192,11 @@ def main() -> None:
             }
         )
 
-    primary = comparisons[-1]
+    primary = comparisons[-1] if comparisons else None
     primary_claim = (
-        primary["forward_observed_relative_l2"] < 5.0e-3
+        failure is None
+        and primary is not None
+        and primary["forward_observed_relative_l2"] < 5.0e-3
         and all(value < 2.0e-2 for value in primary["column_relative_l2"][:3])
         and all(value > 0.999 for value in primary["column_cosines"][:3])
         and max(primary["rank3_principal_angles_degrees"]) < 2.0
@@ -213,6 +223,8 @@ def main() -> None:
             for level in levels
         ],
         "comparisons": comparisons,
+        "failure": failure,
+        "status": "blocked_path_level" if failure is not None else "converged",
         "claims": {
             "path_convergence_primary_gate": primary_claim,
             "fourth_mode_identifiable": False,
