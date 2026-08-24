@@ -7498,4 +7498,4 @@ reste donc `unresolved` : aucune reprise de PATH-002, identification ou P43
 n'est autorisée. Artefacts :
 `validation/srix_femu_branch_causal_preregistration.md`,
 `validation/srix_femu_branch_causal_results.md` et
-`validation/reference_data/srix_femu_branch_causal_v2/`.
+`validation/reference_data/srix_femu_branch_causal_v5/` (`dirty=false`).

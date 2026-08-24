@@ -1,0 +1,378 @@
+{
+  "available_observables": [
+    "accumulated_slip",
+    "back_strain",
+    "elastic_strain",
+    "equivalent_plastic_slip",
+    "plastic_slip",
+    "plastic_strain_2d"
+  ],
+  "base_diagnostics": {
+    "accepted_increments": 4,
+    "attempts": []
+  },
+  "base_error": "two-state increment 5 did not converge",
+  "base_steps": 57,
+  "claims": {
+    "accumulated_incremental_drift": false,
+    "active_set_transition": false,
+    "active_set_transition_candidate": true,
+    "branch_diagnostic_complete": true,
+    "global_solver_basin_or_conditioning": false,
+    "identification_authorized": false,
+    "p43_authorized": false,
+    "unresolved": true
+  },
+  "common_endpoint_comparisons": [
+    {
+      "back_strain_max_abs": 0.0,
+      "back_strain_max_index": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "back_strain_relative_l2": 0.0,
+      "displacement_max_abs": 2.5346020990574605e-16,
+      "displacement_max_index": [
+        2,
+        2,
+        0
+      ],
+      "displacement_relative_l2": 6.555875024323819e-11,
+      "elastic_strain_max_abs": 2.02540756518918e-13,
+      "elastic_strain_max_index": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "elastic_strain_relative_l2": 4.59749525865224e-10,
+      "equivalent_plastic_slip_activation_switches": 0,
+      "equivalent_plastic_slip_max_abs": 0.0,
+      "equivalent_plastic_slip_max_index": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "equivalent_plastic_slip_relative_l2": 0.0,
+      "fraction": 0.03125,
+      "plastic_slip_activation_switches": 0,
+      "plastic_slip_max_abs": 0.0,
+      "plastic_slip_max_index": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "plastic_slip_relative_l2": 0.0,
+      "plastic_strain_max_abs": 5.421010862427522e-20,
+      "plastic_strain_max_index": [
+        0,
+        5,
+        0,
+        0,
+        0
+      ],
+      "plastic_strain_relative_l2": 0.4878027324766969,
+      "stress_max_abs": 1.7768563509434898e-08,
+      "stress_max_index": [
+        2,
+        1,
+        0,
+        1
+      ],
+      "stress_relative_l2": 2.8905781672414055e-10
+    },
+    {
+      "back_strain_max_abs": 0.0,
+      "back_strain_max_index": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "back_strain_relative_l2": 0.0,
+      "displacement_max_abs": 2.5346020990574605e-16,
+      "displacement_max_index": [
+        2,
+        2,
+        0
+      ],
+      "displacement_relative_l2": 3.277936121207919e-11,
+      "elastic_strain_max_abs": 2.025408242815538e-13,
+      "elastic_strain_max_index": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "elastic_strain_relative_l2": 2.2987469546895408e-10,
+      "equivalent_plastic_slip_activation_switches": 0,
+      "equivalent_plastic_slip_max_abs": 0.0,
+      "equivalent_plastic_slip_max_index": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "equivalent_plastic_slip_relative_l2": 0.0,
+      "fraction": 0.0625,
+      "plastic_slip_activation_switches": 0,
+      "plastic_slip_max_abs": 0.0,
+      "plastic_slip_max_index": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "plastic_slip_relative_l2": 0.0,
+      "plastic_strain_max_abs": 5.421010862427522e-20,
+      "plastic_strain_max_index": [
+        0,
+        4,
+        0,
+        0,
+        1
+      ],
+      "plastic_strain_relative_l2": 0.4346645888814644,
+      "stress_max_abs": 1.7768577720289613e-08,
+      "stress_max_index": [
+        2,
+        1,
+        0,
+        1
+      ],
+      "stress_relative_l2": 1.4452883840911844e-10
+    },
+    {
+      "back_strain_max_abs": 1.3884582118094787e-05,
+      "back_strain_max_index": [
+        0,
+        4,
+        0,
+        6
+      ],
+      "back_strain_relative_l2": 0.3167837194450746,
+      "displacement_max_abs": 3.81807156118599e-09,
+      "displacement_max_index": [
+        1,
+        4,
+        0
+      ],
+      "displacement_relative_l2": 0.00028721777537867396,
+      "elastic_strain_max_abs": 5.059598617011829e-06,
+      "elastic_strain_max_index": [
+        0,
+        4,
+        0,
+        0,
+        0
+      ],
+      "elastic_strain_relative_l2": 0.001797782654804077,
+      "equivalent_plastic_slip_activation_switches": 0,
+      "equivalent_plastic_slip_max_abs": 1.5835556196764847e-05,
+      "equivalent_plastic_slip_max_index": [
+        0,
+        4,
+        0,
+        6
+      ],
+      "equivalent_plastic_slip_relative_l2": 0.33101536053132913,
+      "fraction": 0.09375,
+      "plastic_slip_activation_switches": 0,
+      "plastic_slip_max_abs": 1.5835556196764847e-05,
+      "plastic_slip_max_index": [
+        0,
+        4,
+        0,
+        6
+      ],
+      "plastic_slip_relative_l2": 0.33101536053132913,
+      "plastic_strain_max_abs": 7.134637508960718e-06,
+      "plastic_strain_max_index": [
+        0,
+        4,
+        0,
+        0,
+        0
+      ],
+      "plastic_strain_relative_l2": 0.3310153605313261,
+      "stress_max_abs": 1.0857360385701469,
+      "stress_max_index": [
+        0,
+        4,
+        0,
+        0
+      ],
+      "stress_relative_l2": 0.0018985873797973491
+    },
+    {
+      "back_strain_max_abs": 9.560640253109112e-06,
+      "back_strain_max_index": [
+        0,
+        5,
+        0,
+        6
+      ],
+      "back_strain_relative_l2": 0.19295163288501863,
+      "displacement_max_abs": 1.0053336509280934e-08,
+      "displacement_max_index": [
+        4,
+        5,
+        0
+      ],
+      "displacement_relative_l2": 0.0007333018534441398,
+      "elastic_strain_max_abs": 8.228920686187218e-06,
+      "elastic_strain_max_index": [
+        0,
+        4,
+        0,
+        0,
+        0
+      ],
+      "elastic_strain_relative_l2": 0.00655276090090112,
+      "equivalent_plastic_slip_activation_switches": 1,
+      "equivalent_plastic_slip_max_abs": 1.5617298148132535e-05,
+      "equivalent_plastic_slip_max_index": [
+        0,
+        4,
+        0,
+        6
+      ],
+      "equivalent_plastic_slip_relative_l2": 0.20093424863025527,
+      "fraction": 0.125,
+      "plastic_slip_activation_switches": 1,
+      "plastic_slip_max_abs": 1.5617298148132535e-05,
+      "plastic_slip_max_index": [
+        0,
+        4,
+        0,
+        6
+      ],
+      "plastic_slip_relative_l2": 0.20093424863025527,
+      "plastic_strain_max_abs": 9.95784429026151e-06,
+      "plastic_strain_max_index": [
+        0,
+        4,
+        0,
+        0,
+        0
+      ],
+      "plastic_strain_relative_l2": 0.20179518421358722,
+      "stress_max_abs": 1.7387748760254738,
+      "stress_max_index": [
+        0,
+        4,
+        0,
+        0
+      ],
+      "stress_relative_l2": 0.007172406680626344
+    }
+  ],
+  "dirty": false,
+  "elapsed_seconds": 74.6176631100243,
+  "git_sha": "3a63537bf181a72d07ee960e820731d82dcd2a60",
+  "limitations": [
+    "The 114 path is compared only through its accepted prefix before the Newton failure.",
+    "The current observer does not expose per-Newton local Cbb condition numbers or raw MGIS substep traces."
+  ],
+  "machine": "jeff-HP-EliteBook-X-G1i",
+  "method": "causal 57/114 SRIX history divergence diagnostic",
+  "prefix_refinement": [
+    {
+      "accepted_increments": 27,
+      "diagnostics": {
+        "accepted_increments": 27,
+        "attempts": []
+      },
+      "error": "two-state increment 28 did not converge",
+      "last_accepted_fraction": 0.2421875,
+      "path_steps": 65,
+      "refined_base_intervals": 8,
+      "status": "failed"
+    },
+    {
+      "accepted_increments": 30,
+      "diagnostics": {
+        "accepted_increments": 30,
+        "attempts": []
+      },
+      "error": "two-state increment 31 did not converge",
+      "last_accepted_fraction": 0.23046875,
+      "path_steps": 73,
+      "refined_base_intervals": 16,
+      "status": "failed"
+    },
+    {
+      "accepted_increments": 30,
+      "diagnostics": {
+        "accepted_increments": 30,
+        "attempts": []
+      },
+      "error": "two-state increment 31 did not converge",
+      "last_accepted_fraction": 0.23046875,
+      "path_steps": 81,
+      "refined_base_intervals": 24,
+      "status": "failed"
+    },
+    {
+      "accepted_increments": 30,
+      "diagnostics": {
+        "accepted_increments": 30,
+        "attempts": []
+      },
+      "error": "two-state increment 31 did not converge",
+      "last_accepted_fraction": 0.23046875,
+      "path_steps": 89,
+      "refined_base_intervals": 32,
+      "status": "failed"
+    },
+    {
+      "accepted_increments": 30,
+      "diagnostics": {
+        "accepted_increments": 30,
+        "attempts": []
+      },
+      "error": "two-state increment 31 did not converge",
+      "last_accepted_fraction": 0.23046875,
+      "path_steps": 97,
+      "refined_base_intervals": 40,
+      "status": "failed"
+    },
+    {
+      "accepted_increments": 30,
+      "diagnostics": {
+        "accepted_increments": 30,
+        "attempts": []
+      },
+      "error": "two-state increment 31 did not converge",
+      "last_accepted_fraction": 0.23046875,
+      "path_steps": 105,
+      "refined_base_intervals": 48,
+      "status": "failed"
+    },
+    {
+      "accepted_increments": 30,
+      "diagnostics": {
+        "accepted_increments": 30,
+        "attempts": []
+      },
+      "error": "two-state increment 31 did not converge",
+      "last_accepted_fraction": 0.23046875,
+      "path_steps": 114,
+      "refined_base_intervals": 57,
+      "status": "failed"
+    }
+  ],
+  "refined_diagnostics": {
+    "accepted_increments": 27,
+    "attempts": []
+  },
+  "refined_error": "two-state increment 28 did not converge",
+  "refined_steps": 114,
+  "schema_version": 1
+}

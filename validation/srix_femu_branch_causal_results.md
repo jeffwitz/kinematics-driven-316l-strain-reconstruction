@@ -37,6 +37,6 @@ préfixe ne fournit un chemin validé. La classification reste donc
 `unresolved`, et non `active_set_transition` confirmée.
 
 Les observables brutes et les états communs sont archivés dans
-[`srix_femu_branch_causal_v2`](reference_data/srix_femu_branch_causal_v2/),
+[`srix_femu_branch_causal_v5`](reference_data/srix_femu_branch_causal_v5/),
 notamment `common_endpoint_states.npz`. Aucune identification, aucun calcul
 P43 et aucune reprise de PATH-002 ne sont autorisés.
