@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "method": "direct FEMU sensitivity versus synchronized common-path FD",
+  "git_sha": "2e244f6",
+  "dirty": false,
+  "status": "blocked_adaptive_trajectory_timeout",
+  "fd_step_log": 0.003,
+  "adaptive_timeout_seconds": null,
+  "completed_directions_observed": [
+    "base",
+    "tau0_plus",
+    "tau0_minus",
+    "R_plus",
+    "R_minus",
+    "Q_plus",
+    "Q_minus",
+    "b_plus"
+  ],
+  "timed_out_direction": "b_minus",
+  "manual_interrupt_after_seconds": 2400.0,
+  "common_path_constructed": false,
+  "claims": {
+    "common_path_fd_available": false,
+    "direct_femu_qualified": false,
+    "p43_authorized": false
+  }
+}
