@@ -262,21 +262,27 @@ def _direct_jacobian(
             accepted.algorithmic_tangent_in_plane_mpa, dtype=np.float64
         )
         forcings: list[np.ndarray] = []
-        for plus, minus in shadows:
-            plus_trial = evaluate_in_plane_response(
-                plus,
-                base_strain.reshape(-1, 3),
-                time_increment=accepted.time_increment,
-                response_level="tangent",
-                consistent_tangent=True,
-            )
-            minus_trial = evaluate_in_plane_response(
-                minus,
-                base_strain.reshape(-1, 3),
-                time_increment=accepted.time_increment,
-                response_level="tangent",
-                consistent_tangent=True,
-            )
+        for parameter_index, (plus, minus) in enumerate(shadows):
+            try:
+                plus_trial = evaluate_in_plane_response(
+                    plus,
+                    base_strain.reshape(-1, 3),
+                    time_increment=accepted.time_increment,
+                    response_level="tangent",
+                    consistent_tangent=True,
+                )
+                minus_trial = evaluate_in_plane_response(
+                    minus,
+                    base_strain.reshape(-1, 3),
+                    time_increment=accepted.time_increment,
+                    response_level="tangent",
+                    consistent_tangent=True,
+                )
+            except Exception as error:
+                raise RuntimeError(
+                    "direct shadow integration failed at accepted increment "
+                    f"{state_index}, parameter index {parameter_index}: {error}"
+                ) from error
             stress_difference = (
                 np.asarray(plus_trial.stress_in_plane_mpa)
                 - np.asarray(minus_trial.stress_in_plane_mpa)
