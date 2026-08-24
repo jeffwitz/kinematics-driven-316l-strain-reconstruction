@@ -302,3 +302,33 @@ right-hand sides solved with the exact `TraditionalTwoStateTriangleBatch` /
 `solve_two_state_dirichlet_plane_stress` tangent action and boundary packing.
 No P43, optimization, new REGM variant, or analytical MFront derivative is
 authorized before the shadow method reproduces the archived FEMU FD columns.
+
+## Fixed-path finite-difference oracle (2026-08-24)
+
+The adaptive-path provenance audit is recorded in
+`validation/srix_femu_fd_adaptive_path_audit.md`: the base trajectory accepts
+338 increments, while `Q+` and `Q-` accept 326 and 328 respectively. The
+archived FEMU finite difference therefore includes adaptive-controller path
+changes and is not the primary oracle for a tangent derivative.
+
+`scripts/qualify_srix_femu_fixed_path_gate.py` freezes the base
+`LoadPathStep` sequence and uses the exact matrix-free FEMU tangent for the
+direct columns. Attempts at `h=3e-3`, `1e-3`, and `1e-4` did not complete the
+perturbed fixed-path forward: failures occurred at increments 18, 5, and 12,
+respectively, despite Newton-80, twenty line-search reductions, and a base
+trajectory initial predictor. These are recorded as a numerical oracle
+blocker, not as a scientific NO-GO for direct sensitivities.
+
+The first direct-versus-adaptive artifact (`srix_femu_direct_sensitivity_v1`)
+has column errors `(0.942, 0.967, 0.997, 0.998)`, but this comparison is
+explicitly non-primary because the adaptive paths differ. The next authorized
+step is a common refined path or branch diagnostic, followed by raw-column
+comparison. P43, optimization, REGM variants and analytical MFront
+derivatives remain blocked.
+
+A uniformly refined common path (two substeps per accepted base increment) was
+also attempted at `h=1e-3`; the perturbed solve reached 676 prescribed steps
+but failed at step 407. This is recorded in
+`validation/reference_data/srix_femu_fixed_path_gate_ref2_h1e3_v1/report.json`.
+The next action is branch/continuation diagnosis, not an arbitrary change of
+the FD step or a scientific conclusion about direct sensitivities.

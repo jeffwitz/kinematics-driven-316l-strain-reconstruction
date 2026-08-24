@@ -23,8 +23,10 @@ rank 1, 2 and 3 subspaces are reported; the target is below `2 degrees` for
 each. A failure is reported as a negative result and does not authorize P43.
 
 The finite-difference constitutive-shadow step study is frozen at
-`h in {1e-2, 3e-3, 1e-3}`. Accepted forward subincrements, cutbacks, plane
-stress closure and boundary sensitivities must match the reference trajectory.
+`h in {1e-2, 3e-3, 1e-3}`. For the primary fixed-path oracle, the accepted base
+subincrements, plane-stress closure and boundary sensitivities are held fixed;
+the adaptive-path FD is retained only as provenance for the secondary
+comparison.
 
 ## Method boundary
 
@@ -51,10 +53,14 @@ extension, packing and matrix-free Krylov conventions used by
 global sensitivity operator. A dense or sparse `K_II` may be introduced only
 after an explicit equivalence test against the reference matrix-free action.
 
-The primary qualification is raw-column equality to the archived FEMU FD
-Jacobian, before any SVD interpretation. The four column relative L2 errors and
-cosines are the first gate; the singular spectrum is a consequence, not a
-replacement for this test.
+The archived adaptive FEMU FD is not the primary equality oracle: the audit in
+`validation/srix_femu_fd_adaptive_path_audit.md` shows that the `+h/-h`
+trajectories take different accepted subincrements. The primary qualification
+is therefore raw-column equality to a second central-FD oracle built by freezing
+the accepted base `LoadPathStep` sequence for both signs. The archived adaptive
+FD remains a secondary diagnostic and must be reported separately. The four
+column relative L2 errors and cosines are the first gate; the singular spectrum
+is a consequence, not a replacement for this test.
 
 Analytical SRIX/MFront directional derivatives are explicitly out of scope
 until the shadow provider passes these gates.

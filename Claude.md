@@ -7336,3 +7336,33 @@ le chemin matrix-free de `solve_two_state_dirichlet_plane_stress` :
 et le Krylov/EBI du forward. Aucune routine REGM ne doit intervenir dans la
 sensibilité globale. La première comparaison est l'égalité des quatre
 colonnes à la Jacobienne FEMU FD archivée, avant toute SVD.
+
+### Audit du chemin adaptatif et gate FD à chemin figé (2026-08-24)
+
+L'audit `validation/srix_femu_fd_adaptive_path_audit.md` montre que la FD
+FEMU archivée n'est pas une dérivée à chemin discret fixe : la base accepte 338
+incréments, contre 326 pour `Q+` et 328 pour `Q-`, avec des noeuds internes
+différents. Elle reste une provenance utile, mais ne peut pas être l'oracle
+primaire d'une sensibilité tangentielle.
+
+Le nouveau driver
+`scripts/qualify_srix_femu_fixed_path_gate.py` construit donc une FD sur la
+séquence `LoadPathStep` acceptée par la base. Les essais h=`3e-3`, `1e-3` et
+`1e-4` n'ont pas encore produit d'oracle complet : les trajectoires perturbées
+échouent respectivement aux incréments 18, 5 et 12 du chemin figé, même avec
+Newton-80, vingt réductions de line-search et un prédicteur initial issu de la
+base. Ce résultat est enregistré comme blocage numérique, pas comme NO-GO
+scientifique de la sensibilité directe.
+
+Conséquence : le résultat direct déjà archivé contre la FD adaptative (erreurs
+de colonnes `0.942, 0.967, 0.997, 0.998`) ne constitue pas un gate valide. Le
+prochain travail autorisé est de rendre l'oracle commun numériquement robuste
+(chemin raffiné commun ou diagnostic de branche), puis seulement de comparer
+les colonnes brutes. P43, optimisation et dérivée analytique MFront restent
+interdits.
+
+Une première tentative de chemin commun uniformément raffiné (deux sous-pas
+par incrément accepté) à h=`1e-3` a également bloqué à l'incrément 407/676.
+L'artefact est `validation/reference_data/srix_femu_fixed_path_gate_ref2_h1e3_v1/report.json`.
+La prochaine investigation doit donc qualifier la branche Newton et la
+continuité du chemin, plutôt que réduire encore aveuglément le pas FD.

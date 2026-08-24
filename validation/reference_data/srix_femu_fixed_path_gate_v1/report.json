@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "method": "M8 direct FEMU sensitivity versus common fixed-path finite difference",
+  "status": "blocked_fixed_path_oracle",
+  "base_accepted_increments": 338,
+  "attempts": [
+    {"fd_step_log": 0.003, "status": "blocked", "first_failure_increment": 18, "newton_maximum": 80, "line_search_reductions": 20, "initial_base_predictor": true},
+    {"fd_step_log": 0.001, "status": "blocked", "first_failure_increment": 5, "newton_maximum": 80, "line_search_reductions": 20, "initial_base_predictor": true},
+    {"fd_step_log": 0.0001, "status": "blocked", "first_failure_increment": 12, "newton_maximum": 80, "line_search_reductions": 20, "initial_base_predictor": true}
+  ],
+  "secondary_adaptive_comparison": {
+    "source": "validation/reference_data/srix_femu_direct_sensitivity_v1/report.json",
+    "relative_column_l2_errors": [0.9417455759898432, 0.967459997870874, 0.996849431402173, 0.9982119142582483],
+    "column_cosines": [0.4064379549786272, 0.3071336705626391, 0.1679373393938693, 0.2575221599346538],
+    "primary_gate": false
+  },
+  "claims": {
+    "fixed_path_oracle_available": false,
+    "direct_femu_qualified": false,
+    "p43_authorized": false
+  }
+}

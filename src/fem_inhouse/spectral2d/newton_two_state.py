@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from typing import Literal, cast
 
@@ -607,8 +607,14 @@ class TwoStateIncrementFields:
     """
 
     increment: int
+    start_fraction: float
+    end_fraction: float
+    time_increment: float
+    boundary: FloatArray
     displacement: FloatArray
+    sample_strain: FloatArray
     stress_in_plane_mpa: FloatArray
+    algorithmic_tangent_in_plane_mpa: FloatArray
     plastic_strain_tensor: FloatArray | None
 
 
@@ -620,6 +626,8 @@ def solve_two_state_dirichlet_plane_stress(
     config: EBISpectralSolverConfig,
     transform_plan: TransformPlan2D | None = None,
     time_increment_override: float | None = None,
+    load_path_override: Sequence[LoadPathStep] | None = None,
+    initial_displacement: ArrayLike | None = None,
     increment_observer: Callable[[TwoStateIncrementFields], None] | None = None,
 ) -> Spectral2DResult:
     """Solve the direct two-state TRI2 oracle with the EBI Newton machinery.
@@ -635,6 +643,14 @@ def solve_two_state_dirichlet_plane_stress(
     expected = (history.shape[0], *grid.node_shape, 2)
     if history.ndim != 4 or history.shape != expected or not np.allclose(history[0], 0.0):
         raise ValueError(f"invalid boundary history shape {history.shape}")
+    initial_displacement_array = None
+    if initial_displacement is not None:
+        initial_displacement_array = np.asarray(initial_displacement, dtype=np.float64)
+        if initial_displacement_array.shape != (*grid.node_shape, 2):
+            raise ValueError(
+                "initial_displacement must have nodal displacement shape "
+                f"{(*grid.node_shape, 2)}"
+            )
     if config.step_doubling.enabled:
         if increment_observer is not None:
             raise ValueError("increment_observer is not supported with step doubling")
@@ -753,6 +769,7 @@ def solve_two_state_dirichlet_plane_stress(
     nonlinear_divergence_buffer = np.empty((*grid.node_shape, 2), dtype=np.float64)
     jacobian_workspace = TwoStateJacobianWorkspace.create(grid)
     fluctuation = np.zeros((*grid.node_shape, 2))
+    initial_guess_applied = False
     residual_history: list[float] = []
     absolute_history: list[float] = []
     verification_history: list[float] = []
@@ -848,9 +865,12 @@ def solve_two_state_dirichlet_plane_stress(
         if config.adaptive_stepping_enabled
         else None
     )
-    load_path: AdaptiveLoadPath | list[LoadPathStep] = (
-        adaptive_path if adaptive_path is not None else fixed_load_path()
-    )
+    if load_path_override is not None:
+        load_path: AdaptiveLoadPath | list[LoadPathStep] = list(load_path_override)
+        if not load_path:
+            raise ValueError("load_path_override must contain at least one step")
+    else:
+        load_path = adaptive_path if adaptive_path is not None else fixed_load_path()
     for path_item in load_path:
         increment = path_item.index
         boundary_state = path_item.boundary
@@ -887,6 +907,9 @@ def solve_two_state_dirichlet_plane_stress(
         )
         krylov_recycle.reset()
         applied = extension.extend(boundary_state, grid)
+        if not initial_guess_applied and initial_displacement_array is not None:
+            fluctuation[...] = initial_displacement_array - applied
+            initial_guess_applied = True
         increment_start_fluctuation = fluctuation.copy()
         converged = False
         increment_failure_reason = ""
@@ -1269,12 +1292,22 @@ def solve_two_state_dirichlet_plane_stress(
                 force_fixed_linear_tolerance = True
         if converged and increment_observer is not None:
             assert final_trial is not None
+            if final_trial.tangent_in_plane_mpa is None:
+                raise RuntimeError("accepted increment has no consistent tangent")
             increment_observer(
                 TwoStateIncrementFields(
                     increment=increment,
+                    start_fraction=path_item.start_fraction,
+                    end_fraction=path_item.end_fraction,
+                    time_increment=time_increment,
+                    boundary=np.asarray(boundary_state).copy(),
                     displacement=final_applied + fluctuation,
+                    sample_strain=np.asarray(final_sample_strain).copy(),
                     stress_in_plane_mpa=_reshape_two_state(
                         final_trial.stress_in_plane_mpa, grid
+                    ),
+                    algorithmic_tangent_in_plane_mpa=_reshape_two_state(
+                        final_trial.tangent_in_plane_mpa, grid
                     ),
                     plastic_strain_tensor=_reshape_two_state(
                         final_trial.plastic_strain_tensor, grid

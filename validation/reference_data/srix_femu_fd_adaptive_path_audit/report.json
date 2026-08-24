@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "method": "M8 adaptive-path provenance audit",
+  "fd_step_log": 0.003,
+  "base": {
+    "accepted_increments": 338,
+    "scored_indices": [4, 36, 125, 275, 312, 316, 326, 338]
+  },
+  "Q_plus": {
+    "accepted_increments": 326,
+    "scored_indices": [4, 31, 122, 266, 312, 318, 322, 326]
+  },
+  "Q_minus": {
+    "accepted_increments": 328,
+    "scored_indices": [4, 14, 92, 234, 315, 320, 324, 328]
+  },
+  "claims": {
+    "archived_adaptive_fd_is_fixed_path_derivative": false,
+    "fixed_path_fd_required": true,
+    "p43_authorized": false
+  }
+}

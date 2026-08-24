@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "method": "M8 direct FEMU sensitivity versus uniformly refined common path",
+  "status": "blocked_fixed_path_oracle",
+  "path_refinement": 2,
+  "fd_step_log": 0.001,
+  "first_failure_increment": 407,
+  "newton_maximum": 80,
+  "line_search_reductions": 20,
+  "initial_base_predictor": true,
+  "claims": {
+    "common_refined_fd_available": false,
+    "direct_femu_qualified": false,
+    "p43_authorized": false
+  }
+}
