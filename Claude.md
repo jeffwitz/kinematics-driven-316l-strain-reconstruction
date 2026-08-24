@@ -7670,3 +7670,15 @@ identifiés séparément. La suite autorisée est uniquement P43 synthétique :
 départs plus éloignés, puis tests à trois et quatre paramètres et mismatch
 contrôlé. Aucun transfert/bruit DIC ni P43 expérimental n'est autorisé à ce
 stade.
+
+Le gate `P43-SYNTH-002B` est lancé sur quatre départs déterministes éloignés
+(`±20--25 %`) avec `max_nfev=15`; son artefact sera
+`validation/reference_data/p0043_synthetic_multistart_v1/report.json`. Une
+montée M100 est planifiée automatiquement après la création de ce rapport :
+le meilleur jeu M20 initialise le crop enregistré `[1580:1680,1030:1130]`,
+sans changer la vérité SRIX ni l'histoire. Le script est
+`scripts/qualify_srix_p0043_synthetic_scaleup.py` et la limite initiale est de
+quatre évaluations pour éviter de transformer le diagnostic nocturne en
+campagne non bornée. Le résultat sera dans
+`validation/reference_data/p0043_synthetic_scaleup_v1/`; aucune conclusion sur
+le P43 expérimental n'est autorisée.
