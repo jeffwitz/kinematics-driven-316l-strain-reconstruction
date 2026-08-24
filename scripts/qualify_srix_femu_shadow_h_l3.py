@@ -117,9 +117,11 @@ def main() -> None:
     arrays = np.load(SOURCE / "path_convergence.npz")
     l2 = arrays["jacobian_L2"]
     l3_geometries = {key: _geometry(value) for key, value in matrices.items()}
+    l2_spectrum = _geometry(l2)["normalized_singular_values"]
     l2_to_l3 = {}
     for key, matrix in matrices.items():
         errors = _column_comparison(l2, matrix)
+        spectrum = l3_geometries[key]["normalized_singular_values"]
         l2_to_l3[key] = {
             **errors,
             "forward_observed_relative_l2": float(
@@ -129,11 +131,23 @@ def main() -> None:
                 )
                 / np.linalg.norm(_observed_forward(fields, scored, transfer))
             ),
+            "relative_change_first_three_singular_values": (
+                np.abs(np.asarray(spectrum[:3]) - np.asarray(l2_spectrum[:3]))
+                / np.asarray(spectrum[:3])
+            ).tolist(),
         }
     stable = (
         max(stability["column_relative_l2"]) < 5e-3
         and min(stability["column_cosines"]) > 0.99999
         and max(stability["rank3_principal_angles_degrees"]) < 2.0
+    )
+    path_gate = all(
+        value["forward_observed_relative_l2"] < 5.0e-3
+        and all(error < 2.0e-2 for error in value["column_relative_l2"][:3])
+        and all(cosine > 0.999 for cosine in value["column_cosines"][:3])
+        and max(value["rank3_principal_angles_degrees"]) < 2.0
+        and max(value["relative_change_first_three_singular_values"]) < 0.05
+        for value in l2_to_l3.values()
     )
     report = {
         "schema_version": 1,
@@ -150,6 +164,7 @@ def main() -> None:
         "claims": {
             "both_l3_complete": True,
             "h_0015_stable_against_h_001": stable,
+            "path_002s_gate": path_gate,
             "identification_authorized": False,
             "p43_authorized": False,
         },

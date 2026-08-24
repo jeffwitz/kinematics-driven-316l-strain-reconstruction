@@ -2191,6 +2191,42 @@
           "role": "machine-readable Jacobian comparison"
         }
       ]
+    },
+    {
+      "id": "E-SRIX-FEMU-SHADOW-003C",
+      "question": "Do the two prospective shadow steps produce stable complete L3 Jacobians, and does PATH-002S pass?",
+      "fidelity": "M8 SRIX twin; exact 809-step L3 path; full direct shadow replay",
+      "parameters": "h=0.0015 primary and h=0.001 control",
+      "status": "L3 h stability passed; L2-to-L3 path gate remains negative",
+      "conclusion": "Both L3 Jacobians complete. Their maximum column difference is 0.102%, minimum cosine 0.99999957 and rank-3 angle 0.136°. PATH-002S remains negative only because L2-to-L3 rank-3 angles are 2.290° and 2.195°, above the preregistered 2° threshold. Identification and P43 remain blocked.",
+      "sources": [
+        {
+          "path": "validation/reference_data/srix_femu_shadow_h_l3_v1/report.json",
+          "role": "full L3 h qualification",
+          "assertions": [
+            {
+              "path": "/claims/both_l3_complete",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/claims/h_0015_stable_against_h_001",
+              "operator": "equals",
+              "expected": true
+            },
+            {
+              "path": "/claims/path_002s_gate",
+              "operator": "equals",
+              "expected": false
+            },
+            {
+              "path": "/claims/identification_authorized",
+              "operator": "equals",
+              "expected": false
+            }
+          ]
+        }
+      ]
     }
   ],
   "tables": [

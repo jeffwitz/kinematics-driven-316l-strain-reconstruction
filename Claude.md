@@ -7620,3 +7620,20 @@ normalisé et le conditionnement (`1.60e4`) restent stables. Ces valeurs sont
 donc des candidates pour un rejeu L3 complet, mais aucune n'est adoptée avant
 ce rejeu. Les matrices et le détail sont dans
 `validation/reference_data/srix_femu_shadow_diagnostic_v1/l2_jacobian_h_sweep.*`.
+
+Le gate `SHADOW-003C` a exécuté les deux replays L3 complets sur le chemin de
+809 pas. `h=0.0015` termine en 227,44 s et `h=0.001` en 210,25 s, avec 3236
+résolutions GMRES chacun. Les deux Jacobiennes sont cohérentes : erreur
+maximale entre colonnes `0,102 %`, cosinus minimal `0,99999957`, angle de rang
+3 `0,136°`. Le pas `h=0.0015` est donc validé comme candidat principal et
+`h=0.001` comme contrôle.
+
+Le gate de convergence L2→L3 reste néanmoins négatif selon les seuils
+PATH-002S, uniquement sur l'angle du sous-espace de rang 3 : `2,290°` pour
+`h=0.0015` et `2,195°` pour `h=0.001`, contre un seuil de `2°`. Le forward
+(`4,71e-5`), les erreurs de colonnes (`<2 %`), les cosinus et les spectres
+passent. La stabilité en `h` est donc acquise, mais la convergence de la
+géométrie L2→L3 ne l'est pas ; aucune identification ni P43 n'est autorisée.
+Le résultat est archivé dans
+`validation/reference_data/srix_femu_shadow_h_l3_v1/report.json` et
+`validation/srix_femu_shadow_h_l3_results.md`.
