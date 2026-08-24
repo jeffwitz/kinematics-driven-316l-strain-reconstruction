@@ -7440,3 +7440,32 @@ spectre et sans autorisation d'identification :
 `validation/reference_data/srix_femu_path_convergence_v2/`. Le prochain travail
 doit diagnostiquer cette branche ou définir une subdivision locale
 préréférencée qui converge avant de comparer les limites 57/114/228.
+
+### BRANCH-002A : diagnostic local autour de f≈0.237 (2026-08-24)
+
+Le diagnostic `scripts/qualify_srix_femu_branch_local.py` teste le parent
+`[0.234375, 0.23828125]` avec cinq positions de midpoint (`alpha=0.25, 0.40,
+0.50, 0.60, 0.75`) et deux prédicteurs globaux. Les cinq partitions locales
+convergent, y compris `alpha=0.50`, qui correspond au demi-pas bloqué dans le
+raffinement global 114. L'échec 114 ne peut donc pas être attribué à ce
+demi-pas isolé : il dépend de l'histoire obtenue après le raffinement des
+autres intervalles.
+
+À l'endpoint `f=0.23828125`, les écarts relatifs au chemin 57 sont de
+`8.09e-6`–`1.09e-5` en déplacement, `7.30e-5`–`9.77e-5` en contrainte et
+`4.97e-4`–`6.66e-4` en déformation plastique. Les partitions convergentes
+restent proches, mais leur dispersion n'est pas nulle (`2.80e-6`, `2.47e-5`,
+`1.70e-4`). Il n'y a donc pas de branche constitutive distincte démontrée,
+mais la convergence par raffinement global n'est pas établie.
+
+Les prédicteurs extrapolé et coarse-endpoint échouent respectivement aux
+incréments 44 et 18. Ils ne copient pas l'état constitutif coarse et ne
+permettent pas de conclure sur une bifurcation matérielle. Les tableaux SRIX
+bruts `g/p/a` ne sont pas encore exposés par `TwoStateIncrementFields`.
+
+Artefacts : `validation/srix_femu_branch_local_results.md` et
+`validation/reference_data/srix_femu_branch_local_v2/` (rapport et figure).
+Statut : `path_convergence_authorized=false`, `identification_authorized=false`
+et `p43_authorized=false`. Ne pas lancer de campagne 228, d'identification ou
+de P43 avant une qualification de convergence et un diagnostic constitutif
+local plus complet.
