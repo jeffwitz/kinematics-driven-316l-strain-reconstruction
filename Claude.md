@@ -1,3 +1,7 @@
+> **Legacy notice:** the universal coding-agent bootstrap is now
+> [`CLAUDE.md`](CLAUDE.md). This file is retained as a historical project log;
+> do not use it as the sole source of current status or agent rules.
+
 # Plan de mise à niveau de `fem_inhouse`
 
 Dernière mise à jour : 2026-08-23
