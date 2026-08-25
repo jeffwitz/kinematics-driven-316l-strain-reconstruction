@@ -1,0 +1,10 @@
+{
+  "base_minus_rotations_identical": true,
+  "base_plus_rotations_identical": true,
+  "element_order": "F",
+  "max_base_minus_rotation_difference": 0.0,
+  "max_base_plus_rotation_difference": 0.0,
+  "note": "This closes only the orientation-copy hypothesis; it does not validate the shadow forcing assembly.",
+  "orientation_order_suspect": false,
+  "point_count": 800
+}
