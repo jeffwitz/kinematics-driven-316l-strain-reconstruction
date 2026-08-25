@@ -2316,6 +2316,14 @@
       "evidence_ids": [
         "E-P43-PIXEL-MM-AUDIT-001"
       ]
+    },
+    {
+      "question": "Does raw-displacement FEMU on experimental P43 M20 identify a free rank-three SRIX solution?",
+      "status": "NO-GO; reproducible constrained valley, not free identification",
+      "boundary": "P43 experimental M20, raw displacement residual in mm, no noise model, four starts, fixed rank-three SVD basis",
+      "evidence_ids": [
+        "E-SRIX-P43-EXP-RAW-001"
+      ]
     }
   ],
   "tables": [
@@ -3370,6 +3378,27 @@
           "assertions": [
             {"path": "/interpretation_boundary/pixel_mm_mismatch_found", "operator": "equals", "expected": false},
             {"path": "/conversion_tests/kinematic_strain_invariance_max", "operator": "less_than", "expected": 1.0e-12}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-P43-EXP-RAW-001",
+      "question": "Does raw-displacement FEMU on experimental P43 M20 identify a free rank-three SRIX solution?",
+      "fidelity": "P43 experimental M20 crop; raw displacement mismatch in mm; no scalar noise weighting or covariance; four starts",
+      "parameters": "h=0.0015; max_nfev=24; rank=3",
+      "status": "NO-GO",
+      "conclusion": "The RMS decreases from 4.7247169e-6 mm to 4.6100966e-6 mm and all starts reach the same valley, but R, Q and b are on the lower bound, one start reaches max_nfev, and the third singular mode weakens from 0.0361 to 0.0165. M100 is not authorized.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json",
+          "role": "machine-readable raw FEMU gate",
+          "assertions": [
+            {"path": "/observation_weighting", "operator": "equals", "expected": "none"},
+            {"path": "/noise_model_used", "operator": "equals", "expected": false},
+            {"path": "/covariance_used", "operator": "equals", "expected": false},
+            {"path": "/gate/m100_authorized", "operator": "equals", "expected": false},
+            {"path": "/claims/experimental_parameters_identified", "operator": "equals", "expected": false}
           ]
         }
       ]

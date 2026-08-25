@@ -7741,3 +7741,13 @@ Un audit ciblé ne trouve pas de conversion pixel/mm manquante. La chaîne utili
 unités. En revanche, ce scalar reste une échelle robuste par état et non une
 covariance DIC complète : la corrélation spatiale/cohérente du bruit demeure
 une limitation statistique indépendante du diagnostic M20.
+
+### E-SRIX-P43-EXP-RAW-001 : FEMU brute M20 (2026-08-25)
+
+La campagne sans bruit ni covariance est terminée. Le résidu physique passe de
+`4.7247169e-6 mm` au prior à `4.6100966e-6 mm` (baisse `2.43 %`) et les quatre
+départs atteignent la même vallée. Cependant `R`, `Q` et `b` sont actifs sur la
+borne basse ; un départ atteint `max_nfev=24`, et le troisième mode SVD passe de
+`0.0361` à `0.0165`. Le résultat est donc un optimum contraint reproductible,
+pas une identification libre. Le gate RAW M20→M100 est NO-GO et aucun M100
+expérimental n'a été lancé.
