@@ -122,6 +122,15 @@ def main() -> int:
             )
             y = _output(fields, scored)
         except Exception as exc:
+            (output / "failure.json").write_text(json.dumps({
+                "sample_index": sample_index,
+                "phase": "forward",
+                "eta": eta.tolist(),
+                "message": str(exc),
+                "completed_samples": len(local_reports),
+            }, indent=2, sort_keys=True) + "\n")
+            if jacobians:
+                np.savez_compressed(output / "partial.npz", jacobians=np.asarray(jacobians))
             raise RuntimeError(
                 f"global observability sample {sample_index} forward failed; "
                 f"eta={eta.tolist()}"
@@ -132,6 +141,15 @@ def main() -> int:
                 library=library, threads=args.threads, h=H,
             )
         except Exception as exc:
+            (output / "failure.json").write_text(json.dumps({
+                "sample_index": sample_index,
+                "phase": "jacobian",
+                "eta": eta.tolist(),
+                "message": str(exc),
+                "completed_samples": len(local_reports),
+            }, indent=2, sort_keys=True) + "\n")
+            if jacobians:
+                np.savez_compressed(output / "partial.npz", jacobians=np.asarray(jacobians))
             raise RuntimeError(
                 f"global observability sample {sample_index} Jacobian failed; "
                 f"eta={eta.tolist()}"
