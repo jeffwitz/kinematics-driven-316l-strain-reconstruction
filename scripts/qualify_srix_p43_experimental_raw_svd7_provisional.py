@@ -35,6 +35,7 @@ def main() -> int:
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--max-nfev", type=int, default=12)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--element-order", choices=("C", "F"), default="C")
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     if output.exists() and any(output.iterdir()):
@@ -77,11 +78,14 @@ def main() -> int:
         key = eta.tobytes()
         if key not in cache:
             theta = SrixTheta9.from_log_coordinates(eta)
-            fields, timing = _forward(theta, path, angles, library, args.threads)
+            fields, timing = _forward(
+                theta, path, angles, library, args.threads, args.element_order
+            )
             residual = _vector(fields, scored, target)
             jacobian, shadow_timing = _direct_shadow(
                 fields=fields, basis=basis, eta=eta, step_sizes=steps,
                 angles=angles, scored=scored, library=library, threads=args.threads,
+                element_order=args.element_order,
             )
             timing = {**timing, "shadow_seconds": shadow_timing["elapsed_seconds"]}
             nonlocal residual_scale
@@ -146,6 +150,7 @@ def main() -> int:
         "machine": platform.node(),
         "crop": list(CROP),
         "path_steps": len(path),
+        "element_order": args.element_order,
         "scored_steps": list(scored),
         "observation_weighting": "none",
         "noise_model_used": False,

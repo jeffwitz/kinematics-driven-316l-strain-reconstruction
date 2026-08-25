@@ -117,7 +117,12 @@ def _make_path(history: np.ndarray, subdivisions: int) -> list[LoadPathStep]:
     return path
 
 
-def _factory(angles: np.ndarray, library: str, threads: int):
+def _factory(
+    angles: np.ndarray,
+    library: str,
+    threads: int,
+    element_order: str = "C",
+):
     point_count = 2 * angles.shape[0] * angles.shape[1]
 
     def create(overrides: dict[str, float]):
@@ -145,6 +150,7 @@ def _factory(angles: np.ndarray, library: str, threads: int):
                 "crystal_orientation": {
                     "mode": "ebsd",
                     "euler_bunge_deg": angles,
+                    "element_order": element_order,
                 },
             },
         )
@@ -173,10 +179,11 @@ def _forward(
     angles: np.ndarray,
     library: str,
     threads: int,
+    element_order: str = "C",
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any]]:
     pixels = angles.shape[0]
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
-    material = _factory(angles, library, threads)(theta.as_runtime_overrides())
+    material = _factory(angles, library, threads, element_order)(theta.as_runtime_overrides())
     history = np.stack([np.zeros_like(path[0].boundary), *[step.boundary for step in path]])
     fields: list[TwoStateIncrementFields] = []
 

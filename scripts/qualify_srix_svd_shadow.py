@@ -81,13 +81,14 @@ def _direct_shadow(
     scored: tuple[int, ...],
     library: str,
     threads: int,
+    element_order: str = "C",
 ) -> tuple[np.ndarray, dict[str, Any]]:
     pixels = fields[0].displacement.shape[0] - 1
     grid = StructuredGrid2D(
         pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels
     )
     kinematics = TwoSubcellDiagnostic2D(grid)
-    factory = _factory(angles, library, threads)
+    factory = _factory(angles, library, threads, element_order)
     shadows: list[tuple[Any, Any]] = []
     for mode, step in enumerate(step_sizes):
         plus_eta = eta + step * basis[:, mode]

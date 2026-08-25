@@ -165,18 +165,25 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--report", type=Path, default=REPORT)
+    parser.add_argument("--element-order", choices=("C", "F"), default="C")
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.mkdir(parents=True, exist_ok=True)
-    report = json.loads(REPORT.read_text())
+    report_path = args.report if args.report.is_absolute() else ROOT / args.report
+    report = json.loads(report_path.read_text())
     measured_macro, angles, _ = _load_inputs(CROP)
     path = _make_path(measured_macro, 4)
     scored = tuple(4 * index for index in range(1, 9))
     library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", str(ROOT / "build/mfront/src/libBehaviour.so"))
     prior = SrixTheta9.from_parameter_set(get_parameter_set(DEFAULT_PARAMETER_SET))
     final = SrixTheta9.from_log_coordinates(np.asarray(report["final_eta"], dtype=float))
-    fields_prior, timing_prior = _forward(prior, path, angles, library, args.threads)
-    fields_final, timing_final = _forward(final, path, angles, library, args.threads)
+    fields_prior, timing_prior = _forward(
+        prior, path, angles, library, args.threads, args.element_order
+    )
+    fields_final, timing_final = _forward(
+        final, path, angles, library, args.threads, args.element_order
+    )
     dic = np.stack([_evm(path[index - 1].boundary) for index in scored])
     prior_evm = np.stack([_evm(fields_prior[index - 1].displacement) for index in scored])
     final_evm = np.stack([_evm(fields_final[index - 1].displacement) for index in scored])
@@ -190,6 +197,8 @@ def main() -> int:
         "units": "fraction (plots in percent)",
         "prior_forward_timing": timing_prior,
         "final_forward_timing": timing_final,
+        "element_order": args.element_order,
+        "report_source": str(report_path),
         "dic_rms": np.sqrt(np.mean(dic**2, axis=(1, 2))).tolist(),
         "prior_rms": np.sqrt(np.mean(prior_evm**2, axis=(1, 2))).tolist(),
         "final_rms": np.sqrt(np.mean(final_evm**2, axis=(1, 2))).tolist(),

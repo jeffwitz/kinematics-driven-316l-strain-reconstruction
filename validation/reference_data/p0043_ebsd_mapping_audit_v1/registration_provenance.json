@@ -1,0 +1,153 @@
+{
+  "axis_status": {
+    "dic_axis_direction_proven": true,
+    "dic_canonical_axis_identity_proven": true,
+    "ebsd_axis_direction_proven": false,
+    "ebsd_axis_identity_proven": false
+  },
+  "crop_status": {
+    "physical_origin_registration_proven": false,
+    "registration_transform": "unknown",
+    "same_array_indices_declared": true
+  },
+  "dic_crop_contract": "DIC canonical crop uses the same numerical bounds in the maintained workflow",
+  "ebsd_crop_provenance": "CP_dataset.h5 attributes state rows 400:4000 and cols 1211:4311; P43 subcrop method is not recorded",
+  "ebsd_file": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "ebsd_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
+  "hdf5_attrs": {
+    "hdf5_root_attrs": {
+      "created": "2026-07-23T23:31:13",
+      "description": "Crystal plasticity dataset export",
+      "source_folder": "C:\\Users\\adil.kilinc\\Desktop\\Thesis\\3_data\\31_CP_dataset"
+    },
+    "orientation_attrs": {
+      "Phi": {
+        "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+        "description": "Euler angle Phi, per-pixel grain-mean",
+        "original_shape": [
+          4400,
+          5400
+        ],
+        "pixel_size_um": 1.84,
+        "shape": [
+          3600,
+          3100
+        ],
+        "source_file": "3.2.Phi_mean_per_grain_field.npy",
+        "units": "deg"
+      },
+      "phi1": {
+        "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+        "description": "Euler angle phi1, per-pixel grain-mean",
+        "original_shape": [
+          4400,
+          5400
+        ],
+        "pixel_size_um": 1.84,
+        "shape": [
+          3600,
+          3100
+        ],
+        "source_file": "3.1.phi1_mean_per_grain_field.npy",
+        "units": "deg"
+      },
+      "phi2": {
+        "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+        "description": "Euler angle phi2, per-pixel grain-mean",
+        "original_shape": [
+          4400,
+          5400
+        ],
+        "pixel_size_um": 1.84,
+        "shape": [
+          3600,
+          3100
+        ],
+        "source_file": "3.3.phi2_mean_per_grain_field.npy",
+        "units": "deg"
+      }
+    },
+    "schmid_attrs": {
+      "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+      "description": "Max Schmid factor, per-pixel grain-mean",
+      "original_shape": [
+        4400,
+        5400
+      ],
+      "pixel_size_um": 1.84,
+      "shape": [
+        3600,
+        3100
+      ],
+      "source_file": "4.Max_Schmid_factor_mean_per_grain_field.npy",
+      "units": "-"
+    }
+  },
+  "mapping_status": {
+    "explicit_f_mapping_passed": true,
+    "spectral_solver_order": "C by documented contract; not silently changed",
+    "structured_mesh_element_order": "F"
+  },
+  "p43_crop_indices": [
+    1610,
+    1630,
+    1075,
+    1095
+  ],
+  "pixel_size_um": 1.84,
+  "raw_femu_f": {
+    "completed": true,
+    "final_rms_mm": 3.576404809953112e-06,
+    "final_verification_residual": 5.801487719784166e-07,
+    "gauss_newton_predicted_relative_reduction": 0.19756595276350597,
+    "minimum_converged": false,
+    "optimizer": {
+      "cost": 2727.956558079724,
+      "elapsed_seconds": 171.2978362441063,
+      "message": "Positive directional derivative for linesearch",
+      "nfev": 3,
+      "njev": 3,
+      "status": 8,
+      "success": false
+    },
+    "prior_rms_mm": 4.067169138828719e-06,
+    "relative_rms_reduction": 0.12066484380753806,
+    "report": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/p0043_experimental_raw_svd7_f_provisional_v1/report.json"
+  },
+  "sample_frame_status": {
+    "axis_correlations_with_archived_schmid": [
+      0.2667309300256592,
+      0.5187757366076116,
+      0.006040894184770958
+    ],
+    "axis_relative_errors_with_archived_schmid": [
+      0.056098771388248515,
+      0.06296636788639096,
+      0.10788850454780241
+    ],
+    "ebsd_to_fem_rotation_proven_from_acquisition_metadata": false,
+    "internal_schmid_axis_diagnostic": true,
+    "selected_internal_axis": 1
+  },
+  "schema_version": 1,
+  "schmid_diagnostic": {
+    "interpretation": "internal consistency check only; does not prove EBSD-to-DIC sample-frame registration",
+    "invalid_pixels": 329,
+    "selected_axis": 1,
+    "selected_correlation": 0.5187757366076116,
+    "selected_relative_error": 0.06296636788639096,
+    "valid_pixels": 71
+  },
+  "statuses": {
+    "ebsd_dic_axis_direction_proven": false,
+    "ebsd_dic_axis_identity_proven": false,
+    "ebsd_dic_crop_registration_proven": false,
+    "ebsd_dic_origin_registration_proven": false,
+    "ebsd_element_order_correct": true,
+    "ebsd_fem_sample_frame_proven": false,
+    "historical_c_results_physically_valid": false,
+    "historical_c_results_retained_as_control": true,
+    "raw_m20_f_identification_completed": true,
+    "raw_m20_f_minimum_converged": false
+  }
+}

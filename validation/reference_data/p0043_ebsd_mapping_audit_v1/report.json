@@ -40,7 +40,22 @@
   "ebsd_dic_axis_direction_proven": false,
   "ebsd_crystal_sample_frame_registration_proven": false,
   "p43_historical_cp_results_spatially_trustworthy": false,
-  "mechanics_run": false,
-  "schmid_audit": "not yet run",
-  "axis_audit": "not proven in this index-only ticket"
+  "mechanics_run": true,
+  "schmid_audit": {
+    "status": "completed_internal_consistency_check",
+    "selected_axis": 1,
+    "axis_correlations": [
+      0.2667309300256592,
+      0.5187757366076116,
+      0.006040894184770958
+    ],
+    "axis_relative_errors": [
+      0.056098771388248515,
+      0.06296636788639096,
+      0.10788850454780241
+    ],
+    "interpretation": "does not prove EBSD-to-DIC sample-frame registration"
+  },
+  "axis_audit": "not proven in this index-only ticket",
+  "mechanics_run_kind": "classical M20 prior C/F comparison archived separately"
 }

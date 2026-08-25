@@ -44,3 +44,29 @@ The unit tests now cover:
 The implementation change is explicit: classical `run_fem` EBSD mappings
 default to F-order at the StructuredMesh boundary, while direct spectral
 pixel calls retain C-order unless they request another convention.
+
+## Registration closure update
+
+The nominal M20 C/F forwards and the independent Schmid diagnostic have now
+also been run. The explicit F mapping changes the classical prior EVM field
+substantially (`relative L2(F-C) = 0.2827`), so the correction is mechanically
+important. This is not a C-versus-F physical comparison: the C ordering is
+retained only as a historical control.
+
+The HDF5 metadata records the full crop and pixel size, but not the physical
+EBSD-to-DIC transform, image-axis direction, or specimen-frame rotation. The
+maintained DIC contract proves the canonical DIC axes; it does not prove those
+three EBSD relations. The internal Schmid check on the P43 crop selects Euler
+axis 1 as the best match to the archived HDF5 Schmid map, but this is only an
+internal consistency diagnostic and is not acquisition provenance.
+
+The corrected F RAW M20 exploratory run was completed with the provisional
+rank-7 SVD basis. It reduced the raw displacement RMS from `4.0672e-6 mm` to
+`3.5764e-6 mm` (12.07%); the Gauss--Newton linear prediction was 19.76%. The
+optimizer stopped after three evaluations with a positive directional
+derivative and several physical bounds active, and its final verification
+residual was `5.80e-7`; therefore this is not a converged minimum. It is a
+completed diagnostic, not an identification result.
+
+The machine-readable closure status is in
+`reference_data/p0043_ebsd_mapping_audit_v1/registration_provenance.json`.
