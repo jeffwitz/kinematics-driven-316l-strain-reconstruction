@@ -2276,6 +2276,22 @@
           ]
         }
       ]
+    },
+    {
+      "question": "Are direct FEMU synthetic P43 parameters robust to distant initial guesses?",
+      "status": "demonstrated on four M20 starts; Q/b valley retained",
+      "boundary": "P43 M20, no noise, identity observation, four deterministic starts; no experimental claim",
+      "evidence_ids": [
+        "E-SRIX-P43-SYNTH-002B"
+      ]
+    },
+    {
+      "question": "Does the synthetic direct FEMU identification transfer from M20 to M100?",
+      "status": "demonstrated for one initialized M100 run",
+      "boundary": "P43 M100, one M20 initialization, three evaluations; Q and b remain correlated",
+      "evidence_ids": [
+        "E-SRIX-P43-SYNTH-003"
+      ]
     }
   ],
   "tables": [
@@ -3227,6 +3243,48 @@
             "format": ".4f"
           }
         ]
+      ]
+    }
+    ,
+    {
+      "id": "E-SRIX-P43-SYNTH-002B",
+      "question": "Are direct FEMU synthetic P43 parameters robust to distant initial guesses?",
+      "fidelity": "P43 M20 real EBSD crop; identity observation; no noise; four deterministic distant starts",
+      "parameters": "theta4 log-parameters; h=0.0015; max_nfev=15",
+      "status": "passed with Q/b degeneracy",
+      "conclusion": "All four starts converge with RMS between 4.84e-17 and 4.98e-13. Three recover the truth to numerical precision; B2 reaches Q=9.973054 and b=3.008216 with negligible residual, along the weak Q-b direction. No separate Q/b identification is claimed.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_synthetic_multistart_v1/report.json",
+          "role": "machine-readable multi-start result",
+          "assertions": [
+            {"path": "/claims/synthetic_multistart_completed", "operator": "equals", "expected": true},
+            {"path": "/claims/experimental_p43_authorized", "operator": "equals", "expected": false},
+            {"path": "/starts/0/optimizer/success", "operator": "equals", "expected": true},
+            {"path": "/starts/1/optimizer/success", "operator": "equals", "expected": true},
+            {"path": "/starts/2/optimizer/success", "operator": "equals", "expected": true},
+            {"path": "/starts/3/optimizer/success", "operator": "equals", "expected": true}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-P43-SYNTH-003",
+      "question": "Does the synthetic direct FEMU identification transfer from M20 to M100?",
+      "fidelity": "P43 M100 real EBSD crop; identity observation; no noise; initialization from best M20 result",
+      "parameters": "32 path steps; h=0.0015; max_nfev=4",
+      "status": "passed for one initialized scale-up",
+      "conclusion": "M100 converges in three evaluations after M20 initialization: RMS 3.38e-16 to 3.25e-18, parameters recover the truth to numerical precision. The normalized spectrum is (1,0.41608,0.05539,1.4307e-4) and rho(Q,b)=0.9999999999. No experimental P43 claim is authorized.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_synthetic_scaleup_v1/report.json",
+          "role": "machine-readable M100 scale-up result",
+          "assertions": [
+            {"path": "/claims/scaleup_completed", "operator": "equals", "expected": true},
+            {"path": "/claims/experimental_p43_authorized", "operator": "equals", "expected": false},
+            {"path": "/optimizer/success", "operator": "equals", "expected": true}
+          ]
+        }
       ]
     }
   ],

@@ -7682,3 +7682,20 @@ quatre évaluations pour éviter de transformer le diagnostic nocturne en
 campagne non bornée. Le résultat sera dans
 `validation/reference_data/p0043_synthetic_scaleup_v1/`; aucune conclusion sur
 le P43 expérimental n'est autorisée.
+
+### Résultats P43-SYNTH-002B et P43-SYNTH-003 (2026-08-26)
+
+Les quatre départs éloignés M20 ont convergé. Les RMS finaux sont `5.26e-17`,
+`4.98e-13`, `4.84e-17` et `7.25e-17`. Trois départs retrouvent la vérité à
+la précision numérique ; B2 termine à `Q=9.973054`, `b=3.008216` avec un
+résidu quasi nul, ce qui confirme la vallée faible `Q-b`. Les projections de
+l'erreur restent faibles dans les trois directions fortes et se concentrent
+sur le quatrième vecteur singulier.
+
+Le scale-up M100 enregistré de façon indépendante a ensuite convergé en 3
+évaluations et `18282.4 s` (~5.08 h), en partant du meilleur jeu M20. Le RMS
+passe de `3.38e-16` à `3.25e-18`, avec
+`(tau0,R,Q,b)=(40.000000,18.781910,10.000000,3.000000)`. Sa SVD est
+`(1,0.41608,0.05539,1.4307e-4)` et `rho(Q,b)=0.9999999999`. Cette réussite
+est synthétique uniquement ; C (paramètres réduits), bruit, transfert DIC et
+P43 expérimental restent à faire.
