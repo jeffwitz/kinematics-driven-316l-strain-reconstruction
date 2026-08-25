@@ -2300,6 +2300,14 @@
       "evidence_ids": [
         "E-SRIX-P43-SYNTH-SVD-001"
       ]
+    },
+    {
+      "question": "Does the rank-three SVD identification pass on experimental P43 M20?",
+      "status": "NO-GO; optimization stopped at the evaluation cap and ran to parameter bounds",
+      "boundary": "P43 experimental M20 crop, repaired DIC history, identity displacement observation with scalar whitening, three starts, no M100",
+      "evidence_ids": [
+        "E-SRIX-P43-EXP-001-M20"
+      ]
     }
   ],
   "tables": [
@@ -3317,6 +3325,26 @@
         {
           "path": "validation/reference_data/p0043_synthetic_svd_reparameterization_v1/weak_mode_profile.csv",
           "role": "weak-direction profile"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-P43-EXP-001-M20",
+      "question": "Does the rank-three SVD identification pass on experimental P43 M20?",
+      "fidelity": "P43 experimental M20 crop; repaired DIC history; identity displacement observation with scalar whitening; three deterministic starts",
+      "parameters": "prior=(tau0=40,R=18.7819100705,Q=10,b=3); h=0.0015; max_nfev=8; rank=3",
+      "status": "NO-GO",
+      "conclusion": "All three starts reduced the whitened RMS only from about 0.0503 to 0.0490, but all hit max_nfev and drove R, Q and b to the lower bound. This is a diagnostic result, not an experimental parameter identification; M100 is not authorized.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_experimental_srix_m20_v1/report.json",
+          "role": "machine-readable experimental M20 gate",
+          "assertions": [
+            {"path": "/gate/all_optimizers_converged", "operator": "equals", "expected": false},
+            {"path": "/gate/all_costs_decreased", "operator": "equals", "expected": true},
+            {"path": "/gate/m100_authorized", "operator": "equals", "expected": false},
+            {"path": "/claims/parameters_identified", "operator": "equals", "expected": false}
+          ]
         }
       ]
     }

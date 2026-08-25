@@ -7716,3 +7716,17 @@ Le spectre M20 est `(1,0.135725,0.036116,1.031e-4)`. L'alignement de `v4` avec
 qualifiée sur le jumeau M20 et la direction `Q/b` est pratiquement une jauge
 non observable. C2 dynamique et C4 Q-fixé/b-fixé restent optionnels ; aucun
 M100 supplémentaire ni P43 expérimental n'est autorisé.
+
+### E-SRIX-P43-EXP-001-M20 : premier essai expérimental rang 3 (2026-08-25)
+
+Le premier essai sur le crop P43 expérimental M20 (histoire DIC réparée, trois
+départs rang 3, `h=0.0015`) est terminé mais le gate M20→M100 est **NO-GO**.
+Les RMS whitened passent d'environ `0.0503` à `0.0490`, mais les trois
+optimisations atteignent la limite `max_nfev=8` et poussent `R`, `Q` et `b` vers
+la borne basse. Les valeurs finales sont environ `tau0=8.6–8.7 MPa`,
+`R=12.7–12.9 MPa`, `Q=3.86 MPa`, `b=1.17`. La SVD finale se dégrade sur le
+troisième mode (`0.0361` au prior contre `0.0165` à la meilleure solution).
+
+Ce résultat est un diagnostic de non-adéquation de cette chaîne
+d'observation/prior, pas une identification du P43 réel. Aucun M100
+expérimental n'a été lancé ; toute relance devra d'abord traiter ce diagnostic.
