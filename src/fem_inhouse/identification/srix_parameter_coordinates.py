@@ -88,7 +88,7 @@ class SrixTheta9:
         }
 
     @classmethod
-    def from_log_coordinates(cls, eta: ArrayLike) -> "SrixTheta9":
+    def from_log_coordinates(cls, eta: ArrayLike) -> SrixTheta9:
         values = np.asarray(eta, dtype=np.float64)
         if values.shape != (9,) or not np.isfinite(values).all():
             raise ValueError("eta must contain nine finite coordinates")
@@ -99,7 +99,7 @@ class SrixTheta9:
                    float(q), float(b), float(c), float(d))
 
     @classmethod
-    def from_parameter_set(cls, parameter_set: SrixParameterSet) -> "SrixTheta9":
+    def from_parameter_set(cls, parameter_set: SrixParameterSet) -> SrixTheta9:
         elasticity = parameter_set.elasticity
         return cls(
             elasticity.c11_mpa,

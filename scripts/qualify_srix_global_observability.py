@@ -21,7 +21,6 @@ from fem_inhouse.identification.srix_parameter_coordinates import (
 )
 from scripts.qualify_srix_p0043_synthetic_smoke import (
     CROP,
-    _factory,
     _forward,
     _git,
     _load_inputs,
@@ -123,7 +122,7 @@ def main() -> int:
             eta, path=path, scored=scored, angles=angles,
             library=library, threads=args.threads, h=H,
         )
-        singular_values, _, right = np.linalg.svd(jacobian, full_matrices=False)
+        _, singular_values, right = np.linalg.svd(jacobian, full_matrices=False)
         jacobians.append(jacobian)
         local_reports.append({
             "sample_index": sample_index,
@@ -147,7 +146,10 @@ def main() -> int:
     rank3_angles = [
         np.degrees(subspace_angles(report_basis, eigenvectors[:, :3]))
         .tolist()
-        for report_basis in [np.asarray(item["right_singular_vectors"])[:3].T for item in local_reports]
+        for report_basis in [
+            np.asarray(item["right_singular_vectors"])[:3].T
+            for item in local_reports
+        ]
     ]
     report = {
         "schema_version": 1,
@@ -159,7 +161,10 @@ def main() -> int:
         "path_steps": len(path),
         "scored_steps": list(scored),
         "parameter_names": list(SRIX9_NAMES),
-        "parameterization": "log(C11-C12), log(C11+2C12), log(C44), log(tau0), log(R), log(Q), log(b), log(C), log(d)",
+        "parameterization": (
+            "log(C11-C12), log(C11+2C12), log(C44), log(tau0), log(R), "
+            "log(Q), log(b), log(C), log(d)"
+        ),
         "output_units": "mm",
         "observation_weighting": "none",
         "noise_model_used": False,
@@ -174,7 +179,10 @@ def main() -> int:
         "global_normalized_eigenvalues": normalized.tolist(),
         "global_right_eigenvectors": eigenvectors.tolist(),
         "local_rank3_vs_global_angles_deg": rank3_angles,
-        "claims": {"parameter_identification": False, "experimental_optimization_authorized": False},
+        "claims": {
+            "parameter_identification": False,
+            "experimental_optimization_authorized": False,
+        },
     }
     np.savez_compressed(
         output / "global_observability.npz",
