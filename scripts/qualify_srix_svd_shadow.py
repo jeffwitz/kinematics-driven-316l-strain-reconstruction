@@ -71,6 +71,26 @@ def _step_sizes(singular: np.ndarray, rank: int) -> np.ndarray:
     return np.clip(proposal, 5.0e-4, 5.0e-3)
 
 
+def _spectral_samples_to_material(samples: np.ndarray) -> np.ndarray:
+    """Flatten TRI2 samples in the spectral solver's immutable C-order contract.
+
+    ``element_order`` applies only while assigning EBSD pixels to material
+    points.  The spectral solver itself always flattens `(x, y, subcell, ...)`
+    in C order, independently of that EBSD assignment.
+    """
+
+    values = np.asarray(samples, dtype=np.float64)
+    return values.reshape(-1, values.shape[-1])
+
+
+def _material_stress_to_spectral_samples(
+    stress: np.ndarray, grid: StructuredGrid2D
+) -> np.ndarray:
+    """Restore material stresses using the spectral C-order sample layout."""
+
+    return np.asarray(stress, dtype=np.float64).reshape(*grid.pixel_shape, 2, 3)
+
+
 def _direct_shadow(
     *,
     fields: list[Any],
@@ -109,12 +129,12 @@ def _direct_shadow(
             step = float(step_sizes[mode])
             try:
                 plus_trial = evaluate_in_plane_response(
-                    plus, base_strain.reshape(-1, 3),
+                    plus, _spectral_samples_to_material(base_strain),
                     time_increment=accepted.time_increment,
                     response_level="tangent", consistent_tangent=True,
                 )
                 minus_trial = evaluate_in_plane_response(
-                    minus, base_strain.reshape(-1, 3),
+                    minus, _spectral_samples_to_material(base_strain),
                     time_increment=accepted.time_increment,
                     response_level="tangent", consistent_tangent=True,
                 )
@@ -123,10 +143,11 @@ def _direct_shadow(
                     f"shadow fixed-strain failure at increment {state_index}, "
                     f"mode {mode}, step {step}"
                 ) from exc
-            difference = (
+            difference = _material_stress_to_spectral_samples(
                 np.asarray(plus_trial.stress_in_plane_mpa)
-                - np.asarray(minus_trial.stress_in_plane_mpa)
-            ).reshape(*grid.pixel_shape, 2, 3) / (2.0 * step)
+                - np.asarray(minus_trial.stress_in_plane_mpa),
+                grid,
+            ) / (2.0 * step)
             forcings.append(
                 -pack_interior(kinematics.divergence_from_sample_stress(difference))
             )
@@ -151,7 +172,9 @@ def _direct_shadow(
                 try:
                     evaluate_in_plane_response(
                         shadow,
-                        (base_strain + sign * step * strain_sensitivity).reshape(-1, 3),
+                        _spectral_samples_to_material(
+                            base_strain + sign * step * strain_sensitivity
+                        ),
                         time_increment=accepted.time_increment,
                         response_level="residual", consistent_tangent=False,
                     )
