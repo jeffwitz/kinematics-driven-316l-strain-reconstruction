@@ -148,6 +148,10 @@ def main() -> int:
         keys = ["evaluation", "rms_mm", "verification_residual", "objective_valid", "accepted", "alpha"]
         writer = csv.DictWriter(handle, fieldnames=keys, extrasaction="ignore")
         writer.writeheader(); writer.writerows(history)
+    stopped_without_decrease = bool(
+        history
+        and history[-1].get("reason") == "no_valid_decreasing_backtracking_step"
+    )
     report = {"schema_version": 1, "method": "constrained raw F Gauss-Newton with projected rank-7 basis",
               "element_order": "F", "crop": list(CROP), "path_steps": len(path),
               "accepted_evaluations": accepted, "max_accepted": args.max_accepted,
@@ -156,7 +160,12 @@ def main() -> int:
               "final_eta": eta_final.tolist(), "final_z": z.tolist(),
               "final_parameters": final_theta.as_runtime_overrides(), "weak_coordinates": weak0.tolist(),
               "history": history, "provenance": provenance,
-              "stationary": not any(x.get("accepted", False) for x in history[-1:]),
+              "stationary": False,
+              "termination": (
+                  "no_valid_decreasing_backtracking_step"
+                  if stopped_without_decrease
+                  else "accepted_budget"
+              ),
               "claims": {"raw_f_optimization_stationary": False, "m100_exploratory_gate": False}}
     (output / "optimization_report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"accepted": accepted, "prior_rms_mm": initial_rms, "final_rms_mm": rms,
