@@ -81,6 +81,7 @@ def main() -> int:
     )
     cache: dict[bytes, tuple[np.ndarray, np.ndarray, dict[str, float]]] = {}
     history: list[dict[str, object]] = []
+    residual_scale: float | None = None
 
     def evaluate(z: np.ndarray) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         eta = eta_ref + basis @ np.asarray(z, dtype=np.float64)
@@ -94,6 +95,9 @@ def main() -> int:
                 angles=angles, scored=scored, library=library, threads=args.threads,
             )
             timing = {**timing, "shadow_seconds": shadow_timing["elapsed_seconds"]}
+            nonlocal residual_scale
+            if residual_scale is None:
+                residual_scale = float(np.sqrt(np.mean(residual**2)))
             cache[key] = (residual, jacobian, timing)
             history.append({
                 "evaluation": len(history) + 1,
@@ -106,12 +110,26 @@ def main() -> int:
         return cache[key]
 
     def residual(z: np.ndarray) -> np.ndarray:
-        return evaluate(z)[0]
+        values = evaluate(z)[0]
+        if residual_scale is None:
+            raise RuntimeError("residual scale was not initialized")
+        return values / residual_scale
 
     def jacobian(z: np.ndarray) -> np.ndarray:
-        return evaluate(z)[1]
+        values = evaluate(z)[1]
+        if residual_scale is None:
+            raise RuntimeError("residual scale was not initialized")
+        return values / residual_scale
 
     initial_z = np.zeros(7, dtype=np.float64)
+    initial_residual, initial_jacobian, _ = evaluate(initial_z)
+    if residual_scale is None:
+        raise RuntimeError("residual scale was not initialized")
+    gn_step, *_ = np.linalg.lstsq(initial_jacobian, -initial_residual, rcond=None)
+    predicted_residual = initial_residual + initial_jacobian @ gn_step
+    predicted_reduction = float(
+        1.0 - np.linalg.norm(predicted_residual) / np.linalg.norm(initial_residual)
+    )
     started = time.perf_counter()
     fit = least_squares(
         residual, initial_z, jac=jacobian, bounds=(z_low, z_high),
@@ -148,6 +166,9 @@ def main() -> int:
         "final_eta": final_eta.tolist(),
         "final_parameters": final_theta.as_runtime_overrides(),
         "prior_rms_mm": history[0]["rms_mm"],
+        "optimizer_residual_scale_mm": residual_scale,
+        "gauss_newton_linear_step": gn_step.tolist(),
+        "gauss_newton_predicted_relative_reduction": predicted_reduction,
         "final_rms_mm": float(np.sqrt(np.mean(final_residual**2))),
         "relative_rms_reduction": float(
             1.0 - np.sqrt(np.mean(final_residual**2)) / history[0]["rms_mm"]
