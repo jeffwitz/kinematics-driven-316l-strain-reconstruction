@@ -116,12 +116,26 @@ def main() -> int:
     for sample_index, eta in enumerate(samples):
         theta = SrixTheta9.from_log_coordinates(eta)
         started = time.perf_counter()
-        fields, forward_timing = _forward(theta, path, angles, library, args.threads)
-        y = _output(fields, scored)
-        jacobian, fd_timing = _jacobian(
-            eta, path=path, scored=scored, angles=angles,
-            library=library, threads=args.threads, h=H,
-        )
+        try:
+            fields, forward_timing = _forward(
+                theta, path, angles, library, args.threads
+            )
+            y = _output(fields, scored)
+        except Exception as exc:
+            raise RuntimeError(
+                f"global observability sample {sample_index} forward failed; "
+                f"eta={eta.tolist()}"
+            ) from exc
+        try:
+            jacobian, fd_timing = _jacobian(
+                eta, path=path, scored=scored, angles=angles,
+                library=library, threads=args.threads, h=H,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"global observability sample {sample_index} Jacobian failed; "
+                f"eta={eta.tolist()}"
+            ) from exc
         _, singular_values, right = np.linalg.svd(jacobian, full_matrices=False)
         jacobians.append(jacobian)
         local_reports.append({
