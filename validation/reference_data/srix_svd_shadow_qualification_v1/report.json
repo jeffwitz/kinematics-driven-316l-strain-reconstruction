@@ -1,0 +1,129 @@
+{
+  "claims": {
+    "experimental_identification_authorized": false,
+    "svd_shadow_qualified": false
+  },
+  "dirty": true,
+  "git_sha": "d9587b215eb410f81924ab190d3a639fb7448ee9",
+  "machine": "jeff-HP-EliteBook-X-G1i",
+  "method": "projected direct SRIX shadows in global SVD basis",
+  "parameterization": "admissible nine-parameter logarithmic coordinates",
+  "provenance": {
+    "crop_absolute": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "ebsd_sha256": "9be963185616bc114e01d5b511ca0832c1f8462125a4e710946f99dd81feb9c2",
+    "history_sha256": "cb804a6b4f3777603337c05e07d58c88bd19341fa6605c7141dc5e714d7d98a3",
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ]
+  },
+  "rank": 7,
+  "records": [
+    {
+      "column_cosines": [
+        0.9999955449448327,
+        0.9999970409212763,
+        0.999996261526385,
+        0.9999688548555955,
+        0.9999946284666115,
+        0.9999979757072205,
+        0.9999907118951468
+      ],
+      "column_relative_errors": [
+        0.0029905790782926286,
+        0.00243305604938546,
+        0.002815979798602407,
+        0.007899571817856558,
+        0.003297730257768227,
+        0.002021384822426753,
+        0.0043166376195698155
+      ],
+      "forward_timing": {
+        "gmres_iterations": 4467,
+        "seconds": 12.937811637064442,
+        "steps": 32,
+        "verification_residual": 1.0919415201042036e-08
+      },
+      "sample_index": 0,
+      "shadow_timing": {
+        "elapsed_seconds": 79.63880453305319,
+        "gmres_solves": 224,
+        "shadow_count": 14
+      },
+      "step_sizes": [
+        0.001,
+        0.0023732246304185786,
+        0.0029872463351164097,
+        0.005,
+        0.005,
+        0.005,
+        0.005
+      ],
+      "total_seconds": 79.71029381500557
+    },
+    {
+      "column_cosines": [
+        0.9999829056180506,
+        0.9999895461691488,
+        0.9999945676607163,
+        0.9999292597290838,
+        0.9999964348681329,
+        0.9999946721313931,
+        0.9999742527361472
+      ],
+      "column_relative_errors": [
+        0.005877201240529287,
+        0.00458707965933062,
+        0.003296222127562406,
+        0.011911312829140125,
+        0.002671422334555802,
+        0.003269741724628159,
+        0.007202466067787577
+      ],
+      "forward_timing": {
+        "gmres_iterations": 5305,
+        "seconds": 13.930038017919287,
+        "steps": 32,
+        "verification_residual": 1.3030733606217318e-08
+      },
+      "sample_index": 1,
+      "shadow_timing": {
+        "elapsed_seconds": 83.53932918212377,
+        "gmres_solves": 224,
+        "shadow_count": 14
+      },
+      "step_sizes": [
+        0.001,
+        0.0023732246304185786,
+        0.0029872463351164097,
+        0.005,
+        0.005,
+        0.005,
+        0.005
+      ],
+      "total_seconds": 83.59969814284705
+    }
+  ],
+  "schema_version": 1,
+  "step_policy": {
+    "h_max": 0.005,
+    "h_min": 0.0005,
+    "h_ref": 0.001
+  },
+  "step_sizes": [
+    0.001,
+    0.0023732246304185786,
+    0.0029872463351164097,
+    0.005,
+    0.005,
+    0.005,
+    0.005
+  ]
+}
