@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from scipy.optimize import least_squares
+from scipy.optimize import LinearConstraint, minimize
 
 from fem_inhouse.core.srix_parameters import DEFAULT_PARAMETER_SET, get_parameter_set
 from fem_inhouse.identification.srix_parameter_coordinates import SrixTheta9
@@ -28,16 +28,6 @@ from scripts.qualify_srix_svd_shadow import _direct_shadow, _step_sizes
 ROOT = Path(__file__).resolve().parents[1]
 SMOKE = ROOT / "validation/reference_data/p0043_global_srix_observability_v1"
 DEFAULT_OUTPUT = ROOT / "validation/reference_data/p0043_experimental_raw_svd7_provisional_v1"
-
-
-def _safe_z_bounds(
-    eta_ref: np.ndarray, basis: np.ndarray, low: np.ndarray, high: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Conservative rectangular bounds guaranteeing all eta bounds for any z."""
-    widths = np.minimum(high - eta_ref, eta_ref - low)
-    scale = np.sum(np.abs(basis), axis=1)
-    limit = np.min(widths[scale > 0.0] / scale[scale > 0.0])
-    return -np.full(basis.shape[1], limit), np.full(basis.shape[1], limit)
 
 
 def main() -> int:
@@ -69,7 +59,6 @@ def main() -> int:
     ])
     low[3:] = np.log(physical[:, 0])
     high[3:] = np.log(physical[:, 1])
-    z_low, z_high = _safe_z_bounds(eta_ref, basis, low, high)
     steps = _step_sizes(np.sqrt(np.maximum(eigenvalues, 0.0)), 7)
 
     measured_macro, angles, provenance = _load_inputs(CROP)
@@ -131,10 +120,20 @@ def main() -> int:
         1.0 - np.linalg.norm(predicted_residual) / np.linalg.norm(initial_residual)
     )
     started = time.perf_counter()
-    fit = least_squares(
-        residual, initial_z, jac=jacobian, bounds=(z_low, z_high),
-        x_scale="jac", max_nfev=args.max_nfev,
-        xtol=1.0e-10, ftol=1.0e-12, gtol=1.0e-10,
+    eta_constraint = LinearConstraint(basis, low - eta_ref, high - eta_ref)
+
+    def objective(z: np.ndarray) -> tuple[float, np.ndarray]:
+        values = residual(z)
+        matrix = jacobian(z)
+        return 0.5 * float(np.dot(values, values)), matrix.T @ values
+
+    fit = minimize(
+        objective,
+        initial_z,
+        jac=True,
+        method="SLSQP",
+        constraints=(eta_constraint,),
+        options={"maxiter": args.max_nfev, "ftol": 1.0e-12, "disp": False},
     )
     final_residual, final_jacobian, final_timing = evaluate(fit.x)
     final_eta = eta_ref + basis @ fit.x
@@ -160,7 +159,8 @@ def main() -> int:
         "weak_coordinates_initial": (discarded.T @ (eta_ref - eta_ref)).tolist(),
         "singular_values_basis": np.sqrt(np.maximum(eigenvalues, 0.0)).tolist(),
         "shadow_step_sizes": steps.tolist(),
-        "z_bounds": {"low": z_low.tolist(), "high": z_high.tolist()},
+        "eta_bounds": {"low": low.tolist(), "high": high.tolist()},
+        "constraint_type": "linear polytope: low <= eta_ref + V7 z <= high",
         "initial_z": initial_z.tolist(),
         "final_z": fit.x.tolist(),
         "final_eta": final_eta.tolist(),
@@ -176,7 +176,7 @@ def main() -> int:
         "optimizer": {
             "success": bool(fit.success), "status": int(fit.status),
             "message": str(fit.message), "nfev": int(fit.nfev),
-            "njev": int(fit.njev), "cost": float(fit.cost),
+            "njev": int(getattr(fit, "njev", -1)), "cost": float(fit.fun),
             "elapsed_seconds": time.perf_counter() - started,
         },
         "evaluation_history": history,
