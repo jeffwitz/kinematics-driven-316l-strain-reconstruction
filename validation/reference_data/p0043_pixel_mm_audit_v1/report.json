@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "pixel_size_mm": 0.00184,
+  "noise_reference": {
+    "source_report": "validation/reference_data/dic_boundary_loading_subspace_p0043_v1/report.json",
+    "robust_px": 0.0510928919420213,
+    "robust_mm": 9.40109211733192e-05,
+    "rms_px": 0.047015751128052716,
+    "rms_mm": 8.6508982075617e-05,
+    "conversion_error_mm": 0.0
+  },
+  "conversion_tests": {
+    "repeat_flow_roundtrip_max_px": 2.7755575615628914e-17,
+    "kinematic_strain_invariance_max": 1.7033358230833517e-15,
+    "kinematic_strain_invariance_rms": 7.807580955413115e-16
+  },
+  "m20_archived_check": {
+    "source": "validation/reference_data/p0043_experimental_srix_m20_v1/fields.npz",
+    "prior_residual_rms_mm": 4.330107647862299e-06,
+    "prior_residual_rms_px": 0.0023533193738382056,
+    "whitened_rms_from_mm": 0.0460649749772585,
+    "whitened_rms_from_px": 0.0460649749772585
+  },
+  "interpretation_boundary": {
+    "pixel_mm_mismatch_found": false,
+    "scalar_whitener_is_full_covariance": false,
+    "noise_structure": "The registered scalar is a robust per-state scale; repeated-frame and temporal diagnostics indicate coherent/affine and spatially correlated noise, so 1/sigma times identity is not a complete DIC covariance model."
+  }
+}

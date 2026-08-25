@@ -7730,3 +7730,14 @@ troisième mode (`0.0361` au prior contre `0.0165` à la meilleure solution).
 Ce résultat est un diagnostic de non-adéquation de cette chaîne
 d'observation/prior, pas une identification du P43 réel. Aucun M100
 expérimental n'a été lancé ; toute relance devra d'abord traiter ce diagnostic.
+
+### P43 pixel/mm audit (2026-08-25)
+
+Un audit ciblé ne trouve pas de conversion pixel/mm manquante. La chaîne utilise
+`0.00184 mm/pixel`; le rapport DIC enregistre `0.05109289194 px` et
+`9.401092117e-5 mm`, avec conversion exacte. Le round-trip du flux image est à
+`2.8e-17 px` et `B u` calculé en représentation mm ou pixel est invariant à
+`1.7e-15` au maximum. Le scalar `9.40e-5 mm` du run M20 est donc cohérent en
+unités. En revanche, ce scalar reste une échelle robuste par état et non une
+covariance DIC complète : la corrélation spatiale/cohérente du bruit demeure
+une limitation statistique indépendante du diagnostic M20.

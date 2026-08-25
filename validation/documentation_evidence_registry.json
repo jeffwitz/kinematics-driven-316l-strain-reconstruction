@@ -2308,6 +2308,14 @@
       "evidence_ids": [
         "E-SRIX-P43-EXP-001-M20"
       ]
+    },
+    {
+      "question": "Is the P43 experimental M20 mismatch explained by a pixel/mm conversion error?",
+      "status": "not supported by the audit",
+      "boundary": "Round-trip flow and FEM kinematic scaling checks only; scalar whitening covariance remains unqualified",
+      "evidence_ids": [
+        "E-P43-PIXEL-MM-AUDIT-001"
+      ]
     }
   ],
   "tables": [
@@ -3344,6 +3352,24 @@
             {"path": "/gate/all_costs_decreased", "operator": "equals", "expected": true},
             {"path": "/gate/m100_authorized", "operator": "equals", "expected": false},
             {"path": "/claims/parameters_identified", "operator": "equals", "expected": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E-P43-PIXEL-MM-AUDIT-001",
+      "question": "Is the P43 experimental M20 mismatch explained by a pixel/mm conversion error?",
+      "fidelity": "P43 DIC scale and M20 archived displacement fields",
+      "parameters": "pixel_size_mm=0.00184",
+      "status": "unit consistency demonstrated; covariance whitening not qualified",
+      "conclusion": "0.05109289194 px converts exactly to 9.401092117e-5 mm; image-flow round trip is 2.8e-17 px and FEM strain B u is invariant to 1.7e-15. The pixel/mm hypothesis is not supported, while spatial/coherent noise remains a separate limitation.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_pixel_mm_audit_v1/report.json",
+          "role": "machine-readable unit audit",
+          "assertions": [
+            {"path": "/interpretation_boundary/pixel_mm_mismatch_found", "operator": "equals", "expected": false},
+            {"path": "/conversion_tests/kinematic_strain_invariance_max", "operator": "less_than", "expected": 1.0e-12}
           ]
         }
       ]

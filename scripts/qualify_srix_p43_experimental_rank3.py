@@ -15,6 +15,7 @@ import numpy as np
 from scipy.optimize import least_squares
 
 from fem_inhouse.core.srix_parameters import DEFAULT_PARAMETER_SET
+from fem_inhouse.identification.dic_noise_reference import load_dic_noise_reference
 from fem_inhouse.identification.srix_equilibrium_gap import SrixTheta4
 from fem_inhouse.identification.svd_parameter_basis import (
     eta_from_reduced_coordinates,
@@ -35,7 +36,14 @@ from scripts.qualify_srix_regm_twin import _theta_from_preset
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "validation/reference_data/p0043_experimental_srix_m20_v1"
-PIXEL_NOISE_MM = 9.40e-5
+PIXEL_SIZE_MM = 0.00184
+DIC_NOISE_REPORT = (
+    ROOT / "validation/reference_data/dic_boundary_loading_subspace_p0043_v1/report.json"
+)
+_DIC_NOISE_REFERENCE = load_dic_noise_reference(
+    DIC_NOISE_REPORT, pixel_size_mm=PIXEL_SIZE_MM
+)
+PIXEL_NOISE_MM = float(_DIC_NOISE_REFERENCE["robust_mm"])
 H = 1.5e-3
 START_Z = {
     "E1": (0.12, -0.08, 0.10),
@@ -186,6 +194,10 @@ def main() -> int:
     if output.exists() and any(output.iterdir()):
         raise SystemExit(f"refusing to overwrite non-empty {output}")
     output.mkdir(parents=True, exist_ok=True)
+    noise_reference = load_dic_noise_reference(
+        DIC_NOISE_REPORT, pixel_size_mm=PIXEL_SIZE_MM
+    )
+    pixel_noise_mm = float(noise_reference["robust_mm"])
     measured_macro, angles, provenance = _load_inputs(CROP)
     path = _make_path(measured_macro, 4)
     scored = tuple(4 * index for index in range(1, 9))
@@ -201,7 +213,7 @@ def main() -> int:
     factory = _factory(angles, library, args.threads)
 
     prior_fields, prior_timing = _forward(prior, path, angles, library, args.threads)
-    prior_residual = _vector(prior_fields, scored, target) / PIXEL_NOISE_MM
+    prior_residual = _vector(prior_fields, scored, target) / pixel_noise_mm
     prior_matrix = _matrix(prior_fields, scored, angles, prior, factory, library, args.threads)
     basis = svd_parameter_basis(prior_matrix, fixed_rank=3)
     starts = []
@@ -256,7 +268,8 @@ def main() -> int:
         "path_steps": len(path),
         "scored_steps": list(scored),
         "observation_profile": "measured displacement identity plus scalar DIC whitening",
-        "dic_uncertainty_mm": PIXEL_NOISE_MM,
+        "dic_uncertainty_mm": pixel_noise_mm,
+        "dic_noise_reference": noise_reference,
         "parameter_preset": DEFAULT_PARAMETER_SET,
         "shadow_fd_step": H,
         "prior": prior.as_runtime_overrides(),
