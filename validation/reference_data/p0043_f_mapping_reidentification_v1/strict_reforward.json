@@ -1,0 +1,25 @@
+{
+  "elapsed_seconds": 10.326491027139127,
+  "element_order": "F",
+  "mechanically_verified": false,
+  "parameters": {
+    "C11_mpa": 181850.00029938974,
+    "C12_mpa": 99049.99916655569,
+    "C44_mpa": 103699.9974754808,
+    "C_mpa": 80000.00107607487,
+    "Q_mpa": 5.17458623831557,
+    "R_mpa": 35.00000003768495,
+    "b": 1.5637738201747942,
+    "d": 499.999992403842,
+    "tau0_mpa": 24.99999999285511
+  },
+  "previous_recorded_rms_mm": 3.576404809953112e-06,
+  "raw_rms_mm": 3.576404809953112e-06,
+  "timing": {
+    "gmres_iterations": 2379,
+    "seconds": 10.242665515979752,
+    "steps": 32,
+    "verification_residual": 5.801487719784166e-07
+  },
+  "verification_residual": 5.801487719784166e-07
+}

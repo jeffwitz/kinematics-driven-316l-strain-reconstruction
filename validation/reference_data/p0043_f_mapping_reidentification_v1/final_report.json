@@ -1,0 +1,245 @@
+{
+  "c_rank7_reusable_for_f": true,
+  "c_vs_f_rank7_max_angle_deg": 0.09521332921298752,
+  "claims": {
+    "experimental_parameters_identified": false,
+    "f_raw_m20_minimum_converged": false,
+    "m100_full_optimization_authorized": false,
+    "mapping_f_algorithmically_correct": true
+  },
+  "crop": [
+    1610,
+    1630,
+    1075,
+    1095
+  ],
+  "element_order": "F",
+  "f_rank7_basis_computed": true,
+  "fd_oracle_one_step": {
+    "accepted_trial": {
+      "alpha": 0.25,
+      "eta": [
+        11.219361883591983,
+        12.969684141221261,
+        11.671146591340952,
+        3.790245731140977,
+        2.9883977709426923,
+        2.073512410025507,
+        0.872564597139292,
+        10.714717989592762,
+        7.038567314923274
+      ],
+      "parameters": {
+        "C11_mpa": 192774.29148562174,
+        "C12_mpa": 118214.10998902492,
+        "C44_mpa": 117142.51990731111,
+        "C_mpa": 45013.511965999125,
+        "Q_mpa": 7.952707287670506,
+        "R_mpa": 19.85384658427081,
+        "b": 2.3930401745310705,
+        "d": 1139.7535284773885,
+        "tau0_mpa": 44.26727678801286
+      },
+      "rms_mm": 3.983670487520121e-06,
+      "verification_residual": 1.3889237305234825e-10
+    },
+    "basis": [
+      [
+        -0.17942862375181334,
+        -0.5587400715796489,
+        0.26451757533332426,
+        0.47298556153821125,
+        0.3041634368737396,
+        -0.32230287338451574,
+        0.10835439895491673
+      ],
+      [
+        -0.01903704866590894,
+        0.00952655493475063,
+        0.0051683027303515774,
+        0.24145605318593888,
+        -0.8682888977594337,
+        0.06750244486954285,
+        0.17069873227587407
+      ],
+      [
+        0.06726237620518705,
+        0.774451480986344,
+        0.013004332436953734,
+        0.17400924419877004,
+        0.23780559088740216,
+        -0.35602958401973617,
+        0.16799683965330384
+      ],
+      [
+        -0.5789403183727928,
+        -0.05003002463715364,
+        0.03218044399839695,
+        -0.7008334872724672,
+        0.009799775941175537,
+        -0.07106520375491943,
+        0.10681344450511678
+      ],
+      [
+        0.747670259858758,
+        -0.16171943132196548,
+        0.2989860516782941,
+        -0.374774918923926,
+        0.08168701239892429,
+        0.1384879275234978,
+        0.07440770610493411
+      ],
+      [
+        -0.0024594559002931293,
+        0.027791687551318795,
+        -0.010909564082170045,
+        0.013114894042743346,
+        -0.045188196293966365,
+        -0.06577457491939286,
+        -0.6781731029016801
+      ],
+      [
+        -0.0023767584439652566,
+        0.02741307194874786,
+        -0.010592785900183267,
+        0.01284002331752689,
+        -0.044273566700747446,
+        -0.0649422305709073,
+        -0.6692219332683742
+      ],
+      [
+        -0.03488411164062873,
+        -0.041225741288549285,
+        -0.6024759067208367,
+        0.17328527080578765,
+        0.2789632492328174,
+        0.6080667496049015,
+        0.04864726857024326
+      ],
+      [
+        -0.25982190754441414,
+        0.2367785606270138,
+        0.6900709705311051,
+        0.1603619263725684,
+        0.09173916732322196,
+        0.6019045470841284,
+        -0.06172033726484336
+      ]
+    ],
+    "final_eta": [
+      11.219361883591983,
+      12.969684141221261,
+      11.671146591340952,
+      3.790245731140977,
+      2.9883977709426923,
+      2.073512410025507,
+      0.872564597139292,
+      10.714717989592762,
+      7.038567314923274
+    ],
+    "final_parameters": {
+      "C11_mpa": 192774.29148562174,
+      "C12_mpa": 118214.10998902492,
+      "C44_mpa": 117142.51990731111,
+      "C_mpa": 45013.511965999125,
+      "Q_mpa": 7.952707287670506,
+      "R_mpa": 19.85384658427081,
+      "b": 2.3930401745310705,
+      "d": 1139.7535284773885,
+      "tau0_mpa": 44.26727678801286
+    },
+    "linear_solver_message": "Positive directional derivative for linesearch",
+    "linear_solver_success": false,
+    "method": "one constrained GN step with F centered-FD Jacobian",
+    "predicted_rms_mm": 3.8355171666449865e-06,
+    "prior_rms_mm": 4.067169138828719e-06,
+    "singular_values": [
+      0.00015389427737784862,
+      5.4733450943880394e-05,
+      5.203212742922879e-05,
+      1.5693189249304826e-05,
+      1.1074059600632898e-05,
+      8.767380954952641e-06,
+      5.674374387567896e-06,
+      6.338174695960823e-08,
+      1.18525862915601e-08
+    ],
+    "verification_prior": 4.635749474850793e-12
+  },
+  "fd_oracle_one_step_maps": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/p0043_f_mapping_reidentification_v1/fd_gn_one_step_maps",
+  "feasible_descent_direction_exists": true,
+  "full_9p_jacobian_f_computed": true,
+  "historical_c_results_physically_valid": false,
+  "historical_c_results_retained_as_control": true,
+  "m100_exploratory_gate": false,
+  "notes": [
+    "The archived SLSQP endpoint is mechanically invalid and is not an optimum.",
+    "The F GN endpoint is strictly equilibrated and improves the raw displacement objective.",
+    "The registration sample-frame/origin remains unproven from available provenance."
+  ],
+  "projected_shadows_f_qualified": false,
+  "provisional_shadow_gn": {
+    "basis_qualified": false,
+    "parameters": {
+      "C11_mpa": 192774.29148562174,
+      "C12_mpa": 118214.10998902492,
+      "C44_mpa": 117142.51990731111,
+      "C_mpa": 45013.511965999125,
+      "Q_mpa": 7.952707287670506,
+      "R_mpa": 19.85384658427081,
+      "b": 2.3930401745310705,
+      "d": 1139.7535284773885,
+      "tau0_mpa": 44.26727678801286
+    },
+    "rms_mm": 3.744568891546064e-06,
+    "verification_residual": 2.6937097162455926e-12
+  },
+  "raw_f_accepted_evaluations": 5,
+  "raw_f_final_parameters": {
+    "C11_mpa": 192774.29148562174,
+    "C12_mpa": 118214.10998902492,
+    "C44_mpa": 117142.51990731111,
+    "C_mpa": 45013.511965999125,
+    "Q_mpa": 7.952707287670506,
+    "R_mpa": 19.85384658427081,
+    "b": 2.3930401745310705,
+    "d": 1139.7535284773885,
+    "tau0_mpa": 44.26727678801286
+  },
+  "raw_f_final_rms_mm": 3.983670487520121e-06,
+  "raw_f_final_verification_residual": 1.3889237305234825e-10,
+  "raw_f_optimization_method": "F centered-FD oracle; one constrained GN step completed",
+  "raw_f_optimization_stationary": false,
+  "raw_f_prior_rms_mm": 4.067169138828719e-06,
+  "raw_f_relative_reduction": 0.020529918589184515,
+  "registration_physical_frame_proven": false,
+  "schema_version": 2,
+  "slsqp_endpoint_valid": false,
+  "slsqp_stop_is_true_kkt": false,
+  "strict_reforward": {
+    "elapsed_seconds": 10.326491027139127,
+    "element_order": "F",
+    "mechanically_verified": false,
+    "parameters": {
+      "C11_mpa": 181850.00029938974,
+      "C12_mpa": 99049.99916655569,
+      "C44_mpa": 103699.9974754808,
+      "C_mpa": 80000.00107607487,
+      "Q_mpa": 5.17458623831557,
+      "R_mpa": 35.00000003768495,
+      "b": 1.5637738201747942,
+      "d": 499.999992403842,
+      "tau0_mpa": 24.99999999285511
+    },
+    "previous_recorded_rms_mm": 3.576404809953112e-06,
+    "raw_rms_mm": 3.576404809953112e-06,
+    "timing": {
+      "gmres_iterations": 2379,
+      "seconds": 10.242665515979752,
+      "steps": 32,
+      "verification_residual": 5.801487719784166e-07
+    },
+    "verification_residual": 5.801487719784166e-07
+  },
+  "ticket": "E-SRIX-P43-F-REIDENTIFICATION-003"
+}

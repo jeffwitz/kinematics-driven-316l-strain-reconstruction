@@ -126,7 +126,9 @@ def _direct_shadow(
             difference = (
                 np.asarray(plus_trial.stress_in_plane_mpa)
                 - np.asarray(minus_trial.stress_in_plane_mpa)
-            ).reshape(*grid.pixel_shape, 2, 3) / (2.0 * step)
+            ).reshape(
+                *grid.pixel_shape, 2, 3, order=element_order
+            ) / (2.0 * step)
             forcings.append(
                 -pack_interior(kinematics.divergence_from_sample_stress(difference))
             )
