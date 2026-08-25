@@ -20,7 +20,7 @@ from scripts.qualify_srix_svd_shadow import _direct_shadow, _step_sizes
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIOR = ROOT / "validation/reference_data/p0043_f_mapping_reidentification_prior_v1"
-DEFAULT_OUTPUT = ROOT / "validation/reference_data/p0043_f_mapping_reidentification_v1"
+DEFAULT_OUTPUT = ROOT / "validation/reference_data/p0043_f_mapping_reidentification_shadow_v1"
 
 
 def bounds(eta_ref: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -39,6 +39,8 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
+    if output.exists() and any(output.iterdir()):
+        raise SystemExit(f"refusing to overwrite non-empty {output}")
     output.mkdir(parents=True, exist_ok=True)
     measured, angles, provenance = _load_inputs(CROP)
     path, scored = _make_path(measured, 4), tuple(4 * i for i in range(1, 9))
@@ -51,7 +53,10 @@ def main() -> int:
     basis = vf[:, :7]
     weak = vf[:, 7:]
     weak0 = weak.T @ (eta_ref - eta_ref)
-    steps = np.asarray(svd["step_sizes"], float)[:7]
+    if "step_sizes" in svd:
+        steps = np.asarray(svd["step_sizes"], float)[:7]
+    else:
+        steps = _step_sizes(np.asarray(svd["singular_values"], float), 7)
     eta = eta_ref.copy()
     z = np.zeros(7)
     cache: dict[bytes, tuple[float, np.ndarray, np.ndarray, float]] = {}
