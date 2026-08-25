@@ -261,6 +261,17 @@ def run_fem(
     nxn, nyn = nx + 1, ny + 1
     n_e = mesh.n_elems
 
+    # StructuredMesh numbers elements in Fortran order.  Keep this explicit
+    # at the FEM boundary; the spectral pixel solver has its own C-order
+    # convention and leaves its orientation provider at the default.
+    if constitutive_options is not None:
+        constitutive_options = dict(constitutive_options)
+        orientation = constitutive_options.get("crystal_orientation")
+        if isinstance(orientation, dict) and orientation.get("mode") == "ebsd":
+            orientation = dict(orientation)
+            orientation.setdefault("element_order", "F")
+            constitutive_options["crystal_orientation"] = orientation
+
     # element->grid output helpers (also used for snapshots)
     def gm(a):
         return a.mean(axis=1)

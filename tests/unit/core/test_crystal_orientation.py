@@ -12,11 +12,13 @@ import pytest
 
 from fem_inhouse.core.crystal_orientation import (
     HomogeneousOrientationProvider,
+    PixelOrientationProvider,
     mgis_rotation_argument,
     orientation_provider_from_mapping,
     rotation_from_euler_bunge_deg,
     validate_rotations,
 )
+from fem_inhouse.core.mesh import StructuredMesh, flatten_element_field_like_mesh
 
 C11, C12, C44 = 197_000.0, 125_000.0, 122_000.0
 ROOT_TWO = np.sqrt(2.0)
@@ -266,6 +268,40 @@ def test_ebsd_configuration_expands_one_orientation_per_pixel_to_material_states
     np.testing.assert_allclose(rotations[0], np.eye(3))
     np.testing.assert_allclose(rotations[target], rotation_from_euler_bunge_deg(90, 0, 0))
     np.testing.assert_allclose(rotations[target + 1], rotations[target])
+
+
+def test_rectangular_ebsd_f_order_matches_structured_mesh_element_ids() -> None:
+    mesh = StructuredMesh(3.0, 5.0, 1.0, 1.0)
+    markers = 1000 * np.indices((3, 5))[0] + np.indices((3, 5))[1]
+    angles = np.zeros((3, 5, 3), dtype=float)
+    angles[..., 0] = markers * 0.01
+    provider = orientation_provider_from_mapping(
+        {"mode": "ebsd", "euler_bunge_deg": angles, "element_order": "F"}
+    )
+    rotations = provider.rotations_global_to_material(mesh.n_elems)
+    source = np.empty((3, 5, 3, 3), dtype=float)
+    for i, j in np.ndindex((3, 5)):
+        source[i, j] = rotation_from_euler_bunge_deg(angles[i, j, 0], 0.0, 0.0)
+    expected = flatten_element_field_like_mesh(source, mesh.elem_ids)
+    np.testing.assert_allclose(rotations, expected)
+
+
+def test_rectangular_ebsd_default_c_order_is_distinguishable_from_mesh_f_order() -> None:
+    mesh = StructuredMesh(3.0, 5.0, 1.0, 1.0)
+    markers = 1000 * np.indices((3, 5))[0] + np.indices((3, 5))[1]
+    angles = np.zeros((3, 5, 3), dtype=float)
+    angles[..., 0] = markers * 0.01
+    provider = PixelOrientationProvider.from_euler_bunge_deg(angles)
+    rotations = provider.rotations_global_to_material(mesh.n_elems)
+    expected = flatten_element_field_like_mesh(
+        np.asarray(
+            [
+                [rotation_from_euler_bunge_deg(angles[i, j, 0], 0.0, 0.0) for j in range(5)]
+                for i in range(3)
+            ]
+        ), mesh.elem_ids
+    )
+    assert not np.allclose(rotations, expected)
 
 
 def test_a_configuration_must_choose_one_form() -> None:

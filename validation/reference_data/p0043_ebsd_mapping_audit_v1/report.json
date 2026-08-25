@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "status": "completed_index_only_audit",
+  "grid_shape": [
+    3,
+    5
+  ],
+  "mesh_element_ids": [
+    [
+      0,
+      3,
+      6,
+      9,
+      12
+    ],
+    [
+      1,
+      4,
+      7,
+      10,
+      13
+    ],
+    [
+      2,
+      5,
+      8,
+      11,
+      14
+    ]
+  ],
+  "mesh_element_order": "StructuredMesh elem_ids (Fortran numbering)",
+  "current_provider_order": "C",
+  "corrected_provider_order": "F",
+  "current_mismatch_count": 12,
+  "corrected_mismatch_count": 0,
+  "permutation_classification": "C-order provider versus StructuredMesh F-order",
+  "ebsd_element_order_audit_passed_before_fix": false,
+  "ebsd_element_order_audit_passed_after_explicit_fix": true,
+  "ebsd_dic_axis_registration_proven": false,
+  "ebsd_dic_axis_direction_proven": false,
+  "ebsd_crystal_sample_frame_registration_proven": false,
+  "p43_historical_cp_results_spatially_trustworthy": false,
+  "mechanics_run": false,
+  "schmid_audit": "not yet run",
+  "axis_audit": "not proven in this index-only ticket"
+}

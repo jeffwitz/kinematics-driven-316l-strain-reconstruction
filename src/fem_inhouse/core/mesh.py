@@ -8,6 +8,26 @@ import numpy as np
 from numpy.typing import NDArray
 
 
+def flatten_element_field_like_mesh(field: NDArray, element_ids: NDArray) -> NDArray:
+    """Flatten a pixel/element field in the actual mesh element-id order.
+
+    ``element_ids[i, j]`` is the sole source of truth; this avoids making the
+    storage order of a NumPy array part of the mechanical contract.
+    """
+    values = np.asarray(field)
+    ids = np.asarray(element_ids)
+    if ids.ndim != 2 or values.shape[:2] != ids.shape:
+        raise ValueError(
+            f"field leading shape {values.shape[:2]} does not match element ids {ids.shape}"
+        )
+    if not np.array_equal(np.sort(ids.ravel()), np.arange(ids.size)):
+        raise ValueError("element_ids must be a permutation of 0..n_elements-1")
+    output = np.empty((ids.size, *values.shape[2:]), dtype=values.dtype)
+    for i, j in np.ndindex(ids.shape):
+        output[int(ids[i, j])] = values[i, j]
+    return output
+
+
 @dataclass(slots=True)
 class StructuredMesh:
     """Regular mesh with both displacement components prescribed on its edges."""

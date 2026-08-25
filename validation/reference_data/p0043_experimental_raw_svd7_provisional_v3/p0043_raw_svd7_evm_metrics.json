@@ -11,13 +11,13 @@
   ],
   "units": "fraction (plots in percent)",
   "prior_forward_timing": {
-    "seconds": 14.038455117028207,
+    "seconds": 14.849435205105692,
     "steps": 32,
     "verification_residual": 1.0919515835530814e-08,
     "gmres_iterations": 4473
   },
   "final_forward_timing": {
-    "seconds": 11.443445180077106,
+    "seconds": 11.734523957129568,
     "steps": 32,
     "verification_residual": 1.8970752958055986e-07,
     "gmres_iterations": 2593

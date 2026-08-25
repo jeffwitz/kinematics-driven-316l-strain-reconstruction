@@ -23,7 +23,7 @@ cubic stiffness rather than against MGIS itself.
 from __future__ import annotations
 
 import math
-from typing import Protocol, cast, runtime_checkable
+from typing import Literal, Protocol, cast, runtime_checkable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -187,9 +187,19 @@ class HomogeneousOrientationProvider:
 
 
 class PixelOrientationProvider:
-    """Per-pixel orientation map replicated over the material states."""
+    """Per-pixel orientation map replicated over the material states.
 
-    def __init__(self, rotations_global_to_material: ArrayLike) -> None:
+    The default ``C`` order is the convention of the spectral pixel solver.
+    Classical ``StructuredMesh`` FEM uses ``F`` element numbering and must
+    request ``element_order="F"`` explicitly in its orientation mapping.
+    """
+
+    def __init__(
+        self,
+        rotations_global_to_material: ArrayLike,
+        *,
+        element_order: Literal["C", "F"] = "C",
+    ) -> None:
         rotations = np.asarray(rotations_global_to_material, dtype=float)
         if rotations.ndim != 4 or rotations.shape[-2:] != (3, 3):
             raise ValueError(
@@ -197,13 +207,21 @@ class PixelOrientationProvider:
                 f"got {rotations.shape}"
             )
         self._pixel_shape = (int(rotations.shape[0]), int(rotations.shape[1]))
+        if element_order not in {"C", "F"}:
+            raise ValueError("element_order must be 'C' or 'F'")
+        self._element_order = element_order
         self._rotations = validate_rotations(rotations.reshape(-1, 3, 3)).reshape(
             rotations.shape
         )
 
     @classmethod
-    def from_euler_bunge_deg(cls, angles: ArrayLike) -> PixelOrientationProvider:
-        return cls(rotations_from_euler_bunge_deg(angles))
+    def from_euler_bunge_deg(
+        cls,
+        angles: ArrayLike,
+        *,
+        element_order: Literal["C", "F"] = "C",
+    ) -> PixelOrientationProvider:
+        return cls(rotations_from_euler_bunge_deg(angles), element_order=element_order)
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
@@ -218,7 +236,7 @@ class PixelOrientationProvider:
                 f"pixel count {pixel_count}"
             )
         states_per_pixel = point_count // pixel_count
-        flattened = self._rotations.reshape(pixel_count, 3, 3)
+        flattened = self._rotations.reshape(pixel_count, 3, 3, order=self._element_order)
         return np.repeat(flattened, states_per_pixel, axis=0)
 
 
@@ -235,7 +253,12 @@ def orientation_provider_from_mapping(configuration: dict[str, object]) -> Orien
         angles = configuration.get("euler_bunge_deg")
         if angles is None:
             raise ValueError("ebsd orientation needs 'euler_bunge_deg'")
-        return PixelOrientationProvider.from_euler_bunge_deg(cast(ArrayLike, angles))
+        element_order = configuration.get("element_order", "C")
+        if element_order not in {"C", "F"}:
+            raise ValueError("ebsd element_order must be 'C' or 'F'")
+        return PixelOrientationProvider.from_euler_bunge_deg(
+            cast(ArrayLike, angles), element_order=element_order
+        )
     if mode != "homogeneous":
         raise ValueError(
             f"unsupported crystal_orientation mode {mode!r}; available: homogeneous, ebsd"
