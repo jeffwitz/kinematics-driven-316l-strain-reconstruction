@@ -110,6 +110,57 @@ def _plot_summary(output: Path, evm_dic: np.ndarray, evm_prior: np.ndarray, evm_
     plt.close(fig)
 
 
+def _plot_historical_style(output: Path, evm_dic: np.ndarray, evm_prior: np.ndarray,
+                           evm_final: np.ndarray, labels: list[str]) -> None:
+    """Write the former 2x3 comparison layout, with one common scale for all states."""
+    common_max = max(float(np.nanmax(evm_dic)), float(np.nanmax(evm_prior)),
+                     float(np.nanmax(evm_final)))
+    diff_prior = evm_prior - evm_dic
+    diff_final = evm_final - evm_dic
+    diff_change = evm_final - evm_prior
+    diff_max = max(float(np.nanmax(np.abs(diff_prior))), float(np.nanmax(np.abs(diff_final))),
+                   float(np.nanmax(np.abs(diff_change))), 1.0e-12)
+    for row, label in enumerate(labels):
+        panels = (
+            (evm_dic[row], "DIC EVM", "viridis", 0.0, common_max, "%"),
+            (evm_prior[row], "EVM départ", "viridis", 0.0, common_max, "%"),
+            (evm_final[row], "EVM arrivée", "viridis", 0.0, common_max, "%"),
+            (diff_prior[row], "Départ − DIC", "coolwarm", -diff_max, diff_max, "points de %"),
+            (diff_final[row], "Arrivée − DIC", "coolwarm", -diff_max, diff_max, "points de %"),
+            (diff_change[row], "Arrivée − départ", "coolwarm", -diff_max, diff_max, "points de %"),
+        )
+        fig, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
+        for ax, (data, title, cmap, low, high, unit) in zip(axes.flat, panels, strict=True):
+            image = ax.imshow(100.0 * data.T, origin="lower", cmap=cmap,
+                              vmin=100.0 * low, vmax=100.0 * high, aspect="equal")
+            ax.set_title(title)
+            ax.set_xlabel("x node index")
+            ax.set_ylabel("y node index")
+            fig.colorbar(image, ax=ax, label=unit)
+        fig.suptitle(f"P43 M20 — comparaison EVM historique — état {label}", fontsize=14)
+        fig.savefig(output / f"p0043_raw_svd7_evm_state_{int(label):02d}.png", dpi=220)
+        plt.close(fig)
+    # A compact overview in the same six-panel convention, one row per state.
+    fig, axes = plt.subplots(len(labels), 6, figsize=(18, 2.7 * len(labels)), squeeze=False)
+    for row, label in enumerate(labels):
+        panels = (evm_dic[row], evm_prior[row], evm_final[row], diff_prior[row], diff_final[row], diff_change[row])
+        for col, data in enumerate(panels):
+            difference = col >= 3
+            ax = axes[row, col]
+            image = ax.imshow(100.0 * data.T, origin="lower", aspect="equal",
+                              cmap="coolwarm" if difference else "viridis",
+                              vmin=-100.0 * diff_max if difference else 0.0,
+                              vmax=100.0 * diff_max if difference else 100.0 * common_max)
+            if row == 0:
+                ax.set_title(("DIC", "Départ", "Arrivée", "Départ−DIC", "Arrivée−DIC", "Arrivée−départ")[col])
+            ax.set_ylabel(f"état {label}")
+            ax.set_xticks([]); ax.set_yticks([])
+    fig.suptitle("P43 M20 — EVM historique, échelle commune", fontsize=14)
+    fig.tight_layout()
+    fig.savefig(output / "p0043_raw_svd7_evm_historical_overview.png", dpi=220)
+    plt.close(fig)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -131,6 +182,7 @@ def main() -> int:
     final_evm = np.stack([_evm(fields_final[index - 1].displacement) for index in scored])
     labels = [str(index) for index in range(1, 9)]
     _plot_maps(output, dic, prior_evm, final_evm, labels)
+    _plot_historical_style(output, dic, prior_evm, final_evm, labels)
     _plot_summary(output, dic, prior_evm, final_evm, labels)
     np.savez_compressed(output / "p0043_raw_svd7_evm_fields.npz", dic=dic, prior=prior_evm, final=final_evm)
     metrics = {
