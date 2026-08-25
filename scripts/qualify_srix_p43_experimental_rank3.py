@@ -60,6 +60,7 @@ def _matrix(
     factory: Any,
     library: str,
     threads: int,
+    residual_scale: float = PIXEL_NOISE_MM,
 ) -> np.ndarray:
     matrix, _ = _direct_jacobian(
         fields=fields,
@@ -72,7 +73,7 @@ def _matrix(
         h=H,
         material_factory=factory,
     )
-    return matrix / PIXEL_NOISE_MM
+    return matrix / residual_scale
 
 
 def _run_start(
@@ -89,10 +90,13 @@ def _run_start(
     max_nfev: int,
     discarded_direction: np.ndarray | None = None,
     discarded_coordinate: float = 0.0,
+    residual_scale: float = PIXEL_NOISE_MM,
+    optimizer_tolerances: tuple[float, float, float] = (1.0e-8, 1.0e-8, 1.0e-8),
 ) -> dict[str, Any]:
     factory = _factory(angles, library, threads)
     cache: dict[bytes, tuple[list[Any], np.ndarray]] = {}
     forwards: list[dict[str, Any]] = []
+    evaluation_records: list[dict[str, Any]] = []
     jacobian_records: list[dict[str, Any]] = []
     weak_direction = (
         np.zeros(4, dtype=np.float64)
@@ -109,9 +113,15 @@ def _run_start(
         if key not in cache:
             theta = SrixTheta4.from_log_coordinates(eta)
             fields, timing = _forward(theta, path, angles, library, threads)
-            residual = _vector(fields, scored, target) / PIXEL_NOISE_MM
+            residual = _vector(fields, scored, target) / residual_scale
             cache[key] = (fields, residual)
             forwards.append({"theta": theta.as_runtime_overrides(), **timing})
+            evaluation_records.append({
+                "evaluation": len(forwards),
+                "z": np.asarray(z, dtype=np.float64).tolist(),
+                "eta": np.asarray(eta, dtype=np.float64).tolist(),
+                "rms": float(np.sqrt(np.mean(residual**2))),
+            })
         return cache[key]
 
     initial_fields, initial_residual = evaluate(initial_z)
@@ -121,7 +131,10 @@ def _run_start(
 
     def jacobian(z: np.ndarray) -> np.ndarray:
         fields, _ = evaluate(z)
-        eta = eta_from_reduced_coordinates(eta_ref, basis.retained_basis, z)
+        eta = (
+            eta_from_reduced_coordinates(eta_ref, basis.retained_basis, z)
+            + weak_direction * discarded_coordinate
+        )
         started = time.perf_counter()
         matrix = _matrix(
             fields,
@@ -131,6 +144,7 @@ def _run_start(
             factory,
             library,
             threads,
+            residual_scale=residual_scale,
         )
         jacobian_records.append({"seconds": time.perf_counter() - started})
         return matrix @ basis.retained_basis
@@ -143,9 +157,9 @@ def _run_start(
         bounds=(-np.log(4.0) * np.ones(3), np.log(4.0) * np.ones(3)),
         x_scale="jac",
         max_nfev=max_nfev,
-        xtol=1.0e-8,
-        ftol=1.0e-8,
-        gtol=1.0e-8,
+        xtol=optimizer_tolerances[0],
+        ftol=optimizer_tolerances[1],
+        gtol=optimizer_tolerances[2],
     )
     final_eta = eta_from_reduced_coordinates(eta_ref, basis.retained_basis, fit.x)
     final_theta = SrixTheta4.from_log_coordinates(final_eta)
@@ -161,6 +175,8 @@ def _run_start(
         ).as_runtime_overrides(),
         "identified": final_theta.as_runtime_overrides(),
         "cost": {
+            "initial_scaled_rms": float(np.sqrt(np.mean(initial_residual**2))),
+            "final_scaled_rms": float(np.sqrt(np.mean(final_residual**2))),
             "initial_whitened_rms": float(np.sqrt(np.mean(initial_residual**2))),
             "final_whitened_rms": float(np.sqrt(np.mean(final_residual**2))),
             "initial_displacement_rms_mm": float(
@@ -180,6 +196,7 @@ def _run_start(
             "jacobian_evaluations": len(jacobian_records),
         },
         "forward_records": forwards,
+        "evaluation_records": evaluation_records,
         "jacobian_records": jacobian_records,
     }
 
