@@ -7699,3 +7699,20 @@ passe de `3.38e-16` à `3.25e-18`, avec
 `(1,0.41608,0.05539,1.4307e-4)` et `rho(Q,b)=0.9999999999`. Cette réussite
 est synthétique uniquement ; C (paramètres réduits), bruit, transfert DIC et
 P43 expérimental restent à faire.
+
+### E-SRIX-P43-SYNTH-SVD-001 : C1/C3 M20 (2026-08-26)
+
+L'infrastructure générique `svd_parameter_basis.py` et ses trois tests unitaires
+sont ajoutées. C1 utilise la base SVD M20 à la vérité, avec rang fixé à 3 et
+`eta=eta_ref+V3 z`; `Q` et `b` restent donc tous deux variables. Les quatre
+départs B1--B4 convergent avec RMS `8.65e-18`, `3.32e-16`, `9.56e-18` et
+`2.45e-17`; l'erreur rang-3 maximale est `1.61e-9` en log-coordonnées.
+
+Le spectre M20 est `(1,0.135725,0.036116,1.031e-4)`. L'alignement de `v4` avec
+`log(Q)-log(b)` vaut `0.999977`, celui de `v3` avec `log(Q)+log(b)` vaut
+`0.998844`. C3 profile `z4` sans réoptimiser `z1..z3` : le RMS reste entre
+`8.65e-18` et `4.53e-11` sur `z4∈[-0.3,0.3]`, tandis que `Q` varie de `8.10`
+à `12.35` et `b` de `3.71` à `2.42`. La paramétrisation SVD rang 3 est donc
+qualifiée sur le jumeau M20 et la direction `Q/b` est pratiquement une jauge
+non observable. C2 dynamique et C4 Q-fixé/b-fixé restent optionnels ; aucun
+M100 supplémentaire ni P43 expérimental n'est autorisé.

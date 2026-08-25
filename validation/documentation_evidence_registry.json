@@ -2292,6 +2292,14 @@
       "evidence_ids": [
         "E-SRIX-P43-SYNTH-003"
       ]
+    },
+    {
+      "question": "Does a fixed rank-three SVD parameterization qualify synthetic P43 identification?",
+      "status": "demonstrated on M20; weak Q/b direction profiled",
+      "boundary": "P43 M20, fixed SVD basis at truth, four starts, no noise, identity observation; no experimental claim",
+      "evidence_ids": [
+        "E-SRIX-P43-SYNTH-SVD-001"
+      ]
     }
   ],
   "tables": [
@@ -3284,6 +3292,31 @@
             {"path": "/claims/experimental_p43_authorized", "operator": "equals", "expected": false},
             {"path": "/optimizer/success", "operator": "equals", "expected": true}
           ]
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-P43-SYNTH-SVD-001",
+      "question": "Does a fixed rank-three SVD parameterization qualify synthetic P43 identification?",
+      "fidelity": "P43 M20 real EBSD crop; fixed truth SVD basis; identity observation; no noise; four starts and weak-mode profile",
+      "parameters": "rank=3; h=0.0015; z4 in [-0.3,0.3]",
+      "status": "C1 and descriptive C3 passed",
+      "conclusion": "All four rank-three starts converge with RMS <=3.32e-16 and rank-three log-parameter error <=1.61e-9. v4 aligns 0.999977 with log(Q)-log(b), while the C3 profile remains below 4.53e-11 RMS across z4 in [-0.3,0.3], confirming that Q and b are not separately identifiable from this observation set.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_synthetic_svd_reparameterization_v1/report.json",
+          "role": "machine-readable SVD reparameterization result",
+          "assertions": [
+            {"path": "/claims/c1_completed", "operator": "equals", "expected": true},
+            {"path": "/claims/synthetic_rank3_qualified", "operator": "equals", "expected": true},
+            {"path": "/claims/weak_direction_profiled", "operator": "equals", "expected": true},
+            {"path": "/claims/experimental_p43_authorized", "operator": "equals", "expected": false},
+            {"path": "/basis/alignment_v4_log_q_minus_log_b", "operator": "greater_than", "expected": 0.999}
+          ]
+        },
+        {
+          "path": "validation/reference_data/p0043_synthetic_svd_reparameterization_v1/weak_mode_profile.csv",
+          "role": "weak-direction profile"
         }
       ]
     }
