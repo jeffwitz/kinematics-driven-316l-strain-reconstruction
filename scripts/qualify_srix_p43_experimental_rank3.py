@@ -79,14 +79,24 @@ def _run_start(
     library: str,
     threads: int,
     max_nfev: int,
+    discarded_direction: np.ndarray | None = None,
+    discarded_coordinate: float = 0.0,
 ) -> dict[str, Any]:
     factory = _factory(angles, library, threads)
     cache: dict[bytes, tuple[list[Any], np.ndarray]] = {}
     forwards: list[dict[str, Any]] = []
     jacobian_records: list[dict[str, Any]] = []
+    weak_direction = (
+        np.zeros(4, dtype=np.float64)
+        if discarded_direction is None
+        else np.asarray(discarded_direction, dtype=np.float64)
+    )
 
     def evaluate(z: np.ndarray) -> tuple[list[Any], np.ndarray]:
-        eta = eta_from_reduced_coordinates(eta_ref, basis.retained_basis, z)
+        eta = (
+            eta_from_reduced_coordinates(eta_ref, basis.retained_basis, z)
+            + weak_direction * discarded_coordinate
+        )
         key = np.asarray(eta, dtype=np.float64).tobytes()
         if key not in cache:
             theta = SrixTheta4.from_log_coordinates(eta)
@@ -134,7 +144,7 @@ def _run_start(
     final_fields, final_residual = evaluate(fit.x)
     return {
         "name": name,
-        "z4_initial": 0.0,
+        "z4_initial": discarded_coordinate,
         "z_initial": initial_z.tolist(),
         "z_final": fit.x.tolist(),
         "eta_final": final_eta.tolist(),
@@ -223,6 +233,18 @@ def main() -> int:
     best_fields, _ = _forward(best_theta, path, angles, library, args.threads)
     final_matrix = _matrix(best_fields, scored, angles, best_theta, factory, library, args.threads)
     final_basis = svd_parameter_basis(final_matrix, fixed_rank=3)
+    gate = {
+        "all_optimizers_converged": all(item["optimizer"]["success"] for item in starts),
+        "all_costs_decreased": all(
+            item["cost"]["final_whitened_rms"] < item["cost"]["initial_whitened_rms"]
+            for item in starts
+        ),
+    }
+    gate["m100_authorized"] = bool(
+        gate["all_optimizers_converged"]
+        and gate["all_costs_decreased"]
+        and all(np.isfinite(item["cost"]["final_whitened_rms"]) for item in starts)
+    )
     report = {
         "schema_version": 1,
         "method": "P43 experimental direct FEMU rank-three SVD identification M20",
@@ -259,17 +281,10 @@ def main() -> int:
             "right_singular_vectors": final_basis.right_singular_vectors.tolist(),
             "retained_basis": final_basis.retained_basis.tolist(),
         },
-        "gate": {
-            "all_optimizers_converged": all(item["optimizer"]["success"] for item in starts),
-            "all_costs_decreased": all(
-                item["cost"]["final_whitened_rms"] < item["cost"]["initial_whitened_rms"]
-                for item in starts
-            ),
-            "m100_authorized": False,
-        },
+        "gate": gate,
         "claims": {
             "experimental_m20_completed": True,
-            "experimental_m100_authorized": False,
+            "experimental_m100_authorized": gate["m100_authorized"],
             "parameters_identified": False,
         },
     }
