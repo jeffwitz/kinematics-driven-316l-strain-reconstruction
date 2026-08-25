@@ -17,6 +17,7 @@ import numpy as np
 from scipy.stats import spearmanr
 
 from fem_inhouse.core.nonlinear import run_fem
+from fem_inhouse.core.srix_parameters import DEFAULT_PARAMETER_SET, get_parameter_set
 from fem_inhouse.identification.srix_parameter_coordinates import SrixTheta9
 from fem_inhouse.postprocessing.kinematics import (
     plane_stress_equivalent_strain,
@@ -51,17 +52,17 @@ def _metrics(candidate: np.ndarray, reference: np.ndarray) -> dict[str, float]:
     }
 
 
-def _plot(output: Path, dic: np.ndarray, c: np.ndarray, f: np.ndarray) -> None:
+def _plot(output: Path, dic: np.ndarray, c: np.ndarray, f: np.ndarray, label: str) -> None:
     c_minus = c - dic
     f_minus = f - dic
     f_c = f - c
     fields = (dic, c, f, c_minus, f_minus, f_c)
-    titles = ("DIC EVM", "Mapping C", "Mapping F", "C − DIC", "F − DIC", "F − C")
+    titles = ("DIC EVM", "Mapping C", "Mapping F", "C - DIC", "F - DIC", "F - C")
     common_max = max(float(np.max(x)) for x in fields[:3])
     diff_max = max(float(np.max(np.abs(x))) for x in fields[3:])
     fig, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
     for ax, values, title in zip(axes.flat, fields, titles, strict=True):
-        difference = title in {"C − DIC", "F − DIC", "F − C"}
+        difference = title in {"C - DIC", "F - DIC", "F - C"}
         image = ax.imshow(
             100.0 * values.T, origin="lower", aspect="equal",
             cmap="coolwarm" if difference else "viridis",
@@ -72,8 +73,8 @@ def _plot(output: Path, dic: np.ndarray, c: np.ndarray, f: np.ndarray) -> None:
         ax.set_xlabel("x node index")
         ax.set_ylabel("y node index")
         fig.colorbar(image, ax=ax, label="points de %" if difference else "%")
-    fig.suptitle("P43 M20 — test de mapping EBSD C/F, paramètres optimisés", fontsize=14)
-    fig.savefig(output / "old_vs_corrected_evm.png", dpi=220)
+    fig.suptitle(f"P43 M20 — test de mapping EBSD C/F, {label}", fontsize=14)
+    fig.savefig(output / f"old_vs_corrected_evm_{label}.png", dpi=220)
     plt.close(fig)
 
 
@@ -81,14 +82,21 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--parameters", choices=("optimized", "prior"), default="optimized")
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.mkdir(parents=True, exist_ok=True)
     report = json.loads(REPORT.read_text())
-    theta = SrixTheta9.from_log_coordinates(report["final_eta"])
+    if args.parameters == "prior":
+        theta = SrixTheta9.from_parameter_set(get_parameter_set(DEFAULT_PARAMETER_SET))
+    else:
+        theta = SrixTheta9.from_log_coordinates(report["final_eta"])
+    label = args.parameters
     macro, angles, _ = _load_inputs(CROP)
     boundary = macro[-1]
-    library = os.environ.get("MFRONT_BEHAVIOUR_LIBRARY", str(ROOT / "build/mfront/src/libBehaviour.so"))
+    library = os.environ.get(
+        "MFRONT_BEHAVIOUR_LIBRARY", str(ROOT / "build/mfront/src/libBehaviour.so")
+    )
     base = dict(
         disp_x=boundary[..., 0], disp_y=boundary[..., 1],
         yield_map=np.ones((20, 20)), K_map=np.ones((20, 20)), n_exp=0.245,
@@ -115,9 +123,15 @@ def main() -> int:
     dic = _evm(boundary)
     evm_c = _evm(fields["C"]["U"])
     evm_f = _evm(fields["F"]["U"])
-    _plot(output, dic, evm_c, evm_f)
-    np.savez_compressed(output / "old_vs_corrected_fields.npz", dic=dic, mapping_c=evm_c, mapping_f=evm_f,
-                        displacement_c=fields["C"]["U"], displacement_f=fields["F"]["U"])
+    _plot(output, dic, evm_c, evm_f, label)
+    np.savez_compressed(
+        output / f"old_vs_corrected_fields_{label}.npz",
+        dic=dic,
+        mapping_c=evm_c,
+        mapping_f=evm_f,
+        displacement_c=fields["C"]["U"],
+        displacement_f=fields["F"]["U"],
+    )
     metrics = {"C_vs_DIC": _metrics(evm_c, dic), "F_vs_DIC": _metrics(evm_f, dic),
                "F_vs_C": _metrics(evm_f, evm_c), "timings_seconds": timings,
                "parameters": theta.as_runtime_overrides(), "boundary_state": "final DIC state",
@@ -125,7 +139,7 @@ def main() -> int:
                "claims": {"mechanical_mapping_effect_measured": True,
                           "dic_ebsd_axes_proven": False,
                           "sample_frame_proven": False}}
-    (output / "localization_metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
+    (output / f"localization_metrics_{label}.json").write_text(json.dumps(metrics, indent=2) + "\n")
     print(json.dumps(metrics, indent=2))
     return 0
 

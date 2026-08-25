@@ -1,0 +1,45 @@
+{
+  "C_vs_DIC": {
+    "rms": 0.001307987329147745,
+    "relative_l2": 0.22765007591933129,
+    "pearson": 0.2567094691559926,
+    "spearman": 0.1905248812811838
+  },
+  "F_vs_DIC": {
+    "rms": 0.0014949140127124322,
+    "relative_l2": 0.26018393366899095,
+    "pearson": 0.09637575633883554,
+    "spearman": 0.1692296499019188
+  },
+  "F_vs_C": {
+    "rms": 0.0016343853204520858,
+    "relative_l2": 0.28266096418525444,
+    "pearson": 0.1474638148856044,
+    "spearman": 0.23555436160478177
+  },
+  "timings_seconds": {
+    "C": 40.304372251965106,
+    "F": 39.463247801875696
+  },
+  "parameters": {
+    "C11_mpa": 197000.0,
+    "C12_mpa": 125000.0,
+    "C44_mpa": 122000.0,
+    "tau0_mpa": 40.0,
+    "R_mpa": 18.781910070526294,
+    "Q_mpa": 10.0,
+    "b": 3.0,
+    "C_mpa": 40000.0,
+    "d": 1500.0
+  },
+  "boundary_state": "final DIC state",
+  "element_orders": {
+    "historical": "C",
+    "corrected": "F"
+  },
+  "claims": {
+    "mechanical_mapping_effect_measured": true,
+    "dic_ebsd_axes_proven": false,
+    "sample_frame_proven": false
+  }
+}
