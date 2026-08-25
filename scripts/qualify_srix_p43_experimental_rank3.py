@@ -179,7 +179,10 @@ def main() -> int:
     measured_macro, angles, provenance = _load_inputs(CROP)
     path = _make_path(measured_macro, 4)
     scored = tuple(4 * index for index in range(1, 9))
-    target = [np.asarray(measured_macro[index], dtype=np.float64).copy() for index in range(1, 9)]
+    # The scored endpoints are the path steps 4,8,...,32; the path boundaries
+    # are the DIC displacement targets at those macro endpoints and provide the
+    # full index layout expected by the shared residual helper.
+    target = [np.asarray(step.boundary, dtype=np.float64).copy() for step in path]
     prior = _theta_from_preset()
     eta_ref = prior.log_coordinates()
     library = os.environ.get(
