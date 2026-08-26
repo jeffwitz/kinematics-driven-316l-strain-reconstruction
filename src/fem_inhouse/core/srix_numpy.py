@@ -466,7 +466,7 @@ class SrixNumpy3DMaterialPointBatch:
         mus = self._schmid_material
         plastic_modulus = self._plastic_modulus
         dg = np.zeros((n, 12))
-        tau_trial = np.einsum("si,ij,nj->ns", mus, ce, elastic0 + material_strain)
+        tau_trial = (elastic0 + material_strain) @ self._mce.T
         de = _deviatoric(material_strain)
         deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
         slope = deq / self.parameters.overstress_modulus_mpa
@@ -478,10 +478,10 @@ class SrixNumpy3DMaterialPointBatch:
             sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
             p_trial = p0 + abs_dg
             exp_bp = np.exp(-self.parameters.b * p_trial)
-            resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
-                "ij,nj->ni", self._interaction, 1.0 - exp_bp
+            resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * (
+                (1.0 - exp_bp) @ self._interaction.T
             )
-            tau = tau_trial - np.einsum("ij,nj->ni", plastic_modulus, dg)
+            tau = tau_trial - dg @ plastic_modulus.T
             da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
             drive = tau - self.parameters.c_mpa * (a0 + da)
             sgn = np.where(drive > 0.0, 1.0, -1.0)
@@ -560,26 +560,28 @@ class SrixNumpy3DMaterialPointBatch:
                 "NumPy SRIX reduced Newton did not converge in "
                 f"{self._maximum_iterations} iterations"
             )
-        deel = material_strain - np.einsum("si,ns->ni", mus, dg)
+        deel = material_strain - dg @ mus
         elastic_material = elastic0 + deel
-        stress_material = np.einsum("ij,nj->ni", ce, elastic_material)
-        stress_global = np.einsum("nij,nj->ni", np.swapaxes(transform, 1, 2), stress_material)
-        elastic_global = np.einsum("nij,nj->ni", np.swapaxes(transform, 1, 2), elastic_material)
+        stress_material = elastic_material @ ce.T
+        stress_global = np.matmul(np.swapaxes(transform, 1, 2), stress_material[..., None])[:, :, 0]
+        elastic_global = np.matmul(np.swapaxes(transform, 1, 2), elastic_material[..., None])[
+            :, :, 0
+        ]
         # Rebuild the proven 18x18 implicit Jacobian only for the consistent
         # tangent.  The nonlinear solve above uses the exact 12-slip Schur
         # reduction; retaining this oracle construction avoids changing the
         # tangent contract while the reduced formulation is qualified.
         elastic = elastic0 + deel
-        stress = np.einsum("ij,nj->ni", ce, elastic)
-        tau = np.einsum("si,ni->ns", mus, stress)
-        de = _deviatoric(deel) + np.einsum("si,ns->ni", mus, dg)
+        stress = elastic @ ce.T
+        tau = stress @ mus.T
+        de = _deviatoric(deel) + dg @ mus
         deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
         abs_dg = np.abs(dg)
         sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
         p_trial = p0 + abs_dg
         exp_bp = np.exp(-self.parameters.b * p_trial)
-        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
-            "ij,nj->ni", self._interaction, 1.0 - exp_bp
+        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * (
+            (1.0 - exp_bp) @ self._interaction.T
         )
         da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
         drive = tau - self.parameters.c_mpa * (a0 + da)
@@ -590,7 +592,7 @@ class SrixNumpy3DMaterialPointBatch:
         ndeq = np.zeros_like(de)
         nonzero = deq > 1e-14
         ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
-        mus_ce = np.einsum("si,ij->sj", mus, ce)
+        mus_ce = self._mce
         jfd = -active[:, :, None] * slope[:, None, None] * mus_ce[None, :, :]
         jfd -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[:, :, None] * ndeq[
             :, None, :
@@ -611,7 +613,7 @@ class SrixNumpy3DMaterialPointBatch:
             * sign_dg[:, None, :]
         )
         jgg += (active * slope[:, None] * sgn)[:, :, None] * dr
-        ndeq_projection = np.einsum("ni,si->ns", ndeq, mus)
+        ndeq_projection = ndeq @ mus.T
         jgg -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[
             :, :, None
         ] * ndeq_projection[:, None, :]
