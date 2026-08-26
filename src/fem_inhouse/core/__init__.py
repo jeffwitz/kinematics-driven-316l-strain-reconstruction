@@ -48,6 +48,11 @@ from fem_inhouse.core.plane_stress_material import (
     PlaneStressMaterialBatch,
     PythonJ2PlaneStressBatch,
 )
+from fem_inhouse.core.srix_numpy import (
+    SrixNumpy3DMaterialPointBatch,
+    SrixNumpy3DTrial,
+    SrixNumpyCondensedPlaneStressBatch,
+)
 
 __all__ = [
     "PLANE_STRESS_VON_MISES_METRIC",
@@ -69,6 +74,9 @@ __all__ = [
     "PlaneStressBatchStatistics",
     "PlaneStressMaterialBatch",
     "PythonJ2PlaneStressBatch",
+    "SrixNumpy3DMaterialPointBatch",
+    "SrixNumpy3DTrial",
+    "SrixNumpyCondensedPlaneStressBatch",
     "StructuredMesh",
     "assemble_stiffness",
     "assembly_indices",
