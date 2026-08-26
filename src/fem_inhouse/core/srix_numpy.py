@@ -30,6 +30,7 @@ from fem_inhouse.core.plane_stress_material import (
     ConstitutiveTrial,
     InPlaneConstitutiveTrial,
     PlaneStressBatchStatistics,
+    ResponseLevel,
 )
 from fem_inhouse.core.srix_parameters import (
     DEFAULT_PARAMETER_SET,
@@ -567,65 +568,20 @@ class SrixNumpy3DMaterialPointBatch:
         elastic_global = np.matmul(np.swapaxes(transform, 1, 2), elastic_material[..., None])[
             :, :, 0
         ]
-        # Rebuild the proven 18x18 implicit Jacobian only for the consistent
-        # tangent.  The nonlinear solve above uses the exact 12-slip Schur
-        # reduction; retaining this oracle construction avoids changing the
-        # tangent contract while the reduced formulation is qualified.
-        elastic = elastic0 + deel
-        stress = elastic @ ce.T
-        tau = stress @ mus.T
-        de = _deviatoric(deel) + dg @ mus
-        deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
-        abs_dg = np.abs(dg)
-        sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
-        p_trial = p0 + abs_dg
-        exp_bp = np.exp(-self.parameters.b * p_trial)
-        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * (
-            (1.0 - exp_bp) @ self._interaction.T
-        )
-        da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
-        drive = tau - self.parameters.c_mpa * (a0 + da)
-        sgn = np.where(drive > 0.0, 1.0, -1.0)
-        overstress = np.maximum(np.abs(drive) - resistance, 0.0)
-        slope = deq / self.parameters.overstress_modulus_mpa
-        active = (overstress > 0.0).astype(float)
+        # Reuse the converged reduced residual/Jacobian state for the
+        # consistent tangent; no second constitutive reconstruction is needed.
+        if jac is None:
+            raise RuntimeError("reduced Newton completed without a Jacobian")
         ndeq = np.zeros_like(de)
         nonzero = deq > 1e-14
         ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
-        mus_ce = self._mce
-        jfd = -active[:, :, None] * slope[:, None, None] * mus_ce[None, :, :]
+        jfd = -active[:, :, None] * slope[:, None, None] * self._mce[None, :, :]
         jfd -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[:, :, None] * ndeq[
             :, None, :
         ]
-        jgg = np.broadcast_to(np.eye(12), (n, 12, 12)).copy()
-        den = 1.0 + self.parameters.d * abs_dg
-        num = dg - self.parameters.d * a0 * abs_dg
-        dnum = 1.0 - self.parameters.d * a0 * sign_dg
-        dden = self.parameters.d * sign_dg
-        dda = (dnum * den - num * dden) / (den * den)
-        indices = np.arange(12)
-        jgg[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
-        dr = (
-            self.parameters.q_mpa
-            * self.parameters.b
-            * self._interaction[None, :, :]
-            * exp_bp[:, None, :]
-            * sign_dg[:, None, :]
-        )
-        jgg += (active * slope[:, None] * sgn)[:, :, None] * dr
-        ndeq_projection = ndeq @ mus.T
-        jgg -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[
-            :, :, None
-        ] * ndeq_projection[:, None, :]
-        full_jac = np.zeros((n, 18, 18))
-        full_jac[:, :6, :6] = np.eye(6)
-        full_jac[:, :6, 6:] = np.swapaxes(mus[None, :, :], 1, 2)
-        full_jac[:, 6:, :6] = jfd
-        full_jac[:, 6:, 6:] = jgg
-        rhs = np.zeros((n, 18, 6))
-        rhs[:, :6, :] = np.eye(6)
-        implicit = np.linalg.solve(full_jac, rhs)
-        tangent_material = np.einsum("ij,njk->nik", ce, implicit[:, :6, :])
+        dgamma_deps = np.linalg.solve(jac, -jfd)
+        elastic_derivative = np.eye(6)[None, :, :] - np.einsum("si,nsj->nij", mus, dgamma_deps)
+        tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
         tangent_global = np.einsum(
             "nij,njk,nkl->nil", np.swapaxes(transform, 1, 2), tangent_material, transform
         )
@@ -772,12 +728,19 @@ class SrixNumpyCondensedPlaneStressBatch:
     def statistics(self) -> PlaneStressBatchStatistics:
         return PlaneStressBatchStatistics()
 
-    def evaluate(
-        self, in_plane_strain: ArrayLike, *, time_increment: float, consistent_tangent: bool = True
-    ) -> ConstitutiveTrial:
+    def _evaluate(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        response_level: ResponseLevel,
+        consistent_tangent: bool = True,
+    ) -> ConstitutiveTrial | InPlaneConstitutiveTrial:
         in_plane = np.asarray(in_plane_strain, dtype=float)
         if in_plane.shape != (self.point_count, 3):
             raise ValueError(f"in_plane_strain must have shape {(self.point_count, 3)}")
+        if response_level not in {"residual", "tangent", "complete"}:
+            raise ValueError("response_level must be 'residual', 'tangent', or 'complete'")
         total = np.zeros((self.point_count, 6))
         total[:, _PLANE] = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
         transverse_initial = self._committed_transverse
@@ -820,33 +783,69 @@ class SrixNumpyCondensedPlaneStressBatch:
                 full_stress = kelvin_3d_to_tensor(trial.stress_kelvin_mpa, quantity="stress")
                 full_strain = kelvin_3d_to_tensor(total, quantity="strain")
                 elastic = kelvin_3d_to_tensor(trial.elastic_strain_kelvin, quantity="strain")
-                complete = ConstitutiveTrial(
-                    stress_in_plane_mpa=tensor_to_engineering_stress_2d(full_stress),
-                    tangent_in_plane_mpa=cps * scale if consistent_tangent else None,
-                    full_stress_tensor_mpa=full_stress,
-                    full_strain_tensor=full_strain,
-                    elastic_strain_tensor=elastic,
-                    plastic_strain_tensor=full_strain - elastic,
-                    plane_stress_residual_mpa=np.stack(
-                        (full_stress[:, 2, 2], full_stress[:, 0, 2], full_stress[:, 1, 2]), axis=-1
-                    ),
-                    observables={
-                        "plastic_slip": trial.plastic_slip,
-                        "equivalent_plastic_slip": trial.equivalent_plastic_slip,
-                        "accumulated_slip": trial.accumulated_slip,
-                    },
-                )
+                stress_in_plane = tensor_to_engineering_stress_2d(full_stress)
+                if response_level == "complete":
+                    result: ConstitutiveTrial | InPlaneConstitutiveTrial = ConstitutiveTrial(
+                        stress_in_plane_mpa=stress_in_plane,
+                        tangent_in_plane_mpa=cps * scale if consistent_tangent else None,
+                        full_stress_tensor_mpa=full_stress,
+                        full_strain_tensor=full_strain,
+                        elastic_strain_tensor=elastic,
+                        plastic_strain_tensor=full_strain - elastic,
+                        plane_stress_residual_mpa=np.stack(
+                            (full_stress[:, 2, 2], full_stress[:, 0, 2], full_stress[:, 1, 2]),
+                            axis=-1,
+                        ),
+                        observables={
+                            "plastic_slip": trial.plastic_slip,
+                            "equivalent_plastic_slip": trial.equivalent_plastic_slip,
+                            "accumulated_slip": trial.accumulated_slip,
+                        },
+                    )
+                else:
+                    result = InPlaneConstitutiveTrial(
+                        stress_in_plane_mpa=stress_in_plane,
+                        tangent_in_plane_mpa=(cps * scale if response_level == "tangent" else None),
+                    )
                 self._latest_transverse = total[:, _TRANSVERSE].copy()
-                self._latest = complete
+                self._latest = result if isinstance(result, ConstitutiveTrial) else None
                 self._latest_in_plane = in_plane.copy()
                 self._latest_cbb = cbb.copy()
                 self._latest_cba = cba.copy()
-                return complete
+                return result
             tangent = trial.consistent_tangent_kelvin_mpa
             cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
             total[:, _TRANSVERSE] += np.linalg.solve(cbb, -stress[..., None])[..., 0]
         self._bridge.revert()
         raise ConstitutiveIntegrationError("NumPy SRIX plane-stress closure did not converge")
+
+    def evaluate(
+        self, in_plane_strain: ArrayLike, *, time_increment: float, consistent_tangent: bool = True
+    ) -> ConstitutiveTrial:
+        result = self._evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            response_level="complete",
+            consistent_tangent=consistent_tangent,
+        )
+        if not isinstance(result, ConstitutiveTrial):
+            raise RuntimeError("complete NumPy response unexpectedly returned a light trial")
+        return result
+
+    def evaluate_in_plane_response(
+        self,
+        in_plane_strain: ArrayLike,
+        *,
+        time_increment: float,
+        response_level: ResponseLevel,
+        consistent_tangent: bool = True,
+    ) -> InPlaneConstitutiveTrial | ConstitutiveTrial:
+        return self._evaluate(
+            in_plane_strain,
+            time_increment=time_increment,
+            response_level=response_level,
+            consistent_tangent=consistent_tangent,
+        )
 
     def evaluate_in_plane(
         self, in_plane_strain: ArrayLike, *, time_increment: float, consistent_tangent: bool = True
