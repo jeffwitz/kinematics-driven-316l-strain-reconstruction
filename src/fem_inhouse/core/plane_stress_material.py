@@ -684,10 +684,18 @@ def create_plane_stress_material_batch(
         parameter_set = options.pop("parameter_set", None)
         explicit_parameters = options.pop("parameters", None)
         batch_size = options.pop("batch_size", None)
+        legacy_iterations = options.pop("maximum_local_iterations", None)
+        material_iterations = options.pop(
+            "material_newton_max_iterations",
+            100 if legacy_iterations is None else legacy_iterations,
+        )
+        plane_stress_iterations = options.pop(
+            "plane_stress_max_iterations",
+            15 if legacy_iterations is None else legacy_iterations,
+        )
         if options:
             raise ValueError(
-                "unsupported constitutive_options for NumPy SRIX: "
-                f"{', '.join(sorted(options))}"
+                f"unsupported constitutive_options for NumPy SRIX: {', '.join(sorted(options))}"
             )
         count = int(np.asarray(initial_yield_stress_mpa).size)
         provider = (
@@ -701,15 +709,13 @@ def create_plane_stress_material_batch(
             explicit_parameters=explicit_parameters,
             rotation_global_to_material=provider.rotations_global_to_material(count),
             batch_size=batch_size,
-            maximum_local_iterations=int(
-                (local_plane_stress_options or {}).get("maximum_local_iterations", 100)
-            ),
+            material_newton_max_iterations=int(material_iterations),
         )
         local_options = local_plane_stress_options or {}
         return SrixNumpyCondensedPlaneStressBatch(
             bridge,
             local_tolerance_mpa=float(local_options.get("local_tolerance_mpa", 1.0e-8)),
-            maximum_local_iterations=int(local_options.get("maximum_local_iterations", 15)),
+            plane_stress_max_iterations=int(plane_stress_iterations),
         )
 
     if backend == "python":

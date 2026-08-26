@@ -168,10 +168,13 @@ class SrixNumpy3DMaterialPointBatch:
         rotation_global_to_material: ArrayLike | None = None,
         batch_size: int | None = None,
         maximum_local_iterations: int = 100,
+        material_newton_max_iterations: int | None = None,
         local_tolerance: float = 1e-11,
     ) -> None:
         if isinstance(point_count, bool) or not isinstance(point_count, int) or point_count < 1:
             raise ValueError("point_count must be a positive integer")
+        if material_newton_max_iterations is not None:
+            maximum_local_iterations = material_newton_max_iterations
         if maximum_local_iterations < 1 or local_tolerance <= 0:
             raise ValueError("invalid local Newton controls")
         if batch_size is not None and (isinstance(batch_size, bool) or batch_size < 1):
@@ -197,8 +200,44 @@ class SrixNumpy3DMaterialPointBatch:
         self._g = np.zeros((point_count, 12))
         self._p = np.zeros((point_count, 12))
         self._a = np.zeros((point_count, 12))
+        self._committed_total_strain = np.zeros((point_count, 6))
         self._trial: SrixNumpy3DTrial | None = None
         self._trial_state: tuple[FloatArray, FloatArray, FloatArray, FloatArray] | None = None
+        self._trial_total_strain: FloatArray | None = None
+
+    def _residual_for(
+        self,
+        deel: FloatArray,
+        dg: FloatArray,
+        material_strain: FloatArray,
+        ce: FloatArray,
+        mus: FloatArray,
+        p0: FloatArray,
+        a0: FloatArray,
+        elastic0: FloatArray,
+    ) -> FloatArray:
+        """Evaluate the local SRIX residual for a batch of Newton states."""
+
+        elastic = elastic0 + deel
+        stress = np.einsum("nij,nj->ni", ce, elastic)
+        tau = np.einsum("nsi,ni->ns", mus, stress)
+        de = _deviatoric(deel) + np.einsum("nsi,ns->ni", mus, dg)
+        deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
+        abs_dg = np.abs(dg)
+        p_trial = p0 + abs_dg
+        exp_bp = np.exp(-self.parameters.b * p_trial)
+        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
+            "ij,nj->ni", self._interaction, 1.0 - exp_bp
+        )
+        da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
+        drive = tau - self.parameters.c_mpa * (a0 + da)
+        sgn = np.where(drive > 0.0, 1.0, -1.0)
+        overstress = np.maximum(np.abs(drive) - resistance, 0.0)
+        slope = deq / self.parameters.overstress_modulus_mpa
+        flow = slope[:, None] * overstress * sgn
+        return np.concatenate(
+            (deel - material_strain + np.einsum("nsi,ns->ni", mus, dg), dg - flow), axis=1
+        )
 
     @property
     def point_count(self) -> int:
@@ -219,13 +258,19 @@ class SrixNumpy3DMaterialPointBatch:
             "g": self._g.copy(),
             "p": self._p.copy(),
             "a": self._a.copy(),
+            "total_strain": self._committed_total_strain.copy(),
         }
 
-    def _integrate_chunk(self, strain: FloatArray, start: int = 0) -> SrixNumpy3DTrial:
-        n = strain.shape[0]
+    def _integrate_chunk(
+        self,
+        strain_increment: FloatArray,
+        total_strain: FloatArray,
+        start: int = 0,
+    ) -> SrixNumpy3DTrial:
+        n = strain_increment.shape[0]
         stop = start + n
         transform = self._kelvin_rotation[start:stop]
-        material_strain = np.einsum("nij,nj->ni", transform, strain)
+        material_strain = np.einsum("nij,nj->ni", transform, strain_increment)
         deel = material_strain.copy()
         dg = np.zeros((n, 12))
         ce = self._ce[start:stop]
@@ -235,7 +280,7 @@ class SrixNumpy3DMaterialPointBatch:
         eye6 = np.eye(6)
         converged = False
         jac: FloatArray | None = None
-        for _ in range(self._maximum_iterations):
+        for iteration in range(self._maximum_iterations):
             elastic = elastic0 + deel
             stress = np.einsum("nij,nj->ni", ce, elastic)
             tau = np.einsum("nsi,ni->ns", mus, stress)
@@ -257,7 +302,8 @@ class SrixNumpy3DMaterialPointBatch:
             residual = np.concatenate(
                 (deel - material_strain + np.einsum("nsi,ns->ni", mus, dg), dg - flow), axis=1
             )
-            residual_small = float(np.max(np.abs(residual))) <= self._tolerance
+            residual_norm = np.max(np.abs(residual), axis=1)
+            residual_small = residual_norm <= self._tolerance
             active = (overstress > 0.0).astype(float)
             ndeq = np.zeros_like(de)
             nonzero = deq > 1e-14
@@ -294,7 +340,7 @@ class SrixNumpy3DMaterialPointBatch:
             jac[:, :6, 6:] = np.swapaxes(mus, 1, 2)
             jac[:, 6:, :6] = jfd
             jac[:, 6:, 6:] = jgg
-            if residual_small:
+            if np.all(residual_small):
                 converged = True
                 break
             try:
@@ -305,12 +351,43 @@ class SrixNumpy3DMaterialPointBatch:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX local Newton produced non-finite values"
                 )
-            # A full Newton step can cross the absolute-value branch at
-            # ``dg=0``.  A conservative, fixed damping keeps the batched
-            # semismooth iteration on the same branch without introducing a
-            # point-wise Python line search.
-            deel += 0.5 * delta[:, :6]
-            dg += 0.5 * delta[:, 6:]
+            # Take a full Newton step whenever it decreases the batch
+            # residual.  Backtracking is only used when a trial crosses an
+            # absolute-value branch or otherwise increases the residual.
+            current_norm = residual_norm
+            alpha = np.ones(n)
+            accepted = residual_small.copy()
+            best_norm = np.where(residual_small, current_norm, np.inf)
+            best_deel = deel.copy()
+            best_dg = dg.copy()
+            for _backtrack in range(12):
+                candidate_deel = deel + alpha[:, None] * delta[:, :6]
+                candidate_dg = dg + alpha[:, None] * delta[:, 6:]
+                candidate = self._residual_for(
+                    candidate_deel, candidate_dg, material_strain, ce, mus, p0, a0, elastic0
+                )
+                candidate_norm = np.max(np.abs(candidate), axis=1)
+                finite = np.isfinite(candidate_norm)
+                better = (~residual_small) & finite & (candidate_norm < best_norm)
+                best_norm = np.where(better, candidate_norm, best_norm)
+                best_deel = np.where(better[:, None], candidate_deel, best_deel)
+                best_dg = np.where(better[:, None], candidate_dg, best_dg)
+                newly_accepted = (~accepted) & finite & (candidate_norm <= current_norm)
+                accepted |= newly_accepted
+                alpha = np.where(accepted, alpha, 0.5 * alpha)
+                if np.all(accepted):
+                    break
+            if not np.all(accepted):
+                failed = np.flatnonzero(~accepted)
+                worst = int(failed[np.argmax(current_norm[failed])])
+                raise ConstitutiveIntegrationError(
+                    "NumPy SRIX local Newton backtracking failed to decrease the residual "
+                    f"(iteration={iteration + 1}, point={worst}, "
+                    f"current_norm={current_norm[worst]:.6e}, "
+                    f"best_norm={best_norm[worst]:.6e})"
+                )
+            deel = best_deel
+            dg = best_dg
         if not converged:
             raise ConstitutiveIntegrationError(
                 f"NumPy SRIX local Newton did not converge in {self._maximum_iterations} iterations"
@@ -334,10 +411,10 @@ class SrixNumpy3DMaterialPointBatch:
             1.0 + self.parameters.d * np.abs(dg)
         )
         return SrixNumpy3DTrial(
-            total_strain_kelvin=strain.copy(),
+            total_strain_kelvin=total_strain.copy(),
             stress_kelvin_mpa=stress_global,
             elastic_strain_kelvin=elastic_global,
-            plastic_slip=self._g[:n] + dg,
+            plastic_slip=self._g[start:stop] + dg,
             equivalent_plastic_slip=p_final,
             back_strain=a0 + da_final,
             accumulated_slip=np.sum(p_final, axis=1),
@@ -356,15 +433,18 @@ class SrixNumpy3DMaterialPointBatch:
                 f"total_strain_kelvin must have shape {(self.point_count, 6)} and be finite"
             )
         self.revert()
+        strain_increment = values - self._committed_total_strain
         # Persistent state is never replaced by a trial until the whole call
         # has succeeded. Chunking limits Newton workspaces, not state.
         if self._batch_size is None or self._batch_size >= self.point_count:
-            result = self._integrate_chunk(values)
+            result = self._integrate_chunk(strain_increment, values)
         else:
             chunks = []
             for start in range(0, self.point_count, self._batch_size):
                 stop = min(start + self._batch_size, self.point_count)
-                chunks.append(self._integrate_chunk(values[start:stop], start))
+                chunks.append(
+                    self._integrate_chunk(strain_increment[start:stop], values[start:stop], start)
+                )
             result = SrixNumpy3DTrial(
                 total_strain_kelvin=np.concatenate([item.total_strain_kelvin for item in chunks]),
                 stress_kelvin_mpa=np.concatenate([item.stress_kelvin_mpa for item in chunks]),
@@ -391,6 +471,7 @@ class SrixNumpy3DMaterialPointBatch:
             result.equivalent_plastic_slip.copy(),
             result.back_strain.copy(),
         )
+        self._trial_total_strain = values.copy()
         return result
 
     def commit(self) -> None:
@@ -399,12 +480,16 @@ class SrixNumpy3DMaterialPointBatch:
         self._elastic, self._g, self._p, self._a = tuple(
             value.copy() for value in self._trial_state
         )
+        assert self._trial_total_strain is not None
+        self._committed_total_strain = self._trial_total_strain.copy()
         self._trial = None
         self._trial_state = None
+        self._trial_total_strain = None
 
     def revert(self) -> None:
         self._trial = None
         self._trial_state = None
+        self._trial_total_strain = None
 
 
 class SrixNumpyCondensedPlaneStressBatch:
@@ -416,10 +501,15 @@ class SrixNumpyCondensedPlaneStressBatch:
         *,
         local_tolerance_mpa: float = 1e-8,
         maximum_local_iterations: int = 15,
+        plane_stress_max_iterations: int | None = None,
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)
-        self._max = int(maximum_local_iterations)
+        self._max = int(
+            maximum_local_iterations
+            if plane_stress_max_iterations is None
+            else plane_stress_max_iterations
+        )
         self._committed_transverse = np.zeros((bridge.point_count, 3))
         self._latest_transverse: FloatArray | None = None
         self._latest: ConstitutiveTrial | None = None
@@ -458,12 +548,14 @@ class SrixNumpyCondensedPlaneStressBatch:
             stress = trial.stress_kelvin_mpa[:, _TRANSVERSE]
             if float(np.max(np.abs(stress))) <= self._tol:
                 tangent = trial.consistent_tangent_kelvin_mpa
-                cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
+                caa = tangent[:, _PLANE][:, :, _PLANE]
+                cab = tangent[:, _PLANE][:, :, _TRANSVERSE]
                 cba = tangent[:, _TRANSVERSE][:, :, _PLANE]
+                cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
                 # One final correction is unnecessary when already converged;
                 # only retain the condensed operator below.
                 x = np.linalg.solve(cbb, cba)
-                cps = tangent[:, _PLANE][:, :, _PLANE] - np.einsum("nij,njk->nik", cba, x)
+                cps = caa - np.einsum("nij,njk->nik", cab, x)
                 scale = (
                     _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
                     * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]

@@ -51,7 +51,8 @@ def _factory(angles: np.ndarray, theta: SrixTheta9, local_iterations: int):
         mfront_library="",
         mfront_threads=1,
         local_plane_stress_options={
-            "maximum_local_iterations": local_iterations,
+            "material_newton_max_iterations": local_iterations,
+            "plane_stress_max_iterations": 15,
             "local_tolerance_mpa": 1.0e-8,
         },
         constitutive_options={
@@ -167,8 +168,7 @@ def main() -> int:
         dic_evm=dic_evm,
     )
     mfront = np.load(MFRONT_FIELDS)
-    mfront_disp = np.asarray(mfront["displacement"])
-    mfront_selected = mfront_disp[np.asarray(scored)]
+    mfront_selected = np.asarray(mfront["scored_displacement"])
     delta = selected - mfront_selected
     result = {
         "schema_version": 1,
