@@ -35,6 +35,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--subdivisions", type=int, default=8)
+    parser.add_argument("--element-order", choices=("C", "F"), default="F")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -52,7 +53,8 @@ def main() -> int:
         "MFRONT_BEHAVIOUR_LIBRARY", str(ROOT / "build/mfront/src/libBehaviour.so")
     )
     fields, timing = _forward(
-        SrixTheta9.from_log_coordinates(eta), path, angles, library, args.threads, "F"
+        SrixTheta9.from_log_coordinates(eta), path, angles, library, args.threads,
+        args.element_order,
     )
     residual = _vector(fields, scored, target)
     final = fields[-1]
@@ -97,7 +99,7 @@ def main() -> int:
         "path_steps": len(path),
         "subdivisions_per_state": args.subdivisions,
         "scored_steps": list(scored),
-        "element_order": "F",
+        "element_order": args.element_order,
         "spectral_batch_order": "C",
         "parameters": SrixTheta9.from_log_coordinates(eta).as_runtime_overrides(),
         "eta": eta.tolist(),
