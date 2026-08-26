@@ -195,6 +195,10 @@ class SrixNumpy3DMaterialPointBatch:
         ce = _cubic_kelvin(self.parameters)
         self._ce = np.broadcast_to(ce, (point_count, 6, 6)).copy()
         self._schmid = np.broadcast_to(_schmid_kelvin(), (point_count, 12, 6)).copy()
+        self._ce_material = ce
+        self._schmid_material = _schmid_kelvin()
+        self._mce = self._schmid_material @ ce
+        self._plastic_modulus = self._mce @ self._schmid_material.T
         self._interaction = build_interaction_matrix(self.parameters.interaction_matrix)
         self._elastic = np.zeros((point_count, 6))
         self._g = np.zeros((point_count, 12))
@@ -261,7 +265,7 @@ class SrixNumpy3DMaterialPointBatch:
             "total_strain": self._committed_total_strain.copy(),
         }
 
-    def _integrate_chunk(
+    def _integrate_chunk_full(
         self,
         strain_increment: FloatArray,
         total_strain: FloatArray,
@@ -420,6 +424,216 @@ class SrixNumpy3DMaterialPointBatch:
             accumulated_slip=np.sum(p_final, axis=1),
             consistent_tangent_kelvin_mpa=tangent_global,
             material_elastic_strain_kelvin=elastic0 + deel,
+        )
+
+    def _reduced_residual(
+        self,
+        dg: FloatArray,
+        tau_trial: FloatArray,
+        deq: FloatArray,
+        p0: FloatArray,
+        a0: FloatArray,
+    ) -> FloatArray:
+        """Return the 12 slip residuals after eliminating elastic strain."""
+        abs_dg = np.abs(dg)
+        p_trial = p0 + abs_dg
+        exp_bp = np.exp(-self.parameters.b * p_trial)
+        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
+            "ij,nj->ni", self._interaction, 1.0 - exp_bp
+        )
+        tau = tau_trial - np.einsum("ij,nj->ni", self._plastic_modulus, dg)
+        da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
+        drive = tau - self.parameters.c_mpa * (a0 + da)
+        sgn = np.where(drive > 0.0, 1.0, -1.0)
+        overstress = np.maximum(np.abs(drive) - resistance, 0.0)
+        flow = (deq / self.parameters.overstress_modulus_mpa)[:, None] * overstress * sgn
+        return dg - flow
+
+    def _integrate_chunk(
+        self,
+        strain_increment: FloatArray,
+        total_strain: FloatArray,
+        start: int = 0,
+    ) -> SrixNumpy3DTrial:
+        """Integrate one chunk with the exact 12-slip Schur reduction."""
+        n = strain_increment.shape[0]
+        stop = start + n
+        transform = self._kelvin_rotation[start:stop]
+        material_strain = np.einsum("nij,nj->ni", transform, strain_increment)
+        p0, a0 = self._p[start:stop], self._a[start:stop]
+        elastic0 = self._elastic[start:stop]
+        ce = self._ce_material
+        mus = self._schmid_material
+        plastic_modulus = self._plastic_modulus
+        dg = np.zeros((n, 12))
+        tau_trial = np.einsum("si,ij,nj->ns", mus, ce, elastic0 + material_strain)
+        de = _deviatoric(material_strain)
+        deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
+        slope = deq / self.parameters.overstress_modulus_mpa
+        eye12 = np.eye(12)
+        converged = np.zeros(n, dtype=bool)
+        jac: FloatArray | None = None
+        for iteration in range(self._maximum_iterations):
+            abs_dg = np.abs(dg)
+            sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
+            p_trial = p0 + abs_dg
+            exp_bp = np.exp(-self.parameters.b * p_trial)
+            resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
+                "ij,nj->ni", self._interaction, 1.0 - exp_bp
+            )
+            tau = tau_trial - np.einsum("ij,nj->ni", plastic_modulus, dg)
+            da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
+            drive = tau - self.parameters.c_mpa * (a0 + da)
+            sgn = np.where(drive > 0.0, 1.0, -1.0)
+            overstress = np.maximum(np.abs(drive) - resistance, 0.0)
+            flow = slope[:, None] * overstress * sgn
+            residual = dg - flow
+            residual_norm = np.max(np.abs(residual), axis=1)
+            converged = residual_norm <= self._tolerance
+            active = (overstress > 0.0).astype(float)
+            dda = np.empty((n, 12))
+            for i in range(12):
+                den = 1.0 + self.parameters.d * abs_dg[:, i]
+                num = dg[:, i] - self.parameters.d * a0[:, i] * abs_dg[:, i]
+                dnum = 1.0 - self.parameters.d * a0[:, i] * sign_dg[:, i]
+                dden = self.parameters.d * sign_dg[:, i]
+                dda[:, i] = (dnum * den - num * dden) / (den * den)
+            jac = np.broadcast_to(eye12, (n, 12, 12)).copy()
+            jac += (active * slope[:, None])[:, :, None] * plastic_modulus
+            dr = (
+                self.parameters.q_mpa
+                * self.parameters.b
+                * self._interaction[None, :, :]
+                * exp_bp[:, None, :]
+                * sign_dg[:, None, :]
+            )
+            jac += (active * slope[:, None] * sgn)[:, :, None] * dr
+            indices = np.arange(12)
+            jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
+            if np.all(converged):
+                break
+            try:
+                delta = np.linalg.solve(jac, -residual[..., None])[..., 0]
+            except np.linalg.LinAlgError as error:
+                raise ConstitutiveIntegrationError(
+                    "NumPy SRIX reduced Newton is singular"
+                ) from error
+            if not np.isfinite(delta).all():
+                raise ConstitutiveIntegrationError(
+                    "NumPy SRIX reduced Newton produced non-finite values"
+                )
+            current_norm = residual_norm
+            alpha = np.ones(n)
+            accepted = converged.copy()
+            best_norm = np.where(converged, current_norm, np.inf)
+            best_dg = dg.copy()
+            for _backtrack in range(12):
+                candidate_dg = dg + alpha[:, None] * delta
+                candidate = self._reduced_residual(candidate_dg, tau_trial, deq, p0, a0)
+                candidate_norm = np.max(np.abs(candidate), axis=1)
+                finite = np.isfinite(candidate_norm)
+                better = (~converged) & finite & (candidate_norm < best_norm)
+                best_norm = np.where(better, candidate_norm, best_norm)
+                best_dg = np.where(better[:, None], candidate_dg, best_dg)
+                accepted |= (~converged) & finite & (candidate_norm <= current_norm)
+                alpha = np.where(accepted, alpha, 0.5 * alpha)
+                if np.all(accepted):
+                    break
+            if not np.all(accepted):
+                failed = np.flatnonzero(~accepted)
+                worst = int(failed[np.argmax(current_norm[failed])])
+                raise ConstitutiveIntegrationError(
+                    "NumPy SRIX reduced Newton backtracking failed "
+                    f"(iteration={iteration + 1}, point={worst}, "
+                    f"current_norm={current_norm[worst]:.6e}, "
+                    f"best_norm={best_norm[worst]:.6e})"
+                )
+            dg = best_dg
+        if not np.all(converged):
+            raise ConstitutiveIntegrationError(
+                "NumPy SRIX reduced Newton did not converge in "
+                f"{self._maximum_iterations} iterations"
+            )
+        deel = material_strain - np.einsum("si,ns->ni", mus, dg)
+        elastic_material = elastic0 + deel
+        stress_material = np.einsum("ij,nj->ni", ce, elastic_material)
+        stress_global = np.einsum("nij,nj->ni", np.swapaxes(transform, 1, 2), stress_material)
+        elastic_global = np.einsum("nij,nj->ni", np.swapaxes(transform, 1, 2), elastic_material)
+        # Rebuild the proven 18x18 implicit Jacobian only for the consistent
+        # tangent.  The nonlinear solve above uses the exact 12-slip Schur
+        # reduction; retaining this oracle construction avoids changing the
+        # tangent contract while the reduced formulation is qualified.
+        elastic = elastic0 + deel
+        stress = np.einsum("ij,nj->ni", ce, elastic)
+        tau = np.einsum("si,ni->ns", mus, stress)
+        de = _deviatoric(deel) + np.einsum("si,ns->ni", mus, dg)
+        deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
+        abs_dg = np.abs(dg)
+        sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
+        p_trial = p0 + abs_dg
+        exp_bp = np.exp(-self.parameters.b * p_trial)
+        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
+            "ij,nj->ni", self._interaction, 1.0 - exp_bp
+        )
+        da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
+        drive = tau - self.parameters.c_mpa * (a0 + da)
+        sgn = np.where(drive > 0.0, 1.0, -1.0)
+        overstress = np.maximum(np.abs(drive) - resistance, 0.0)
+        slope = deq / self.parameters.overstress_modulus_mpa
+        active = (overstress > 0.0).astype(float)
+        ndeq = np.zeros_like(de)
+        nonzero = deq > 1e-14
+        ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
+        mus_ce = np.einsum("si,ij->sj", mus, ce)
+        jfd = -active[:, :, None] * slope[:, None, None] * mus_ce[None, :, :]
+        jfd -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[:, :, None] * ndeq[
+            :, None, :
+        ]
+        jgg = np.broadcast_to(np.eye(12), (n, 12, 12)).copy()
+        for i in range(12):
+            den = 1.0 + self.parameters.d * abs_dg[:, i]
+            num = dg[:, i] - self.parameters.d * a0[:, i] * abs_dg[:, i]
+            dnum = 1.0 - self.parameters.d * a0[:, i] * sign_dg[:, i]
+            dden = self.parameters.d * sign_dg[:, i]
+            dda = (dnum * den - num * dden) / (den * den)
+            jgg[:, i, i] += active[:, i] * slope * self.parameters.c_mpa * dda
+            dr = (
+                self.parameters.q_mpa
+                * self._interaction[i][None, :]
+                * self.parameters.b
+                * exp_bp
+                * sign_dg
+            )
+            jgg[:, i, :] += active[:, i, None] * slope[:, None] * dr * sgn[:, i, None]
+            jgg[:, i, :] -= (overstress[:, i] * sgn[:, i] / self.parameters.overstress_modulus_mpa)[
+                :, None
+            ] * np.einsum("ni,si->ns", ndeq, mus)
+        full_jac = np.zeros((n, 18, 18))
+        full_jac[:, :6, :6] = np.eye(6)
+        full_jac[:, :6, 6:] = np.swapaxes(mus[None, :, :], 1, 2)
+        full_jac[:, 6:, :6] = jfd
+        full_jac[:, 6:, 6:] = jgg
+        rhs = np.zeros((n, 18, 6))
+        rhs[:, :6, :] = np.eye(6)
+        implicit = np.linalg.solve(full_jac, rhs)
+        tangent_material = np.einsum("ij,njk->nik", ce, implicit[:, :6, :])
+        tangent_global = np.einsum(
+            "nij,njk,nkl->nil", np.swapaxes(transform, 1, 2), tangent_material, transform
+        )
+        p_final = p0 + np.abs(dg)
+        da_final = (dg - self.parameters.d * a0 * np.abs(dg)) / (
+            1.0 + self.parameters.d * np.abs(dg)
+        )
+        return SrixNumpy3DTrial(
+            total_strain_kelvin=total_strain.copy(),
+            stress_kelvin_mpa=stress_global,
+            elastic_strain_kelvin=elastic_global,
+            plastic_slip=self._g[start:stop] + dg,
+            equivalent_plastic_slip=p_final,
+            back_strain=a0 + da_final,
+            accumulated_slip=np.sum(p_final, axis=1),
+            consistent_tangent_kelvin_mpa=tangent_global,
+            material_elastic_strain_kelvin=elastic_material,
         )
 
     def evaluate(
