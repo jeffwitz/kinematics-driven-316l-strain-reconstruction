@@ -669,6 +669,55 @@ def create_plane_stress_material_batch(
 ) -> PlaneStressMaterialBatch:
     """Construct a backend without exposing its implementation to global Newton."""
 
+    if backend in {"numpy-srix", "numpy-srix-plane-stress"}:
+        from fem_inhouse.core.crystal_orientation import (
+            HomogeneousOrientationProvider,
+            orientation_provider_from_mapping,
+        )
+        from fem_inhouse.core.srix_numpy import (
+            SrixNumpy3DMaterialPointBatch,
+            SrixNumpyCondensedPlaneStressBatch,
+        )
+
+        options = dict(constitutive_options or {})
+        orientation_configuration = options.pop("crystal_orientation", None)
+        parameter_set = options.pop("parameter_set", None)
+        explicit_parameters = options.pop("parameters", None)
+        batch_size = options.pop("batch_size", None)
+        legacy_iterations = options.pop("maximum_local_iterations", None)
+        material_iterations = options.pop(
+            "material_newton_max_iterations",
+            100 if legacy_iterations is None else legacy_iterations,
+        )
+        plane_stress_iterations = options.pop(
+            "plane_stress_max_iterations",
+            15 if legacy_iterations is None else legacy_iterations,
+        )
+        if options:
+            raise ValueError(
+                f"unsupported constitutive_options for NumPy SRIX: {', '.join(sorted(options))}"
+            )
+        count = int(np.asarray(initial_yield_stress_mpa).size)
+        provider = (
+            HomogeneousOrientationProvider.identity()
+            if orientation_configuration is None
+            else orientation_provider_from_mapping(dict(orientation_configuration))
+        )
+        bridge = SrixNumpy3DMaterialPointBatch(
+            point_count=count,
+            parameter_set=parameter_set,
+            explicit_parameters=explicit_parameters,
+            rotation_global_to_material=provider.rotations_global_to_material(count),
+            batch_size=batch_size,
+            material_newton_max_iterations=int(material_iterations),
+        )
+        local_options = local_plane_stress_options or {}
+        return SrixNumpyCondensedPlaneStressBatch(
+            bridge,
+            local_tolerance_mpa=float(local_options.get("local_tolerance_mpa", 1.0e-8)),
+            plane_stress_max_iterations=int(plane_stress_iterations),
+        )
+
     if backend == "python":
         return PythonJ2PlaneStressBatch(
             initial_yield_stress_mpa,
@@ -872,5 +921,5 @@ def create_plane_stress_material_batch(
     plugin_suffix = f"; registered plugins: {plugins}" if plugins else ""
     raise ValueError(
         "constitutive_backend must be 'python', 'mfront-native-plane-stress', "
-        f"or 'mfront-3d-condensed-plane-stress'{plugin_suffix}"
+        f"'mfront-3d-condensed-plane-stress', 'numpy-srix'{plugin_suffix}"
     )
