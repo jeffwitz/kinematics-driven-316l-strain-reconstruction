@@ -55,7 +55,6 @@ def main() -> int:
         SrixTheta9.from_log_coordinates(eta), path, angles, library, args.threads, "F"
     )
     residual = _vector(fields, scored, target)
-    _plot_evm(output, measured, fields, fields, scored)
     final = fields[-1]
     strain = np.asarray([f.sample_strain for f in fields])
     stress = np.asarray([f.stress_in_plane_mpa for f in fields])
@@ -72,6 +71,8 @@ def main() -> int:
         scored_displacement=displacement[np.asarray(scored) - 1],
         dic_displacement=np.asarray([target[i - 1] for i in scored]),
     )
+    selected = [fields[i - 1] for i in scored]
+    _plot_evm(output, measured, selected, selected, tuple(range(1, 9)))
     # A compact field panel for quick visual inspection of the final state.
     evm_sim = _evm(final.displacement)
     evm_dic = _evm(target[-1])
