@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "hdf5": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "shape": [
+    3600,
+    3100
+  ],
+  "pixel_size_mm": 0.00184,
+  "dic_displacement_units": "mm (HDF5 px converted using 1.84 um/px)",
+  "results": [
+    {
+      "spatial_hypothesis": "identity",
+      "traction_axis": "EBSD_X",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": -0.09814457743624135,
+      "epsilon_yy_spearman": -0.10459034197934272,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": 0.02264087873769955,
+      "evm_spearman": 0.03186997865130017,
+      "top10_iou_epsilon_yy": 0.03437289986077439,
+      "top10_enrichment_epsilon_yy": 0.6579471053625018
+    },
+    {
+      "spatial_hypothesis": "identity",
+      "traction_axis": "EBSD_Y",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": -0.09831653846625509,
+      "epsilon_yy_spearman": -0.09969471030253932,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": -0.0077340281170153544,
+      "evm_spearman": 0.013165207331968558,
+      "top10_iou_epsilon_yy": 0.04287334459358465,
+      "top10_enrichment_epsilon_yy": 0.8219764403117488
+    },
+    {
+      "spatial_hypothesis": "rot180",
+      "traction_axis": "EBSD_X",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": 0.003824155702132587,
+      "epsilon_yy_spearman": 0.0044824438387754935,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": -0.003316648980115987,
+      "evm_spearman": 0.008052596594220642,
+      "top10_iou_epsilon_yy": 0.06270433721573061,
+      "top10_enrichment_epsilon_yy": 1.1682534442821222
+    },
+    {
+      "spatial_hypothesis": "rot180",
+      "traction_axis": "EBSD_Y",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": 0.029369158697266563,
+      "epsilon_yy_spearman": 0.019397670840055385,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": -0.005344645393532608,
+      "evm_spearman": -0.008145312105204527,
+      "top10_iou_epsilon_yy": 0.05894450365281665,
+      "top10_enrichment_epsilon_yy": 1.112944959717421
+    },
+    {
+      "spatial_hypothesis": "flip_x",
+      "traction_axis": "EBSD_X",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": -0.02780326543418379,
+      "epsilon_yy_spearman": -0.03630085339016136,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": 0.02845714385631065,
+      "evm_spearman": 0.0315232423518435,
+      "top10_iou_epsilon_yy": 0.051059358870315534,
+      "top10_enrichment_epsilon_yy": 0.9618338452849022
+    },
+    {
+      "spatial_hypothesis": "flip_x",
+      "traction_axis": "EBSD_Y",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": 0.03158866428509999,
+      "epsilon_yy_spearman": 0.01908569094222197,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": -0.0009662595184089826,
+      "evm_spearman": 0.005728872629203805,
+      "top10_iou_epsilon_yy": 0.07159295930332178,
+      "top10_enrichment_epsilon_yy": 1.3358079855993439
+    },
+    {
+      "spatial_hypothesis": "flip_y",
+      "traction_axis": "EBSD_X",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": -0.000750248491355012,
+      "epsilon_yy_spearman": 0.012729611142354434,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": 0.004201556698435778,
+      "evm_spearman": -0.0083097225955829,
+      "top10_iou_epsilon_yy": 0.062335338481891475,
+      "top10_enrichment_epsilon_yy": 1.1617819773576306
+    },
+    {
+      "spatial_hypothesis": "flip_y",
+      "traction_axis": "EBSD_Y",
+      "epsilon_yy_n_pixels": 11160000,
+      "epsilon_yy_pearson": 0.011422093634396927,
+      "epsilon_yy_spearman": 0.005316804003979028,
+      "evm_n_pixels": 11160000,
+      "evm_pearson": -0.012374657826626185,
+      "evm_spearman": -0.008380086376136976,
+      "top10_iou_epsilon_yy": 0.06380697715196194,
+      "top10_enrichment_epsilon_yy": 1.199247739610698
+    }
+  ],
+  "null": {
+    "metric": "Spearman(identity, EBSD_Y, epsilon_yy)",
+    "n": 1000,
+    "observed": -0.0979439006228846,
+    "percentile": 0.0,
+    "empirical_pvalue": 1.0
+  },
+  "statuses": {
+    "fullfield_analysis_completed": true,
+    "ebsd_global_geometry_known": false,
+    "ebsd_axis_metadata_found": false,
+    "registration_proven": false,
+    "fem_used": false,
+    "material_identification_used": false
+  }
+}

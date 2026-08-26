@@ -1,0 +1,10 @@
+{
+  "hdf5": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "shape": [
+    3600,
+    3100
+  ],
+  "pixel_size_mm": 0.00184,
+  "orientation_attrs": "read from HDF5",
+  "displacement_attrs": "read from HDF5"
+}
