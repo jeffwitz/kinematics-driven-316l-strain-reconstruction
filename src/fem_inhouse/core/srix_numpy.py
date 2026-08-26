@@ -491,13 +491,11 @@ class SrixNumpy3DMaterialPointBatch:
             residual_norm = np.max(np.abs(residual), axis=1)
             converged = residual_norm <= self._tolerance
             active = (overstress > 0.0).astype(float)
-            dda = np.empty((n, 12))
-            for i in range(12):
-                den = 1.0 + self.parameters.d * abs_dg[:, i]
-                num = dg[:, i] - self.parameters.d * a0[:, i] * abs_dg[:, i]
-                dnum = 1.0 - self.parameters.d * a0[:, i] * sign_dg[:, i]
-                dden = self.parameters.d * sign_dg[:, i]
-                dda[:, i] = (dnum * den - num * dden) / (den * den)
+            den = 1.0 + self.parameters.d * abs_dg
+            num = dg - self.parameters.d * a0 * abs_dg
+            dnum = 1.0 - self.parameters.d * a0 * sign_dg
+            dden = self.parameters.d * sign_dg
+            dda = (dnum * den - num * dden) / (den * den)
             jac = np.broadcast_to(eye12, (n, 12, 12)).copy()
             jac += (active * slope[:, None])[:, :, None] * plastic_modulus
             dr = (
@@ -512,8 +510,9 @@ class SrixNumpy3DMaterialPointBatch:
             jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
             if np.all(converged):
                 break
+            pending = np.flatnonzero(~converged)
             try:
-                delta = np.linalg.solve(jac, -residual[..., None])[..., 0]
+                delta = np.linalg.solve(jac[pending], -residual[pending, :, None])[..., 0]
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton is singular"
@@ -522,33 +521,40 @@ class SrixNumpy3DMaterialPointBatch:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton produced non-finite values"
                 )
-            current_norm = residual_norm
-            alpha = np.ones(n)
-            accepted = converged.copy()
-            best_norm = np.where(converged, current_norm, np.inf)
-            best_dg = dg.copy()
+            current_norm = residual_norm[pending]
+            alpha = np.ones(pending.size)
+            accepted = np.zeros(pending.size, dtype=bool)
+            best_norm = np.full(pending.size, np.inf)
+            best_dg = dg[pending].copy()
             for _backtrack in range(12):
-                candidate_dg = dg + alpha[:, None] * delta
-                candidate = self._reduced_residual(candidate_dg, tau_trial, deq, p0, a0)
+                candidate_dg = dg[pending] + alpha[:, None] * delta
+                candidate = self._reduced_residual(
+                    candidate_dg,
+                    tau_trial[pending],
+                    deq[pending],
+                    p0[pending],
+                    a0[pending],
+                )
                 candidate_norm = np.max(np.abs(candidate), axis=1)
                 finite = np.isfinite(candidate_norm)
-                better = (~converged) & finite & (candidate_norm < best_norm)
+                better = finite & (candidate_norm < best_norm)
                 best_norm = np.where(better, candidate_norm, best_norm)
                 best_dg = np.where(better[:, None], candidate_dg, best_dg)
-                accepted |= (~converged) & finite & (candidate_norm <= current_norm)
+                accepted |= finite & (candidate_norm <= current_norm)
                 alpha = np.where(accepted, alpha, 0.5 * alpha)
                 if np.all(accepted):
                     break
             if not np.all(accepted):
                 failed = np.flatnonzero(~accepted)
-                worst = int(failed[np.argmax(current_norm[failed])])
+                worst_local = int(failed[np.argmax(current_norm[failed])])
+                worst = int(pending[worst_local])
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton backtracking failed "
                     f"(iteration={iteration + 1}, point={worst}, "
-                    f"current_norm={current_norm[worst]:.6e}, "
-                    f"best_norm={best_norm[worst]:.6e})"
+                    f"current_norm={current_norm[worst_local]:.6e}, "
+                    f"best_norm={best_norm[worst_local]:.6e})"
                 )
-            dg = best_dg
+            dg[pending] = best_dg
         if not np.all(converged):
             raise ConstitutiveIntegrationError(
                 "NumPy SRIX reduced Newton did not converge in "
@@ -590,24 +596,25 @@ class SrixNumpy3DMaterialPointBatch:
             :, None, :
         ]
         jgg = np.broadcast_to(np.eye(12), (n, 12, 12)).copy()
-        for i in range(12):
-            den = 1.0 + self.parameters.d * abs_dg[:, i]
-            num = dg[:, i] - self.parameters.d * a0[:, i] * abs_dg[:, i]
-            dnum = 1.0 - self.parameters.d * a0[:, i] * sign_dg[:, i]
-            dden = self.parameters.d * sign_dg[:, i]
-            dda = (dnum * den - num * dden) / (den * den)
-            jgg[:, i, i] += active[:, i] * slope * self.parameters.c_mpa * dda
-            dr = (
-                self.parameters.q_mpa
-                * self._interaction[i][None, :]
-                * self.parameters.b
-                * exp_bp
-                * sign_dg
-            )
-            jgg[:, i, :] += active[:, i, None] * slope[:, None] * dr * sgn[:, i, None]
-            jgg[:, i, :] -= (overstress[:, i] * sgn[:, i] / self.parameters.overstress_modulus_mpa)[
-                :, None
-            ] * np.einsum("ni,si->ns", ndeq, mus)
+        den = 1.0 + self.parameters.d * abs_dg
+        num = dg - self.parameters.d * a0 * abs_dg
+        dnum = 1.0 - self.parameters.d * a0 * sign_dg
+        dden = self.parameters.d * sign_dg
+        dda = (dnum * den - num * dden) / (den * den)
+        indices = np.arange(12)
+        jgg[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
+        dr = (
+            self.parameters.q_mpa
+            * self.parameters.b
+            * self._interaction[None, :, :]
+            * exp_bp[:, None, :]
+            * sign_dg[:, None, :]
+        )
+        jgg += (active * slope[:, None] * sgn)[:, :, None] * dr
+        ndeq_projection = np.einsum("ni,si->ns", ndeq, mus)
+        jgg -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[
+            :, :, None
+        ] * ndeq_projection[:, None, :]
         full_jac = np.zeros((n, 18, 18))
         full_jac[:, :6, :6] = np.eye(6)
         full_jac[:, :6, 6:] = np.swapaxes(mus[None, :, :], 1, 2)
