@@ -493,37 +493,45 @@ class SrixNumpy3DMaterialPointBatch:
         slope = deq / self.parameters.overstress_modulus_mpa
         eye12 = np.eye(12)
         converged = np.zeros(n, dtype=bool)
-        jac: FloatArray | None = None
+        pending = np.arange(n)
         for iteration in range(self._maximum_iterations):
+            if pending.size == 0:
+                break
+            active_indices = pending
             residual_started = perf_counter()
-            abs_dg = np.abs(dg)
-            sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
-            p_trial = p0 + abs_dg
+            dg_active = dg[active_indices]
+            abs_dg = np.abs(dg_active)
+            sign_dg = np.where(dg_active > 0.0, 1.0, np.where(dg_active < 0.0, -1.0, 0.0))
+            p_trial = p0[active_indices] + abs_dg
             exp_bp = np.exp(-self.parameters.b * p_trial)
             resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * (
                 (1.0 - exp_bp) @ self._interaction.T
             )
-            tau = tau_trial - dg @ plastic_modulus.T
-            da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
-            drive = tau - self.parameters.c_mpa * (a0 + da)
+            tau = tau_trial[active_indices] - dg_active @ plastic_modulus.T
+            da = (dg_active - self.parameters.d * a0[active_indices] * abs_dg) / (
+                1.0 + self.parameters.d * abs_dg
+            )
+            drive = tau - self.parameters.c_mpa * (a0[active_indices] + da)
             sgn = np.where(drive > 0.0, 1.0, -1.0)
             overstress = np.maximum(np.abs(drive) - resistance, 0.0)
-            flow = slope[:, None] * overstress * sgn
-            residual = dg - flow
+            flow = slope[active_indices, None] * overstress * sgn
+            residual = dg_active - flow
             residual_norm = np.max(np.abs(residual), axis=1)
-            converged = residual_norm <= self._tolerance
+            newly_converged = residual_norm <= self._tolerance
+            converged[active_indices[newly_converged]] = True
+            pending = active_indices[~newly_converged]
             self._timing["reduced_residual_seconds"] += perf_counter() - residual_started
-            self._timing["material_newton_iterations"] += n
-            if np.all(converged):
+            self._timing["material_newton_iterations"] += int(active_indices.size)
+            if pending.size == 0:
                 break
-            pending = np.flatnonzero(~converged)
             self._timing["active_point_solves"] += int(pending.size)
             jacobian_started = perf_counter()
-            active_pending = (overstress[pending] > 0.0).astype(float)
-            den = 1.0 + self.parameters.d * abs_dg[pending]
-            num = dg[pending] - self.parameters.d * a0[pending] * abs_dg[pending]
-            dnum = 1.0 - self.parameters.d * a0[pending] * sign_dg[pending]
-            dden = self.parameters.d * sign_dg[pending]
+            still_pending = ~newly_converged
+            active_pending = (overstress[still_pending] > 0.0).astype(float)
+            den = 1.0 + self.parameters.d * abs_dg[still_pending]
+            num = dg_active[still_pending] - self.parameters.d * a0[pending] * abs_dg[still_pending]
+            dnum = 1.0 - self.parameters.d * a0[pending] * sign_dg[still_pending]
+            dden = self.parameters.d * sign_dg[still_pending]
             dda = (dnum * den - num * dden) / (den * den)
             jac_pending = np.broadcast_to(eye12, (pending.size, 12, 12)).copy()
             jac_pending += (active_pending * slope[pending, None])[:, :, None] * plastic_modulus
@@ -531,10 +539,12 @@ class SrixNumpy3DMaterialPointBatch:
                 self.parameters.q_mpa
                 * self.parameters.b
                 * self._interaction[None, :, :]
-                * exp_bp[pending, None, :]
-                * sign_dg[pending, None, :]
+                * exp_bp[still_pending, None, :]
+                * sign_dg[still_pending, None, :]
             )
-            jac_pending += (active_pending * slope[pending, None] * sgn[pending])[:, :, None] * dr
+            jac_pending += (
+                active_pending * slope[pending, None] * sgn[still_pending]
+            )[:, :, None] * dr
             indices = np.arange(12)
             jac_pending[:, indices, indices] += (
                 active_pending * slope[pending, None] * self.parameters.c_mpa * dda
@@ -542,7 +552,7 @@ class SrixNumpy3DMaterialPointBatch:
             self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
             solve_started = perf_counter()
             try:
-                delta = np.linalg.solve(jac_pending, -residual[pending, :, None])[..., 0]
+                delta = np.linalg.solve(jac_pending, -residual[still_pending, :, None])[..., 0]
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton is singular"
@@ -552,7 +562,7 @@ class SrixNumpy3DMaterialPointBatch:
                     "NumPy SRIX reduced Newton produced non-finite values"
                 )
             self._timing["reduced_solve_seconds"] += perf_counter() - solve_started
-            current_norm = residual_norm[pending]
+            current_norm = residual_norm[still_pending]
             alpha = np.ones(pending.size)
             accepted = np.zeros(pending.size, dtype=bool)
             best_norm = np.full(pending.size, np.inf)
@@ -593,6 +603,20 @@ class SrixNumpy3DMaterialPointBatch:
                 "NumPy SRIX reduced Newton did not converge in "
                 f"{self._maximum_iterations} iterations"
             )
+        # Reconstruct the converged constitutive quantities once for stress and
+        # (when requested) the sensitivity.  Newton work above only touched
+        # points that were still active.
+        abs_dg = np.abs(dg)
+        sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
+        exp_bp = np.exp(-self.parameters.b * (p0 + abs_dg))
+        tau = tau_trial - dg @ plastic_modulus.T
+        da = (dg - self.parameters.d * a0 * abs_dg) / (1.0 + self.parameters.d * abs_dg)
+        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * (
+            (1.0 - exp_bp) @ self._interaction.T
+        )
+        drive = tau - self.parameters.c_mpa * (a0 + da)
+        sgn = np.where(drive > 0.0, 1.0, -1.0)
+        overstress = np.maximum(np.abs(drive) - resistance, 0.0)
         deel = material_strain - dg @ mus
         elastic_material = elastic0 + deel
         stress_material = elastic_material @ ce.T
