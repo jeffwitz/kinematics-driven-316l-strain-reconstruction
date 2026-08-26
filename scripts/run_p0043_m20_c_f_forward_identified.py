@@ -53,9 +53,9 @@ def _plot_evm(
             (dic[row], "DIC", "viridis", 0.0, common),
             (c_map[row], "C historique", "viridis", 0.0, common),
             (f_map[row], "F corrigé", "viridis", 0.0, common),
-            (differences[0][row], "C − DIC", "coolwarm", -diff_limit, diff_limit),
-            (differences[1][row], "F − DIC", "coolwarm", -diff_limit, diff_limit),
-            (differences[2][row], "F − C", "coolwarm", -diff_limit, diff_limit),
+            (differences[0][row], "C - DIC", "coolwarm", -diff_limit, diff_limit),
+            (differences[1][row], "F - DIC", "coolwarm", -diff_limit, diff_limit),
+            (differences[2][row], "F - C", "coolwarm", -diff_limit, diff_limit),
         )
         for column, (field, title, cmap, vmin, vmax) in enumerate(panels):
             axis = axes[row, column]
