@@ -25,7 +25,7 @@
     0.43345760260706473,
     0.5668653687979298
   ],
-  "git_sha": "d3cb036a43c62cda700fdc9705decab6abd9b795",
+  "git_sha": "4db3e8e19b91ab96b5ea6157e468c61618df8d61",
   "machine": "jeff-HP-EliteBook-X-G1i",
   "method": "P43 M20 NumPy SRIX forward, EBSD order F",
   "mfront_comparison": {
@@ -77,7 +77,7 @@
   "timing": {
     "backend": "numpy-srix-condensed-plane-stress",
     "gmres_iterations": 2265,
-    "seconds": 41.309518372872844,
+    "seconds": 39.28637380595319,
     "steps": 32,
     "verification_residual": 6.998450091348672e-09
   }
