@@ -3,6 +3,7 @@
 import numpy as np
 
 from fem_inhouse.core.crystal_orientation import HomogeneousOrientationProvider
+from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
 from fem_inhouse.core.srix_numpy import (
     SrixNumpy3DMaterialPointBatch,
     SrixNumpyCondensedPlaneStressBatch,
@@ -63,6 +64,23 @@ def test_numpy_srix_algorithmic_tangent_matches_directional_difference() -> None
     assert relative_error < 1.0e-6
 
 
+def test_numpy_srix_reduced_tangent_matches_full_18x18_oracle() -> None:
+    rotation = HomogeneousOrientationProvider.from_euler_bunge_deg(
+        17.0, 31.0, 43.0
+    ).rotations_global_to_material(1)
+    material = SrixNumpy3DMaterialPointBatch(point_count=1, rotation_global_to_material=rotation)
+    strain_increment = np.array([[3.0e-3, -4.0e-4, 2.0e-4, 1.0e-4, 0.0, -2.0e-4]])
+    reduced = material._integrate_chunk(strain_increment, strain_increment)
+    material.revert()
+    full = material._integrate_chunk_full(strain_increment, strain_increment)
+    assert np.allclose(
+        reduced.consistent_tangent_kelvin_mpa,
+        full.consistent_tangent_kelvin_mpa,
+        rtol=2.0e-10,
+        atol=1.0e-7,
+    )
+
+
 def test_numpy_srix_plane_stress_closes_all_three_transverse_components() -> None:
     material = SrixNumpyCondensedPlaneStressBatch(SrixNumpy3DMaterialPointBatch(point_count=2))
     trial = material.evaluate(
@@ -99,3 +117,22 @@ def test_numpy_srix_tangent_transverse_predictor_matches_committed_seed() -> Non
         )
         committed.commit()
         tangent.commit()
+
+
+def test_numpy_srix_response_levels_return_only_requested_payload() -> None:
+    material = SrixNumpyCondensedPlaneStressBatch(SrixNumpy3DMaterialPointBatch(point_count=1))
+    strain = np.array([[1.0e-3, -1.0e-4, 2.0e-4]])
+    residual = material.evaluate_in_plane_response(
+        strain, time_increment=1.0, response_level="residual"
+    )
+    assert isinstance(residual, InPlaneConstitutiveTrial)
+    assert residual.tangent_in_plane_mpa is None
+    tangent = material.evaluate_in_plane_response(
+        strain, time_increment=1.0, response_level="tangent"
+    )
+    assert isinstance(tangent, InPlaneConstitutiveTrial)
+    assert tangent.tangent_in_plane_mpa is not None
+    complete = material.evaluate_in_plane_response(
+        strain, time_increment=1.0, response_level="complete"
+    )
+    assert isinstance(complete, ConstitutiveTrial)
