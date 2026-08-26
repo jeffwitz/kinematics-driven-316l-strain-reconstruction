@@ -1,0 +1,17 @@
+{
+  "backend": "numpy-srix-condensed-plane-stress",
+  "crop": [
+    1610,
+    1630,
+    1075,
+    1095
+  ],
+  "elapsed_seconds_wall": 1.47000614204444,
+  "element_order": "F",
+  "error": "ConstitutiveIntegrationError: NumPy SRIX local Newton did not converge in 15 iterations",
+  "local_iterations": 15,
+  "path_steps": 32,
+  "schema_version": 1,
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/scripts/run_p0043_m20_numpy_srix_forward.py\", line 109, in main\n    fields, timing = _forward(theta, path, angles, args.local_iterations)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/scripts/run_p0043_m20_numpy_srix_forward.py\", line 77, in _forward\n    result = solve_two_state_dirichlet_plane_stress(\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/spectral2d/newton_two_state.py\", line 948, in solve_two_state_dirichlet_plane_stress\n    trial = evaluate_samples_timed(\n            ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/spectral2d/newton_two_state.py\", line 701, in evaluate_samples_timed\n    result = elements.evaluate_samples(\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/spectral2d/newton_two_state.py\", line 259, in evaluate_samples\n    material_trial = evaluate_in_plane_response(\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/plane_stress_material.py\", line 93, in evaluate_in_plane_response\n    return material.evaluate_in_plane(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/srix_numpy.py\", line 502, in evaluate_in_plane\n    trial = self.evaluate(\n            ^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/srix_numpy.py\", line 457, in evaluate\n    trial = self._bridge.evaluate(total, time_increment=time_increment)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/srix_numpy.py\", line 362, in evaluate\n    result = self._integrate_chunk(values)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/src/fem_inhouse/core/srix_numpy.py\", line 315, in _integrate_chunk\n    raise ConstitutiveIntegrationError(\nfem_inhouse.core.plane_stress_material.ConstitutiveIntegrationError: NumPy SRIX local Newton did not converge in 15 iterations\n"
+}
