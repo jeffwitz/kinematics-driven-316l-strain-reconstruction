@@ -1,0 +1,97 @@
+{
+  "best_strict": {
+    "elapsed_seconds": 15.462524197995663,
+    "equilibrium_residual": 4.780831219247429e-12,
+    "gmres_iterations": 4288,
+    "label": "C_anti_transpose_rz0",
+    "raw_rms_mm": 3.945626915462314e-06,
+    "sample_frame_degrees": 0.0,
+    "spatial_transform": "anti_transpose"
+  },
+  "crop": [
+    1610,
+    1630,
+    1075,
+    1095
+  ],
+  "mapping_order": "F",
+  "parameters": {
+    "C11_mpa": 197000.0,
+    "C12_mpa": 125000.0,
+    "C44_mpa": 122000.0,
+    "C_mpa": 40000.0,
+    "Q_mpa": 10.0,
+    "R_mpa": 18.781910070526294,
+    "b": 3.0,
+    "d": 1500.0,
+    "tau0_mpa": 40.0
+  },
+  "path_steps": 32,
+  "provenance": {
+    "crop_absolute": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "ebsd_sha256": "9be963185616bc114e01d5b511ca0832c1f8462125a4e710946f99dd81feb9c2",
+    "history_sha256": "cb804a6b4f3777603337c05e07d58c88bd19341fa6605c7141dc5e714d7d98a3",
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ]
+  },
+  "results": [
+    {
+      "elapsed_seconds": 17.091432439163327,
+      "equilibrium_residual": 5.077724057254839e-07,
+      "gmres_iterations": 6135,
+      "label": "A_identity_rz90",
+      "raw_rms_mm": 3.874409439265956e-06,
+      "sample_frame_degrees": 90.0,
+      "spatial_transform": "identity"
+    },
+    {
+      "elapsed_seconds": 13.677288550883532,
+      "equilibrium_residual": 4.447773011301876e-12,
+      "gmres_iterations": 4398,
+      "label": "B_identity_rz0",
+      "raw_rms_mm": 4.067169138828672e-06,
+      "sample_frame_degrees": 0.0,
+      "spatial_transform": "identity"
+    },
+    {
+      "elapsed_seconds": 15.462524197995663,
+      "equilibrium_residual": 4.780831219247429e-12,
+      "gmres_iterations": 4288,
+      "label": "C_anti_transpose_rz0",
+      "raw_rms_mm": 3.945626915462314e-06,
+      "sample_frame_degrees": 0.0,
+      "spatial_transform": "anti_transpose"
+    },
+    {
+      "elapsed_seconds": 17.443344797939062,
+      "equilibrium_residual": 9.856723370637142e-12,
+      "gmres_iterations": 6255,
+      "label": "D_flip_x_rz90",
+      "raw_rms_mm": 4.075617855636863e-06,
+      "sample_frame_degrees": 90.0,
+      "spatial_transform": "flip_x"
+    }
+  ],
+  "schema_version": 1,
+  "scored_steps": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32
+  ],
+  "spectral_storage_order": "C",
+  "strict_equilibrium_threshold": 1e-08
+}
