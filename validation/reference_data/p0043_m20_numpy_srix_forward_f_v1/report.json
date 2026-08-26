@@ -18,20 +18,20 @@
   "evm_rms_percent": [
     0.029081912473087553,
     0.03415023966923568,
-    0.08028420869492876,
-    0.09982982278702837,
-    0.1638471111499709,
-    0.30286700798480787,
+    0.08028420869492878,
+    0.09982982278702844,
+    0.16384711114997122,
+    0.3028670079848077,
     0.43345760260706456,
-    0.5668653687979326
+    0.5668653687979325
   ],
-  "git_sha": "c939673b02e642b2dc221f9aeb58ec24d70a6506",
+  "git_sha": "8a5b5a3821915a3c92f789dc254beb9a033cadb8",
   "machine": "jeff-HP-EliteBook-X-G1i",
   "method": "P43 M20 NumPy SRIX forward, EBSD order F",
   "mfront_comparison": {
-    "displacement_max_abs_mm": 2.1868809713699276e-05,
-    "displacement_relative_l2": 4.7972516100941505e-05,
-    "displacement_rmse_mm": 1.5298886136961957e-06,
+    "displacement_max_abs_mm": 2.1868809713700144e-05,
+    "displacement_relative_l2": 4.797251610094079e-05,
+    "displacement_rmse_mm": 1.5298886136961733e-06,
     "source": "validation/reference_data/p0043_m20_c_f_forward_identified_v1/fields_F.npz"
   },
   "parameters": {
@@ -62,7 +62,7 @@
       1390
     ]
   },
-  "raw_rms_mm": 3.952271742885392e-06,
+  "raw_rms_mm": 3.952271742885409e-06,
   "schema_version": 1,
   "scored_steps": [
     4,
@@ -77,8 +77,8 @@
   "timing": {
     "backend": "numpy-srix-condensed-plane-stress",
     "gmres_iterations": 2265,
-    "seconds": 97.35675356909633,
+    "seconds": 44.57746115489863,
     "steps": 32,
-    "verification_residual": 6.998302177629542e-09
+    "verification_residual": 6.998152035997778e-09
   }
 }
