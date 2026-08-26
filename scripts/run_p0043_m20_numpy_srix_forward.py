@@ -35,7 +35,9 @@ OUTPUT = ROOT / "validation/reference_data/p0043_m20_numpy_srix_forward_f_v1"
 PIXEL_SIZE_MM = 0.00184
 
 
-def _factory(angles: np.ndarray, theta: SrixTheta9, local_iterations: int):
+def _factory(
+    angles: np.ndarray, theta: SrixTheta9, local_iterations: int, predictor: str = "committed"
+):
     count = 2 * angles.shape[0] * angles.shape[1]
     return create_plane_stress_material_batch(
         "numpy-srix-plane-stress",
@@ -54,6 +56,7 @@ def _factory(angles: np.ndarray, theta: SrixTheta9, local_iterations: int):
             "material_newton_max_iterations": local_iterations,
             "plane_stress_max_iterations": 15,
             "local_tolerance_mpa": 1.0e-8,
+            "local_transverse_predictor": predictor,
         },
         constitutive_options={
             "parameter_set": DEFAULT_PARAMETER_SET,
@@ -89,11 +92,15 @@ def _copy_field(value: TwoStateIncrementFields) -> TwoStateIncrementFields:
 
 
 def _forward(
-    theta: SrixTheta9, path: list[LoadPathStep], angles: np.ndarray, local_iterations: int
+    theta: SrixTheta9,
+    path: list[LoadPathStep],
+    angles: np.ndarray,
+    local_iterations: int,
+    predictor: str = "committed",
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any]]:
     pixels = angles.shape[0]
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
-    material = _factory(angles, theta, local_iterations)
+    material = _factory(angles, theta, local_iterations, predictor)
     history = np.stack([np.zeros_like(path[0].boundary), *[step.boundary for step in path]])
     fields: list[TwoStateIncrementFields] = []
 
@@ -115,6 +122,7 @@ def _forward(
         "verification_residual": result.diagnostics.verification_residual,
         "gmres_iterations": int(result.diagnostics.timings["gmres_iterations"]),
         "backend": "numpy-srix-condensed-plane-stress",
+        "local_transverse_predictor": predictor,
     }
 
 
@@ -124,8 +132,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--subdivisions", type=int, default=4)
     parser.add_argument("--local-iterations", type=int, default=30)
+    parser.add_argument("--predictor", choices=("committed", "tangent"), default="committed")
+    parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
-    OUTPUT.mkdir(parents=True, exist_ok=True)
+    output = args.output if args.output.is_absolute() else ROOT / args.output
+    output.mkdir(parents=True, exist_ok=True)
     measured, angles, provenance = _load_inputs(CROP)
     path = _make_path(measured, args.subdivisions)
     scored = tuple(args.subdivisions * i for i in range(1, 9))
@@ -134,7 +145,7 @@ def main() -> int:
     theta = SrixTheta9.from_log_coordinates(np.asarray(report["final_eta"], dtype=float))
     started = time.perf_counter()
     try:
-        fields, timing = _forward(theta, path, angles, args.local_iterations)
+        fields, timing = _forward(theta, path, angles, args.local_iterations, args.predictor)
     except Exception as error:
         failure = {
             "schema_version": 1,
@@ -144,11 +155,12 @@ def main() -> int:
             "crop": list(CROP),
             "path_steps": len(path),
             "local_iterations": args.local_iterations,
+            "local_transverse_predictor": args.predictor,
             "elapsed_seconds_wall": time.perf_counter() - started,
             "error": f"{type(error).__name__}: {error}",
             "traceback": traceback.format_exc(),
         }
-        (OUTPUT / "failure_report.json").write_text(
+        (output / "failure_report.json").write_text(
             json.dumps(failure, indent=2, sort_keys=True) + "\n"
         )
         print(json.dumps(failure, sort_keys=True), flush=True)
@@ -158,7 +170,7 @@ def main() -> int:
     evm = np.asarray([_evm(field) for field in selected])
     dic_evm = np.asarray([_evm(field) for field in target])
     np.savez_compressed(
-        OUTPUT / "fields_numpy.npz",
+        output / "fields_numpy.npz",
         displacement=np.asarray([field.displacement for field in fields]),
         sample_strain=np.asarray([field.sample_strain for field in fields]),
         stress_in_plane_mpa=np.asarray([field.stress_in_plane_mpa for field in fields]),
@@ -195,7 +207,7 @@ def main() -> int:
         "evm_rms_percent": (100.0 * np.sqrt(np.mean(evm**2, axis=(1, 2)))).tolist(),
         "dic_evm_rms_percent": (100.0 * np.sqrt(np.mean(dic_evm**2, axis=(1, 2)))).tolist(),
     }
-    (OUTPUT / "report.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    (output / "report.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps(result, sort_keys=True), flush=True)
     return 0
 

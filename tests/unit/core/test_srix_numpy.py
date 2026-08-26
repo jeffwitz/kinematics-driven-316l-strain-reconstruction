@@ -70,3 +70,32 @@ def test_numpy_srix_plane_stress_closes_all_three_transverse_components() -> Non
     )
     assert np.max(np.abs(trial.plane_stress_residual_mpa)) < 1.0e-7
     assert trial.tangent_in_plane_mpa is not None
+
+
+def test_numpy_srix_tangent_transverse_predictor_matches_committed_seed() -> None:
+    committed = SrixNumpyCondensedPlaneStressBatch(
+        SrixNumpy3DMaterialPointBatch(point_count=2),
+        local_transverse_predictor="committed",
+    )
+    tangent = SrixNumpyCondensedPlaneStressBatch(
+        SrixNumpy3DMaterialPointBatch(point_count=2),
+        local_transverse_predictor="tangent",
+    )
+    path = (
+        np.array([[5.0e-4, -1.0e-4, 2.0e-4], [2.0e-4, 0.0, 1.0e-4]]),
+        np.array([[1.2e-3, -2.0e-4, 4.0e-4], [7.0e-4, 0.0, 2.0e-4]]),
+        np.array([[2.0e-3, -3.0e-4, 6.0e-4], [1.1e-3, 0.0, 3.0e-4]]),
+    )
+    for strain in path:
+        trial_committed = committed.evaluate(strain, time_increment=1.0)
+        trial_tangent = tangent.evaluate(strain, time_increment=1.0)
+        assert np.allclose(
+            trial_committed.stress_in_plane_mpa, trial_tangent.stress_in_plane_mpa, rtol=1e-10
+        )
+        assert np.allclose(
+            trial_committed.plane_stress_residual_mpa,
+            trial_tangent.plane_stress_residual_mpa,
+            atol=1e-8,
+        )
+        committed.commit()
+        tangent.commit()
