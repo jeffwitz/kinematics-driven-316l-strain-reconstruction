@@ -116,7 +116,7 @@ def _forward(
     elapsed = time.perf_counter() - started
     if len(fields) != len(path):
         raise RuntimeError(f"NumPy forward accepted {len(fields)} of {len(path)} increments")
-    return fields, {
+    timing_result = {
         "seconds": elapsed,
         "steps": len(fields),
         "verification_residual": result.diagnostics.verification_residual,
@@ -124,6 +124,8 @@ def _forward(
         "backend": "numpy-srix-condensed-plane-stress",
         "local_transverse_predictor": predictor,
     }
+    timing_result["material"] = material.timing_statistics
+    return fields, timing_result
 
 
 def main() -> int:
