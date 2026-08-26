@@ -10,7 +10,7 @@ MFront remains the production default and the numerical oracle.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -723,6 +723,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         local_tolerance_mpa: float = 1e-8,
         maximum_local_iterations: int = 15,
         plane_stress_max_iterations: int | None = None,
+        local_transverse_predictor: Literal["committed", "tangent"] = "committed",
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)
@@ -731,9 +732,19 @@ class SrixNumpyCondensedPlaneStressBatch:
             if plane_stress_max_iterations is None
             else plane_stress_max_iterations
         )
+        if local_transverse_predictor not in {"committed", "tangent"}:
+            raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
+        self._local_transverse_predictor = local_transverse_predictor
         self._committed_transverse = np.zeros((bridge.point_count, 3))
         self._latest_transverse: FloatArray | None = None
         self._latest: ConstitutiveTrial | None = None
+        self._accepted_transverse = self._committed_transverse.copy()
+        self._accepted_in_plane: FloatArray | None = None
+        self._accepted_cbb: FloatArray | None = None
+        self._accepted_cba: FloatArray | None = None
+        self._latest_in_plane: FloatArray | None = None
+        self._latest_cbb: FloatArray | None = None
+        self._latest_cba: FloatArray | None = None
 
     @property
     def point_count(self) -> int:
@@ -742,6 +753,10 @@ class SrixNumpyCondensedPlaneStressBatch:
     @property
     def backend_name(self) -> str:
         return "numpy-srix-condensed-plane-stress"
+
+    @property
+    def local_transverse_predictor(self) -> str:
+        return self._local_transverse_predictor
 
     @property
     def completion_strategy(self) -> str:
@@ -763,7 +778,26 @@ class SrixNumpyCondensedPlaneStressBatch:
             raise ValueError(f"in_plane_strain must have shape {(self.point_count, 3)}")
         total = np.zeros((self.point_count, 6))
         total[:, _PLANE] = in_plane * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
-        total[:, _TRANSVERSE] = self._committed_transverse
+        transverse_initial = self._committed_transverse
+        if (
+            self._local_transverse_predictor == "tangent"
+            and self._accepted_in_plane is not None
+            and self._accepted_cbb is not None
+            and self._accepted_cba is not None
+        ):
+            delta_in_plane = (
+                in_plane - self._accepted_in_plane
+            ) * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
+            try:
+                correction = np.linalg.solve(
+                    self._accepted_cbb,
+                    -np.einsum("nij,nj->ni", self._accepted_cba, delta_in_plane)[..., None],
+                )[..., 0]
+                if np.isfinite(correction).all():
+                    transverse_initial = self._accepted_transverse + correction
+            except np.linalg.LinAlgError:
+                pass
+        total[:, _TRANSVERSE] = transverse_initial
         for _ in range(self._max):
             trial = self._bridge.evaluate(total, time_increment=time_increment)
             stress = trial.stress_kelvin_mpa[:, _TRANSVERSE]
@@ -802,6 +836,9 @@ class SrixNumpyCondensedPlaneStressBatch:
                 )
                 self._latest_transverse = total[:, _TRANSVERSE].copy()
                 self._latest = complete
+                self._latest_in_plane = in_plane.copy()
+                self._latest_cbb = cbb.copy()
+                self._latest_cba = cba.copy()
                 return complete
             tangent = trial.consistent_tangent_kelvin_mpa
             cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
@@ -831,10 +868,31 @@ class SrixNumpyCondensedPlaneStressBatch:
             raise RuntimeError("no successful NumPy SRIX trial to commit")
         self._bridge.commit()
         self._committed_transverse = self._latest_transverse.copy()
+        self.accept_global_trial()
         self._latest_transverse = None
         self._latest = None
 
+    def accept_global_trial(self) -> None:
+        """Keep the latest converged closure as predictor for the next trial."""
+
+        if self._latest_transverse is None:
+            return
+        self._accepted_transverse = self._latest_transverse.copy()
+        if self._latest_in_plane is not None:
+            self._accepted_in_plane = self._latest_in_plane.copy()
+        if self._latest_cbb is not None:
+            self._accepted_cbb = self._latest_cbb.copy()
+        if self._latest_cba is not None:
+            self._accepted_cba = self._latest_cba.copy()
+
     def revert(self) -> None:
         self._bridge.revert()
+        self._accepted_transverse = self._committed_transverse.copy()
+        self._accepted_in_plane = None
+        self._accepted_cbb = None
+        self._accepted_cba = None
         self._latest_transverse = None
         self._latest = None
+        self._latest_in_plane = None
+        self._latest_cbb = None
+        self._latest_cba = None

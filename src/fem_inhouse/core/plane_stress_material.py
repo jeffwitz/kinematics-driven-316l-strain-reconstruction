@@ -716,6 +716,9 @@ def create_plane_stress_material_batch(
             bridge,
             local_tolerance_mpa=float(local_options.get("local_tolerance_mpa", 1.0e-8)),
             plane_stress_max_iterations=int(plane_stress_iterations),
+            local_transverse_predictor=str(
+                local_options.get("local_transverse_predictor", "committed")
+            ),
         )
 
     if backend == "python":
