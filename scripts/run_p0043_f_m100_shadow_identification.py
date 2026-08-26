@@ -42,6 +42,7 @@ DEFAULT_OUTPUT = ROOT / (
     "validation/reference_data/p0043_f_mapping_reidentification_m100_shadow_v1"
 )
 H = 1.5e-3
+M100_SUBDIVISIONS = 8
 
 
 def _bounds(eta_ref: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -98,8 +99,11 @@ def main() -> int:
     m20_report = json.loads(M20_REPORT.read_text())
     eta_m20 = np.asarray(m20_report["final_eta"], dtype=float)
     measured, angles, provenance = _load_inputs(FULL_CROP)
-    path = _make_path(measured, 4)
-    scored = tuple(4 * index for index in range(1, 9))
+    # The four-substep path reaches the late-load branch but fails on the
+    # final high-strain increment.  Keep the same endpoints and oracle
+    # policy, while using a finer continuation path for M100.
+    path = _make_path(measured, M100_SUBDIVISIONS)
+    scored = tuple(M100_SUBDIVISIONS * index for index in range(1, 9))
     target = [np.asarray(step.boundary, dtype=float).copy() for step in path]
     library = os.environ.get(
         "MFRONT_BEHAVIOUR_LIBRARY", str(ROOT / "build/mfront/src/libBehaviour.so")
@@ -283,6 +287,7 @@ def main() -> int:
         "crop": list(FULL_CROP),
         "mesh": list(angles.shape[:2]),
         "path_steps": len(path),
+        "path_subdivisions_per_state": M100_SUBDIVISIONS,
         "scored_steps": list(scored),
         "element_order": "F",
         "spectral_batch_order": "C",
