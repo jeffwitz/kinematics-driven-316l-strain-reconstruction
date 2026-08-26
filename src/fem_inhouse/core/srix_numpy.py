@@ -10,6 +10,7 @@ MFront remains the production default and the numerical oracle.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from time import perf_counter
 from typing import Any, Literal
 
 import numpy as np
@@ -209,6 +210,16 @@ class SrixNumpy3DMaterialPointBatch:
         self._trial: SrixNumpy3DTrial | None = None
         self._trial_state: tuple[FloatArray, FloatArray, FloatArray, FloatArray] | None = None
         self._trial_total_strain: FloatArray | None = None
+        self._timing = {
+            "rotation_seconds": 0.0,
+            "reduced_residual_seconds": 0.0,
+            "reduced_jacobian_seconds": 0.0,
+            "reduced_solve_seconds": 0.0,
+            "backtracking_seconds": 0.0,
+            "tangent_seconds": 0.0,
+            "material_newton_iterations": 0,
+            "active_point_solves": 0,
+        }
 
     def _residual_for(
         self,
@@ -266,6 +277,10 @@ class SrixNumpy3DMaterialPointBatch:
             "total_strain": self._committed_total_strain.copy(),
         }
 
+    @property
+    def timing_statistics(self) -> dict[str, float | int]:
+        return dict(self._timing)
+
     def _integrate_chunk_full(
         self,
         strain_increment: FloatArray,
@@ -275,7 +290,9 @@ class SrixNumpy3DMaterialPointBatch:
         n = strain_increment.shape[0]
         stop = start + n
         transform = self._kelvin_rotation[start:stop]
+        started = perf_counter()
         material_strain = np.einsum("nij,nj->ni", transform, strain_increment)
+        self._timing["rotation_seconds"] += perf_counter() - started
         deel = material_strain.copy()
         dg = np.zeros((n, 12))
         ce = self._ce[start:stop]
@@ -460,7 +477,9 @@ class SrixNumpy3DMaterialPointBatch:
         n = strain_increment.shape[0]
         stop = start + n
         transform = self._kelvin_rotation[start:stop]
+        started = perf_counter()
         material_strain = np.einsum("nij,nj->ni", transform, strain_increment)
+        self._timing["rotation_seconds"] += perf_counter() - started
         p0, a0 = self._p[start:stop], self._a[start:stop]
         elastic0 = self._elastic[start:stop]
         ce = self._ce_material
@@ -475,6 +494,7 @@ class SrixNumpy3DMaterialPointBatch:
         converged = np.zeros(n, dtype=bool)
         jac: FloatArray | None = None
         for iteration in range(self._maximum_iterations):
+            residual_started = perf_counter()
             abs_dg = np.abs(dg)
             sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
             p_trial = p0 + abs_dg
@@ -491,6 +511,8 @@ class SrixNumpy3DMaterialPointBatch:
             residual = dg - flow
             residual_norm = np.max(np.abs(residual), axis=1)
             converged = residual_norm <= self._tolerance
+            self._timing["reduced_residual_seconds"] += perf_counter() - residual_started
+            jacobian_started = perf_counter()
             active = (overstress > 0.0).astype(float)
             den = 1.0 + self.parameters.d * abs_dg
             num = dg - self.parameters.d * a0 * abs_dg
@@ -509,9 +531,13 @@ class SrixNumpy3DMaterialPointBatch:
             jac += (active * slope[:, None] * sgn)[:, :, None] * dr
             indices = np.arange(12)
             jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
+            self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
+            self._timing["material_newton_iterations"] += n
             if np.all(converged):
                 break
             pending = np.flatnonzero(~converged)
+            self._timing["active_point_solves"] += int(pending.size)
+            solve_started = perf_counter()
             try:
                 delta = np.linalg.solve(jac[pending], -residual[pending, :, None])[..., 0]
             except np.linalg.LinAlgError as error:
@@ -522,11 +548,13 @@ class SrixNumpy3DMaterialPointBatch:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton produced non-finite values"
                 )
+            self._timing["reduced_solve_seconds"] += perf_counter() - solve_started
             current_norm = residual_norm[pending]
             alpha = np.ones(pending.size)
             accepted = np.zeros(pending.size, dtype=bool)
             best_norm = np.full(pending.size, np.inf)
             best_dg = dg[pending].copy()
+            backtracking_started = perf_counter()
             for _backtrack in range(12):
                 candidate_dg = dg[pending] + alpha[:, None] * delta
                 candidate = self._reduced_residual(
@@ -545,6 +573,7 @@ class SrixNumpy3DMaterialPointBatch:
                 alpha = np.where(accepted, alpha, 0.5 * alpha)
                 if np.all(accepted):
                     break
+            self._timing["backtracking_seconds"] += perf_counter() - backtracking_started
             if not np.all(accepted):
                 failed = np.flatnonzero(~accepted)
                 worst_local = int(failed[np.argmax(current_norm[failed])])
@@ -570,6 +599,7 @@ class SrixNumpy3DMaterialPointBatch:
         ]
         # Reuse the converged reduced residual/Jacobian state for the
         # consistent tangent; no second constitutive reconstruction is needed.
+        tangent_started = perf_counter()
         if jac is None:
             raise RuntimeError("reduced Newton completed without a Jacobian")
         ndeq = np.zeros_like(de)
@@ -585,6 +615,7 @@ class SrixNumpy3DMaterialPointBatch:
         tangent_global = np.einsum(
             "nij,njk,nkl->nil", np.swapaxes(transform, 1, 2), tangent_material, transform
         )
+        self._timing["tangent_seconds"] += perf_counter() - tangent_started
         p_final = p0 + np.abs(dg)
         da_final = (dg - self.parameters.d * a0 * np.abs(dg)) / (
             1.0 + self.parameters.d * np.abs(dg)
@@ -703,6 +734,8 @@ class SrixNumpyCondensedPlaneStressBatch:
         self._latest_in_plane: FloatArray | None = None
         self._latest_cbb: FloatArray | None = None
         self._latest_cba: FloatArray | None = None
+        self._plane_stress_seconds = 0.0
+        self._plane_stress_iterations = 0
 
     @property
     def point_count(self) -> int:
@@ -715,6 +748,13 @@ class SrixNumpyCondensedPlaneStressBatch:
     @property
     def local_transverse_predictor(self) -> str:
         return self._local_transverse_predictor
+
+    @property
+    def timing_statistics(self) -> dict[str, float | int]:
+        values = self._bridge.timing_statistics
+        values["plane_stress_seconds"] = self._plane_stress_seconds
+        values["plane_stress_iterations"] = self._plane_stress_iterations
+        return values
 
     @property
     def completion_strategy(self) -> str:
@@ -763,7 +803,9 @@ class SrixNumpyCondensedPlaneStressBatch:
             except np.linalg.LinAlgError:
                 pass
         total[:, _TRANSVERSE] = transverse_initial
-        for _ in range(self._max):
+        plane_stress_started = perf_counter()
+        for _iteration in range(self._max):
+            self._plane_stress_iterations += 1
             trial = self._bridge.evaluate(total, time_increment=time_increment)
             stress = trial.stress_kelvin_mpa[:, _TRANSVERSE]
             if float(np.max(np.abs(stress))) <= self._tol:
@@ -812,11 +854,13 @@ class SrixNumpyCondensedPlaneStressBatch:
                 self._latest_in_plane = in_plane.copy()
                 self._latest_cbb = cbb.copy()
                 self._latest_cba = cba.copy()
+                self._plane_stress_seconds += perf_counter() - plane_stress_started
                 return result
             tangent = trial.consistent_tangent_kelvin_mpa
             cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
             total[:, _TRANSVERSE] += np.linalg.solve(cbb, -stress[..., None])[..., 0]
         self._bridge.revert()
+        self._plane_stress_seconds += perf_counter() - plane_stress_started
         raise ConstitutiveIntegrationError("NumPy SRIX plane-stress closure did not converge")
 
     def evaluate(
