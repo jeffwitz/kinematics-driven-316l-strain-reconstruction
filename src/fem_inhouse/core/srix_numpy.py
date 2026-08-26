@@ -153,7 +153,7 @@ class SrixNumpy3DTrial:
     equivalent_plastic_slip: FloatArray
     back_strain: FloatArray
     accumulated_slip: FloatArray
-    consistent_tangent_kelvin_mpa: FloatArray
+    consistent_tangent_kelvin_mpa: FloatArray | None
     material_elastic_strain_kelvin: FloatArray
 
 
@@ -472,6 +472,7 @@ class SrixNumpy3DMaterialPointBatch:
         strain_increment: FloatArray,
         total_strain: FloatArray,
         start: int = 0,
+        tangent_mode: Literal["none", "transverse", "full"] = "full",
     ) -> SrixNumpy3DTrial:
         """Integrate one chunk with the exact 12-slip Schur reduction."""
         n = strain_increment.shape[0]
@@ -512,34 +513,36 @@ class SrixNumpy3DMaterialPointBatch:
             residual_norm = np.max(np.abs(residual), axis=1)
             converged = residual_norm <= self._tolerance
             self._timing["reduced_residual_seconds"] += perf_counter() - residual_started
-            jacobian_started = perf_counter()
-            active = (overstress > 0.0).astype(float)
-            den = 1.0 + self.parameters.d * abs_dg
-            num = dg - self.parameters.d * a0 * abs_dg
-            dnum = 1.0 - self.parameters.d * a0 * sign_dg
-            dden = self.parameters.d * sign_dg
-            dda = (dnum * den - num * dden) / (den * den)
-            jac = np.broadcast_to(eye12, (n, 12, 12)).copy()
-            jac += (active * slope[:, None])[:, :, None] * plastic_modulus
-            dr = (
-                self.parameters.q_mpa
-                * self.parameters.b
-                * self._interaction[None, :, :]
-                * exp_bp[:, None, :]
-                * sign_dg[:, None, :]
-            )
-            jac += (active * slope[:, None] * sgn)[:, :, None] * dr
-            indices = np.arange(12)
-            jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
-            self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
             self._timing["material_newton_iterations"] += n
             if np.all(converged):
                 break
             pending = np.flatnonzero(~converged)
             self._timing["active_point_solves"] += int(pending.size)
+            jacobian_started = perf_counter()
+            active_pending = (overstress[pending] > 0.0).astype(float)
+            den = 1.0 + self.parameters.d * abs_dg[pending]
+            num = dg[pending] - self.parameters.d * a0[pending] * abs_dg[pending]
+            dnum = 1.0 - self.parameters.d * a0[pending] * sign_dg[pending]
+            dden = self.parameters.d * sign_dg[pending]
+            dda = (dnum * den - num * dden) / (den * den)
+            jac_pending = np.broadcast_to(eye12, (pending.size, 12, 12)).copy()
+            jac_pending += (active_pending * slope[pending, None])[:, :, None] * plastic_modulus
+            dr = (
+                self.parameters.q_mpa
+                * self.parameters.b
+                * self._interaction[None, :, :]
+                * exp_bp[pending, None, :]
+                * sign_dg[pending, None, :]
+            )
+            jac_pending += (active_pending * slope[pending, None] * sgn[pending])[:, :, None] * dr
+            indices = np.arange(12)
+            jac_pending[:, indices, indices] += (
+                active_pending * slope[pending, None] * self.parameters.c_mpa * dda
+            )
+            self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
             solve_started = perf_counter()
             try:
-                delta = np.linalg.solve(jac[pending], -residual[pending, :, None])[..., 0]
+                delta = np.linalg.solve(jac_pending, -residual[pending, :, None])[..., 0]
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton is singular"
@@ -597,25 +600,55 @@ class SrixNumpy3DMaterialPointBatch:
         elastic_global = np.matmul(np.swapaxes(transform, 1, 2), elastic_material[..., None])[
             :, :, 0
         ]
-        # Reuse the converged reduced residual/Jacobian state for the
-        # consistent tangent; no second constitutive reconstruction is needed.
-        tangent_started = perf_counter()
-        if jac is None:
-            raise RuntimeError("reduced Newton completed without a Jacobian")
-        ndeq = np.zeros_like(de)
-        nonzero = deq > 1e-14
-        ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
-        jfd = -active[:, :, None] * slope[:, None, None] * self._mce[None, :, :]
-        jfd -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[:, :, None] * ndeq[
-            :, None, :
-        ]
-        dgamma_deps = np.linalg.solve(jac, -jfd)
-        elastic_derivative = np.eye(6)[None, :, :] - np.einsum("si,nsj->nij", mus, dgamma_deps)
-        tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
-        tangent_global = np.einsum(
-            "nij,njk,nkl->nil", np.swapaxes(transform, 1, 2), tangent_material, transform
-        )
-        self._timing["tangent_seconds"] += perf_counter() - tangent_started
+        if tangent_mode == "none":
+            tangent_global = None
+        else:
+            # Rebuild one full reduced Jacobian only for the requested
+            # sensitivity. Newton iterations assemble it only for active points.
+            tangent_started = perf_counter()
+            active = (overstress > 0.0).astype(float)
+            den = 1.0 + self.parameters.d * abs_dg
+            num = dg - self.parameters.d * a0 * abs_dg
+            dnum = 1.0 - self.parameters.d * a0 * sign_dg
+            dden = self.parameters.d * sign_dg
+            dda = (dnum * den - num * dden) / (den * den)
+            jac = np.broadcast_to(eye12, (n, 12, 12)).copy()
+            jac += (active * slope[:, None])[:, :, None] * plastic_modulus
+            dr = (
+                self.parameters.q_mpa
+                * self.parameters.b
+                * self._interaction[None, :, :]
+                * exp_bp[:, None, :]
+                * sign_dg[:, None, :]
+            )
+            jac += (active * slope[:, None] * sgn)[:, :, None] * dr
+            indices = np.arange(12)
+            jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
+            ndeq = np.zeros_like(de)
+            nonzero = deq > 1e-14
+            ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
+            jfd = -active[:, :, None] * slope[:, None, None] * self._mce[None, :, :]
+            jfd -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[:, :, None] * ndeq[
+                :, None, :
+            ]
+            if tangent_mode == "transverse":
+                transverse = transform[:, :, _TRANSVERSE]
+                dgamma_deps = np.linalg.solve(jac, -np.matmul(jfd, transverse))
+                elastic_derivative = transverse - np.einsum(
+                    "si,nsj->nij", mus, dgamma_deps
+                )
+                tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
+                tangent_global = np.matmul(np.swapaxes(transform, 1, 2), tangent_material)
+            else:
+                dgamma_deps = np.linalg.solve(jac, -jfd)
+                elastic_derivative = np.eye(6)[None, :, :] - np.einsum(
+                    "si,nsj->nij", mus, dgamma_deps
+                )
+                tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
+                tangent_global = np.einsum(
+                    "nij,njk,nkl->nil", np.swapaxes(transform, 1, 2), tangent_material, transform
+                )
+            self._timing["tangent_seconds"] += perf_counter() - tangent_started
         p_final = p0 + np.abs(dg)
         da_final = (dg - self.parameters.d * a0 * np.abs(dg)) / (
             1.0 + self.parameters.d * np.abs(dg)
@@ -632,11 +665,96 @@ class SrixNumpy3DMaterialPointBatch:
             material_elastic_strain_kelvin=elastic_material,
         )
 
+    def tangent_from_trial(
+        self,
+        total_strain_kelvin: FloatArray,
+        trial: SrixNumpy3DTrial,
+        *,
+        tangent_mode: Literal["transverse", "full"] = "full",
+    ) -> FloatArray:
+        """Build a requested tangent from a converged trial without re-integrating."""
+        if tangent_mode not in {"transverse", "full"}:
+            raise ValueError("tangent_mode must be 'transverse' or 'full'")
+        started = perf_counter()
+        total = np.asarray(total_strain_kelvin, dtype=float)
+        if total.shape != (self.point_count, 6):
+            raise ValueError(f"total_strain_kelvin must have shape {(self.point_count, 6)}")
+        transform = self._kelvin_rotation
+        mus = self._schmid_material
+        ce = self._ce_material
+        elastic0 = self._elastic
+        deel = trial.material_elastic_strain_kelvin - elastic0
+        dg = trial.plastic_slip - self._g
+        de = _deviatoric(deel) + np.einsum("si,ns->ni", mus, dg)
+        deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
+        abs_dg = np.abs(dg)
+        sign_dg = np.where(dg > 0.0, 1.0, np.where(dg < 0.0, -1.0, 0.0))
+        exp_bp = np.exp(-self.parameters.b * (self._p + abs_dg))
+        tau = (elastic0 + deel) @ self._mce.T
+        da = (dg - self.parameters.d * self._a * abs_dg) / (1.0 + self.parameters.d * abs_dg)
+        resistance = self.parameters.tau0_mpa + self.parameters.q_mpa * np.einsum(
+            "ij,nj->ni", self._interaction, 1.0 - exp_bp
+        )
+        drive = tau - self.parameters.c_mpa * (self._a + da)
+        sgn = np.where(drive > 0.0, 1.0, -1.0)
+        overstress = np.maximum(np.abs(drive) - resistance, 0.0)
+        slope = deq / self.parameters.overstress_modulus_mpa
+        active = (overstress > 0.0).astype(float)
+        ndeq = np.zeros_like(de)
+        nonzero = deq > 1e-14
+        ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
+        jfd = -active[:, :, None] * slope[:, None, None] * self._mce[None, :, :]
+        jfd -= (overstress * sgn / self.parameters.overstress_modulus_mpa)[:, :, None] * ndeq[
+            :, None, :
+        ]
+        den = 1.0 + self.parameters.d * abs_dg
+        num = dg - self.parameters.d * self._a * abs_dg
+        dnum = 1.0 - self.parameters.d * self._a * sign_dg
+        dden = self.parameters.d * sign_dg
+        dda = (dnum * den - num * dden) / (den * den)
+        jac = np.broadcast_to(np.eye(12), (self.point_count, 12, 12)).copy()
+        jac += (active * slope[:, None])[:, :, None] * self._plastic_modulus
+        dr = (
+            self.parameters.q_mpa
+            * self.parameters.b
+            * self._interaction[None, :, :]
+            * exp_bp[:, None, :]
+            * sign_dg[:, None, :]
+        )
+        jac += (active * slope[:, None] * sgn)[:, :, None] * dr
+        indices = np.arange(12)
+        jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
+        if tangent_mode == "transverse":
+            rhs = -np.matmul(jfd, transform[:, :, _TRANSVERSE])
+            dgamma_deps = np.linalg.solve(jac, rhs)
+            elastic_derivative = transform[:, :, _TRANSVERSE] - np.einsum(
+                "si,nsj->nij", mus, dgamma_deps
+            )
+            tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
+            result = np.matmul(np.swapaxes(transform, 1, 2), tangent_material)
+        else:
+            dgamma_deps = np.linalg.solve(jac, -jfd)
+            elastic_derivative = np.eye(6)[None, :, :] - np.einsum(
+                "si,nsj->nij", mus, dgamma_deps
+            )
+            tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
+            result = np.einsum(
+                "nij,njk,nkl->nil", np.swapaxes(transform, 1, 2), tangent_material, transform
+            )
+        self._timing["tangent_seconds"] += perf_counter() - started
+        return result
+
     def evaluate(
-        self, total_strain_kelvin: ArrayLike, *, time_increment: float
+        self,
+        total_strain_kelvin: ArrayLike,
+        *,
+        time_increment: float,
+        tangent_mode: Literal["none", "transverse", "full"] = "full",
     ) -> SrixNumpy3DTrial:
         if not np.isfinite(time_increment) or time_increment <= 0:
             raise ValueError("time_increment must be finite and positive")
+        if tangent_mode not in {"none", "transverse", "full"}:
+            raise ValueError("tangent_mode must be 'none', 'transverse', or 'full'")
         values = np.asarray(total_strain_kelvin, dtype=float)
         if values.shape != (self.point_count, 6) or not np.isfinite(values).all():
             raise ValueError(
@@ -647,13 +765,18 @@ class SrixNumpy3DMaterialPointBatch:
         # Persistent state is never replaced by a trial until the whole call
         # has succeeded. Chunking limits Newton workspaces, not state.
         if self._batch_size is None or self._batch_size >= self.point_count:
-            result = self._integrate_chunk(strain_increment, values)
+            result = self._integrate_chunk(strain_increment, values, tangent_mode=tangent_mode)
         else:
             chunks = []
             for start in range(0, self.point_count, self._batch_size):
                 stop = min(start + self._batch_size, self.point_count)
                 chunks.append(
-                    self._integrate_chunk(strain_increment[start:stop], values[start:stop], start)
+                    self._integrate_chunk(
+                        strain_increment[start:stop],
+                        values[start:stop],
+                        start,
+                        tangent_mode,
+                    )
                 )
             result = SrixNumpy3DTrial(
                 total_strain_kelvin=np.concatenate([item.total_strain_kelvin for item in chunks]),
@@ -667,8 +790,12 @@ class SrixNumpy3DMaterialPointBatch:
                 ),
                 back_strain=np.concatenate([item.back_strain for item in chunks]),
                 accumulated_slip=np.concatenate([item.accumulated_slip for item in chunks]),
-                consistent_tangent_kelvin_mpa=np.concatenate(
-                    [item.consistent_tangent_kelvin_mpa for item in chunks]
+                consistent_tangent_kelvin_mpa=(
+                    None
+                    if tangent_mode == "none"
+                    else np.concatenate(
+                        [item.consistent_tangent_kelvin_mpa for item in chunks]
+                    )
                 ),
                 material_elastic_strain_kelvin=np.concatenate(
                     [item.material_elastic_strain_kelvin for item in chunks]
@@ -806,16 +933,42 @@ class SrixNumpyCondensedPlaneStressBatch:
         plane_stress_started = perf_counter()
         for _iteration in range(self._max):
             self._plane_stress_iterations += 1
-            trial = self._bridge.evaluate(total, time_increment=time_increment)
+            trial = self._bridge.evaluate(
+                total,
+                time_increment=time_increment,
+                tangent_mode="none",
+            )
             stress = trial.stress_kelvin_mpa[:, _TRANSVERSE]
             if float(np.max(np.abs(stress))) <= self._tol:
-                tangent = trial.consistent_tangent_kelvin_mpa
+                if response_level == "residual":
+                    stress_in_plane = np.stack(
+                        (
+                            trial.stress_kelvin_mpa[:, 0],
+                            trial.stress_kelvin_mpa[:, 1],
+                            trial.stress_kelvin_mpa[:, 3] / _SQRT_TWO,
+                        ),
+                        axis=-1,
+                    )
+                    result: ConstitutiveTrial | InPlaneConstitutiveTrial = InPlaneConstitutiveTrial(
+                        stress_in_plane_mpa=stress_in_plane,
+                        tangent_in_plane_mpa=None,
+                    )
+                    self._latest_transverse = total[:, _TRANSVERSE].copy()
+                    self._latest = None
+                    self._latest_in_plane = in_plane.copy()
+                    self._latest_cbb = None
+                    self._latest_cba = None
+                    self._plane_stress_seconds += perf_counter() - plane_stress_started
+                    return result
+
+                # Tangent/complete responses request a sensitivity only once,
+                # after the plane-stress residual has converged.  Reuse the
+                # converged constitutive state; do not integrate it again.
+                tangent = self._bridge.tangent_from_trial(total, trial, tangent_mode="full")
                 caa = tangent[:, _PLANE][:, :, _PLANE]
                 cab = tangent[:, _PLANE][:, :, _TRANSVERSE]
                 cba = tangent[:, _TRANSVERSE][:, :, _PLANE]
                 cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
-                # One final correction is unnecessary when already converged;
-                # only retain the condensed operator below.
                 x = np.linalg.solve(cbb, cba)
                 cps = caa - np.einsum("nij,njk->nik", cab, x)
                 scale = (
@@ -827,7 +980,7 @@ class SrixNumpyCondensedPlaneStressBatch:
                 elastic = kelvin_3d_to_tensor(trial.elastic_strain_kelvin, quantity="strain")
                 stress_in_plane = tensor_to_engineering_stress_2d(full_stress)
                 if response_level == "complete":
-                    result: ConstitutiveTrial | InPlaneConstitutiveTrial = ConstitutiveTrial(
+                    result = ConstitutiveTrial(
                         stress_in_plane_mpa=stress_in_plane,
                         tangent_in_plane_mpa=cps * scale if consistent_tangent else None,
                         full_stress_tensor_mpa=full_stress,
@@ -856,8 +1009,8 @@ class SrixNumpyCondensedPlaneStressBatch:
                 self._latest_cba = cba.copy()
                 self._plane_stress_seconds += perf_counter() - plane_stress_started
                 return result
-            tangent = trial.consistent_tangent_kelvin_mpa
-            cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
+            tangent = self._bridge.tangent_from_trial(total, trial, tangent_mode="transverse")
+            cbb = tangent[:, _TRANSVERSE, :]
             total[:, _TRANSVERSE] += np.linalg.solve(cbb, -stress[..., None])[..., 0]
         self._bridge.revert()
         self._plane_stress_seconds += perf_counter() - plane_stress_started
