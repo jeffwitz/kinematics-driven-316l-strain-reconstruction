@@ -36,6 +36,16 @@ OUTPUT = ROOT / "validation/reference_data/p0043_m20_numpy_srix_forward_f_v1"
 PIXEL_SIZE_MM = 0.00184
 
 
+def _centered_crop(pixels: int) -> tuple[int, int, int, int]:
+    """Return a square crop centered on the qualified P43 M20 crop."""
+    if pixels < 1:
+        raise ValueError("pixels must be positive")
+    cx = (CROP[0] + CROP[1]) // 2
+    cy = (CROP[2] + CROP[3]) // 2
+    half = pixels // 2
+    return (cx - half, cx - half + pixels, cy - half, cy - half + pixels)
+
+
 def _factory(
     angles: np.ndarray,
     theta: SrixTheta9,
@@ -179,6 +189,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--pixels", type=int, default=20)
     parser.add_argument("--subdivisions", type=int, default=4)
     parser.add_argument("--local-iterations", type=int, default=30)
     parser.add_argument("--predictor", choices=("committed", "tangent"), default="committed")
@@ -191,7 +202,8 @@ def main() -> int:
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.mkdir(parents=True, exist_ok=True)
-    measured, angles, provenance = _load_inputs(CROP)
+    crop = _centered_crop(args.pixels)
+    measured, angles, provenance = _load_inputs(crop)
     path = _make_path(measured, args.subdivisions)
     scored = tuple(args.subdivisions * i for i in range(1, 9))
     target = np.asarray([path[i - 1].boundary for i in scored])
@@ -217,7 +229,7 @@ def main() -> int:
             "status": "failed",
             "backend": "numpy-srix-condensed-plane-stress",
             "element_order": "F",
-            "crop": list(CROP),
+            "crop": list(crop),
             "path_steps": len(path),
             "local_iterations": args.local_iterations,
             "local_transverse_predictor": args.predictor,
@@ -251,7 +263,23 @@ def main() -> int:
     )
     mfront = np.load(MFRONT_FIELDS)
     mfront_selected = np.asarray(mfront["scored_displacement"])
-    delta = selected - mfront_selected
+    if mfront_selected.shape == selected.shape:
+        delta = selected - mfront_selected
+        mfront_comparison: dict[str, Any] = {
+            "source": str(MFRONT_FIELDS.relative_to(ROOT)),
+            "displacement_max_abs_mm": float(np.max(np.abs(delta))),
+            "displacement_relative_l2": float(
+                np.linalg.norm(delta) / max(np.linalg.norm(mfront_selected), 1.0e-30)
+            ),
+            "displacement_rmse_mm": float(np.sqrt(np.mean(delta**2))),
+        }
+    else:
+        mfront_comparison = {
+            "source": str(MFRONT_FIELDS.relative_to(ROOT)),
+            "status": "not_comparable_shape",
+            "numpy_shape": list(selected.shape),
+            "mfront_shape": list(mfront_selected.shape),
+        }
     result = {
         "schema_version": 1,
         "method": "P43 M20 NumPy SRIX forward, EBSD order F",
@@ -259,21 +287,14 @@ def main() -> int:
             ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True, capture_output=True, text=True
         ).stdout.strip(),
         "machine": platform.node(),
-        "crop": list(CROP),
+        "crop": list(crop),
         "path_steps": len(path),
         "scored_steps": list(scored),
         "parameters": theta.as_runtime_overrides(),
         "provenance": provenance,
         "timing": timing,
         "raw_rms_mm": float(np.sqrt(np.mean(residual**2))),
-        "mfront_comparison": {
-            "source": str(MFRONT_FIELDS.relative_to(ROOT)),
-            "displacement_max_abs_mm": float(np.max(np.abs(delta))),
-            "displacement_relative_l2": float(
-                np.linalg.norm(delta) / max(np.linalg.norm(mfront_selected), 1.0e-30)
-            ),
-            "displacement_rmse_mm": float(np.sqrt(np.mean(delta**2))),
-        },
+        "mfront_comparison": mfront_comparison,
         "evm_rms_percent": (100.0 * np.sqrt(np.mean(evm**2, axis=(1, 2)))).tolist(),
         "dic_evm_rms_percent": (100.0 * np.sqrt(np.mean(dic_evm**2, axis=(1, 2)))).tolist(),
     }
