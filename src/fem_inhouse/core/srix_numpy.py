@@ -579,27 +579,48 @@ class SrixNumpy3DMaterialPointBatch:
             dnum = 1.0 - self.parameters.d * a0[pending] * sign_dg[still_pending]
             dden = self.parameters.d * sign_dg[still_pending]
             dda = (dnum * den - num * dden) / (den * den)
-            jac_pending = np.broadcast_to(eye12, (pending.size, 12, 12)).copy()
-            jac_pending += (active_pending * slope[pending, None])[:, :, None] * plastic_modulus
-            dr = (
-                self.parameters.q_mpa
-                * self.parameters.b
-                * self._interaction[None, :, :]
-                * exp_bp[still_pending, None, :]
-                * sign_dg[still_pending, None, :]
-            )
-            jac_pending += (
-                active_pending * slope[pending, None] * sgn[still_pending]
-            )[:, :, None] * dr
-            indices = np.arange(12)
-            jac_pending[:, indices, indices] += (
-                active_pending * slope[pending, None] * self.parameters.c_mpa * dda
-            )
-            self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
             solve_started = perf_counter()
             try:
                 rhs_pending = -residual[still_pending]
-                delta = self._solve12(jac_pending, rhs_pending)
+                if self._local_linear_solver == "numba-lu12":
+                    from fem_inhouse.core.small_linear_solvers import solve12_jacobian_batch_numba
+
+                    delta, success = solve12_jacobian_batch_numba(
+                        slope[pending],
+                        active_pending,
+                        sgn[still_pending],
+                        exp_bp[still_pending],
+                        sign_dg[still_pending],
+                        dda,
+                        residual[still_pending],
+                        plastic_modulus,
+                        self._interaction,
+                        self.parameters.q_mpa,
+                        self.parameters.b,
+                        self.parameters.c_mpa,
+                    )
+                    if not np.all(success):
+                        raise np.linalg.LinAlgError("Numba fused LU12 detected a singular system")
+                else:
+                    jac_pending = np.broadcast_to(eye12, (pending.size, 12, 12)).copy()
+                    jac_pending += (
+                        active_pending * slope[pending, None]
+                    )[:, :, None] * plastic_modulus
+                    dr = (
+                        self.parameters.q_mpa
+                        * self.parameters.b
+                        * self._interaction[None, :, :]
+                        * exp_bp[still_pending, None, :]
+                        * sign_dg[still_pending, None, :]
+                    )
+                    jac_pending += (
+                        active_pending * slope[pending, None] * sgn[still_pending]
+                    )[:, :, None] * dr
+                    indices = np.arange(12)
+                    jac_pending[:, indices, indices] += (
+                        active_pending * slope[pending, None] * self.parameters.c_mpa * dda
+                    )
+                    delta = self._solve12(jac_pending, rhs_pending)
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton is singular"
@@ -608,6 +629,8 @@ class SrixNumpy3DMaterialPointBatch:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton produced non-finite values"
                 )
+            if self._local_linear_solver != "numba-lu12":
+                self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
             self._timing["reduced_solve_seconds"] += perf_counter() - solve_started
             current_norm = residual_norm[still_pending]
             alpha = np.ones(pending.size)
