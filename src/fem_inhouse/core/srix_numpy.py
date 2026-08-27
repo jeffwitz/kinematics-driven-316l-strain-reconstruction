@@ -174,6 +174,7 @@ class SrixNumpy3DMaterialPointBatch:
         local_tolerance: float = 1e-11,
         parallel_backend: Literal["serial", "dask-threads"] = "serial",
         dask_workers: int = 1,
+        local_linear_solver: Literal["numpy", "numba-lu12"] = "numpy",
     ) -> None:
         if isinstance(point_count, bool) or not isinstance(point_count, int) or point_count < 1:
             raise ValueError("point_count must be a positive integer")
@@ -187,12 +188,15 @@ class SrixNumpy3DMaterialPointBatch:
             raise ValueError("parallel_backend must be 'serial' or 'dask-threads'")
         if isinstance(dask_workers, bool) or dask_workers < 1:
             raise ValueError("dask_workers must be positive")
+        if local_linear_solver not in {"numpy", "numba-lu12"}:
+            raise ValueError("local_linear_solver must be 'numpy' or 'numba-lu12'")
         selected = parameters if parameters is not None else parameter_set
         self.parameters = _resolve_parameters(selected, explicit_parameters)
         self._point_count = point_count
         self._batch_size = batch_size
         self._parallel_backend = parallel_backend
         self._dask_workers = int(dask_workers)
+        self._local_linear_solver = local_linear_solver
         self._maximum_iterations = int(maximum_local_iterations)
         self._tolerance = float(local_tolerance)
         rotations = (
@@ -278,6 +282,10 @@ class SrixNumpy3DMaterialPointBatch:
     @property
     def dask_workers(self) -> int:
         return self._dask_workers
+
+    @property
+    def local_linear_solver(self) -> str:
+        return self._local_linear_solver
 
     @property
     def rotations_global_to_material(self) -> FloatArray:
@@ -568,7 +576,15 @@ class SrixNumpy3DMaterialPointBatch:
             self._timing["reduced_jacobian_seconds"] += perf_counter() - jacobian_started
             solve_started = perf_counter()
             try:
-                delta = np.linalg.solve(jac_pending, -residual[still_pending, :, None])[..., 0]
+                rhs_pending = -residual[still_pending]
+                if self._local_linear_solver == "numba-lu12":
+                    from fem_inhouse.core.small_linear_solvers import solve12_batch_numba
+
+                    delta, success = solve12_batch_numba(jac_pending, rhs_pending)
+                    if not np.all(success):
+                        raise np.linalg.LinAlgError("Numba LU12 detected a singular system")
+                else:
+                    delta = np.linalg.solve(jac_pending, rhs_pending[..., None])[..., 0]
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton is singular"

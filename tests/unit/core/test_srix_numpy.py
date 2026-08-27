@@ -154,3 +154,16 @@ def test_numpy_srix_dask_threads_matches_serial() -> None:
     actual = parallel.evaluate(strain, time_increment=1.0, tangent_mode="none")
     assert np.array_equal(expected.stress_kelvin_mpa, actual.stress_kelvin_mpa)
     assert np.array_equal(expected.plastic_slip, actual.plastic_slip)
+
+
+def test_numpy_srix_numba_lu12_matches_numpy_solver() -> None:
+    pytest.importorskip("numba")
+    strain = np.array([[3.0e-3, -4.0e-4, 2.0e-4, 1.0e-4, 0.0, -2.0e-4]])
+    numpy_material = SrixNumpy3DMaterialPointBatch(point_count=1, local_linear_solver="numpy")
+    numba_material = SrixNumpy3DMaterialPointBatch(
+        point_count=1, local_linear_solver="numba-lu12"
+    )
+    expected = numpy_material.evaluate(strain, time_increment=1.0, tangent_mode="none")
+    actual = numba_material.evaluate(strain, time_increment=1.0, tangent_mode="none")
+    assert np.allclose(expected.stress_kelvin_mpa, actual.stress_kelvin_mpa, rtol=1.0e-12)
+    assert np.allclose(expected.plastic_slip, actual.plastic_slip, rtol=1.0e-12, atol=1.0e-14)
