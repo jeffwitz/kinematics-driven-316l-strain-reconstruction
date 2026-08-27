@@ -1,0 +1,12 @@
+{
+  "warmup": "one complete forward before timing",
+  "forward_seconds": [
+    23.428,
+    25.971,
+    26.572
+  ],
+  "forward_median_seconds": 25.971,
+  "forward_mad_seconds": 0.602,
+  "numba_threads": 1,
+  "notes": "Post-dispatch measurements; fields remain equivalent to the prior LU12 forward."
+}
