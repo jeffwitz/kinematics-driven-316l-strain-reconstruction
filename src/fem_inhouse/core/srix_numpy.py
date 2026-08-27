@@ -958,6 +958,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         plane_stress_max_iterations: int | None = None,
         local_transverse_predictor: Literal["committed", "tangent"] = "committed",
         plane_stress_solver: Literal["nested", "coupled"] = "nested",
+        coupled_block_solver: Literal["numpy", "numba-fused"] = "numpy",
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)
@@ -970,8 +971,11 @@ class SrixNumpyCondensedPlaneStressBatch:
             raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
         if plane_stress_solver not in {"nested", "coupled"}:
             raise ValueError("plane_stress_solver must be 'nested' or 'coupled'")
+        if coupled_block_solver not in {"numpy", "numba-fused"}:
+            raise ValueError("coupled_block_solver must be 'numpy' or 'numba-fused'")
         self._local_transverse_predictor = local_transverse_predictor
         self._plane_stress_solver = plane_stress_solver
+        self._coupled_block_solver = coupled_block_solver
         # These orientation/elasticity blocks are invariant during a local
         # Newton solve.  Cache them once rather than rebuilding them per
         # coupled iteration.
@@ -1023,6 +1027,10 @@ class SrixNumpyCondensedPlaneStressBatch:
     @property
     def plane_stress_solver(self) -> str:
         return self._plane_stress_solver
+
+    @property
+    def coupled_block_solver(self) -> str:
+        return self._coupled_block_solver
 
     @property
     def timing_statistics(self) -> dict[str, Any]:
@@ -1155,6 +1163,56 @@ class SrixNumpyCondensedPlaneStressBatch:
         cps = h + np.matmul(i, de_b) + np.matmul(j, dg_de)
         return cps, schur, cba_alg
 
+    def _coupled_block_numpy(
+        self,
+        pending: NDArray[np.int64],
+        residual: FloatArray,
+        stress_b: FloatArray,
+        de: FloatArray,
+        deq: FloatArray,
+        slope: FloatArray,
+        abs_dg: FloatArray,
+        sign_dg: FloatArray,
+        exp_bp: FloatArray,
+        sgn: FloatArray,
+        overstress: FloatArray,
+        dda: FloatArray,
+    ) -> tuple[FloatArray, FloatArray]:
+        """Reference NumPy implementation of one coupled block update."""
+        bridge = self._bridge
+        active = (overstress[pending] > 0.0).astype(float)
+        a = np.broadcast_to(np.eye(12), (pending.size, 12, 12)).copy()
+        a += (active * slope[pending, None])[:, :, None] * bridge._plastic_modulus
+        dr = (
+            bridge.parameters.q_mpa
+            * bridge.parameters.b
+            * bridge._interaction[None]
+            * exp_bp[pending, None, :]
+            * sign_dg[pending, None, :]
+        )
+        a += (active * slope[pending, None] * sgn[pending])[:, :, None] * dr
+        ii = np.arange(12)
+        a[:, ii, ii] += active * slope[pending, None] * bridge.parameters.c_mpa * dda
+        ndeq = np.zeros_like(de)
+        nz = deq > 1.0e-14
+        ndeq[nz] = (2.0 / (3.0 * deq[nz, None])) * de[nz]
+        jfd = -active[:, :, None] * slope[pending, None, None] * bridge._mce[None]
+        jfd -= (
+            overstress[pending] * sgn[pending] / bridge.parameters.overstress_modulus_mpa
+        )[:, :, None] * ndeq[pending, None, :]
+        b = np.matmul(jfd, bridge._kelvin_rotation[pending][:, :, _TRANSVERSE])
+        dmat = self._coupled_dmat[pending]
+        c_base = self._coupled_c_base[pending]
+        a_rhs = np.concatenate((residual[pending, :, None], b), axis=2)
+        a_solution = bridge._solve12(a, a_rhs)
+        inv_a_r = a_solution[:, :, 0]
+        inv_a_b = a_solution[:, :, 1:]
+        schur = dmat - np.matmul(c_base, inv_a_b)
+        rhs_b = -stress_b[pending] + np.einsum("nij,nj->ni", c_base, inv_a_r)
+        delta_b = self._solve3(schur, rhs_b)
+        delta_g = -inv_a_r - np.einsum("nij,nj->ni", inv_a_b, delta_b)
+        return delta_g, delta_b
+
     def _evaluate_coupled(
         self,
         total: FloatArray,
@@ -1176,7 +1234,6 @@ class SrixNumpyCondensedPlaneStressBatch:
         elastic0 = bridge._elastic
         ce = bridge._ce_material
         mus = bridge._schmid_material
-        eye12 = np.eye(12)
         dg = np.zeros((n, 12))
         converged = np.zeros(n, dtype=bool)
 
@@ -1239,45 +1296,55 @@ class SrixNumpyCondensedPlaneStressBatch:
             pending = np.flatnonzero(~converged)
             if pending.size == 0:
                 break
-            active = (overstress[pending] > 0.0).astype(float)
             block_started = perf_counter()
             den = 1.0 + bridge.parameters.d * abs_dg[pending]
             num = dg[pending] - bridge.parameters.d * a0[pending] * abs_dg[pending]
             dnum = 1.0 - bridge.parameters.d * a0[pending] * sign_dg[pending]
             dden = bridge.parameters.d * sign_dg[pending]
             dda = (dnum * den - num * dden) / (den * den)
-            a = np.broadcast_to(eye12, (pending.size, 12, 12)).copy()
-            a += (active * slope[pending, None])[:, :, None] * bridge._plastic_modulus
-            dr = (
-                bridge.parameters.q_mpa
-                * bridge.parameters.b
-                * bridge._interaction[None]
-                * exp_bp[pending, None, :]
-                * sign_dg[pending, None, :]
-            )
-            a += (active * slope[pending, None] * sgn[pending])[:, :, None] * dr
-            ii = np.arange(12)
-            a[:, ii, ii] += active * slope[pending, None] * bridge.parameters.c_mpa * dda
-            ndeq = np.zeros_like(de)
-            nz = deq > 1.0e-14
-            ndeq[nz] = (2.0 / (3.0 * deq[nz, None])) * de[nz]
-            jfd = -active[:, :, None] * slope[pending, None, None] * bridge._mce[None]
-            jfd -= (
-                overstress[pending] * sgn[pending] / bridge.parameters.overstress_modulus_mpa
-            )[:, :, None] * ndeq[pending, None, :]
-            b = np.matmul(jfd, transform[pending][:, :, _TRANSVERSE])
-            dmat = self._coupled_dmat[pending]
-            c_base = self._coupled_c_base[pending]
-            # Factor A once for the residual and the three transverse RHS.
-            # LAPACK's batched multi-RHS path amortizes this factorization.
-            a_rhs = np.concatenate((residual[pending, :, None], b), axis=2)
-            a_solution = bridge._solve12(a, a_rhs)
-            inv_a_r = a_solution[:, :, 0]
-            inv_a_b = a_solution[:, :, 1:]
-            schur = dmat - np.matmul(c_base, inv_a_b)
-            rhs_b = -stress_b[pending] + np.einsum("nij,nj->ni", c_base, inv_a_r)
-            delta_b = self._solve3(schur, rhs_b)
-            delta_g = -inv_a_r - np.einsum("nij,nj->ni", inv_a_b, delta_b)
+            if self._coupled_block_solver == "numba-fused":
+                from fem_inhouse.core.small_linear_solvers import solve_coupled_block_numba
+
+                delta_g, delta_b, success = solve_coupled_block_numba(
+                    slope[pending],
+                    (overstress[pending] > 0.0).astype(float),
+                    sgn[pending],
+                    exp_bp[pending],
+                    sign_dg[pending],
+                    dda,
+                    residual[pending],
+                    stress_b[pending],
+                    de[pending],
+                    deq[pending],
+                    overstress[pending],
+                    bridge._mce,
+                    transform[pending][:, :, _TRANSVERSE],
+                    bridge._plastic_modulus,
+                    bridge._interaction,
+                    self._coupled_dmat[pending],
+                    self._coupled_c_base[pending],
+                    bridge.parameters.q_mpa,
+                    bridge.parameters.b,
+                    bridge.parameters.c_mpa,
+                    bridge.parameters.overstress_modulus_mpa,
+                )
+                if not np.all(success):
+                    raise np.linalg.LinAlgError("Numba fused coupled block is singular")
+            else:
+                delta_g, delta_b = self._coupled_block_numpy(
+                    pending,
+                    residual,
+                    stress_b,
+                    de,
+                    deq,
+                    slope,
+                    abs_dg,
+                    sign_dg,
+                    exp_bp,
+                    sgn,
+                    overstress,
+                    dda,
+                )
             self._coupled_block_seconds += perf_counter() - block_started
             current_metric = residual_norm[pending]
             alpha = np.ones(pending.size)

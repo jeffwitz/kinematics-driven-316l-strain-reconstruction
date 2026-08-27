@@ -701,6 +701,7 @@ def create_plane_stress_material_batch(
         parallel_backend = options.pop("parallel_backend", "serial")
         dask_workers = options.pop("dask_workers", 1)
         local_linear_solver = options.pop("local_linear_solver", "numpy")
+        coupled_block_solver = options.pop("coupled_block_solver", "numpy")
         legacy_iterations = options.pop("maximum_local_iterations", None)
         material_iterations = options.pop(
             "material_newton_max_iterations",
@@ -740,6 +741,7 @@ def create_plane_stress_material_batch(
                 local_options.get("local_transverse_predictor", "committed")
             ),
             plane_stress_solver=requested_plane_stress_solver,
+            coupled_block_solver=str(coupled_block_solver),
         )
 
     if backend == "python":

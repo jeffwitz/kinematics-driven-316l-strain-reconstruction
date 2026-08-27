@@ -208,6 +208,120 @@ if njit is not None:
             result[point], success[point] = _solve_small_lu_multi(matrix[point], rhs[point])
         return result, success
 
+
+    @njit(parallel=True, cache=True, fastmath=False, boundscheck=False)
+    def solve_coupled_block_numba(
+        slope: FloatArray,
+        active: FloatArray,
+        sgn: FloatArray,
+        exp_bp: FloatArray,
+        sign_dg: FloatArray,
+        dda: FloatArray,
+        residual: FloatArray,
+        stress_b: FloatArray,
+        de: FloatArray,
+        deq: FloatArray,
+        overstress: FloatArray,
+        mce: FloatArray,
+        transform_b: FloatArray,
+        plastic_modulus: FloatArray,
+        interaction: FloatArray,
+        dmat: FloatArray,
+        cbase: FloatArray,
+        q_mpa: float,
+        b: float,
+        c_mpa: float,
+        overstress_modulus_mpa: float,
+    ) -> tuple[FloatArray, FloatArray, NDArray[np.bool_]]:
+        """Fuse coupled A/B construction, solve, Schur and correction.
+
+        The point-local work arrays never leave this kernel.  This is an
+        accelerator only; the NumPy/LAPACK path remains the reference.
+        """
+        count = residual.shape[0]
+        delta_g = np.empty((count, 12), dtype=residual.dtype)
+        delta_b = np.empty((count, 3), dtype=residual.dtype)
+        success = np.empty(count, dtype=np.bool_)
+        for point in prange(count):
+            a = np.eye(12, dtype=residual.dtype)
+            block_b = np.empty((12, 3), dtype=residual.dtype)
+            ndeq = np.zeros(6, dtype=residual.dtype)
+            if deq[point] > 1.0e-14:
+                factor = 2.0 / (3.0 * deq[point])
+                for component in range(6):
+                    ndeq[component] = factor * de[point, component]
+            jfd = np.empty((12, 6), dtype=residual.dtype)
+            for row in range(12):
+                row_factor = active[point, row] * slope[point]
+                for column in range(12):
+                    a[row, column] += row_factor * plastic_modulus[row, column]
+                    a[row, column] += (
+                        row_factor
+                        * sgn[point, row]
+                        * q_mpa
+                        * b
+                        * interaction[row, column]
+                        * exp_bp[point, column]
+                        * sign_dg[point, column]
+                    )
+                a[row, row] += row_factor * c_mpa * dda[point, row]
+                for component in range(6):
+                    jfd[row, component] = (
+                        -row_factor * mce[row, component]
+                        - overstress[point, row]
+                        * sgn[point, row]
+                        / overstress_modulus_mpa
+                        * ndeq[component]
+                    )
+                for component in range(3):
+                    value = 0.0
+                    for material_component in range(6):
+                        value += jfd[row, material_component] * transform_b[
+                            point, material_component, component
+                        ]
+                    block_b[row, component] = value
+            rhs = np.empty((12, 4), dtype=residual.dtype)
+            for row in range(12):
+                rhs[row, 0] = residual[point, row]
+                for component in range(3):
+                    rhs[row, component + 1] = block_b[row, component]
+            a_solution, ok_a = _solve_small_lu_multi(a, rhs)
+            if not ok_a:
+                success[point] = False
+                delta_g[point] = 0.0
+                delta_b[point] = 0.0
+                continue
+            schur = np.empty((3, 3), dtype=residual.dtype)
+            rhs_schur = np.empty(3, dtype=residual.dtype)
+            inv_a_r = np.empty(12, dtype=residual.dtype)
+            for row in range(12):
+                inv_a_r[row] = a_solution[row, 0]
+            inv_a_b = a_solution[:, 1:]
+            for row in range(3):
+                rhs_schur[row] = -stress_b[point, row]
+                for column in range(12):
+                    rhs_schur[row] += cbase[point, row, column] * inv_a_r[column]
+                for column in range(3):
+                    value = dmat[point, row, column]
+                    for inner in range(12):
+                        value -= cbase[point, row, inner] * inv_a_b[inner, column]
+                    schur[row, column] = value
+            db, ok_b = _solve_small_lu_single(schur, rhs_schur)
+            if not ok_b:
+                success[point] = False
+                delta_g[point] = 0.0
+                delta_b[point] = 0.0
+                continue
+            for row in range(3):
+                delta_b[point, row] = db[row]
+            for row in range(12):
+                value = -inv_a_r[row]
+                for column in range(3):
+                    value -= inv_a_b[row, column] * db[column]
+                delta_g[point, row] = value
+            success[point] = True
+        return delta_g, delta_b, success
+
 else:
 
     def solve12_batch_numba(
@@ -227,3 +341,6 @@ else:
 
     def solve3_batch_rhs_numba(matrix: FloatArray, rhs: NDArray[np.float64]):
         raise ImportError("solve3_batch_rhs_numba requires the optional numba dependency")
+
+    def solve_coupled_block_numba(*args, **kwargs):
+        raise ImportError("solve_coupled_block_numba requires the optional numba dependency")
