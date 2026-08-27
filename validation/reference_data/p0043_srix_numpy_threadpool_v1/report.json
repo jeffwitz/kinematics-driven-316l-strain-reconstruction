@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "method": "SRIX NumPy _integrate_chunk ThreadPoolExecutor microbenchmark",
+  "blas_threads": 1,
+  "points": 800,
+  "chunks": 4,
+  "chunk_size": 200,
+  "rows": [
+    {
+      "workers": 1,
+      "repetitions_s": [
+        0.08440542500466108,
+        0.07745509687811136,
+        0.08135557384230196,
+        0.07746917614713311,
+        0.07501438912004232
+      ],
+      "median_seconds": 0.07746917614713311,
+      "min_seconds": 0.07501438912004232,
+      "max_field_abs_diff": 0.0
+    },
+    {
+      "workers": 2,
+      "repetitions_s": [
+        0.07378029497340322,
+        0.06181033095344901,
+        0.07943192101083696,
+        0.07314919005148113,
+        0.06920302892103791
+      ],
+      "median_seconds": 0.07314919005148113,
+      "min_seconds": 0.06181033095344901,
+      "max_field_abs_diff": 0.0
+    },
+    {
+      "workers": 4,
+      "repetitions_s": [
+        0.10532566020265222,
+        0.10948812891729176,
+        0.10678902897052467,
+        0.09565540496259928,
+        0.09164675395004451
+      ],
+      "median_seconds": 0.10532566020265222,
+      "min_seconds": 0.09164675395004451,
+      "max_field_abs_diff": 0.0
+    }
+  ]
+}
