@@ -684,6 +684,8 @@ def create_plane_stress_material_batch(
         parameter_set = options.pop("parameter_set", None)
         explicit_parameters = options.pop("parameters", None)
         batch_size = options.pop("batch_size", None)
+        parallel_backend = options.pop("parallel_backend", "serial")
+        dask_workers = options.pop("dask_workers", 1)
         legacy_iterations = options.pop("maximum_local_iterations", None)
         material_iterations = options.pop(
             "material_newton_max_iterations",
@@ -710,6 +712,8 @@ def create_plane_stress_material_batch(
             rotation_global_to_material=provider.rotations_global_to_material(count),
             batch_size=batch_size,
             material_newton_max_iterations=int(material_iterations),
+            parallel_backend=str(parallel_backend),
+            dask_workers=int(dask_workers),
         )
         local_options = local_plane_stress_options or {}
         return SrixNumpyCondensedPlaneStressBatch(

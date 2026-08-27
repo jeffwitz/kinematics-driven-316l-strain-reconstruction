@@ -34,6 +34,9 @@ fem-inhouse = "fem_inhouse.cli:main"
 performance = [
     "numba>=0.60",
 ]
+parallel = [
+    "dask>=2024,<2026",
+]
 dev = [
     "mypy>=1.15,<2",
     "pytest>=8,<10",

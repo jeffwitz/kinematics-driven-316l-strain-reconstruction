@@ -1,0 +1,54 @@
+{
+  "comparison": "serial baseline fields_numpy.npz",
+  "dask_dependency": "dask 2025.12.0",
+  "element_order": "F",
+  "method": "P43 M20 NumPy SRIX Dask threaded prototype",
+  "rows": [
+    {
+      "batch_size": null,
+      "case": "serial",
+      "max_field_abs_diff": 0.0,
+      "raw_rms_mm": 3.952271742885384e-06,
+      "seconds": 31.967981920111924,
+      "verification_residual": 6.998304310758577e-09,
+      "workers": 1
+    },
+    {
+      "batch_size": 200,
+      "case": "dask_1",
+      "max_field_abs_diff": 2.6937811981042614e-09,
+      "raw_rms_mm": 3.952271742885321e-06,
+      "seconds": 32.8049184740521,
+      "verification_residual": 6.998474704932669e-09,
+      "workers": 1
+    },
+    {
+      "batch_size": 200,
+      "case": "dask_2",
+      "max_field_abs_diff": 2.6937811981042614e-09,
+      "raw_rms_mm": 3.952271742885321e-06,
+      "seconds": 32.307735960930586,
+      "verification_residual": 6.998474704932669e-09,
+      "workers": 2
+    },
+    {
+      "batch_size": 200,
+      "case": "dask_4",
+      "max_field_abs_diff": 2.6937811981042614e-09,
+      "raw_rms_mm": 3.952271742885321e-06,
+      "seconds": 40.568273849086836,
+      "verification_residual": 6.998474704932669e-09,
+      "workers": 4
+    },
+    {
+      "batch_size": 100,
+      "case": "dask_8",
+      "max_field_abs_diff": 2.6831514787772903e-09,
+      "raw_rms_mm": 3.952271742885408e-06,
+      "seconds": 66.06906905211508,
+      "verification_residual": 6.998081651578728e-09,
+      "workers": 8
+    }
+  ],
+  "schema_version": 1
+}
