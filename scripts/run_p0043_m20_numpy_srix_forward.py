@@ -36,7 +36,13 @@ PIXEL_SIZE_MM = 0.00184
 
 
 def _factory(
-    angles: np.ndarray, theta: SrixTheta9, local_iterations: int, predictor: str = "committed"
+    angles: np.ndarray,
+    theta: SrixTheta9,
+    local_iterations: int,
+    predictor: str = "committed",
+    parallel_backend: str = "serial",
+    dask_workers: int = 1,
+    batch_size: int | None = None,
 ):
     count = 2 * angles.shape[0] * angles.shape[1]
     return create_plane_stress_material_batch(
@@ -61,6 +67,9 @@ def _factory(
         constitutive_options={
             "parameter_set": DEFAULT_PARAMETER_SET,
             "parameters": theta.as_runtime_overrides(),
+            "parallel_backend": parallel_backend,
+            "dask_workers": dask_workers,
+            "batch_size": batch_size,
             "crystal_orientation": {
                 "mode": "ebsd",
                 "euler_bunge_deg": angles,
@@ -97,10 +106,21 @@ def _forward(
     angles: np.ndarray,
     local_iterations: int,
     predictor: str = "committed",
+    parallel_backend: str = "serial",
+    dask_workers: int = 1,
+    batch_size: int | None = None,
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any]]:
     pixels = angles.shape[0]
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
-    material = _factory(angles, theta, local_iterations, predictor)
+    material = _factory(
+        angles,
+        theta,
+        local_iterations,
+        predictor,
+        parallel_backend,
+        dask_workers,
+        batch_size,
+    )
     history = np.stack([np.zeros_like(path[0].boundary), *[step.boundary for step in path]])
     fields: list[TwoStateIncrementFields] = []
 
@@ -123,6 +143,9 @@ def _forward(
         "gmres_iterations": int(result.diagnostics.timings["gmres_iterations"]),
         "backend": "numpy-srix-condensed-plane-stress",
         "local_transverse_predictor": predictor,
+        "parallel_backend": parallel_backend,
+        "dask_workers": dask_workers,
+        "batch_size": batch_size,
     }
     timing_result["material"] = material.timing_statistics
     return fields, timing_result
@@ -135,6 +158,9 @@ def main() -> int:
     parser.add_argument("--subdivisions", type=int, default=4)
     parser.add_argument("--local-iterations", type=int, default=30)
     parser.add_argument("--predictor", choices=("committed", "tangent"), default="committed")
+    parser.add_argument("--parallel-backend", choices=("serial", "dask-threads"), default="serial")
+    parser.add_argument("--dask-workers", type=int, default=1)
+    parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -147,7 +173,16 @@ def main() -> int:
     theta = SrixTheta9.from_log_coordinates(np.asarray(report["final_eta"], dtype=float))
     started = time.perf_counter()
     try:
-        fields, timing = _forward(theta, path, angles, args.local_iterations, args.predictor)
+        fields, timing = _forward(
+            theta,
+            path,
+            angles,
+            args.local_iterations,
+            args.predictor,
+            args.parallel_backend,
+            args.dask_workers,
+            args.batch_size,
+        )
     except Exception as error:
         failure = {
             "schema_version": 1,
@@ -158,6 +193,9 @@ def main() -> int:
             "path_steps": len(path),
             "local_iterations": args.local_iterations,
             "local_transverse_predictor": args.predictor,
+            "parallel_backend": args.parallel_backend,
+            "dask_workers": args.dask_workers,
+            "batch_size": args.batch_size,
             "elapsed_seconds_wall": time.perf_counter() - started,
             "error": f"{type(error).__name__}: {error}",
             "traceback": traceback.format_exc(),

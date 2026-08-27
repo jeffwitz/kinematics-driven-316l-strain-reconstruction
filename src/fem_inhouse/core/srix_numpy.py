@@ -172,6 +172,8 @@ class SrixNumpy3DMaterialPointBatch:
         maximum_local_iterations: int = 100,
         material_newton_max_iterations: int | None = None,
         local_tolerance: float = 1e-11,
+        parallel_backend: Literal["serial", "dask-threads"] = "serial",
+        dask_workers: int = 1,
     ) -> None:
         if isinstance(point_count, bool) or not isinstance(point_count, int) or point_count < 1:
             raise ValueError("point_count must be a positive integer")
@@ -181,10 +183,16 @@ class SrixNumpy3DMaterialPointBatch:
             raise ValueError("invalid local Newton controls")
         if batch_size is not None and (isinstance(batch_size, bool) or batch_size < 1):
             raise ValueError("batch_size must be positive")
+        if parallel_backend not in {"serial", "dask-threads"}:
+            raise ValueError("parallel_backend must be 'serial' or 'dask-threads'")
+        if isinstance(dask_workers, bool) or dask_workers < 1:
+            raise ValueError("dask_workers must be positive")
         selected = parameters if parameters is not None else parameter_set
         self.parameters = _resolve_parameters(selected, explicit_parameters)
         self._point_count = point_count
         self._batch_size = batch_size
+        self._parallel_backend = parallel_backend
+        self._dask_workers = int(dask_workers)
         self._maximum_iterations = int(maximum_local_iterations)
         self._tolerance = float(local_tolerance)
         rotations = (
@@ -262,6 +270,14 @@ class SrixNumpy3DMaterialPointBatch:
     @property
     def backend_name(self) -> str:
         return "numpy-srix-3d"
+
+    @property
+    def parallel_backend(self) -> str:
+        return self._parallel_backend
+
+    @property
+    def dask_workers(self) -> int:
+        return self._dask_workers
 
     @property
     def rotations_global_to_material(self) -> FloatArray:
@@ -791,17 +807,40 @@ class SrixNumpy3DMaterialPointBatch:
         if self._batch_size is None or self._batch_size >= self.point_count:
             result = self._integrate_chunk(strain_increment, values, tangent_mode=tangent_mode)
         else:
-            chunks = []
-            for start in range(0, self.point_count, self._batch_size):
-                stop = min(start + self._batch_size, self.point_count)
-                chunks.append(
-                    self._integrate_chunk(
-                        strain_increment[start:stop],
-                        values[start:stop],
+            starts = range(0, self.point_count, self._batch_size)
+            if self._parallel_backend == "dask-threads":
+                try:
+                    from dask import compute, delayed
+                except ImportError as error:
+                    raise ImportError(
+                        "parallel_backend='dask-threads' requires the optional dask dependency"
+                    ) from error
+                tasks = [
+                    delayed(self._integrate_chunk)(
+                        strain_increment[start : min(start + self._batch_size, self.point_count)],
+                        values[start : min(start + self._batch_size, self.point_count)],
                         start,
                         tangent_mode,
                     )
+                    for start in starts
+                ]
+                chunks = list(
+                    compute(
+                        *tasks,
+                        scheduler="threads",
+                        num_workers=self._dask_workers,
+                    )
                 )
+            else:
+                chunks = [
+                    self._integrate_chunk(
+                        strain_increment[start : min(start + self._batch_size, self.point_count)],
+                        values[start : min(start + self._batch_size, self.point_count)],
+                        start,
+                        tangent_mode,
+                    )
+                    for start in starts
+                ]
             result = SrixNumpy3DTrial(
                 total_strain_kelvin=np.concatenate([item.total_strain_kelvin for item in chunks]),
                 stress_kelvin_mpa=np.concatenate([item.stress_kelvin_mpa for item in chunks]),

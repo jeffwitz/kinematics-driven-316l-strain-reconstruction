@@ -1,0 +1,100 @@
+{
+  "crop": [
+    1610,
+    1630,
+    1075,
+    1095
+  ],
+  "dic_evm_rms_percent": [
+    0.03252615264598824,
+    0.04459121544544032,
+    0.09093812059118081,
+    0.11505683232506894,
+    0.17856683643964524,
+    0.3165930388256494,
+    0.44451420169051353,
+    0.5745604625281282
+  ],
+  "evm_rms_percent": [
+    0.02908191247308759,
+    0.03415023966923597,
+    0.08028420869492889,
+    0.09982982278702786,
+    0.16384711114997152,
+    0.3028670079848082,
+    0.43345760260706495,
+    0.5668653687979319
+  ],
+  "git_sha": "183c006f6305e58089045c34fa6bb0e85e7b8f24",
+  "machine": "jeff-HP-EliteBook-X-G1i",
+  "method": "P43 M20 NumPy SRIX forward, EBSD order F",
+  "mfront_comparison": {
+    "displacement_max_abs_mm": 2.1868809713699276e-05,
+    "displacement_relative_l2": 4.7972516100938374e-05,
+    "displacement_rmse_mm": 1.5298886136960962e-06,
+    "source": "validation/reference_data/p0043_m20_c_f_forward_identified_v1/fields_F.npz"
+  },
+  "parameters": {
+    "C11_mpa": 181850.00029938974,
+    "C12_mpa": 99049.99916655569,
+    "C44_mpa": 103699.9974754808,
+    "C_mpa": 80000.00107607487,
+    "Q_mpa": 5.17458623831557,
+    "R_mpa": 35.00000003768495,
+    "b": 1.5637738201747942,
+    "d": 499.999992403842,
+    "tau0_mpa": 24.99999999285511
+  },
+  "path_steps": 32,
+  "provenance": {
+    "crop_absolute": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "ebsd_sha256": "9be963185616bc114e01d5b511ca0832c1f8462125a4e710946f99dd81feb9c2",
+    "history_sha256": "cb804a6b4f3777603337c05e07d58c88bd19341fa6605c7141dc5e714d7d98a3",
+    "solve_bounds": [
+      1290,
+      1950,
+      780,
+      1390
+    ]
+  },
+  "raw_rms_mm": 3.952271742885321e-06,
+  "schema_version": 1,
+  "scored_steps": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32
+  ],
+  "timing": {
+    "backend": "numpy-srix-condensed-plane-stress",
+    "batch_size": 200,
+    "dask_workers": 4,
+    "gmres_iterations": 2303,
+    "local_transverse_predictor": "tangent",
+    "material": {
+      "active_point_solves": 1086730,
+      "backtracking_seconds": 17.628699844470248,
+      "material_newton_iterations": 1501930,
+      "plane_stress_iterations": 519,
+      "plane_stress_seconds": 37.280508855124936,
+      "reduced_jacobian_seconds": 29.416007213992998,
+      "reduced_residual_seconds": 24.72910436638631,
+      "reduced_solve_seconds": 6.747488046763465,
+      "rotation_seconds": 0.9725187201984227,
+      "tangent_seconds": 8.977274992270395
+    },
+    "parallel_backend": "dask-threads",
+    "seconds": 40.568273849086836,
+    "steps": 32,
+    "verification_residual": 6.998474704932669e-09
+  }
+}

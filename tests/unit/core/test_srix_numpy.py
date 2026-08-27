@@ -1,6 +1,7 @@
 """Fast, MGIS-free checks for the NumPy SRIX backend."""
 
 import numpy as np
+import pytest
 
 from fem_inhouse.core.crystal_orientation import HomogeneousOrientationProvider
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
@@ -136,3 +137,20 @@ def test_numpy_srix_response_levels_return_only_requested_payload() -> None:
         strain, time_increment=1.0, response_level="complete"
     )
     assert isinstance(complete, ConstitutiveTrial)
+
+
+def test_numpy_srix_dask_threads_matches_serial() -> None:
+    pytest.importorskip("dask")
+    rng = np.random.default_rng(7)
+    strain = rng.normal(0.0, 1.0e-3, (12, 6))
+    serial = SrixNumpy3DMaterialPointBatch(point_count=12, batch_size=3)
+    parallel = SrixNumpy3DMaterialPointBatch(
+        point_count=12,
+        batch_size=3,
+        parallel_backend="dask-threads",
+        dask_workers=2,
+    )
+    expected = serial.evaluate(strain, time_increment=1.0, tangent_mode="none")
+    actual = parallel.evaluate(strain, time_increment=1.0, tangent_mode="none")
+    assert np.array_equal(expected.stress_kelvin_mpa, actual.stress_kelvin_mpa)
+    assert np.array_equal(expected.plastic_slip, actual.plastic_slip)
