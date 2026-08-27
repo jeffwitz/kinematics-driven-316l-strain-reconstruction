@@ -165,6 +165,12 @@ def _forward(
     timing_result["global_newton_iterations_total"] = int(
         sum(result.diagnostics.iterations_per_increment)
     )
+    timing_result["global_relative_residual_history"] = list(
+        result.diagnostics.relative_residual_history
+    )
+    timing_result["global_absolute_residual_history"] = list(
+        result.diagnostics.absolute_residual_history
+    )
     timing_result["linear_solves"] = [asdict(item) for item in result.diagnostics.linear_solves]
     return fields, timing_result
 
