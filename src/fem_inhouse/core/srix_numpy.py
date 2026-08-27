@@ -972,6 +972,19 @@ class SrixNumpyCondensedPlaneStressBatch:
             raise ValueError("plane_stress_solver must be 'nested' or 'coupled'")
         self._local_transverse_predictor = local_transverse_predictor
         self._plane_stress_solver = plane_stress_solver
+        # These orientation/elasticity blocks are invariant during a local
+        # Newton solve.  Cache them once rather than rebuilding them per
+        # coupled iteration.
+        transform = bridge._kelvin_rotation
+        ce = bridge._ce_material
+        mus = bridge._schmid_material
+        self._coupled_ce_global = np.einsum(
+            "nmi,mk,nkj->nij", transform, ce, transform
+        )
+        self._coupled_dmat = self._coupled_ce_global[:, _TRANSVERSE][:, :, _TRANSVERSE]
+        self._coupled_c_base = -np.einsum(
+            "nmi,mj->nij", transform, ce @ mus.T
+        )[:, _TRANSVERSE, :]
         self._committed_transverse = np.zeros((bridge.point_count, 3))
         self._latest_transverse: FloatArray | None = None
         self._latest: ConstitutiveTrial | None = None
@@ -1178,16 +1191,14 @@ class SrixNumpyCondensedPlaneStressBatch:
                 overstress[pending] * sgn[pending] / bridge.parameters.overstress_modulus_mpa
             )[:, :, None] * ndeq[pending, None, :]
             b = np.matmul(jfd, transform[pending][:, :, _TRANSVERSE])
-            ce_global = np.matmul(
-                np.swapaxes(transform[pending], 1, 2),
-                np.matmul(ce[None], transform[pending]),
-            )
-            dmat = ce_global[:, _TRANSVERSE][:, :, _TRANSVERSE]
-            c_base = -np.matmul(
-                np.swapaxes(transform[pending], 1, 2), (ce @ mus.T)[None]
-            )[:, _TRANSVERSE, :]
-            inv_a_r = bridge._solve12(a, residual[pending][..., None])[:, :, 0]
-            inv_a_b = bridge._solve12(a, b)
+            dmat = self._coupled_dmat[pending]
+            c_base = self._coupled_c_base[pending]
+            # Factor A once for the residual and the three transverse RHS.
+            # LAPACK's batched multi-RHS path amortizes this factorization.
+            a_rhs = np.concatenate((residual[pending, :, None], b), axis=2)
+            a_solution = bridge._solve12(a, a_rhs)
+            inv_a_r = a_solution[:, :, 0]
+            inv_a_b = a_solution[:, :, 1:]
             schur = dmat - np.matmul(c_base, inv_a_b)
             rhs_b = -stress_b[pending] + np.einsum("nij,nj->ni", c_base, inv_a_r)
             delta_b = self._solve3(schur, rhs_b)
@@ -1199,32 +1210,47 @@ class SrixNumpyCondensedPlaneStressBatch:
             best_dg = dg[pending].copy()
             best_total_b = total[pending][:, _TRANSVERSE].copy()
             best_metric = np.full(pending.size, np.inf)
+            line_search_pending = np.arange(pending.size)
             line_search_started = perf_counter()
             for _ in range(10):
-                self._coupled_line_search_evaluations += pending.size
-                cand_dg = dg[pending] + alpha[:, None] * delta_g
-                cand_total = total[pending].copy()
-                cand_total[:, _TRANSVERSE] += alpha[:, None] * delta_b
+                if line_search_pending.size == 0:
+                    break
+                local_pending = line_search_pending
+                point_pending = pending[local_pending]
+                local_alpha = alpha[local_pending]
+                self._coupled_line_search_evaluations += local_pending.size
+                cand_dg = dg[point_pending] + local_alpha[:, None] * delta_g[local_pending]
+                cand_total = total[point_pending].copy()
+                cand_total[:, _TRANSVERSE] += local_alpha[:, None] * delta_b[local_pending]
                 cand_material = np.einsum(
-                    "nij,nj->ni", transform[pending],
-                    cand_total - bridge._committed_total_strain[pending],
+                    "nij,nj->ni", transform[point_pending],
+                    cand_total - bridge._committed_total_strain[point_pending],
                 )
-                cand_r, cand_s, *_ = state(cand_material, cand_dg, pending)
+                cand_r, cand_s, *_ = state(cand_material, cand_dg, point_pending)
                 cand_metric = np.maximum(
                     np.max(np.abs(cand_r), axis=1),
                     np.max(np.abs(cand_s), axis=1) / max(bridge.parameters.tau0_mpa, 1.0),
                 )
-                good = np.isfinite(cand_metric) & (cand_metric < best_metric)
-                best_metric = np.where(good, cand_metric, best_metric)
-                best_dg = np.where(good[:, None], cand_dg, best_dg)
-                best_total_b = np.where(good[:, None], cand_total[:, _TRANSVERSE], best_total_b)
-                accepted_now = np.isfinite(cand_metric) & (cand_metric <= current_metric)
-                if np.all(alpha == 1.0):
+                good = np.isfinite(cand_metric) & (
+                    cand_metric < best_metric[local_pending]
+                )
+                best_metric[local_pending] = np.where(
+                    good, cand_metric, best_metric[local_pending]
+                )
+                best_dg[local_pending] = np.where(
+                    good[:, None], cand_dg, best_dg[local_pending]
+                )
+                best_total_b[local_pending] = np.where(
+                    good[:, None], cand_total[:, _TRANSVERSE], best_total_b[local_pending]
+                )
+                accepted_now = np.isfinite(cand_metric) & (
+                    cand_metric <= current_metric[local_pending]
+                )
+                if np.all(local_alpha == 1.0):
                     self._coupled_full_step_accepts += int(np.count_nonzero(accepted_now))
-                accepted |= accepted_now
-                alpha = np.where(accepted, alpha, 0.5 * alpha)
-                if np.all(accepted):
-                    break
+                accepted[local_pending[accepted_now]] = True
+                line_search_pending = local_pending[~accepted_now]
+                alpha[line_search_pending] *= 0.5
             self._coupled_line_search_seconds += perf_counter() - line_search_started
             if not np.all(accepted):
                 raise ConstitutiveIntegrationError(
