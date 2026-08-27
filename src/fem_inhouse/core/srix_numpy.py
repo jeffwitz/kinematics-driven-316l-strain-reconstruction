@@ -287,6 +287,28 @@ class SrixNumpy3DMaterialPointBatch:
     def local_linear_solver(self) -> str:
         return self._local_linear_solver
 
+    def _solve12(self, matrix: FloatArray, rhs: FloatArray) -> FloatArray:
+        """Solve batched 12x12 systems, optionally with multiple RHS."""
+        if matrix.shape[1:] != (12, 12):
+            if rhs.ndim == 2:
+                return np.linalg.solve(matrix, rhs[..., None])[..., 0]
+            return np.linalg.solve(matrix, rhs)
+        if self._local_linear_solver == "numba-lu12":
+            if rhs.ndim == 2:
+                from fem_inhouse.core.small_linear_solvers import solve12_batch_numba
+
+                result, success = solve12_batch_numba(matrix, rhs)
+            else:
+                from fem_inhouse.core.small_linear_solvers import solve12_batch_rhs_numba
+
+                result, success = solve12_batch_rhs_numba(matrix, rhs)
+            if not np.all(success):
+                raise np.linalg.LinAlgError("Numba LU12 detected a singular system")
+            return result
+        if rhs.ndim == 2:
+            return np.linalg.solve(matrix, rhs[..., None])[..., 0]
+        return np.linalg.solve(matrix, rhs)
+
     @property
     def rotations_global_to_material(self) -> FloatArray:
         return self._rotation.copy()
@@ -390,7 +412,7 @@ class SrixNumpy3DMaterialPointBatch:
                 converged = True
                 break
             try:
-                delta = np.linalg.solve(jac, -residual[..., None])[..., 0]
+                delta = self._solve12(jac, -residual)
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError("NumPy SRIX local Newton is singular") from error
             if not np.isfinite(delta).all():
@@ -577,14 +599,7 @@ class SrixNumpy3DMaterialPointBatch:
             solve_started = perf_counter()
             try:
                 rhs_pending = -residual[still_pending]
-                if self._local_linear_solver == "numba-lu12":
-                    from fem_inhouse.core.small_linear_solvers import solve12_batch_numba
-
-                    delta, success = solve12_batch_numba(jac_pending, rhs_pending)
-                    if not np.all(success):
-                        raise np.linalg.LinAlgError("Numba LU12 detected a singular system")
-                else:
-                    delta = np.linalg.solve(jac_pending, rhs_pending[..., None])[..., 0]
+                delta = self._solve12(jac_pending, rhs_pending)
             except np.linalg.LinAlgError as error:
                 raise ConstitutiveIntegrationError(
                     "NumPy SRIX reduced Newton is singular"
@@ -689,14 +704,14 @@ class SrixNumpy3DMaterialPointBatch:
             ]
             if tangent_mode == "transverse":
                 transverse = transform[:, :, _TRANSVERSE]
-                dgamma_deps = np.linalg.solve(jac, -np.matmul(jfd, transverse))
+                dgamma_deps = self._solve12(jac, -np.matmul(jfd, transverse))
                 elastic_derivative = transverse - np.einsum(
                     "si,nsj->nij", mus, dgamma_deps
                 )
                 tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
                 tangent_global = np.matmul(np.swapaxes(transform, 1, 2), tangent_material)
             else:
-                dgamma_deps = np.linalg.solve(jac, -jfd)
+                dgamma_deps = self._solve12(jac, -jfd)
                 elastic_derivative = np.eye(6)[None, :, :] - np.einsum(
                     "si,nsj->nij", mus, dgamma_deps
                 )
@@ -782,14 +797,14 @@ class SrixNumpy3DMaterialPointBatch:
         jac[:, indices, indices] += active * slope[:, None] * self.parameters.c_mpa * dda
         if tangent_mode == "transverse":
             rhs = -np.matmul(jfd, transform[:, :, _TRANSVERSE])
-            dgamma_deps = np.linalg.solve(jac, rhs)
+            dgamma_deps = self._solve12(jac, rhs)
             elastic_derivative = transform[:, :, _TRANSVERSE] - np.einsum(
                 "si,nsj->nij", mus, dgamma_deps
             )
             tangent_material = np.einsum("ij,njk->nik", ce, elastic_derivative)
             result = np.matmul(np.swapaxes(transform, 1, 2), tangent_material)
         else:
-            dgamma_deps = np.linalg.solve(jac, -jfd)
+            dgamma_deps = self._solve12(jac, -jfd)
             elastic_derivative = np.eye(6)[None, :, :] - np.einsum(
                 "si,nsj->nij", mus, dgamma_deps
             )
@@ -974,6 +989,26 @@ class SrixNumpyCondensedPlaneStressBatch:
     def statistics(self) -> PlaneStressBatchStatistics:
         return PlaneStressBatchStatistics()
 
+    def _solve3(self, matrix: FloatArray, rhs: FloatArray) -> FloatArray:
+        """Solve batched 3x3 systems using the configured local accelerator."""
+        if self._bridge.local_linear_solver == "numba-lu12":
+            if rhs.ndim == 2:
+                from fem_inhouse.core.small_linear_solvers import solve3_batch_numba
+
+                solution, success = solve3_batch_numba(matrix, rhs)
+                result = solution
+            else:
+                from fem_inhouse.core.small_linear_solvers import solve3_batch_rhs_numba
+
+                solution, success = solve3_batch_rhs_numba(matrix, rhs)
+                result = solution
+            if not np.all(success):
+                raise np.linalg.LinAlgError("Numba LU3 detected a singular system")
+            return result
+        if rhs.ndim == 2:
+            return np.linalg.solve(matrix, rhs[..., None])[..., 0]
+        return np.linalg.solve(matrix, rhs)
+
     def _evaluate(
         self,
         in_plane_strain: ArrayLike,
@@ -1000,10 +1035,10 @@ class SrixNumpyCondensedPlaneStressBatch:
                 in_plane - self._accepted_in_plane
             ) * _ENGINEERING_TO_KELVIN_STRAIN_SCALE
             try:
-                correction = np.linalg.solve(
+                correction = self._solve3(
                     self._accepted_cbb,
-                    -np.einsum("nij,nj->ni", self._accepted_cba, delta_in_plane)[..., None],
-                )[..., 0]
+                    -np.einsum("nij,nj->ni", self._accepted_cba, delta_in_plane),
+                )
                 if np.isfinite(correction).all():
                     transverse_initial = self._accepted_transverse + correction
             except np.linalg.LinAlgError:
@@ -1048,7 +1083,7 @@ class SrixNumpyCondensedPlaneStressBatch:
                 cab = tangent[:, _PLANE][:, :, _TRANSVERSE]
                 cba = tangent[:, _TRANSVERSE][:, :, _PLANE]
                 cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
-                x = np.linalg.solve(cbb, cba)
+                x = self._solve3(cbb, cba)
                 cps = caa - np.einsum("nij,njk->nik", cab, x)
                 scale = (
                     _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
@@ -1090,7 +1125,7 @@ class SrixNumpyCondensedPlaneStressBatch:
                 return result
             tangent = self._bridge.tangent_from_trial(total, trial, tangent_mode="transverse")
             cbb = tangent[:, _TRANSVERSE, :]
-            total[:, _TRANSVERSE] += np.linalg.solve(cbb, -stress[..., None])[..., 0]
+            total[:, _TRANSVERSE] += self._solve3(cbb, -stress)
         self._bridge.revert()
         self._plane_stress_seconds += perf_counter() - plane_stress_started
         raise ConstitutiveIntegrationError("NumPy SRIX plane-stress closure did not converge")
