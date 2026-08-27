@@ -324,7 +324,7 @@ class SrixNumpy3DMaterialPointBatch:
         }
 
     @property
-    def timing_statistics(self) -> dict[str, float | int]:
+    def timing_statistics(self) -> dict[str, Any]:
         return dict(self._timing)
 
     def _integrate_chunk_full(
@@ -980,6 +980,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         self._latest_cba: FloatArray | None = None
         self._plane_stress_seconds = 0.0
         self._plane_stress_iterations = 0
+        self._srix_iterations_per_plane_stress: list[float] = []
 
     @property
     def point_count(self) -> int:
@@ -994,10 +995,19 @@ class SrixNumpyCondensedPlaneStressBatch:
         return self._local_transverse_predictor
 
     @property
-    def timing_statistics(self) -> dict[str, float | int]:
+    def timing_statistics(self) -> dict[str, Any]:
         values = self._bridge.timing_statistics
         values["plane_stress_seconds"] = self._plane_stress_seconds
         values["plane_stress_iterations"] = self._plane_stress_iterations
+        if self._srix_iterations_per_plane_stress:
+            samples = np.asarray(self._srix_iterations_per_plane_stress)
+            values["srix_equivalent_iterations_total"] = float(np.sum(samples))
+            values["srix_equivalent_iterations_mean_per_plane_stress"] = float(np.mean(samples))
+            values["srix_equivalent_iterations_median_per_plane_stress"] = float(np.median(samples))
+            values["srix_equivalent_iterations_p95_per_plane_stress"] = float(
+                np.percentile(samples, 95.0)
+            )
+            values["srix_equivalent_iterations_per_plane_stress"] = samples.tolist()
         return values
 
     @property
@@ -1069,10 +1079,22 @@ class SrixNumpyCondensedPlaneStressBatch:
         plane_stress_started = perf_counter()
         for _iteration in range(self._max):
             self._plane_stress_iterations += 1
+            material_iterations_before = self._bridge.timing_statistics[
+                "material_newton_iterations"
+            ]
             trial = self._bridge.evaluate(
                 total,
                 time_increment=time_increment,
                 tangent_mode="none",
+            )
+            material_iterations_after = self._bridge.timing_statistics[
+                "material_newton_iterations"
+            ]
+            self._srix_iterations_per_plane_stress.append(
+                (
+                    float(material_iterations_after) - float(material_iterations_before)
+                )
+                / self.point_count
             )
             stress = trial.stress_kelvin_mpa[:, _TRANSVERSE]
             if float(np.max(np.abs(stress))) <= self._tol:
