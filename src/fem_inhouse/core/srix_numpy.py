@@ -299,9 +299,9 @@ class SrixNumpy3DMaterialPointBatch:
 
                 result, success = solve12_batch_numba(matrix, rhs)
             else:
-                from fem_inhouse.core.small_linear_solvers import solve12_batch_rhs_numba
-
-                result, success = solve12_batch_rhs_numba(matrix, rhs)
+                # Batched LAPACK is faster than the hand-written kernel for
+                # the 3/6-RHS tangent workloads on the qualified CPU.
+                return np.linalg.solve(matrix, rhs)
             if not np.all(success):
                 raise np.linalg.LinAlgError("Numba LU12 detected a singular system")
             return result
@@ -993,10 +993,9 @@ class SrixNumpyCondensedPlaneStressBatch:
         """Solve batched 3x3 systems using the configured local accelerator."""
         if self._bridge.local_linear_solver == "numba-lu12":
             if rhs.ndim == 2:
-                from fem_inhouse.core.small_linear_solvers import solve3_batch_numba
-
-                solution, success = solve3_batch_numba(matrix, rhs)
-                result = solution
+                # The small 3x3 single-RHS calls are below the crossover
+                # point for the compiled kernel; use LAPACK here.
+                return np.linalg.solve(matrix, rhs[..., None])[..., 0]
             else:
                 from fem_inhouse.core.small_linear_solvers import solve3_batch_rhs_numba
 
