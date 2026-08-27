@@ -1,0 +1,11 @@
+{
+  "warmup": "one complete forward before timing",
+  "warm_forward_seconds": 22.414,
+  "first_forward_seconds_including_jit": 36.517,
+  "previous_dispatch_median_seconds": 25.971,
+  "numba_threads": 1,
+  "tangent_seconds": 8.272,
+  "reduced_jacobian_seconds": 0.0,
+  "fused_jacobian_lu_seconds": 3.923,
+  "verification_residual": 6.998e-09
+}
