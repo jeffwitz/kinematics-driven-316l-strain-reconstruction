@@ -8,6 +8,7 @@ import platform
 import subprocess
 import time
 import traceback
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -158,6 +159,13 @@ def _forward(
         "plane_stress_solver": plane_stress_solver,
     }
     timing_result["material"] = material.timing_statistics
+    timing_result["global_newton_iterations_per_increment"] = list(
+        result.diagnostics.iterations_per_increment
+    )
+    timing_result["global_newton_iterations_total"] = int(
+        sum(result.diagnostics.iterations_per_increment)
+    )
+    timing_result["linear_solves"] = [asdict(item) for item in result.diagnostics.linear_solves]
     return fields, timing_result
 
 

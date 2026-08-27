@@ -985,6 +985,13 @@ class SrixNumpyCondensedPlaneStressBatch:
         self._plane_stress_seconds = 0.0
         self._plane_stress_iterations = 0
         self._srix_iterations_per_plane_stress: list[float] = []
+        self._coupled_calls = 0
+        self._coupled_iterations = 0
+        self._coupled_line_search_evaluations = 0
+        self._coupled_full_step_accepts = 0
+        self._coupled_state_seconds = 0.0
+        self._coupled_block_seconds = 0.0
+        self._coupled_line_search_seconds = 0.0
 
     @property
     def point_count(self) -> int:
@@ -1016,6 +1023,17 @@ class SrixNumpyCondensedPlaneStressBatch:
                 np.percentile(samples, 95.0)
             )
             values["srix_equivalent_iterations_per_plane_stress"] = samples.tolist()
+        values.update(
+            {
+                "coupled_calls": self._coupled_calls,
+                "coupled_iterations_total": self._coupled_iterations,
+                "coupled_line_search_evaluations": self._coupled_line_search_evaluations,
+                "coupled_full_step_accepts": self._coupled_full_step_accepts,
+                "coupled_state_seconds": self._coupled_state_seconds,
+                "coupled_block_seconds": self._coupled_block_seconds,
+                "coupled_line_search_seconds": self._coupled_line_search_seconds,
+            }
+        )
         return values
 
     @property
@@ -1060,6 +1078,7 @@ class SrixNumpyCondensedPlaneStressBatch:
     ) -> ConstitutiveTrial | InPlaneConstitutiveTrial:
         """Solve SRIX and the three plane-stress equations in one local Newton."""
         bridge = self._bridge
+        self._coupled_calls += 1
         bridge.revert()
         n = self.point_count
         transform = bridge._kelvin_rotation
@@ -1113,7 +1132,10 @@ class SrixNumpyCondensedPlaneStressBatch:
             )
 
         for _iteration in range(bridge._maximum_iterations):
+            self._coupled_iterations += int(np.count_nonzero(~converged))
+            state_started = perf_counter()
             current = state(material_strain, dg)
+            self._coupled_state_seconds += perf_counter() - state_started
             (
                 residual, stress_b, de, deq, slope, abs_dg, sign_dg,
                 exp_bp, sgn, overstress, _
@@ -1130,6 +1152,7 @@ class SrixNumpyCondensedPlaneStressBatch:
             if pending.size == 0:
                 break
             active = (overstress[pending] > 0.0).astype(float)
+            block_started = perf_counter()
             den = 1.0 + bridge.parameters.d * abs_dg[pending]
             num = dg[pending] - bridge.parameters.d * a0[pending] * abs_dg[pending]
             dnum = 1.0 - bridge.parameters.d * a0[pending] * sign_dg[pending]
@@ -1169,13 +1192,16 @@ class SrixNumpyCondensedPlaneStressBatch:
             rhs_b = -stress_b[pending] + np.einsum("nij,nj->ni", c_base, inv_a_r)
             delta_b = self._solve3(schur, rhs_b)
             delta_g = -inv_a_r - np.einsum("nij,nj->ni", inv_a_b, delta_b)
+            self._coupled_block_seconds += perf_counter() - block_started
             current_metric = residual_norm[pending]
             alpha = np.ones(pending.size)
             accepted = np.zeros(pending.size, dtype=bool)
             best_dg = dg[pending].copy()
             best_total_b = total[pending][:, _TRANSVERSE].copy()
             best_metric = np.full(pending.size, np.inf)
+            line_search_started = perf_counter()
             for _ in range(10):
+                self._coupled_line_search_evaluations += pending.size
                 cand_dg = dg[pending] + alpha[:, None] * delta_g
                 cand_total = total[pending].copy()
                 cand_total[:, _TRANSVERSE] += alpha[:, None] * delta_b
@@ -1192,10 +1218,14 @@ class SrixNumpyCondensedPlaneStressBatch:
                 best_metric = np.where(good, cand_metric, best_metric)
                 best_dg = np.where(good[:, None], cand_dg, best_dg)
                 best_total_b = np.where(good[:, None], cand_total[:, _TRANSVERSE], best_total_b)
-                accepted |= np.isfinite(cand_metric) & (cand_metric <= current_metric)
+                accepted_now = np.isfinite(cand_metric) & (cand_metric <= current_metric)
+                if np.all(alpha == 1.0):
+                    self._coupled_full_step_accepts += int(np.count_nonzero(accepted_now))
+                accepted |= accepted_now
                 alpha = np.where(accepted, alpha, 0.5 * alpha)
                 if np.all(accepted):
                     break
+            self._coupled_line_search_seconds += perf_counter() - line_search_started
             if not np.all(accepted):
                 raise ConstitutiveIntegrationError(
                     "coupled SRIX plane-stress Newton line search failed"
