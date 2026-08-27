@@ -167,3 +167,31 @@ def test_numpy_srix_numba_lu12_matches_numpy_solver() -> None:
     actual = numba_material.evaluate(strain, time_increment=1.0, tangent_mode="none")
     assert np.allclose(expected.stress_kelvin_mpa, actual.stress_kelvin_mpa, rtol=1.0e-12)
     assert np.allclose(expected.plastic_slip, actual.plastic_slip, rtol=1.0e-12, atol=1.0e-14)
+
+
+def test_numpy_srix_coupled_plane_stress_matches_nested() -> None:
+    strain = np.array(
+        [[1.0e-3, -2.0e-4, 3.0e-4], [2.0e-3, 4.0e-4, -1.0e-4]],
+    )
+    nested = SrixNumpyCondensedPlaneStressBatch(
+        SrixNumpy3DMaterialPointBatch(point_count=2),
+        plane_stress_solver="nested",
+    )
+    coupled = SrixNumpyCondensedPlaneStressBatch(
+        SrixNumpy3DMaterialPointBatch(point_count=2),
+        plane_stress_solver="coupled",
+    )
+    expected = nested.evaluate(strain, time_increment=1.0)
+    actual = coupled.evaluate(strain, time_increment=1.0)
+    assert np.allclose(
+        actual.stress_in_plane_mpa,
+        expected.stress_in_plane_mpa,
+        rtol=1.0e-8,
+        atol=1.0e-7,
+    )
+    assert np.allclose(
+        actual.plane_stress_residual_mpa,
+        expected.plane_stress_residual_mpa,
+        atol=1.0e-8,
+    )
+    assert actual.tangent_in_plane_mpa is not None

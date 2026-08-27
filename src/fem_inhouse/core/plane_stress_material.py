@@ -669,6 +669,20 @@ def create_plane_stress_material_batch(
 ) -> PlaneStressMaterialBatch:
     """Construct a backend without exposing its implementation to global Newton."""
 
+    requested_plane_stress_solver = str(
+        (local_plane_stress_options or {}).get("plane_stress_solver", "nested")
+    )
+    if requested_plane_stress_solver not in {"nested", "coupled"}:
+        raise ValueError("plane_stress_solver must be 'nested' or 'coupled'")
+    if requested_plane_stress_solver == "coupled" and backend not in {
+        "numpy-srix",
+        "numpy-srix-plane-stress",
+    }:
+        raise ValueError(
+            "plane_stress_solver='coupled' requires the native NumPy SRIX backend; "
+            "MFront exposes only nested plane-stress closure"
+        )
+
     if backend in {"numpy-srix", "numpy-srix-plane-stress"}:
         from fem_inhouse.core.crystal_orientation import (
             HomogeneousOrientationProvider,
@@ -725,6 +739,7 @@ def create_plane_stress_material_batch(
             local_transverse_predictor=str(
                 local_options.get("local_transverse_predictor", "committed")
             ),
+            plane_stress_solver=requested_plane_stress_solver,
         )
 
     if backend == "python":

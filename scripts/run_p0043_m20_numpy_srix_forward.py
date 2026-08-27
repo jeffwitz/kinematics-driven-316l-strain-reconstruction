@@ -44,6 +44,7 @@ def _factory(
     dask_workers: int = 1,
     batch_size: int | None = None,
     local_linear_solver: str = "numpy",
+    plane_stress_solver: str = "nested",
 ):
     count = 2 * angles.shape[0] * angles.shape[1]
     return create_plane_stress_material_batch(
@@ -64,6 +65,7 @@ def _factory(
             "plane_stress_max_iterations": 15,
             "local_tolerance_mpa": 1.0e-8,
             "local_transverse_predictor": predictor,
+            "plane_stress_solver": plane_stress_solver,
         },
         constitutive_options={
             "parameter_set": DEFAULT_PARAMETER_SET,
@@ -112,6 +114,7 @@ def _forward(
     dask_workers: int = 1,
     batch_size: int | None = None,
     local_linear_solver: str = "numpy",
+    plane_stress_solver: str = "nested",
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any]]:
     pixels = angles.shape[0]
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
@@ -124,6 +127,7 @@ def _forward(
         dask_workers,
         batch_size,
         local_linear_solver,
+        plane_stress_solver,
     )
     history = np.stack([np.zeros_like(path[0].boundary), *[step.boundary for step in path]])
     fields: list[TwoStateIncrementFields] = []
@@ -151,6 +155,7 @@ def _forward(
         "dask_workers": dask_workers,
         "batch_size": batch_size,
         "local_linear_solver": local_linear_solver,
+        "plane_stress_solver": plane_stress_solver,
     }
     timing_result["material"] = material.timing_statistics
     return fields, timing_result
@@ -167,6 +172,7 @@ def main() -> int:
     parser.add_argument("--dask-workers", type=int, default=1)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--local-linear-solver", choices=("numpy", "numba-lu12"), default="numpy")
+    parser.add_argument("--plane-stress-solver", choices=("nested", "coupled"), default="nested")
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -189,6 +195,7 @@ def main() -> int:
             args.dask_workers,
             args.batch_size,
             args.local_linear_solver,
+            args.plane_stress_solver,
         )
     except Exception as error:
         failure = {
@@ -204,6 +211,7 @@ def main() -> int:
             "dask_workers": args.dask_workers,
             "batch_size": args.batch_size,
             "local_linear_solver": args.local_linear_solver,
+            "plane_stress_solver": args.plane_stress_solver,
             "elapsed_seconds_wall": time.perf_counter() - started,
             "error": f"{type(error).__name__}: {error}",
             "traceback": traceback.format_exc(),
