@@ -982,9 +982,10 @@ class SrixNumpyCondensedPlaneStressBatch:
             "nmi,mk,nkj->nij", transform, ce, transform
         )
         self._coupled_dmat = self._coupled_ce_global[:, _TRANSVERSE][:, :, _TRANSVERSE]
-        self._coupled_c_base = -np.einsum(
+        self._coupled_stress_gamma = -np.einsum(
             "nmi,mj->nij", transform, ce @ mus.T
-        )[:, _TRANSVERSE, :]
+        )
+        self._coupled_c_base = self._coupled_stress_gamma[:, _TRANSVERSE, :]
         self._committed_transverse = np.zeros((bridge.point_count, 3))
         self._latest_transverse: FloatArray | None = None
         self._latest: ConstitutiveTrial | None = None
@@ -1005,6 +1006,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         self._coupled_state_seconds = 0.0
         self._coupled_block_seconds = 0.0
         self._coupled_line_search_seconds = 0.0
+        self._coupled_direct_tangent_seconds = 0.0
 
     @property
     def point_count(self) -> int:
@@ -1045,6 +1047,7 @@ class SrixNumpyCondensedPlaneStressBatch:
                 "coupled_state_seconds": self._coupled_state_seconds,
                 "coupled_block_seconds": self._coupled_block_seconds,
                 "coupled_line_search_seconds": self._coupled_line_search_seconds,
+                "coupled_direct_tangent_seconds": self._coupled_direct_tangent_seconds,
             }
         )
         return values
@@ -1079,6 +1082,78 @@ class SrixNumpyCondensedPlaneStressBatch:
         if rhs.ndim == 2:
             return np.linalg.solve(matrix, rhs[..., None])[..., 0]
         return np.linalg.solve(matrix, rhs)
+
+    def _direct_coupled_tangent(
+        self,
+        material_strain: FloatArray,
+        dg: FloatArray,
+        state: tuple[FloatArray, ...],
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
+        """Differentiate the converged coupled plane-stress system directly.
+
+        The returned tangent is the exact implicit derivative of
+        ``[R_gamma, sigma_transverse] == 0`` with respect to the three imposed
+        in-plane strains.  The older 3-D tangent/condensation path remains the
+        validation oracle; this path avoids constructing a 6x6 tangent.
+        """
+        bridge = self._bridge
+        transform = bridge._kelvin_rotation
+        n = self.point_count
+        _, _, de, deq, slope, abs_dg, sign_dg, exp_bp, sgn, overstress, _ = state
+        active = (overstress > 0.0).astype(float)
+        den = 1.0 + bridge.parameters.d * abs_dg
+        num = dg - bridge.parameters.d * bridge._a * abs_dg
+        dnum = 1.0 - bridge.parameters.d * bridge._a * sign_dg
+        dden = bridge.parameters.d * sign_dg
+        dda = (dnum * den - num * dden) / (den * den)
+
+        # A = dR_gamma/dgamma, in the same reduced form used by the local
+        # Newton.  jfd is dR_gamma/d(material strain).
+        a = np.broadcast_to(np.eye(12), (n, 12, 12)).copy()
+        a += (active * slope[:, None])[:, :, None] * bridge._plastic_modulus
+        dr = (
+            bridge.parameters.q_mpa
+            * bridge.parameters.b
+            * bridge._interaction[None]
+            * exp_bp[:, None, :]
+            * sign_dg[:, None, :]
+        )
+        a += (active * slope[:, None] * sgn)[:, :, None] * dr
+        indices = np.arange(12)
+        a[:, indices, indices] += active * slope[:, None] * bridge.parameters.c_mpa * dda
+        ndeq = np.zeros_like(de)
+        nonzero = deq > 1.0e-14
+        ndeq[nonzero] = (2.0 / (3.0 * deq[nonzero, None])) * de[nonzero]
+        jfd = -active[:, :, None] * slope[:, None, None] * bridge._mce[None]
+        jfd -= (
+            overstress * sgn / bridge.parameters.overstress_modulus_mpa
+        )[:, :, None] * ndeq[:, None, :]
+
+        transform_a = transform[:, :, _PLANE]
+        transform_b = transform[:, :, _TRANSVERSE]
+        e = np.matmul(jfd, transform_a)
+        b = np.matmul(jfd, transform_b)
+        # One factorisation of A serves the imposed-strain and transverse
+        # blocks.  The direct derivative is evaluated only once per trial.
+        a_inv_rhs = bridge._solve12(a, np.concatenate((e, b), axis=2))
+        a_inv_e = a_inv_rhs[:, :, :3]
+        a_inv_b = a_inv_rhs[:, :, 3:]
+
+        ce_global = self._coupled_ce_global
+        stress_gamma = self._coupled_stress_gamma
+        c = stress_gamma[:, _TRANSVERSE, :]
+        j = stress_gamma[:, _PLANE, :]
+        d = self._coupled_dmat
+        g = ce_global[:, _TRANSVERSE][:, :, _PLANE]
+        h = ce_global[:, _PLANE][:, :, _PLANE]
+        i = ce_global[:, _PLANE][:, :, _TRANSVERSE]
+        schur = d - np.matmul(c, a_inv_b)
+        cba_alg = g - np.matmul(c, a_inv_e)
+        rhs_b = -cba_alg
+        de_b = self._solve3(schur, rhs_b)
+        dg_de = -a_inv_e - np.matmul(a_inv_b, de_b)
+        cps = h + np.matmul(i, de_b) + np.matmul(j, dg_de)
+        return cps, schur, cba_alg
 
     def _evaluate_coupled(
         self,
@@ -1310,12 +1385,11 @@ class SrixNumpyCondensedPlaneStressBatch:
             )
             self._latest = None
         else:
-            tangent = bridge.tangent_from_trial(total, trial, tangent_mode="full")
-            caa = tangent[:, _PLANE][:, :, _PLANE]
-            cab = tangent[:, _PLANE][:, :, _TRANSVERSE]
-            cba = tangent[:, _TRANSVERSE][:, :, _PLANE]
-            cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
-            cps = caa - np.einsum("nij,njk->nik", cab, self._solve3(cbb, cba))
+            tangent_started = perf_counter()
+            cps, cbb, cba = self._direct_coupled_tangent(material_strain, dg, final)
+            self._coupled_direct_tangent_seconds = getattr(
+                self, "_coupled_direct_tangent_seconds", 0.0
+            ) + perf_counter() - tangent_started
             scale = (
                 _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
                 * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]

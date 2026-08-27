@@ -6,6 +6,10 @@ import pytest
 from fem_inhouse.core.crystal_orientation import HomogeneousOrientationProvider
 from fem_inhouse.core.plane_stress_material import ConstitutiveTrial, InPlaneConstitutiveTrial
 from fem_inhouse.core.srix_numpy import (
+    _ENGINEERING_TO_KELVIN_STRAIN_SCALE,
+    _KELVIN_TO_ENGINEERING_STRESS_SCALE,
+    _PLANE,
+    _TRANSVERSE,
     SrixNumpy3DMaterialPointBatch,
     SrixNumpyCondensedPlaneStressBatch,
 )
@@ -195,3 +199,32 @@ def test_numpy_srix_coupled_plane_stress_matches_nested() -> None:
         atol=1.0e-8,
     )
     assert actual.tangent_in_plane_mpa is not None
+
+
+def test_numpy_srix_coupled_direct_tangent_matches_3d_oracle() -> None:
+    coupled_bridge = SrixNumpy3DMaterialPointBatch(point_count=2)
+    coupled = SrixNumpyCondensedPlaneStressBatch(
+        coupled_bridge, plane_stress_solver="coupled"
+    )
+    for strain in (
+        np.array([[1.0e-3, -2.0e-4, 3.0e-4], [2.0e-3, 4.0e-4, -1.0e-4]]),
+        np.array([[1.4e-3, -2.5e-4, 3.5e-4], [2.4e-3, 5.0e-4, -1.5e-4]]),
+    ):
+        actual = coupled.evaluate(strain, time_increment=1.0)
+        trial = coupled_bridge._trial
+        assert trial is not None
+        tangent = coupled_bridge.tangent_from_trial(
+            trial.total_strain_kelvin, trial, tangent_mode="full"
+        )
+        caa = tangent[:, _PLANE][:, :, _PLANE]
+        cab = tangent[:, _PLANE][:, :, _TRANSVERSE]
+        cba = tangent[:, _TRANSVERSE][:, :, _PLANE]
+        cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
+        oracle = caa - np.einsum("nij,njk->nik", cab, np.linalg.solve(cbb, cba))
+        scale = (
+            _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
+            * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+        )
+        assert actual.tangent_in_plane_mpa is not None
+        assert np.allclose(actual.tangent_in_plane_mpa, oracle * scale, rtol=1.0e-9)
+        coupled.commit()
