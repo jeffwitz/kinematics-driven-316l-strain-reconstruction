@@ -119,6 +119,56 @@ if njit is not None:
 
 
     @njit(parallel=True, cache=True, fastmath=False, boundscheck=False)
+    def solve12_jacobian_batch_numba(
+        slope: FloatArray,
+        active: FloatArray,
+        sgn: FloatArray,
+        exp_bp: FloatArray,
+        sign_dg: FloatArray,
+        dda: FloatArray,
+        residual: FloatArray,
+        plastic_modulus: FloatArray,
+        interaction: FloatArray,
+        q_mpa: float,
+        b: float,
+        c_mpa: float,
+    ) -> tuple[FloatArray, NDArray[np.bool_]]:
+        """Build and solve the reduced SRIX Newton system per point.
+
+        This fuses the hot-path 12x12 Jacobian construction with the
+        single-RHS LU solve, avoiding a temporary ``(N, 12, 12)`` array.
+        ``active`` is a float mask to match the constitutive expressions.
+        """
+        count = residual.shape[0]
+        result = np.empty((count, 12), dtype=residual.dtype)
+        success = np.empty(count, dtype=np.bool_)
+        for point in prange(count):
+            jac = np.eye(12, dtype=residual.dtype)
+            for row in range(12):
+                for column in range(12):
+                    jac[row, column] += (
+                        active[point, row] * slope[point] * plastic_modulus[row, column]
+                    )
+                    jac[row, column] += (
+                        active[point, row]
+                        * slope[point]
+                        * sgn[point, row]
+                        * q_mpa
+                        * b
+                        * interaction[row, column]
+                        * exp_bp[point, column]
+                        * sign_dg[point, column]
+                    )
+                jac[row, row] += (
+                    active[point, row] * slope[point] * c_mpa * dda[point, row]
+                )
+            result[point], success[point] = _solve_small_lu_single(
+                jac, -residual[point]
+            )
+        return result, success
+
+
+    @njit(parallel=True, cache=True, fastmath=False, boundscheck=False)
     def solve12_batch_rhs_numba(
         matrix: FloatArray, rhs: NDArray[np.float64]
     ) -> tuple[NDArray[np.float64], NDArray[np.bool_]]:
@@ -168,6 +218,9 @@ else:
 
     def solve12_batch_rhs_numba(matrix: FloatArray, rhs: NDArray[np.float64]):
         raise ImportError("solve12_batch_rhs_numba requires the optional numba dependency")
+
+    def solve12_jacobian_batch_numba(*args, **kwargs):
+        raise ImportError("solve12_jacobian_batch_numba requires the optional numba dependency")
 
     def solve3_batch_numba(matrix: FloatArray, rhs: FloatArray):
         raise ImportError("solve3_batch_numba requires the optional numba dependency")
