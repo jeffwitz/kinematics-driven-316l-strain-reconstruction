@@ -1115,6 +1115,47 @@ class SrixNumpyCondensedPlaneStressBatch:
         dden = bridge.parameters.d * sign_dg
         dda = (dnum * den - num * dden) / (den * den)
 
+        if self._coupled_block_solver == "numba-fused":
+            from fem_inhouse.core.small_linear_solvers import solve_coupled_tangent_numba
+
+            ce_global = self._coupled_ce_global
+            stress_gamma = self._coupled_stress_gamma
+            c = stress_gamma[:, _TRANSVERSE, :]
+            j = stress_gamma[:, _PLANE, :]
+            d = self._coupled_dmat
+            g = ce_global[:, _TRANSVERSE][:, :, _PLANE]
+            h = ce_global[:, _PLANE][:, :, _PLANE]
+            i = ce_global[:, _PLANE][:, :, _TRANSVERSE]
+            cps, cbb, cba, success = solve_coupled_tangent_numba(
+                slope,
+                active,
+                sgn,
+                exp_bp,
+                sign_dg,
+                dda,
+                de,
+                deq,
+                overstress,
+                bridge._mce,
+                transform[:, :, _PLANE],
+                transform[:, :, _TRANSVERSE],
+                bridge._plastic_modulus,
+                bridge._interaction,
+                d,
+                c,
+                g,
+                h,
+                i,
+                j,
+                bridge.parameters.q_mpa,
+                bridge.parameters.b,
+                bridge.parameters.c_mpa,
+                bridge.parameters.overstress_modulus_mpa,
+            )
+            if not np.all(success):
+                raise np.linalg.LinAlgError("Numba fused coupled tangent is singular")
+            return cps, cbb, cba
+
         # A = dR_gamma/dgamma, in the same reduced form used by the local
         # Newton.  jfd is dR_gamma/d(material strain).
         a = np.broadcast_to(np.eye(12), (n, 12, 12)).copy()

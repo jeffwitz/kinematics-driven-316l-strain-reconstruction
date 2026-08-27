@@ -322,6 +322,132 @@ if njit is not None:
             success[point] = True
         return delta_g, delta_b, success
 
+
+    @njit(parallel=False, cache=True, fastmath=False, boundscheck=False)
+    def solve_coupled_tangent_numba(
+        slope: FloatArray,
+        active: FloatArray,
+        sgn: FloatArray,
+        exp_bp: FloatArray,
+        sign_dg: FloatArray,
+        dda: FloatArray,
+        de: FloatArray,
+        deq: FloatArray,
+        overstress: FloatArray,
+        mce: FloatArray,
+        transform_a: FloatArray,
+        transform_b: FloatArray,
+        plastic_modulus: FloatArray,
+        interaction: FloatArray,
+        dmat: FloatArray,
+        c: FloatArray,
+        g: FloatArray,
+        h: FloatArray,
+        i: FloatArray,
+        j: FloatArray,
+        q_mpa: float,
+        b: float,
+        c_mpa: float,
+        overstress_modulus_mpa: float,
+    ) -> tuple[FloatArray, FloatArray, FloatArray, NDArray[np.bool_]]:
+        """Fuse the direct coupled plane-stress tangent point by point."""
+        count = slope.shape[0]
+        cps = np.empty((count, 3, 3), dtype=slope.dtype)
+        cbb = np.empty((count, 3, 3), dtype=slope.dtype)
+        cba = np.empty((count, 3, 3), dtype=slope.dtype)
+        success = np.empty(count, dtype=np.bool_)
+        for point in range(count):
+            a = np.eye(12, dtype=slope.dtype)
+            e = np.empty((12, 3), dtype=slope.dtype)
+            block_b = np.empty((12, 3), dtype=slope.dtype)
+            ndeq = np.zeros(6, dtype=slope.dtype)
+            if deq[point] > 1.0e-14:
+                factor = 2.0 / (3.0 * deq[point])
+                for component in range(6):
+                    ndeq[component] = factor * de[point, component]
+            for row in range(12):
+                row_factor = active[point, row] * slope[point]
+                for column in range(12):
+                    a[row, column] += row_factor * plastic_modulus[row, column]
+                    a[row, column] += (
+                        row_factor
+                        * sgn[point, row]
+                        * q_mpa
+                        * b
+                        * interaction[row, column]
+                        * exp_bp[point, column]
+                        * sign_dg[point, column]
+                    )
+                a[row, row] += row_factor * c_mpa * dda[point, row]
+                for component in range(6):
+                    value_a = 0.0
+                    value_b = 0.0
+                    for material_component in range(6):
+                        local_jfd = (
+                            -row_factor * mce[row, material_component]
+                            - overstress[point, row]
+                            * sgn[point, row]
+                            / overstress_modulus_mpa
+                            * ndeq[material_component]
+                        )
+                        value_a += local_jfd * transform_a[
+                            point, material_component, component
+                        ]
+                        value_b += local_jfd * transform_b[
+                            point, material_component, component
+                        ]
+                    e[row, component] = value_a
+                    block_b[row, component] = value_b
+            rhs = np.empty((12, 6), dtype=slope.dtype)
+            for row in range(12):
+                for component in range(3):
+                    rhs[row, component] = e[row, component]
+                    rhs[row, component + 3] = block_b[row, component]
+            a_solution, ok_a = _solve_small_lu_multi(a, rhs)
+            if not ok_a:
+                success[point] = False
+                cps[point] = 0.0
+                cbb[point] = 0.0
+                cba[point] = 0.0
+                continue
+            schur = np.empty((3, 3), dtype=slope.dtype)
+            cba_point = np.empty((3, 3), dtype=slope.dtype)
+            for row in range(3):
+                for column in range(3):
+                    value = g[point, row, column]
+                    for inner in range(12):
+                        value -= c[point, row, inner] * a_solution[inner, column]
+                    cba_point[row, column] = value
+                    schur[row, column] = dmat[point, row, column]
+                    for inner in range(12):
+                        schur[row, column] -= c[point, row, inner] * a_solution[inner, column + 3]
+            de_b, ok_b = _solve_small_lu_multi(schur, -cba_point)
+            if not ok_b:
+                success[point] = False
+                cps[point] = 0.0
+                cbb[point] = 0.0
+                cba[point] = 0.0
+                continue
+            dg_de = np.empty((12, 3), dtype=slope.dtype)
+            for row in range(12):
+                for column in range(3):
+                    value = -a_solution[row, column]
+                    for inner in range(3):
+                        value -= a_solution[row, inner + 3] * de_b[inner, column]
+                    dg_de[row, column] = value
+            for row in range(3):
+                for column in range(3):
+                    value = h[point, row, column]
+                    for inner in range(3):
+                        value += i[point, row, inner] * de_b[inner, column]
+                    for inner in range(12):
+                        value += j[point, row, inner] * dg_de[inner, column]
+                    cps[point, row, column] = value
+                    cbb[point, row, column] = schur[row, column]
+                    cba[point, row, column] = cba_point[row, column]
+            success[point] = True
+        return cps, cbb, cba, success
+
 else:
 
     def solve12_batch_numba(
@@ -344,3 +470,6 @@ else:
 
     def solve_coupled_block_numba(*args, **kwargs):
         raise ImportError("solve_coupled_block_numba requires the optional numba dependency")
+
+    def solve_coupled_tangent_numba(*args, **kwargs):
+        raise ImportError("solve_coupled_tangent_numba requires the optional numba dependency")
