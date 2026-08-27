@@ -957,6 +957,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         maximum_local_iterations: int = 15,
         plane_stress_max_iterations: int | None = None,
         local_transverse_predictor: Literal["committed", "tangent"] = "committed",
+        plane_stress_solver: Literal["nested", "coupled"] = "nested",
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)
@@ -967,7 +968,10 @@ class SrixNumpyCondensedPlaneStressBatch:
         )
         if local_transverse_predictor not in {"committed", "tangent"}:
             raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
+        if plane_stress_solver not in {"nested", "coupled"}:
+            raise ValueError("plane_stress_solver must be 'nested' or 'coupled'")
         self._local_transverse_predictor = local_transverse_predictor
+        self._plane_stress_solver = plane_stress_solver
         self._committed_transverse = np.zeros((bridge.point_count, 3))
         self._latest_transverse: FloatArray | None = None
         self._latest: ConstitutiveTrial | None = None
@@ -993,6 +997,10 @@ class SrixNumpyCondensedPlaneStressBatch:
     @property
     def local_transverse_predictor(self) -> str:
         return self._local_transverse_predictor
+
+    @property
+    def plane_stress_solver(self) -> str:
+        return self._plane_stress_solver
 
     @property
     def timing_statistics(self) -> dict[str, Any]:
@@ -1041,6 +1049,255 @@ class SrixNumpyCondensedPlaneStressBatch:
             return np.linalg.solve(matrix, rhs[..., None])[..., 0]
         return np.linalg.solve(matrix, rhs)
 
+    def _evaluate_coupled(
+        self,
+        total: FloatArray,
+        in_plane: FloatArray,
+        *,
+        time_increment: float,
+        response_level: ResponseLevel,
+        consistent_tangent: bool,
+    ) -> ConstitutiveTrial | InPlaneConstitutiveTrial:
+        """Solve SRIX and the three plane-stress equations in one local Newton."""
+        bridge = self._bridge
+        bridge.revert()
+        n = self.point_count
+        transform = bridge._kelvin_rotation
+        strain_increment = total - bridge._committed_total_strain
+        material_strain = np.einsum("nij,nj->ni", transform, strain_increment)
+        p0, a0 = bridge._p, bridge._a
+        elastic0 = bridge._elastic
+        ce = bridge._ce_material
+        mus = bridge._schmid_material
+        eye12 = np.eye(12)
+        dg = np.zeros((n, 12))
+        converged = np.zeros(n, dtype=bool)
+
+        def state(values: FloatArray, slips: FloatArray, indices: NDArray[np.int64] | None = None):
+            p_base = p0 if indices is None else p0[indices]
+            a_base = a0 if indices is None else a0[indices]
+            e_base = elastic0 if indices is None else elastic0[indices]
+            t_base = transform if indices is None else transform[indices]
+            de = _deviatoric(values)
+            deq = np.sqrt(np.maximum(2.0 * np.sum(de * de, axis=1) / 3.0, 0.0))
+            slope = deq / bridge.parameters.overstress_modulus_mpa
+            abs_dg = np.abs(slips)
+            sign_dg = np.where(slips > 0.0, 1.0, np.where(slips < 0.0, -1.0, 0.0))
+            exp_bp = np.exp(-bridge.parameters.b * (p_base + abs_dg))
+            resistance = bridge.parameters.tau0_mpa + bridge.parameters.q_mpa * (
+                (1.0 - exp_bp) @ bridge._interaction.T
+            )
+            tau_trial = (e_base + values) @ bridge._mce.T
+            tau = tau_trial - slips @ bridge._plastic_modulus.T
+            da = (slips - bridge.parameters.d * a_base * abs_dg) / (
+                1.0 + bridge.parameters.d * abs_dg
+            )
+            drive = tau - bridge.parameters.c_mpa * (a_base + da)
+            sgn = np.where(drive > 0.0, 1.0, -1.0)
+            overstress = np.maximum(np.abs(drive) - resistance, 0.0)
+            residual = slips - slope[:, None] * overstress * sgn
+            stress_material = (e_base + values - slips @ mus) @ ce.T
+            stress_global = np.einsum("nij,nj->ni", np.swapaxes(t_base, 1, 2), stress_material)
+            return (
+                residual,
+                stress_global[:, _TRANSVERSE],
+                de,
+                deq,
+                slope,
+                abs_dg,
+                sign_dg,
+                exp_bp,
+                sgn,
+                overstress,
+                stress_material,
+            )
+
+        for _iteration in range(bridge._maximum_iterations):
+            current = state(material_strain, dg)
+            (
+                residual, stress_b, de, deq, slope, abs_dg, sign_dg,
+                exp_bp, sgn, overstress, _
+            ) = current
+            residual_norm = np.maximum(
+                np.max(np.abs(residual), axis=1),
+                np.max(np.abs(stress_b), axis=1) / max(bridge.parameters.tau0_mpa, 1.0),
+            )
+            newly_converged = (
+                np.max(np.abs(residual), axis=1) <= bridge._tolerance
+            ) & (np.max(np.abs(stress_b), axis=1) <= self._tol)
+            converged |= newly_converged
+            pending = np.flatnonzero(~converged)
+            if pending.size == 0:
+                break
+            active = (overstress[pending] > 0.0).astype(float)
+            den = 1.0 + bridge.parameters.d * abs_dg[pending]
+            num = dg[pending] - bridge.parameters.d * a0[pending] * abs_dg[pending]
+            dnum = 1.0 - bridge.parameters.d * a0[pending] * sign_dg[pending]
+            dden = bridge.parameters.d * sign_dg[pending]
+            dda = (dnum * den - num * dden) / (den * den)
+            a = np.broadcast_to(eye12, (pending.size, 12, 12)).copy()
+            a += (active * slope[pending, None])[:, :, None] * bridge._plastic_modulus
+            dr = (
+                bridge.parameters.q_mpa
+                * bridge.parameters.b
+                * bridge._interaction[None]
+                * exp_bp[pending, None, :]
+                * sign_dg[pending, None, :]
+            )
+            a += (active * slope[pending, None] * sgn[pending])[:, :, None] * dr
+            ii = np.arange(12)
+            a[:, ii, ii] += active * slope[pending, None] * bridge.parameters.c_mpa * dda
+            ndeq = np.zeros_like(de)
+            nz = deq > 1.0e-14
+            ndeq[nz] = (2.0 / (3.0 * deq[nz, None])) * de[nz]
+            jfd = -active[:, :, None] * slope[pending, None, None] * bridge._mce[None]
+            jfd -= (
+                overstress[pending] * sgn[pending] / bridge.parameters.overstress_modulus_mpa
+            )[:, :, None] * ndeq[pending, None, :]
+            b = np.matmul(jfd, transform[pending][:, :, _TRANSVERSE])
+            ce_global = np.matmul(
+                np.swapaxes(transform[pending], 1, 2),
+                np.matmul(ce[None], transform[pending]),
+            )
+            dmat = ce_global[:, _TRANSVERSE][:, :, _TRANSVERSE]
+            c_base = -np.matmul(
+                np.swapaxes(transform[pending], 1, 2), (ce @ mus.T)[None]
+            )[:, _TRANSVERSE, :]
+            inv_a_r = bridge._solve12(a, residual[pending][..., None])[:, :, 0]
+            inv_a_b = bridge._solve12(a, b)
+            schur = dmat - np.matmul(c_base, inv_a_b)
+            rhs_b = -stress_b[pending] + np.einsum("nij,nj->ni", c_base, inv_a_r)
+            delta_b = self._solve3(schur, rhs_b)
+            delta_g = -inv_a_r - np.einsum("nij,nj->ni", inv_a_b, delta_b)
+            current_metric = residual_norm[pending]
+            alpha = np.ones(pending.size)
+            accepted = np.zeros(pending.size, dtype=bool)
+            best_dg = dg[pending].copy()
+            best_total_b = total[pending][:, _TRANSVERSE].copy()
+            best_metric = np.full(pending.size, np.inf)
+            for _ in range(10):
+                cand_dg = dg[pending] + alpha[:, None] * delta_g
+                cand_total = total[pending].copy()
+                cand_total[:, _TRANSVERSE] += alpha[:, None] * delta_b
+                cand_material = np.einsum(
+                    "nij,nj->ni", transform[pending],
+                    cand_total - bridge._committed_total_strain[pending],
+                )
+                cand_r, cand_s, *_ = state(cand_material, cand_dg, pending)
+                cand_metric = np.maximum(
+                    np.max(np.abs(cand_r), axis=1),
+                    np.max(np.abs(cand_s), axis=1) / max(bridge.parameters.tau0_mpa, 1.0),
+                )
+                good = np.isfinite(cand_metric) & (cand_metric < best_metric)
+                best_metric = np.where(good, cand_metric, best_metric)
+                best_dg = np.where(good[:, None], cand_dg, best_dg)
+                best_total_b = np.where(good[:, None], cand_total[:, _TRANSVERSE], best_total_b)
+                accepted |= np.isfinite(cand_metric) & (cand_metric <= current_metric)
+                alpha = np.where(accepted, alpha, 0.5 * alpha)
+                if np.all(accepted):
+                    break
+            if not np.all(accepted):
+                raise ConstitutiveIntegrationError(
+                    "coupled SRIX plane-stress Newton line search failed"
+                )
+            dg[pending] = best_dg
+            for component, index in enumerate(_TRANSVERSE):
+                total[pending, index] = best_total_b[:, component]
+            material_strain[pending] = np.einsum(
+                "nij,nj->ni", transform[pending],
+                total[pending] - bridge._committed_total_strain[pending],
+            )
+        if not np.all(converged):
+            raise ConstitutiveIntegrationError(
+                "coupled SRIX plane-stress Newton did not converge in "
+                f"{bridge._maximum_iterations} iterations"
+            )
+        final = state(material_strain, dg)
+        _, stress_b, _, _, _, abs_dg, _, _, _, _, stress_material = final
+        elastic_material = elastic0 + material_strain - dg @ mus
+        elastic_global = np.einsum(
+            "nij,nj->ni", np.swapaxes(transform, 1, 2), elastic_material
+        )
+        stress_global = np.einsum(
+            "nij,nj->ni", np.swapaxes(transform, 1, 2), stress_material
+        )
+        full_stress = kelvin_3d_to_tensor(stress_global, quantity="stress")
+        p_final = p0 + abs_dg
+        da_final = (dg - bridge.parameters.d * a0 * abs_dg) / (
+            1.0 + bridge.parameters.d * abs_dg
+        )
+        trial = SrixNumpy3DTrial(
+            total_strain_kelvin=total.copy(),
+            stress_kelvin_mpa=stress_global,
+            elastic_strain_kelvin=elastic_global,
+            plastic_slip=bridge._g + dg,
+            equivalent_plastic_slip=p_final,
+            back_strain=a0 + da_final,
+            accumulated_slip=np.sum(p_final, axis=1),
+            consistent_tangent_kelvin_mpa=None,
+            material_elastic_strain_kelvin=elastic_material,
+        )
+        bridge._trial = trial
+        bridge._trial_state = (
+            elastic_material.copy(),
+            trial.plastic_slip.copy(),
+            p_final.copy(),
+            trial.back_strain.copy(),
+        )
+        bridge._trial_total_strain = total.copy()
+        stress_in_plane = np.stack(
+            (stress_global[:, 0], stress_global[:, 1], stress_global[:, 3] / _SQRT_TWO), axis=-1
+        )
+        if response_level == "residual":
+            result: ConstitutiveTrial | InPlaneConstitutiveTrial = InPlaneConstitutiveTrial(
+                stress_in_plane_mpa=stress_in_plane, tangent_in_plane_mpa=None
+            )
+            self._latest = None
+        else:
+            tangent = bridge.tangent_from_trial(total, trial, tangent_mode="full")
+            caa = tangent[:, _PLANE][:, :, _PLANE]
+            cab = tangent[:, _PLANE][:, :, _TRANSVERSE]
+            cba = tangent[:, _TRANSVERSE][:, :, _PLANE]
+            cbb = tangent[:, _TRANSVERSE][:, :, _TRANSVERSE]
+            cps = caa - np.einsum("nij,njk->nik", cab, self._solve3(cbb, cba))
+            scale = (
+                _KELVIN_TO_ENGINEERING_STRESS_SCALE[None, :, None]
+                * _ENGINEERING_TO_KELVIN_STRAIN_SCALE[None, None, :]
+            )
+            full_strain = kelvin_3d_to_tensor(total, quantity="strain")
+            elastic_tensor = kelvin_3d_to_tensor(elastic_global, quantity="strain")
+            complete_result = ConstitutiveTrial(
+                stress_in_plane_mpa=tensor_to_engineering_stress_2d(full_stress),
+                tangent_in_plane_mpa=cps * scale if consistent_tangent else None,
+                full_stress_tensor_mpa=full_stress,
+                full_strain_tensor=full_strain,
+                elastic_strain_tensor=elastic_tensor,
+                plastic_strain_tensor=full_strain - elastic_tensor,
+                plane_stress_residual_mpa=np.stack(
+                    (full_stress[:, 2, 2], full_stress[:, 0, 2], full_stress[:, 1, 2]),
+                    axis=-1,
+                ),
+                observables={
+                    "plastic_slip": trial.plastic_slip,
+                    "equivalent_plastic_slip": trial.equivalent_plastic_slip,
+                    "accumulated_slip": trial.accumulated_slip,
+                },
+            )
+            self._latest = complete_result
+            result = (
+                complete_result
+                if response_level == "complete"
+                else InPlaneConstitutiveTrial(
+                    stress_in_plane_mpa=complete_result.stress_in_plane_mpa,
+                    tangent_in_plane_mpa=complete_result.tangent_in_plane_mpa,
+                )
+            )
+            self._latest_cbb = cbb.copy()
+            self._latest_cba = cba.copy()
+        self._latest_transverse = total[:, _TRANSVERSE].copy()
+        self._latest_in_plane = in_plane.copy()
+        return result
+
     def _evaluate(
         self,
         in_plane_strain: ArrayLike,
@@ -1076,6 +1333,14 @@ class SrixNumpyCondensedPlaneStressBatch:
             except np.linalg.LinAlgError:
                 pass
         total[:, _TRANSVERSE] = transverse_initial
+        if self._plane_stress_solver == "coupled":
+            return self._evaluate_coupled(
+                total,
+                in_plane,
+                time_increment=time_increment,
+                response_level=response_level,
+                consistent_tangent=consistent_tangent,
+            )
         plane_stress_started = perf_counter()
         for _iteration in range(self._max):
             self._plane_stress_iterations += 1
