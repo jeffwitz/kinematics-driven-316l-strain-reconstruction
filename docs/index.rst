@@ -50,8 +50,33 @@ Recommended journeys
    :caption: Start here
 
    tutorials/index
+
+.. toctree::
+   :hidden:
+   :caption: Use the software
+
    how-to/index
+
+.. toctree::
+   :hidden:
+   :caption: Look things up
+
    reference/index
+
+.. toctree::
+   :hidden:
+   :caption: Understand the science
+
    explanation/index
+
+.. toctree::
+   :hidden:
+   :caption: Scientific evidence
+
    evidence/index
+
+.. toctree::
+   :hidden:
+   :caption: Developer / maintainer
+
    maintainers/index
