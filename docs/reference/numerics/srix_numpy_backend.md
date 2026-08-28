@@ -327,6 +327,172 @@ The correct interpretation is: the native coupled path is qualified as an
 equivalent high-performance path, while timing claims must always include the
 machine, thread settings, warm-up state, global Newton count and GMRES count.
 
+## Benchmark ledger: what was measured and what it means
+
+This section is intentionally explicit.  A timing is useful only when the
+algorithm, the requested response, the thread settings and the global Newton
+trajectory are known.  The JSON reports named below are the primary evidence;
+the numbers in this page are summaries, not a replacement for those reports.
+
+### P43 M20: native SRIX path
+
+The M20 case contains 800 material points (20 x 20 pixels, two subcells) and
+uses the corrected F mapping, the same DIC boundary conditions and the same
+load path.  The following sequence shows the effect of each structural change.
+
+| Stage | Plane-stress / kernel | Wall time | Global Newton / GMRES | What changed | Interpretation |
+|---|---|---:|---:|---|---|
+| Nested reference | `nested`, active-point NumPy path | 20.418 s | 121 / 2303 | independent native reference | Baseline for the native M20 implementation. |
+| Coupled driver | `coupled`, NumPy blocks | 21.579 s | 146 / 2984 | solve SRIX and the three traction equations together | Same local problem; more global iterations on this run, so not a pure speed comparison. |
+| Cached/compact coupled | coupled, cached blocks | 20.010 / 19.645 s | 146 / 2984 | reuse invariant data and reduce temporary arrays | Small, trajectory-preserving implementation gains. |
+| Fused coupled block | `numba-fused` A/B + LU12 + Schur | 9.032 s | 119 / 2265 | point-local construction and solve | Large gain from removing `N x 12 x 12` temporaries; the trajectory also changed. |
+| Direct tangent | fused block + direct plane-stress tangent | 12.924 s | 146 / 2984 | avoid rebuilding a full 3-D tangent before condensation | The tangent agrees with the oracle; this run is not an A/B timing because its trajectory differs from the 9.032 s run. |
+| Fused-state experiment | `numba-fused-state` | 10.786 s | 119 / 2265 | also evaluate state in the point-local kernel | Useful as a large-batch experiment, but slower than vectorized state at M20. |
+
+The M20 table contains deliberately different trajectories.  Consequently,
+the wall times are a development history, not one additive speedup claim.  The
+strongest conclusions are the field equivalence and the local block/tangent
+benchmarks performed at identical states.
+
+The corresponding raw displacement RMS is approximately
+`3.952271743e-6 mm` for all qualified native paths.  The coupled-vs-nested
+field difference is at round-off level in the qualification reports.  The
+older `multi_rhs_dispatch` run (27.640 s) is retained as a profiling artifact,
+not as a regression: all phase counters were about 1.35--1.45 times slower on
+that machine run, so it is not comparable to the 19--21 s runs.
+
+### P43 M100: scaling evidence
+
+M100 is the useful scaling test because the number of active material points is
+large enough for point-local constitutive work to dominate.  The entries below
+are separate, fully completed runs.  They must not be combined as if they were
+one controlled experiment when the Newton/GMRES counts differ.
+
+| Run | Wall time | Global Newton / GMRES | Main timings reported | Valid conclusion |
+|---|---:|---:|---|---|
+| Nested reference | 477.091 s | 124 / 3390 | -- | Reference cost of the nested algorithm. |
+| First coupled | 379.395 s | 140 / 3926 | -- | Coupled local closure scales better despite more global work. |
+| Coupled blocks/Schur optimized | 341.456 s | 140 / 3926 | block 107.56 s; state 37.11 s; tangent 92.71 s | Reduced temporaries and cached blocks preserve the trajectory. |
+| Fused block | 224.977 s | 140 / 3926 | block 51.94 s; direct tangent 43.48 s | Strong evidence for the point-local A/B--LU12--Schur kernel on this trajectory. |
+| Fused tangent, unfavorable machine run | 243.721 s | 140 / 3926 | block 59.77 s; direct tangent 33.37 s | The tangent is faster, but the wall time is not an A/B result because the unchanged block was 15% slower. |
+| Fused-state experiment | 211.687 s | 124 / 3390 | fused state 74.74 s; direct tangent 48.15 s | Indicative only: fewer global iterations; use the local crossover benchmark, not this wall time, to quantify the kernel gain. |
+
+The conservative statement supported by these runs is that the coupled path
+and point-local fused kernels remove a substantial amount of constitutive
+work.  A single wall-time ratio is not a scientific speedup unless the run is
+pre-warmed, interleaved with its control, and has the same global trajectory.
+For this reason, the validated status is “equivalent high-performance native
+path”, not “a universal 2.12x speedup”.
+
+### MFront comparison: two different questions
+
+There are two MFront comparisons in the repository, and they answer different
+questions.
+
+1. **Native P43 SRIX equivalence.**  The P43 native reports compare the
+   displacement fields to the archived identified F fields.  They do not
+   contain a direct MFront SRIX/MGIS M100 run.  Therefore this page does not
+   claim that the native SRIX wall time is faster than MFront SRIX.
+2. **Backend context benchmark.**  The independent
+   `plane_stress_backend_performance_100x100_v1` benchmark is a homogeneous
+   J2, 100 x 100, 20-increment test (not P43 SRIX and not EBSD).  It gives a
+   reproducible view of the generic MFront plane-stress routes:
+
+| Backend (J2 100 x 100) | Process wall median | Solver wall median | Constitutive median | Newton | max plane-stress residual |
+|---|---:|---:|---:|---:|---:|
+| MFront native plane stress, 2 threads | 27.03 s | 25.89 s | 9.52 s | 93 | `9.11e-14` |
+| MFront 3-D + external condensation, 2 threads | 83.43 s | 82.30 s | 65.44 s | 93 | `3.75e-08` |
+| Historical Python J2 | 134.36 s | 133.31 s | 99.33 s | 183 | -- |
+
+The J2 table shows why a native MFront plane-stress behaviour can be much
+faster than repeatedly calling a generic 3-D behaviour.  It is not a
+qualification of the SRIX NumPy implementation and must not be used to infer
+an MFront-versus-SRIX speedup.
+
+An older constitutive-only benchmark on 200,000 heterogeneous points measured
+Python/NumPy at a median of 12.347 s, MFront serial at 13.333 s, and MFront at
+eight threads at 3.527 s.  This benchmark is also a separate tabulated-law
+context test; it does not include the P43 FFT solve.  The complete reports are
+`validation/reference_data/mfront_performance_v1` and
+`validation/reference_data/plane_stress_backend_performance_100x100_v1`.
+
+### Isolated solver and parallelism benchmarks
+
+These experiments explain why the implementation uses a hybrid NumPy/Numba
+design rather than forcing one library everywhere.
+
+| Experiment | Setup | Result | Lesson |
+|---|---|---|---|
+| LU12 solve-only | 100,000 random nonsymmetric 12 x 12 systems, one RHS, BLAS pinned to one thread | NumPy/LAPACK 0.214 s; Numba LU12 0.152 s at 1 thread, 0.039 s at 4 threads; relative solution error `1.8e-16` | A fixed-size point-local solve is an excellent Numba target. This does not predict full-forward speed. |
+| ThreadPool kernel test | 800 points, four chunks, BLAS one thread | 1 worker 0.077 s; 2 workers 0.073 s; 4 workers 0.105 s | Python threads do not help these small batches; do not extrapolate to large grids. |
+| Dask threaded prototype | Dask graph rebuilt inside each constitutive evaluation | 31.968 s serial; 32.805 s (1 worker); 32.308 s (2); 40.568 s (4); 66.069 s (8) | The graph was placed too low in the nested closure. It is not evidence that a coarse chunk-level GPU/CPU design cannot scale. |
+
+The Dask prototype is intentionally not a production option.  A future
+experiment would submit one complete SRIX+plane-stress chunk per task, rather
+than constructing thousands of tiny synchronized graphs.
+
+### Crossover benchmark for `auto`
+
+The `numba-fused-state` path is not uniformly faster.  On identical warmed-up
+local data, the ratio `(fused-state time)/(vectorized-state + fused-block
+time)` was:
+
+| Pending points | Ratio, crossover v1 | Ratio, v2/v3 evidence |
+|---:|---:|---:|
+| 800 | 1.53 | -- |
+| 2,000 | 1.77 | -- |
+| 5,000 | 1.54 | -- |
+| 6,000--10,000 | -- | 1.43--1.38 (v2) |
+| 12,000 | -- | 0.65 (v3) |
+| 16,000--20,000 | 0.94--0.92 | 0.94--0.92 (v3) |
+
+The exact crossover moved with CPU load and library state.  The robust
+engineering choice is therefore a conservative configurable threshold of
+`12_000`, not a universal physical constant.  The `auto` path can start with
+`numba-fused-state` while many points are pending and switch to
+`numba-fused` as the monotone active set shrinks.
+
+### Optimization ledger: mechanism, gain, and proof
+
+The following is the pedagogical map from the old implementation to the
+current one.  “Gain” means the effect measured for that isolated change when a
+controlled comparison exists; it does not mean that the percentages can be
+added.
+
+| Optimization | Why the old path was expensive | What was changed | Evidence / gain | Scientific guard |
+|---|---|---|---|---|
+| Correct F mapping, preserve C spectral storage | A spatial permutation contaminated the physical fields and shadow path | F only for EBSD-to-material assignment; C remains internal spectral storage | F prior RMS improved from about `4.7247e-6` to `4.0672e-6 mm` before fitting (about -13.9%) | Sentinel mapping and strict re-forward |
+| 12-slip reduction | The local Newton solved an 18 x 18 system although six elastic equations can be eliminated exactly | Solve only the 12 slip unknowns and reconstruct elastic strain analytically | Same qualified stress/state/tangent as the 18 x 18 oracle | 18 x 18 path retained as test oracle |
+| Active-point compression | Converged points still paid for residual/Jacobian construction | Remove converged points from subsequent local work | Reduced local work; fields unchanged | Compare all committed state arrays |
+| Predictor and separate iteration limits | Poor transverse initial guesses and one limit accidentally controlled two Newton layers | Tangent/committed predictor; separate material and closure limits | Fewer closure evaluations and no hidden tolerance change | `revert`/`commit` tests and residual gates |
+| Fixed-size LU12 | LAPACK was called for many independent 12 x 12 one-RHS systems | Specialized Numba LU for one-RHS point solves | 0.214 -> 0.152 s in the solve-only benchmark at 1 thread | Relative solve error below `2e-16` |
+| Coupled closure | Nested closure fully reconverged SRIX after each transverse correction | Solve 12 slip residuals plus 3 traction residuals together | M100 477.1 -> 379.4 s on separate runs; same local solution, but counts differ | Nested remains the reference |
+| Cached blocks / one A factorization | Orientation and elastic blocks were rebuilt; `A` was solved separately for each RHS group | Cache invariants; solve `[R_gamma, B]` together | M100 379.4 -> 341.5 s on the same 140/3926 trajectory | Compare stress, tangent and fields |
+| Fused A/B--Schur | Global `N x 12 x 12` and `N x 12 x 3` temporaries caused allocation and memory traffic | Build, factor and apply the local Schur in Numba | Block phase 107.6 -> 51.9 s on the corresponding M100 trajectory; M20 14.51 -> 12.92 s in the direct-tangent A/B run | NumPy/LAPACK path remains oracle |
+| Direct plane-stress tangent | Full 3-D tangent was reconstructed and condensed after the coupled solve | Differentiate the coupled 15-variable system directly to obtain `C_PS` | Tangent error about `2e-16`; M100 tangent 43.5 -> 33.4 s in the machine-adjusted comparison | Full tangent retained for verification |
+| Fused state for large batches | Vectorized state arrays become costly at very large active batches | Evaluate state and fused correction in one point-local kernel | About 20--22% local gain around 10k--20k points in crossover tests; M20 is slower | `auto` threshold 12,000, not default production |
+| Dask/thread experiments | Attempted to distribute small repeated constitutive calls | Tested coarse and fine threaded prototypes | No benefit for the current fine-grained placement; not used in production | No change to equations or transactions |
+
+The stages are not additive: for example, the direct tangent and fused block
+share work, and a full forward also includes global FFT/GMRES, line-search and
+output construction.  A proper A/B report must therefore include wall time,
+warm-up status, BLAS/Numba threads, selected options, global Newton count,
+GMRES count, raw RMS and equilibrium residual.
+
+### Reading the benchmark numbers safely
+
+Three rules prevent the most common misinterpretations:
+
+1. **Do not sum phase counters.**  `state`, `line-search`, `tangent` and block
+   timers can overlap because a line-search calls the state evaluator.
+2. **Do not call a different trajectory a regression.**  A change of one global
+   Newton step can dominate a small kernel gain.  Compare local kernels at the
+   same state, or interleave old/new complete forwards after warm-up.
+3. **Do not transfer J2/MFront numbers to P43 SRIX.**  MFront remains the
+   constitutive reference, but the available direct MFront table is a separate
+   J2 benchmark.  Native P43 claims are about equivalence and measured scaling,
+   not an unperformed MFront SRIX race.
+
 ## What to validate before trusting a result
 
 For a new backend or optimization, check in this order:
