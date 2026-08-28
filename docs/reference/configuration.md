@@ -59,6 +59,7 @@ fields. They are element-wise input maps.
 | `local_plane_stress_tolerance_mpa` | `1e-8` | absolute transverse-stress tolerance |
 | `local_plane_stress_relative_tolerance` | `1e-10` | relative transverse-stress tolerance |
 | `maximum_local_plane_stress_iterations` | `15` | local Newton iteration limit |
+| `maximum_local_iterations` | `15` | legacy alias accepted by registered constitutive plugins for the local iteration limit |
 | `maximum_cbb_condition_number` | `1e12` | reject an ill-conditioned transverse tangent |
 
 `hardening_mode="tabular"` is meaningful only with the historical Python
