@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "rows": [
+    {
+      "points": 800,
+      "vectorised_state_block_median_s": 0.00436179107055068,
+      "fused_state_block_median_s": 0.006663351086899638,
+      "ratio_fused_over_vectorised": 1.527663975445386,
+      "max_residual_delta": 1.0842021724855044e-18,
+      "max_stress_b_delta": 5.684341886080802e-14,
+      "max_delta_g_delta": 5.204170427930421e-18,
+      "max_delta_b_delta": 4.336808689942018e-18
+    },
+    {
+      "points": 2000,
+      "vectorised_state_block_median_s": 0.008684421889483929,
+      "fused_state_block_median_s": 0.015332181937992573,
+      "ratio_fused_over_vectorised": 1.7654810110686237,
+      "max_residual_delta": 1.5178830414797062e-18,
+      "max_stress_b_delta": 8.526512829121202e-14,
+      "max_delta_g_delta": 7.806255641895632e-18,
+      "max_delta_b_delta": 6.938893903907228e-18
+    },
+    {
+      "points": 5000,
+      "vectorised_state_block_median_s": 0.024581869831308722,
+      "fused_state_block_median_s": 0.037803592160344124,
+      "ratio_fused_over_vectorised": 1.5378647930270766,
+      "max_residual_delta": 1.5178830414797062e-18,
+      "max_stress_b_delta": 8.526512829121202e-14,
+      "max_delta_g_delta": 1.5959455978986625e-16,
+      "max_delta_b_delta": 1.8041124150158794e-16
+    },
+    {
+      "points": 10000,
+      "vectorised_state_block_median_s": 0.08677431801334023,
+      "fused_state_block_median_s": 0.06909191492013633,
+      "ratio_fused_over_vectorised": 0.7962253867499656,
+      "max_residual_delta": 1.5178830414797062e-18,
+      "max_stress_b_delta": 8.526512829121202e-14,
+      "max_delta_g_delta": 1.700029006457271e-16,
+      "max_delta_b_delta": 1.457167719820518e-16
+    },
+    {
+      "points": 20000,
+      "vectorised_state_block_median_s": 0.21066839899867773,
+      "fused_state_block_median_s": 0.16446196800097823,
+      "ratio_fused_over_vectorised": 0.780667479235984,
+      "max_residual_delta": 1.5178830414797062e-18,
+      "max_stress_b_delta": 8.526512829121202e-14,
+      "max_delta_g_delta": 4.787836793695988e-16,
+      "max_delta_b_delta": 2.949029909160572e-16
+    }
+  ]
+}
