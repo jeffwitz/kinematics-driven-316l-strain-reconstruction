@@ -57,7 +57,7 @@ def _factory(
     local_linear_solver: str = "numpy",
     plane_stress_solver: str = "nested",
     coupled_block_solver: str = "numpy",
-    fused_state_threshold: int = 8_000,
+    fused_state_threshold: int = 12_000,
 ):
     count = 2 * angles.shape[0] * angles.shape[1]
     return create_plane_stress_material_batch(
@@ -131,7 +131,7 @@ def _forward(
     local_linear_solver: str = "numpy",
     plane_stress_solver: str = "nested",
     coupled_block_solver: str = "numpy",
-    fused_state_threshold: int = 8_000,
+    fused_state_threshold: int = 12_000,
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any]]:
     pixels = angles.shape[0]
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
@@ -213,7 +213,7 @@ def main() -> int:
         choices=("numpy", "numba-fused", "numba-fused-state", "auto"),
         default="numpy",
     )
-    parser.add_argument("--fused-state-threshold", type=int, default=8_000)
+    parser.add_argument("--fused-state-threshold", type=int, default=12_000)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
