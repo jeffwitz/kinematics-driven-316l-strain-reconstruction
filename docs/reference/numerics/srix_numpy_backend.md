@@ -384,19 +384,44 @@ pre-warmed, interleaved with its control, and has the same global trajectory.
 For this reason, the validated status is “equivalent high-performance native
 path”, not “a universal 2.12x speedup”.
 
-### MFront comparison: two different questions
+### MFront comparison: direct P43 references and a separate J2 benchmark
 
-There are two MFront comparisons in the repository, and they answer different
-questions.
+There are two kinds of MFront evidence in the repository, and they answer
+different questions.
 
-1. **Native P43 SRIX equivalence.**  The P43 native reports compare the
-   displacement fields to the archived identified F fields.  They do not
-   contain a direct MFront SRIX/MGIS M100 run.  Therefore this page does not
-   claim that the native SRIX wall time is faster than MFront SRIX.
-2. **Backend context benchmark.**  The independent
-   `plane_stress_backend_performance_100x100_v1` benchmark is a homogeneous
-   J2, 100 x 100, 20-increment test (not P43 SRIX and not EBSD).  It gives a
-   reproducible view of the generic MFront plane-stress routes:
+**Direct P43 SRIX/MGIS references exist.**  The script
+`scripts/run_p0043_m20_c_f_forward_identified.py` runs the qualified
+`mfront-3d-condensed-plane-stress` behaviour for both element orders on M20.
+The M100 script uses the same MFront route for the larger corrected-F and
+historical-C forwards.  Their headline results are:
+
+| Direct MFront P43 run | Mesh/path | Wall time | RAW RMS | GMRES | max verification residual |
+|---|---|---:|---:|---:|---:|
+| M20, C mapping | 20 x 20, 32 steps | 11.828 s | `4.187305e-6 mm` | 2393 | `5.40e-7` |
+| M20, F mapping | 20 x 20, 32 steps | 13.228 s | `3.576405e-6 mm` | 2379 | `5.80e-7` |
+| M100, C mapping | 100 x 100, 64 steps | 406.528 s | `2.251707e-5 mm` | 9005 | `5.48e-12` |
+| M100, F mapping | 100 x 100, 64 steps | 358.237 s elapsed (`326.244 s` solver) | `2.813641e-5 mm` | 7999 | `9.30e-8` |
+
+The corresponding artifacts are
+`validation/reference_data/p0043_m20_c_f_forward_identified_v1/report.json`,
+`validation/reference_data/p0043_c_m100_forward_identified_v1/report.json`
+and
+`validation/reference_data/p0043_f_m100_forward_identified_v1/report.json`.
+These are genuine MFront SRIX forwards and are therefore suitable references
+for checking native fields, stresses and EVM on the same geometry when the
+parameters, crop and load path are matched.
+
+The native NumPy M100 scaling table above is a different campaign: it uses a
+32-step crop and a different identified parameter/crop provenance.  Its
+477--212 s chronology must not be presented as a direct MFront-versus-NumPy
+race.  A strict performance comparison requires rerunning MFront and NumPy
+with identical inputs and selected options; the existing direct MFront P43
+reports are nevertheless the correct constitutive reference artifacts.
+
+**Separate backend context benchmark.**  The independent
+`plane_stress_backend_performance_100x100_v1` benchmark is a homogeneous
+J2, 100 x 100, 20-increment test (not P43 SRIX and not EBSD).  It gives a
+reproducible view of the generic MFront plane-stress routes:
 
 | Backend (J2 100 x 100) | Process wall median | Solver wall median | Constitutive median | Newton | max plane-stress residual |
 |---|---:|---:|---:|---:|---:|
