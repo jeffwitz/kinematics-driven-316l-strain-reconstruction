@@ -72,13 +72,18 @@ def matches(entry: dict[str, str], path: str) -> bool:
 
 
 def resolve_target(source: str, target: str) -> bool:
+    return resolve_path(source, target) is not None
+
+
+def resolve_path(source: str, target: str) -> str | None:
     target = target.strip().strip("`")
     if not target or target.startswith(":") or target.startswith("#"):
-        return True
+        return None
     if target.startswith("/"):
         candidate = DOC_ROOT / target.lstrip("/")
     else:
         candidate = DOC_ROOT / Path(source).parent / target
+    candidate = candidate.resolve()
     candidates = [candidate]
     if candidate.suffix == "":
         candidates += [
@@ -87,7 +92,10 @@ def resolve_target(source: str, target: str) -> bool:
             candidate / "index.md",
             candidate / "index.rst",
         ]
-    return any(item.is_file() for item in candidates)
+    for item in candidates:
+        if item.is_file():
+            return str(item.relative_to(DOC_ROOT))
+    return None
 
 
 def navigation_targets(path: str, text: str) -> list[str]:
@@ -109,6 +117,37 @@ def navigation_targets(path: str, text: str) -> list[str]:
     for match in re.finditer(r"\{doc\}`(?:[^<`]*<)?([^>`\s]+)(?:>)?`", text):
         targets.append(match.group(1))
     return targets
+
+
+def manifest_entry(entries: list[dict[str, str]], path: str) -> dict[str, str] | None:
+    exact = [entry for entry in entries if entry.get("path") == path]
+    found = exact or [entry for entry in entries if matches(entry, path)]
+    return found[0] if len(found) == 1 else None
+
+
+def reachable_from(entries: list[dict[str, str]], start: str, target: str) -> bool:
+    pending = [start]
+    seen: set[str] = set()
+    while pending:
+        current = pending.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        if current == target:
+            return True
+        source = DOC_ROOT / current
+        if not source.is_file():
+            continue
+        for raw_target in navigation_targets(current, source.read_text(errors="replace")):
+            resolved = resolve_path(current, raw_target)
+            if resolved is not None:
+                pending.append(resolved)
+    return False
+
+
+def declared_marker(text: str, label: str) -> str | None:
+    match = re.search(rf"^\*\*{re.escape(label)}:\*\*\s+(.+?)\s*$", text, re.MULTILINE)
+    return match.group(1).strip() if match else None
 
 
 def main() -> int:
@@ -158,6 +197,12 @@ def main() -> int:
         ):
             errors.append(f"{path}: current substantive page cannot remain at docs root")
         text = (DOC_ROOT / path).read_text(errors="replace")
+        for label, value in (("Mode", entry.get("mode")), ("Domain", entry.get("domain"))):
+            marker = declared_marker(text, label)
+            if marker is not None and marker != value:
+                errors.append(
+                    f"{path}: declared {label} {marker!r} disagrees with manifest {value!r}"
+                )
         for target in navigation_targets(path, text):
             if not resolve_target(path, target):
                 errors.append(f"{path}: navigation target does not exist: {target}")
@@ -171,18 +216,69 @@ def main() -> int:
             if not isinstance(subject, dict) or not subject.get("name"):
                 errors.append("scientific coverage: every subject needs a name")
                 continue
-            required = {"explanation", "reference", "how_to", "evidence"}
+            required = {"explanation", "reference", "how_to", "evidence", "status"}
             missing = sorted(required - subject.keys())
             if missing:
                 errors.append(
                     f"coverage {subject.get('name')}: missing paths: {', '.join(missing)}"
                 )
+            status = subject.get("status")
+            if status not in {"complete", "routed", "partial"}:
+                errors.append(
+                    f"coverage {subject.get('name')}: invalid status {status!r}"
+                )
             for key, target in subject.items():
-                if key == "name":
+                if key in {"name", "status"}:
                     continue
                 if not isinstance(target, str) or not (DOC_ROOT / target).is_file():
                     errors.append(
                         f"coverage {subject.get('name')}: {key} target does not exist: {target}"
+                    )
+                    continue
+                entry = manifest_entry(entries, target)
+                if entry is None:
+                    errors.append(
+                        f"coverage {subject.get('name')}: {key} target has no unique "
+                        f"manifest entry: {target}"
+                    )
+                    continue
+                if status == "complete" and entry.get("status") in {
+                    "historical",
+                    "internal",
+                    "provisional",
+                }:
+                    errors.append(
+                        f"coverage {subject.get('name')}: {key} target is not current: {target}"
+                    )
+                if status == "complete" and entry.get("navigation") == "legacy":
+                    errors.append(
+                        f"coverage {subject.get('name')}: {key} target uses legacy "
+                        f"navigation: {target}"
+                    )
+                expected_modes = {
+                    "tutorial": {"tutorial"},
+                    "how_to": {"how-to"},
+                    "reference": {"reference"},
+                    "explanation": {"explanation"},
+                    "evidence": {"reference", "explanation", "portal"},
+                }
+                if key in expected_modes and entry.get("mode") not in expected_modes[key]:
+                    errors.append(
+                        f"coverage {subject.get('name')}: {key} target has mode "
+                        f"{entry.get('mode')!r}, expected {sorted(expected_modes[key])}"
+                    )
+                roots = {
+                    "tutorial": "tutorials/index.md",
+                    "how_to": "how-to/index.md",
+                    "reference": "reference/index.md",
+                    "explanation": "explanation/index.md",
+                    "evidence": "evidence/index.md",
+                }
+                root = roots.get(key)
+                if status == "complete" and root and not reachable_from(entries, root, target):
+                    errors.append(
+                        f"coverage {subject.get('name')}: {key} target is not reachable "
+                        f"from {root}: {target}"
                     )
 
     if errors:

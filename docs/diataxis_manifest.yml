@@ -39,9 +39,19 @@ pages:
     domain: software
     status: current
     navigation: how-to/installation
+  - path: how-to/installation/build_mfront.md
+    mode: how-to
+    domain: crystal-plasticity
+    status: current
+    navigation: how-to/installation
   - glob: "how-to/data/*.md"
     mode: how-to
     domain: dic
+    status: current
+    navigation: how-to/data
+  - path: how-to/data/inspect_ebsd_registration.md
+    mode: how-to
+    domain: crystal-plasticity
     status: current
     navigation: how-to/data
   - glob: "how-to/mechanics/*.md"
@@ -49,9 +59,34 @@ pages:
     domain: reconstruction
     status: current
     navigation: how-to/mechanics
+  - path: how-to/mechanics/use_reduced_integration.md
+    mode: how-to
+    domain: constitutive
+    status: current
+    navigation: how-to/mechanics
+  - path: how-to/mechanics/compare_fields.md
+    mode: how-to
+    domain: evidence
+    status: current
+    navigation: how-to/mechanics
+  - path: how-to/mechanics/inspect_spectral_convergence.md
+    mode: how-to
+    domain: spectral
+    status: current
+    navigation: how-to/mechanics
+  - path: how-to/mechanics/run_full_dirichlet_spectral.md
+    mode: how-to
+    domain: spectral
+    status: current
+    navigation: how-to/mechanics
   - glob: "how-to/crystal-plasticity/*.md"
     mode: how-to
     domain: crystal-plasticity
+    status: current
+    navigation: how-to/crystal-plasticity
+  - path: how-to/crystal-plasticity/run_tet2_srix.md
+    mode: how-to
+    domain: spectral
     status: current
     navigation: how-to/crystal-plasticity
   - glob: "how-to/identification/*.md"
@@ -62,6 +97,11 @@ pages:
   - glob: "how-to/reproduce/*.md"
     mode: how-to
     domain: evidence
+    status: current
+    navigation: how-to/reproduce
+  - path: how-to/reproduce/reproduce_srix_meric_comparison.md
+    mode: how-to
+    domain: crystal-plasticity
     status: current
     navigation: how-to/reproduce
   - glob: "how-to/extend/*.md"
@@ -94,6 +134,11 @@ pages:
     domain: scientific
     status: current
     navigation: reference/scientific
+  - path: reference/scientific/nonlocal_parameters.md
+    mode: reference
+    domain: constitutive
+    status: current
+    navigation: reference/scientific
   - glob: "reference/data/*.md"
     mode: reference
     domain: data
@@ -117,6 +162,11 @@ pages:
   - glob: "reference/numerics/*.md"
     mode: reference
     domain: numerics
+    status: current
+    navigation: reference/numerics
+  - path: reference/numerics/native_srix_backend.md
+    mode: reference
+    domain: crystal-plasticity
     status: current
     navigation: reference/numerics
   - path: reference/numerics/srix_numpy_backend.md
@@ -149,9 +199,34 @@ pages:
     domain: constitutive
     status: current
     navigation: explanation/constitutive
+  - path: explanation/constitutive/forest_rubin_srix.md
+    mode: explanation
+    domain: crystal-plasticity
+    status: current
+    navigation: explanation/constitutive
+  - path: explanation/constitutive/structural_plane_stress.md
+    mode: explanation
+    domain: plane-stress
+    status: current
+    navigation: explanation/constitutive
   - glob: "explanation/native-srix/*.md"
     mode: explanation
     domain: crystal-plasticity
+    status: current
+    navigation: explanation/native-srix
+  - path: explanation/native-srix/coupled_plane_stress.md
+    mode: explanation
+    domain: plane-stress
+    status: current
+    navigation: explanation/native-srix
+  - path: explanation/native-srix/gpu_path.md
+    mode: explanation
+    domain: architecture
+    status: current
+    navigation: explanation/native-srix
+  - path: explanation/native-srix/optimization_strategy.md
+    mode: explanation
+    domain: architecture
     status: current
     navigation: explanation/native-srix
   - glob: "explanation/identification/*.md"

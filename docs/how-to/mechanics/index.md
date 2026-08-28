@@ -8,6 +8,7 @@
 - {doc}`run_coupled_reconstruction`
 - {doc}`inspect_spectral_convergence`
 - {doc}`compare_fields`
+- {doc}`use_reduced_integration`
 
 ```{toctree}
 :hidden:
@@ -17,4 +18,5 @@ run_full_dirichlet_spectral
 run_coupled_reconstruction
 inspect_spectral_convergence
 compare_fields
+use_reduced_integration
 ```
