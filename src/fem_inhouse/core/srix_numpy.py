@@ -958,7 +958,10 @@ class SrixNumpyCondensedPlaneStressBatch:
         plane_stress_max_iterations: int | None = None,
         local_transverse_predictor: Literal["committed", "tangent"] = "committed",
         plane_stress_solver: Literal["nested", "coupled"] = "nested",
-        coupled_block_solver: Literal["numpy", "numba-fused", "numba-fused-state"] = "numpy",
+        coupled_block_solver: Literal[
+            "numpy", "numba-fused", "numba-fused-state", "auto"
+        ] = "numpy",
+        fused_state_threshold: int = 8_000,
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)
@@ -971,13 +974,19 @@ class SrixNumpyCondensedPlaneStressBatch:
             raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
         if plane_stress_solver not in {"nested", "coupled"}:
             raise ValueError("plane_stress_solver must be 'nested' or 'coupled'")
-        if coupled_block_solver not in {"numpy", "numba-fused", "numba-fused-state"}:
+        if coupled_block_solver not in {
+            "numpy", "numba-fused", "numba-fused-state", "auto"
+        }:
             raise ValueError(
-                "coupled_block_solver must be 'numpy', 'numba-fused', or 'numba-fused-state'"
+                "coupled_block_solver must be 'numpy', 'numba-fused', "
+                "'numba-fused-state', or 'auto'"
             )
+        if isinstance(fused_state_threshold, bool) or fused_state_threshold < 1:
+            raise ValueError("fused_state_threshold must be a positive integer")
         self._local_transverse_predictor = local_transverse_predictor
         self._plane_stress_solver = plane_stress_solver
         self._coupled_block_solver = coupled_block_solver
+        self._fused_state_threshold = int(fused_state_threshold)
         # These orientation/elasticity blocks are invariant during a local
         # Newton solve.  Cache them once rather than rebuilding them per
         # coupled iteration.
@@ -1035,6 +1044,10 @@ class SrixNumpyCondensedPlaneStressBatch:
         return self._coupled_block_solver
 
     @property
+    def fused_state_threshold(self) -> int:
+        return self._fused_state_threshold
+
+    @property
     def timing_statistics(self) -> dict[str, Any]:
         values = self._bridge.timing_statistics
         values["plane_stress_seconds"] = self._plane_stress_seconds
@@ -1058,6 +1071,7 @@ class SrixNumpyCondensedPlaneStressBatch:
                 "coupled_block_seconds": self._coupled_block_seconds,
                 "coupled_line_search_seconds": self._coupled_line_search_seconds,
                 "coupled_direct_tangent_seconds": self._coupled_direct_tangent_seconds,
+                "fused_state_threshold": self._fused_state_threshold,
             }
         )
         return values
@@ -1117,7 +1131,9 @@ class SrixNumpyCondensedPlaneStressBatch:
         dden = bridge.parameters.d * sign_dg
         dda = (dnum * den - num * dden) / (den * den)
 
-        if self._coupled_block_solver == "numba-fused":
+        if self._coupled_block_solver in {
+            "numba-fused", "numba-fused-state", "auto"
+        }:
             from fem_inhouse.core.small_linear_solvers import solve_coupled_tangent_numba
 
             ce_global = self._coupled_ce_global
@@ -1325,7 +1341,11 @@ class SrixNumpyCondensedPlaneStressBatch:
             fused_state_deltas: tuple[FloatArray, FloatArray] | None = None
             fused_newly_converged: NDArray[np.bool_] | None = None
             fused_success: NDArray[np.bool_] | None = None
-            if self._coupled_block_solver == "numba-fused-state":
+            use_fused_state = self._coupled_block_solver == "numba-fused-state" or (
+                self._coupled_block_solver == "auto"
+                and np.count_nonzero(~converged) >= self._fused_state_threshold
+            )
+            if use_fused_state:
                 from fem_inhouse.core.small_linear_solvers import (
                     solve_coupled_state_block_numba,
                 )
@@ -1399,7 +1419,9 @@ class SrixNumpyCondensedPlaneStressBatch:
                 dnum = 1.0 - bridge.parameters.d * a0[pending] * sign_dg[pending]
                 dden = bridge.parameters.d * sign_dg[pending]
                 dda = (dnum * den - num * dden) / (den * den)
-            if fused_state_deltas is None and self._coupled_block_solver == "numba-fused":
+            if fused_state_deltas is None and self._coupled_block_solver in {
+                "numba-fused", "auto"
+            }:
                 from fem_inhouse.core.small_linear_solvers import solve_coupled_block_numba
 
                 delta_g, delta_b, success = solve_coupled_block_numba(
