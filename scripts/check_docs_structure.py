@@ -31,6 +31,17 @@ VALID_DOMAINS = {
     "numerics",
     "legacy",
 }
+VALID_BLOCKERS = {
+    "missing_tutorial",
+    "missing_how_to",
+    "missing_reference",
+    "missing_explanation",
+    "missing_evidence",
+    "content_review_required",
+    "insufficient_specificity",
+    "historical_content_not_fully_migrated",
+    "scientific_status_not_frozen",
+}
 
 
 def pages() -> list[str]:
@@ -116,6 +127,26 @@ def navigation_targets(path: str, text: str) -> list[str]:
                 targets.append(value)
     for match in re.finditer(r"\{doc\}`(?:[^<`]*<)?([^>`\s]+)(?:>)?`", text):
         targets.append(match.group(1))
+    return targets
+
+
+def toctree_targets(text: str) -> list[str]:
+    """Return only primary menu entries, excluding inline cross-references."""
+    targets: list[str] = []
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        myst = bool(re.match(r"^\s*```\{toctree\}", line))
+        rst = bool(re.match(r"^\s*\.\.\s+toctree::", line))
+        if not (myst or rst):
+            continue
+        for candidate in lines[index + 1 :]:
+            if myst and candidate.strip().startswith("```"):
+                break
+            if rst and candidate and not candidate[0].isspace():
+                break
+            value = candidate.strip()
+            if value and not value.startswith(":") and not value.startswith("#"):
+                targets.append(value)
     return targets
 
 
@@ -206,6 +237,22 @@ def main() -> int:
         for target in navigation_targets(path, text):
             if not resolve_target(path, target):
                 errors.append(f"{path}: navigation target does not exist: {target}")
+        if entry.get("status") == "current":
+            for target in toctree_targets(text):
+                resolved = resolve_path(path, target)
+                if resolved is None:
+                    continue
+                target_entry = manifest_entry(entries, resolved)
+                if target_entry is None:
+                    continue
+                if target_entry.get("status") in {"historical", "internal", "provisional"}:
+                    errors.append(
+                        f"{path}: current toctree exposes non-current target: {resolved}"
+                    )
+                if target_entry.get("navigation") == "legacy":
+                    errors.append(
+                        f"{path}: current toctree exposes legacy target: {resolved}"
+                    )
 
     try:
         coverage = load_coverage()
@@ -227,8 +274,15 @@ def main() -> int:
                 errors.append(
                     f"coverage {subject.get('name')}: invalid status {status!r}"
                 )
+            blockers = subject.get("blockers", [])
+            if not isinstance(blockers, list) or any(
+                blocker not in VALID_BLOCKERS for blocker in blockers
+            ):
+                errors.append(
+                    f"coverage {subject.get('name')}: invalid blockers {blockers!r}"
+                )
             for key, target in subject.items():
-                if key in {"name", "status"}:
+                if key in {"name", "status", "blockers"}:
                     continue
                 if not isinstance(target, str) or not (DOC_ROOT / target).is_file():
                     errors.append(

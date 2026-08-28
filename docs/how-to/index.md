@@ -40,8 +40,6 @@ installation/index
 data/index
 mechanics/index
 mechanics/run_full_dirichlet_spectral
-mechanics/run_coupled_reconstruction
-run_coupled_reconstruction
 crystal-plasticity/index
 crystal-plasticity/qualify_native_srix_backend
 identification/index

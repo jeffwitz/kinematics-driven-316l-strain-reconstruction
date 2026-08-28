@@ -109,6 +109,11 @@ pages:
     domain: software
     status: current
     navigation: how-to/extend
+  - path: how-to/extend/qualify_fftw_backend.md
+    mode: how-to
+    domain: spectral
+    status: current
+    navigation: how-to/extend
   - glob: "how-to/maintenance/*.md"
     mode: how-to
     domain: operations
@@ -144,6 +149,26 @@ pages:
     domain: constitutive
     status: current
     navigation: reference/scientific
+  - path: reference/scientific/model_contract.md
+    mode: reference
+    domain: scientific
+    status: current
+    navigation: reference/scientific
+  - path: reference/scientific/tensor_conventions.md
+    mode: reference
+    domain: numerics
+    status: current
+    navigation: reference/scientific
+  - path: reference/scientific/srix_parameter_sets.md
+    mode: reference
+    domain: crystal-plasticity
+    status: current
+    navigation: reference/scientific
+  - path: reference/scientific/fcc_interaction_matrix_mapping.md
+    mode: reference
+    domain: crystal-plasticity
+    status: current
+    navigation: reference/scientific
   - path: reference/scientific/observation_operator.md
     mode: reference
     domain: measurement
@@ -162,6 +187,11 @@ pages:
   - glob: "reference/data/*.md"
     mode: reference
     domain: data
+    status: current
+    navigation: reference/data
+  - path: reference/data/dic_axis_conventions.md
+    mode: reference
+    domain: dic
     status: current
     navigation: reference/data
   - glob: "reference/software/*.md"

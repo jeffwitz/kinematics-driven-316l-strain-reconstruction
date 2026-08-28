@@ -6,6 +6,8 @@ from scripts.check_docs_structure import (
     manifest_entry,
     pages,
     reachable_from,
+    resolve_path,
+    toctree_targets,
 )
 
 
@@ -67,3 +69,21 @@ def test_phase3_canonical_reference_targets_are_current() -> None:
         assert entry["status"] == "current"
         assert entry["navigation"] != "legacy"
         assert entry["domain"] == domain
+
+
+def test_current_toctrees_do_not_expose_noncurrent_pages() -> None:
+    entries = load_manifest()
+    for path in pages():
+        entry = manifest_entry(entries, path)
+        assert entry is not None
+        if entry["status"] != "current":
+            continue
+        text = (DOC_ROOT / path).read_text()
+        for raw_target in toctree_targets(text):
+            target = resolve_path(path, raw_target)
+            if target is None:
+                continue
+            target_entry = manifest_entry(entries, target)
+            assert target_entry is not None
+            assert target_entry["status"] == "current"
+            assert target_entry["navigation"] != "legacy"
