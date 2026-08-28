@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import time
 from pathlib import Path
@@ -104,13 +105,17 @@ def _make_inputs(rotations, count, rng):
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sizes", nargs="+", type=int, default=[800, 2_000, 5_000, 10_000, 20_000])
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    args = parser.parse_args()
     _, angles, _ = _load_inputs(_centered_crop(20))
     rotations = SrixNumpy3DMaterialPointBatch(
         point_count=angles.size // 2,
         rotation_global_to_material=np.broadcast_to(np.eye(3), (angles.size // 2, 3, 3)),
     )._rotation
     rng = np.random.default_rng(20260828)
-    sizes = [800, 2_000, 5_000, 10_000, 20_000]
+    sizes = args.sizes
     # Compile all kernels outside the measured loops.
     warm = _make_inputs(rotations, sizes[0], rng)
     wrapper, values, slips, p_base, a_base, elastic_base = warm
@@ -194,8 +199,9 @@ def main() -> int:
                 "max_delta_b_delta": float(np.max(np.abs(reference[3] - fused[12]))),
             }
         )
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    (OUTPUT / "report.json").write_text(
+    output = args.output if args.output.is_absolute() else ROOT / args.output
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "report.json").write_text(
         json.dumps({"schema_version": 1, "status": "completed", "rows": rows}, indent=2),
         encoding="utf-8",
     )

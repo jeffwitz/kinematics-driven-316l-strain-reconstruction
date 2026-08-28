@@ -57,6 +57,7 @@ def _factory(
     local_linear_solver: str = "numpy",
     plane_stress_solver: str = "nested",
     coupled_block_solver: str = "numpy",
+    fused_state_threshold: int = 8_000,
 ):
     count = 2 * angles.shape[0] * angles.shape[1]
     return create_plane_stress_material_batch(
@@ -87,6 +88,7 @@ def _factory(
             "batch_size": batch_size,
             "local_linear_solver": local_linear_solver,
             "coupled_block_solver": coupled_block_solver,
+            "fused_state_threshold": fused_state_threshold,
             "crystal_orientation": {
                 "mode": "ebsd",
                 "euler_bunge_deg": angles,
@@ -129,6 +131,7 @@ def _forward(
     local_linear_solver: str = "numpy",
     plane_stress_solver: str = "nested",
     coupled_block_solver: str = "numpy",
+    fused_state_threshold: int = 8_000,
 ) -> tuple[list[TwoStateIncrementFields], dict[str, Any]]:
     pixels = angles.shape[0]
     grid = StructuredGrid2D(pixels, pixels, PIXEL_SIZE_MM * pixels, PIXEL_SIZE_MM * pixels)
@@ -143,6 +146,7 @@ def _forward(
         local_linear_solver,
         plane_stress_solver,
         coupled_block_solver,
+        fused_state_threshold,
     )
     history = np.stack([np.zeros_like(path[0].boundary), *[step.boundary for step in path]])
     fields: list[TwoStateIncrementFields] = []
@@ -172,6 +176,7 @@ def _forward(
         "local_linear_solver": local_linear_solver,
         "plane_stress_solver": plane_stress_solver,
         "coupled_block_solver": coupled_block_solver,
+        "fused_state_threshold": fused_state_threshold,
     }
     timing_result["material"] = material.timing_statistics
     timing_result["global_newton_iterations_per_increment"] = list(
@@ -205,9 +210,10 @@ def main() -> int:
     parser.add_argument("--plane-stress-solver", choices=("nested", "coupled"), default="nested")
     parser.add_argument(
         "--coupled-block-solver",
-        choices=("numpy", "numba-fused", "numba-fused-state"),
+        choices=("numpy", "numba-fused", "numba-fused-state", "auto"),
         default="numpy",
     )
+    parser.add_argument("--fused-state-threshold", type=int, default=8_000)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -233,6 +239,7 @@ def main() -> int:
             args.local_linear_solver,
             args.plane_stress_solver,
             args.coupled_block_solver,
+            args.fused_state_threshold,
         )
     except Exception as error:
         failure = {
@@ -250,6 +257,7 @@ def main() -> int:
             "local_linear_solver": args.local_linear_solver,
             "plane_stress_solver": args.plane_stress_solver,
             "coupled_block_solver": args.coupled_block_solver,
+            "fused_state_threshold": args.fused_state_threshold,
             "elapsed_seconds_wall": time.perf_counter() - started,
             "error": f"{type(error).__name__}: {error}",
             "traceback": traceback.format_exc(),

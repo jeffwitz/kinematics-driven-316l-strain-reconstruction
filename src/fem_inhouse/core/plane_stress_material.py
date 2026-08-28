@@ -702,6 +702,7 @@ def create_plane_stress_material_batch(
         dask_workers = options.pop("dask_workers", 1)
         local_linear_solver = options.pop("local_linear_solver", "numpy")
         coupled_block_solver = options.pop("coupled_block_solver", "numpy")
+        fused_state_threshold = options.pop("fused_state_threshold", 8_000)
         legacy_iterations = options.pop("maximum_local_iterations", None)
         material_iterations = options.pop(
             "material_newton_max_iterations",
@@ -742,6 +743,7 @@ def create_plane_stress_material_batch(
             ),
             plane_stress_solver=requested_plane_stress_solver,
             coupled_block_solver=str(coupled_block_solver),
+            fused_state_threshold=int(fused_state_threshold),
         )
 
     if backend == "python":

@@ -270,3 +270,24 @@ def test_numpy_srix_fused_state_block_matches_numpy_block() -> None:
     assert np.allclose(actual.stress_in_plane_mpa, expected.stress_in_plane_mpa, rtol=1.0e-10)
     assert np.allclose(actual.tangent_in_plane_mpa, expected.tangent_in_plane_mpa, rtol=1.0e-10)
     assert np.allclose(actual.plane_stress_residual_mpa, expected.plane_stress_residual_mpa)
+
+
+def test_numpy_srix_auto_dispatch_respects_fused_state_threshold() -> None:
+    strain = np.array(
+        [[1.0e-3, -2.0e-4, 3.0e-4], [2.0e-3, 4.0e-4, -1.0e-4]],
+    )
+    fused_state = SrixNumpyCondensedPlaneStressBatch(
+        SrixNumpy3DMaterialPointBatch(point_count=2),
+        plane_stress_solver="coupled",
+        coupled_block_solver="numba-fused-state",
+    )
+    auto = SrixNumpyCondensedPlaneStressBatch(
+        SrixNumpy3DMaterialPointBatch(point_count=2),
+        plane_stress_solver="coupled",
+        coupled_block_solver="auto",
+        fused_state_threshold=1,
+    )
+    expected = fused_state.evaluate(strain, time_increment=1.0)
+    actual = auto.evaluate(strain, time_increment=1.0)
+    assert np.allclose(actual.stress_in_plane_mpa, expected.stress_in_plane_mpa, rtol=1.0e-10)
+    assert np.allclose(actual.tangent_in_plane_mpa, expected.tangent_in_plane_mpa, rtol=1.0e-10)
