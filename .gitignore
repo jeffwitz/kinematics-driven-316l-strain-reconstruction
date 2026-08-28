@@ -59,6 +59,11 @@ validation/_generated/**/*.weights
 # Large/reproducible scratch products from the plastic-observability ladder.
 # Their compact JSON summaries and the scripts that regenerate them are the
 # versioned evidence; the full fields stay local.
+validation/_generated/**/*.npz
+validation/_generated/**/*.npy
+validation/_generated/**/*.pt
+validation/_generated/**/*.pth
+validation/_generated/**/*.checkpoint.*
 validation/_generated/shared_tensor_generator/fcc_slip_fields.npz
 validation/_generated/shared_tensor_generator/femu_smoke_*/
 validation/_generated/shared_tensor_generator/krylov_trajectories.r*.npz
