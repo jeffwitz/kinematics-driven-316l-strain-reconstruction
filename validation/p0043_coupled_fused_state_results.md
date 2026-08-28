@@ -26,6 +26,21 @@ Les champs restent proches : déplacement maximal `1.94e-12 mm`, déformation
 ## Décision
 
 Le kernel est fonctionnel mais ne constitue pas encore une optimisation sur
-M20. Il reste activable explicitement pour de futurs benchmarks de grande
-taille ; il ne change aucun défaut de production et aucun M100 n'est lancé
-sur la base de ce résultat seul.
+M20. Il reste activable explicitement pour les benchmarks de grande taille et
+ne change aucun défaut de production.
+
+## Microbenchmark de crossover
+
+Sur des états identiques préchauffés, le ratio `fused-state / vectorisé +
+fused-block` vaut `1.53`, `1.77`, `1.54`, `0.80` et `0.78` pour `N = 800`,
+`2000`, `5000`, `10000` et `20000`. Le crossover apparaît donc entre 5000 et
+10000 points.
+
+## M100
+
+Le seuil de gain étant franchi à la taille M100, un unique forward a été
+exécuté : `211.69 s`, 124 Newton globaux et 3390 GMRES. Comparé au run
+`numba-fused` tangent précédent (`243.72 s`, 140 Newton, 3926 GMRES), le RAW
+RMS diffère de `3.0e-15` et les champs diffèrent de `8.5e-13 mm` au maximum.
+La comparaison wall-time reste une mesure de runs distincts ; elle confirme
+toutefois que la fusion devient pertinente sur le grand batch.
