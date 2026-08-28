@@ -1,5 +1,7 @@
 data/raw/case_study/*.npy filter=lfs diff=lfs merge=lfs -text
 references/legacy_abaqus/*.py -text -diff
-validation/reference_data/**/*.npy filter=lfs diff=lfs merge=lfs -text
-validation/reference_data/mfront_performance_v1/final_states.npz filter=lfs diff=lfs merge=lfs -text
-validation/reference_data/plane_stress_backend_performance_100x100_v1/runs/*/fields.npz filter=lfs diff=lfs merge=lfs -text
+# LFS is intentionally opt-in for durable golden references only.  Existing
+# legacy pointers under validation/reference_data remain readable, but new
+# validation outputs must not acquire LFS tracking through a broad glob.
+validation/golden/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/golden/**/*.npz filter=lfs diff=lfs merge=lfs -text

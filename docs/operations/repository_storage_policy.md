@@ -1,5 +1,13 @@
 # Repository storage policy
 
+This repository has a fast, effective MFront reference backend, but MFront is
+not a practical route to a future GPU implementation.  The native Python SRIX
+backend is therefore being built as a portable CPU/GPU architecture: NumPy is
+the qualified CPU implementation today, with Numba kernels for small local
+systems and a future CuPy backend as the GPU target.  That work produces many
+intermediate fields and benchmark snapshots.  They are evidence during
+development, not automatically durable repository artefacts.
+
 ## Why this policy exists
 
 The repository contains a large amount of numerical evidence generated while
@@ -16,6 +24,11 @@ The repository therefore separates three kinds of material:
    regression tests and backend equivalence checks.
 3. **Generated or historical fields**: reproducible outputs kept outside the
    normal Git history and referenced by their report/provenance when needed.
+
+The governing rule is **golden only** for LFS:
+
+> Git stores the scientific proof and the recipe to reproduce it.  It does not
+> store every field produced while developing or benchmarking the solver.
 
 ## Cleanup performed on 2026-08-28
 
@@ -56,6 +69,49 @@ MFront references, article data, or quantitative reports.
   explicit exception is required before adding a generated binary reference.
 - Git LFS is reserved for intentionally retained golden arrays, not as a way
   to archive every intermediate output.
+
+### Where a new artefact belongs
+
+| Artefact | Location | Versioning |
+|---|---|---|
+| source, tests, scripts, parameters | repository | Git |
+| report, metrics, manifest, command line | `validation/reports/`, `validation/metrics/`, or `validation/manifests/` | Git |
+| small deterministic test fixture | tests or `validation/golden/` | Git; LFS only when explicitly justified |
+| full simulation field, DIC history, checkpoint, benchmark snapshot | external archive | Git stores a manifest and SHA-256 |
+| generated plots or `_generated` output | local `validation/_generated/` | ignored by Git |
+
+Before committing a binary or a large result, ask whether it is a stable
+golden reference needed by a regression test.  By default, calculation output
+is generated locally and ignored.  Do not add a new LFS rule under
+`validation/reference_data/`; use an explicit path under `validation/golden/`
+only after documenting why the object is durable and necessary.
+
+### Archiving a large campaign
+
+Keep a compressed archive outside Git/Git LFS, for example
+`p0043_srix_m100_20260828.tar.zst`, and commit a small manifest containing:
+
+```json
+{
+  "archive": "p0043_srix_m100_20260828.tar.zst",
+  "sha256": "...",
+  "source_commit": "...",
+  "command": "...",
+  "description": "...",
+  "status": "archived"
+}
+```
+
+The archive may currently be institutional or local; the policy does not
+prescribe a particular external service.
+
+### Automated guard
+
+Run `python scripts/check_repository_storage.py` before committing.  It fails
+for a new Git-normal file larger than 20 MiB unless the path is explicitly
+whitelisted (currently `validation/golden/**`).  LFS pointers themselves are
+small and are not counted as payloads.  For a branch/PR comparison, pass its
+base commit with `--base origin/main`.
 
 ## Important limitation
 

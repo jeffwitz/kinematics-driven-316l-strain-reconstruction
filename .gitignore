@@ -69,3 +69,16 @@ validation/_generated/shared_tensor_generator/femu_smoke_*/
 validation/_generated/shared_tensor_generator/krylov_trajectories.r*.npz
 validation/_generated/shared_tensor_generator/probe200
 validation/_generated/shared_tensor_generator/tann_fcc_p43_run.npz
+
+# Generated campaign payloads: keep reports/manifests in Git, archive fields
+# and checkpoints externally.  `validation/golden/` is the explicit exception
+# for deliberately retained regression data.
+validation/**/fields*.npz
+validation/**/history*.npz
+validation/**/checkpoint*
+validation/**/*.pt
+validation/**/*.pth
+validation/**/*.weights
+validation/**/*.checkpoint.*
+!validation/golden/
+!validation/golden/**
