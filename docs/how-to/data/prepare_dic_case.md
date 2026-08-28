@@ -8,6 +8,7 @@
 3. Preserve the temporal path and valid mask.
 4. Record the observation operator and provenance in the case manifest.
 
-Use {doc}`../../reference/input_contract` and
-{doc}`../../reference/dic_axis_conventions` for the exact fields. The
-legacy end-to-end commands remain in {doc}`../prepare_data`.
+Use {doc}`../../reference/data/input_contract` and
+{doc}`../../reference/data/dic_axis_conventions` for the exact fields. The
+case-preparation command is recorded in the campaign manifest; no hidden
+transpose, filtering or baseline subtraction is permitted.

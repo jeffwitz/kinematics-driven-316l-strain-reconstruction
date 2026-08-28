@@ -10,12 +10,12 @@ the retained centre is separated from the nonlocal boundary.
 
 ## 2. Run a local reference
 
-Use {doc}`../how-to/run_local_reconstruction` to create one local campaign.
+Use {doc}`../how-to/mechanics/run_local_reconstruction` to create one local campaign.
 Record its mesh, loading and material hashes.
 
 ## 3. Add one moderate coupled candidate
 
-Use {doc}`../how-to/run_coupled_reconstruction` with a documented
+Use {doc}`../how-to/mechanics/run_coupled_reconstruction` with a documented
 $\ell>0$ and $H_\chi>0$. Keep every local and numerical setting unchanged.
 
 ## 4. Compare four fields
@@ -37,4 +37,4 @@ neighbourhood over which $\chi$ differs from local $p$.
 The coupled model changes plastic evolution, not merely the displayed output.
 One comparison cannot identify either parameter. Identification requires the
 discriminating F0/F1/F2 design in
-{doc}`../explanation/parameter_identification`.
+{doc}`../explanation/identification/identifiability`.

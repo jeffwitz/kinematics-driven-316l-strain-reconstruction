@@ -8,10 +8,10 @@ node. Its strain vector is
 $[\varepsilon_{11},\varepsilon_{22},\gamma_{12}]$ and its stress vector is
 $[\sigma_{11},\sigma_{22},\sigma_{12}]$.
 
-For native MFront plane stress, MFront solves its axial constraint internally
-and returns an already condensed tangent. For the 3D adapter, the local
-transverse unknowns are solved and the tangent is condensed before the global
-solver receives it.
+The three-traction crystal contract is not synonymous with every object named
+``PlaneStress``. A standard two-dimensional MFront behaviour enforces its own
+model-specific axial constraint. An anisotropic three-dimensional law used in
+this repository instead relaxes three transverse strain components.
 
 Complete $3\times3$ tensors are output products. They do not enter the global
 residual, tangent or Newton correction.
@@ -29,9 +29,19 @@ in-plane algorithmic tangent returned to the global solver is
 
 $$C^{PS}=C_{aa}-C_{ab}C_{bb}^{-1}C_{ba}.$$
 
-The repository provides native MFront plane stress, external 3-D condensation,
-structural plane-stress MFront and native SRIX nested/coupled closures. They
-share this contract but differ in where the local Newton solve is performed;
-the generic MFront bridge naturally uses the nested strategy.
+The available strategies are deliberately distinct:
+
+| strategy | local state | zero tractions | local solve |
+|---|---|---|---|
+| standard MFront `PlaneStress` | behaviour-specific 2-D state | behaviour-defined axial constraint | inside the behaviour |
+| external 3-D condensation | generic 3-D integrated state | `zz`, `xz`, `yz` | outer nested solve |
+| `StructuralPlaneStress3D` | 3-D MFront state | `zz`, `xz`, `yz` | structural MFront wrapper |
+| native SRIX nested | slips plus transverse strains | `zz`, `xz`, `yz` | nested local Newton |
+| native SRIX coupled | slips plus transverse strains | `zz`, `xz`, `yz` | one block local Newton |
+
+Only the last four entries implement the crystal three-traction contract. They
+share the physical constraint but differ in where the local Newton solve and
+consistent tangent are constructed; the generic MFront bridge naturally uses
+the nested strategy.
 
 The full structural derivation is in {doc}`mfront_structural_plane_stress`.

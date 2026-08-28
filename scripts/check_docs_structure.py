@@ -42,6 +42,16 @@ VALID_BLOCKERS = {
     "historical_content_not_fully_migrated",
     "scientific_status_not_frozen",
 }
+VALID_ROUTING_STATUSES = {"complete", "incomplete", "routed", "partial"}
+VALID_CONTENT_STATUSES = {"reviewed", "partial", "stub", "blocked"}
+VALID_SCIENTIFIC_STATUSES = {
+    "verified",
+    "supported",
+    "negative",
+    "provisional",
+    "open",
+    "historical",
+}
 
 
 def pages() -> list[str]:
@@ -169,7 +179,9 @@ def reachable_from(entries: list[dict[str, str]], start: str, target: str) -> bo
         source = DOC_ROOT / current
         if not source.is_file():
             continue
-        for raw_target in navigation_targets(current, source.read_text(errors="replace")):
+        # Reachability for a public menu is deliberately stricter than inline
+        # cross-reference reachability: only primary ``toctree`` edges count.
+        for raw_target in toctree_targets(source.read_text(errors="replace")):
             resolved = resolve_path(current, raw_target)
             if resolved is not None:
                 pending.append(resolved)
@@ -235,8 +247,22 @@ def main() -> int:
                     f"{path}: declared {label} {marker!r} disagrees with manifest {value!r}"
                 )
         for target in navigation_targets(path, text):
-            if not resolve_target(path, target):
+            resolved = resolve_path(path, target)
+            if resolved is None:
                 errors.append(f"{path}: navigation target does not exist: {target}")
+                continue
+            target_entry = manifest_entry(entries, resolved)
+            if (
+                entry.get("status") == "current"
+                and target_entry is not None
+                and (
+                    target_entry.get("status") in {"historical", "legacy"}
+                    or target_entry.get("navigation") == "legacy"
+                )
+            ):
+                errors.append(
+                    f"{path}: current page links to legacy target: {resolved}"
+                )
         if entry.get("status") == "current":
             for target in toctree_targets(text):
                 resolved = resolve_path(path, target)
@@ -263,16 +289,45 @@ def main() -> int:
             if not isinstance(subject, dict) or not subject.get("name"):
                 errors.append("scientific coverage: every subject needs a name")
                 continue
-            required = {"explanation", "reference", "how_to", "evidence", "status"}
+            required = {
+                "explanation",
+                "reference",
+                "evidence",
+                "status",
+                "routing_status",
+                "content_status",
+                "scientific_status",
+            }
             missing = sorted(required - subject.keys())
             if missing:
                 errors.append(
                     f"coverage {subject.get('name')}: missing paths: {', '.join(missing)}"
                 )
             status = subject.get("status")
-            if status not in {"complete", "routed", "partial"}:
+            routing_status = subject.get("routing_status")
+            if status not in VALID_ROUTING_STATUSES:
                 errors.append(
                     f"coverage {subject.get('name')}: invalid status {status!r}"
+                )
+            if routing_status not in VALID_ROUTING_STATUSES:
+                errors.append(
+                    f"coverage {subject.get('name')}: invalid routing_status "
+                    f"{routing_status!r}"
+                )
+            elif status != routing_status:
+                errors.append(
+                    f"coverage {subject.get('name')}: status and routing_status "
+                    "must agree"
+                )
+            if subject.get("content_status") not in VALID_CONTENT_STATUSES:
+                errors.append(
+                    f"coverage {subject.get('name')}: invalid content_status "
+                    f"{subject.get('content_status')!r}"
+                )
+            if subject.get("scientific_status") not in VALID_SCIENTIFIC_STATUSES:
+                errors.append(
+                    f"coverage {subject.get('name')}: invalid scientific_status "
+                    f"{subject.get('scientific_status')!r}"
                 )
             blockers = subject.get("blockers", [])
             if not isinstance(blockers, list) or any(
@@ -282,8 +337,24 @@ def main() -> int:
                     f"coverage {subject.get('name')}: invalid blockers {blockers!r}"
                 )
             for key, target in subject.items():
-                if key in {"name", "status", "blockers"}:
+                if key in {
+                    "name",
+                    "status",
+                    "routing_status",
+                    "content_status",
+                    "scientific_status",
+                    "blockers",
+                }:
                     continue
+                if isinstance(target, dict):
+                    if target.get("applicable") is False:
+                        if not target.get("reason"):
+                            errors.append(
+                                f"coverage {subject.get('name')}: {key} marked "
+                                "not applicable without a reason"
+                            )
+                        continue
+                    target = target.get("path")
                 if not isinstance(target, str) or not (DOC_ROOT / target).is_file():
                     errors.append(
                         f"coverage {subject.get('name')}: {key} target does not exist: {target}"
@@ -296,7 +367,7 @@ def main() -> int:
                         f"manifest entry: {target}"
                     )
                     continue
-                if status == "complete" and entry.get("status") in {
+                if routing_status == "complete" and entry.get("status") in {
                     "historical",
                     "internal",
                     "provisional",
@@ -304,7 +375,7 @@ def main() -> int:
                     errors.append(
                         f"coverage {subject.get('name')}: {key} target is not current: {target}"
                     )
-                if status == "complete" and entry.get("navigation") == "legacy":
+                if routing_status == "complete" and entry.get("navigation") == "legacy":
                     errors.append(
                         f"coverage {subject.get('name')}: {key} target uses legacy "
                         f"navigation: {target}"
@@ -329,7 +400,11 @@ def main() -> int:
                     "evidence": "evidence/index.md",
                 }
                 root = roots.get(key)
-                if status == "complete" and root and not reachable_from(entries, root, target):
+                if (
+                    routing_status == "complete"
+                    and root
+                    and not reachable_from(entries, root, target)
+                ):
                     errors.append(
                         f"coverage {subject.get('name')}: {key} target is not reachable "
                         f"from {root}: {target}"

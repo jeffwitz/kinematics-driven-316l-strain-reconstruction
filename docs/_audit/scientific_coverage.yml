@@ -2,6 +2,9 @@ version: 1
 subjects:
   - name: DIC and observation
     status: complete
+    routing_status: complete
+    content_status: reviewed
+    scientific_status: supported
     blockers: []
     explanation: explanation/measurement/dic_observation_limits.md
     reference: reference/scientific/observation_operator.md
@@ -9,6 +12,9 @@ subjects:
     evidence: reference/evidence/evidence_registry.md
   - name: EBSD and registration
     status: complete
+    routing_status: complete
+    content_status: reviewed
+    scientific_status: supported
     blockers: []
     explanation: explanation/measurement/ebsd_registration_and_orientation.md
     reference: reference/scientific/ebsd_orientation_contract.md
@@ -16,6 +22,9 @@ subjects:
     evidence: reference/evidence/evidence_registry.md
   - name: J2/Ludwik baseline
     status: complete
+    routing_status: complete
+    content_status: reviewed
+    scientific_status: verified
     blockers: []
     explanation: explanation/constitutive/ludwik_j2.md
     reference: reference/scientific/constitutive_models.md
@@ -23,28 +32,40 @@ subjects:
     evidence: explanation/reconstruction/local_baseline.md
   - name: SRIX
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: supported
+    blockers: [content_review_required, missing_evidence]
     explanation: explanation/constitutive/forest_rubin_srix.md
     reference: reference/numerics/native_srix_backend.md
     how_to: how-to/crystal-plasticity/run_316l_crystal_plasticity.md
     evidence: reference/evidence/srix_qualification.md
   - name: Méric-Cailletaud
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: supported
+    blockers: [content_review_required]
     explanation: explanation/constitutive/meric_cailletaud.md
     reference: reference/scientific/meric_cailletaud.md
     how_to: how-to/reproduce/reproduce_srix_meric_comparison.md
     evidence: explanation/constitutive/srix_vs_meric.md
   - name: Structural plane stress
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: verified
+    blockers: [content_review_required]
     explanation: explanation/constitutive/structural_plane_stress.md
     reference: reference/numerics/plane_stress.md
     how_to: how-to/crystal-plasticity/qualify_native_srix_backend.md
     evidence: reference/evidence/evidence_registry.md
   - name: Spectral solver and FFTW
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: supported
+    blockers: [content_review_required]
     
     tutorial: tutorials/first_full_dirichlet_spectral_reconstruction.md
     explanation: explanation/spectral_mechanics/index.md
@@ -53,6 +74,9 @@ subjects:
     evidence: reference/evidence/evidence_registry.md
   - name: TET2 / EBI-TET
     status: complete
+    routing_status: complete
+    content_status: reviewed
+    scientific_status: negative
     blockers: []
     explanation: explanation/spectral_mechanics/ebi_srix_falsification.md
     reference: reference/numerics/ebi_tet_contract.md
@@ -60,27 +84,44 @@ subjects:
     evidence: explanation/evidence/negative_results.md
   - name: Native SRIX / Numba
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: supported
+    blockers: [content_review_required, missing_evidence]
     explanation: explanation/native-srix/optimization_strategy.md
     reference: reference/numerics/native_srix_backend.md
     how_to: how-to/crystal-plasticity/qualify_native_srix_backend.md
     evidence: reference/evidence/native_srix_qualification.md
   - name: FEMU and SVD
-    status: complete
-    blockers: []
+    status: incomplete
+    routing_status: incomplete
+    content_status: blocked
+    scientific_status: open
+    blockers: [missing_how_to, content_review_required]
     explanation: explanation/identification/femu_identification.md
     reference: reference/numerics/femu_sensitivity_and_svd.md
-    how_to: how-to/identification/run_identification.md
-    evidence: explanation/identification/identifiability.md
+    how_to:
+      applicable: false
+      status: blocked
+      reason: >-
+        The registered srix_femu_smoke driver is a full-field-Dirichlet
+        negative control, not a production boundary-only FEMU workflow.
+    evidence: reference/evidence/evidence_registry.md
   - name: REGM
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: negative
+    blockers: [content_review_required]
     explanation: explanation/identification/regm_screening.md
-    reference: reference/evidence/claims_matrix.md
+    reference: reference/numerics/regm.md
     how_to: how-to/identification/run_regm_screening.md
-    evidence: explanation/evidence/negative_results.md
+    evidence: reference/evidence/regm_qualification.md
   - name: Reduced integration
     status: complete
+    routing_status: complete
+    content_status: reviewed
+    scientific_status: negative
     blockers: []
     explanation: explanation/constitutive/reduced_integration_hourglass.md
     reference: reference/numerics/cps4r_hourglass.md
@@ -88,7 +129,10 @@ subjects:
     evidence: explanation/evidence/negative_results.md
   - name: Nonlocal / micromorphic
     status: complete
-    blockers: []
+    routing_status: complete
+    content_status: partial
+    scientific_status: historical
+    blockers: [historical_content_not_fully_migrated]
     explanation: explanation/reconstruction/nonlocal_micromorphic.md
     reference: reference/scientific/nonlocal_parameters.md
     how_to: how-to/identification/run_micromorphic_identification.md

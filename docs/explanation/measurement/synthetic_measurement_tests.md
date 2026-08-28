@@ -9,6 +9,9 @@ pipeline and compared with the recovered field using pre-declared masks and
 metrics. A failure here limits the interpretation of any later FEMU result;
 success does not validate a constitutive law.
 
-The existing detailed results remain in
-{doc}`../dic_synthetic_measurement_tests` and the metric definitions are in
-{doc}`../../reference/evidence/validation_metrics`.
+The useful checks are the recovered displacement amplitude, spatial
+localisation, the effect of the observation operator, and repeated-frame
+uncertainty. Report these separately from constitutive errors. Metric
+definitions are in {doc}`../../reference/evidence/validation_metrics`; the
+reproducible measurement-chain procedure is in
+{doc}`../../how-to/data/characterise_dic_measurement_chain`.

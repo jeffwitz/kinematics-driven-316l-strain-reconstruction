@@ -34,5 +34,25 @@ artefacts; these pages explain their status and interpretation.
 - {doc}`../explanation/identification/identifiability` — FEMU/SVD observable
   modes and current limits.
 - {doc}`../explanation/identification/regm_screening` — REGM transfer boundary.
+- {doc}`../reference/evidence/regm_qualification` — REGM evidence IDs and metrics.
 - {doc}`../reference/evidence/selection_indicators` — definitions for
   sensitivity and SVD outputs.
+
+```{toctree}
+:hidden:
+
+../reference/evidence/evidence_registry
+../reference/evidence/claims_matrix
+../reference/evidence/srix_qualification
+../reference/evidence/native_srix_qualification
+../explanation/reconstruction/local_baseline
+../explanation/constitutive/srix_vs_meric
+../explanation/constitutive/structural_plane_stress
+../explanation/spectral_mechanics/ebi_srix_falsification
+../explanation/evidence/current_scientific_status
+../explanation/evidence/what_is_verified
+../explanation/evidence/negative_results
+../explanation/identification/identifiability
+../explanation/identification/regm_screening
+../reference/evidence/regm_qualification
+```

@@ -32,8 +32,8 @@ Recommended journeys
 
 **First reconstruction**
    :doc:`tutorials/first_reconstruction` →
-   :doc:`how-to/compare_fields` →
-   :doc:`reference/output_contract`
+   :doc:`how-to/mechanics/compare_fields` →
+   :doc:`reference/data/output_contract`
 
 **Understand native SRIX**
    :doc:`explanation/constitutive/forest_rubin_srix` →
@@ -42,8 +42,8 @@ Recommended journeys
 
 **Find a scientific result**
    :doc:`evidence/index` →
-   :doc:`reference/evidence_registry` →
-   :doc:`how-to/reproduce_ebi_falsification`
+   :doc:`reference/evidence/evidence_registry` →
+   :doc:`how-to/reproduce/reproduce_ebi_falsification`
 
 .. toctree::
    :hidden:

@@ -13,5 +13,9 @@ exactly zero after inverse reconstruction. Frequencies are
 $\theta_x=\pi k/n_x$, $\theta_y=\pi l/n_y$, with
 $k=1,\ldots,n_x-1$ and $l=1,\ldots,n_y-1$.
 
-This is a SciPy DTT plan. Native FFTW and mixed boundary transforms are not
-part of the qualified API.
+This page defines the mathematical transform contract only. The implementation
+backend is selected separately through
+{doc}`transform_backends`; SciPy is the default and FFTW is an optional
+functionally equivalent backend. A numerical equivalence check does not imply
+that a global FFTW performance advantage has been established. Mixed-boundary
+transforms are outside this contract.

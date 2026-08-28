@@ -44,13 +44,27 @@ not primary navigation entries.
 
 The subject-level coverage contract is
 `_audit/scientific_coverage.yml`; the rendered matrix is
-`_audit/scientific_coverage_matrix.md`. A subject is `complete` only when its
-declared Explanation, Reference, How-to and Evidence routes exist.
+`_audit/scientific_coverage_matrix.md`. It separates three dimensions:
+
+```yaml
+routing_status: complete | incomplete
+content_status: reviewed | partial | stub | blocked
+scientific_status: verified | supported | negative | provisional | open | historical
+```
+
+`routing_status: complete` means only that every *applicable* route is current
+and reachable through the canonical `toctree` menus. It does not assert that
+the prose has been semantically reviewed or that the scientific claim is
+positive. An inapplicable quadrant is declared with `applicable: false` and a
+reason; it is never filled by a placeholder How-to.
 
 `python scripts/check_docs_structure.py` validates manifest coverage, mode/tree
-consistency, coverage targets and local toctree/`{doc}` targets.  A page with `status: historical`, `provisional`, or
-`internal` must not be presented as a recommended current path.  Redirects are
-kept out of navigation and use `orphan`/`nosearch` when Sphinx needs a stub.
+consistency, coverage targets and local navigation targets. Reachability for a
+public menu uses only `toctree` edges; inline `{doc}` links are cross-references
+and do not make a page a menu entry. A page with `status: historical`,
+`provisional`, or `internal` must not be presented as a recommended current
+path, and current pages may not link to legacy pages. Redirects are kept out
+of navigation and use `orphan`/`nosearch` when Sphinx needs a stub.
 
 ## Adding a page
 

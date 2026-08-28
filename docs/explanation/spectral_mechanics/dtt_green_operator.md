@@ -8,8 +8,10 @@ DST-I basis
 \sin(\pi ki/n_x)\sin(\pi lj/n_y),
 ```
 
-with $k=1,\ldots,n_x-1$ and $l=1,\ldots,n_y-1$. The implementation uses
-`scipy.fft.dstn`/`idstn`, type 1, with `norm="ortho"`.
+with $k=1,\ldots,n_x-1$ and $l=1,\ldots,n_y-1$. The transform contract is
+backend-independent. The current implementation uses
+`scipy.fft.dstn`/`idstn`, type 1, with `norm="ortho"` by default; an optional
+FFTW backend implements the same contract.
 
 For TET2, with $\theta_x=\pi k/n_x$ and $\theta_y=\pi l/n_y$,
 
@@ -64,8 +66,9 @@ The Green action inverts these modal factors with the solver's residual sign.
 It is therefore a GMRES preconditioner, not a claim that the heterogeneous
 plastic Jacobian is diagonal in the DST basis.
 
-:::{admonition} Literature result
+:::{admonition} Qualification boundary
 DTT reference operators are the standard mechanism for non-periodic
-FFT-based mechanics. The present implementation is a SciPy prototype, not a
-native FFTW/2DECOMP implementation.
+FFT-based mechanics. SciPy and FFTW are functionally compared through the
+transform-backend contract; a separate performance qualification is tracked
+by ``E-FFT-006``.
 :::

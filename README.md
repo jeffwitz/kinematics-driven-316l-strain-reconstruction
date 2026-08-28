@@ -1,22 +1,23 @@
 # Kinematics-Driven 316L Strain Reconstruction
 
-Research software for reconstructing mechanically admissible microscale fields
-from digital image correlation (DIC) kinematics in the 316L case study supplied
-with the repository.
+Research software combining DIC kinematics and EBSD crystal orientations in a
+mechanically admissible 316L workflow. Three-dimensional constitutive laws are
+evaluated under structural plane stress by a spectral/matrix-free FEM solver;
+MFront and native SRIX share the material contract.
 
 The code imposes measured displacement on the boundary of a structured
-plane-stress finite-element domain. Interior displacement, strain, stress and
-plasticity then follow from compatibility, a J2/Ludwik constitutive model and
-mechanical equilibrium. This is deliberately not a general Abaqus replacement.
+plane-stress domain. Interior displacement, strain, stress and crystal
+plasticity then follow from compatibility and mechanical equilibrium. J2/Ludwik
+is retained as a baseline; SRIX/MFront/native are the crystal-plasticity paths.
+This is deliberately not a general Abaqus replacement.
 
 ## Current scientific conclusion
 
-The local and coupled mechanics are numerically verified. Earlier validation
-scores nevertheless compared raw FEM fields with image-observed DIC fields.
-A symmetric image-level replay now shows that DISFlow materially changes
-amplitude, morphology and the ranking of coupling candidates. Micromorphic
-coupling redistributes plasticity, but its coupling modulus and spatial length
-remain unidentified; no transferable material internal length is claimed.
+The repository records qualification evidence for DIC/EBSD preparation,
+structural plane stress, SRIX against MFront, spectral mechanics and the native
+NumPy/Numba implementation. FEMU/SVD and REGM remain explicit identification
+and screening workflows with documented observability limits; historical J2 and
+micromorphic results are retained as baselines and scientific branches.
 
 ## Install
 
@@ -33,8 +34,8 @@ cmake --build build/mfront
 fem-inhouse backend
 ```
 
-See the [installation guide](docs/how-to/install.md) for supported versions and
-platform details.
+See the [installation guide](docs/how-to/installation/install.md) for supported
+versions and platform details.
 
 ## First reconstruction
 
@@ -57,7 +58,8 @@ fem-inhouse partition \
 ```
 
 The [tutorial](docs/tutorials/first_reconstruction.md) explains what is
-measured, imposed and reconstructed.
+measured, imposed and reconstructed. See the [How-to guides](docs/how-to/index.md)
+for backend and qualification workflows.
 
 ## Documentation and quality
 
@@ -79,7 +81,5 @@ Evidence and claim boundaries come from
 `validation/documentation_evidence_registry.json`.
 
 ## Citation and licence
-
-Citation metadata are provided in [`CITATION.cff`](CITATION.cff). No software
-licence has yet been declared; reuse outside the private project therefore
-requires permission from the authors.
+Citation metadata are in [`CITATION.cff`](CITATION.cff). No software licence
+has been declared; reuse outside the private project requires permission.

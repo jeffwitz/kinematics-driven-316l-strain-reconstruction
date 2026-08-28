@@ -59,4 +59,4 @@ solve for a mechanically admissible interior. Optional complete tensors are
 output-only and do not change the 2D solve.
 
 Continue with {doc}`first_coupled_comparison`, or read
-{doc}`../explanation/from_dic_to_mechanics`.
+{doc}`../explanation/reconstruction/from_dic_to_mechanics`.

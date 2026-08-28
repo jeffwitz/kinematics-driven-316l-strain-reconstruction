@@ -41,4 +41,4 @@ field construction, `tangent` returns the condensed in-plane tangent, and
 `complete` includes the diagnostic state required for archival.
 
 See {doc}`plane_stress`, {doc}`srix_semismooth_jacobian` and
-{doc}`../../reference/api` for the surrounding interfaces.
+{doc}`../../reference/software/api` for the surrounding interfaces.

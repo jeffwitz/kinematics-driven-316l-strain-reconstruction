@@ -42,6 +42,6 @@ The principal SRIX observables are signed system slips, accumulated absolute
 slip, stress, and the relaxed transverse strains. A scalar J2 equivalent
 plastic strain is not a native SRIX state variable.
 
-See {doc}`../../how-to/use_srix_crystal_law` for the operational setup,
+See {doc}`../../how-to/crystal-plasticity/use_srix_crystal_law` for the operational setup,
 {doc}`../../reference/numerics/mfront_structural_plane_stress` for the
-constitutive formulation, and {doc}`../forest_rubin_srix` for the law itself.
+constitutive formulation, and {doc}`../constitutive/forest_rubin_srix` for the law itself.

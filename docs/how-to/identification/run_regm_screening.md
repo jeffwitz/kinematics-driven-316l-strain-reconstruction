@@ -14,5 +14,5 @@ ranking as separate outputs; the current registered DIC transfer is a negative
 result and must not be used as a FEMU replacement.
 
 See {doc}`../../explanation/identification/regm_screening` for the equations
-and gates, and {doc}`../../reference/evidence/claims_matrix` for the claim
-boundary.
+and gates, and {doc}`../../reference/evidence/regm_qualification` for the
+claim boundary.

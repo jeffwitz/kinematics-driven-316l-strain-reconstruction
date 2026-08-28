@@ -3,12 +3,17 @@
 **Mode:** reference  
 **Domain:** spectral
 
-The full-Dirichlet solver decomposes displacement as (u=u^*+u_f), applies
-the measured boundary through the discrete (B) and (B^T) operators, and
-solves the true mechanical residual with matrix-free Newton--GMRES. No global
-Jacobian is assembled. The homogeneous (B_0^{-1}) operator is the
-preconditioner; it is not the nonlinear residual and does not replace
-constitutive integration.
+The full-Dirichlet solver decomposes displacement as
+
+$$u=u^*+u_f,$$
+
+where the lifting ``u*`` carries the measured boundary values and the
+fluctuation ``uf`` is zero on the boundary. The discrete ``B`` maps a
+displacement field to strain and ``B^T`` maps stress to the internal residual.
+The solver applies the boundary through the lifting, then solves the true
+mechanical residual with matrix-free Newton--GMRES. No global Jacobian is
+assembled. The homogeneous ``B0^{-1}`` operator is the preconditioner; it is
+not the nonlinear residual and does not replace constitutive integration.
 
 The transform layer implements the declared DST-I convention and supports
 SciPy or FFTW through `SpectralTransformConfig`. FFTW plan/wisdom settings and

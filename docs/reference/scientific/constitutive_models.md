@@ -12,5 +12,5 @@ The repository exposes three families of constitutive response:
 The J2 baseline uses (f=\sigma_{eq}-R(p)) with regularised Ludwik hardening.
 SRIX uses twelve FCC systems, cubic elasticity, an interaction matrix and
 isotropic/kinematic hardening. Méric retains its time-dependent evolution.
-Parameter provenance is defined in {doc}`../srix_parameter_sets`; the numerical
+Parameter provenance is defined in {doc}`srix_parameter_sets`; the numerical
 state and response contract is defined by the selected backend.

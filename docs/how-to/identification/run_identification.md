@@ -1,19 +1,19 @@
-# Run a FEMU identification
+# FEMU identification: current boundary-only status
 
 **Mode:** how-to  
 **Domain:** identification
 
-Declare the observable field, parameter perturbations, forward backend and
-stopping criteria before launching FEMU. Archive the sensitivity matrix and
-singular values; interpret weak modes before reporting parameter estimates.
+There is currently no registered production boundary-only FEMU driver in this
+checkout. Do not present the smoke script as one. A valid FEMU workflow must
+declare the observable field, parameter perturbations, forward backend and
+stopping criteria, impose measured kinematics only on the boundary, and
+compare the predicted interior through the observation operator.
 
-For the currently registered smoke workflow, use
-`scripts/srix_femu_smoke.py` with the preregistered case and the declared
-`tau0`/`Q` perturbations. The driver performs complete forward evaluations and
-records objective, parameter, backend and provenance data. Check that the
-kinematics are imposed on the boundary rather than on every interior node;
-the latter is a deliberate negative control because it removes constitutive
-sensitivity.
+The available `scripts/srix_femu_smoke.py` is instead a full-field-Dirichlet
+negative control. It is useful to reproduce the fact that prescribing the
+interior displacement annihilates constitutive sensitivity, but it cannot
+qualify parameter identification. Reproduce that control with
+{doc}`../reproduce/reproduce_femu_full_field_dirichlet_negative_control`.
 
 Definitions and required provenance are in
 {doc}`../../reference/numerics/femu_sensitivity_and_svd`; interpretation is in

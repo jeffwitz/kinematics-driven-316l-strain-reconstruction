@@ -45,6 +45,9 @@ commands belong in How-to guides and stable interfaces belong in Reference.
 - {doc}`identification/femu_identification`
 - {doc}`identification/identifiability`
 - {doc}`identification/regm_screening`
+- {doc}`identification/regm_method`
+- {doc}`identification/regm_observation_failure`
+- {doc}`identification/regm_information_geometry`
 
 ## Understand current evidence
 
@@ -81,6 +84,9 @@ native-srix/gpu_path
 identification/femu_identification
 identification/identifiability
 identification/regm_screening
+identification/regm_method
+identification/regm_observation_failure
+identification/regm_information_geometry
 evidence/current_scientific_status
 evidence/what_is_verified
 evidence/negative_results

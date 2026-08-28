@@ -69,7 +69,7 @@ independent oracle for a new constitutive model and for the generic structural
 closure. Its cost is the repeated MGIS integration and host-side local Newton.
 
 For SRIX + EBSD, the recommended production choices and the generic route are
-documented in {doc}`../../how-to/choose_mfront_backend`. Do not infer the
+documented in {doc}`../../how-to/crystal-plasticity/choose_mfront_backend`. Do not infer the
 performance of the specialised or generic GPS routes from this page; they use
 different one-step constitutive implementations and share only the physical
 closure.

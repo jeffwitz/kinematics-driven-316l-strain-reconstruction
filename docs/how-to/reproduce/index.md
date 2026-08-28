@@ -6,6 +6,7 @@
 - {doc}`reproduce_ebi_falsification`
 - {doc}`reproduce_srix_meric_comparison`
 - {doc}`reproduce_registered_qualifications`
+- {doc}`reproduce_femu_full_field_dirichlet_negative_control`
 - {doc}`../crystal-plasticity/qualify_native_srix_backend`
 
 ```{toctree}
@@ -14,5 +15,6 @@
 reproduce_ebi_falsification
 reproduce_srix_meric_comparison
 reproduce_registered_qualifications
+reproduce_femu_full_field_dirichlet_negative_control
 ../crystal-plasticity/qualify_native_srix_backend
 ```

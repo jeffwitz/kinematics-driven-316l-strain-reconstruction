@@ -234,6 +234,11 @@ pages:
     domain: identification
     status: current
     navigation: reference/numerics
+  - path: reference/numerics/regm.md
+    mode: reference
+    domain: identification
+    status: current
+    navigation: reference/numerics
   - path: reference/numerics/cps4r_hourglass.md
     mode: reference
     domain: constitutive
