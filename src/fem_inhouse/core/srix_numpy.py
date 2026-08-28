@@ -958,7 +958,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         plane_stress_max_iterations: int | None = None,
         local_transverse_predictor: Literal["committed", "tangent"] = "committed",
         plane_stress_solver: Literal["nested", "coupled"] = "nested",
-        coupled_block_solver: Literal["numpy", "numba-fused"] = "numpy",
+        coupled_block_solver: Literal["numpy", "numba-fused", "numba-fused-state"] = "numpy",
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)
@@ -971,8 +971,10 @@ class SrixNumpyCondensedPlaneStressBatch:
             raise ValueError("local_transverse_predictor must be 'committed' or 'tangent'")
         if plane_stress_solver not in {"nested", "coupled"}:
             raise ValueError("plane_stress_solver must be 'nested' or 'coupled'")
-        if coupled_block_solver not in {"numpy", "numba-fused"}:
-            raise ValueError("coupled_block_solver must be 'numpy' or 'numba-fused'")
+        if coupled_block_solver not in {"numpy", "numba-fused", "numba-fused-state"}:
+            raise ValueError(
+                "coupled_block_solver must be 'numpy', 'numba-fused', or 'numba-fused-state'"
+            )
         self._local_transverse_predictor = local_transverse_predictor
         self._plane_stress_solver = plane_stress_solver
         self._coupled_block_solver = coupled_block_solver
@@ -1320,7 +1322,45 @@ class SrixNumpyCondensedPlaneStressBatch:
         for _iteration in range(bridge._maximum_iterations):
             self._coupled_iterations += int(np.count_nonzero(~converged))
             state_started = perf_counter()
-            current = state(material_strain, dg)
+            fused_state_deltas: tuple[FloatArray, FloatArray] | None = None
+            fused_newly_converged: NDArray[np.bool_] | None = None
+            fused_success: NDArray[np.bool_] | None = None
+            if self._coupled_block_solver == "numba-fused-state":
+                from fem_inhouse.core.small_linear_solvers import (
+                    solve_coupled_state_block_numba,
+                )
+
+                fused = solve_coupled_state_block_numba(
+                    material_strain,
+                    dg,
+                    p0,
+                    a0,
+                    elastic0,
+                    transform,
+                    ce,
+                    mus,
+                    bridge._mce,
+                    bridge._plastic_modulus,
+                    bridge._interaction,
+                    self._coupled_dmat,
+                    self._coupled_c_base,
+                    transform[:, :, _TRANSVERSE],
+                    converged,
+                    bridge.parameters.tau0_mpa,
+                    bridge.parameters.q_mpa,
+                    bridge.parameters.b,
+                    bridge.parameters.c_mpa,
+                    bridge.parameters.d,
+                    bridge.parameters.overstress_modulus_mpa,
+                    bridge._tolerance,
+                    self._tol,
+                )
+                current = fused[:11]
+                fused_state_deltas = (fused[11], fused[12])
+                fused_newly_converged = fused[13]
+                fused_success = fused[14]
+            else:
+                current = state(material_strain, dg)
             self._coupled_state_seconds += perf_counter() - state_started
             (
                 residual, stress_b, de, deq, slope, abs_dg, sign_dg,
@@ -1331,19 +1371,35 @@ class SrixNumpyCondensedPlaneStressBatch:
                 np.max(np.abs(stress_b), axis=1) / max(bridge.parameters.tau0_mpa, 1.0),
             )
             newly_converged = (
-                np.max(np.abs(residual), axis=1) <= bridge._tolerance
-            ) & (np.max(np.abs(stress_b), axis=1) <= self._tol)
+                fused_newly_converged
+                if fused_newly_converged is not None
+                else (
+                    np.max(np.abs(residual), axis=1) <= bridge._tolerance
+                ) & (np.max(np.abs(stress_b), axis=1) <= self._tol)
+            )
             converged |= newly_converged
             pending = np.flatnonzero(~converged)
             if pending.size == 0:
                 break
-            block_started = perf_counter()
-            den = 1.0 + bridge.parameters.d * abs_dg[pending]
-            num = dg[pending] - bridge.parameters.d * a0[pending] * abs_dg[pending]
-            dnum = 1.0 - bridge.parameters.d * a0[pending] * sign_dg[pending]
-            dden = bridge.parameters.d * sign_dg[pending]
-            dda = (dnum * den - num * dden) / (den * den)
-            if self._coupled_block_solver == "numba-fused":
+            if fused_state_deltas is not None:
+                if fused_success is None or not np.all(fused_success[pending]):
+                    raise np.linalg.LinAlgError(
+                        "Numba fused state/block kernel is singular"
+                    )
+                delta_g = fused_state_deltas[0][pending]
+                delta_b = fused_state_deltas[1][pending]
+                current_metric = residual_norm[pending]
+                # The line-search below is shared with the reference path.
+                block_started = None
+            else:
+                block_started = perf_counter()
+            if fused_state_deltas is None:
+                den = 1.0 + bridge.parameters.d * abs_dg[pending]
+                num = dg[pending] - bridge.parameters.d * a0[pending] * abs_dg[pending]
+                dnum = 1.0 - bridge.parameters.d * a0[pending] * sign_dg[pending]
+                dden = bridge.parameters.d * sign_dg[pending]
+                dda = (dnum * den - num * dden) / (den * den)
+            if fused_state_deltas is None and self._coupled_block_solver == "numba-fused":
                 from fem_inhouse.core.small_linear_solvers import solve_coupled_block_numba
 
                 delta_g, delta_b, success = solve_coupled_block_numba(
@@ -1371,7 +1427,7 @@ class SrixNumpyCondensedPlaneStressBatch:
                 )
                 if not np.all(success):
                     raise np.linalg.LinAlgError("Numba fused coupled block is singular")
-            else:
+            elif fused_state_deltas is None:
                 delta_g, delta_b = self._coupled_block_numpy(
                     pending,
                     residual,
@@ -1386,7 +1442,8 @@ class SrixNumpyCondensedPlaneStressBatch:
                     overstress,
                     dda,
                 )
-            self._coupled_block_seconds += perf_counter() - block_started
+            if block_started is not None:
+                self._coupled_block_seconds += perf_counter() - block_started
             current_metric = residual_norm[pending]
             alpha = np.ones(pending.size)
             accepted = np.zeros(pending.size, dtype=bool)

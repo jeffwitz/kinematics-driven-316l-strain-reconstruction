@@ -203,7 +203,11 @@ def main() -> int:
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--local-linear-solver", choices=("numpy", "numba-lu12"), default="numpy")
     parser.add_argument("--plane-stress-solver", choices=("nested", "coupled"), default="nested")
-    parser.add_argument("--coupled-block-solver", choices=("numpy", "numba-fused"), default="numpy")
+    parser.add_argument(
+        "--coupled-block-solver",
+        choices=("numpy", "numba-fused", "numba-fused-state"),
+        default="numpy",
+    )
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
