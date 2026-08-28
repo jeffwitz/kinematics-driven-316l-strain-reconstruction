@@ -36,9 +36,9 @@ Recommended journeys
    :doc:`reference/output_contract`
 
 **Understand native SRIX**
-   :doc:`explanation/forest_rubin_srix` →
-   :doc:`reference/numerics/srix_numpy_backend` →
-   :doc:`how-to/run_316l_crystal_plasticity`
+   :doc:`explanation/constitutive/forest_rubin_srix` →
+   :doc:`reference/numerics/native_srix_backend` →
+   :doc:`how-to/crystal-plasticity/run_316l_crystal_plasticity`
 
 **Find a scientific result**
    :doc:`evidence/index` →

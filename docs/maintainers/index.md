@@ -7,6 +7,7 @@ from the scientific user journey.
 - {doc}`../reference/extension_interfaces`
 - {doc}`../reference/architecture/documentation_architecture`
 - {doc}`../operations/repository_storage_policy`
+- {doc}`../reference/operations/repository_storage_policy`
 - {doc}`../adr/index`
 
 ```{toctree}
@@ -19,4 +20,5 @@ from the scientific user journey.
 ../_audit/scientific_coverage_matrix
 ../reference/architecture/documentation_architecture
 ../operations/repository_storage_policy
+../reference/operations/repository_storage_policy
 ```

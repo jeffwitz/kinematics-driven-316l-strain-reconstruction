@@ -26,8 +26,29 @@ mode, domain, status and primary navigation route.  The public portals are:
 Evidence and maintainer portals route to the four modes; they are not a fifth
 or sixth Diátaxis quadrant and must not become catch-all pages.
 
-`python scripts/check_docs_structure.py` validates manifest coverage and local
-toctree/`{doc}` targets.  A page with `status: historical`, `provisional`, or
+## Canonical content tree
+
+Current scientific content is organised by domain below each mode:
+
+```text
+explanation/{reconstruction,measurement,constitutive,spectral,native-srix,
+             identification,evidence}
+how-to/{installation,data,mechanics,crystal-plasticity,identification,
+        reproduce,extend,maintenance}
+reference/{scientific,data,numerics,software,evidence,architecture,operations}
+```
+
+Legacy root pages remain available for provenance while their content is
+migrated. They are marked `historical` and `legacy` in the manifest and are
+not primary navigation entries.
+
+The subject-level coverage contract is
+`_audit/scientific_coverage.yml`; the rendered matrix is
+`_audit/scientific_coverage_matrix.md`. A subject is `complete` only when its
+declared Explanation, Reference, How-to and Evidence routes exist.
+
+`python scripts/check_docs_structure.py` validates manifest coverage, mode/tree
+consistency, coverage targets and local toctree/`{doc}` targets.  A page with `status: historical`, `provisional`, or
 `internal` must not be presented as a recommended current path.  Redirects are
 kept out of navigation and use `orphan`/`nosearch` when Sphinx needs a stub.
 
