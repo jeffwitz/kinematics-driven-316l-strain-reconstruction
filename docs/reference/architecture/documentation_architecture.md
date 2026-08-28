@@ -50,6 +50,8 @@ The subject-level coverage contract is
 routing_status: complete | incomplete
 content_status: reviewed | partial | stub | blocked
 scientific_status: verified | supported | negative | provisional | open | historical
+claim_statuses:
+  claim_name: verified | supported | negative | provisional | open | not_claimed
 ```
 
 `routing_status: complete` means only that every *applicable* route is current
@@ -57,6 +59,13 @@ and reachable through the canonical `toctree` menus. It does not assert that
 the prose has been semantically reviewed or that the scientific claim is
 positive. An inapplicable quadrant is declared with `applicable: false` and a
 reason; it is never filled by a placeholder How-to.
+
+`scientific_status` is only a subject-level summary. The `claim_statuses`
+mapping is the authoritative boundary for individual claims, so a subject can
+simultaneously contain verified implementation evidence, a negative adequacy
+result and an open identification question. A `content_status: reviewed`
+subject must also have an actionable How-to with prerequisites, an exact
+procedure, inputs, expected artifacts, verification and failure boundaries.
 
 `python scripts/check_docs_structure.py` validates manifest coverage, mode/tree
 consistency, coverage targets and local navigation targets. Reachability for a

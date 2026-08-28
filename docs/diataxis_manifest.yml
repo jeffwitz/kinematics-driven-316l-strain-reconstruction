@@ -99,6 +99,11 @@ pages:
     domain: evidence
     status: current
     navigation: how-to/reproduce
+  - path: how-to/reproduce/reproduce_tet2_qualification.md
+    mode: how-to
+    domain: spectral
+    status: current
+    navigation: how-to/reproduce
   - path: how-to/reproduce/reproduce_srix_meric_comparison.md
     mode: how-to
     domain: crystal-plasticity

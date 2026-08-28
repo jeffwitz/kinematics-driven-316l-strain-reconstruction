@@ -52,6 +52,14 @@ VALID_SCIENTIFIC_STATUSES = {
     "open",
     "historical",
 }
+VALID_CLAIM_STATUSES = {
+    "verified",
+    "supported",
+    "negative",
+    "provisional",
+    "open",
+    "not_claimed",
+}
 
 
 def pages() -> list[str]:
@@ -158,6 +166,26 @@ def toctree_targets(text: str) -> list[str]:
             if value and not value.startswith(":") and not value.startswith("#"):
                 targets.append(value)
     return targets
+
+
+def how_to_is_actionable(path: str) -> bool:
+    """Require minimum operational content for a reviewed how-to."""
+    text = (DOC_ROOT / path).read_text(errors="replace").lower()
+    has_inputs = any(token in text for token in ("## prerequisites", "## inputs", "input paths"))
+    has_procedure = any(token in text for token in ("```bash", "```console", "```python"))
+    has_outputs = any(
+        token in text
+        for token in ("expected artifact", "expected output", "expected report", "outputs")
+    )
+    has_verification = any(
+        token in text
+        for token in ("## verify", "verification", "compare", "check that", "criteria")
+    )
+    has_boundary = any(
+        token in text
+        for token in ("failure", "do not", "not qualified", "claim boundary", "error")
+    )
+    return all((has_inputs, has_procedure, has_outputs, has_verification, has_boundary))
 
 
 def manifest_entry(entries: list[dict[str, str]], path: str) -> dict[str, str] | None:
@@ -297,6 +325,7 @@ def main() -> int:
                 "routing_status",
                 "content_status",
                 "scientific_status",
+                "claim_statuses",
             }
             missing = sorted(required - subject.keys())
             if missing:
@@ -329,6 +358,15 @@ def main() -> int:
                     f"coverage {subject.get('name')}: invalid scientific_status "
                     f"{subject.get('scientific_status')!r}"
                 )
+            claims = subject.get("claim_statuses")
+            if not isinstance(claims, dict) or not claims:
+                errors.append(
+                    f"coverage {subject.get('name')}: claim_statuses must be a non-empty mapping"
+                )
+            elif any(status not in VALID_CLAIM_STATUSES for status in claims.values()):
+                errors.append(
+                    f"coverage {subject.get('name')}: invalid claim status values {claims!r}"
+                )
             blockers = subject.get("blockers", [])
             if not isinstance(blockers, list) or any(
                 blocker not in VALID_BLOCKERS for blocker in blockers
@@ -343,6 +381,7 @@ def main() -> int:
                     "routing_status",
                     "content_status",
                     "scientific_status",
+                    "claim_statuses",
                     "blockers",
                 }:
                     continue
@@ -409,6 +448,16 @@ def main() -> int:
                         f"coverage {subject.get('name')}: {key} target is not reachable "
                         f"from {root}: {target}"
                     )
+            how_to = subject.get("how_to")
+            if (
+                subject.get("content_status") == "reviewed"
+                and isinstance(how_to, str)
+                and not how_to_is_actionable(how_to)
+            ):
+                errors.append(
+                    "coverage "
+                    f"{subject.get('name')}: reviewed how-to is not actionable: {how_to}"
+                )
 
     if errors:
         print("Documentation structure violations:", file=sys.stderr)

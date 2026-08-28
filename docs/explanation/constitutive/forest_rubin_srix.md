@@ -36,6 +36,25 @@ increment rather than a clock rate. Constructing ``Deq`` from the Newton
 unknowns is part of the consistent tangent; replacing it with a fixed imposed
 increment changes the derivative.
 
+More explicitly, the implementation uses
+
+$$
+\Delta\varepsilon_{\rm eq}=\sqrt{\frac{2}{3}\,
+\Delta e_{\rm dev}:\Delta e_{\rm dev}},
+$$
+
+with $\Delta e_{\rm dev}$ formed from the elastic deviatoric increment and
+the twelve slip contributions. At convergence this has the same value as the
+quantity reconstructed from the imposed total increment, but during Newton it
+does not have the same derivative:
+
+:::{admonition} Consistent-tangent point
+The converged value may be identical while the Newton derivative is not.
+Building $\Delta\varepsilon_{\rm eq}$ from the unknowns keeps its dependence in
+the Jacobian. Building it from the imposed ``deto`` treats it as constant and
+misses the corresponding derivative term.
+:::
+
 The currently registered ``R`` is an analytical transposition of a
 Méric--Cailletaud ``(K,n)`` pair at a reference strain rate. It is explicitly
 marked as ``analytical_transposition`` in the parameter provenance and is not

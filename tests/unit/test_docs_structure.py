@@ -3,6 +3,7 @@ import re
 from scripts.check_docs_structure import (
     DOC_ROOT,
     declared_marker,
+    how_to_is_actionable,
     load_coverage,
     load_manifest,
     manifest_entry,
@@ -74,6 +75,25 @@ def test_coverage_declares_separate_semantic_statuses() -> None:
             "open",
             "historical",
         }
+        assert isinstance(subject["claim_statuses"], dict)
+        assert subject["claim_statuses"]
+        assert set(subject["claim_statuses"].values()) <= {
+            "verified",
+            "supported",
+            "negative",
+            "provisional",
+            "open",
+            "not_claimed",
+        }
+
+
+def test_reviewed_how_tos_are_actionable() -> None:
+    for subject in load_coverage():
+        if subject["content_status"] != "reviewed":
+            continue
+        how_to = subject.get("how_to")
+        if isinstance(how_to, str):
+            assert how_to_is_actionable(how_to)
 
 
 def test_phase3_canonical_reference_targets_are_current() -> None:

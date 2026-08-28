@@ -15,9 +15,11 @@ This is deliberately not a general Abaqus replacement.
 
 The repository records qualification evidence for DIC/EBSD preparation,
 structural plane stress, SRIX against MFront, spectral mechanics and the native
-NumPy/Numba implementation. FEMU/SVD and REGM remain explicit identification
-and screening workflows with documented observability limits; historical J2 and
-micromorphic results are retained as baselines and scientific branches.
+NumPy/Numba implementation. FEMU/SVD defines the target identification and
+observability framework, but no production boundary-only FEMU driver is
+currently registered. REGM remains a screening investigation whose observed-
+DIC transfer is negative; historical J2 and micromorphic results are retained
+as baselines and scientific branches.
 
 ## Install
 
@@ -63,10 +65,9 @@ for backend and qualification workflows.
 
 ## Documentation and quality
 
-The English documentation follows Diátaxis:
-[Tutorials](docs/tutorials/first_reconstruction.md),
-[How-to](docs/how-to/index.md), [Reference](docs/reference/index.md), and
-[Explanation](docs/explanation/index.md). Run the checks below with the venv
+The English documentation follows Diátaxis: [Tutorials](docs/tutorials/first_reconstruction.md),
+[How-to](docs/how-to/index.md), [Reference](docs/reference/index.md), and [Explanation](docs/explanation/index.md).
+Run the checks below with the venv
 active; `latexpdf` needs `lualatex` and `latexmk` (Debian/Ubuntu:
 `texlive-luatex`, `texlive-latex-extra`, `latexmk`).
 
@@ -77,9 +78,8 @@ pytest
 make -C docs html latexpdf
 ```
 
-Evidence and claim boundaries come from
-`validation/documentation_evidence_registry.json`.
+Evidence and claim boundaries come from `validation/documentation_evidence_registry.json`.
 
 ## Citation and licence
-Citation metadata are in [`CITATION.cff`](CITATION.cff). No software licence
-has been declared; reuse outside the private project requires permission.
+Citation metadata are in [`CITATION.cff`](CITATION.cff). No software licence has
+been declared; reuse outside the private project requires permission.

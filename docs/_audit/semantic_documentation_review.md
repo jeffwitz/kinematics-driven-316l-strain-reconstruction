@@ -15,18 +15,19 @@ filled with a facade page.
 
 | Subject | Routing | Content | Scientific status | Remaining issue |
 |---|---|---|---|---|
-| DIC and observation | complete | reviewed | supported | continue migrating historical campaign details when needed |
-| EBSD and registration | complete | reviewed | supported | registration evidence is provenance-limited |
-| J2/Ludwik baseline | complete | reviewed | verified | baseline, not a production crystal law |
+| DIC and observation | complete | partial | supported | actionable workflow added; semantic review still required |
+| EBSD and registration | complete | partial | supported | actionable workflow added; registration evidence is provenance-limited |
+| J2/Ludwik baseline | complete | partial | verified | actionable workflow added; baseline, not a production crystal law |
 | SRIX | complete | partial | supported | expand evidence paths and parameter claim boundary |
 | Méric--Cailletaud | complete | partial | supported | distinguish rate physics from integration robustness |
 | Structural plane stress | complete | partial | verified | keep standard 2-D MFront distinct from the three-traction contract |
 | Spectral solver and FFTW | complete | partial | supported | FFTW performance remains a separate pending claim |
-| TET2 / EBI-TET | complete | reviewed | negative | falsification is registered-case specific |
+| TET2 discretisation | complete | partial | supported | two-history discretisation is distinct from EBI-TET |
+| EBI-TET state sharing | complete | reviewed | negative | falsification is registered-case specific |
 | Native SRIX / Numba | complete | partial | supported | retain explicit evidence IDs for each optimization step |
 | FEMU and SVD | incomplete | blocked | open | no registered production boundary-only FEMU driver |
 | REGM | complete | partial | negative | observed-DIC transfer remains a no-go |
-| Reduced integration | complete | reviewed | negative | CPS4R is not qualified for production plastic campaigns |
+| Reduced integration | complete | partial | negative | actionable workflow added; CPS4R is not qualified for production plastic campaigns |
 | Nonlocal / micromorphic | complete | partial | historical | preserve historical status and limitations |
 
 The authoritative machine-readable fields are in
@@ -34,6 +35,13 @@ The authoritative machine-readable fields are in
 `how_to.applicable: false`: `scripts/srix_femu_smoke.py` is documented as a
 full-field-Dirichlet negative control, not as a boundary-only identification
 workflow.
+
+Scientific status is claim-level, not a blanket verdict for a subject. The
+`claim_statuses` mapping records, for example, that J2 table equivalence can be
+verified while experimental morphology adequacy is negative, or that FFTW
+functional equivalence is supported while its full-solver performance remains
+open. A reviewed content status also requires an actionable How-to; a route or
+an index page alone is not evidence of semantic completeness.
 
 ## Review rules
 

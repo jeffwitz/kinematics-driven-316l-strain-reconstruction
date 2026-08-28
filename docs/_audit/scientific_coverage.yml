@@ -3,9 +3,13 @@ subjects:
   - name: DIC and observation
     status: complete
     routing_status: complete
-    content_status: reviewed
+    content_status: partial
     scientific_status: supported
-    blockers: []
+    claim_statuses:
+      observation_contract: supported
+      synthetic_transfer: supported
+      experimental_parameter_identification: not_claimed
+    blockers: [content_review_required]
     explanation: explanation/measurement/dic_observation_limits.md
     reference: reference/scientific/observation_operator.md
     how_to: how-to/data/prepare_dic_case.md
@@ -13,9 +17,12 @@ subjects:
   - name: EBSD and registration
     status: complete
     routing_status: complete
-    content_status: reviewed
+    content_status: partial
     scientific_status: supported
-    blockers: []
+    claim_statuses:
+      orientation_mapping: verified
+      co_registration: provisional
+    blockers: [content_review_required]
     explanation: explanation/measurement/ebsd_registration_and_orientation.md
     reference: reference/scientific/ebsd_orientation_contract.md
     how_to: how-to/data/inspect_ebsd_registration.md
@@ -23,9 +30,13 @@ subjects:
   - name: J2/Ludwik baseline
     status: complete
     routing_status: complete
-    content_status: reviewed
+    content_status: partial
     scientific_status: verified
-    blockers: []
+    claim_statuses:
+      table_material_equivalence: verified
+      fe_pipeline: verified
+      experimental_morphology_adequacy: negative
+    blockers: [content_review_required]
     explanation: explanation/constitutive/ludwik_j2.md
     reference: reference/scientific/constitutive_models.md
     how_to: how-to/mechanics/run_local_reconstruction.md
@@ -35,6 +46,10 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: supported
+    claim_statuses:
+      constitutive_implementation: verified
+      p43_robustness: supported
+      parameter_identification: not_claimed
     blockers: [content_review_required, missing_evidence]
     explanation: explanation/constitutive/forest_rubin_srix.md
     reference: reference/numerics/native_srix_backend.md
@@ -45,6 +60,11 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: supported
+    claim_statuses:
+      constitutive_implementation: supported
+      physical_rate_dependence: supported
+      temporal_convergence: open
+      current_robustness: provisional
     blockers: [content_review_required]
     explanation: explanation/constitutive/meric_cailletaud.md
     reference: reference/scientific/meric_cailletaud.md
@@ -55,6 +75,9 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: verified
+    claim_statuses:
+      three_traction_closure: verified
+      standard_mfront_three_traction_equivalence: not_claimed
     blockers: [content_review_required]
     explanation: explanation/constitutive/structural_plane_stress.md
     reference: reference/numerics/plane_stress.md
@@ -65,6 +88,10 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: supported
+    claim_statuses:
+      full_dirichlet_contract: verified
+      fftw_functional_equivalence: supported
+      fftw_performance: open
     blockers: [content_review_required]
     
     tutorial: tutorials/first_full_dirichlet_spectral_reconstruction.md
@@ -72,11 +99,27 @@ subjects:
     reference: reference/numerics/spectral_solver.md
     how_to: how-to/mechanics/run_full_dirichlet_spectral.md
     evidence: reference/evidence/evidence_registry.md
-  - name: TET2 / EBI-TET
+  - name: TET2 discretisation
+    status: complete
+    routing_status: complete
+    content_status: partial
+    scientific_status: supported
+    claim_statuses:
+      two_history_operator: supported
+      plastic_field_agreement: supported
+    blockers: [content_review_required]
+    explanation: explanation/spectral_mechanics/tet2_newton_gmres.md
+    reference: reference/numerics/tet2_operators.md
+    how_to: how-to/reproduce/reproduce_tet2_qualification.md
+    evidence: reference/evidence/evidence_registry.md
+  - name: EBI-TET state sharing
     status: complete
     routing_status: complete
     content_status: reviewed
     scientific_status: negative
+    claim_statuses:
+      registered_case_state_sharing: negative
+      universal_ebi_claim: not_claimed
     blockers: []
     explanation: explanation/spectral_mechanics/ebi_srix_falsification.md
     reference: reference/numerics/ebi_tet_contract.md
@@ -87,6 +130,10 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: supported
+    claim_statuses:
+      native_equivalence: supported
+      performance_scaling: supported
+      gpu_port: not_claimed
     blockers: [content_review_required, missing_evidence]
     explanation: explanation/native-srix/optimization_strategy.md
     reference: reference/numerics/native_srix_backend.md
@@ -97,6 +144,10 @@ subjects:
     routing_status: incomplete
     content_status: blocked
     scientific_status: open
+    claim_statuses:
+      sensitivity_contract: supported
+      boundary_only_driver: open
+      current_smoke_control: negative
     blockers: [missing_how_to, content_review_required]
     explanation: explanation/identification/femu_identification.md
     reference: reference/numerics/femu_sensitivity_and_svd.md
@@ -112,6 +163,10 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: negative
+    claim_statuses:
+      exact_twin_ranking: supported
+      observed_dic_transfer: negative
+      p43_identification: not_claimed
     blockers: [content_review_required]
     explanation: explanation/identification/regm_screening.md
     reference: reference/numerics/regm.md
@@ -120,9 +175,13 @@ subjects:
   - name: Reduced integration
     status: complete
     routing_status: complete
-    content_status: reviewed
+    content_status: partial
     scientific_status: negative
-    blockers: []
+    claim_statuses:
+      elastic_equivalence: verified
+      plastic_qualification: negative
+      hourglass_ratio_predictive: negative
+    blockers: [content_review_required]
     explanation: explanation/constitutive/reduced_integration_hourglass.md
     reference: reference/numerics/cps4r_hourglass.md
     how_to: how-to/mechanics/use_reduced_integration.md
@@ -132,6 +191,9 @@ subjects:
     routing_status: complete
     content_status: partial
     scientific_status: historical
+    claim_statuses:
+      historical_coupling: supported
+      current_production: not_claimed
     blockers: [historical_content_not_fully_migrated]
     explanation: explanation/reconstruction/nonlocal_micromorphic.md
     reference: reference/scientific/nonlocal_parameters.md

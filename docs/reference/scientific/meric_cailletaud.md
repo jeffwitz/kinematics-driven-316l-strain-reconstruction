@@ -32,8 +32,9 @@ the time-discrete fields.
 |---|---|---|
 | FCC systems | 12 | 12 |
 | anisotropy/orientation | yes | yes |
-| physical viscosity | no in this use | yes |
-| time-step partition dependence | not physical | material evolution depends on it |
+| physical loading-rate dependence | no in this use | yes |
+| numerical increment partition | path-independent in this use | should converge when refined |
+| observed current robustness | good | requires finer partition |
 | current role | production quasi-static path | comparison branch |
 
 Parameter names, units, orientation convention and structural plane-stress
