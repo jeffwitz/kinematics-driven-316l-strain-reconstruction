@@ -961,7 +961,7 @@ class SrixNumpyCondensedPlaneStressBatch:
         coupled_block_solver: Literal[
             "numpy", "numba-fused", "numba-fused-state", "auto"
         ] = "numpy",
-        fused_state_threshold: int = 8_000,
+        fused_state_threshold: int = 12_000,
     ) -> None:
         self._bridge = bridge
         self._tol = float(local_tolerance_mpa)

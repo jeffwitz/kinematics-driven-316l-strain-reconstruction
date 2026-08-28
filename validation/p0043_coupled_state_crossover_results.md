@@ -23,6 +23,6 @@ run fused-tangent précédent, avec un RAW RMS identique à `3.0e-15` près. Les
 déformation ; les trajectoires globales ne sont toutefois pas identiques.
 
 Conclusion : un dispatch `auto` est disponible avec seuil configurable, par
-défaut `8000` points actifs. Ce seuil est expérimental et doit rester
+défaut `12000` points actifs. Ce seuil est expérimental et doit rester
 explicitement contrôlable ; `numba-fused` demeure la référence pour les petits
 batches et les contrôles A/B.
