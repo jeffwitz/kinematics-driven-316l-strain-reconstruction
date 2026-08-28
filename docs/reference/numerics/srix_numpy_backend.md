@@ -1,22 +1,82 @@
-# Native NumPy SRIX backend
+# Native Python/NumPy/Numba SRIX backend
 
-This page is the entry point for the native crystal-plasticity backend.  It
-explains both the configuration knobs and the reason why several apparently
-similar options exist.  If you are discovering the project, read the
-sections in order; if you only need a setting, use the tables.
+This page tells the story of the native crystal-plasticity backend.  It is
+written for a reader who has not followed the successive P43 experiments:
+first understand why a new backend is needed, then how the naïve Python
+implementation was qualified, and finally which optimisations make the CPU
+implementation useful as preparation for a GPU port.
 
-## The short version
+## The architectural story in one page
 
-The production reference remains MFront/MGIS.  The native backend is an
-independent implementation of the qualified Forest--Rubin SRIX law, used when
-we need a point-batched NumPy implementation or a future CuPy/GPU path.
+MFront/MGIS is already an efficient CPU implementation of the qualified
+Forest--Rubin SRIX law.  It remains our scientific and production reference.
+However, a generic MFront 3-D behaviour exposes an integrated response, not the
+internal slip residual and Jacobian needed to solve the SRIX equations and the
+three plane-stress traction equations as one local system.  It is therefore not
+the right abstraction for a direct GPU port of the algorithm we want to use.
 
-There are **two independent choices**:
+The native backend is being rebuilt for that reason.  It is not intended to
+replace MFront on the CPU by assertion.  It gives us explicit point-local
+equations, transactional state, a coupled plane-stress closure and kernels that
+can later be translated from NumPy/Numba to CuPy or another GPU backend.
 
-1. the constitutive implementation (`mfront` or `numpy-srix`);
-2. the local plane-stress closure (`nested` or `coupled`).
+The development path was deliberately:
 
-They must not be conflated:
+```text
+naïve Python/NumPy implementation
+        ↓  qualify equations against MFront
+reduced and vectorised NumPy implementation
+        ↓  remove small-system overhead
+NumPy + point-local Numba kernels
+        ↓  expose the coupled local problem
+validated high-performance CPU architecture
+        ↓
+future CuPy/GPU implementation
+```
+
+The important claim is architectural: the Python/Numba path can use a
+coupling that remains hidden inside generic MFront.  The important scientific
+claim is narrower: every optimisation is accepted only when it reproduces the
+same local solution and global fields as the reference path.
+
+For a newcomer, the comparison should therefore be read in this order:
+
+1. **Naïve Python:** make the equations visible and easy to compare, even if
+   every constitutive call allocates batch temporaries and the plane-stress
+   closure is nested.
+2. **Qualified Python:** reduce the equations analytically, vectorise regular
+   batch algebra, and retain the naïve/LAPACK route as an oracle.
+3. **Fast Python:** put only the irregular fixed-size work (LU12, Schur and
+   direct tangent) into point-local Numba kernels; keep exponentials and dense
+   regular contractions in NumPy.
+4. **GPU-ready architecture:** preserve pure point-local functions, explicit
+   state ownership and the same `evaluate/commit/revert` contract so that the
+   array backend can later be changed without changing the SRIX equations.
+
+The final comparison with MFront is consequently a **reference comparison**,
+not a race whose winner would decide the architecture.  MFront tells us that
+the law and fields are correct and provides a strong CPU baseline.  The native
+backend is justified when it reproduces that baseline while exposing the
+coupled local algebra needed by the future GPU implementation.
+
+## Why keep MFront if the Python path is fast?
+
+MFront has three roles that should not be confused with the role of the native
+backend:
+
+| Role | MFront | Native Python/NumPy/Numba |
+|---|---|---|
+| Qualified constitutive reference | Yes | Reproduces it and is checked against it |
+| Efficient generic CPU production route | Yes | Competitive on large native coupled runs, but timings are machine- and trajectory-dependent |
+| Explicit internal residual/Jacobian for a GPU-oriented coupled kernel | Not exposed by the generic 3-D interface | Yes |
+| Future CuPy/GPU port of the same local algorithm | Not the target abstraction | Designed for this |
+
+Thus “MFront is efficient” and “we need a Python backend” are compatible
+statements.  MFront gives confidence and a robust CPU route; the native
+backend gives control over the algorithm and a path to accelerators that the
+MFront black-box interface does not provide.
+
+The two choices remain independent:
 
 ```text
 global FFT/Newton solver
@@ -504,6 +564,37 @@ output construction.  A proper A/B report must therefore include wall time,
 warm-up status, BLAS/Numba threads, selected options, global Newton count,
 GMRES count, raw RMS and equilibrium residual.
 
+### Final comparison: what is already demonstrated
+
+The direct MFront P43 forwards establish that the reference route is available
+on both M20 and M100.  The native reports establish that the NumPy nested and
+coupled closures agree to numerical precision on matched native qualification
+paths.  Native-versus-MFront field differences are also archived explicitly;
+they are not silently relabelled as round-off.  The CPU implementation is
+therefore already useful in its own right, but its strongest result is
+structural: it performs a coupled plane-stress solve that a generic MFront 3-D
+call cannot expose to a future GPU kernel.
+
+The evidence supports the following claims:
+
+* the naïve/native equations were checked against MFront before acceleration;
+* the successive native optimisations remove allocations or redundant local
+  solves, not physical terms;
+* the coupled and nested native closures agree in fields and condensed tangent;
+* on large batches, point-local Numba kernels make the Python implementation
+  competitive with the direct MFront P43 references on the tested machine;
+* exact speedup percentages remain conditional on identical crop, parameters,
+  load path, warm-up, thread settings and global Newton/GMRES trajectory.
+
+What is **not** claimed is that Python/Numba universally replaces MFront on
+the CPU, or that a P43 M100 wall time from a different trajectory is a strict
+MFront race.  The defensible conclusion is:
+
+> MFront is the efficient and qualified CPU reference; the native
+> Python/NumPy/Numba backend is a qualified, increasingly performant CPU
+> implementation whose explicit coupled architecture is the route we can
+> carry to CuPy/GPU.
+
 ### Reading the benchmark numbers safely
 
 Three rules prevent the most common misinterpretations:
@@ -513,10 +604,10 @@ Three rules prevent the most common misinterpretations:
 2. **Do not call a different trajectory a regression.**  A change of one global
    Newton step can dominate a small kernel gain.  Compare local kernels at the
    same state, or interleave old/new complete forwards after warm-up.
-3. **Do not transfer J2/MFront numbers to P43 SRIX.**  MFront remains the
-   constitutive reference, but the available direct MFront table is a separate
-   J2 benchmark.  Native P43 claims are about equivalence and measured scaling,
-   not an unperformed MFront SRIX race.
+3. **Do not mix benchmark families.**  The direct P43 MFront tables are valid
+   SRIX references, while the J2 table is a separate backend-context benchmark.
+   Native P43 claims are about equivalence and measured scaling; a strict
+   MFront-versus-NumPy speedup still requires identical inputs and trajectory.
 
 ## What to validate before trusting a result
 
