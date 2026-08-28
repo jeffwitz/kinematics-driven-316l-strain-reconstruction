@@ -29,16 +29,101 @@ pages:
     domain: reconstruction
     status: current
     navigation: tutorials
-  - glob: "how-to/*.md"
+  - path: how-to/index.md
     mode: how-to
     domain: software
     status: current
     navigation: how-to
+  - glob: "how-to/installation/*.md"
+    mode: how-to
+    domain: software
+    status: current
+    navigation: how-to/installation
+  - glob: "how-to/data/*.md"
+    mode: how-to
+    domain: dic
+    status: current
+    navigation: how-to/data
+  - glob: "how-to/mechanics/*.md"
+    mode: how-to
+    domain: reconstruction
+    status: current
+    navigation: how-to/mechanics
+  - glob: "how-to/crystal-plasticity/*.md"
+    mode: how-to
+    domain: crystal-plasticity
+    status: current
+    navigation: how-to/crystal-plasticity
+  - glob: "how-to/identification/*.md"
+    mode: how-to
+    domain: identification
+    status: current
+    navigation: how-to/identification
+  - glob: "how-to/reproduce/*.md"
+    mode: how-to
+    domain: evidence
+    status: current
+    navigation: how-to/reproduce
+  - glob: "how-to/extend/*.md"
+    mode: how-to
+    domain: software
+    status: current
+    navigation: how-to/extend
+  - glob: "how-to/maintenance/*.md"
+    mode: how-to
+    domain: operations
+    status: current
+    navigation: how-to/maintenance
+  - glob: "how-to/*.md"
+    mode: how-to
+    domain: legacy
+    status: historical
+    navigation: legacy
+  - path: reference/index.md
+    mode: reference
+    domain: software
+    status: current
+    navigation: reference
+  - path: explanation/index.md
+    mode: explanation
+    domain: architecture
+    status: current
+    navigation: explanation
+  - path: reference/scientific/index.md
+    mode: reference
+    domain: scientific
+    status: current
+    navigation: reference/scientific
+  - glob: "reference/data/*.md"
+    mode: reference
+    domain: data
+    status: current
+    navigation: reference/data
+  - glob: "reference/software/*.md"
+    mode: reference
+    domain: software
+    status: current
+    navigation: reference/software
+  - glob: "reference/operations/*.md"
+    mode: reference
+    domain: operations
+    status: current
+    navigation: reference/operations
+  - glob: "reference/evidence/*.md"
+    mode: reference
+    domain: evidence
+    status: current
+    navigation: reference/evidence
   - glob: "reference/numerics/*.md"
     mode: reference
     domain: numerics
     status: current
     navigation: reference/numerics
+  - path: reference/numerics/srix_numpy_backend.md
+    mode: reference
+    domain: legacy
+    status: historical
+    navigation: legacy
   - glob: "reference/architecture/*.md"
     mode: reference
     domain: architecture
@@ -46,9 +131,39 @@ pages:
     navigation: maintainers
   - glob: "reference/*.md"
     mode: reference
-    domain: software
+    domain: legacy
+    status: historical
+    navigation: legacy
+  - glob: "explanation/reconstruction/*.md"
+    mode: explanation
+    domain: reconstruction
     status: current
-    navigation: reference
+    navigation: explanation/reconstruction
+  - glob: "explanation/measurement/*.md"
+    mode: explanation
+    domain: measurement
+    status: current
+    navigation: explanation/measurement
+  - glob: "explanation/constitutive/*.md"
+    mode: explanation
+    domain: constitutive
+    status: current
+    navigation: explanation/constitutive
+  - glob: "explanation/native-srix/*.md"
+    mode: explanation
+    domain: crystal-plasticity
+    status: current
+    navigation: explanation/native-srix
+  - glob: "explanation/identification/*.md"
+    mode: explanation
+    domain: identification
+    status: current
+    navigation: explanation/identification
+  - glob: "explanation/evidence/*.md"
+    mode: explanation
+    domain: evidence
+    status: current
+    navigation: explanation/evidence
   - glob: "explanation/spectral_mechanics/*.md"
     mode: explanation
     domain: spectral
@@ -56,9 +171,9 @@ pages:
     navigation: explanation/spectral
   - glob: "explanation/*.md"
     mode: explanation
-    domain: reconstruction
-    status: current
-    navigation: explanation
+    domain: legacy
+    status: historical
+    navigation: legacy
   - glob: "adr/*.md"
     mode: reference
     domain: architecture
@@ -86,6 +201,6 @@ pages:
     navigation: maintainers
   - glob: "*.md"
     mode: explanation
-    domain: reconstruction
+    domain: legacy
     status: historical
     navigation: legacy

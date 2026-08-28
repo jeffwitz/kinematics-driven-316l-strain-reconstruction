@@ -63,6 +63,12 @@ myst_enable_extensions = [
 ]
 myst_heading_anchors = 3
 
+# Historical pages are kept for provenance and linked from canonical task
+# pages, but are intentionally not primary navigation entries. The manifest
+# and structure checker enforce that distinction; Sphinx should not turn these
+# documented legacy pages into build failures.
+suppress_warnings = ["toc.not_included"]
+
 autodoc_typehints = "description"
 autodoc_member_order = "bysource"
 autosummary_generate = True

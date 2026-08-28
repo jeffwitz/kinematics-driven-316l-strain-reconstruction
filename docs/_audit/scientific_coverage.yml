@@ -1,0 +1,68 @@
+version: 1
+subjects:
+  - name: DIC and observation
+    explanation: explanation/measurement/dic_observation_limits.md
+    reference: reference/observation_operator.md
+    how_to: how-to/data/prepare_dic_case.md
+    evidence: reference/evidence_registry.md
+  - name: EBSD and registration
+    explanation: explanation/measurement/dic_observation_limits.md
+    reference: reference/ebsd_orientation_contract.md
+    how_to: how-to/data/inspect_ebsd_registration.md
+    evidence: reference/evidence_registry.md
+  - name: J2/Ludwik baseline
+    explanation: explanation/constitutive/ludwik_j2.md
+    reference: reference/constitutive_models.md
+    how_to: how-to/mechanics/run_local_reconstruction.md
+    evidence: explanation/reconstruction/local_baseline.md
+  - name: SRIX
+    explanation: explanation/constitutive/forest_rubin_srix.md
+    reference: reference/numerics/native_srix_backend.md
+    how_to: how-to/crystal-plasticity/run_316l_crystal_plasticity.md
+    evidence: reference/evidence_registry.md
+  - name: Méric-Cailletaud
+    explanation: explanation/constitutive/meric_cailletaud.md
+    reference: reference/constitutive_models.md
+    how_to: how-to/reproduce/reproduce_srix_meric_comparison.md
+    evidence: explanation/constitutive/srix_vs_meric.md
+  - name: Structural plane stress
+    explanation: explanation/constitutive/structural_plane_stress.md
+    reference: reference/numerics/plane_stress.md
+    how_to: how-to/crystal-plasticity/qualify_native_srix_backend.md
+    evidence: reference/evidence_registry.md
+  - name: Spectral solver and FFTW
+    tutorial: tutorials/first_full_dirichlet_spectral_reconstruction.md
+    explanation: explanation/spectral_mechanics/index.md
+    reference: reference/numerics/newton_gmres_contract.md
+    how_to: how-to/mechanics/run_full_dirichlet_spectral.md
+    evidence: reference/evidence_registry.md
+  - name: TET2 / EBI-TET
+    explanation: explanation/spectral_mechanics/ebi_srix_falsification.md
+    reference: reference/numerics/ebi_tet_contract.md
+    how_to: how-to/reproduce/reproduce_ebi_falsification.md
+    evidence: explanation/evidence/negative_results.md
+  - name: Native SRIX / Numba
+    explanation: explanation/native-srix/optimization_strategy.md
+    reference: reference/numerics/native_srix_backend.md
+    how_to: how-to/crystal-plasticity/qualify_native_srix_backend.md
+    evidence: reference/evidence_registry.md
+  - name: FEMU and SVD
+    explanation: explanation/identification/femu_identification.md
+    reference: reference/selection_indicators.md
+    how_to: how-to/identification/run_identification.md
+    evidence: explanation/identification/identifiability.md
+  - name: REGM
+    explanation: explanation/identification/regm_screening.md
+    reference: reference/claims_matrix.md
+    how_to: how-to/identification/run_regm_screening.md
+    evidence: explanation/evidence/negative_results.md
+  - name: Reduced integration
+    explanation: explanation/constitutive/reduced_integration_hourglass.md
+    reference: reference/constitutive_models.md
+    how_to: how-to/use_reduced_integration.md
+    evidence: explanation/evidence/negative_results.md
+  - name: Nonlocal / micromorphic
+    explanation: explanation/reconstruction/nonlocal_micromorphic.md
+    reference: reference/nonlocal_parameters.md
+    how_to: how-to/run_micromorphic_identification.md
+    evidence: explanation/evidence/current_scientific_status.md

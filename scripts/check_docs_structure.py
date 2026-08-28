@@ -13,6 +13,24 @@ import yaml
 DOC_ROOT = Path(__file__).resolve().parents[1] / "docs"
 EXCLUDED_DIRS = {"_build", "_generated", "_static", "_inventories", "_exports"}
 VALID_MODES = {"tutorial", "how-to", "reference", "explanation", "portal"}
+VALID_DOMAINS = {
+    "dic",
+    "data",
+    "measurement",
+    "reconstruction",
+    "constitutive",
+    "crystal-plasticity",
+    "plane-stress",
+    "spectral",
+    "identification",
+    "evidence",
+    "software",
+    "architecture",
+    "operations",
+    "scientific",
+    "numerics",
+    "legacy",
+}
 
 
 def pages() -> list[str]:
@@ -32,6 +50,14 @@ def load_manifest() -> list[dict[str, str]]:
     return data["pages"]
 
 
+def load_coverage() -> list[dict[str, str]]:
+    source = DOC_ROOT / "_audit" / "scientific_coverage.yml"
+    data = yaml.safe_load(source.read_text())
+    if not isinstance(data, dict) or not isinstance(data.get("subjects"), list):
+        raise ValueError("scientific coverage must contain a subjects list")
+    return data["subjects"]
+
+
 def matches(entry: dict[str, str], path: str) -> bool:
     pattern = entry.get("path") or entry.get("glob")
     if not pattern:
@@ -39,6 +65,8 @@ def matches(entry: dict[str, str], path: str) -> bool:
     # A basename glob such as ``*.md`` is only for the docs root; fnmatch's
     # '*' also matches slashes, which would make every declaration ambiguous.
     if "/" not in pattern and "/" in path:
+        return False
+    if "**" not in pattern and len(pattern.split("/")) != len(path.split("/")):
         return False
     return PurePosixPath(path).match(pattern)
 
@@ -104,6 +132,23 @@ def main() -> int:
         entry = found[0]
         if entry.get("mode") not in VALID_MODES:
             errors.append(f"{path}: invalid mode {entry.get('mode')!r}")
+        if entry.get("domain") not in VALID_DOMAINS:
+            errors.append(f"{path}: invalid domain {entry.get('domain')!r}")
+        top_level_mode = {
+            "tutorials": "tutorial",
+            "how-to": "how-to",
+            "reference": "reference",
+            "explanation": "explanation",
+        }.get(path.split("/", 1)[0])
+        if (
+            top_level_mode
+            and entry.get("status") == "current"
+            and entry.get("mode") != top_level_mode
+        ):
+            errors.append(
+                f"{path}: current page mode {entry.get('mode')!r} disagrees "
+                f"with its {top_level_mode!r} tree"
+            )
         if not entry.get("domain") or not entry.get("status") or not entry.get("navigation"):
             errors.append(f"{path}: mode/domain/status/navigation are required")
         if (
@@ -116,6 +161,29 @@ def main() -> int:
         for target in navigation_targets(path, text):
             if not resolve_target(path, target):
                 errors.append(f"{path}: navigation target does not exist: {target}")
+
+    try:
+        coverage = load_coverage()
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        errors.append(f"scientific coverage: {exc}")
+    else:
+        for subject in coverage:
+            if not isinstance(subject, dict) or not subject.get("name"):
+                errors.append("scientific coverage: every subject needs a name")
+                continue
+            required = {"explanation", "reference", "how_to", "evidence"}
+            missing = sorted(required - subject.keys())
+            if missing:
+                errors.append(
+                    f"coverage {subject.get('name')}: missing paths: {', '.join(missing)}"
+                )
+            for key, target in subject.items():
+                if key == "name":
+                    continue
+                if not isinstance(target, str) or not (DOC_ROOT / target).is_file():
+                    errors.append(
+                        f"coverage {subject.get('name')}: {key} target does not exist: {target}"
+                    )
 
     if errors:
         print("Documentation structure violations:", file=sys.stderr)
