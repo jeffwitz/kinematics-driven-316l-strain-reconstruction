@@ -5,3 +5,27 @@ references/legacy_abaqus/*.py -text -diff
 # validation outputs must not acquire LFS tracking through a broad glob.
 validation/golden/**/*.npy filter=lfs diff=lfs merge=lfs -text
 validation/golden/**/*.npz filter=lfs diff=lfs merge=lfs -text
+
+# Legacy validation references already tracked in LFS.  These scoped rules
+# preserve checkout behaviour for existing payloads; the storage guard rejects
+# adding new non-golden LFS paths under them.
+validation/reference_data/article_100p_pad150_p0000/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/article_100p_pad150_p0000_mfront_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/article_100p_pad150_p0042_mfront_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/article_100p_pad150_p0048_mfront_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_multistep_modal3_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_multistep_observed_path_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_multistep_predictor_fix_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_multistep_proportional40_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_photometric_quality_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_symmetric_observation_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/dic_uncertainty_propagation_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/local_roi_observations_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/nonlocality_helmholtz_article_p0000/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/nonlocality_helmholtz_article_p0042_confirmatory_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/nonlocality_helmholtz_article_p0048_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/observed_evm_controls_p0043_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/p0043_matrix_observations_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/p0043_f_mapping_reidentification_v1/**/*.npy filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/mfront_performance_v1/final_states.npz filter=lfs diff=lfs merge=lfs -text
+validation/reference_data/plane_stress_backend_performance_100x100_v1/runs/*/fields.npz filter=lfs diff=lfs merge=lfs -text
