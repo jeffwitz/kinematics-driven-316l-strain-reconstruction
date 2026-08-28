@@ -4,4 +4,4 @@ nosearch: true
 ---
 # This page has moved
 
-The current claim boundaries are in {doc}`../reference/claims_matrix`.
+The current claim boundaries are in {doc}`../reference/evidence/claims_matrix`.

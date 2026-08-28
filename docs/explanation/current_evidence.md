@@ -81,4 +81,4 @@ Use the evidence registry and the case-specific result artefact for numerical
 values. Interpret slip maps together with orientation, boundary data, stress,
 and displacement fields. For the scientific interpretation of the temporal
 loading path and observation operator, see
-{doc}`temporal_loading_path` and {doc}`../reference/observation_operator`.
+{doc}`temporal_loading_path` and {doc}`../reference/scientific/observation_operator`.

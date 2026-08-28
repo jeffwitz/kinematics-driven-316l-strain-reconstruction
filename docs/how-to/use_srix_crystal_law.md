@@ -60,7 +60,7 @@ Clarke element for `d|dg|/ddg`; this is not a user calibration parameter. See
 With `mode: ebsd`, the orientation provider reads the case's co-registered
 Euler angles and assigns a material orientation to every Gauss point. The
 orientation convention is Bunge, in degrees, and follows the contract in
-{doc}`../reference/ebsd_orientation_contract`.
+{doc}`../reference/scientific/ebsd_orientation_contract`.
 
 SRIX does not provide a scalar J2 equivalent plastic strain. Use the twelve
 signed slip increments, accumulated absolute slip, and system-wise slip

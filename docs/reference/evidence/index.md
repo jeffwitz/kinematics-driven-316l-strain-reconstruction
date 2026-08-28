@@ -5,8 +5,9 @@
 
 - {doc}`validation_metrics`
 - {doc}`qualification_vocabulary`
-- {doc}`../evidence_registry`
-- {doc}`../claims_matrix`
+- {doc}`evidence_registry`
+- {doc}`claims_matrix`
+- {doc}`selection_indicators`
 
 The portal {doc}`../../evidence/index` explains how these contracts are used
 to navigate the primary artefacts.
@@ -16,6 +17,7 @@ to navigate the primary artefacts.
 
 validation_metrics
 qualification_vocabulary
-../evidence_registry
-../claims_matrix
+evidence_registry
+claims_matrix
+selection_indicators
 ```

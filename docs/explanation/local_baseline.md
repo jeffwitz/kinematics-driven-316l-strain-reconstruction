@@ -53,7 +53,7 @@ The independent DIC-driven finite-element comparison gives:
 | constitutive tangent | path-wise and finite-difference diagnostics | consistent with each implementation |
 | plane-stress state | in-plane fields and transverse residual | within declared tolerances |
 
-The exact numbers are generated in {doc}`../reference/evidence_registry`.
+The exact numbers are generated in {doc}`../reference/evidence/evidence_registry`.
 The comparison has a deliberate model boundary: below the former tabulation
 cap, the table and analytical law represent the same baseline; beyond it, the
 analytical law continues while the historical table plateaus.

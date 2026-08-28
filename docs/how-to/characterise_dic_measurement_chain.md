@@ -172,4 +172,4 @@ they are not confidence intervals. PEEQ is explicitly left unpropagated.
   intentionally regenerating the same declared campaign.
 
 For interpretation, see {doc}`../explanation/current_evidence`. Exact field
-and measurement conventions are in {doc}`../reference/observation_operator`.
+and measurement conventions are in {doc}`../reference/scientific/observation_operator`.

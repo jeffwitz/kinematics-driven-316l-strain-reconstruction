@@ -75,5 +75,5 @@ therefore measures spatial information rather than a change in marginal
 material statistics. PEEQ remains a model output and is not compared with DIC
 in amplitude.
 
-See {doc}`../reference/observation_operator` for comparison rules and
+See {doc}`../reference/scientific/observation_operator` for comparison rules and
 {doc}`../explanation/missing_spatial_interaction` for interpretation.

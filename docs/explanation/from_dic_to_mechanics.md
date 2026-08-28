@@ -60,7 +60,7 @@ internal variable and has no direct experimental counterpart in this dataset.
 
 Exact axes, units, derivative conventions and tensor completion are specified
 in {doc}`../reference/input_contract`,
-{doc}`../reference/observation_operator` and
+{doc}`../reference/scientific/observation_operator` and
 {doc}`../reference/tensor_conventions`.
 
 ## Conclusion

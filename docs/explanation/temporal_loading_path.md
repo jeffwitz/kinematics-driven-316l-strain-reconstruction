@@ -40,7 +40,7 @@ single documented convention. Do not mix a total displacement difference with
 an accumulated internal variable unless that relation is part of the model.
 
 The observation operator and its frame conventions are specified in
-{doc}`../reference/observation_operator`. Current evidence and its limits are
+{doc}`../reference/scientific/observation_operator`. Current evidence and its limits are
 summarised in {doc}`current_evidence`.
 
 ## Interpretation

@@ -148,7 +148,7 @@ Orientations are point dependent and use the repository's
 (the spatial map from EBSD pixels to material points).  Internal spectral
 arrays remain **C** ordered `(x, y, subcell)`.  F is not a global array-order
 switch: applying it to stresses or shadows is a bug.  See
-{doc}`../../reference/ebsd_orientation_contract` and
+{doc}`../../reference/scientific/ebsd_orientation_contract` and
 {doc}`../../reference/fcc_interaction_matrix_mapping` for the detailed
 contracts.
 

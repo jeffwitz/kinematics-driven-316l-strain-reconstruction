@@ -134,6 +134,26 @@ pages:
     domain: scientific
     status: current
     navigation: reference/scientific
+  - glob: "reference/scientific/*.md"
+    mode: reference
+    domain: scientific
+    status: current
+    navigation: reference/scientific
+  - path: reference/scientific/constitutive_models.md
+    mode: reference
+    domain: constitutive
+    status: current
+    navigation: reference/scientific
+  - path: reference/scientific/observation_operator.md
+    mode: reference
+    domain: measurement
+    status: current
+    navigation: reference/scientific
+  - path: reference/scientific/ebsd_orientation_contract.md
+    mode: reference
+    domain: crystal-plasticity
+    status: current
+    navigation: reference/scientific
   - path: reference/scientific/nonlocal_parameters.md
     mode: reference
     domain: constitutive

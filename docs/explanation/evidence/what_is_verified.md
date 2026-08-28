@@ -10,4 +10,4 @@ negative results. Unknown means that the available data do not discriminate
 the hypotheses; it is not permission to select a convenient convention.
 
 The definitions and links to primary artefacts are maintained in
-{doc}`../../reference/evidence_registry` and the Evidence portal.
+{doc}`../../reference/evidence/evidence_registry` and the Evidence portal.

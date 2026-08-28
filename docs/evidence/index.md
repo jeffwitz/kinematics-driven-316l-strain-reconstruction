@@ -6,8 +6,9 @@ artefacts; these pages explain their status and interpretation.
 
 ## Current routes
 
-- {doc}`../reference/evidence_registry` — which artefact supports which claim.
-- {doc}`../reference/claims_matrix` — claim status and provenance.
+- {doc}`../reference/evidence/evidence_registry` — which artefact supports
+  which claim.
+- {doc}`../reference/evidence/claims_matrix` — claim status and provenance.
 - {doc}`../explanation/evidence/current_scientific_status` — what is verified,
   supported or still unknown.
 - {doc}`../explanation/evidence/what_is_verified` — vocabulary and permitted
@@ -27,3 +28,5 @@ artefacts; these pages explain their status and interpretation.
 - {doc}`../explanation/identification/identifiability` — FEMU/SVD observable
   modes and current limits.
 - {doc}`../explanation/identification/regm_screening` — REGM transfer boundary.
+- {doc}`../reference/evidence/selection_indicators` — definitions for
+  sensitivity and SVD outputs.

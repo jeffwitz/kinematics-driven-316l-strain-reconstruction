@@ -47,3 +47,23 @@ def test_explicit_markers_and_canonical_reachability() -> None:
         "explanation/index.md",
         "explanation/native-srix/optimization_strategy.md",
     )
+
+
+def test_phase3_canonical_reference_targets_are_current() -> None:
+    entries = load_manifest()
+    canonical = {
+        "reference/evidence/evidence_registry.md": "evidence",
+        "reference/evidence/claims_matrix.md": "evidence",
+        "reference/evidence/qualification_vocabulary.md": "evidence",
+        "reference/evidence/selection_indicators.md": "evidence",
+        "reference/scientific/constitutive_models.md": "constitutive",
+        "reference/scientific/observation_operator.md": "measurement",
+        "reference/scientific/ebsd_orientation_contract.md": "crystal-plasticity",
+    }
+    for path, domain in canonical.items():
+        entry = manifest_entry(entries, path)
+        assert entry is not None
+        assert entry["mode"] == "reference"
+        assert entry["status"] == "current"
+        assert entry["navigation"] != "legacy"
+        assert entry["domain"] == domain

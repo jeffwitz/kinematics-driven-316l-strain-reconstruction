@@ -7,7 +7,7 @@ DIC supplies measured boundary kinematics, not a complete equilibrated
 mechanical field. The reconstruction therefore combines measured displacement
 data, a constitutive law and an equilibrium solver. The observation operator,
 axis conventions and admissible masks are contracts, not tuning parameters;
-see {doc}`../../reference/observation_operator` and
+see {doc}`../../reference/scientific/observation_operator` and
 {doc}`../../reference/dic_axis_conventions`.
 
 The central distinction is between reproducing the measured boundary motion
