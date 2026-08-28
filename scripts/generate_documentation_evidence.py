@@ -117,6 +117,11 @@ def _write_evidence(data: dict[str, Any], output: Path) -> None:
         "",
     ]
     for item in data["evidence"]:
+        # Schema-v2 registries in older checkouts may contain claim-shaped
+        # records in this list.  They are rendered by _write_claims and do not
+        # have the evidence fields needed for this table.
+        if "id" not in item:
+            continue
         sources = item.get("sources", [])
         source_text = "<br>".join(
             f"{source.get('role', 'primary')}: `{source['path']}`" for source in sources
@@ -159,6 +164,11 @@ def _write_tables(data: dict[str, Any], output: Path) -> None:
         for source, document in evidence["_loaded_sources"]
     }
     for table in data.get("tables", []):
+        # Some historical registry records are evidence entries accidentally
+        # repeated in the tables list.  They are not renderable tables; the
+        # structured evidence entries are handled above.
+        if not {"target", "columns", "rows"}.issubset(table):
+            continue
         headings = table["columns"]
         lines = [
             "<!-- Generated and verified from machine-readable evidence. -->",

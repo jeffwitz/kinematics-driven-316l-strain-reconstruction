@@ -257,3 +257,45 @@
 : Status: **negative corrected-observable result**.
 : Conclusion: No. The cumulative endpoint observable raises the third direction to 0.0938 but leaves the fourth at 2.17e-4; the leading angle to FEMU is 74.7 degrees and P43 remains blocked.
 : Sources: corrected cumulative endpoint geometry: `validation/reference_data/srix_regm_sequential_one_newton_v3/report.json`.
+
+**E-SRIX-FEMU-COMMON-PATH-001R — Does the corrected Dirichlet contract yield one strict common path for the FEMU base and all eight parameter perturbations?**
+: Fidelity: M8 SRIX twin; corrected free-DOF initial predictor; unqualified v9 proposal with synchronized local bisection. Parameters: log tau0, R, Q, b; central step 3e-3; strict oracle replay.
+: Status: **demonstrated on corrected discrete path**.
+: Conclusion: The corrected common path converged for all nine trajectories after 25 local insertions (94 steps). Direct-vs-FD relative column errors are 3.95e-4, 9.71e-4, 7.94e-5 and 7.96e-5, with cosines above 0.9999995. This qualifies direct FEMU differentiation on the 94-step path, but not path-refinement convergence or parameter identification.
+: Sources: corrected common-path rebaseline: `validation/reference_data/srix_femu_common_path_gate_v17/report.json`.
+
+**E-SRIX-FEMU-PATH-002R — Does the corrected FEMU sensitivity geometry converge under nested loading-path refinement?**
+: Fidelity: M8 SRIX twin; corrected Dirichlet contract 2; L0/L1/L2 nested paths with strict local repairs. Parameters: log tau0, R, Q, b; direct sensitivity; same physical L0 scoring fractions.
+: Status: **negative primary gate**.
+: Conclusion: The observed forward is stable (2.18e-4 then 9.51e-5 relative changes), but L1-to-L2 sensitivity changes remain 3.67% and 4.20% for log(tau0) and log(R), with a 2.606 degree rank-3 angle. The pre-registered path-convergence gate is false; no identification or P43 is authorized.
+: Sources: nested corrected path convergence: `validation/reference_data/srix_femu_path_convergence_v3/report.json`.
+
+**E-SRIX-FEMU-PATH-002S — Does one final L3 refinement stabilize the direct FEMU sensitivity geometry?**
+: Fidelity: M8 SRIX twin; corrected Dirichlet contract 2; L3 nested path with strict local repairs. Parameters: log tau0, R, Q, b; direct sensitivity; L2 artefact reused.
+: Status: **blocked at direct sensitivity evaluation**.
+: Conclusion: The L3 forward converged with 809 steps and 25 repairs, but a constitutive shadow replay failed with MFront status -1 while constructing the direct Jacobian. No L2-to-L3 sensitivity metric is claimed; no L4, identification or P43 is authorized.
+: Sources: final path extension diagnostic: `validation/reference_data/srix_femu_path_convergence_v4/report.json`.
+
+**E-SRIX-FEMU-SHADOW-003 — Where does the L3 direct FEMU shadow replay fail, and does reducing h remove the failure?**
+: Fidelity: M8 SRIX twin; corrected Dirichlet contract 2; exact 809-step L3 path. Parameters: log tau0, R, Q, b; h in {0.003, 0.0015, 0.001}.
+: Status: **L3 shadow failure localized; L2 h diagnostic passes**.
+: Conclusion: The L3 forward converges, but fixed-current-strain shadow tau0-minus fails at accepted increment 271, fraction 0.232177734375 to 0.2322998046875, with MFront status -1. On L2 all three preregistered h values complete. No h is adopted and no L2-to-L3 sensitivity convergence is claimed.
+: Sources: machine-readable shadow diagnostic: `validation/reference_data/srix_femu_shadow_diagnostic_v1/report.json`.
+
+**E-SRIX-FEMU-SHADOW-003B — Does reducing h allow the failing tau0-minus shadow to pass the L3 failure increment, and are L2 Jacobians stable?**
+: Fidelity: M8 SRIX twin; L3 exact-path prefix through increment 271; L2 392-step Jacobian comparison. Parameters: h = 0.003, 0.0015, 0.001.
+: Status: **diagnostic positive at the local prefix; full L3 adoption pending**.
+: Conclusion: On the L3 prefix, h=0.003 fails at tau0-minus while h=0.0015 and h=0.001 pass increment 271. On L2, maximum column changes are 0.204% and 0.246%, with minimum cosines 0.9999981 and 0.9999973; the normalized spectrum remains stable. The smaller h values are candidates, not yet adopted.
+: Sources: prefix and L2 h comparison: `validation/reference_data/srix_femu_shadow_diagnostic_v1/report.json`<br>machine-readable Jacobian comparison: `validation/reference_data/srix_femu_shadow_diagnostic_v1/l2_jacobian_h_sweep.json`.
+
+**E-SRIX-FEMU-SHADOW-003C — Do the two prospective shadow steps produce stable complete L3 Jacobians, and does PATH-002S pass?**
+: Fidelity: M8 SRIX twin; exact 809-step L3 path; full direct shadow replay. Parameters: h=0.0015 primary and h=0.001 control.
+: Status: **L3 h stability passed; L2-to-L3 path gate remains negative**.
+: Conclusion: Both L3 Jacobians complete. Their maximum column difference is 0.102%, minimum cosine 0.99999957 and rank-3 angle 0.136°, so h=0.0015 is adopted as the primary shadow-FD step and h=0.001 remains a control. PATH-002S remains negative only because L2-to-L3 rank-3 angles are 2.290° and 2.195°, above the preregistered 2° threshold. Identification and P43 remain blocked.
+: Sources: full L3 h qualification: `validation/reference_data/srix_femu_shadow_h_l3_v1/report.json`.
+
+**E-SRIX-P43-SYNTH-001 — La chaîne de sensibilité FEMU directe retrouve-t-elle une vérité SRIX connue sur un crop P43 synthétique ?**
+: Fidelity: P43 M20 réel avec EBSD réel, histoire DIC réparée, 32 incréments, observation identité, sans bruit. Parameters: theta4 log-paramètres; shadow FD h=0.0015; départ proche; six évaluations préenregistrées.
+: Status: **smoke positif; qualification multi-départs non terminée**.
+: Conclusion: Le résidu RMS passe de 8.8502e-8 à 1.2693e-13 et les paramètres finaux sont tau0=40.000004 MPa, R=18.781912 MPa, Q=10.006888 MPa, b=2.997907. La SVD vaut (1, 0.135725, 0.036116, 1.031e-4), avec rho(Q,b)=0.999999997; Q et b ne sont donc pas revendiqués séparément. L'optimiseur a atteint la limite de six évaluations, et aucun P43 expérimental n'est autorisé.
+: Sources: machine-readable synthetic smoke result: `validation/reference_data/p0043_synthetic_identification_v1/report.json`.
