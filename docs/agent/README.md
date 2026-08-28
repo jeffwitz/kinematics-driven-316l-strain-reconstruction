@@ -24,7 +24,7 @@ before changing code that touches multiple domains.
 | spectral solver, FFT, DTT, Gélébart, kinematics | [`docs/explanation/spectral_mechanics/index.md`](../explanation/spectral_mechanics/index.md) and [`docs/reference/numerics/spectral_result_contract.md`](../reference/numerics/spectral_result_contract.md) | spectral convergence/performance artifact |
 | DIC preparation, units, noise, boundaries | [`docs/how-to/prepare_data.md`](../how-to/prepare_data.md), [`docs/how-to/characterise_dic_measurement_chain.md`](../how-to/characterise_dic_measurement_chain.md) | DIC provenance and measurement-chain artifacts |
 | nonlocality, micromorphic or spatial interaction | [`docs/explanation/missing_spatial_interaction.md`](../explanation/missing_spatial_interaction.md), [`docs/explanation/micromorphic_model.md`](../explanation/micromorphic_model.md) | current local/nonlocal comparison |
-| performance or scaling | [`docs/performance.md`](../performance.md) | benchmark artifact with environment fingerprint |
+| performance or scaling | [`reference/results.md`](../reference/results.md) | benchmark artifact with environment fingerprint |
 | durable design choice | [`docs/adr/index.md`](../adr/index.md) | the referenced ADR and current code |
 
 ## Evidence and history rules
