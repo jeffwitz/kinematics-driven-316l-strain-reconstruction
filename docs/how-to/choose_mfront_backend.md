@@ -11,6 +11,7 @@ and for three-dimensional behaviours without a structural backend.
 | `mfront-3d-condensed-plane-stress` | Reference calculations and any compatible 3D law | Independent external closure | Local condensation is performed by the host |
 | `mfront-structural-plane-stress` | Registered `StructuralPlaneStress3D` behaviours | Generic three-traction closure with the 3D state retained | Behaviour must satisfy the V1 contract |
 | `mfront-native-generalised-plane-stress` | The specialised legacy GPS behaviour | Direct specialised SRIX GPS implementation | Use only when reproducing that registered behaviour explicitly |
+| `numpy-srix` | Native, point-batched SRIX implementation | Explicit NumPy/Numba path and native coupled closure | Opt-in; MFront remains the reference |
 | `python` | Historical J2 regression workflows | Independent of MFront | Not the production crystal-plasticity route |
 
 ## Qualified SRIX/EBSD configuration
@@ -52,6 +53,10 @@ Keep the MFront, Krylov-BLAS, and FFTW thread settings explicit in benchmark
 reports. See {doc}`../reference/configuration` for the complete configuration
 contract and {doc}`../reference/numerics/mfront_structural_plane_stress` for
 the formulation and its validity domain.
+
+For the native SRIX options, the `nested`/`coupled` distinction, and the staged
+optimization evidence, see
+{doc}`../reference/numerics/srix_numpy_backend`.
 
 ## Calling it correctly
 

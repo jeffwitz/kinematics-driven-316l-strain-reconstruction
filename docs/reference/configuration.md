@@ -73,6 +73,7 @@ Supported backend values are:
 | `mfront-3d-condensed-plane-stress` | 3D law with the plane-stress closure solved outside it, in Python; works with any 3D behaviour and is the numerical reference |
 | `mfront-native-generalised-plane-stress` | legacy specialised GPS behaviour; use `mfront-structural-plane-stress` for the registered generic V1 route |
 | `mfront-structural-plane-stress` | generated structural plane-stress closure for the V1 `Implicit`/`StandardElasticity` 3D contract |
+| `numpy-srix` / `numpy-srix-plane-stress` | native point-batched SRIX implementation; opt-in, with `nested` or native `coupled` plane-stress closure |
 | `python` | historical analytical/tabulated J2 regression implementation |
 | any registered identifier | process-local constitutive plugin |
 
@@ -98,6 +99,28 @@ whichever plane-stress route is chosen.
 The 316L parameter sets are **transposed from published work, not identified on
 this material**. See {doc}`../how-to/use_srix_crystal_law` before presenting a
 number obtained with them.
+
+### Native NumPy SRIX controls
+
+These options apply only to `constitutive_backend: numpy-srix` (the
+`numpy-srix-plane-stress` spelling is an alias).  The complete explanation and
+selection guide is {doc}`numerics/srix_numpy_backend`.
+
+| Key | Default | Meaning |
+|---|---:|---|
+| `material_newton_max_iterations` | `100` | Maximum iterations of the native twelve-slip constitutive Newton. |
+| `plane_stress_max_iterations` | `15` | Maximum iterations of the local three-traction closure. |
+| `local_tolerance` | `1e-11` | Native 3-D constitutive residual tolerance. |
+| `local_linear_solver` | `numpy` | Batched LAPACK or specialized `numba-lu12` one-RHS solves. |
+| `batch_size` | `null` | Optional point chunk size limiting Newton workspace memory. |
+| `parallel_backend` | `serial` | `serial` or experimental `dask-threads` chunk execution. |
+| `dask_workers` | `1` | Worker count for the experimental Dask threaded mode. |
+| `coupled_block_solver` | `numpy` | Coupled-only: `numpy`, `numba-fused`, `numba-fused-state`, or `auto`. |
+| `fused_state_threshold` | `12000` | `auto` dispatch threshold in pending points; machine-dependent performance knob. |
+
+The native options do not change the material parameters or equations.  Keep
+`nested` and `coupled_block_solver: numpy` for an independent reference; use
+the Numba options only after the corresponding equivalence tests pass.
 
 ### Production options for the generalised plane-stress backend
 
