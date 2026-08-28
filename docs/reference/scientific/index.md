@@ -6,6 +6,7 @@
 Stable definitions used across the reconstruction are collected here:
 
 - {doc}`constitutive_models`
+- {doc}`meric_cailletaud`
 - {doc}`model_contract`
 - {doc}`tensor_conventions`
 - {doc}`ebsd_orientation_contract`
@@ -21,6 +22,7 @@ interpretation belongs in Explanation.
 :hidden:
 
 constitutive_models
+meric_cailletaud
 model_contract
 tensor_conventions
 ebsd_orientation_contract

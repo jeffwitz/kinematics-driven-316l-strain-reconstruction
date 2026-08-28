@@ -20,12 +20,12 @@ points to them.  The structure checker now rejects any current `toctree`
 target whose manifest status is not `current`, or whose navigation is
 `legacy`.
 
-## Routed subjects and blockers
+## Historical backlog snapshot
 
-The machine-readable backlog is in
+At the time of Phase 4, the machine-readable backlog was in
 `scientific_coverage.yml`; the corresponding paths and human-readable summary
-are in `scientific_coverage_matrix.md`.  Current blockers are deliberately
-conservative:
+are in `scientific_coverage_matrix.md`. The following blockers were then
+deliberately conservative:
 
 - DIC, J2, plane stress and REGM need a content review before completion.
 - EBSD needs a dedicated explanatory page for orientation/registration.
@@ -33,6 +33,6 @@ conservative:
 - Méric, spectral/FFTW, FEMU/SVD and reduced integration need more specific
   reference contracts.
 
-No subject was promoted to `complete` by declaration alone.  The checker still
-requires current manifest entries, mode agreement and reachability from the
-canonical portal for that status.
+Phase 5 reviewed and migrated those contents. The current matrix is the source
+of truth; the strict checker still requires current manifest entries, mode
+agreement and reachability from the canonical portal for `complete`.

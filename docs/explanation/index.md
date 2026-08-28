@@ -16,6 +16,7 @@ commands belong in How-to guides and stable interfaces belong in Reference.
 ## Understand measurement
 
 - {doc}`measurement/dic_observation_limits`
+- {doc}`measurement/ebsd_registration_and_orientation`
 - {doc}`measurement/synthetic_measurement_tests`
 - {doc}`measurement/photometric_uncertainty`
 
@@ -64,6 +65,7 @@ reconstruction/scope_reconstruction_identification_prediction
 reconstruction/temporal_loading_path
 reconstruction/nonlocal_micromorphic
 measurement/dic_observation_limits
+measurement/ebsd_registration_and_orientation
 measurement/synthetic_measurement_tests
 measurement/photometric_uncertainty
 constitutive/ludwik_j2

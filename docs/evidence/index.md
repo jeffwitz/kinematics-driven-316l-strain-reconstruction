@@ -8,6 +8,8 @@ artefacts; these pages explain their status and interpretation.
 
 - {doc}`../reference/evidence/evidence_registry` — which artefact supports
   which claim.
+- {doc}`../explanation/reconstruction/local_baseline` — J2 baseline evidence
+  and its qualification boundary.
 - {doc}`../reference/evidence/claims_matrix` — claim status and provenance.
 - {doc}`../explanation/evidence/current_scientific_status` — what is verified,
   supported or still unknown.
@@ -17,6 +19,10 @@ artefacts; these pages explain their status and interpretation.
   unqualified results.
 - {doc}`../explanation/constitutive/forest_rubin_srix` — SRIX qualification
   context and MFront relationship.
+- {doc}`../reference/evidence/srix_qualification` — SRIX claim boundaries and
+  primary qualification artefacts.
+- {doc}`../reference/evidence/native_srix_qualification` — native/Numba
+  equivalence and performance evidence.
 - {doc}`../explanation/constitutive/srix_vs_meric` — comparison scope and
   metrics.
 - {doc}`../explanation/constitutive/structural_plane_stress` — nested/coupled

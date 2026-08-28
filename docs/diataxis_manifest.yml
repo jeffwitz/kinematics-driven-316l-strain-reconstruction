@@ -149,6 +149,11 @@ pages:
     domain: constitutive
     status: current
     navigation: reference/scientific
+  - path: reference/scientific/meric_cailletaud.md
+    mode: reference
+    domain: crystal-plasticity
+    status: current
+    navigation: reference/scientific
   - path: reference/scientific/model_contract.md
     mode: reference
     domain: scientific
@@ -214,6 +219,26 @@ pages:
     domain: numerics
     status: current
     navigation: reference/numerics
+  - path: reference/numerics/plane_stress.md
+    mode: reference
+    domain: plane-stress
+    status: current
+    navigation: reference/numerics
+  - path: reference/numerics/spectral_solver.md
+    mode: reference
+    domain: spectral
+    status: current
+    navigation: reference/numerics
+  - path: reference/numerics/femu_sensitivity_and_svd.md
+    mode: reference
+    domain: identification
+    status: current
+    navigation: reference/numerics
+  - path: reference/numerics/cps4r_hourglass.md
+    mode: reference
+    domain: constitutive
+    status: current
+    navigation: reference/numerics
   - path: reference/numerics/native_srix_backend.md
     mode: reference
     domain: crystal-plasticity
@@ -242,6 +267,11 @@ pages:
   - glob: "explanation/measurement/*.md"
     mode: explanation
     domain: measurement
+    status: current
+    navigation: explanation/measurement
+  - path: explanation/measurement/ebsd_registration_and_orientation.md
+    mode: explanation
+    domain: crystal-plasticity
     status: current
     navigation: explanation/measurement
   - glob: "explanation/constitutive/*.md"

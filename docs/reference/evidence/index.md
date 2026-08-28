@@ -8,6 +8,8 @@
 - {doc}`evidence_registry`
 - {doc}`claims_matrix`
 - {doc}`selection_indicators`
+- {doc}`srix_qualification`
+- {doc}`native_srix_qualification`
 
 The portal {doc}`../../evidence/index` explains how these contracts are used
 to navigate the primary artefacts.
@@ -20,4 +22,6 @@ qualification_vocabulary
 evidence_registry
 claims_matrix
 selection_indicators
+srix_qualification
+native_srix_qualification
 ```
