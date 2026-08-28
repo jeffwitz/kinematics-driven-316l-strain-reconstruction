@@ -1,0 +1,91 @@
+version: 1
+description: >-
+  Canonical documentation routing.  A declaration may cover a stable family
+  of pages with a glob; every public page must match exactly one declaration.
+
+pages:
+  - path: index.rst
+    mode: portal
+    domain: architecture
+    status: current
+    navigation: home
+  - path: evidence/index.md
+    mode: portal
+    domain: evidence
+    status: current
+    navigation: evidence
+  - path: maintainers/index.md
+    mode: portal
+    domain: architecture
+    status: current
+    navigation: maintainers
+  - path: tutorials/index.md
+    mode: tutorial
+    domain: reconstruction
+    status: current
+    navigation: tutorials
+  - glob: "tutorials/*.md"
+    mode: tutorial
+    domain: reconstruction
+    status: current
+    navigation: tutorials
+  - glob: "how-to/*.md"
+    mode: how-to
+    domain: software
+    status: current
+    navigation: how-to
+  - glob: "reference/numerics/*.md"
+    mode: reference
+    domain: numerics
+    status: current
+    navigation: reference/numerics
+  - glob: "reference/architecture/*.md"
+    mode: reference
+    domain: architecture
+    status: current
+    navigation: maintainers
+  - glob: "reference/*.md"
+    mode: reference
+    domain: software
+    status: current
+    navigation: reference
+  - glob: "explanation/spectral_mechanics/*.md"
+    mode: explanation
+    domain: spectral
+    status: current
+    navigation: explanation/spectral
+  - glob: "explanation/*.md"
+    mode: explanation
+    domain: reconstruction
+    status: current
+    navigation: explanation
+  - glob: "adr/*.md"
+    mode: reference
+    domain: architecture
+    status: internal
+    navigation: maintainers
+  - glob: "agent/**/*.md"
+    mode: reference
+    domain: architecture
+    status: internal
+    navigation: maintainers
+  - glob: "agent/*.md"
+    mode: reference
+    domain: architecture
+    status: internal
+    navigation: maintainers
+  - glob: "operations/*.md"
+    mode: reference
+    domain: operations
+    status: current
+    navigation: maintainers
+  - glob: "_audit/*.md"
+    mode: reference
+    domain: architecture
+    status: internal
+    navigation: maintainers
+  - glob: "*.md"
+    mode: explanation
+    domain: reconstruction
+    status: historical
+    navigation: legacy
