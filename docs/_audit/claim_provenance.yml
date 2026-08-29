@@ -97,9 +97,9 @@ subjects:
     sensitivity_contract:
       evidence: [reference/numerics/femu_sensitivity_and_svd.md]
       boundary: definitions and registered sensitivity machinery
-    dic_weighted_observability:
-      evidence: [E-DIC-OBSERVABILITY-001]
-      boundary: archived P43 M20/M100 post-processing; no experimental parameter identification
+    field_observability_prerequisite:
+      evidence: [E-DIC-OBSERVABILITY-001, E-DIC-OBSERVABILITY-002, E-DIC-OBSERVABILITY-003, E-DIC-OBSERVABILITY-004]
+      boundary: archived P43 M20/M100 free-field post-processing; not parametric FEMU observability and no experimental parameter identification
     boundary_only_driver:
       evidence: []
       boundary: no production boundary-only driver is registered

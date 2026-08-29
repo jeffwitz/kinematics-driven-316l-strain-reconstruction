@@ -2301,11 +2301,35 @@
       ]
     },
     {
-      "question": "Which plastic observability modes are excited after the measured DIC transfer and whitening?",
+      "question": "Which free tensorial inelastic fields are observable through the registered DIC chain?",
       "status": "supported for the registered M20/M100 post-processing",
-      "boundary": "Archived DIC histories, transfer function and whitener; no new mechanical forward and no latent plastic-field identification",
+      "boundary": "Archived P43 histories and field/eigenstrain observability operator; not a parametric FEMU sensitivity or latent-field identification",
       "evidence_ids": [
         "E-DIC-OBSERVABILITY-001"
+      ]
+    },
+    {
+      "question": "Does masking the boundary band recover the plastic localisation?",
+      "status": "negative for the registered M100 field-observability analysis",
+      "boundary": "15-node observation mask and registered DIC equivalent-strain comparison",
+      "evidence_ids": [
+        "E-DIC-OBSERVABILITY-002"
+      ]
+    },
+    {
+      "question": "Does the registered EBSD crystal-elastic reference explain the DIC residual?",
+      "status": "not supported for the registered polycrystalline crop",
+      "boundary": "Rotated cubic FCC elasticity with exact plane-stress condensation; this does not assess the value of EBSD generally",
+      "evidence_ids": [
+        "E-DIC-OBSERVABILITY-003"
+      ]
+    },
+    {
+      "question": "Are the registered modal amplitudes independent of the transfer-model choice?",
+      "status": "open; transfer-model sensitivity is documented",
+      "boundary": "Periodic, wrap-free and identity transfer variants in the archived M100 diagnostics",
+      "evidence_ids": [
+        "E-DIC-OBSERVABILITY-004"
       ]
     },
     {
@@ -3420,11 +3444,11 @@
     },
     {
       "id": "E-DIC-OBSERVABILITY-001",
-      "question": "Does the measured DIC transfer and whitening reveal plastic observability modes in archived P43 histories?",
+      "question": "Which free tensorial inelastic fields are observable through the registered DIC chain?",
       "fidelity": "archived P43 M20/M100 histories, DIC transfer CSV and repeated-frame noise",
       "parameters": "20 modes at M100, 12 at M20, fixed whitener seed 42, 40 states",
       "status": "supported for registered post-processing",
-      "conclusion": "The M20 crop remains below the DIC noise scale, while the M100 crop shows load-growing whitened coefficients up to the registered values; the leading modes are edge-dominated and are not a reconstruction of the latent plastic field.",
+      "conclusion": "In the registered analyses M20 remains below the measured noise scale early, whereas M100 contains strongly excited observable residual modes. The leading modes are edge-dominated and are not a reconstruction of the latent plastic field or a parametric FEMU SVD.",
       "sources": [
         {
           "path": "validation/_generated/performance/experimental_oracle_p43_m20/dic_excitation_m20.json",
@@ -3445,6 +3469,76 @@
         {
           "path": "validation/dic_excitation_of_observable_plastic_modes.md",
           "role": "interpretive report and limitations"
+        },
+        {
+          "path": "scripts/project_dic_residuals_on_observable_modes.py",
+          "role": "reproducible field-observability post-processing"
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-OBSERVABILITY-002",
+      "question": "Does masking the boundary band recover the plastic localisation?",
+      "fidelity": "registered M100 mode anatomy with a 15-node observation-band mask",
+      "parameters": "boundary band width=15 nodes",
+      "status": "negative for the registered analysis",
+      "conclusion": "Masking changes the DIC-equivalent-strain correlation from about +0.149 to -0.150 and reduces top-decile overlap from about 0.134 to 0.112; the leading modes do not recover the plastic localisation.",
+      "sources": [
+        {
+          "path": "validation/dic_excitation_of_observable_plastic_modes.md",
+          "role": "registered mode-anatomy and masking report"
+        },
+        {
+          "path": "validation/_generated/performance/experimental_oracle_p43_m20/mode_anatomy_m100/report.json",
+          "role": "unmasked mode anatomy"
+        },
+        {
+          "path": "validation/_generated/performance/experimental_oracle_p43_m20/mode_anatomy_m100_interior/report.json",
+          "role": "interior-mask mode anatomy"
+        },
+        {
+          "path": "scripts/anatomy_of_the_observable_plastic_modes.py",
+          "role": "mode-anatomy post-processing"
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-OBSERVABILITY-003",
+      "question": "Does the registered EBSD crystal-elastic reference explain the DIC residual?",
+      "fidelity": "rotated cubic FCC elasticity with exact plane-stress condensation on a polycrystalline EBSD crop",
+      "parameters": "E=99950.3 MPa, nu=0.388, G=122000 MPa, Zener anisotropy=3.39",
+      "status": "not supported for the registered crop",
+      "conclusion": "EBSD and shuffled controls give residual norms 1.180/2.948/5.875 and 1.180/2.944/5.873 at states 20/30/40; the correction is nearly orthogonal to the residual (cosines +0.0015 and +0.0057), so this elasticity hypothesis does not explain it.",
+      "sources": [
+        {
+          "path": "validation/_generated/performance/experimental_oracle_p43_m20/ebsd_elastic_reference_m100_polycrystal.json",
+          "role": "primary EBSD crystal-elastic reference test"
+        },
+        {
+          "path": "validation/dic_excitation_of_observable_plastic_modes.md",
+          "role": "interpretive report and controls"
+        },
+        {
+          "path": "scripts/test_ebsd_elastic_reference_p43.py",
+          "role": "EBSD elastic-reference controls"
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-OBSERVABILITY-004",
+      "question": "Are the registered modal amplitudes independent of the transfer-model choice?",
+      "fidelity": "archived M100 transfer-variant diagnostics with periodic, wrap-free and identity transfer",
+      "parameters": "same DIC whitener and residual history; transfer operator varied",
+      "status": "open; sensitivity recorded",
+      "conclusion": "The report records a 57--71% residual reduction after removing the periodic-wrap artefact and a sub-noise identity-transfer residual. Modal excitation must therefore always state the transfer model; no transfer-independent plastic-signal claim is made.",
+      "sources": [
+        {
+          "path": "validation/_generated/performance/experimental_oracle_p43_m20/measurement_transfer_variants_m100.json",
+          "role": "machine-readable transfer-variant diagnostics"
+        },
+        {
+          "path": "validation/dic_excitation_of_observable_plastic_modes.md",
+          "role": "transfer-model interpretation"
         }
       ]
     }

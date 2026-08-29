@@ -18,8 +18,9 @@ normalisation, loading path or constitutive redundancy rather than a solver
 failure.
 
 For the registered P43 post-processing, the sensitivity is further filtered
-by the measured DIC observation and noise model.  See
-{doc}`dic_observable_femu_modes` for the resulting observable-mode analysis.
+by the measured DIC observation and noise model.  The distinct free-field
+analysis is documented in {doc}`dic_weighted_tensor_observability`; it must
+not be read as a parametric FEMU SVD.
 
 Definitions and recorded thresholds belong in
 {doc}`../../reference/evidence/validation_metrics` and the evidence
