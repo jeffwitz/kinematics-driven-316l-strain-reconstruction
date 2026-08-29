@@ -1,0 +1,320 @@
+{
+  "blockers": [
+    "No archived Krylov basis Phi_K is present in the trajectory archive.",
+    "No archived WOA Phi_K response or Krylov observable correction delta_y_K is present.",
+    "The available Krylov trajectory uses 20 states on a 100x100, two-subcell support, whereas the SRIX Jacobian is 8 scored states on the 21x21 M20 support."
+  ],
+  "compatibility_checks": {
+    "krylov_basis_available": false,
+    "krylov_observable_response_available": false,
+    "same_observable_vector_length": false,
+    "same_scored_state_layout": false,
+    "srix_final_jacobian_reconstructible": true
+  },
+  "interpretation": "The registered SRIX tangent can be recomputed from final_jacobian, but no archived Krylov observable object exists in the same space. A latent-field reshape or a new mechanical application of A would change the experiment and is not performed.",
+  "krylov_contract": {
+    "actual": {
+      "arrays": {
+        "d_eps_inel": {
+          "dtype": "float64",
+          "shape": [
+            20,
+            20000,
+            3
+          ]
+        },
+        "d_eps_inel_observable": {
+          "dtype": "float64",
+          "shape": [
+            20,
+            20000,
+            3
+          ]
+        },
+        "eps_elastic": {
+          "dtype": "float64",
+          "shape": [
+            20,
+            20000,
+            3
+          ]
+        },
+        "eps_inel": {
+          "dtype": "float64",
+          "shape": [
+            20,
+            20000,
+            3
+          ]
+        },
+        "eps_inel_observable": {
+          "dtype": "float64",
+          "shape": [
+            20,
+            20000,
+            3
+          ]
+        },
+        "states": {
+          "dtype": "int64",
+          "shape": [
+            20
+          ]
+        },
+        "stress": {
+          "dtype": "float64",
+          "shape": [
+            20,
+            20000,
+            3
+          ]
+        }
+      },
+      "exists": true,
+      "path": "validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz"
+    },
+    "mode_candidates": [
+      {
+        "arrays": {
+          "coefficients": {
+            "dtype": "float64",
+            "shape": [
+              20,
+              41
+            ]
+          },
+          "measured_equivalent": {
+            "dtype": "float64",
+            "shape": [
+              100,
+              100
+            ]
+          },
+          "modes": {
+            "dtype": "float64",
+            "shape": [
+              60000,
+              20
+            ]
+          },
+          "reconstructed_equivalent": {
+            "dtype": "float64",
+            "shape": [
+              100,
+              100
+            ]
+          },
+          "singular_values": {
+            "dtype": "float64",
+            "shape": [
+              20
+            ]
+          }
+        },
+        "classification": "latent mode archive, not an observable displacement response",
+        "exists": true,
+        "path": "validation/_generated/performance/experimental_oracle_p43_m20/mode_anatomy_m100/modes.npz",
+        "tracked_in_clean_branch": false
+      },
+      {
+        "arrays": {
+          "eigenvalues": {
+            "dtype": "float64",
+            "shape": [
+              722
+            ]
+          },
+          "modes": {
+            "dtype": "float64",
+            "shape": [
+              2400,
+              24
+            ]
+          },
+          "signal_to_noise": {
+            "dtype": "object",
+            "shape": []
+          }
+        },
+        "classification": "observable tensor SVD mode archive, not a projected-Krylov basis",
+        "exists": true,
+        "path": "validation/_generated/performance/experimental_oracle_p43_m20/tensor_observability/modes.npz",
+        "tracked_in_clean_branch": false
+      }
+    ],
+    "shape_summary": {
+      "contains_observable_response": false,
+      "contains_phi_k": false,
+      "d_eps_inel": [
+        20,
+        20000,
+        3
+      ],
+      "d_eps_inel_observable": [
+        20,
+        20000,
+        3
+      ],
+      "eps_inel": [
+        20,
+        20000,
+        3
+      ],
+      "eps_inel_observable": [
+        20,
+        20000,
+        3
+      ],
+      "observable_field_note": "eps_inel_observable and d_eps_inel_observable are latent plastic fields after a tensor nullspace projection; they are not displacement-space WOA responses.",
+      "states": [
+        20
+      ],
+      "stress": [
+        20,
+        20000,
+        3
+      ]
+    },
+    "state40_summary": {
+      "exists": true,
+      "path": "validation/_generated/performance/experimental_oracle_p43_m20/krylov_maps_state40/report.json",
+      "top_level_keys": [
+        "dic_peak_equivalent_strain",
+        "origin_nodes",
+        "records",
+        "reference_state",
+        "schema_version",
+        "state"
+      ]
+    },
+    "summary_json": {
+      "exists": true,
+      "krylov": "predictive",
+      "origin": [
+        1580,
+        1030
+      ],
+      "path": "validation/_generated/shared_tensor_generator/krylov_projected_gp_trajectories.json",
+      "pixels": 100,
+      "projector": "gp",
+      "ranks": [
+        4,
+        8,
+        16
+      ],
+      "top_level_keys": [
+        "elastic_lifting_residual_guard",
+        "krylov",
+        "origin",
+        "pixels",
+        "projector",
+        "ranks",
+        "results",
+        "schema_version"
+      ]
+    },
+    "tracked_in_clean_branch": false,
+    "trajectory_path": "validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz"
+  },
+  "not_computed": [
+    "principal angles between Q_K and U_theta,3",
+    "eta_1, eta_2, eta_3 projections",
+    "delta_q and delta_log_theta mapping",
+    "raw versus dissipative Krylov comparison"
+  ],
+  "required_artifacts_for_followup": [
+    "Krylov Phi_K or WOA Phi_K stored on the same M20 21x21x2 eight-state observable convention.",
+    "Raw and dissipatively projected delta_y_K in that same vector space.",
+    "A manifest fixing support, state order, component order, transfer and whitening contracts."
+  ],
+  "schema_version": 1,
+  "scope": {
+    "comparison_space": "W O A observable quotient only",
+    "new_dic_processing": false,
+    "new_forward": false,
+    "new_mechanical_solve": false
+  },
+  "srix_contract": {
+    "actual": {
+      "arrays": {
+        "best_displacement": {
+          "dtype": "float64",
+          "shape": [
+            32,
+            21,
+            21,
+            2
+          ]
+        },
+        "final_jacobian": {
+          "dtype": "float64",
+          "shape": [
+            7056,
+            4
+          ]
+        },
+        "prior_displacement": {
+          "dtype": "float64",
+          "shape": [
+            32,
+            21,
+            21,
+            2
+          ]
+        },
+        "prior_jacobian": {
+          "dtype": "float64",
+          "shape": [
+            7056,
+            4
+          ]
+        },
+        "target_displacement": {
+          "dtype": "float64",
+          "shape": [
+            32,
+            21,
+            21,
+            2
+          ]
+        }
+      },
+      "exists": true,
+      "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz"
+    },
+    "expected": {
+      "grid": [
+        20,
+        20
+      ],
+      "nodal_shape": [
+        21,
+        21,
+        2
+      ],
+      "observable_vector_components": 7056,
+      "observed_jacobian_shape": [
+        7056,
+        4
+      ],
+      "parameter_order": [
+        "tau0",
+        "R",
+        "Q",
+        "b"
+      ],
+      "scored_states": 8,
+      "target_shape": [
+        32,
+        21,
+        21,
+        2
+      ]
+    },
+    "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
+    "tracked_in_clean_branch": true
+  },
+  "status": "blocked_compatibility",
+  "verdict": "C",
+  "verdict_text": "artifacts incompatible for observable-space constitutive-manifold intersection"
+}
