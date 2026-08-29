@@ -292,3 +292,89 @@ guides remain less even.
 
 This file is an audit record only.  No canonical page, manifest status,
 navigation tree or scientific claim was changed as part of this review.
+
+## Closure reassessment after P1--P4
+
+**Review date: 2026-08-29.** This reassessment revisits only the domains changed
+by P1--P4. The original scores and observations above are retained as the
+baseline; no page or coverage status is changed by this audit.
+
+Scores are ordered as **scientific narrative / technical completeness /
+evidence-provenance / usability-navigation**.
+
+| Domain | Before | After | Interpretation |
+|---|---:|---:|---|
+| Experimental / measurement | 2 / 2 / 2 / 2 | 3 / 2 / 3 / 2 | provenance states and EBSD registration boundaries are now explicit; raw metadata remain unavailable |
+| Reconstruction mechanics | 2 / 2 / 2 / 2 | 2 / 2 / 2 / 2 | coherent, but not revisited in P1--P4 |
+| Constitutive modelling | 2 / 2 / 2 / 2 | 3 / 3 / 3 / 3 | J2, Méric, SRIX and structural plane stress are autonomous explanations with clear status boundaries |
+| Spectral solver / numerical mechanics | 3 / 3 / 2 / 2 | 3 / 3 / 2 / 3 | first-class navigation now exposes the existing scientific depth; FFTW performance remains a bounded open claim |
+| Native SRIX / performance architecture | 2 / 2 / 2 / 2 | 2 / 2 / 2 / 2 | architecture and qualification route are clear; end-to-end execution still depends on environment and payloads |
+| Identification | 3 / 3 / 3 / 2 | 3 / 3 / 3 / 2 | unchanged; this remains the most polished narrative, without being the only scientific pillar |
+| Software / user documentation | 2 / 2 / 2 / 1 | 2 / 2 / 2 / 2 | installation, driver scope and blockers are now explicit; generic production runners are still absent |
+
+### Closure findings
+
+The public entry path now presents four comparable scientific pillars:
+
+```text
+measurement and provenance
+        ↓
+constitutive mechanics
+        ↓
+full-Dirichlet spectral mechanics
+        ↓
+identification and observability
+```
+
+The documentation no longer gives the impression that the repository is
+primarily a FEMU project. Identification remains the most densely linked and
+carefully audited area, but the homepage and Explanation index now expose the
+measurement, constitutive and spectral pillars before or alongside it. The
+spectral route has visible conceptual doors without duplicating its detailed
+pages.
+
+The main user-facing commands are documented with their actual scope. Where a
+generic production runner does not exist, the page says that it is a registered
+qualification driver. Where installation or external data prevents execution,
+the limitation is classified as an environment, software or payload gap rather
+than hidden behind a plausible command.
+
+The constitutive pages can now be read without opening FEMU documentation:
+J2 is the isotropic baseline, Méric is the rate-dependent comparison law, SRIX
+is the rate-independent production law, and structural plane stress is a
+three-dimensional local closure. The EBSD/data route likewise separates
+received bytes, prepared fields, provisional mappings and unproven physical
+registration.
+
+### Final FEMU-bias check
+
+**Result: no material presentation bias remains.** The visible navigation is not
+required to contain equal numbers of links. It is sufficient that the four
+scientific pillars are discoverable and that the identification pages no longer
+stand in for constitutive, spectral or measurement explanations.
+
+### Remaining issues (not documentation re-architecture)
+
+1. **External-data/provenance gap:** EBSD global geometry, native step size,
+   acquisition axes and independent DIC--EBSD co-registration remain unproven.
+2. **Environment/reproducibility gap:** offline installation, TFEL/MGIS and
+   external P43/EBSD payloads prevent end-to-end execution in the current
+   environment.
+3. **Software capability gap:** no generic arbitrary-DIC spectral or standalone
+   SRIX production runner is currently exposed; qualification drivers are
+   documented honestly instead.
+4. **Scientific open question:** the full DIC-weighted parametric FEMU
+   sensitivity and an experimental boundary-only identification remain
+   unqualified; this is not a documentation defect.
+5. **Local documentation polish:** some historical reconstruction and negative
+   result How-to pages could become more autonomous, but no major current
+   scientific route depends on them to understand the project.
+
+### Final verdict
+
+**A — globally coherent, only local polishing remains.**
+
+This verdict is scoped to documentation coherence, provenance honesty,
+navigation and the documented software boundaries. It does not claim that the
+scientific open questions or the missing experimental/software infrastructure
+have been solved.
