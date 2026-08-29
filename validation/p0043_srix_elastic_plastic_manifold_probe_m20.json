@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "status": "blocked_before_elastic_sensitivity",
+  "verdict": "phase_1_blocked",
+  "scope": {
+    "new_srix_forward": false,
+    "new_finite_differences": false,
+    "new_femu": false,
+    "new_nonlinear_probe": false
+  },
+  "lot_e_manifest": "validation/reference_data/p0043_krylov_srix_intersection_m20_v1/manifest.json",
+  "lot_e_contract": {
+    "states": 8,
+    "source_steps": [4, 8, 12, 16, 20, 24, 28, 32],
+    "rows": 7056,
+    "per_state_rows": 882,
+    "units": "mm",
+    "components": ["u_x", "u_y"]
+  },
+  "compatible_elastic_artifacts": [],
+  "incompatible_elastic_artifacts": [
+    {
+      "path": "validation/reference_data/srix_femu_direct_sensitivity_v1/jacobian.npz",
+      "arrays": {"FEMU_direct": [1296, 4], "FEMU_reference": [1296, 4]},
+      "states": [4, 36, 125, 275, 312, 316, 326, 338],
+      "reason": "different support, row contract, and state selection"
+    },
+    {
+      "path": "validation/reference_data/srix_femu_direct_sensitivity_v2/jacobian.npz",
+      "arrays": {"FEMU_direct": [1296, 4], "FEMU_reference": [1296, 4]},
+      "states": [4, 36, 125, 275, 312, 316, 326, 338],
+      "reason": "different support, row contract, and state selection"
+    }
+  ],
+  "future_fallback": {
+    "method": "central finite differences in log(K,Cprime,C44)",
+    "step": 0.01,
+    "maximum_forwards": 6,
+    "half_step_gate": 0.005,
+    "not_run_reason": [
+      "repaired P43 history payload absent in clean checkout",
+      "MGIS/TFEL runtime unavailable"
+    ]
+  },
+  "stable_elastic_coordinates": {
+    "historical_mpa": {"K": 149000.0, "Cprime": 36000.0, "C44": 122000.0},
+    "updated_mpa": {"K": 169300.0, "Cprime": 36750.0, "C44": 125400.0}
+  },
+  "scientific_status": "P43 registered-case methodological diagnostic only; no elastic calibration claim"
+}

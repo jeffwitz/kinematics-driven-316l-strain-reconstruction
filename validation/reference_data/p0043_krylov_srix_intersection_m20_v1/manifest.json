@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "purpose": "Auditable manifest for the local observable-matched M20 Krylov/SRIX fixture",
+  "reconstruction": {
+    "builder": "scripts/build_p0043_krylov_srix_intersection_m20.py",
+    "command": "PYTHONPATH=src python3 scripts/build_p0043_krylov_srix_intersection_m20.py",
+    "new_srix_forward": false,
+    "linear_operator": "TensorPlasticObservabilityOperator.matvec/rmatvec",
+    "source_fields": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
+    "source_git_sha": "4283e8f9214da3e0503abe4a042bc4fcd353131a"
+  },
+  "files": {
+    "fields.npz": {
+      "sha256": "0f7cf7ee358633170e2832ed3ffbe3db3657f6b7826d2e2b0fbce62d3d9c89d2",
+      "tracked_in_local_branch": true,
+      "size_bytes": 2782018
+    },
+    "report.json": {
+      "sha256": "5c9e0c0e391675ea685f3ddddcd9e7206f3f60392828d6a79eee80cd1bbc3aa5",
+      "tracked_in_local_branch": true
+    },
+    "builder_script": {
+      "path": "scripts/build_p0043_krylov_srix_intersection_m20.py",
+      "sha256": "fc5d340896d903aa216f4c6fc4c8892556c47de09157eca488c34743df554914"
+    },
+    "analyzer_script": {
+      "path": "scripts/analyze_p0043_constitutive_krylov_intersection.py",
+      "sha256": "7a90b77eb3a7a0da99a9b4435a68ebb4a8ec1537f93c06a5fffc0e601853b2b6"
+    },
+    "intersection_report": {
+      "path": "validation/reference_data/p0043_constitutive_krylov_intersection_v1/report.json",
+      "sha256": "c1744ae7f98f58a4d91a45dee4afadeb90ca401e002d7affc7950cc31c29560b"
+    }
+  },
+  "row_contract": {
+    "states": 8,
+    "state_indices": [3, 7, 11, 15, 19, 23, 27, 31],
+    "source_steps": [4, 8, 12, 16, 20, 24, 28, 32],
+    "per_state_shape": [21, 21, 2],
+    "per_state_rows": 882,
+    "stacked_rows": 7056,
+    "components": ["u_x", "u_y"],
+    "units": "mm",
+    "flatten": "NumPy C-order: state, node axes, component"
+  },
+  "local_validation": {
+    "boundary_max_abs_mm": 0.0,
+    "affine_extension_relative_error": 0.0,
+    "dot_test_relative_error": 7.006821132884425e-14,
+    "raw_contribution_reconstruction_relative_error_rank8": 1.1158300716022312e-16,
+    "raw_contribution_reconstruction_relative_error_rank16": 1.7580920641118495e-16
+  },
+  "export_note": "The binary fixture remains local because the remote push was rejected by the safety policy; its hash and contract are recorded here."
+}
