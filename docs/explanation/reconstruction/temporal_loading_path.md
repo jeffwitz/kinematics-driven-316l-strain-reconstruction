@@ -42,11 +42,13 @@ not by itself demonstrate physical rate dependence.
 
 ## SRIX and Méric--Cailletaud
 
-In the registered use of SRIX, the law is rate-independent: its response
-depends on the strain path and its increments, not on an arbitrary elapsed time
-assigned to image indices. At a fixed physical path, changing the numerical
-partition should converge to the same response. A different response under a
-different non-proportional path is nevertheless expected.
+In the registered use of SRIX, the law is rate-independent: its physical
+response depends on the strain path, not on the elapsed time used to parameterise
+that path. The numerical increments are only a discretisation of the prescribed
+path and should cease to be an independent influence under temporal convergence.
+At a fixed physical path, changing the numerical partition should therefore
+converge to the same response. A different response under a different
+non-proportional path is nevertheless expected.
 
 Méric--Cailletaud contains a viscous/rate-dependent evolution. Its response can
 therefore depend on the physical loading rate, provided that a physical or
