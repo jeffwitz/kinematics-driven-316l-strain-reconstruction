@@ -65,3 +65,9 @@ production evidence.
 | `validation/dic_uncertainty_propagation_p0043_results.md` | repeated-frame noise scale and sensitivity interpretation | `explanation/measurement/dic_observation_limits.md` |
 | `validation/dic_epsilon_band32_v2/epsilon_band32_metrics.csv` | profile/Charbonnier trade-off | `explanation/measurement/dic_observation_limits.md` |
 | `validation/dic_photometric_quality_p0043_results.md` | brightness-residual proxy does not explain the structured mismatch | `explanation/measurement/dic_observation_limits.md` and `explanation/evidence/negative_results.md` |
+
+| Historical temporal source | Concept retained | Canonical destination |
+|---|---|---|
+| `validation/dic_multistep_p0043_path_dependence_results.md` | same-endpoint path dependence and numerical-partition control | `explanation/reconstruction/temporal_loading_path.md` |
+| `validation/dic_multistep_p0043_observed_path_comparison_results.md` | internal path effect diluted by the DIC observable | `explanation/reconstruction/temporal_loading_path.md` |
+| `validation/path_memory_closure_check_results.md` | limits of inferring a local closure from short history windows | `explanation/reconstruction/temporal_loading_path.md` |
