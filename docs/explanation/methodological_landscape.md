@@ -189,6 +189,7 @@ conditions under which a method would be worth revisiting:
 | FEMU | Which constitutive parameters best explain the observations? | Synthetic/registered demonstrations; experimental use remains open |
 | SVD | Which parameter combinations can the observations distinguish? | Geometric and synthetic/registered demonstrations |
 | REGM | Can an equilibrium proxy accelerate or screen inversion? | Exploratory; registered negative transfer to the current DIC observable |
+| DIC-driven dissipative reconstruction | What plastic correction is required by measured kinematics before choosing a constitutive law? | Reduced/full-field reconstruction and dissipative projection demonstrated on registered cases; constitutive uniqueness open |
 | Reduced basis | How can a high-dimensional latent field be represented? | Synthetic demonstrations; basis richness and nullspaces documented |
 | TANN | Can a causal constitutive evolution law be learned from data? | Pipeline and sequential adjoint developed; no qualified learned law |
 | Nonlocal coupling | Is spatial interaction missing from a local material model? | Spatial redistribution demonstrated; physical length scale uncalibrated |
@@ -205,6 +206,12 @@ conditions under which a method would be worth revisiting:
   enriched basis introduced algebraic null directions.  Adding basis
   richness is therefore not automatically adding information.  Revisit when
   bases are designed or orthogonalised against the observable nullspace.
+* **DIC-driven dissipative reconstruction** uses $A^Tr$ to build modes guided by
+  the observed mechanical defect, then enforces positive dissipation without
+  choosing a full constitutive law first.  The observable increment is exactly
+  in the FCC tensor span, but the dissipative constraint still leaves a large
+  zero-work boundary; this is a route to constitutive hypotheses, not a
+  recovery of true slip histories.  Revisit it on curated full-field cases.
 * **TANN** established a causal state-propagation and sequential-adjoint
   pipeline, but the registered learning configuration did not establish a
   useful scientific constitutive law.  The old runs are provenance and

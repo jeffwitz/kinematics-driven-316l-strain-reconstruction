@@ -53,6 +53,7 @@ capabilities before the specialised paths below.
 ## Understand identification
 
 - {doc}`identification/identification_strategy_big_picture`
+- {doc}`identification/dic_driven_dissipative_reconstruction`
 - {doc}`identification/observable_fit_vs_latent_identifiability`
 - {doc}`identification/femu_identification`
 - {doc}`identification/identifiability`
@@ -97,6 +98,7 @@ native-srix/coupled_plane_stress
 native-srix/optimization_strategy
 native-srix/gpu_path
 identification/femu_identification
+identification/dic_driven_dissipative_reconstruction
 identification/identification_strategy_big_picture
 identification/observable_fit_vs_latent_identifiability
 identification/identifiability

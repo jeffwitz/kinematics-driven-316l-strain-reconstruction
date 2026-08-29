@@ -23,6 +23,13 @@ constitutive state to impose everywhere. A full-field Dirichlet control that
 prescribes the interior is consequently a useful wiring negative control, not
 a valid material-identification experiment.
 
+FEMU is not the only ordering of the inverse problem.  The complementary
+{doc}`dic_driven_dissipative_reconstruction` starts from the measured defect,
+constructs mechanically effective plastic corrections and only then asks
+which constitutive law could select among them.  FEMU is law-to-observable;
+that method is observable-to-candidate-law.  They are complementary rather
+than competing claims.
+
 ## Why it is expensive
 
 Crystal plasticity adds twelve slip systems, internal variables, history and a
