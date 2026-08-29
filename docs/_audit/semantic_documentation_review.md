@@ -58,3 +58,10 @@ Their source records remain `tensor_local_inverse_results.md`,
 `local_coefficient_inverse_results.md`, `tann_fcc_primary_run_results.md` and
 `tann_fcc_recovery_strategy.md`; they are not deleted or reclassified as new
 production evidence.
+
+| Historical DIC source | Concept retained | Canonical destination |
+|---|---|---|
+| `docs/explanation/dic_synthetic_measurement_tests.md` | real-texture warp, sinusoidal transfer, localised-band amplitude/width bias | `explanation/measurement/dic_observation_limits.md` |
+| `validation/dic_uncertainty_propagation_p0043_results.md` | repeated-frame noise scale and sensitivity interpretation | `explanation/measurement/dic_observation_limits.md` |
+| `validation/dic_epsilon_band32_v2/epsilon_band32_metrics.csv` | profile/Charbonnier trade-off | `explanation/measurement/dic_observation_limits.md` |
+| `validation/dic_photometric_quality_p0043_results.md` | brightness-residual proxy does not explain the structured mismatch | `explanation/measurement/dic_observation_limits.md` and `explanation/evidence/negative_results.md` |
