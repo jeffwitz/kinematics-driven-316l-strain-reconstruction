@@ -33,7 +33,8 @@ the time-discrete fields.
 | FCC systems | 12 | 12 |
 | anisotropy/orientation | yes | yes |
 | physical loading-rate dependence | no in this use | yes |
-| numerical increment partition | path-independent in this use | should converge when refined |
+| loading-path dependence | yes | yes |
+| numerical increment partition | should converge under refinement | should converge under refinement |
 | observed current robustness | good | requires finer partition |
 | current role | production quasi-static path | comparison branch |
 
