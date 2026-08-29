@@ -149,6 +149,7 @@ subjects:
       field_observability_prerequisite: supported
       parametric_observability: supported
       dic_weighted_parametric_sensitivity: supported
+      absolute_parametric_detectability: open
       boundary_only_driver: open
       current_smoke_control: negative
     blockers: [missing_how_to, content_review_required]

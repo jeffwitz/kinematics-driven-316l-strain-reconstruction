@@ -104,8 +104,11 @@ subjects:
       evidence: [E-SRIX-PARAM-OBS-001, E-SRIX-PARAM-OBS-002, E-SRIX-PARAM-OBS-003, E-SRIX-PARAM-OBS-004]
       boundary: archived synthetic and experimental M20/M100 sensitivity summaries; experimental uniqueness and 316L calibration are not claimed
     dic_weighted_parametric_sensitivity:
-      evidence: [E-SRIX-PARAM-OBS-006, E-SRIX-PARAM-OBS-007]
-      boundary: offline periodic and wrap-free spectral DIC surrogates applied to archived Jacobians; three directions remain above 1e-3 in the experimental M20 final point, but no image-level DIC qualification, experimental calibration or uniqueness is claimed
+      evidence: [E-SRIX-PARAM-OBS-006, E-SRIX-PARAM-OBS-007, E-SRIX-PARAM-OBS-008]
+      boundary: offline periodic and wrap-free spectral DIC surrogates applied to archived Jacobians; three geometric directions remain above 1e-3, but held-out modal noise is not unit-dispersed, so absolute detectability, image-level DIC qualification, experimental calibration and uniqueness are not claimed
+    absolute_parametric_detectability:
+      evidence: [E-SRIX-PARAM-OBS-008]
+      boundary: held-out stationary spatial-noise/independent-window surrogate only; temporal covariance across the eight scored states is not measured
     boundary_only_driver:
       evidence: []
       boundary: no production boundary-only driver is registered

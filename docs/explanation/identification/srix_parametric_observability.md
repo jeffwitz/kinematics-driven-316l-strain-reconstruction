@@ -183,10 +183,28 @@ $3/\sigma_j$ are:
 | 3 | `92.844` | `278.532` |
 | 4 | `113872.7` | `341618.2` |
 
-These are detectability scales, not confidence intervals or a claim about a
-physically plausible parameter range.  The third mode is mathematically
-non-null but requires a very large local log perturbation to produce a
-one-sigma signal under this registered metric.
+For a modal amplitude $\delta q_j$, the corresponding parameter change is
+$\delta\log\theta_i=v_{ij}\,\delta q_j$; the report stores these four-component
+vectors and their one-sided parameter factors where representable.  A scalar
+$\exp(\delta q_j)-1$ is not a parameter variation.
+
+These nominal values are detectability scales, not confidence intervals or a
+claim about a physically plausible parameter range.  They are not yet
+calibrated as experimental one-sigma thresholds.  To test that interpretation
+without a forward solve, 256 realizations of eight spatially separated
+21-by-21 noise windows were drawn outside the calibration crop and projected
+onto the four wrap-free left singular vectors.  The modal projection standard
+deviations were approximately `7.40, 1.76, 1.96, 4.83`, not one.  The
+stationary spatial-noise/independent-window surrogate therefore does not
+validate the nominal $1/\sigma_j$ scale as a one-sigma experimental quantity.
+
+Using those empirical modal dispersions only as a correction gives local
+one-sigma log-coordinate scales of approximately
+`22.0, 34.5, 182.4, 549507` (three-sigma scales `66.0, 103.4, 547.1,
+1648521`).  These remain detectability diagnostics, not confidence intervals.
+Under this held-out surrogate even the geometrically strongest mode has a
+very large absolute scale, so rank must not be selected from normalised
+singular values alone.
 
 At the prior point, the wrap-free full spectrum is
 `1, 0.139006, 0.066843, 0.00009468`; prior-to-final wrap-free angles are
@@ -200,6 +218,13 @@ experimental prior because the archived displacement Jacobians coincide at
 that point.  The synthetic M100 control retains three directions above
 $10^{-3}$ under the wrap-free variant.  These controls do not authorise
 experimental calibration.
+
+The offline surrogates establish a robust geometric rank-three workspace, but
+the held-out modal-noise test makes its absolute experimental calibration
+uncertain.  Do not freeze a rank-two or rank-three FEMU on the nominal
+$1/\sigma_j$ values: this is a stop condition for an expensive boundary-only
+campaign until the temporal/covariance interpretation of the noise is better
+qualified.
 
 The exact key/shape/dtype inventory is recorded in
 {doc}`../../_audit/srix_parametric_fields_inventory`.

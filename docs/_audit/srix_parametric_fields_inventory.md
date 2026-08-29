@@ -63,3 +63,7 @@ leave the fourth opposite-sign $Q-b$ direction effectively null.  The
 wrap-free full variant has absolute singular values
 `0.336070, 0.051059, 0.010771, 0.000008782`; complete values and angles are
 in `validation/reference_data/p0043_parametric_dic_weighting_v1/report.json`.
+Held-out projections of eight-window noise draws have modal standard
+deviations `(7.40, 1.76, 1.96, 4.83)`, so the nominal `1/sigma` values are not
+calibrated experimental one-sigma thresholds.  Temporal covariance across
+the eight scored states is not measured by this final repeated-frame field.
