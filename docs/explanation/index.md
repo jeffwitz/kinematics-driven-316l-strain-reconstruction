@@ -45,6 +45,7 @@ commands belong in How-to guides and stable interfaces belong in Reference.
 - {doc}`identification/femu_identification`
 - {doc}`identification/identifiability`
 - {doc}`identification/dic_weighted_tensor_observability`
+- {doc}`identification/srix_parametric_observability`
 - {doc}`identification/regm_screening`
 - {doc}`identification/regm_method`
 - {doc}`identification/regm_observation_failure`
@@ -85,6 +86,7 @@ native-srix/gpu_path
 identification/femu_identification
 identification/identifiability
 identification/dic_weighted_tensor_observability
+identification/srix_parametric_observability
 identification/regm_screening
 identification/regm_method
 identification/regm_observation_failure

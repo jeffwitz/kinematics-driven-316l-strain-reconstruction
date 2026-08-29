@@ -27,6 +27,8 @@ The archived field-observability prerequisite is documented in
 eigenstrain-like field through the operator $A=W_D M_D K^{-1}B^T C H^{-1/2}$;
 it is not the parametric FEMU sensitivity $S_\theta=\partial r/\partial
 \theta$.  Parameter observability must therefore be assessed separately.
+The archived SRIX parameter spectra and their weak $Q/b$ direction are
+summarised in {doc}`srix_parametric_observability`.
 
 ## What is already demonstrated
 

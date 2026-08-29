@@ -25,7 +25,7 @@ filled with a facade page.
 | TET2 discretisation | complete | partial | supported | two-history discretisation is distinct from EBI-TET |
 | EBI-TET state sharing | complete | reviewed | negative | falsification is registered-case specific |
 | Native SRIX / Numba | complete | partial | supported | retain explicit evidence IDs for each optimization step |
-| FEMU and SVD | incomplete | blocked | open | no registered production boundary-only FEMU driver; free-field DIC observability is documented as a prerequisite, distinct from parametric FEMU SVD |
+| FEMU and SVD | incomplete | blocked | open | no registered production boundary-only FEMU driver; free-field and archived parametric observability are documented separately, while experimental uniqueness remains open |
 | REGM | complete | partial | negative | observed-DIC transfer remains a no-go |
 | Reduced integration | complete | partial | negative | actionable workflow added; CPS4R is not qualified for production plastic campaigns |
 | Nonlocal / micromorphic | complete | partial | historical | preserve historical status and limitations |

@@ -39,6 +39,8 @@ artefacts; these pages explain their status and interpretation.
   the experimental-qualification boundary.
 - {doc}`../reference/evidence/dic_observable_modes` — DIC-weighted observable
   modes from archived P43 histories.
+- {doc}`../reference/evidence/srix_parametric_observability` — archived SRIX
+  parameter sensitivities, singular directions and experimental gates.
 - {doc}`../reference/evidence/selection_indicators` — definitions for
   sensitivity and SVD outputs.
 
@@ -61,4 +63,5 @@ artefacts; these pages explain their status and interpretation.
 ../reference/evidence/regm_qualification
 ../reference/evidence/femu_qualification
 ../reference/evidence/dic_observable_modes
+../reference/evidence/srix_parametric_observability
 ```

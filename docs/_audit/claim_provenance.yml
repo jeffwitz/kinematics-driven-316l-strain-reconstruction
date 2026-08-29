@@ -100,6 +100,9 @@ subjects:
     field_observability_prerequisite:
       evidence: [E-DIC-OBSERVABILITY-001, E-DIC-OBSERVABILITY-002, E-DIC-OBSERVABILITY-003, E-DIC-OBSERVABILITY-004]
       boundary: archived P43 M20/M100 free-field post-processing; not parametric FEMU observability and no experimental parameter identification
+    parametric_observability:
+      evidence: [E-SRIX-PARAM-OBS-001, E-SRIX-PARAM-OBS-002, E-SRIX-PARAM-OBS-003, E-SRIX-PARAM-OBS-004]
+      boundary: archived synthetic and experimental M20/M100 sensitivity summaries; experimental uniqueness and 316L calibration are not claimed
     boundary_only_driver:
       evidence: []
       boundary: no production boundary-only driver is registered

@@ -13,6 +13,7 @@
 - {doc}`regm_qualification`
 - {doc}`femu_qualification`
 - {doc}`dic_observable_modes`
+- {doc}`srix_parametric_observability`
 
 The portal {doc}`../../evidence/index` explains how these contracts are used
 to navigate the primary artefacts.
@@ -30,4 +31,5 @@ native_srix_qualification
 regm_qualification
 femu_qualification
 dic_observable_modes
+srix_parametric_observability
 ```

@@ -2301,6 +2301,24 @@
       ]
     },
     {
+      "question": "What parameter combinations are observable in the archived synthetic SRIX sensitivities?",
+      "status": "supported for the registered synthetic M20/M100 sensitivity records",
+      "boundary": "Log-coordinate theta=(tau0,R,Q,b), archived finite-difference sensitivities and SVD summaries; no experimental calibration",
+      "evidence_ids": [
+        "E-SRIX-PARAM-OBS-001"
+      ]
+    },
+    {
+      "question": "What parameter combinations are supported by the archived experimental SRIX sensitivity records?",
+      "status": "experimental uniqueness not established; NO-GO gates retained",
+      "boundary": "Experimental P43 M20 whitened and raw controls; no M100 experimental run and no parameter-identification claim",
+      "evidence_ids": [
+        "E-SRIX-PARAM-OBS-002",
+        "E-SRIX-PARAM-OBS-003",
+        "E-SRIX-PARAM-OBS-004"
+      ]
+    },
+    {
       "question": "Which free tensorial inelastic fields are observable through the registered DIC chain?",
       "status": "supported for the registered M20/M100 post-processing",
       "boundary": "Archived P43 histories and field/eigenstrain observability operator; not a parametric FEMU sensitivity or latent-field identification",
@@ -3473,6 +3491,82 @@
         {
           "path": "scripts/project_dic_residuals_on_observable_modes.py",
           "role": "reproducible field-observability post-processing"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-001",
+      "question": "What parameter combinations are observable in the archived synthetic SRIX sensitivities?",
+      "fidelity": "synthetic P43 M20 smoke, four-start M20 multi-start and M100 scale-up reports",
+      "parameters": "theta=(tau0,R,Q,b) in log coordinates; shadow finite-difference step h=0.0015; identity observation; 32 path steps",
+      "status": "supported for registered synthetic sensitivity geometry",
+      "conclusion": "The first two singular directions carry most linearised information; the third is a weaker same-sign Q+b direction and the fourth is an almost-null opposite-sign Q-b direction. Synthetic multi-start directions are stable and the registered M100 scale-up reaches the generating truth, but separate Q and b identification is not claimed.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_synthetic_identification_v1/report.json",
+          "role": "synthetic M20 sensitivity and SVD"
+        },
+        {
+          "path": "validation/reference_data/p0043_synthetic_multistart_v1/report.json",
+          "role": "four-start sensitivity stability"
+        },
+        {
+          "path": "validation/reference_data/p0043_synthetic_scaleup_v1/report.json",
+          "role": "synthetic M100 sensitivity and scale-up"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-002",
+      "question": "What parameter combinations are supported by the archived experimental whitened SRIX sensitivity record?",
+      "fidelity": "experimental P43 M20 direct FEMU rank-three SVD record",
+      "parameters": "theta=(tau0,R,Q,b) in log coordinates; scalar DIC whitening; shadow finite-difference step h=0.0015",
+      "status": "NO-GO for experimental identification; sensitivity geometry retained",
+      "conclusion": "The normalised spectrum is (1, 0.143072, 0.016464, 0.00001553). The retained rank-three basis leaves an almost-null opposite-sign Q-b direction; all costs decrease but the optimizer does not establish a unique experimental parameter solution.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_experimental_srix_m20_v1/report.json",
+          "role": "machine-readable experimental whitened sensitivity record"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-003",
+      "question": "What parameter combinations are supported by the archived experimental raw SRIX sensitivity control?",
+      "fidelity": "experimental P43 M20 raw-displacement rank-three SVD control",
+      "parameters": "theta=(tau0,R,Q,b) in log coordinates; no observation weighting or covariance; shadow finite-difference step h=0.0015",
+      "status": "NO-GO for experimental identification; sensitivity geometry retained",
+      "conclusion": "The normalised spectrum is (1, 0.143084, 0.016465, 0.00001553), essentially matching the whitened control. Parameter bounds become active and experimental identification is not established.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json",
+          "role": "machine-readable experimental raw sensitivity control"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-004",
+      "question": "Are the archived synthetic and experimental SRIX sensitivity subspaces geometrically aligned?",
+      "fidelity": "algebraic principal-angle comparison of archived right-singular vectors",
+      "parameters": "rank-three subspaces; no new forward",
+      "status": "supported as an algebraic comparison; not an identification result",
+      "conclusion": "Principal angles are about 0.265 degrees (synthetic M20 versus experimental), 0.139 degrees (synthetic M100 versus experimental) and below 1e-5 degrees (experimental whitened versus raw). Alignment of sensitivity directions does not imply experimental uniqueness or parameter calibration.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_synthetic_identification_v1/report.json",
+          "role": "synthetic M20 right-singular vectors"
+        },
+        {
+          "path": "validation/reference_data/p0043_synthetic_scaleup_v1/report.json",
+          "role": "synthetic M100 right-singular vectors"
+        },
+        {
+          "path": "validation/reference_data/p0043_experimental_srix_m20_v1/report.json",
+          "role": "experimental whitened right-singular vectors"
+        },
+        {
+          "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json",
+          "role": "experimental raw right-singular vectors"
         }
       ]
     },
