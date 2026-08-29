@@ -22,7 +22,9 @@ import numpy as np
 from scipy.linalg import subspace_angles
 
 ROOT = Path(__file__).resolve().parents[1]
-NOISE_PATH = ROOT / "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+NOISE_PATH = ROOT / (
+    "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+)
 TRANSFER_PATH = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
 FIELDS_PATH = ROOT / "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz"
 PIXEL_SIZE_MM = 0.00184
@@ -66,9 +68,7 @@ def _support() -> np.ndarray:
 
 
 def _corner_whitener(noise: np.ndarray) -> DICSpectralWhitener:
-    corner = image_flow_to_canonical(
-        np.asarray(noise[:512, :512]), pixel_size_mm=PIXEL_SIZE_MM
-    )
+    corner = image_flow_to_canonical(np.asarray(noise[:512, :512]), pixel_size_mm=PIXEL_SIZE_MM)
     return DICSpectralWhitener.from_stationary_noise_field(
         corner,
         target_shape=(SIDE, SIDE),
@@ -152,21 +152,27 @@ def _subset_summary(matrices: list[np.ndarray], full_vectors: np.ndarray) -> dic
         for subset in itertools.combinations(range(STATES), size):
             summary = _fisher_summary([matrices[index] for index in subset])
             vectors = np.asarray(summary["right_singular_vectors"], dtype=np.float64)
-            rank3_angle = float(np.max(np.degrees(subspace_angles(vectors[:, :3], full_vectors[:, :3]))))
+            rank3_angle = float(
+                np.max(np.degrees(subspace_angles(vectors[:, :3], full_vectors[:, :3])))
+            )
             trace_fraction = float(summary["trace"] / _fisher_summary(matrices)["trace"])
             candidates.append((trace_fraction, rank3_angle, subset, summary))
         best_trace = max(candidates, key=lambda item: item[0])
         best_angle = min(candidates, key=lambda item: item[1])
-        records.append({
-            "subset_size": size,
-            "best_trace_fraction": best_trace[0],
-            "best_trace_subset_one_based": [index + 1 for index in best_trace[2]],
-            "best_trace_rank3_angle_deg": best_trace[1],
-            "best_rank3_angle_deg": best_angle[1],
-            "best_rank3_angle_subset_one_based": [index + 1 for index in best_angle[2]],
-        })
+        records.append(
+            {
+                "subset_size": size,
+                "best_trace_fraction": best_trace[0],
+                "best_trace_subset_one_based": [index + 1 for index in best_trace[2]],
+                "best_trace_rank3_angle_deg": best_trace[1],
+                "best_rank3_angle_deg": best_angle[1],
+                "best_rank3_angle_subset_one_based": [index + 1 for index in best_angle[2]],
+            }
+        )
     return {
-        "interpretation": "geometric subset summaries; no temporal covariance or statistical optimality claim",
+        "interpretation": (
+            "geometric subset summaries; no temporal covariance or statistical optimality claim"
+        ),
         "by_subset_size": records,
     }
 

@@ -20,7 +20,9 @@ import numpy as np
 from scipy.linalg import subspace_angles
 
 ROOT = Path(__file__).resolve().parents[1]
-NOISE = ROOT / "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+NOISE = ROOT / (
+    "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+)
 TRANSFER = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
 REPORT = ROOT / "validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json"
 FIELDS = ROOT / "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz"
@@ -42,8 +44,12 @@ def _load_module(name: str, path: Path):
     return module
 
 
-_WHITENING = _load_module("offline_dic_whitening_prior_final", ROOT / "src/fem_inhouse/identification/dic_whitening.py")
-_COORDINATES = _load_module("offline_coordinates_prior_final", ROOT / "src/fem_inhouse/measurement/coordinates.py")
+_WHITENING = _load_module(
+    "offline_dic_whitening_prior_final", ROOT / "src/fem_inhouse/identification/dic_whitening.py"
+)
+_COORDINATES = _load_module(
+    "offline_coordinates_prior_final", ROOT / "src/fem_inhouse/measurement/coordinates.py"
+)
 DICSpectralTransfer = _WHITENING.DICSpectralTransfer
 DICSpectralWhitener = _WHITENING.DICSpectralWhitener
 image_flow_to_canonical = _COORDINATES.image_flow_to_canonical
@@ -59,24 +65,32 @@ def _support() -> np.ndarray:
 def _whitener(noise: np.ndarray) -> DICSpectralWhitener:
     corner = image_flow_to_canonical(np.asarray(noise[:512, :512]), pixel_size_mm=PIXEL_SIZE_MM)
     return DICSpectralWhitener.from_stationary_noise_field(
-        corner, target_shape=(SIDE, SIDE), sample_count=256, seed=42,
-        remove_spatial_mean=False, support_mask=_support(),
+        corner,
+        target_shape=(SIDE, SIDE),
+        sample_count=256,
+        seed=42,
+        remove_spatial_mean=False,
+        support_mask=_support(),
     )
 
 
-def _transform(jacobian: np.ndarray, transfer: DICSpectralTransfer,
-               whitener: DICSpectralWhitener | None) -> np.ndarray:
+def _transform(
+    jacobian: np.ndarray, transfer: DICSpectralTransfer, whitener: DICSpectralWhitener | None
+) -> np.ndarray:
     fields = jacobian.reshape(STATES, SIDE, SIDE, COMPONENTS, len(PARAMETER_ORDER))
     transformed = np.empty_like(fields)
     for state in range(STATES):
         for parameter in range(len(PARAMETER_ORDER)):
             value = transfer.apply_without_wrap(fields[state, ..., parameter])
-            transformed[state, ..., parameter] = value if whitener is None else whitener.apply(value)
+            transformed[state, ..., parameter] = (
+                value if whitener is None else whitener.apply(value)
+            )
     return transformed.reshape(jacobian.shape)
 
 
-def _transform_displacement(fields: np.ndarray, transfer: DICSpectralTransfer,
-                            whitener: DICSpectralWhitener) -> np.ndarray:
+def _transform_displacement(
+    fields: np.ndarray, transfer: DICSpectralTransfer, whitener: DICSpectralWhitener
+) -> np.ndarray:
     output = np.empty_like(fields, dtype=np.float64)
     for state in range(STATES):
         output[state] = whitener.apply(transfer.apply_without_wrap(fields[state]))
@@ -90,16 +104,26 @@ def _state_svd_angles(prior: np.ndarray, final: np.ndarray) -> list[dict[str, ob
         _, _, final_vh = np.linalg.svd(final[state], full_matrices=False)
         prior_v = prior_vh.T
         final_v = final_vh.T
-        records.append({
-            "state": state + 1,
-            "source_scored_state_index": SCORED_STATE_INDICES[state],
-            "prior_normalised": (np.linalg.svd(prior[state], compute_uv=False) / np.linalg.svd(prior[state], compute_uv=False)[0]).tolist(),
-            "final_normalised": (np.linalg.svd(final[state], compute_uv=False) / np.linalg.svd(final[state], compute_uv=False)[0]).tolist(),
-            "angles_prior_to_final_deg": {
-                str(rank): np.degrees(subspace_angles(prior_v[:, :rank], final_v[:, :rank])).tolist()
-                for rank in (1, 2, 3)
-            },
-        })
+        records.append(
+            {
+                "state": state + 1,
+                "source_scored_state_index": SCORED_STATE_INDICES[state],
+                "prior_normalised": (
+                    np.linalg.svd(prior[state], compute_uv=False)
+                    / np.linalg.svd(prior[state], compute_uv=False)[0]
+                ).tolist(),
+                "final_normalised": (
+                    np.linalg.svd(final[state], compute_uv=False)
+                    / np.linalg.svd(final[state], compute_uv=False)[0]
+                ).tolist(),
+                "angles_prior_to_final_deg": {
+                    str(rank): np.degrees(
+                        subspace_angles(prior_v[:, :rank], final_v[:, :rank])
+                    ).tolist()
+                    for rank in (1, 2, 3)
+                },
+            }
+        )
     return records
 
 
@@ -113,18 +137,34 @@ def main() -> int:
     with np.load(FIELDS, allow_pickle=False) as archive:
         prior_jacobian = np.asarray(archive["prior_jacobian"], dtype=np.float64)
         final_jacobian = np.asarray(archive["final_jacobian"], dtype=np.float64)
-        prior_displacement = np.asarray(archive["prior_displacement"], dtype=np.float64)[list(SCORED_STATE_INDICES)]
-        best_displacement = np.asarray(archive["best_displacement"], dtype=np.float64)[list(SCORED_STATE_INDICES)]
+        prior_displacement = np.asarray(archive["prior_displacement"], dtype=np.float64)[
+            list(SCORED_STATE_INDICES)
+        ]
+        best_displacement = np.asarray(archive["best_displacement"], dtype=np.float64)[
+            list(SCORED_STATE_INDICES)
+        ]
     metadata = json.loads(REPORT.read_text(encoding="utf-8"))
-    prior_parameters = np.array([metadata["prior"][key] for key in PARAMETER_ORDER], dtype=np.float64)
-    best_start = next(start for start in metadata["starts"] if start["name"] == metadata["best_start"])
-    final_parameters = np.array([best_start["identified"][key] for key in PARAMETER_ORDER], dtype=np.float64)
+    prior_parameters = np.array(
+        [metadata["prior"][key] for key in PARAMETER_ORDER], dtype=np.float64
+    )
+    best_start = next(
+        start for start in metadata["starts"] if start["name"] == metadata["best_start"]
+    )
+    final_parameters = np.array(
+        [best_start["identified"][key] for key in PARAMETER_ORDER], dtype=np.float64
+    )
     delta_log_theta = np.log(final_parameters / prior_parameters)
     prior_raw = prior_jacobian.reshape(STATES, -1, len(PARAMETER_ORDER))
-    prior_observed = _transform(prior_jacobian, transfer, whitener).reshape(STATES, -1, len(PARAMETER_ORDER))
+    prior_observed = _transform(prior_jacobian, transfer, whitener).reshape(
+        STATES, -1, len(PARAMETER_ORDER)
+    )
     final_raw = final_jacobian.reshape(STATES, -1, len(PARAMETER_ORDER))
-    final_observed = _transform(final_jacobian, transfer, whitener).reshape(STATES, -1, len(PARAMETER_ORDER))
-    observed_delta = _transform_displacement(best_displacement - prior_displacement, transfer, whitener)
+    final_observed = _transform(final_jacobian, transfer, whitener).reshape(
+        STATES, -1, len(PARAMETER_ORDER)
+    )
+    observed_delta = _transform_displacement(
+        best_displacement - prior_displacement, transfer, whitener
+    )
     records = []
     for state in range(STATES):
         pred_raw = prior_raw[state] @ delta_log_theta
@@ -132,15 +172,23 @@ def main() -> int:
         actual = observed_delta[state].reshape(-1)
         predicted = pred_observed
         denominator = np.linalg.norm(actual)
-        records.append({
-            "state": state + 1,
-            "source_scored_state_index": SCORED_STATE_INDICES[state],
-            "raw_predicted_norm": float(np.linalg.norm(pred_raw)),
-            "observed_predicted_norm": float(np.linalg.norm(predicted)),
-            "archived_observed_difference_norm": float(denominator),
-            "observed_relative_linearisation_error": float(np.linalg.norm(predicted - actual) / denominator) if denominator else None,
-            "observed_correlation": float(np.corrcoef(predicted, actual)[0, 1]) if np.std(predicted) and np.std(actual) else None,
-        })
+        records.append(
+            {
+                "state": state + 1,
+                "source_scored_state_index": SCORED_STATE_INDICES[state],
+                "raw_predicted_norm": float(np.linalg.norm(pred_raw)),
+                "observed_predicted_norm": float(np.linalg.norm(predicted)),
+                "archived_observed_difference_norm": float(denominator),
+                "observed_relative_linearisation_error": float(
+                    np.linalg.norm(predicted - actual) / denominator
+                )
+                if denominator
+                else None,
+                "observed_correlation": float(np.corrcoef(predicted, actual)[0, 1])
+                if np.std(predicted) and np.std(actual)
+                else None,
+            }
+        )
     report = {
         "schema_version": 1,
         "method": "frame-resolved prior-to-final local linearity check",

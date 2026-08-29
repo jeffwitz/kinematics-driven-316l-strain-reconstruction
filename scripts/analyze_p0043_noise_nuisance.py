@@ -19,7 +19,9 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-NOISE_PATH = ROOT / "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+NOISE_PATH = ROOT / (
+    "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+)
 PIXEL_SIZE_MM = 0.00184
 SIDE = 21
 ZONES = {
@@ -46,9 +48,7 @@ image_flow_to_canonical = _load_coordinates()
 
 def _canonical_region(noise: np.ndarray, bounds: tuple[int, int, int, int]) -> np.ndarray:
     x0, x1, y0, y1 = bounds
-    return image_flow_to_canonical(
-        np.asarray(noise[x0:x1, y0:y1]), pixel_size_mm=PIXEL_SIZE_MM
-    )
+    return image_flow_to_canonical(np.asarray(noise[x0:x1, y0:y1]), pixel_size_mm=PIXEL_SIZE_MM)
 
 
 def _affine_fit(field: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -137,9 +137,7 @@ def main() -> int:
             "pixel_size_mm": PIXEL_SIZE_MM,
             "conversion": "image_flow_to_canonical",
         },
-        "regions": {
-            name: _region_report(noise, bounds) for name, bounds in ZONES.items()
-        },
+        "regions": {name: _region_report(noise, bounds) for name, bounds in ZONES.items()},
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

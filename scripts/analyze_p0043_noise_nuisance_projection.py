@@ -21,7 +21,9 @@ import numpy as np
 from scipy.linalg import subspace_angles
 
 ROOT = Path(__file__).resolve().parents[1]
-NOISE_PATH = ROOT / "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+NOISE_PATH = ROOT / (
+    "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy"
+)
 TRANSFER_PATH = ROOT / "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv"
 FIELDS_PATH = ROOT / "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz"
 PIXEL_SIZE_MM = 0.00184
@@ -71,9 +73,7 @@ def _support() -> np.ndarray:
 def _origins(bounds: tuple[int, int, int, int], stride: int = 32) -> list[tuple[int, int]]:
     x0, x1, y0, y1 = bounds
     return [
-        (x, y)
-        for x in range(x0, x1 - SIDE + 1, stride)
-        for y in range(y0, y1 - SIDE + 1, stride)
+        (x, y) for x in range(x0, x1 - SIDE + 1, stride) for y in range(y0, y1 - SIDE + 1, stride)
     ]
 
 
@@ -211,7 +211,9 @@ def _main() -> int:
             "condition_number": float(singular[0] / singular[-1]),
             "right_singular_vectors": right.tolist(),
             "angles_to_N0_deg": {
-                str(rank): np.degrees(subspace_angles(reference_left[:, :rank], right[:, :rank])).tolist()
+                str(rank): np.degrees(
+                    subspace_angles(reference_left[:, :rank], right[:, :rank])
+                ).tolist()
                 for rank in (1, 2, 3)
             },
             "modal_projection": {
@@ -221,7 +223,10 @@ def _main() -> int:
         }
     report = {
         "schema_version": 1,
-        "method": "N0/N1/N2 nuisance projection after wrap-free DIC transfer and registered corner whitening",
+        "method": (
+            "N0/N1/N2 nuisance projection after wrap-free DIC transfer "
+            "and registered corner whitening"
+        ),
         "no_forward_or_finite_difference": True,
         "noise": {
             "source": str(NOISE_PATH.relative_to(ROOT)),
