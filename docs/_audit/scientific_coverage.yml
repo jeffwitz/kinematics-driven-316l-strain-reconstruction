@@ -146,6 +146,7 @@ subjects:
     scientific_status: open
     claim_statuses:
       sensitivity_contract: supported
+      dic_weighted_observability: supported
       boundary_only_driver: open
       current_smoke_control: negative
     blockers: [missing_how_to, content_review_required]

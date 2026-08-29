@@ -22,6 +22,11 @@ useful negative control, not a valid identification experiment.
 The native SRIX architecture reduces this cost while preserving an MFront
 oracle; it does not make an unobservable parameter identifiable.
 
+The relevant experimental sensitivity is the DIC-weighted map
+{doc}`dic_observable_femu_modes`: `S_obs = W_DIC O S`.  It uses the measured
+transfer function and repeated-frame uncertainty, rather than treating DIC as
+an unspecified smoothing filter.
+
 ## What is already demonstrated
 
 The direct sensitivity machinery has a positive synthetic qualification. In

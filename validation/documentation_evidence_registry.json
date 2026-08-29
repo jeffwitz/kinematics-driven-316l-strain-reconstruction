@@ -2301,6 +2301,14 @@
       ]
     },
     {
+      "question": "Which plastic observability modes are excited after the measured DIC transfer and whitening?",
+      "status": "supported for the registered M20/M100 post-processing",
+      "boundary": "Archived DIC histories, transfer function and whitener; no new mechanical forward and no latent plastic-field identification",
+      "evidence_ids": [
+        "E-DIC-OBSERVABILITY-001"
+      ]
+    },
+    {
       "question": "Does a fixed rank-three SVD parameterization qualify synthetic P43 identification?",
       "status": "demonstrated on M20; weak Q/b direction profiled",
       "boundary": "P43 M20, fixed SVD basis at truth, four starts, no noise, identity observation; no experimental claim",
@@ -3407,6 +3415,36 @@
             {"path": "/gate/m100_authorized", "operator": "equals", "expected": false},
             {"path": "/claims/experimental_parameters_identified", "operator": "equals", "expected": false}
           ]
+        }
+      ]
+    },
+    {
+      "id": "E-DIC-OBSERVABILITY-001",
+      "question": "Does the measured DIC transfer and whitening reveal plastic observability modes in archived P43 histories?",
+      "fidelity": "archived P43 M20/M100 histories, DIC transfer CSV and repeated-frame noise",
+      "parameters": "20 modes at M100, 12 at M20, fixed whitener seed 42, 40 states",
+      "status": "supported for registered post-processing",
+      "conclusion": "The M20 crop remains below the DIC noise scale, while the M100 crop shows load-growing whitened coefficients up to the registered values; the leading modes are edge-dominated and are not a reconstruction of the latent plastic field.",
+      "sources": [
+        {
+          "path": "validation/_generated/performance/experimental_oracle_p43_m20/dic_excitation_m20.json",
+          "role": "primary M20 post-processing artefact"
+        },
+        {
+          "path": "validation/_generated/performance/experimental_oracle_p43_m20/dic_excitation_m100.json",
+          "role": "primary M100 post-processing artefact"
+        },
+        {
+          "path": "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv",
+          "role": "measured DIC spectral transfer"
+        },
+        {
+          "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+          "role": "repeated-frame uncertainty used by the whitener"
+        },
+        {
+          "path": "validation/dic_excitation_of_observable_plastic_modes.md",
+          "role": "interpretive report and limitations"
         }
       ]
     }

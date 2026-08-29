@@ -37,6 +37,8 @@ artefacts; these pages explain their status and interpretation.
 - {doc}`../reference/evidence/regm_qualification` — REGM evidence IDs and metrics.
 - {doc}`../reference/evidence/femu_qualification` — synthetic FEMU/SVD evidence and
   the experimental-qualification boundary.
+- {doc}`../reference/evidence/dic_observable_modes` — DIC-weighted observable
+  modes from archived P43 histories.
 - {doc}`../reference/evidence/selection_indicators` — definitions for
   sensitivity and SVD outputs.
 
@@ -58,4 +60,5 @@ artefacts; these pages explain their status and interpretation.
 ../explanation/identification/regm_screening
 ../reference/evidence/regm_qualification
 ../reference/evidence/femu_qualification
+../reference/evidence/dic_observable_modes
 ```
