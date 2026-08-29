@@ -86,12 +86,14 @@
     {
       "conclusion": "tensor/coarse observables do not establish individual slip-system recovery",
       "latent_recovery": {
+        "metric": "weighted system R2",
         "slip_space_gate": false,
-        "status": "slip-space gate false"
+        "status": "slip-space gate false",
+        "value": -0.031046591249033903
       },
       "observable_fit": {
-        "metric": "best per-system R2",
-        "value": 0.20593095845912257
+        "metric": "unconstrained tensor e_FCC median",
+        "value": 1.756551695315726e-12
       },
       "problem": "shared FCC slip generator ladder"
     },
@@ -126,6 +128,7 @@
     "validation/reference_data/srix_regm_femu_ranking_v1/report.json",
     "validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json",
     "validation/_generated/shared_tensor_generator/slip_law_ladder.json",
+    "validation/_generated/shared_tensor_generator/fcc_slip_decomposition.json",
     "validation/reference_data/p0043_spatial_noise_stationarity_v1/report.json"
   ]
 }

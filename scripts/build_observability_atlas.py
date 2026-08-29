@@ -26,6 +26,7 @@ def main() -> int:
     exact_regm = _load("validation/reference_data/srix_regm_femu_ranking_v1/report.json")["statistics"]
     observed_regm = _load("validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json")["statistics"]
     slip = _load("validation/_generated/shared_tensor_generator/slip_law_ladder.json")
+    fcc = _load("validation/_generated/shared_tensor_generator/fcc_slip_decomposition.json")
     femu = _load("validation/reference_data/p0043_spatial_noise_stationarity_v1/report.json")
 
     entries = [
@@ -71,8 +72,8 @@ def main() -> int:
         },
         {
             "problem": "shared FCC slip generator ladder",
-            "observable_fit": {"metric": "best per-system R2", "value": max(item["best_per_system_r2"] for item in slip["results"].values())},
-            "latent_recovery": {"status": "slip-space gate false", "slip_space_gate": slip["bars"]["slip_space"]},
+            "observable_fit": {"metric": "unconstrained tensor e_FCC median", "value": fcc["unconstrained"]["e_fcc_median"]},
+            "latent_recovery": {"metric": "weighted system R2", "value": fcc["weighted_system_r2"], "status": "slip-space gate false", "slip_space_gate": slip["bars"]["slip_space"]},
             "conclusion": "tensor/coarse observables do not establish individual slip-system recovery",
         },
         {
@@ -99,6 +100,7 @@ def main() -> int:
             "validation/reference_data/srix_regm_femu_ranking_v1/report.json",
             "validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json",
             "validation/_generated/shared_tensor_generator/slip_law_ladder.json",
+            "validation/_generated/shared_tensor_generator/fcc_slip_decomposition.json",
             "validation/reference_data/p0043_spatial_noise_stationarity_v1/report.json",
         ],
     }
