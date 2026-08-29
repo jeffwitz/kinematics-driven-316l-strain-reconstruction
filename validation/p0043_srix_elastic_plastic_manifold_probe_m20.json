@@ -1,50 +1,526 @@
 {
-  "schema_version": 1,
-  "status": "blocked_before_elastic_sensitivity",
-  "verdict": "phase_1_blocked",
-  "scope": {
-    "new_srix_forward": false,
-    "new_finite_differences": false,
-    "new_femu": false,
-    "new_nonlinear_probe": false
-  },
-  "lot_e_manifest": "validation/reference_data/p0043_krylov_srix_intersection_m20_v1/manifest.json",
-  "lot_e_contract": {
-    "states": 8,
-    "source_steps": [4, 8, 12, 16, 20, 24, 28, 32],
-    "rows": 7056,
-    "per_state_rows": 882,
-    "units": "mm",
-    "components": ["u_x", "u_y"]
-  },
-  "compatible_elastic_artifacts": [],
-  "incompatible_elastic_artifacts": [
-    {
-      "path": "validation/reference_data/srix_femu_direct_sensitivity_v1/jacobian.npz",
-      "arrays": {"FEMU_direct": [1296, 4], "FEMU_reference": [1296, 4]},
-      "states": [4, 36, 125, 275, 312, 316, 326, 338],
-      "reason": "different support, row contract, and state selection"
-    },
-    {
-      "path": "validation/reference_data/srix_femu_direct_sensitivity_v2/jacobian.npz",
-      "arrays": {"FEMU_direct": [1296, 4], "FEMU_reference": [1296, 4]},
-      "states": [4, 36, 125, 275, 312, 316, 326, 338],
-      "reason": "different support, row contract, and state selection"
-    }
-  ],
-  "future_fallback": {
-    "method": "central finite differences in log(K,Cprime,C44)",
-    "step": 0.01,
-    "maximum_forwards": 6,
-    "half_step_gate": 0.005,
-    "not_run_reason": [
-      "repaired P43 history payload absent in clean checkout",
-      "MGIS/TFEL runtime unavailable"
+  "angles_krylov_trajectory_contributions": {
+    "raw_r16_vs_combined": [
+      28.34626134558885,
+      41.7683563877341,
+      47.8138196620607
+    ],
+    "raw_r16_vs_elastic": [
+      34.07971551837001,
+      49.668263865670696,
+      56.98088871073208
+    ],
+    "raw_r16_vs_plastic": [
+      33.27545484805942,
+      53.86006459260329,
+      61.88116169863534
     ]
   },
-  "stable_elastic_coordinates": {
-    "historical_mpa": {"K": 149000.0, "Cprime": 36000.0, "C44": 122000.0},
-    "updated_mpa": {"K": 169300.0, "Cprime": 36750.0, "C44": 125400.0}
+  "baseline_replay_gate": {
+    "max_abs_delta_mm": 0.0,
+    "relative_delta": 0.0,
+    "shape": [
+      7056
+    ]
   },
-  "scientific_status": "P43 registered-case methodological diagnostic only; no elastic calibration claim"
+  "contract": {
+    "components": [
+      "u_x",
+      "u_y"
+    ],
+    "crop": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "flatten": "state-major NumPy C-order",
+    "rows": 7056,
+    "rows_per_state": 882,
+    "source_steps": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32
+    ],
+    "units": "mm"
+  },
+  "elastic_parameterization": {
+    "coordinates": [
+      "log K",
+      "log Cprime",
+      "log C44"
+    ],
+    "finite_difference_log_step": 0.01,
+    "half_step_K_relative_difference": 0.0004064428672544096,
+    "historical": {
+      "C11_mpa": 197000.0,
+      "C12_mpa": 125000.0,
+      "C44": 122000.0,
+      "C44_mpa": 122000.0,
+      "Cprime": 36000.0,
+      "K": 149000.0
+    },
+    "stability_checked": true
+  },
+  "environment": {
+    "ebsd_path": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+    "ebsd_sha256": "9be963185616bc114e01d5b511ca0832c1f8462125a4e710946f99dd81feb9c2",
+    "history_path": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/validation/reference_data/dic_multistep_history_p0043_repaired_v1/repaired_history_mm.npy",
+    "history_sha256": "8b0c6df9b8ac6235c87b0e5d60e5dee6a4e6e905980c879d50c595fe1d72c8a0",
+    "library": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/build/mfront/src/libBehaviour.so",
+    "library_exists": true,
+    "python": "/home/jeff/CNRS/Theses/Adil/Data_code/fem_inhouse/.venv/bin/python",
+    "threads": 4
+  },
+  "forward_records": [
+    {
+      "gmres_iterations": 4473,
+      "label": "baseline",
+      "steps": 32,
+      "verification_residual": 1.0919515835530814e-08
+    },
+    {
+      "elastic": {
+        "C11_mpa": 198497.47489554115,
+        "C12_mpa": 126497.4748955411,
+        "C44": 122000.0000000001,
+        "C44_mpa": 122000.0000000001,
+        "Cprime": 36000.00000000002,
+        "K": 150497.47489554112
+      },
+      "gmres_iterations": 4468,
+      "label": "K_plus_h",
+      "steps": 32,
+      "verification_residual": 1.0061241012255432e-08
+    },
+    {
+      "elastic": {
+        "C11_mpa": 195517.4252286262,
+        "C12_mpa": 123517.42522862616,
+        "C44": 122000.0000000001,
+        "C44_mpa": 122000.0000000001,
+        "Cprime": 36000.00000000002,
+        "K": 147517.42522862618
+      },
+      "gmres_iterations": 4205,
+      "label": "K_minus_h",
+      "steps": 32,
+      "verification_residual": 1.0250323877552353e-08
+    },
+    {
+      "elastic": {
+        "C11_mpa": 197482.4080200402,
+        "C12_mpa": 124758.79598998008,
+        "C44": 122000.0000000001,
+        "C44_mpa": 122000.0000000001,
+        "Cprime": 36361.80601503006,
+        "K": 149000.00000000012
+      },
+      "gmres_iterations": 4392,
+      "label": "Cprime_plus_h",
+      "steps": 32,
+      "verification_residual": 1.1137625970514775e-08
+    },
+    {
+      "elastic": {
+        "C11_mpa": 196522.3920199602,
+        "C12_mpa": 125238.80399002007,
+        "C44": 122000.0000000001,
+        "C44_mpa": 122000.0000000001,
+        "Cprime": 35641.79401497007,
+        "K": 149000.00000000012
+      },
+      "gmres_iterations": 4445,
+      "label": "Cprime_minus_h",
+      "steps": 32,
+      "verification_residual": 1.0356331660155488e-08
+    },
+    {
+      "elastic": {
+        "C11_mpa": 197000.00000000015,
+        "C12_mpa": 125000.0000000001,
+        "C44": 123226.12038426858,
+        "C44_mpa": 123226.12038426858,
+        "Cprime": 36000.00000000002,
+        "K": 149000.00000000012
+      },
+      "gmres_iterations": 4319,
+      "label": "C44_plus_h",
+      "steps": 32,
+      "verification_residual": 1.0665777811670863e-08
+    },
+    {
+      "elastic": {
+        "C11_mpa": 197000.00000000015,
+        "C12_mpa": 125000.0000000001,
+        "C44": 120786.07971739864,
+        "C44_mpa": 120786.07971739864,
+        "Cprime": 36000.00000000002,
+        "K": 149000.00000000012
+      },
+      "gmres_iterations": 4211,
+      "label": "C44_minus_h",
+      "steps": 32,
+      "verification_residual": 1.0641865608814182e-08
+    },
+    {
+      "gmres_iterations": 4473,
+      "label": "K_plus_half_h",
+      "steps": 32,
+      "verification_residual": 1.00610518655564e-08
+    },
+    {
+      "gmres_iterations": 4310,
+      "label": "K_minus_half_h",
+      "steps": 32,
+      "verification_residual": 1.0530448499513272e-08
+    }
+  ],
+  "interpretation": {
+    "elastic_constants_are_not_calibrated": true,
+    "no_nonlinear_curvature_probe_run": true,
+    "parameter_factors_are_not_identification": true
+  },
+  "per_state_raw_krylov_projection": [
+    {
+      "eta_combined": 0.21050650733304455,
+      "eta_elastic": 0.18579013296334723,
+      "eta_plastic": 0.15283652504233594,
+      "source_step": 4,
+      "state_index": 0
+    },
+    {
+      "eta_combined": 0.29257495492797586,
+      "eta_elastic": 0.06327924438444123,
+      "eta_plastic": 0.1762511196728899,
+      "source_step": 8,
+      "state_index": 1
+    },
+    {
+      "eta_combined": 0.3270527539412634,
+      "eta_elastic": 0.20029842979894774,
+      "eta_plastic": 0.09326142089394039,
+      "source_step": 12,
+      "state_index": 2
+    },
+    {
+      "eta_combined": 0.3287061345138163,
+      "eta_elastic": 0.15689078103927243,
+      "eta_plastic": 0.10349118018498304,
+      "source_step": 16,
+      "state_index": 3
+    },
+    {
+      "eta_combined": 0.19421226419653714,
+      "eta_elastic": 0.07935102692017969,
+      "eta_plastic": 0.06762773686995895,
+      "source_step": 20,
+      "state_index": 4
+    },
+    {
+      "eta_combined": 0.38908092150866824,
+      "eta_elastic": 0.2094448318441027,
+      "eta_plastic": 0.029587799260111777,
+      "source_step": 24,
+      "state_index": 5
+    },
+    {
+      "eta_combined": 0.39498670269506636,
+      "eta_elastic": 0.2978400211102107,
+      "eta_plastic": 0.13813005966460928,
+      "source_step": 28,
+      "state_index": 6
+    },
+    {
+      "eta_combined": 0.2778201304014702,
+      "eta_elastic": 0.18399510106414013,
+      "eta_plastic": 0.0962448277641448,
+      "source_step": 32,
+      "state_index": 7
+    }
+  ],
+  "projection_fractions": {
+    "Krylov dissipative r16": {
+      "eta_combined": 0.205392163973302,
+      "eta_elastic": 0.1797532402652943,
+      "eta_elastic_given_plastic": 0.15227255393304942,
+      "eta_plastic": 0.0626611895585061
+    },
+    "Krylov raw r16": {
+      "eta_combined": 0.21691257547479081,
+      "eta_elastic": 0.17700130454337012,
+      "eta_elastic_given_plastic": 0.16333696932378067,
+      "eta_plastic": 0.06403486741640863
+    },
+    "final SRIX residual": {
+      "eta_combined": 0.41313776002864516,
+      "eta_elastic": 0.35979482497919935,
+      "eta_elastic_given_plastic": 0.2571184067058501,
+      "eta_plastic": 0.21001914014650494
+    }
+  },
+  "schema_version": 1,
+  "scope": {
+    "new_femu_optimization": false,
+    "new_finite_differences": true,
+    "new_srix_forward": true,
+    "nonlinear_mixed_mode_probe": false,
+    "registered_case_methodological_diagnostic_only": true
+  },
+  "sensitivity_arrays": {
+    "path": "validation/_generated/p0043_srix_elastic_plastic_manifold_probe_m20/elastic_sensitivities.npz",
+    "sha256": "554f1c8fa601d15c9e308b1859a6e63fddb0e99d127c004baffd59aa9b8d79d0",
+    "shapes": {
+      "S_combined": [
+        7056,
+        7
+      ],
+      "S_elastic": [
+        7056,
+        3
+      ],
+      "S_plastic": [
+        7056,
+        4
+      ]
+    }
+  },
+  "status": "elastic_tangent_complete_no_nonlinear_probe",
+  "svd": {
+    "combined": {
+      "normalized": [
+        1.0,
+        0.8167230284351956,
+        0.2439596105714507,
+        0.13065222279062036,
+        0.07501925056881174,
+        0.015590925372613206,
+        1.4394689902973368e-05
+      ],
+      "rank": 6,
+      "singular_values": [
+        6.814515372216953e-05,
+        5.5655716321152244e-05,
+        1.6624665164392125e-05,
+        8.903315806209967e-06,
+        5.11219836213363e-06,
+        1.0624460061876002e-06,
+        9.809283562210818e-10
+      ]
+    },
+    "combined_right_mode_composition": [
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          -0.0272909283793651,
+          0.02736082206584578,
+          -0.3296859962866931,
+          -0.2633792825717987,
+          0.9057839022838515,
+          0.0005478205245707806,
+          0.0005570140027244576
+        ],
+        "elastic_squared_weight": 0.11018626550347592,
+        "mode": 1,
+        "normalized_singular_value": 1.0,
+        "plastic_squared_weight": 0.8898137344965237
+      },
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          -0.0280379191133994,
+          -0.6220903252418996,
+          0.722028001903559,
+          0.054314385019301886,
+          0.2965403608695246,
+          0.0018478542164576217,
+          0.0018477525578889323
+        ],
+        "elastic_squared_weight": 0.9091069332006276,
+        "mode": 2,
+        "normalized_singular_value": 0.8167230284351956,
+        "plastic_squared_weight": 0.09089306679937333
+      },
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          0.1328797362088217,
+          0.772160007278672,
+          0.5734901825654367,
+          0.09836228587459245,
+          0.2180152586246591,
+          0.002739783603012414,
+          0.002758745311675041
+        ],
+        "elastic_squared_weight": 0.9427790906344626,
+        "mode": 3,
+        "normalized_singular_value": 0.2439596105714507,
+        "plastic_squared_weight": 0.057220909365538065
+      },
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          0.9489715272137137,
+          -0.1043585300555834,
+          -0.008183178753768306,
+          -0.29157654077500145,
+          -0.05603304444912638,
+          0.01305394854868802,
+          0.012976384493703712
+        ],
+        "elastic_squared_weight": 0.9115046266722063,
+        "mode": 4,
+        "normalized_singular_value": 0.13065222279062036,
+        "plastic_squared_weight": 0.08849537332779407
+      },
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          0.28304262970255073,
+          -0.07164110083937654,
+          -0.2023995896612278,
+          0.9123926201025166,
+          0.20234078101218517,
+          -0.013935045747862945,
+          -0.013876533010866374
+        ],
+        "elastic_squared_weight": 0.12621117145344637,
+        "mode": 5,
+        "normalized_singular_value": 0.07501925056881174,
+        "plastic_squared_weight": 0.873788828546553
+      },
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          -0.01232745619867312,
+          -0.0008862614164101392,
+          -0.007691574466734696,
+          0.022999770464009084,
+          0.002681380867191319,
+          0.7083424462264181,
+          0.7053388459994362
+        ],
+        "elastic_squared_weight": 0.00021191195340574675,
+        "mode": 6,
+        "normalized_singular_value": 0.015590925372613206,
+        "plastic_squared_weight": 0.9997880880465944
+      },
+      {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": [
+          -1.2548452711205536e-05,
+          1.5217526587332997e-05,
+          1.390470204110301e-05,
+          4.496188414074182e-06,
+          1.4540246469966677e-05,
+          0.7056026974966462,
+          -0.7086076717559897
+        ],
+        "elastic_squared_weight": 5.823775197334025e-10,
+        "mode": 7,
+        "normalized_singular_value": 1.4394689902973368e-05,
+        "plastic_squared_weight": 0.9999999994176225
+      }
+    ],
+    "elastic": {
+      "normalized": [
+        1.0,
+        0.3652088790418918,
+        0.15331903054624793
+      ],
+      "rank": 3,
+      "singular_values": [
+        5.6275768078721236e-05,
+        2.055241017725126e-05,
+        8.628146205075025e-06
+      ]
+    },
+    "elastic_independent_of_plastic": {
+      "rank": 3,
+      "singular_values": [
+        3.5969209651337944e-05,
+        1.537874737313379e-05,
+        8.099587455772114e-06
+      ]
+    },
+    "plastic": {
+      "normalized": [
+        1.0,
+        0.14308435894960975,
+        0.016465247435778187,
+        1.5531833907768377e-05
+      ],
+      "rank": 3,
+      "singular_values": [
+        6.610428425313853e-05,
+        9.458489136183109e-06,
+        1.0884233967929414e-06,
+        1.026720763611656e-09
+      ]
+    },
+    "threshold_relative": 0.0001
+  },
+  "tangent_equivalent_7d": {
+    "Krylov dissipative r16": {
+      "delta_eta_order_log_K_Cprime_C44_tau0_R_Q_b": [
+        -7.042423072704903,
+        -0.3743321378498632,
+        -2.388364156724924,
+        4.734053896458044,
+        1.0929211623192718,
+        -16.90334352503578,
+        -16.83153968156833
+      ],
+      "parameter_factors": [
+        0.0008740062138158413,
+        0.6877484465998043,
+        0.09177969834630018,
+        113.75578304081914,
+        2.98297511229843,
+        4.5600665554654275e-08,
+        4.899538722323838e-08
+      ],
+      "retained_rank": 6
+    },
+    "Krylov raw r16": {
+      "delta_eta_order_log_K_Cprime_C44_tau0_R_Q_b": [
+        -7.969661123049166,
+        -1.3082830548574371,
+        -3.5055050040614044,
+        6.810155376807938,
+        1.3302308695056724,
+        -24.28353258348495,
+        -24.18043927817871
+      ],
+      "parameter_factors": [
+        0.00034579614838552484,
+        0.2702837205489269,
+        0.030031603432358167,
+        907.0117245861505,
+        3.7819164159605334,
+        2.8431239767806e-11,
+        3.1518725759157427e-11
+      ],
+      "retained_rank": 6
+    },
+    "final SRIX residual": {
+      "delta_eta_order_log_K_Cprime_C44_tau0_R_Q_b": [
+        -10.538157565654178,
+        -0.727290023287656,
+        -5.494868722129834,
+        0.5037533102091389,
+        -1.4277004176872086,
+        -20.1237849592577,
+        -20.03840946930382
+      ],
+      "parameter_factors": [
+        2.6505519446643025e-05,
+        0.4832167233938857,
+        0.004107795692821527,
+        1.6549210606667502,
+        0.23985986603615345,
+        1.8211731433444775e-09,
+        1.9834869221737422e-09
+      ],
+      "retained_rank": 6
+    }
+  }
 }
