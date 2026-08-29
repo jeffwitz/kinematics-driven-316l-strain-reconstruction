@@ -283,7 +283,8 @@ experimental material hypothesis.
 ## What remains to consolidate
 
 * **Experimental/data:** DIC--EBSD co-registration, acquisition metadata,
-  loading synchronisation and multiple curated cases.
+  loading synchronisation and multiple curated cases; the readiness levels
+  are defined in {doc}`../reference/data/experimental_dataset_readiness`.
 * **Method:** a generic user-facing full-field runner, a broader constitutive
   adjoint route and robust multi-experiment inverse orchestration.
 * **Science:** determine which physical ingredients control localisation, then

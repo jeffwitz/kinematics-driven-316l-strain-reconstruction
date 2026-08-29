@@ -4,6 +4,7 @@
 **Domain:** data
 
 - {doc}`experimental_data_inventory`
+- {doc}`experimental_dataset_readiness`
 - {doc}`input_contract`
 - {doc}`output_contract`
 - {doc}`dic_axis_conventions`
@@ -15,6 +16,7 @@ The contracts make the DIC/EBSD provenance, shapes, units and masks explicit.
 :hidden:
 
 experimental_data_inventory
+experimental_dataset_readiness
 input_contract
 output_contract
 dic_axis_conventions
