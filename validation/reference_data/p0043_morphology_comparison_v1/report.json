@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "reason": "No archived J2, SRIX, and DIC fields share a declared common crop, increment, and observation representation for a new multiscale comparison.",
+  "no_forward_or_finite_difference": true,
+  "inspected_artifacts": [
+    "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
+    "validation/reference_data/p0043_experimental_srix_m20_v1/fields.npz",
+    "validation/reference_data/p0043_synthetic_identification_v1/fields.npz",
+    "validation/reference_data/p0043_synthetic_scaleup_v1/fields.npz"
+  ],
+  "available": {
+    "experimental_raw_m20": "prior/best/target displacement and four-parameter Jacobians on an 8-state 21x21 support",
+    "experimental_srix_m20": "same displacement/Jacobian shape, but no archived J2 counterpart",
+    "synthetic_cases": "displacement/Jacobian artifacts on different supports and/or different targets"
+  },
+  "required_for_future_comparison": [
+    "same DIC target and increment for J2 and SRIX",
+    "declared observation transfer applied consistently to each model",
+    "common crop/support and units"
+  ],
+  "interpretation": "No interpolation or cross-case morphology claim was manufactured from incompatible artifacts."
+}
