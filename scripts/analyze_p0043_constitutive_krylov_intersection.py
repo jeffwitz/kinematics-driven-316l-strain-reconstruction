@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""Preflight the observable-space SRIX/Krylov intersection test.
+"""Compare an observable-matched Krylov fixture with the archived SRIX tangent.
 
-This command deliberately performs no mechanical solve and no DIC operation.
-It only inventories the archived array contracts needed for
-
-    K = W O A Phi_K
-
-and for the Krylov correction ``delta_y_K``.  The test is only meaningful when
-both objects live in the same observable vector space.  A missing or
-incompatible artifact is reported as a blocked test rather than being
-reshaped, interpolated, or projected opportunistically.
+The analysis is deliberately linear and offline. It consumes the displacement
+space M20 fixture and the registered raw-FEMU Jacobian; no SRIX forward,
+finite-difference, or FEMU optimization is performed.
 """
 
 from __future__ import annotations
@@ -22,224 +16,236 @@ from typing import Any
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-SRIX_FIELDS = Path(
-    "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz"
+SRIX_ROOT = Path("validation/reference_data/p0043_experimental_raw_femu_m20_v1")
+FIXTURE_ROOT = Path("validation/reference_data/p0043_krylov_srix_intersection_m20_v1")
+OUTPUT = Path(
+    "validation/reference_data/p0043_constitutive_krylov_intersection_v1/report.json"
 )
-KRYLOV_TRAJECTORY = Path(
-    "validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz"
-)
-KRYLOV_SUMMARY = Path(
-    "validation/_generated/shared_tensor_generator/krylov_projected_gp_trajectories.json"
-)
-KRYLOV_MAP_SUMMARY = Path(
-    "validation/_generated/performance/experimental_oracle_p43_m20/"
-    "krylov_maps_state40/report.json"
-)
-KRYLOV_MODE_CANDIDATES = (
-    Path(
-        "validation/_generated/performance/experimental_oracle_p43_m20/"
-        "mode_anatomy_m100/modes.npz"
-    ),
-    Path(
-        "validation/_generated/performance/experimental_oracle_p43_m20/"
-        "tensor_observability/modes.npz"
-    ),
-)
+SCORED_INDICES = np.asarray([3, 7, 11, 15, 19, 23, 27, 31], dtype=int)
 
 
-def _array_contract(
-    path: Path, *, display_path: Path | None = None, allow_pickle: bool = False
+def _stack_states(values: np.ndarray) -> np.ndarray:
+    """Flatten state-major ``(8, 21, 21, 2)`` arrays to 7056 rows."""
+    array = np.asarray(values, dtype=np.float64)
+    if array.shape != (8, 21, 21, 2):
+        raise ValueError(f"expected eight nodal displacement states, got {array.shape}")
+    return array.reshape(-1)
+
+
+def _subspace_basis(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Return an SVD basis and singular values for the columns of ``values``."""
+    u, singular, _ = np.linalg.svd(values, full_matrices=False)
+    scale = max(float(singular[0]) if singular.size else 0.0, 1e-300)
+    rank = int(np.count_nonzero(singular > 1e-12 * scale))
+    return u[:, :rank], singular
+
+
+def _principal_angles(left: np.ndarray, right: np.ndarray) -> list[float]:
+    """Return sorted principal angles in degrees, smallest first."""
+    q_left, _ = _subspace_basis(left)
+    overlaps = np.linalg.svd(q_left.T @ right, compute_uv=False)
+    angles = np.degrees(np.arccos(np.clip(overlaps, -1.0, 1.0)))
+    return np.sort(angles).tolist()
+
+
+def _eta(values: np.ndarray, u: np.ndarray, count: int) -> float:
+    vector = np.asarray(values, dtype=np.float64).reshape(-1)
+    denominator = max(float(vector @ vector), 1e-300)
+    projected = u[:, :count].T @ vector
+    return float((projected @ projected) / denominator)
+
+
+def _tangent_equivalent(
+    values: np.ndarray, u3: np.ndarray, singular: np.ndarray, vt3: np.ndarray
 ) -> dict[str, Any]:
-    if not path.exists():
-        return {"path": (display_path or path).as_posix(), "exists": False}
-    result: dict[str, Any] = {
-        "path": (display_path or path).as_posix(),
-        "exists": True,
+    vector = np.asarray(values, dtype=np.float64).reshape(-1)
+    coefficients = u3.T @ vector
+    delta_q = coefficients / np.maximum(singular[:3], 1e-300)
+    delta_log_theta = vt3.T @ delta_q
+    return {
+        "observable_projection_norm_fraction": float(
+            (coefficients @ coefficients) / max(vector @ vector, 1e-300)
+        ),
+        "delta_q": delta_q.tolist(),
+        "delta_log_theta_order_tau0_R_Q_b": delta_log_theta.tolist(),
+        "parameter_factor_order_tau0_R_Q_b": np.exp(delta_log_theta).tolist(),
     }
-    try:
-        with np.load(path, allow_pickle=allow_pickle) as archive:
-            result["arrays"] = {
-                key: {"shape": list(archive[key].shape), "dtype": str(archive[key].dtype)}
-                for key in archive.files
-            }
-    except Exception as error:  # pragma: no cover - diagnostic path
-        result["load_error"] = f"{type(error).__name__}: {error}"
-    return result
-
-
-def _json_contract(path: Path, *, display_path: Path | None = None) -> dict[str, Any]:
-    if not path.exists():
-        return {"path": (display_path or path).as_posix(), "exists": False}
-    result: dict[str, Any] = {
-        "path": (display_path or path).as_posix(),
-        "exists": True,
-    }
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        result["top_level_keys"] = sorted(payload)
-        for key in ("origin", "pixels", "ranks", "states", "projector", "krylov"):
-            if key in payload:
-                result[key] = payload[key]
-    except Exception as error:  # pragma: no cover - diagnostic path
-        result["load_error"] = f"{type(error).__name__}: {error}"
-    return result
-
-
-def _tracked(repo_root: Path, relative: Path) -> bool:
-    """Use the index, not the filesystem, to distinguish archived from local data."""
-    import subprocess
-
-    completed = subprocess.run(
-        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", str(relative)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return completed.returncode == 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--artifact-root",
-        type=Path,
-        default=ROOT,
-        help="checkout containing generated artifacts; defaults to this checkout",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=ROOT
-        / "validation/reference_data/p0043_constitutive_krylov_intersection_v1/report.json",
-    )
+    parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--output", type=Path, default=ROOT / OUTPUT)
     args = parser.parse_args()
-    artifact_root = args.artifact_root.resolve()
+    root = args.root.resolve()
+    srix_root = root / SRIX_ROOT
+    fixture_root = root / FIXTURE_ROOT
 
-    srix_path = artifact_root / SRIX_FIELDS
-    srix = _array_contract(srix_path, display_path=SRIX_FIELDS)
-    expected_srix = {
-        "observable_vector_components": 7056,
-        "scored_states": 8,
-        "grid": [20, 20],
-        "nodal_shape": [21, 21, 2],
-        "parameter_order": ["tau0", "R", "Q", "b"],
-    }
-    if srix.get("arrays"):
-        arrays = srix["arrays"]
-        expected_srix["observed_jacobian_shape"] = arrays.get("final_jacobian", {}).get("shape")
-        expected_srix["target_shape"] = arrays.get("target_displacement", {}).get("shape")
-
-    trajectory_path = artifact_root / KRYLOV_TRAJECTORY
-    trajectory = _array_contract(trajectory_path, display_path=KRYLOV_TRAJECTORY)
-    summary = _json_contract(
-        artifact_root / KRYLOV_SUMMARY, display_path=KRYLOV_SUMMARY
+    source_fields = np.load(srix_root / "fields.npz", allow_pickle=False)
+    source_report = json.loads((srix_root / "report.json").read_text(encoding="utf-8"))
+    fixture_fields = np.load(fixture_root / "fields.npz", allow_pickle=False)
+    fixture_report = json.loads(
+        (fixture_root / "report.json").read_text(encoding="utf-8")
     )
-    map_summary = _json_contract(
-        artifact_root / KRYLOV_MAP_SUMMARY, display_path=KRYLOV_MAP_SUMMARY
-    )
-    mode_candidates = []
-    for relative in KRYLOV_MODE_CANDIDATES:
-        item = _array_contract(
-            artifact_root / relative,
-            display_path=relative,
-            allow_pickle=True,
-        )
-        item["tracked_in_clean_branch"] = _tracked(ROOT, relative)
-        item["classification"] = (
-            "latent mode archive, not an observable displacement response"
-            if relative.name == "modes.npz"
-            and "mode_anatomy_m100" in relative.as_posix()
-            else "observable tensor SVD mode archive, not a projected-Krylov basis"
-        )
-        mode_candidates.append(item)
 
-    trajectory_arrays = trajectory.get("arrays", {})
-    trajectory_contract = {
-        "states": trajectory_arrays.get("states", {}).get("shape"),
-        "stress": trajectory_arrays.get("stress", {}).get("shape"),
-        "eps_inel": trajectory_arrays.get("eps_inel", {}).get("shape"),
-        "d_eps_inel": trajectory_arrays.get("d_eps_inel", {}).get("shape"),
-        "eps_inel_observable": trajectory_arrays.get("eps_inel_observable", {}).get("shape"),
-        "d_eps_inel_observable": trajectory_arrays.get("d_eps_inel_observable", {}).get("shape"),
-        "contains_phi_k": any(key in trajectory_arrays for key in ("Phi_K", "phi_k", "basis")),
-        "contains_observable_response": any(
-            key in trajectory_arrays
-            for key in ("WOA_Phi_K", "observable_response", "responses", "delta_y")
-        ),
-        "observable_field_note": (
-            "eps_inel_observable and d_eps_inel_observable are latent plastic fields "
-            "after a tensor nullspace projection; they are not displacement-space WOA responses."
-        ),
-    }
-
-    blockers = [
-        "No archived Krylov basis Phi_K is present in the trajectory archive.",
-        "No archived WOA Phi_K response or Krylov observable correction delta_y_K is present.",
-        "The available Krylov trajectory uses 20 states on a 100x100, two-subcell support, "
-        "whereas the SRIX Jacobian is 8 scored states on the 21x21 M20 support.",
+    final_jacobian = np.asarray(source_fields["final_jacobian"], dtype=np.float64)
+    if final_jacobian.shape != (7056, 4):
+        raise ValueError(f"unexpected final_jacobian shape: {final_jacobian.shape}")
+    target = np.asarray(source_fields["target_displacement"], dtype=np.float64)[
+        SCORED_INDICES
     ]
+    best = np.asarray(source_fields["best_displacement"], dtype=np.float64)[
+        SCORED_INDICES
+    ]
+    final_residual = _stack_states(target - best)
+    u, singular, vt = np.linalg.svd(final_jacobian, full_matrices=False)
+    u3 = u[:, :3]
+    vt3 = vt[:3, :]
+    if singular[3] > 1e-4 * singular[0]:
+        raise ValueError("SRIX tangent is not rank-3 under the declared diagnostic gate")
+
+    mode_results: dict[str, Any] = {}
+    eta_results: dict[str, Any] = {}
+    mapping_results: dict[str, Any] = {}
+    angles: dict[str, Any] = {}
+    for rank in (8, 16):
+        key = str(rank)
+        contributions = np.asarray(
+            fixture_fields[f"trajectory_mode_contributions_raw_r{rank}"],
+            dtype=np.float64,
+        )
+        if contributions.shape != (7056, rank):
+            raise ValueError(
+                f"unexpected contribution shape for rank {rank}: {contributions.shape}"
+            )
+        basis, contribution_singular = _subspace_basis(contributions)
+        angles[key] = {
+            "principal_angles_degrees": _principal_angles(basis, u3),
+            "fitted_krylov_trajectory_contribution_rank": int(basis.shape[1]),
+            "contribution_singular_values": contribution_singular.tolist(),
+        }
+        raw = fixture_fields[f"delta_y_raw_r{rank}"]
+        dissipative = fixture_fields[f"delta_y_dissipative_r{rank}"]
+        eta_results[key] = {
+            "raw": {f"eta{k}": _eta(raw, u, k) for k in (1, 2, 3)},
+            "dissipative": {
+                f"eta{k}": _eta(dissipative, u, k) for k in (1, 2, 3)
+            },
+        }
+        mapping_results[key] = {
+            "raw": _tangent_equivalent(raw, u3, singular, vt3),
+            "dissipative": _tangent_equivalent(dissipative, u3, singular, vt3),
+        }
+        mode_results[key] = {
+            "raw_norm": float(np.linalg.norm(raw)),
+            "dissipative_norm": float(np.linalg.norm(dissipative)),
+            "raw_fit_relative_error_by_state": fixture_report["fit"][
+                "raw_relative_observable_error_by_state"
+            ][key],
+            "dissipative_fit_relative_error_by_state": fixture_report["fit"][
+                "dissipative_relative_observable_error_by_state"
+            ][key],
+        }
+
+    final_eta = {f"eta{k}": _eta(final_residual, u, k) for k in (1, 2, 3)}
+    final_mapping = _tangent_equivalent(final_residual, u3, singular, vt3)
+    max_raw_norm = max(item["raw_norm"] for item in mode_results.values())
+    if max_raw_norm <= 1e-15:
+        verdict = "D"
+        verdict_text = "the observable-matched Krylov fixture produces no meaningful correction"
+    else:
+        eta3_max = max(item["raw"]["eta3"] for item in eta_results.values())
+        final_eta3 = final_eta["eta3"]
+        smallest_angle = min(
+            angle
+            for item in angles.values()
+            for angle in item["principal_angles_degrees"][:3]
+        )
+        if smallest_angle < 30.0 and eta3_max > 0.5:
+            verdict = "A"
+            verdict_text = (
+                "the current SRIX tangent has substantial local geometric overlap "
+                "with the fitted Krylov correction"
+            )
+        elif eta3_max > 0.2 or final_eta3 > 0.2:
+            verdict = "B"
+            verdict_text = (
+                "SRIX explains part of the correction, but the remaining/final "
+                "residual is not fully aligned with its local tangent"
+            )
+        else:
+            verdict = "C"
+            verdict_text = (
+                "the current four-parameter SRIX tangent has weak overlap with "
+                "the data-driven correction"
+            )
+
     report = {
-        "schema_version": 1,
-        "status": "blocked_compatibility",
-        "verdict": "C",
-        "verdict_text": (
-            "artifacts incompatible for observable-space constitutive-manifold "
-            "intersection"
-        ),
+        "schema_version": 2,
+        "status": "observable_matched_intersection_complete",
+        "verdict": verdict,
+        "verdict_text": verdict_text,
         "scope": {
-            "new_forward": False,
-            "new_mechanical_solve": False,
-            "new_dic_processing": False,
-            "comparison_space": "W O A observable quotient only",
+            "new_srix_forward": False,
+            "new_femu": False,
+            "finite_differences": False,
+            "comparison_space": "raw displacement observable, state-major 7056-vector",
+            "experimental_status": "P43 registered-case methodological diagnostic only",
         },
-        "srix_contract": {
-            "path": SRIX_FIELDS.as_posix(),
-            "tracked_in_clean_branch": _tracked(ROOT, SRIX_FIELDS),
-            "expected": expected_srix,
-            "actual": srix,
+        "srix_source": {
+            "fields": SRIX_ROOT.joinpath("fields.npz").as_posix(),
+            "report": SRIX_ROOT.joinpath("report.json").as_posix(),
+            "source_git_sha": source_report.get("git_sha"),
+            "scored_source_indices": SCORED_INDICES.tolist(),
+            "scored_steps": source_report.get("scored_steps"),
+            "parameter_order": ["tau0", "R", "Q", "b"],
+            "jacobian_shape": list(final_jacobian.shape),
+            "observation_profile": source_report.get("observation_profile"),
         },
-        "krylov_contract": {
-            "trajectory_path": KRYLOV_TRAJECTORY.as_posix(),
-            "tracked_in_clean_branch": _tracked(ROOT, KRYLOV_TRAJECTORY),
-            "actual": trajectory,
-            "shape_summary": trajectory_contract,
-            "summary_json": summary,
-            "state40_summary": map_summary,
-            "mode_candidates": mode_candidates,
+        "fixture": {
+            "fields": FIXTURE_ROOT.joinpath("fields.npz").as_posix(),
+            "report": FIXTURE_ROOT.joinpath("report.json").as_posix(),
+            "state_order": fixture_report["observable_contract"]["state_order"],
+            "row_contract": fixture_report["observable_contract"],
+            "basis": fixture_report["basis"],
+            "gates": fixture_report["gates"],
+            "fit": fixture_report["fit"],
         },
-        "compatibility_checks": {
-            "srix_final_jacobian_reconstructible": srix.get("exists", False)
-            and "arrays" in srix
-            and srix["arrays"].get("final_jacobian", {}).get("shape") == [7056, 4],
-            "same_observable_vector_length": False,
-            "same_scored_state_layout": False,
-            "krylov_observable_response_available": trajectory_contract[
-                "contains_observable_response"
-            ],
-            "krylov_basis_available": trajectory_contract["contains_phi_k"],
+        "srix_tangent": {
+            "singular_values": singular.tolist(),
+            "normalized_singular_values": (singular / singular[0]).tolist(),
+            "right_singular_vectors": vt.tolist(),
+            "rank3": True,
         },
-        "blockers": blockers,
-        "required_artifacts_for_followup": [
-            "Krylov Phi_K or WOA Phi_K stored on the same M20 21x21x2 "
-            "eight-state observable convention.",
-            "Raw and dissipatively projected delta_y_K in that same vector space.",
-            "A manifest fixing support, state order, component order, transfer "
-            "and whitening contracts.",
-        ],
-        "not_computed": [
-            "principal angles between Q_K and U_theta,3",
-            "eta_1, eta_2, eta_3 projections",
-            "delta_q and delta_log_theta mapping",
-            "raw versus dissipative Krylov comparison",
-        ],
-        "interpretation": (
-            "The registered SRIX tangent can be recomputed from final_jacobian, but no archived "
-            "Krylov observable object exists in the same space. A latent-field reshape or a new "
-            "mechanical application of A would change the experiment and is not performed."
-        ),
+        "principal_angles": angles,
+        "eta": {
+            "raw_and_dissipative_krylov_by_rank": eta_results,
+            "final_srix_residual": final_eta,
+        },
+        "tangent_equivalent_parameter_displacement": {
+            "interpretation": (
+                "local tangent-equivalent parameter displacement, not identified "
+                "parameters"
+            ),
+            "raw_and_dissipative_krylov_by_rank": mapping_results,
+            "final_srix_residual": final_mapping,
+        },
+        "final_residual": {
+            "source": "target_displacement - best_displacement on the eight scored states",
+            "norm": float(np.linalg.norm(final_residual)),
+            "mode_results": mode_results,
+        },
+        "claims": {
+            "trajectory_contribution_subspace_not_latent_field_distance": True,
+            "no_claim_of_true_slip_recovery": True,
+            "no_claim_of_material_calibration": True,
+        },
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output = args.output if args.output.is_absolute() else root / args.output
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 

@@ -1,320 +1,858 @@
 {
-  "blockers": [
-    "No archived Krylov basis Phi_K is present in the trajectory archive.",
-    "No archived WOA Phi_K response or Krylov observable correction delta_y_K is present.",
-    "The available Krylov trajectory uses 20 states on a 100x100, two-subcell support, whereas the SRIX Jacobian is 8 scored states on the 21x21 M20 support."
-  ],
-  "compatibility_checks": {
-    "krylov_basis_available": false,
-    "krylov_observable_response_available": false,
-    "same_observable_vector_length": false,
-    "same_scored_state_layout": false,
-    "srix_final_jacobian_reconstructible": true
+  "claims": {
+    "no_claim_of_material_calibration": true,
+    "no_claim_of_true_slip_recovery": true,
+    "trajectory_contribution_subspace_not_latent_field_distance": true
   },
-  "interpretation": "The registered SRIX tangent can be recomputed from final_jacobian, but no archived Krylov observable object exists in the same space. A latent-field reshape or a new mechanical application of A would change the experiment and is not performed.",
-  "krylov_contract": {
-    "actual": {
-      "arrays": {
-        "d_eps_inel": {
-          "dtype": "float64",
-          "shape": [
-            20,
-            20000,
-            3
-          ]
+  "eta": {
+    "final_srix_residual": {
+      "eta1": 0.0006564839584358446,
+      "eta2": 0.1779919281476833,
+      "eta3": 0.21001914014650494
+    },
+    "raw_and_dissipative_krylov_by_rank": {
+      "16": {
+        "dissipative": {
+          "eta1": 0.020285875300841777,
+          "eta2": 0.027075364102961193,
+          "eta3": 0.0626611895585061
         },
-        "d_eps_inel_observable": {
-          "dtype": "float64",
-          "shape": [
-            20,
-            20000,
-            3
-          ]
-        },
-        "eps_elastic": {
-          "dtype": "float64",
-          "shape": [
-            20,
-            20000,
-            3
-          ]
-        },
-        "eps_inel": {
-          "dtype": "float64",
-          "shape": [
-            20,
-            20000,
-            3
-          ]
-        },
-        "eps_inel_observable": {
-          "dtype": "float64",
-          "shape": [
-            20,
-            20000,
-            3
-          ]
-        },
-        "states": {
-          "dtype": "int64",
-          "shape": [
-            20
-          ]
-        },
-        "stress": {
-          "dtype": "float64",
-          "shape": [
-            20,
-            20000,
-            3
-          ]
+        "raw": {
+          "eta1": 0.014625511495915164,
+          "eta2": 0.018630543658720477,
+          "eta3": 0.06403486741640863
         }
       },
-      "exists": true,
-      "path": "validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz"
-    },
-    "mode_candidates": [
-      {
-        "arrays": {
-          "coefficients": {
-            "dtype": "float64",
-            "shape": [
-              20,
-              41
-            ]
-          },
-          "measured_equivalent": {
-            "dtype": "float64",
-            "shape": [
-              100,
-              100
-            ]
-          },
-          "modes": {
-            "dtype": "float64",
-            "shape": [
-              60000,
-              20
-            ]
-          },
-          "reconstructed_equivalent": {
-            "dtype": "float64",
-            "shape": [
-              100,
-              100
-            ]
-          },
-          "singular_values": {
-            "dtype": "float64",
-            "shape": [
-              20
-            ]
-          }
+      "8": {
+        "dissipative": {
+          "eta1": 0.035316835320308056,
+          "eta2": 0.04204100030699359,
+          "eta3": 0.06211310129937186
         },
-        "classification": "latent mode archive, not an observable displacement response",
-        "exists": true,
-        "path": "validation/_generated/performance/experimental_oracle_p43_m20/mode_anatomy_m100/modes.npz",
-        "tracked_in_clean_branch": false
-      },
-      {
-        "arrays": {
-          "eigenvalues": {
-            "dtype": "float64",
-            "shape": [
-              722
-            ]
-          },
-          "modes": {
-            "dtype": "float64",
-            "shape": [
-              2400,
-              24
-            ]
-          },
-          "signal_to_noise": {
-            "dtype": "object",
-            "shape": []
-          }
-        },
-        "classification": "observable tensor SVD mode archive, not a projected-Krylov basis",
-        "exists": true,
-        "path": "validation/_generated/performance/experimental_oracle_p43_m20/tensor_observability/modes.npz",
-        "tracked_in_clean_branch": false
+        "raw": {
+          "eta1": 0.021393936220210134,
+          "eta2": 0.03133139660128427,
+          "eta3": 0.06012387465798127
+        }
       }
-    ],
-    "shape_summary": {
-      "contains_observable_response": false,
-      "contains_phi_k": false,
-      "d_eps_inel": [
-        20,
-        20000,
-        3
-      ],
-      "d_eps_inel_observable": [
-        20,
-        20000,
-        3
-      ],
-      "eps_inel": [
-        20,
-        20000,
-        3
-      ],
-      "eps_inel_observable": [
-        20,
-        20000,
-        3
-      ],
-      "observable_field_note": "eps_inel_observable and d_eps_inel_observable are latent plastic fields after a tensor nullspace projection; they are not displacement-space WOA responses.",
-      "states": [
-        20
-      ],
-      "stress": [
-        20,
-        20000,
-        3
-      ]
+    }
+  },
+  "final_residual": {
+    "mode_results": {
+      "16": {
+        "dissipative_fit_relative_error_by_state": [
+          0.21384358558586603,
+          0.21360247725249426,
+          0.21618822243444932,
+          0.21772210182449478,
+          0.22034336165302243,
+          0.2529036300600126,
+          0.23393334576752284,
+          0.22870851867454794
+        ],
+        "dissipative_norm": 0.0002404361976727531,
+        "raw_fit_relative_error_by_state": [
+          0.11749575748255552,
+          0.11884983781058762,
+          0.11540281689553765,
+          0.114219293529318,
+          0.11352963812326682,
+          0.08735333846951485,
+          0.09764878482971721,
+          0.10881860316825799
+        ],
+        "raw_norm": 0.0002851976479538793
+      },
+      "8": {
+        "dissipative_fit_relative_error_by_state": [
+          0.5354490364637814,
+          0.544652700018897,
+          0.5392463395153967,
+          0.5379062919072143,
+          0.5394640736673333,
+          0.46436757071974305,
+          0.5022011900408063,
+          0.5347341421601846
+        ],
+        "dissipative_norm": 0.00020485985932420546,
+        "raw_fit_relative_error_by_state": [
+          0.5044126016281363,
+          0.5216861994358238,
+          0.5163572736967953,
+          0.5144537053763447,
+          0.5158649732620001,
+          0.41047157469087736,
+          0.46161238807197347,
+          0.49893579456772746
+        ],
+        "raw_norm": 0.00025260608467174515
+      }
     },
-    "state40_summary": {
-      "exists": true,
-      "path": "validation/_generated/performance/experimental_oracle_p43_m20/krylov_maps_state40/report.json",
-      "top_level_keys": [
-        "dic_peak_equivalent_strain",
-        "origin_nodes",
-        "records",
-        "reference_state",
-        "schema_version",
-        "state"
-      ]
-    },
-    "summary_json": {
-      "exists": true,
-      "krylov": "predictive",
-      "origin": [
-        1580,
-        1030
+    "norm": 0.00038724811760657517,
+    "source": "target_displacement - best_displacement on the eight scored states"
+  },
+  "fixture": {
+    "basis": {
+      "combined_qr_r": [
+        [
+          -1.0,
+          -8.384179358064702e-17,
+          -4.120206337312326e-17,
+          1.8518795595354482e-17,
+          2.783772800616608e-17,
+          2.640304426824872e-17,
+          -1.7348990259883165e-16,
+          -3.00154535109198e-18,
+          -0.01564973577691107,
+          0.007184196524331759,
+          0.006686090194089296,
+          0.00470375309974721,
+          0.00043527661289662073,
+          0.001141973098511043,
+          -0.001213263662608761,
+          0.0006122604044217475
+        ],
+        [
+          0.0,
+          -1.0,
+          6.938893903907228e-18,
+          -3.469446951953614e-18,
+          -2.7755575615628914e-17,
+          9.71445146547012e-17,
+          3.469446951953614e-17,
+          -8.673617379884035e-17,
+          0.007184196524331762,
+          -0.032343249220311225,
+          0.0014956273457055786,
+          -0.0029863479287022873,
+          0.005160836583118535,
+          -0.0005466433031037009,
+          0.000841764337890267,
+          0.0016763863399430208
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          9.5924787210655e-17,
+          2.4231918555051024e-17,
+          -1.1926223897340549e-17,
+          1.0271121518405646e-16,
+          7.14218181124826e-17,
+          0.006686090194089292,
+          0.0014956273457055892,
+          -0.03525763870119492,
+          0.003819829597059,
+          -0.0005995639349674342,
+          -0.0010487890983870585,
+          0.000320704141462308,
+          0.0005637032129737479
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          5.204170427930421e-17,
+          -3.469446951953614e-18,
+          -7.979727989493313e-17,
+          -2.7755575615628914e-17,
+          -0.004703753099747215,
+          0.002986347928702284,
+          -0.00381982959705899,
+          0.023519427408739083,
+          0.0037198216595375846,
+          0.001617366918445839,
+          -0.001926549718370566,
+          0.004692279879409096
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9999999999999999,
+          1.97758476261356e-16,
+          1.3010426069826053e-16,
+          -4.7704895589362195e-18,
+          -0.0004352766128966212,
+          -0.005160836583118531,
+          0.0005995639349674229,
+          0.0037198216595375833,
+          0.015313221737309615,
+          0.0015813863076692618,
+          -0.0017928602630221005,
+          0.001294897213644205
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          -7.45931094670027e-17,
+          -1.0061396160665481e-16,
+          -0.0011419730985110451,
+          0.0005466433031037031,
+          0.001048789098387062,
+          0.0016173669184458377,
+          0.0015813863076692518,
+          0.01775239628520433,
+          -0.0008577045649737239,
+          0.0014469303236547553
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          -1.9081958235744878e-17,
+          0.001213263662608757,
+          -0.0008417643378902583,
+          -0.0003207041414623048,
+          -0.001926549718370564,
+          -0.001792860263022099,
+          -0.0008577045649737253,
+          0.010581397071712377,
+          -0.0015469587859465986
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9999999999999999,
+          -0.0006122604044217474,
+          -0.0016763863399430205,
+          -0.0005637032129737487,
+          0.004692279879409095,
+          0.0012948972136442034,
+          0.0014469303236547574,
+          -0.0015469587859465981,
+          0.01003776521675695
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.002361132239445228,
+          0.0016662558406860583,
+          -0.0013843630078272473,
+          -0.0029440596055354575,
+          -0.002321624270969976,
+          -0.0017766932601155588,
+          -0.0009384948679267117,
+          0.0005119607740885572
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0028827724547510762,
+          0.00036471383861435484,
+          -0.0007310278327336999,
+          -0.002967097597975981,
+          -0.0002914137156232876,
+          -0.002190014829805725,
+          -0.001222677991691979
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0015969648043815397,
+          -0.000440380754472647,
+          3.2265041084240065e-05,
+          -0.0018663300192568286,
+          0.0005298009621067295,
+          -0.0015347658684231574
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.00455689784478277,
+          -0.002143468112403772,
+          -0.00026465039682517147,
+          0.004069164677758489,
+          -0.001360939415635986
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0030285703248445306,
+          0.0010263739608668805,
+          -0.0004045454495884616,
+          -0.0020710983965699283
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.003063757114589952,
+          0.00019558360556221616,
+          -0.000753281267671155
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.0026672949226044847,
+          -0.00037409378073176286
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0026228626066241013
+        ]
       ],
-      "path": "validation/_generated/shared_tensor_generator/krylov_projected_gp_trajectories.json",
-      "pixels": 100,
-      "projector": "gp",
-      "ranks": [
-        4,
+      "construction": "eight displacement residual seeds with rmatvec, one A^T A block enrichment, QR reorthogonalisation",
+      "ordering": "SVD of A_u Phi_core response, descending displacement singular value",
+      "ranks_archived": [
         8,
         16
       ],
-      "top_level_keys": [
-        "elastic_lifting_residual_guard",
-        "krylov",
-        "origin",
-        "pixels",
-        "projector",
-        "ranks",
-        "results",
-        "schema_version"
+      "response_singular_values_r16": [
+        0.19508154199626657,
+        0.19394641708184646,
+        0.1770098892432616,
+        0.1362392378199698,
+        0.12583983871051985,
+        0.12510426117547582,
+        0.1200928638795892,
+        0.09981815628393423,
+        0.09725355735681852,
+        0.0949142701448003,
+        0.09215874573184768,
+        0.07776789772404887,
+        0.07281721654469955,
+        0.06304499051209876,
+        0.05710456927906554,
+        0.05564221728930768
+      ],
+      "seed_qr_r": [
+        [
+          -1.8483283646598733e-06,
+          -3.3096084281545637e-06,
+          -4.6247445192244885e-06,
+          -6.183578540992558e-06,
+          -7.18984149087971e-06,
+          -3.665867783667508e-06,
+          -9.345617786319585e-06,
+          -1.2419384373872258e-05
+        ],
+        [
+          0.0,
+          -8.67279395355088e-07,
+          -1.2939691963361582e-06,
+          -1.5458100770163212e-06,
+          -3.1779777979224804e-06,
+          -1.232657191107322e-05,
+          -1.112707430191419e-05,
+          -7.824308914781416e-06
+        ],
+        [
+          0.0,
+          0.0,
+          -1.5775395010799247e-06,
+          -2.5219617063814972e-06,
+          -3.4964281440093903e-06,
+          -1.3152866525017332e-05,
+          -5.064660429686077e-06,
+          -3.5843043069799154e-06
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          2.0838568305347077e-07,
+          -1.5849836603651628e-07,
+          -2.2917469735769434e-06,
+          -3.249897951281584e-06,
+          -1.1898434229033723e-06
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.9798970166261608e-07,
+          1.8166970221012214e-06,
+          2.189727698402978e-06,
+          1.2415568839573e-06
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.499624452347e-06,
+          -1.809770159144827e-06,
+          -7.137617917680069e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -6.711649456662368e-07,
+          -3.9530737874034304e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          2.1612711783314586e-07
+        ]
       ]
     },
-    "tracked_in_clean_branch": false,
-    "trajectory_path": "validation/_generated/shared_tensor_generator/krylov_trajectories.r16.npz"
+    "fields": "validation/reference_data/p0043_krylov_srix_intersection_m20_v1/fields.npz",
+    "fit": {
+      "dissipative_relative_observable_error_by_state": {
+        "16": [
+          0.21384358558586603,
+          0.21360247725249426,
+          0.21618822243444932,
+          0.21772210182449478,
+          0.22034336165302243,
+          0.2529036300600126,
+          0.23393334576752284,
+          0.22870851867454794
+        ],
+        "8": [
+          0.5354490364637814,
+          0.544652700018897,
+          0.5392463395153967,
+          0.5379062919072143,
+          0.5394640736673333,
+          0.46436757071974305,
+          0.5022011900408063,
+          0.5347341421601846
+        ]
+      },
+      "raw_relative_observable_error_by_state": {
+        "16": [
+          0.11749575748255552,
+          0.11884983781058762,
+          0.11540281689553765,
+          0.114219293529318,
+          0.11352963812326682,
+          0.08735333846951485,
+          0.09764878482971721,
+          0.10881860316825799
+        ],
+        "8": [
+          0.5044126016281363,
+          0.5216861994358238,
+          0.5163572736967953,
+          0.5144537053763447,
+          0.5158649732620001,
+          0.41047157469087736,
+          0.46161238807197347,
+          0.49893579456772746
+        ]
+      }
+    },
+    "gates": {
+      "affine_extension_relative_error": 0.0,
+      "boundary_max_abs_mm": 0.0,
+      "boundary_to_interior_ratio": 0.0,
+      "dissipative_predictor_power": {
+        "16": {
+          "active_fraction": 0.4953125,
+          "dissipative_final_rms_gauge": 0.0015556101620229179,
+          "maximum": 0.701212041368302,
+          "minimum": -1.6653345369377348e-16,
+          "negative_fraction_below_minus_1e-12_scale": 0.0,
+          "raw_final_rms_gauge": 0.0016600388592629932
+        },
+        "8": {
+          "active_fraction": 0.49765625,
+          "dissipative_final_rms_gauge": 0.0011991012381732094,
+          "maximum": 0.5286231390533723,
+          "minimum": -1.3877787807814457e-16,
+          "negative_fraction_below_minus_1e-12_scale": 0.0,
+          "raw_final_rms_gauge": 0.0013095959120347587
+        }
+      },
+      "dot_test_relative_error": 7.006821132884425e-14,
+      "final_jacobian_row_contract": 7056,
+      "interior_l2_mm": 0.00028670416568825536,
+      "observed_block_size": 882,
+      "raw_contribution_reconstruction_relative_error": {
+        "16": 1.7580920641118495e-16,
+        "8": 1.1158300716022312e-16
+      },
+      "target_shape": [
+        8,
+        21,
+        21,
+        2
+      ]
+    },
+    "report": "validation/reference_data/p0043_krylov_srix_intersection_m20_v1/report.json",
+    "row_contract": {
+      "component_order": "source displacement last axis [u_x, u_y]",
+      "displacement_units": "mm",
+      "flatten_order": "NumPy C-order, state then node axes then component",
+      "nodal_shape_per_state": [
+        21,
+        21,
+        2
+      ],
+      "observed_components_per_state": 882,
+      "scored_source_indices": [
+        3,
+        7,
+        11,
+        15,
+        19,
+        23,
+        27,
+        31
+      ],
+      "scored_source_steps": [
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "stacked_observed_components": 7056,
+      "state_order": "score index 0..7 follows source scored_steps",
+      "transfer": "identity",
+      "whitener": "identity"
+    },
+    "state_order": "score index 0..7 follows source scored_steps"
   },
-  "not_computed": [
-    "principal angles between Q_K and U_theta,3",
-    "eta_1, eta_2, eta_3 projections",
-    "delta_q and delta_log_theta mapping",
-    "raw versus dissipative Krylov comparison"
-  ],
-  "required_artifacts_for_followup": [
-    "Krylov Phi_K or WOA Phi_K stored on the same M20 21x21x2 eight-state observable convention.",
-    "Raw and dissipatively projected delta_y_K in that same vector space.",
-    "A manifest fixing support, state order, component order, transfer and whitening contracts."
-  ],
-  "schema_version": 1,
+  "principal_angles": {
+    "16": {
+      "contribution_singular_values": [
+        0.0002298759385405453,
+        7.1967588456284e-05,
+        6.796433149502498e-05,
+        6.532327438012109e-05,
+        5.724556798892859e-05,
+        5.1965765468166474e-05,
+        5.139731253098593e-05,
+        3.704818407425334e-05,
+        3.559298575483857e-05,
+        3.4153861369399015e-05,
+        3.1145738030705716e-05,
+        1.985829038694301e-05,
+        1.959613910910908e-05,
+        1.3122831835906713e-05,
+        6.54461334676604e-06,
+        6.370598256393488e-06
+      ],
+      "fitted_krylov_trajectory_contribution_rank": 16,
+      "principal_angles_degrees": [
+        33.27545484805945,
+        53.86006459260327,
+        61.88116169863534
+      ]
+    },
+    "8": {
+      "contribution_singular_values": [
+        0.0002298759385405456,
+        7.196758845628404e-05,
+        5.1965765468166474e-05,
+        3.415386136939876e-05,
+        3.114573803070579e-05,
+        1.9858290386943013e-05,
+        1.9596139109109208e-05,
+        1.3122831835906753e-05
+      ],
+      "fitted_krylov_trajectory_contribution_rank": 8,
+      "principal_angles_degrees": [
+        44.83880780722757,
+        57.827516833751254,
+        69.16086313753472
+      ]
+    }
+  },
+  "schema_version": 2,
   "scope": {
-    "comparison_space": "W O A observable quotient only",
-    "new_dic_processing": false,
-    "new_forward": false,
-    "new_mechanical_solve": false
+    "comparison_space": "raw displacement observable, state-major 7056-vector",
+    "experimental_status": "P43 registered-case methodological diagnostic only",
+    "finite_differences": false,
+    "new_femu": false,
+    "new_srix_forward": false
   },
-  "srix_contract": {
-    "actual": {
-      "arrays": {
-        "best_displacement": {
-          "dtype": "float64",
-          "shape": [
-            32,
-            21,
-            21,
-            2
+  "srix_source": {
+    "fields": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
+    "jacobian_shape": [
+      7056,
+      4
+    ],
+    "observation_profile": "measured displacement identity; raw physical mismatch",
+    "parameter_order": [
+      "tau0",
+      "R",
+      "Q",
+      "b"
+    ],
+    "report": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json",
+    "scored_source_indices": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31
+    ],
+    "scored_steps": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32
+    ],
+    "source_git_sha": "4283e8f9214da3e0503abe4a042bc4fcd353131a"
+  },
+  "srix_tangent": {
+    "normalized_singular_values": [
+      1.0,
+      0.14308435894960975,
+      0.016465247435778187,
+      1.5531833907768377e-05
+    ],
+    "rank3": true,
+    "right_singular_vectors": [
+      [
+        -0.25253693855720594,
+        0.9675863197347022,
+        0.000946227037019625,
+        0.0009556049413084747
+      ],
+      [
+        0.9675852214823606,
+        0.2525333151373464,
+        0.0016819314371258574,
+        0.0017131903904677984
+      ],
+      [
+        -0.0019832452345910022,
+        -0.0019074462077735715,
+        0.7085971840708064,
+        0.7056078649747515
+      ],
+      [
+        2.3904495994754325e-05,
+        1.6030022367447162e-05,
+        0.7056105912526813,
+        -0.7085998113770952
+      ]
+    ],
+    "singular_values": [
+      6.610428425313853e-05,
+      9.458489136183109e-06,
+      1.0884233967929414e-06,
+      1.026720763611656e-09
+    ]
+  },
+  "status": "observable_matched_intersection_complete",
+  "tangent_equivalent_parameter_displacement": {
+    "final_srix_residual": {
+      "delta_log_theta_order_tau0_R_Q_b": [
+        -16.518064018203376,
+        -4.377735737476522,
+        -45.1472023176579,
+        -44.957405633587946
+      ],
+      "delta_q": [
+        -0.15009691539759693,
+        -17.24111384428148,
+        -63.67236976770741
+      ],
+      "observable_projection_norm_fraction": 0.21001914014650494,
+      "parameter_factor_order_tau0_R_Q_b": [
+        6.703412504407649e-08,
+        0.012553751453475811,
+        2.470695135008309e-20,
+        2.987079715308896e-20
+      ]
+    },
+    "interpretation": "local tangent-equivalent parameter displacement, not identified parameters",
+    "raw_and_dissipative_krylov_by_rank": {
+      "16": {
+        "dissipative": {
+          "delta_log_theta_order_tau0_R_Q_b": [
+            -2.0748634259030605,
+            0.05178840093118335,
+            -29.531433527008055,
+            -29.4069243391845
+          ],
+          "delta_q": [
+            0.5180445627114116,
+            -2.0945783975488195,
+            -41.671631557845274
+          ],
+          "observable_projection_norm_fraction": 0.0626611895585061,
+          "parameter_factor_order_tau0_R_Q_b": [
+            0.12557357641991998,
+            1.0531528727674817,
+            1.495069481847049e-13,
+            1.6933043721891093e-13
           ]
         },
-        "final_jacobian": {
-          "dtype": "float64",
-          "shape": [
-            7056,
-            4
-          ]
-        },
-        "prior_displacement": {
-          "dtype": "float64",
-          "shape": [
-            32,
-            21,
-            21,
-            2
-          ]
-        },
-        "prior_jacobian": {
-          "dtype": "float64",
-          "shape": [
-            7056,
-            4
-          ]
-        },
-        "target_displacement": {
-          "dtype": "float64",
-          "shape": [
-            32,
-            21,
-            21,
-            2
+        "raw": {
+          "delta_log_theta_order_tau0_R_Q_b": [
+            -1.86739208943085,
+            0.12946122729570747,
+            -39.56634278044271,
+            -39.39949268763979
+          ],
+          "delta_q": [
+            0.5217613006260053,
+            -1.9082144235719172,
+            -55.83373443848044
+          ],
+          "observable_projection_norm_fraction": 0.06403486741640863,
+          "parameter_factor_order_tau0_R_Q_b": [
+            0.15452612711038,
+            1.138214978934422,
+            6.554742893259193e-18,
+            7.744934263694584e-18
           ]
         }
       },
-      "exists": true,
-      "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz"
-    },
-    "expected": {
-      "grid": [
-        20,
-        20
-      ],
-      "nodal_shape": [
-        21,
-        21,
-        2
-      ],
-      "observable_vector_components": 7056,
-      "observed_jacobian_shape": [
-        7056,
-        4
-      ],
-      "parameter_order": [
-        "tau0",
-        "R",
-        "Q",
-        "b"
-      ],
-      "scored_states": 8,
-      "target_shape": [
-        32,
-        21,
-        21,
-        2
-      ]
-    },
-    "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
-    "tracked_in_clean_branch": true
+      "8": {
+        "dissipative": {
+          "delta_log_theta_order_tau0_R_Q_b": [
+            -1.8126676511034092,
+            0.1658709182009871,
+            -18.897781732706147,
+            -18.81811905630717
+          ],
+          "delta_q": [
+            0.5823956909529246,
+            -1.7760462917307567,
+            -26.665849156514856
+          ],
+          "observable_projection_norm_fraction": 0.06211310129937186,
+          "parameter_factor_order_tau0_R_Q_b": [
+            0.16321814645770272,
+            1.180420721058436,
+            6.205798545426362e-09,
+            6.720393978968712e-09
+          ]
+        },
+        "raw": {
+          "delta_log_theta_order_tau0_R_Q_b": [
+            -2.639067665022123,
+            -0.05639111418172997,
+            -27.90913247766654,
+            -27.791488428676587
+          ],
+          "delta_q": [
+            0.5589327387342701,
+            -2.662316864385871,
+            -39.3808840167753
+          ],
+          "observable_projection_norm_fraction": 0.06012387465798127,
+          "parameter_factor_order_tau0_R_Q_b": [
+            0.07142783318903899,
+            0.9451693944352455,
+            7.57212492319727e-13,
+            8.517456643420668e-13
+          ]
+        }
+      }
+    }
   },
-  "status": "blocked_compatibility",
-  "verdict": "C",
-  "verdict_text": "artifacts incompatible for observable-space constitutive-manifold intersection"
+  "verdict": "B",
+  "verdict_text": "SRIX explains part of the correction, but the remaining/final residual is not fully aligned with its local tangent"
 }
