@@ -2320,10 +2320,11 @@
     },
     {
       "question": "Can the full DIC-transfer and spectral-whitening parametric sensitivity be reconstructed offline from the archived fields?",
-      "status": "blocked in the current checkout",
-      "boundary": "Raw displacement Jacobians exist for some records, but the qualified repeated-frame noise payload is an unhydrated Git LFS pointer; scalar whitening is not a substitute",
+      "status": "demonstrated by offline post-processing",
+      "boundary": "The pre-hydration audit was blocked by the unavailable repeated-frame noise payload; the hydrated payload is now used by E-SRIX-PARAM-OBS-006",
       "evidence_ids": [
-        "E-SRIX-PARAM-OBS-005"
+        "E-SRIX-PARAM-OBS-005",
+        "E-SRIX-PARAM-OBS-006"
       ]
     },
     {
@@ -3582,9 +3583,9 @@
       "id": "E-SRIX-PARAM-OBS-005",
       "question": "Can the full DIC-transfer and spectral-whitening parametric sensitivity be reconstructed offline from the archived fields?",
       "fidelity": "archived SRIX displacement Jacobians plus the registered DIC transfer and whitener inputs",
-      "parameters": "raw Jacobians available for synthetic and experimental raw records; spatial whitener input unavailable locally",
-      "status": "blocked in current checkout",
-      "conclusion": "The raw Jacobian fields are present for synthetic M20/M100 and experimental raw M20, but centred_repeat_flow_pixels.npy is only an unhydrated Git LFS pointer. The full S_DIC comparison cannot be computed without that payload; scalar whitening is not accepted as a replacement.",
+      "parameters": "raw Jacobians available for synthetic and experimental raw records; spatial whitener input unavailable at the time of the pre-hydration audit",
+      "status": "historical blocking audit superseded by E-SRIX-PARAM-OBS-006",
+      "conclusion": "The raw Jacobian fields were present, but centred_repeat_flow_pixels.npy was an unhydrated Git LFS pointer in the pre-hydration checkout. Scalar whitening was not accepted as a replacement. The payload is now hydrated and the full comparison is recorded separately.",
       "sources": [
         {
           "path": "docs/_audit/srix_parametric_fields_inventory.md",
@@ -3596,7 +3597,33 @@
         },
         {
           "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
-          "role": "required but unhydrated whitener input"
+          "role": "whitener input unavailable during the pre-hydration audit"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-006",
+      "question": "What does the registered DIC transfer and spatial whitener do to archived SRIX parameter sensitivities?",
+      "fidelity": "offline post-processing of archived displacement Jacobians; no forward or finite-difference calculation",
+      "parameters": "theta=(tau0,R,Q,b) in log coordinates; 8 scored states; transfer CSV; canonical repeated-frame noise conversion; 256 windows with seed 42; one-node boundary support mask",
+      "status": "supported for the registered offline calculation; experimental calibration not claimed",
+      "conclusion": "For the experimental M20 final point, the normalised spectrum changes from (1, 0.143084, 0.016465, 0.00001553) before observation to (1, 0.050649, 0.007111, 0.000002408) after transfer and spatial whitening. Three directions remain above the 1e-3 threshold, while the opposite-sign Q-b direction remains effectively null; the raw-to-full rank-three principal angle is about 0.020 degrees.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_parametric_dic_weighting_v1/report.json",
+          "role": "machine-readable offline DIC-weighted SVD report"
+        },
+        {
+          "path": "scripts/analyze_srix_parametric_dic_weighting.py",
+          "role": "reproducible offline post-processing script"
+        },
+        {
+          "path": "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv",
+          "role": "registered DIC transfer input"
+        },
+        {
+          "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+          "role": "hydrated repeated-frame noise input"
         }
       ]
     },

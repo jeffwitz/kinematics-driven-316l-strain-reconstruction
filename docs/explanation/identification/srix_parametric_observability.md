@@ -21,9 +21,11 @@ $$
 
 with $\tau_0$, $R$ and $Q$ in MPa and $b$ dimensionless.  The archived
 shadow finite-difference step is $h=0.0015$ in log coordinates.  Synthetic
-cases use identity observation and no noise; the experimental rank-three case
-uses measured displacement with scalar DIC whitening, while the raw case uses
-the unweighted displacement mismatch.
+cases use identity observation and no noise; the historical experimental
+rank-three case uses measured displacement with scalar DIC whitening, while
+the raw case uses the unweighted displacement mismatch.  A separate offline
+report now applies the registered spectral transfer and spatial whitener to
+the archived raw displacement Jacobians.
 
 This is different from the free-field operator in
 {doc}`dic_weighted_tensor_observability`.  That operator asks which arbitrary
@@ -139,17 +141,39 @@ experimental uniqueness             not established
 316L parameter identification       not claimed
 ```
 
-The field-observability analysis remains a distinct prerequisite.  The next
-step, if authorised, would be to apply the same DIC transfer and spectral
-whitening to archived **parametric** displacement Jacobians and to test how the
-parameter SVD changes.  The displacement Jacobians exist for the synthetic and
-raw records, but the repeated-frame noise payload needed to reconstruct the
-qualified spatial whitener is not available in this checkout (the `.npy` is a
-Git LFS pointer).  Therefore the full $S_{\mathrm{DIC}}$ comparison is
-currently blocked and no scalar-whitening result is presented as a substitute.
+The field-observability analysis remains a distinct prerequisite.  The full
+offline construction is recorded in
+`validation/reference_data/p0043_parametric_dic_weighting_v1/report.json`.
+It uses the registered conversion of the repeated-frame payload
+(`noise[:512,:512]` to canonical millimetres), 256 seeded windows, the
+one-node boundary support mask, and the archived sinusoidal transfer.  No
+forward or finite-difference calculation was performed.
 
-The exact key/shape/dtype inventory and this blocking condition are recorded
-in {doc}`../../_audit/srix_parametric_fields_inventory`.
+For the experimental M20 final Jacobian, the three successive levels are:
+
+| Level | Normalised singular values | Condition number | Rank at $10^{-2}/10^{-3}/10^{-4}$ |
+|---|---|---:|---:|
+| raw displacement | `1, 0.143084, 0.016465, 0.00001553` | `6.44e4` | `3 / 3 / 3` |
+| DIC transfer only | `1, 0.045725, 0.005725, 0.000002047` | `4.88e5` | `2 / 3 / 3` |
+| transfer + spatial whitening | `1, 0.050649, 0.007111, 0.000002408` | `4.15e5` | `2 / 3 / 3` |
+
+The registered DIC chain therefore leaves a useful third direction at the
+$10^{-3}$ scale, but attenuates it substantially; the fourth opposite-sign
+$Q-b$ direction remains effectively null.  The full-chain rank-three
+subspace is close to the raw one (principal angle about $0.020^\circ$), while
+its leading one-dimensional direction rotates by about $1.75^\circ$.  At the
+prior point the full-chain spectrum is
+`1, 0.077415, 0.012622, 0.00001777`; this difference is a change of evaluation
+point, not a direct effect of the measured data vector.
+
+The synthetic M20 control has the same full-chain spectrum as the experimental
+prior because the archived displacement Jacobians coincide at that point.  The
+synthetic M100 control retains three directions above $10^{-3}$ and has full
+chain spectrum `1, 0.358349, 0.044036, 0.00012164`.  These controls do not
+authorise experimental calibration.
+
+The exact key/shape/dtype inventory is recorded in
+{doc}`../../_audit/srix_parametric_fields_inventory`.
 
 Exact files, values and claim boundaries are listed in
 {doc}`../../reference/evidence/srix_parametric_observability`.

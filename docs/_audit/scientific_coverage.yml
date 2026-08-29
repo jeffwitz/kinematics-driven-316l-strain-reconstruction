@@ -148,7 +148,7 @@ subjects:
       sensitivity_contract: supported
       field_observability_prerequisite: supported
       parametric_observability: supported
-      dic_weighted_parametric_sensitivity: open
+      dic_weighted_parametric_sensitivity: supported
       boundary_only_driver: open
       current_smoke_control: negative
     blockers: [missing_how_to, content_review_required]

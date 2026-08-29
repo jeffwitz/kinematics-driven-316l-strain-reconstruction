@@ -17,7 +17,8 @@ coordinates $\theta=(\tau_0,R,Q,b)$, with shadow finite-difference step
 | Experimental whitened sensitivity has a weak fourth direction | `E-SRIX-PARAM-OBS-002` | `validation/reference_data/p0043_experimental_srix_m20_v1/report.json` | normalised `1, 0.143072, 0.016464, 0.00001553`; retained rank 3; $Q-b$ direction in discarded vector | Experimental M20 NO-GO; no uniqueness or calibration claim |
 | Experimental raw control has the same direction geometry | `E-SRIX-PARAM-OBS-003` | `validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json` | normalised `1, 0.143084, 0.016465, 0.00001553`; retained rank 3; no whitening/covariance | Raw mismatch control; similarity with scalar-whitened case is expected algebraically |
 | Principal-angle comparisons can be computed from archived $V$ | `E-SRIX-PARAM-OBS-004` | the four reports above | synthetic M20/experimental rank-three angle about `0.265°`; synthetic M100/experimental about `0.139°`; experimental whitened/raw below `1e-5°` as expected for scalar rescaling | Algebraic comparison only; no new forward and no independent whitening validation |
-| Full DIC-weighted parametric sensitivity can be reconstructed in this checkout | `E-SRIX-PARAM-OBS-005` | `docs/_audit/srix_parametric_fields_inventory.md` | displacement Jacobians exist for synthetic and raw records, but the repeated-frame noise `.npy` is an unhydrated Git LFS pointer | Blocked until the qualified noise payload is available; no scalar substitute |
+| The pre-hydration audit identified the required full-DIC inputs | `E-SRIX-PARAM-OBS-005` | `docs/_audit/srix_parametric_fields_inventory.md` | raw displacement Jacobians and transfer were present; the repeated-frame noise payload was unavailable in that checkout | Historical blocking audit; no scalar substitute was accepted |
+| Full DIC-weighted parametric sensitivity is reconstructed offline | `E-SRIX-PARAM-OBS-006` | `validation/reference_data/p0043_parametric_dic_weighting_v1/report.json` | experimental M20 final: normalised `1, 0.050649, 0.007111, 0.000002408`; condition `4.15e5`; rank `2/3/3` at thresholds `1e-2/1e-3/1e-4`; rank-three raw-to-full angle `0.020°` | Offline post-processing only; registered transfer, canonical repeated-frame noise, 256 windows, seed 42; no new forward or finite differences; experimental calibration not claimed |
 
 The synthetic reports use identity observation and no noise.  The experimental
 whitened report uses measured displacement with scalar DIC whitening; the raw
@@ -40,15 +41,15 @@ opposite-sign $Q/b$ combination, so a low residual does not imply independent
 recovery of those two parameters.  The experimental gates explicitly record
 `parameters_identified=false` and `m100_authorized=false`.
 
-The archived raw Jacobians are sufficient in principle to form
-$S_{\mathrm{DIC}}=W_D M_D S_u$, but the qualified repeated-frame noise field
-needed to build $W_D$ is not hydrated in the current checkout.  The exact
-key/shape/dtype inventory and blocking condition are recorded in
-{doc}`../../_audit/srix_parametric_fields_inventory`; no scalar-whitening
-result is presented as a replacement for the spatial DIC chain.
+The archived raw Jacobians are sufficient to form
+$S_{\mathrm{DIC}}=W_D M_D S_u$.  The qualified repeated-frame noise field is
+now hydrated and used by the offline report.  Its canonical conversion,
+registered support mask and sinusoidal transfer are recorded in
+`validation/reference_data/p0043_parametric_dic_weighting_v1/report.json`;
+no scalar-whitening result is used as a replacement for the spatial DIC chain.
 
-These records support synthetic sensitivity geometry and a registered
-experimental NO-GO.  They do not support experimental 316L parameter
-identification.  The full DIC-transfer plus spectral-whitening sensitivity
-remains an explicit offline post-processing task once the noise payload is
-available; it is not replaced by the historical scalar whitening.
+These records support synthetic sensitivity geometry, a registered
+experimental NO-GO, and a full offline DIC-weighted sensitivity calculation.
+The latter retains three directions at the $10^{-3}$ threshold while leaving
+the opposite-sign $Q-b$ direction effectively null.  They do not support
+experimental 316L parameter identification or uniqueness.

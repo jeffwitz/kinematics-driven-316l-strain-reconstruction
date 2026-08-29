@@ -149,9 +149,10 @@ The archived raw and scalar-whitened controls have almost identical spectra
 because the recorded whitening is scalar.  Multiplying a Jacobian by a scalar
 changes singular-value magnitudes but not $V$ or normalised singular values;
 that agreement is therefore an algebraic consistency check, not an independent
-validation of the spatial DIC chain.  The full transfer-plus-spatial-whitener
-parametric SVD remains blocked until the qualified repeated-frame noise
-payload is available.
+validation of the spatial DIC chain.  The now-registered offline full-chain
+calculation retains three directions above the $10^{-3}$ threshold at the
+experimental M20 final point, while the opposite-sign $Q-b$ direction remains
+effectively null; it does not establish experimental calibration.
 
 Definitions and recorded values are collected in [SRIX parametric
 observability](srix_parametric_observability) and its [evidence
@@ -248,8 +249,8 @@ information.
 
 **Open**
 
-* Reconstruct the full DIC-weighted parametric SVD once the qualified spatial
-  whitener is available.
+* Extend the offline DIC-weighted parametric SVD to additional archived cases
+  when their registered inputs are available.
 * Establish a genuinely boundary-only experimental FEMU workflow.
 * Assess experimental SRIX calibration only in the supported parameter
   subspace.
