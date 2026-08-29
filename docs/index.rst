@@ -1,10 +1,13 @@
 Kinematics-Driven 316L Strain Reconstruction
 =============================================
 
-Measured DIC kinematics and EBSD crystal orientations are combined in a
-mechanical reconstruction problem.  The current stack uses three-dimensional
-constitutive laws under structural plane stress, a matrix-free spectral/FEM
-solver, and full-field comparison for qualification and identification.
+This repository is a research platform for full-field computational mechanics
+and inverse identification from measured kinematics.  It develops
+full-Dirichlet spectral mechanics, three-dimensional constitutive laws under
+structural plane stress, matrix-free sensitivities and adjoints, and
+observation-aware inverse methods.  P43 is the primary current experimental
+demonstrator; its data provenance and material conclusions remain under
+consolidation.
 
 MFront remains the qualified reference backend.  The native Python SRIX
 backend reproduces that behaviour on the CPU and exposes the point-local
@@ -46,6 +49,11 @@ Recommended journeys
    :doc:`explanation/spectral_mechanics/full_dirichlet_formulation` →
    :doc:`explanation/spectral_mechanics/solver_pipeline` →
    :doc:`explanation/spectral_mechanics/tet2_newton_gmres`
+
+**Understand the methodological landscape**
+   :doc:`explanation/methodological_landscape` →
+   :doc:`explanation/spectral_mechanics/plastic_inverse_reuse` →
+   :doc:`explanation/identification/femu_identification`
 
 **Find a scientific result**
    :doc:`evidence/index` →

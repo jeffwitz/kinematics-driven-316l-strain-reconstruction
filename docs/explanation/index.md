@@ -4,6 +4,12 @@ This section explains why the reconstruction, constitutive and identification
 choices exist. It is deliberately split into independent scientific paths;
 commands belong in How-to guides and stable interfaces belong in Reference.
 
+## Start with the methodological landscape
+
+{doc}`methodological_landscape` presents the common architecture, maturity
+boundaries and potential of the numerical, measurement and inverse-method
+capabilities before the specialised paths below.
+
 ## Understand reconstruction
 
 - {doc}`reconstruction/from_dic_to_mechanics`
@@ -68,6 +74,7 @@ in {doc}`../reference/index`; the evidence portal is {doc}`../evidence/index`.
 
 ```{toctree}
 :hidden:
+methodological_landscape
 spectral_mechanics/index
 reconstruction/from_dic_to_mechanics
 reconstruction/local_baseline

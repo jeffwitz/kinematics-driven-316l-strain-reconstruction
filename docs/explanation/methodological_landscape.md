@@ -1,0 +1,241 @@
+# Methodological landscape
+
+This repository is a research platform for full-field computational mechanics
+and inverse methods.  Its numerical methods have different maturity levels and
+must not be confused with the maturity of the current experimental
+demonstrator.  P43 is the main registered case used to exercise the stack; it
+is not the definition of the scientific contribution.
+
+The guiding question is:
+
+> Which mechanical and inverse-method capabilities can turn measured fields
+> into defensible information about heterogeneous constitutive behaviour?
+
+## One composable architecture
+
+```text
+EXPERIMENTAL INFORMATION
+DIC boundary/interior fields, EBSD orientations, loading history
+                              │
+                              ▼
+DATA AND OBSERVATION CONTRACTS
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+       MECHANICAL FORWARD              OBSERVATION OPERATOR
+       full-Dirichlet spectral          crop, transfer, mask, noise
+       matrix-free equilibrium
+       3-D constitutive law
+       structural plane stress
+              │                               │
+              └───────────────┬───────────────┘
+                              ▼
+                     PREDICTED OBSERVABLE
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+       DIRECT / TANGENT                    ADJOINT
+       SENSITIVITIES                       GRADIENT
+              │                               │
+              └───────────────┬───────────────┘
+                              ▼
+                       INVERSE METHODS
+                 FEMU, SVD, reduced and learned
+                         surrogates
+```
+
+These are composable capabilities, not one mandatory end-to-end workflow.  A
+spectral solve can be used without FEMU; the mechanical adjoint can support a
+field optimisation; plane stress can wrap another three-dimensional law; and
+the observation operator can be applied to other full-field datasets.
+
+## I. Mechanics at field scale
+
+### Full-Dirichlet spectral mechanics
+
+Measured boundary displacement is lifted into the domain and decomposed as
+
+```{math}
+u=u^\ast+u^f,
+\qquad u^f|_{\partial\Omega}=0.
+```
+
+The fluctuation has homogeneous boundary values, so a DST-I reference operator
+can be used inside a Krylov method without pretending that the physical
+problem is periodic.  The actual residual still comes from local stresses and
+the actual matrix-free Jacobian from local algorithmic tangents:
+
+```{math}
+Jv=-B^T C_{\rm alg}Bv.
+```
+
+No global stiffness matrix is assembled.  The DST/FFT action is the inverse of
+a simple elastic reference operator used as a preconditioner; it does not
+diagonalise the nonlinear heterogeneous constitutive problem.  The formulation
+and Newton--GMRES pipeline are described in
+{doc}`spectral_mechanics/index`.
+
+### Three-dimensional constitutive behaviour in a two-dimensional solve
+
+Structural plane stress keeps the constitutive law three-dimensional and
+relaxes local transverse strains until
+
+```{math}
+\sigma_{zz}=\sigma_{xz}=\sigma_{yz}=0.
+```
+
+Crystal slip, internal variables and anisotropic couplings remain three-
+dimensional; only the local closure is condensed before the global solver sees
+the in-plane response.  This makes the same structural machinery reusable for
+crystal plasticity, MFront behaviours and future three-dimensional laws.  See
+{doc}`constitutive/structural_plane_stress`.
+
+## II. Differentiation and inverse mechanics
+
+The generic inverse problem is
+
+```{math}
+R(u,\theta)=0,
+\qquad y_{\rm pred}=O(u),
+\qquad J(\theta)=\tfrac12\|O(u(\theta))-y_{\rm obs}\|^2.
+```
+
+The observation operator is part of the problem, not plotting after the fact:
+
+```{math}
+y=O_{\rm DIC}(u)+n.
+```
+
+For a parameter sensitivity, the repository uses three conceptually distinct
+routes:
+
+| Route | Main global cost | Repository status |
+|---|---|---|
+| Central finite differences | Approximately $2p$ nonlinear forwards for $p$ parameters | Implemented and used as an oracle; fixed-path SRIX gates remain mixed/blocked. |
+| Direct/tangent sensitivity | One converged trajectory plus tangent solves/right-hand sides | Implemented in synthetic and shadow SRIX paths; the exact common-path qualification gate is not passed. |
+| Adjoint | Approximately one transpose solve per scalar objective, plus local contractions | Full-field linear/eigenstrain $A^T$ is strongly qualified; a generic production SRIX parameter adjoint is not claimed. |
+
+Finite differences are general and easy to audit, but expensive and sensitive
+to step size and failed forwards.  Direct sensitivities reuse the converged
+state and tangent, avoiding a complete nonlinear replay for every perturbation.
+Adjoints reverse the dependency of a scalar objective:
+
+```{math}
+R_u^T\lambda=J_u^T,
+\qquad
+\frac{dJ}{d\theta}=J_\theta-\lambda^TR_\theta.
+```
+
+An adjoint is not free: history-dependent constitutive states and multiple
+increments still require correct storage and backward propagation.  Its
+advantage is that the number of global transpose solves is driven mainly by
+the number of scalar objectives rather than by the number of local
+coefficients.
+
+### The qualified full-field operator
+
+For an eigenstrain-like perturbation, the linear operator is
+
+```{math}
+A:\delta\varepsilon_p\mapsto\delta y,
+\qquad
+A^T:g_y\mapsto g_{\varepsilon_p}.
+```
+
+The scalable pattern is to assemble one complete perturbation field, apply
+$A$ once, apply $A^T$ once to the resulting dual, and then form all local
+coefficient contractions.  It is not one global solve per coefficient.  The
+registered full-field gate covers 22,293,208 interior unknowns, with adjoint
+dot-product discrepancy about $4.4\times10^{-17}$, $A\approx52$ s,
+$A^T\approx53$ s and peak memory about 1.8 GB.  This is a numerical
+feasibility and transpose-consistency result, not a P43 material validation;
+details are in {doc}`spectral_mechanics/plastic_inverse_reuse` and
+`validation/full_field_operator_gate.md`.
+
+The same matrix-free mechanics plus transpose actions provide ingredients for
+high-dimensional field inversion, efficient gradient-based FEMU and future
+material or topology optimisation.  They do not mean that those future
+applications are already implemented.
+
+## III. Identifiability is a separate question
+
+Once a sensitivity matrix exists,
+
+```{math}
+S=\frac{\partial r}{\partial\theta}=U\Sigma V^T
+```
+
+$U$ describes observable field patterns, $V$ describes parameter combinations,
+and $\Sigma$ describes their relative sensitivity.  Four material parameters
+do not imply four identifiable directions.  The free-tensor, compact local,
+enriched-basis and FCC experiments show why an excellent observable fit can
+coexist with a wrong or non-unique latent state.  SVD is therefore an
+interpretation and reduction tool, not a fourth sensitivity-generation route.
+
+The current registered SRIX records show strongly unequal parameter directions
+and a weak $Q-b$ combination.  This illustrates the method on one experiment;
+it is not an experimental calibration claim.  The specialised discussion is
+in {doc}`identification/srix_parametric_observability` and
+{doc}`identification/observable_fit_vs_latent_identifiability`.
+
+## IV. Constitutive and measurement inputs
+
+J2/Ludwik is a robust isotropic baseline for checking boundary conditions,
+equilibrium and constitutive plumbing.  Méric--Cailletaud provides a
+rate-dependent FCC comparison branch.  SRIX provides the current
+rate-independent FCC candidate with twelve slip systems, hardening memory and
+EBSD-dependent orientation.  MFront is the qualified reference implementation;
+native SRIX exposes the same registered formulation for explicit coupled
+plane-stress algebra and acceleration.  Their formulations and boundaries are
+independent of whether P43 ultimately supports a material conclusion.
+
+EBSD supplies a local crystallographic frame and rotated slip systems.  Its
+scientific value depends on reliable spatial registration to the mechanical
+measurement.  The numerical assignment exists for registered-case studies,
+but the P43 physical co-registration remains unproven.  DIC supplies measured
+image motion through an observation operator; it does not directly measure
+stress, slip or plastic strain.  The detailed contracts are in
+{doc}`measurement/dic_observation_limits` and
+{doc}`measurement/ebsd_registration_and_orientation`.
+
+## Research maturity
+
+| Capability | Current status |
+|---|---|
+| Spectral mechanics and matrix-free equilibrium | Demonstrated on registered numerical cases |
+| Full-field mechanical/eigenstrain adjoint | Demonstrated and full-field qualified |
+| Structural plane stress | Demonstrated numerically and in registered closures |
+| FEMU, direct sensitivities and SVD | Synthetic/registered demonstrations; experimental workflow open |
+| Constitutive CP implementations | Numerically and registered-case demonstrated |
+| DIC observation transfer | Synthetic/algorithmic demonstration; P43 absolute noise model limited |
+| EBSD-driven experimental CP conclusion | Open because physical registration is not proven |
+| Experimental material identification | Open |
+
+“Open” means that the evidence for that scientific claim is insufficient; it
+does not mean that the numerical method failed.  Conversely, code or a
+successful numerical qualification does not by itself establish an
+experimental material hypothesis.
+
+## What remains to consolidate
+
+* **Experimental/data:** DIC--EBSD co-registration, acquisition metadata,
+  loading synchronisation and multiple curated cases.
+* **Method:** a generic user-facing full-field runner, a broader constitutive
+  adjoint route and robust multi-experiment inverse orchestration.
+* **Science:** determine which physical ingredients control localisation, then
+  identify only parameters supported by curated observations.
+
+## Potential beyond the demonstrator
+
+The spectral solver and adjoint provide ingredients for large-field inverse
+mechanics, local field optimisation and topology/material optimisation.  The
+3-D plane-stress closure can support other anisotropic constitutive laws in
+2-D experiments.  The observation contract can be reused with better-curated
+full-field measurements.  Sensitivity/SVD methods could support experiment
+design, parameter reduction and multi-experiment identification, while the
+native constitutive backend could support CPU/GPU acceleration.  These are
+capabilities the architecture enables, not completed claims about P43.
+
+P43 is therefore best read as an imperfect experimental demonstrator that
+exercises a set of more general methods: mature numerical mechanics,
+partially mature inverse machinery and data curation still in progress.

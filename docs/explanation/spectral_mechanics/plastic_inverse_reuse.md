@@ -1,101 +1,111 @@
-# Reusing the full-Dirichlet solver for the plastic inverse
+# Full-field mechanical operator and adjoint
 
-```{admonition} The full-Dirichlet solver is not a new development
-:class: important
+This page explains how the full-Dirichlet spectral mechanics can be reused for
+inverse problems. It is a method-level capability, not a claim that a P43
+plastic field or material has been uniquely identified.
 
-The DIC-driven plastic reconstruction needs a mechanical operator that scales to
-`3599 x 3099`. That operator is **this one**. What has to be written is the
-matrix-free plastic inverse `A / A^T` on top of it, not a new boundary
-treatment, not a new spectral solve, and not a new preconditioner.
-```
+## The mechanical operator
 
-This page exists because the reconstruction work drafted two consecutive plans
-around rebuilding a Dirichlet solver that has been here, documented, all along.
-The reconstruction notes under `validation/` did not link to this section, so
-the reader of one had no reason to look at the other.
-
-## What is already provided
-
-The splitting, from {doc}`full_dirichlet_formulation`:
+The full-Dirichlet split is
 
 ```text
-u = u* + u^f,      u*|_boundary = u_DIC,      u^f|_boundary = 0
+u = u* + uf,      u*|boundary = u_DIC,      uf|boundary = 0
 ```
 
-`u*` is a discrete harmonic extension of the measured boundary displacements
-(`spectral2d/boundary.py::HarmonicDirichletExtension2D`), so the transform acts
-on the homogeneous fluctuation and **the problem is never treated as periodic**.
+`u*` is a discrete harmonic extension of measured boundary displacement. The
+fluctuation is therefore homogeneous at the boundary and the transform is
+never used to make the physical problem periodic.
 
-The pipeline, from {doc}`solver_pipeline`: local kinematics give `sigma` and
-`C_alg`, the residual is `R = -sum B^T sigma`, and a matrix-free Newton--GMRES
-uses `J v = -sum B^T C_alg B v`. The DST-I basis, compatible with `u^f = 0` on
-all four edges, applies the reference inverse `B_0^-1` **as a preconditioner
-only**. `B_0` is a Gelebart-type reference operator and deliberately not the
-exact inverse of the coupled isotropic stiffness. No global stiffness is
-assembled anywhere.
-
-## What the plastic inverse adds
-
-Only the eigenstrain path and its adjoint:
+The nonlinear forward retains the actual local constitutive response:
 
 ```text
-d eps_p
-   |  mechanical source
-   v
-equilibrium, matrix-free           J v = -sum B^T C B v
-   |  preconditioned by B_0^-1 through DST-I
-   v
-u^f
-   |
-   v
-d eps = A d eps_p
-   |
-   v
-E_DIC
+local kinematics -> stress and C_alg
+                 -> R = -sum B^T stress
+                 -> Jv = -sum B^T C_alg Bv
 ```
 
-and, coming back,
+The DST-I inverse of the reference $B_0$ is only the Krylov preconditioner;
+the global constitutive tangent is not assembled or diagonalised in Fourier
+space. See {doc}`full_dirichlet_formulation` and {doc}`solver_pipeline`.
+
+For a small perturbation of plastic/eigenstrain, the linearised field map is
+
+```{math}
+A:\delta\varepsilon_p\longmapsto\delta y,
+\qquad
+A^T:g_y\longmapsto g_{\varepsilon_p}.
+```
+
+Here $y$ can be a displacement, strain or declared observed field after the
+appropriate observation map. The `A` solve is linear around the registered
+reference state; it is not a replacement for the nonlinear constitutive loop.
+
+## Why the adjoint matters
+
+Suppose a local field is expanded as
+
+```{math}
+q=\sum_i a_i\phi_i.
+```
+
+A naive implementation applies $A$ once per basis function. The scalable route
+assembles $q$, applies $Aq$ once, then applies $A^T$ once to the objective dual
+and obtains all coefficient gradients by local contractions,
+
+```{math}
+p=A^Tg,
+\qquad
+\frac{\partial J}{\partial a_i}=\langle\phi_i,p\rangle
+```
+
+with the declared partition-of-unity and chain-rule factors included. A large
+number of local coefficients therefore need not imply one global mechanical
+solve per coefficient. The coefficient count affects local assembly and
+contractions, while the global solve count stays tied to the forward/transpose
+actions.
+
+## Registered full-field gate
+
+The full-field operator gate reports:
 
 ```text
-E_DIC  ->  A^T  ->  DP_H^T  ->  Phi_local^T  ->  grad_a E
+grid                 3599 x 3099
+interior unknowns    22,293,208
+A                    approximately 52 s
+A^T                  approximately 53 s
+peak memory          approximately 1.8 GB
+adjoint discrepancy   4.445e-17
 ```
 
-Two differences from the production pipeline are worth stating. This solve is
-**linear** -- `A` is the elastic response to an eigenstrain, not the
-constitutive Newton loop -- so it is one preconditioned Krylov solve with no
-Newton iteration. And because `B_0` is a reference operator rather than the
-exact inverse, that linear solve still iterates; the iteration count, not the
-transform cost, is what sets `T_A`.
+This is a transpose-consistency and full-field feasibility result for the
+registered homogeneous-elasticity configuration. Timings are machine- and
+planning-dependent; they are not universal performance promises. The complete
+acceptance record is `validation/full_field_operator_gate.md`.
 
-## The rule that makes it scale
+## Adjoint levels must not be conflated
 
-```{admonition} Never apply the solver once per mode
-:class: warning
+The repository contains related but distinct constructions:
 
-Building `A Phi` column by column costs one solve per mode, which is what made
-an earlier estimate read 32 minutes per gradient step. Assemble the plastic
-field first,
+1. the qualified full-field linear/eigenstrain operator $A^T$ described here;
+2. mechanical adjoints of selected converged inverse problems;
+3. a sequential history adjoint in the causal TANN exploration.
 
-    v = sum_jk a_jk w_j phi_jk   ->   q = P_H(v)   ->   A q
+The latter two require their own state, objective and trajectory contracts.
+The full-field gate does not establish a generic analytic SRIX parameter
+adjoint, nor does it validate a trained TANN constitutive model.
 
-then obtain the gradient of **every** coefficient from a single `A^T`:
+## What this enables
 
-    p = A^T W (A q - g)          ->   dJ/da_jk = <DP_H(w_j phi_jk), p>
+The operator and adjoint provide ingredients for high-dimensional field
+inversion, gradient-based FEMU, material-field optimisation and future
+topology optimisation. They also make it possible to test many local
+coefficients without repeating a complete global solve for each one. These are
+reusable numerical ingredients, not completed optimisation products.
 
-The number of local coefficients then costs local contractions, not global
-solves.
-```
+Local windows carrying their own DIC boundary data remain training or diagnostic
+material, not proof of global equilibrium: a window boundary already contains
+the influence of material outside the window.
 
-The representation is local -- modes and coefficients per subdomain, joined by a
-partition of unity. The mechanics stays global. Windows carrying DIC data on
-their own contour are useful training material and never proof: the boundary
-kinematics of a window already contains the effect of everything outside it, and
-independently solved windows guarantee nothing about `B^T sigma = 0` over the
-whole domain.
-
-## Where the rest is written
-
-`validation/full_field_operator_gate.md` holds the registered milestone,
-its tasks and its acceptance criteria, and
-`validation/dic_driven_plastic_identification.md` is the cold-restart document
-for the reconstruction as a whole.
+The reconstruction-specific historical reports remain in
+`validation/dic_driven_plastic_identification.md`; this page exposes the
+operator as a general methodological capability.

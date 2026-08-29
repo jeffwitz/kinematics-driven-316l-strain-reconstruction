@@ -324,6 +324,11 @@ pages:
     domain: architecture
     status: current
     navigation: explanation/native-srix
+  - path: explanation/methodological_landscape.md
+    mode: explanation
+    domain: architecture
+    status: current
+    navigation: explanation
   - glob: "explanation/identification/*.md"
     mode: explanation
     domain: identification
