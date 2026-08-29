@@ -178,6 +178,62 @@ it is not an experimental calibration claim.  The specialised discussion is
 in {doc}`identification/srix_parametric_observability` and
 {doc}`identification/observable_fit_vs_latent_identifiability`.
 
+## Exploratory and complementary branches
+
+Several other branches were experiments on the inverse architecture, not
+failed competitors to FEMU.  They address different questions and expose
+conditions under which a method would be worth revisiting:
+
+| Method | Scientific question | Current status |
+|---|---|---|
+| FEMU | Which constitutive parameters best explain the observations? | Synthetic/registered demonstrations; experimental use remains open |
+| SVD | Which parameter combinations can the observations distinguish? | Geometric and synthetic/registered demonstrations |
+| REGM | Can an equilibrium proxy accelerate or screen inversion? | Exploratory; registered negative transfer to the current DIC observable |
+| Reduced basis | How can a high-dimensional latent field be represented? | Synthetic demonstrations; basis richness and nullspaces documented |
+| TANN | Can a causal constitutive evolution law be learned from data? | Pipeline and sequential adjoint developed; no qualified learned law |
+| Nonlocal coupling | Is spatial interaction missing from a local material model? | Spatial redistribution demonstrated; physical length scale uncalibrated |
+
+### What these branches taught us
+
+* **REGM** replaces repeated constitutive solves by an equilibrium-gap proxy.
+  It can be useful for screening or initialisation, but the recorded proxy
+  ranking did not transfer convincingly through the present DIC observation.
+  It should be revisited only when that connection is demonstrated for a
+  curated observable.
+* **Reduced representations** can regularise an otherwise invisible latent
+  field: a compact synthetic representation recovered its twin, whereas an
+  enriched basis introduced algebraic null directions.  Adding basis
+  richness is therefore not automatically adding information.  Revisit when
+  bases are designed or orthogonalised against the observable nullspace.
+* **TANN** established a causal state-propagation and sequential-adjoint
+  pipeline, but the registered learning configuration did not establish a
+  useful scientific constitutive law.  The old runs are provenance and
+  diagnostics, not a general failure claim.  Revisit with physically grounded
+  variables and curated multi-case data that justify the model flexibility.
+* **Nonlocal or micromorphic coupling** provides a way to represent a missing
+  interaction length and has produced substantial spatial redistribution in
+  the recorded campaigns.  Its length scale is not physically calibrated,
+  so this remains a secondary modelling branch.  Revisit when a curated
+  localisation dataset demonstrates that a qualified local law is
+  insufficient.
+
+These branches can be summarised by their triggers rather than by their
+campaign history:
+
+| Branch | Revisit trigger |
+|---|---|
+| REGM | A demonstrated link between the equilibrium proxy and the measured observable |
+| Richer reduced bases | Observable-aware basis design or orthogonalisation |
+| TANN | Physically grounded parameterisation and curated multi-case data |
+| Nonlocal coupling | Curated localisation data showing a qualified local model is inadequate |
+
+The common lesson is methodological: proxy agreement may not survive the
+measurement operator, richer latent spaces can create nullspaces, history
+requires causal state propagation, and spatial coupling can change
+localisation.  Further discrimination between these options now depends more
+on curated DIC/EBSD/loading cases than on another layer of optimisation of
+the present P43 record.
+
 ## IV. Constitutive and measurement inputs
 
 J2/Ludwik is a robust isotropic baseline for checking boundary conditions,
