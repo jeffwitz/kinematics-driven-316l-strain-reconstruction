@@ -162,9 +162,13 @@ reference](../../reference/evidence/srix_parametric_observability).
 Several alternatives were scientifically useful precisely because they showed
 what an apparently good proxy cannot establish.
 
-* Local tensor inversion and TANN-style closures can fit an observable while
-  leaving a large latent nullspace.  The issue is not merely the optimiser;
-  the inverse state is not uniquely determined by the kinematics.
+* Free tensor inversion can fit an observable while leaving a large latent
+  nullspace.  A compact local inverse recovered an exact synthetic twin,
+  showing that identifiability depends on the representation.  Enriching its
+  basis then introduced algebraic null directions, while TANN/inverse-closure
+  attempts did not establish the kinematically inferred variable as a
+  qualified local constitutive state; no trained scientific TANN model is
+  currently validated.
 * REGM ranks candidates well on an exact mechanical twin, but its ranking is
   destroyed after the registered DIC observation.  A surrogate must be
   validated after the same observation operator, not only in the mechanical

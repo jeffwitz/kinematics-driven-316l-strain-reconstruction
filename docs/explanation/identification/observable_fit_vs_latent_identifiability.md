@@ -47,19 +47,28 @@ The detailed gates and nullspace construction remain in
 `validation/tensor_local_inverse_results.md` and the associated evidence
 records.
 
-## B. A compact representation can still be non-unique
+## B. Identifiability depends on the representation
 
-The next campaign restricted the latent field to a smaller local-coefficient
-parameterisation. At the degree-zero setting, the parameter-to-observable map
-was well behaved (condition number about $2.0\times10^2$), and a synthetic twin
-was recovered to $2.1\times10^{-4}$ relative field error. This is a useful
-qualification of the inverse plumbing and of that restricted representation;
-it is not evidence that an unrestricted constitutive state is identifiable.
+The next campaign restricted the latent field to a compact local-coefficient
+parameterisation. At the degree-zero (`q=1`) setting, the
+parameter-to-observable map was well behaved (condition number about
+$2.0\times10^2$), and a synthetic twin was recovered to
+$2.1\times10^{-4}$ relative field error. This is a positive result: the
+inverse problem is not intrinsically hopeless when the representation is
+sufficiently constrained. It qualifies that restricted synthetic twin, not an
+unrestricted constitutive state.
 
-Enriching the same partition-of-unity basis exposed its own algebraic nullspace:
-the degree-one representation had condition number about $4.1\times10^{15}$
-and 23 numerically absent directions. The degeneracy came from the assembly
-map, not from a failure of the mechanical solve.
+Enriching the same partition-of-unity basis (`q=4`) exposed a different,
+representation-induced algebraic nullspace: the degree-one representation had
+condition number about $4.1\times10^{15}$ and 23 numerically absent
+directions. The degeneracy came from the assembly map, not from a failure of
+the mechanical solve. The distinction is therefore:
+
+```text
+free tensor field  → physical/kinematic nullspace
+compact q=1        → identifiable synthetic twin
+enriched q=4       → basis-induced algebraic nullspace
+```
 
 More generally, even a compact representation with a healthy local spectrum
 does not guarantee a unique nonlinear inverse. A low residual only says that
@@ -72,10 +81,10 @@ of constitutive identifiability.
 
 The TANN/FCC and inverse-closure campaigns tested whether the inferred
 inelastic correction could be turned directly into a local constitutive law.
-The registered primary TANN run did not pass its held-out displacement gates
-(`median(E_holdout)=1.052`), and the amended full-field trajectory remained an
-incomplete solver/law-coupling experiment. The corrected recovery record
-explicitly says that no trained scientific TANN model exists.
+The archived campaigns exposed formulation and implementation problems; the
+corrected recovery record explicitly says that no trained scientific TANN
+model exists. They therefore cannot support a constitutive claim, positive or
+negative, about a qualified TANN law.
 
 Those results do **not** show that TANNs cannot work. They show that the
 particular formulation in which a kinematically inferred latent correction is
@@ -165,4 +174,3 @@ The conclusions above consolidate the relevant parts of
 `validation/_generated/shared_tensor_generator/tann_fcc_smoke_25.json`.
 Those artefacts remain the primary records; this page is the canonical
 scientific synthesis, not a replacement for their registered gates.
-
