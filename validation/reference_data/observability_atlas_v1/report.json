@@ -1,0 +1,131 @@
+{
+  "central_claim": "excellent agreement in the measured observable does not by itself identify a unique latent constitutive state",
+  "entries": [
+    {
+      "conclusion": "excellent kinematic fit does not determine the free latent tensor field",
+      "effective_rank": 173,
+      "latent_recovery": {
+        "registered_gauge_relative_error": 0.797395699951219,
+        "zero_mean_gauge_relative_error": 0.5166738779236657
+      },
+      "nullity": 19,
+      "observable_fit": {
+        "metric": "least-squares objective",
+        "source": "validation/tensor_local_inverse_results.md",
+        "value": 2.43e-15
+      },
+      "parameter_count": 192,
+      "problem": "free tensor inverse"
+    },
+    {
+      "conclusion": "a sufficiently constrained representation can recover an exact synthetic twin",
+      "condition_number": 199.92696726445487,
+      "effective_rank": {
+        "above_1e-1": 21,
+        "above_1e-2": 35,
+        "above_1e-3": 36,
+        "above_1e-4": 36,
+        "above_1e-6": 36
+      },
+      "latent_recovery": {
+        "coefficient_relative_error": 0.0001895130871456482,
+        "field_relative_error": 0.00021293944231602275
+      },
+      "nullity": 0,
+      "observable_fit": {
+        "metric": "twin objective",
+        "value": 3.65879673467032e-20
+      },
+      "problem": "compact local inverse q=1"
+    },
+    {
+      "conclusion": "basis enrichment introduces algebraic null directions",
+      "condition_number": 4088607579134977.5,
+      "effective_rank": {
+        "above_1e-1": 23,
+        "above_1e-2": 75,
+        "above_1e-3": 114,
+        "above_1e-4": 121,
+        "above_1e-6": 121
+      },
+      "latent_recovery": {
+        "status": "not interpreted"
+      },
+      "nullity": 23,
+      "observable_fit": {
+        "metric": "twin recovery",
+        "status": "not run; basis is rank deficient"
+      },
+      "parameter_count": 144,
+      "problem": "enriched local inverse q=4"
+    },
+    {
+      "conclusion": "exact-space ranking is useful before measurement transfer",
+      "latent_recovery": {
+        "status": "ranking surrogate only"
+      },
+      "observable_fit": {
+        "log_pearson": 0.8779925829892407,
+        "metric": "Spearman",
+        "value": 0.8661654135338346
+      },
+      "problem": "REGM exact twin ranking"
+    },
+    {
+      "conclusion": "the surrogate ranking does not survive the registered observed-space formulation",
+      "latent_recovery": {
+        "status": "not authorized"
+      },
+      "observable_fit": {
+        "log_pearson": 0.2755652553534226,
+        "metric": "Spearman T1 transfer",
+        "value": 0.32631578947368417
+      },
+      "problem": "REGM observed-DIC transfer"
+    },
+    {
+      "conclusion": "tensor/coarse observables do not establish individual slip-system recovery",
+      "latent_recovery": {
+        "slip_space_gate": false,
+        "status": "slip-space gate false"
+      },
+      "observable_fit": {
+        "metric": "best per-system R2",
+        "value": 0.20593095845912257
+      },
+      "problem": "shared FCC slip generator ladder"
+    },
+    {
+      "conclusion": "parameter combinations, not individual parameters, are the supported object",
+      "effective_rank": 3,
+      "latent_recovery": {
+        "status": "absolute experimental detectability unqualified"
+      },
+      "observable_fit": {
+        "metric": "registered geometric sensitivity",
+        "status": "rank-3 geometric subspace"
+      },
+      "problem": "SRIX parametric FEMU SVD",
+      "singular_values": [
+        0.33607036952137875,
+        0.05105931732544018,
+        0.010770760960336601,
+        8.781733143069155e-06
+      ],
+      "weak_mode": "Q-b"
+    }
+  ],
+  "method": "offline aggregation of registered inverse and observability artifacts",
+  "no_forward_or_finite_difference": true,
+  "schema_version": 1,
+  "sources": [
+    "validation/_generated/tensor_local_inverse/observability_truncated_svd.json",
+    "validation/_generated/local_coefficient_inverse/spectrum_q1.json",
+    "validation/_generated/local_coefficient_inverse/spectrum_q4.json",
+    "validation/_generated/local_coefficient_inverse/gate3_twin_q1.json",
+    "validation/reference_data/srix_regm_femu_ranking_v1/report.json",
+    "validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json",
+    "validation/_generated/shared_tensor_generator/slip_law_ladder.json",
+    "validation/reference_data/p0043_spatial_noise_stationarity_v1/report.json"
+  ]
+}
