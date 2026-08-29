@@ -41,6 +41,12 @@ Recommended journeys
    :doc:`reference/numerics/native_srix_backend` →
    :doc:`how-to/crystal-plasticity/run_316l_crystal_plasticity`
 
+**Understand the full-Dirichlet spectral solver**
+   :doc:`explanation/spectral_mechanics/scientific_question` →
+   :doc:`explanation/spectral_mechanics/full_dirichlet_formulation` →
+   :doc:`explanation/spectral_mechanics/solver_pipeline` →
+   :doc:`explanation/spectral_mechanics/tet2_newton_gmres`
+
 **Find a scientific result**
    :doc:`evidence/index` →
    :doc:`reference/evidence/evidence_registry` →

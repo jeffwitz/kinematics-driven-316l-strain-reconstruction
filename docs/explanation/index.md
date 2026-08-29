@@ -32,6 +32,10 @@ commands belong in How-to guides and stable interfaces belong in Reference.
 ## Understand spectral mechanics
 
 - {doc}`spectral_mechanics/index`
+  - {doc}`spectral_mechanics/scientific_question`
+  - {doc}`spectral_mechanics/full_dirichlet_formulation`
+  - {doc}`spectral_mechanics/solver_pipeline`
+  - {doc}`spectral_mechanics/tet2_newton_gmres`
 
 ## Understand the native SRIX backend
 

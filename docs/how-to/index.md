@@ -17,6 +17,8 @@ Each page answers one operational question. Read the scientific rationale in
 ## Mechanics
 
 - {doc}`mechanics/index`
+- {doc}`mechanics/run_full_dirichlet_spectral` — reproduce the registered
+  full-Dirichlet spectral qualification case
 - {doc}`mechanics/run_coupled_reconstruction`
 
 ## Crystal plasticity
