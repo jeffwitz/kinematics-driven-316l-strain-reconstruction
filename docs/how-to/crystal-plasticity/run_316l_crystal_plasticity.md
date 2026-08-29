@@ -23,7 +23,8 @@ export MFRONT_BEHAVIOUR_LIBRARY="$PWD/build/mfront/src/libBehaviour.so"
 ```
 
 The registered P43 displacement/material maps are loaded from
-`data/processed/case_study`. The paired parameter set is
+`data/processed/case_study`; prepare that directory first with
+{doc}`../data/prepare_dic_case` if it is not already provisioned. The paired parameter set is
 `316l_guilhem2013_nasri2018_meric_srix_rate_1e-3`. Verify the Bunge orientation
 convention and the case provenance in
 {doc}`../../reference/scientific/ebsd_orientation_contract`.

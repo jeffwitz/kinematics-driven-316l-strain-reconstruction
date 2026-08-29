@@ -15,10 +15,14 @@ silently replace the MFront oracle.
 Install the project with its numerical dependencies and make the archived M20
 MFront fields available at
 `validation/reference_data/p0043_m20_c_f_forward_identified_v1/fields_F.npz`.
-The native runner reads the registered experimental inputs and the final
-parameter point from the archived P43 report. No MFront shared library is
-needed by this particular native-vs-archived-fields command, but the MFront
-reference fields must exist.
+The runner also requires the repaired P43 history payload and the co-registered
+EBSD HDF5 payload imported by its qualification helper. Those payloads are not
+part of a clean checkout in the current repository state, and the helper still
+resolves the EBSD file through an external path rather than a command-line
+option. Consequently this command is source-verified but workflow-blocked until
+those two registered inputs are provisioned; do not substitute synthetic data.
+No MFront shared library is needed by this native-vs-archived-fields command,
+but the MFront reference fields must exist.
 
 ## Run
 
