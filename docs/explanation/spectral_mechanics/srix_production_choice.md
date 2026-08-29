@@ -2,12 +2,18 @@
 
 The registered P43 reconstruction uses the Forest–Rubin SRIX law because the
 available DIC sequence defines an ordered displacement path but does not
-provide a qualified physical time scale. SRIX is rate-independent: its
-response depends on the strain path and its increments, not on an arbitrary
-assignment of elapsed seconds between images.
+provide a qualified physical time scale. SRIX is path-dependent but
+rate-independent: its physical response depends on the ordered strain path,
+not on an arbitrary assignment of elapsed seconds between images. A different
+interpolation between measured states is a different physical path. Refining
+the numerical subdivision of the same prescribed path should converge to the
+same solution; residual dependence on that subdivision is an integration or
+solver issue, not a constitutive rate effect.
 
 Méric–Cailletaud is a rate-dependent comparison law. Its response requires a
-physical or pseudo-time history and parameters identified at that rate. It is
+time/rate history whose scale has physical meaning relative to the calibrated
+``K,n`` parameters. A numerical time parameterisation may be used by the
+solver, but changing its scale changes the constitutive problem. Méric is
 useful for sensitivity studies, but it is not interchangeable with SRIX under
 the current DIC data contract.
 
@@ -32,11 +38,13 @@ behaviour, orientation field, parameter set, and load path.
 
 ## Interpretation limits
 
-Rate independence does not remove dependence on load-path discretisation. The
-number and ordering of increments can affect activation and reversal of slip
-systems. Nor does the production-law choice identify the SRIX parameters from
-DIC; the parameter provenance and any transposition from a rate-dependent
-reference remain part of the case record.
+Rate independence does not remove dependence on the physical load path: the
+ordering and interpolation of measured states can affect activation and
+reversal of slip systems. That is distinct from refining the numerical
+subdivision of one fixed path, which should converge. Nor does the
+production-law choice identify the SRIX parameters from DIC; the parameter
+provenance and any transposition from a rate-dependent reference remain part
+of the case record.
 
 The principal SRIX observables are signed system slips, accumulated absolute
 slip, stress, and the relaxed transverse strains. A scalar J2 equivalent

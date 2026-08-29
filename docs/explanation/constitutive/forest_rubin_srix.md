@@ -17,9 +17,10 @@ $$
 \tau_s=\boldsymbol\sigma:M_s.
 $$
 
-The state therefore contains signed slip $\Delta\gamma_s$, accumulated slip
-$p_s$, resistance $r_s$ and kinematic backstress $X_s$; the Schmid tensors and
-cubic elastic constants are rotated according to the local EBSD orientation.
+The committed state contains signed slip $\gamma_s$; $\Delta\gamma_s$ denotes
+its increment. It also contains accumulated slip $p_s$, resistance $r_s$ and
+kinematic backstress $X_s$. The Schmid tensors and cubic elastic constants are
+rotated according to the local EBSD orientation.
 
 The slip resistance is
 
