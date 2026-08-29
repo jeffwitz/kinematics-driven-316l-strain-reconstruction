@@ -11,7 +11,6 @@ least-squares solves and the registered dissipative projector.
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 
 import numpy as np
@@ -108,7 +107,6 @@ def _relative_errors(predicted: np.ndarray, target: np.ndarray) -> list[float]:
 
 
 def main() -> int:
-    started = time.perf_counter()
     source_fields = np.load(SOURCE / "fields.npz", allow_pickle=False)
     source_report = json.loads((SOURCE / "report.json").read_text(encoding="utf-8"))
     target_all = np.asarray(source_fields["target_displacement"], dtype=np.float64)
@@ -355,7 +353,6 @@ def main() -> int:
             "raw_relative_observable_error_by_state": raw_errors,
             "dissipative_relative_observable_error_by_state": dissipative_errors,
         },
-        "runtime_seconds": float(time.perf_counter() - started),
         "claims": {
             "reproduces_old_strain_space_krylov_bitwise": False,
             "observable_matched_fixture": True,

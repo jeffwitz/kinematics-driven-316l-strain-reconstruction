@@ -545,7 +545,6 @@
     "physical_conversion": "operator.plastic_mode",
     "plastic_size": 2400
   },
-  "runtime_seconds": 0.12357097794301808,
   "schema_version": 1,
   "source": {
     "fields": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
