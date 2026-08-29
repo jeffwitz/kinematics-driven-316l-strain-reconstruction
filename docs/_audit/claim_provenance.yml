@@ -103,6 +103,9 @@ subjects:
     parametric_observability:
       evidence: [E-SRIX-PARAM-OBS-001, E-SRIX-PARAM-OBS-002, E-SRIX-PARAM-OBS-003, E-SRIX-PARAM-OBS-004]
       boundary: archived synthetic and experimental M20/M100 sensitivity summaries; experimental uniqueness and 316L calibration are not claimed
+    dic_weighted_parametric_sensitivity:
+      evidence: [E-SRIX-PARAM-OBS-005]
+      boundary: blocked because the qualified repeated-frame noise payload is not hydrated; no scalar-whitening substitute is claimed
     boundary_only_driver:
       evidence: []
       boundary: no production boundary-only driver is registered

@@ -2319,6 +2319,14 @@
       ]
     },
     {
+      "question": "Can the full DIC-transfer and spectral-whitening parametric sensitivity be reconstructed offline from the archived fields?",
+      "status": "blocked in the current checkout",
+      "boundary": "Raw displacement Jacobians exist for some records, but the qualified repeated-frame noise payload is an unhydrated Git LFS pointer; scalar whitening is not a substitute",
+      "evidence_ids": [
+        "E-SRIX-PARAM-OBS-005"
+      ]
+    },
+    {
       "question": "Which free tensorial inelastic fields are observable through the registered DIC chain?",
       "status": "supported for the registered M20/M100 post-processing",
       "boundary": "Archived P43 histories and field/eigenstrain observability operator; not a parametric FEMU sensitivity or latent-field identification",
@@ -3567,6 +3575,28 @@
         {
           "path": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/report.json",
           "role": "experimental raw right-singular vectors"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-005",
+      "question": "Can the full DIC-transfer and spectral-whitening parametric sensitivity be reconstructed offline from the archived fields?",
+      "fidelity": "archived SRIX displacement Jacobians plus the registered DIC transfer and whitener inputs",
+      "parameters": "raw Jacobians available for synthetic and experimental raw records; spatial whitener input unavailable locally",
+      "status": "blocked in current checkout",
+      "conclusion": "The raw Jacobian fields are present for synthetic M20/M100 and experimental raw M20, but centred_repeat_flow_pixels.npy is only an unhydrated Git LFS pointer. The full S_DIC comparison cannot be computed without that payload; scalar whitening is not accepted as a replacement.",
+      "sources": [
+        {
+          "path": "docs/_audit/srix_parametric_fields_inventory.md",
+          "role": "key/shape/dtype inventory and blocking audit"
+        },
+        {
+          "path": "validation/reference_data/dic_measurement_chain_v4/sinusoidal_transfer.csv",
+          "role": "available DIC transfer input"
+        },
+        {
+          "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+          "role": "required but unhydrated whitener input"
         }
       ]
     },

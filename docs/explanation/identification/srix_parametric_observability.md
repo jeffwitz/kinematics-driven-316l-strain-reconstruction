@@ -108,14 +108,25 @@ demonstrations of the machinery and of one synthetic scale-up, not a material
 calibration.
 
 The experimental whitened and raw records have almost identical normalised
-spectra and right-singular subspaces: their leading rank-three subspaces differ
-by less than $10^{-5}$ degrees in the archived matrices.  Comparing the
-experimental rank-three subspace with the synthetic one gives principal angles
-of about $0.265^\circ$ for synthetic M20 versus experimental, and
-$0.139^\circ$ for synthetic M100 versus experimental.  The direction geometry
-is therefore repeatable across these registered cases, but the experimental
-optimisations still stop at the evaluation cap or parameter bounds and are
-explicitly NO-GO.
+spectra and right-singular subspaces because the recorded whitening is scalar.
+If $S_{\mathrm{scalar}}=cS_{\mathrm{raw}}$, then $V$ and all normalised
+singular values are mathematically unchanged.  This is therefore a consistency
+check, not an independent robustness validation.  Comparing the experimental
+rank-three subspace with the synthetic one gives principal angles of about
+$0.265^\circ$ for synthetic M20 versus experimental, and $0.139^\circ$ for
+synthetic M100 versus experimental.  These comparisons describe the archived
+linearisation points; the experimental optimisations still stop at the
+evaluation cap or parameter bounds and are explicitly NO-GO.
+
+The word “experimental” also requires care.  The data vector
+$y^{\mathrm{obs}}$ does not enter $S_\theta$ when $O$ and $W$ are fixed:
+
+$$
+S_\theta=W O\,\frac{\partial u}{\partial\theta}.
+$$
+
+The experimental record changes the evaluation point, crop, loading path and
+observation convention, not the derivative through an additive data vector.
 
 The scientifically supported conclusion is consequently narrow:
 
@@ -129,9 +140,16 @@ experimental uniqueness             not established
 ```
 
 The field-observability analysis remains a distinct prerequisite.  The next
-step, if authorised, would be to apply the same DIC observation and whitening
-to archived **parametric** sensitivities and to test how the parameter SVD
-changes; it is not performed by the free tensor-field analysis above.
+step, if authorised, would be to apply the same DIC transfer and spectral
+whitening to archived **parametric** displacement Jacobians and to test how the
+parameter SVD changes.  The displacement Jacobians exist for the synthetic and
+raw records, but the repeated-frame noise payload needed to reconstruct the
+qualified spatial whitener is not available in this checkout (the `.npy` is a
+Git LFS pointer).  Therefore the full $S_{\mathrm{DIC}}$ comparison is
+currently blocked and no scalar-whitening result is presented as a substitute.
+
+The exact key/shape/dtype inventory and this blocking condition are recorded
+in {doc}`../../_audit/srix_parametric_fields_inventory`.
 
 Exact files, values and claim boundaries are listed in
 {doc}`../../reference/evidence/srix_parametric_observability`.
