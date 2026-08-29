@@ -35,6 +35,8 @@ artefacts; these pages explain their status and interpretation.
   modes and current limits.
 - {doc}`../explanation/identification/regm_screening` — REGM transfer boundary.
 - {doc}`../reference/evidence/regm_qualification` — REGM evidence IDs and metrics.
+- {doc}`../reference/evidence/femu_qualification` — synthetic FEMU/SVD evidence and
+  the experimental-qualification boundary.
 - {doc}`../reference/evidence/selection_indicators` — definitions for
   sensitivity and SVD outputs.
 
@@ -55,4 +57,5 @@ artefacts; these pages explain their status and interpretation.
 ../explanation/identification/identifiability
 ../explanation/identification/regm_screening
 ../reference/evidence/regm_qualification
+../reference/evidence/femu_qualification
 ```

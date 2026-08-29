@@ -22,6 +22,27 @@ useful negative control, not a valid identification experiment.
 The native SRIX architecture reduces this cost while preserving an MFront
 oracle; it does not make an unobservable parameter identifiable.
 
+## What is already demonstrated
+
+The direct sensitivity machinery has a positive synthetic qualification. In
+`E-SRIX-P43-SYNTH-003`, a P43 M100 case with real EBSD, identity observation,
+no noise and the registered 32-step path converges in three evaluations after
+initialisation from the best M20 result. The recovered parameters reach the
+synthetic truth to numerical precision, while the fourth singular direction is
+weak and the `Q`/`b` combination remains strongly correlated. This demonstrates
+the FEMU machinery and one synthetic scale-up; it does not identify experimental
+316L parameters.
+
+The evidence ladder is therefore:
+
+```text
+direct sensitivities       supported
+synthetic M20 identification demonstrated
+synthetic M20 -> M100      demonstrated for one registered run
+experimental P43 modes     limited / under study
+production boundary-only   not registered
+```
+
 The recorded smoke driver is `scripts/srix_femu_smoke.py`. It demonstrates a
 wiring limitation (full-field prescribed displacement), so its flat fit must
 not be reported as parameter identification. Boundary-only FEMU and the

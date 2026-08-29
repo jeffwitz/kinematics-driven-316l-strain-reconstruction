@@ -23,8 +23,12 @@ PYTHONPATH=src python scripts/qualify_ebi_state_sharing.py \
 ## Expected output and verification
 
 The JSON output contains CPS4, TET2, EBI and independent verification results.
-Archive it with the commit SHA and MFront library SHA, then compare the
-reported residuals and field metrics with the registered thresholds.
+For the registered checks, the expected thresholds are a TET2 verification
+residual below `1e-13` and a directional tangent error below `1e-6` (evidence
+`E-EBI-001`). The state-sharing comparison is expected to report approximately
+`5.39%` EBI-versus-TET2 accumulated-slip error versus `0.72%` TET2-versus-CPS4
+(`E-EBI-002`). Archive the JSON with the commit SHA and MFront library SHA,
+then record whether these values are reproduced.
 
 The result is a documented falsification for that registered SRIX case; do not
 generalise it to every possible EBI formulation. Record the exact configuration

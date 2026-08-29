@@ -1,7 +1,18 @@
 <!-- Generated from validation/documentation_evidence_registry.json. -->
 
-:::{admonition} Current conclusion
+:::{admonition} Current conclusions
 :class: important
 
-Micromorphic coupling is the only change tested that measurably brings the reconstruction closer to DIC: under symmetric image-level observation it improves relative L2 by 9.6 times the metric's noise margin and correlation by 3.2 times, and it brings the over-active q90 area from +61 % down to +2.6 % of the DIC reference. It does so while degrading where the localisation sits, by 2.4 and 2.5 margins on the two overlap measures, so the ranking depends on the objective and neither Hchi nor ell is identified. By contrast the measured 40-state loading path, which now replays end to end after a defect in the elastic predictor was fixed, changes core PEEQ by 15.8 % yet moves no DIC metric beyond its margin. A fast SRIX equilibrium-gap surrogate recovers and ranks exact digital twins, but its ranking fails after the qualified DIC transfer, so SRIX parameter identification on P43 is currently blocked. The local and coupled mechanics are numerically verified; no transferable material internal length is claimed.
+**Reconstruction adequacy.** Micromorphic coupling improves relative L2, correlation and active-area agreement under the registered symmetric image-level observation, but localisation overlap degrades; neither Hchi nor ell is identified. This is a scoped P43 reconstruction conclusion, not a claim that micromorphic coupling is the only useful model globally.
+
+**Constitutive models.** The local J2 baseline, Méric comparison branch, SRIX implementation and MFront/native plane-stress paths are documented with separate claim boundaries. SRIX parameters remain a prior/transposition, not an identified 316L calibration.
+
+**Spectral solver.** Full-Dirichlet spectral mechanics, matrix-free Newton--Krylov, TET2 and the registered EBI-TET falsification are recorded. EBI-TET is negative for the registered SRIX state-sharing case; this does not generalise to every discretisation.
+
+**Femu identifiability.** Direct FEMU sensitivities and synthetic P43 identification are demonstrated, including one M20-to-M100 scale-up (E-SRIX-P43-SYNTH-003). Experimental P43 parameter identification and a production boundary-only driver remain open/blocked.
+
+**Regm.** The equilibrium-gap surrogate ranks exact digital twins, but the registered transfer through the qualified DIC observation fails; REGM is therefore a screening result, not an experimental identification method.
+
+**Unresolved scientific questions.** The experimental observation/identification boundary, 316L parameter calibration, full-solver FFTW performance and transferable material length remain open. Claims must be read from the claim records and their evidence IDs.
+
 :::

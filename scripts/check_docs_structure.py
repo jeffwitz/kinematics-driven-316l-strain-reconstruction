@@ -87,6 +87,14 @@ def load_coverage() -> list[dict[str, str]]:
     return data["subjects"]
 
 
+def load_claim_provenance() -> dict[str, dict[str, dict[str, object]]]:
+    source = DOC_ROOT / "_audit" / "claim_provenance.yml"
+    data = yaml.safe_load(source.read_text())
+    if not isinstance(data, dict) or not isinstance(data.get("subjects"), dict):
+        raise ValueError("claim provenance must contain a subjects mapping")
+    return data["subjects"]
+
+
 def matches(entry: dict[str, str], path: str) -> bool:
     pattern = entry.get("path") or entry.get("glob")
     if not pattern:
@@ -313,6 +321,11 @@ def main() -> int:
     except (OSError, ValueError, yaml.YAMLError) as exc:
         errors.append(f"scientific coverage: {exc}")
     else:
+        try:
+            provenance = load_claim_provenance()
+        except (OSError, ValueError, yaml.YAMLError) as exc:
+            errors.append(f"claim provenance: {exc}")
+            provenance = {}
         for subject in coverage:
             if not isinstance(subject, dict) or not subject.get("name"):
                 errors.append("scientific coverage: every subject needs a name")
@@ -367,6 +380,46 @@ def main() -> int:
                 errors.append(
                     f"coverage {subject.get('name')}: invalid claim status values {claims!r}"
                 )
+            subject_name = subject.get("name")
+            subject_provenance = provenance.get(subject_name, {})
+            if not isinstance(subject_provenance, dict):
+                errors.append(
+                    f"coverage {subject_name}: claim provenance must be a mapping"
+                )
+                subject_provenance = {}
+            if isinstance(claims, dict):
+                missing_claims = sorted(set(claims) - set(subject_provenance))
+                extra_claims = sorted(set(subject_provenance) - set(claims))
+                if missing_claims:
+                    errors.append(
+                        "coverage "
+                        f"{subject_name}: claims missing provenance: {', '.join(missing_claims)}"
+                    )
+                if extra_claims:
+                    errors.append(
+                        "coverage "
+                        f"{subject_name}: provenance has undeclared claims: "
+                        f"{', '.join(extra_claims)}"
+                    )
+                for claim_key, claim_status in claims.items():
+                    record = subject_provenance.get(claim_key)
+                    if not isinstance(record, dict):
+                        errors.append(
+                            f"coverage {subject_name}: provenance for {claim_key} must be a mapping"
+                        )
+                        continue
+                    evidence = record.get("evidence")
+                    boundary = record.get("boundary")
+                    if not isinstance(evidence, list) or (
+                        claim_status not in {"not_claimed", "open"} and not evidence
+                    ):
+                        errors.append(
+                            f"coverage {subject_name}: provenance for {claim_key} needs evidence"
+                        )
+                    if not isinstance(boundary, str) or not boundary.strip():
+                        errors.append(
+                            f"coverage {subject_name}: provenance for {claim_key} needs a boundary"
+                        )
             blockers = subject.get("blockers", [])
             if not isinstance(blockers, list) or any(
                 blocker not in VALID_BLOCKERS for blocker in blockers

@@ -78,13 +78,30 @@ def _load_registry(path: Path) -> dict[str, Any]:
 
 
 def _write_current_conclusion(data: dict[str, Any], output: Path) -> None:
-    text = (
-        "<!-- Generated from validation/documentation_evidence_registry.json. -->\n\n"
-        ":::{admonition} Current conclusion\n"
-        ":class: important\n\n"
-        f"{data['current_conclusion']}\n"
-        ":::\n"
-    )
+    conclusions = data.get("current_conclusions")
+    if isinstance(conclusions, dict):
+        body = [
+            "<!-- Generated from validation/documentation_evidence_registry.json. -->",
+            "",
+            ":::{admonition} Current conclusions",
+            ":class: important",
+            "",
+        ]
+        for key, value in conclusions.items():
+            title = key.replace("_", " ").capitalize()
+            body.extend((f"**{title}.** {value}", ""))
+        body.append(":::")
+        text = "\n".join(body) + "\n"
+    else:
+        # Keep schema-v2 fixture compatibility while repositories migrate from
+        # the former singleton field to scoped conclusions.
+        text = (
+            "<!-- Generated from validation/documentation_evidence_registry.json. -->\n\n"
+            ":::{admonition} Current conclusion\n"
+            ":class: important\n\n"
+            f"{data['current_conclusion']}\n"
+            ":::\n"
+        )
     (output / "current_conclusion.inc").write_text(text, encoding="utf-8")
 
 

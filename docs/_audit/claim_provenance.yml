@@ -1,0 +1,132 @@
+version: 1
+# Claim statuses stay in scientific_coverage.yml; this file binds each key to
+# the evidence or source that justifies it and states the claim boundary.
+subjects:
+  DIC and observation:
+    observation_contract:
+      evidence: [reference/evidence/evidence_registry.md]
+      boundary: DIC observation and transfer contracts, not constitutive identification
+    synthetic_transfer:
+      evidence: [E-DIC-004, validation/documentation_evidence_registry.json]
+      boundary: registered synthetic/image-level transfer cases
+    experimental_parameter_identification:
+      evidence: []
+      boundary: no experimental parameter-identification claim
+  EBSD and registration:
+    orientation_mapping:
+      evidence: [reference/scientific/ebsd_orientation_contract.md, tests/unit/core/test_crystal_orientation.py]
+      boundary: pointwise orientation and mapping conventions
+    co_registration:
+      evidence: [validation/reference_data/p0043_fullfield_schmid_registration_v1/final_report.json]
+      boundary: registered provenance; independent experimental registration is not claimed
+  J2/Ludwik baseline:
+    table_material_equivalence:
+      evidence: [E-TABLE-001, validation/documentation_evidence_registry.json]
+      boundary: table definition and analytical reproduction
+    fe_pipeline:
+      evidence: [E-LOCAL-001, E-LOCAL-002]
+      boundary: registered material-point and FE comparisons
+    experimental_morphology_adequacy:
+      evidence: [explanation/reconstruction/local_baseline.md]
+      boundary: local J2 does not reproduce the registered experimental morphology
+  SRIX:
+    constitutive_implementation:
+      evidence: [mfront/Fcc316LForestRubinSrix.mfront, tests/unit/core/test_forest_rubin_srix.py, validation/srix_canonical_qualification_report.md]
+      boundary: model/integration qualification, not 316L calibration
+    p43_robustness:
+      evidence: [E-SRIX-P43-001]
+      boundary: registered P43 M100 case
+    parameter_identification:
+      evidence: []
+      boundary: registered R is an analytical transposition, not an identified 316L parameter
+  Méric-Cailletaud:
+    constitutive_implementation:
+      evidence: [mfront/Fcc316LMericCailletaud.mfront, docs/explanation/constitutive/srix_vs_meric.md]
+      boundary: comparison branch and registered parameters
+    physical_rate_dependence:
+      evidence: [mfront/Fcc316LMericCailletaud.mfront]
+      boundary: explicit loading-rate dependence of the constitutive law
+    temporal_convergence:
+      evidence: [E-MERIC-P43-001]
+      boundary: observed increment/solver sensitivity is not a convergence proof
+    current_robustness:
+      evidence: [E-MERIC-P43-001]
+      boundary: recorded P43 comparison only
+  Structural plane stress:
+    three_traction_closure:
+      evidence: [reference/numerics/mfront_structural_plane_stress.md, E-3D-001]
+      boundary: registered anisotropic three-traction closures
+    standard_mfront_three_traction_equivalence:
+      evidence: []
+      boundary: standard 2-D MFront PlaneStress is not claimed equivalent
+  Spectral solver and FFTW:
+    full_dirichlet_contract:
+      evidence: [reference/numerics/spectral_solver.md, E-SPECTRAL-003]
+      boundary: full-Dirichlet matrix-free contract
+    fftw_functional_equivalence:
+      evidence: [E-FFT-005]
+      boundary: recorded functional contract tests
+    fftw_performance:
+      evidence: [E-FFT-006]
+      boundary: complete-solver speedup remains pending
+  TET2 discretisation:
+    two_history_operator:
+      evidence: [reference/numerics/tet2_operators.md, E-SPECTRAL-003]
+      boundary: registered two-history discretisation
+    plastic_field_agreement:
+      evidence: [E-SPECTRAL-003]
+      boundary: registered grids and material histories
+  EBI-TET state sharing:
+    registered_case_state_sharing:
+      evidence: [E-EBI-002]
+      boundary: negative result for the registered SRIX case
+    universal_ebi_claim:
+      evidence: []
+      boundary: no universal claim about every EBI formulation
+  Native SRIX / Numba:
+    native_equivalence:
+      evidence: [validation/p0043_direct_coupled_tangent_results.md, validation/p0043_coupled_fused_block_results.md]
+      boundary: registered M20/M100 configurations
+    performance_scaling:
+      evidence: [validation/p0043_coupled_fused_tangent_results.md, validation/p0043_coupled_state_crossover_results.md]
+      boundary: machine-dependent performance measurements
+    gpu_port:
+      evidence: []
+      boundary: GPU implementation is future work, not a current result
+  FEMU and SVD:
+    sensitivity_contract:
+      evidence: [reference/numerics/femu_sensitivity_and_svd.md]
+      boundary: definitions and registered sensitivity machinery
+    boundary_only_driver:
+      evidence: []
+      boundary: no production boundary-only driver is registered
+    current_smoke_control:
+      evidence: [scripts/srix_femu_smoke.py, validation/srix_femu_smoke_results.md]
+      boundary: full-field-Dirichlet negative control
+  REGM:
+    exact_twin_ranking:
+      evidence: [E-SRIX-REGM-001, E-SRIX-REGM-002]
+      boundary: exact digital-twin ranking only
+    observed_dic_transfer:
+      evidence: [E-SRIX-REGM-003, E-SRIX-REGM-004, E-SRIX-REGM-005, E-SRIX-REGM-006, E-SRIX-REGM-007]
+      boundary: registered DIC observation transfer is negative
+    p43_identification:
+      evidence: []
+      boundary: REGM does not authorise experimental P43 identification
+  Reduced integration:
+    elastic_equivalence:
+      evidence: [reference/numerics/cps4r_hourglass.md]
+      boundary: linear-elastic quadrature/stabilisation comparison
+    plastic_qualification:
+      evidence: [validation/cps4r_qualification_preregistration.md, explanation/constitutive/reduced_integration_hourglass.md]
+      boundary: CPS4R is not production-qualified for plastic campaigns
+    hourglass_ratio_predictive:
+      evidence: [explanation/constitutive/reduced_integration_hourglass.md]
+      boundary: energy ratio is not a plastic-error predictor
+  Nonlocal / micromorphic:
+    historical_coupling:
+      evidence: [explanation/reconstruction/nonlocal_micromorphic.md]
+      boundary: historical registered branch
+    current_production:
+      evidence: []
+      boundary: no current production claim

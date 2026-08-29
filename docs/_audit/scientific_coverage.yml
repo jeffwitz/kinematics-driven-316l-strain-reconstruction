@@ -157,7 +157,7 @@ subjects:
       reason: >-
         The registered srix_femu_smoke driver is a full-field-Dirichlet
         negative control, not a production boundary-only FEMU workflow.
-    evidence: reference/evidence/evidence_registry.md
+    evidence: reference/evidence/femu_qualification.md
   - name: REGM
     status: complete
     routing_status: complete

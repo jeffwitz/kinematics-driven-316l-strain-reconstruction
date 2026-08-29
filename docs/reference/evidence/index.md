@@ -11,6 +11,7 @@
 - {doc}`srix_qualification`
 - {doc}`native_srix_qualification`
 - {doc}`regm_qualification`
+- {doc}`femu_qualification`
 
 The portal {doc}`../../evidence/index` explains how these contracts are used
 to navigate the primary artefacts.
@@ -26,4 +27,5 @@ selection_indicators
 srix_qualification
 native_srix_qualification
 regm_qualification
+femu_qualification
 ```

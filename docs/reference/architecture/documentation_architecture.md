@@ -43,7 +43,8 @@ migrated. They are marked `historical` and `legacy` in the manifest and are
 not primary navigation entries.
 
 The subject-level coverage contract is
-`_audit/scientific_coverage.yml`; the rendered matrix is
+`_audit/scientific_coverage.yml`; claim provenance is bound in
+`_audit/claim_provenance.yml`; the rendered matrix is
 `_audit/scientific_coverage_matrix.md`. It separates three dimensions:
 
 ```yaml

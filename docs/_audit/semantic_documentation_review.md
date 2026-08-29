@@ -31,7 +31,8 @@ filled with a facade page.
 | Nonlocal / micromorphic | complete | partial | historical | preserve historical status and limitations |
 
 The authoritative machine-readable fields are in
-`docs/_audit/scientific_coverage.yml`. In particular, FEMU deliberately has
+`docs/_audit/scientific_coverage.yml`; each claim is bound to evidence and a
+claim boundary in `docs/_audit/claim_provenance.yml`. In particular, FEMU deliberately has
 `how_to.applicable: false`: `scripts/srix_femu_smoke.py` is documented as a
 full-field-Dirichlet negative control, not as a boundary-only identification
 workflow.
