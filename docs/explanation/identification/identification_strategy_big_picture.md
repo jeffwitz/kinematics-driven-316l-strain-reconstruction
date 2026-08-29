@@ -5,6 +5,11 @@ It is intended for a reader who knows numerical mechanics but has not followed
 the successive reconstruction, constitutive and identification studies.  The
 detailed derivations, commands and evidence remain in the linked pages.
 
+Given measured boundary kinematics, loading history and EBSD orientations, the
+project asks whether a three-dimensional crystal-plasticity model can explain
+the measured interior kinematics, and which combinations of constitutive
+parameters those measurements can actually constrain.
+
 ## 1. What the experiment provides
 
 The experiment provides images, a loading history, DIC displacement fields,
@@ -36,15 +41,16 @@ The current forward chain is:
 ```text
 DIC boundary history
         ↓
-full-Dirichlet mechanical forward
+global equilibrium / full-Dirichlet forward
         ↓
-3-D constitutive update
+local constitutive problem
+        │
+        ├── EBSD orientation
+        ├── SRIX crystal plasticity
+        └── structural 3-D plane-stress closure
         ↓
-structural plane stress
-        ↓
-EBSD orientation at each point
-        ↓
-SRIX, MFront or native SRIX backend
+implementation
+MFront oracle / native SRIX
         ↓
 predicted interior fields
 ```
@@ -56,15 +62,15 @@ negative control, but not an identification experiment.
 
 J2/Ludwik is retained as a historical and numerical baseline: it verifies the
 mechanical chain and shows the limits of an isotropic local law.  SRIX is the
-current crystal-plasticity production direction because it combines FCC slip,
-anisotropic elasticity, rate-independent incremental evolution and a local
-consistent Newton formulation.  Méric--Cailletaud provides a rate-dependent
-comparison branch.  MFront remains the constitutive oracle used to qualify the
-native implementation.  The native SRIX backend exists because coupled
-plane-stress closure and point-local kernels make the many-forward budget more
-manageable, while preserving a path toward a GPU implementation.  The
-matrix-free spectral solver and its Krylov preconditioner serve the same
-purpose at the global level: make repeated, full-field forward solves
+current crystal-plasticity production model.  EBSD supplies the local
+orientation that parameterises its anisotropic elasticity and slip systems;
+structural plane stress is the local closure imposing the three transverse
+tractions to zero.  Méric--Cailletaud provides a rate-dependent comparison
+branch.  MFront is the constitutive oracle used to qualify the native
+implementation, while native SRIX is the optimised implementation for coupled
+plane-stress closure and point-local performance, with a path toward a GPU
+backend.  The matrix-free spectral solver and its Krylov preconditioner serve
+the same purpose at the global level: make repeated, full-field forward solves
 practical.
 
 See [Forest--Rubin SRIX](../constitutive/forest_rubin_srix),
@@ -161,10 +167,12 @@ what an apparently good proxy cannot establish.
   destroyed after the registered DIC observation.  A surrogate must be
   validated after the same observation operator, not only in the mechanical
   state space.
-* One-point/TET2/EBI variants, reduced integration and other inexpensive
-  proxies can improve a numerical symptom while changing the constitutive
-  history or failing the scientific gate.  Their negative results are why the
-  production strategy keeps the qualified full forward visible.
+* The one-point stencil exposes a high-frequency near-null diagnostic, while
+  TET2 corrects that kinematic defect and is a supported discretisation result.
+  EBI-TET state sharing fails the registered SRIX qualification, and reduced
+  integration has a separate negative plastic qualification.  These outcomes
+  are not interchangeable: they show that an inexpensive proxy is acceptable
+  only when its link to the quantity of interest is demonstrated.
 
 These results are not discarded side experiments.  They define the boundary
 between an observable agreement, a useful screening proxy and an actual
@@ -246,4 +254,3 @@ observation, determine observable parameter modes, and only then spend the
 cost of a full experimental identification campaign.  This keeps the next
 scientific step falsifiable and prevents a good-looking displacement fit from
 being mistaken for a unique constitutive identification.
-

@@ -23,6 +23,7 @@ Choose what you need
 * **Learn by example** — :doc:`tutorials/index`
 * **Use the software** — :doc:`how-to/index`
 * **Understand the science** — :doc:`explanation/index`
+* **Scientific strategy and identification big picture** — :doc:`explanation/identification/identification_strategy_big_picture`
 * **Look up a contract** — :doc:`reference/index`
 * **Check the evidence** — :doc:`evidence/index`
 * **Develop and maintain** — :doc:`maintainers/index`
