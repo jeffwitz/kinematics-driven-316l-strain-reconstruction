@@ -14,7 +14,7 @@
     "source": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
     "state_count": 8
   },
-  "method": "N0/N1/N2 nuisance projection after wrap-free DIC transfer and registered corner whitening",
+  "method": "N0/N1/N2: wrap-free DIC transfer -> nuisance projection -> registered corner whitening",
   "no_forward_or_finite_difference": true,
   "noise": {
     "dtype": "float32",

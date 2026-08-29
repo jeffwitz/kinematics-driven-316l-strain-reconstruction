@@ -18,7 +18,7 @@
             ]
           },
           "condition_number": 34007581.03173004,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7398400262205241,
             0.999999232739109,
             0.9999999999999994,
@@ -83,7 +83,7 @@
             ]
           },
           "condition_number": 9373763.441373313,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.5418646728555978,
             0.9999976237050026,
             0.9999999999999939,
@@ -148,7 +148,7 @@
             ]
           },
           "condition_number": 2268026.2760042935,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.5951421642583491,
             0.999963411377834,
             0.9999999999998843,
@@ -213,7 +213,7 @@
             ]
           },
           "condition_number": 1293257.440881263,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.6622187434366476,
             0.9999421658063122,
             0.999999999999604,
@@ -278,7 +278,7 @@
             ]
           },
           "condition_number": 399076.20412011526,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.5944342866812555,
             0.9999034619929253,
             0.9999999999962675,
@@ -343,7 +343,7 @@
             ]
           },
           "condition_number": 156863.10573753176,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8661064626513618,
             0.9999130200556655,
             0.999999999964801,
@@ -408,7 +408,7 @@
             ]
           },
           "condition_number": 95381.90139820494,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9644229623512989,
             0.9998546330488993,
             0.9999999998939928,
@@ -473,7 +473,7 @@
             ]
           },
           "condition_number": 64383.89736500817,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9796773397192118,
             0.9997344049526189,
             0.9999999997636647,
@@ -525,7 +525,7 @@
       ],
       "full": {
         "condition_number": 64383.89736500817,
-        "cumulative_information": [
+        "cumulative_gram_energy_fraction": [
           0.9796773397192118,
           0.9997344049526189,
           0.9999999997636647,
@@ -575,7 +575,7 @@
       "per_state": [
         {
           "condition_number": 34007668.28037612,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.739840026220524,
             0.999999232739109,
             0.9999999999999994,
@@ -631,7 +631,7 @@
         },
         {
           "condition_number": 8292533.768579483,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7276475302501324,
             0.9999963266871209,
             0.9999999999999893,
@@ -687,7 +687,7 @@
         },
         {
           "condition_number": 2282704.613787366,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.6224716979176333,
             0.9999544726386478,
             0.9999999999998805,
@@ -743,7 +743,7 @@
         },
         {
           "condition_number": 1153171.6503360174,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.73785863293208,
             0.9999223484067681,
             0.9999999999994452,
@@ -799,7 +799,7 @@
         },
         {
           "condition_number": 334237.1177253905,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.5493114161961035,
             0.9998912631273692,
             0.9999999999950829,
@@ -855,7 +855,7 @@
         },
         {
           "condition_number": 188793.43393741164,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.93430816813627,
             0.9999148446093199,
             0.9999999999737871,
@@ -911,7 +911,7 @@
         },
         {
           "condition_number": 96774.04160574429,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.986493441578617,
             0.9998478002474024,
             0.9999999998946641,
@@ -967,7 +967,7 @@
         },
         {
           "condition_number": 60529.527897252716,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.99096192054636,
             0.9996497438567294,
             0.999999999729528,
@@ -1180,7 +1180,7 @@
         "interpretation": "geometric subset summaries; no temporal covariance or statistical optimality claim"
       }
     },
-    "wrap_free_dicom_surrogate": {
+    "wrap_free_dic_surrogate": {
       "cumulative": [
         {
           "angles_to_full_cumulative_subspace_deg": {
@@ -1198,7 +1198,7 @@
             ]
           },
           "condition_number": 18251926.618949767,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8203471626889071,
             0.9999985414601429,
             0.9999999999999977,
@@ -1263,7 +1263,7 @@
             ]
           },
           "condition_number": 7552929.937462736,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8550362810325866,
             0.9999980190241176,
             0.999999999999985,
@@ -1328,7 +1328,7 @@
             ]
           },
           "condition_number": 2249247.82830473,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7157274967914801,
             0.9999927363313537,
             0.9999999999998586,
@@ -1393,7 +1393,7 @@
             ]
           },
           "condition_number": 1178554.3611085634,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7301896724862506,
             0.9999772478015038,
             0.9999999999994744,
@@ -1458,7 +1458,7 @@
             ]
           },
           "condition_number": 296366.1236612273,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7417764423092468,
             0.9999097492097732,
             0.9999999999915546,
@@ -1523,7 +1523,7 @@
             ]
           },
           "condition_number": 133068.8437839111,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9438981678774654,
             0.9998937189668455,
             0.9999999999466945,
@@ -1588,7 +1588,7 @@
             ]
           },
           "condition_number": 52099.455356402876,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9688333843869853,
             0.9995841060159785,
             0.9999999996430703,
@@ -1653,7 +1653,7 @@
             ]
           },
           "condition_number": 38269.25323430309,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9764576032621843,
             0.9989970344681972,
             0.9999999993332648,
@@ -1705,7 +1705,7 @@
       ],
       "full": {
         "condition_number": 38269.25323430309,
-        "cumulative_information": [
+        "cumulative_gram_energy_fraction": [
           0.9764576032621843,
           0.9989970344681972,
           0.9999999993332648,
@@ -1755,7 +1755,7 @@
       "per_state": [
         {
           "condition_number": 18251918.56015672,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8203471626889065,
             0.9999985414601429,
             0.9999999999999977,
@@ -1811,7 +1811,7 @@
         },
         {
           "condition_number": 8353022.48009855,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8850877530210621,
             0.9999982842098556,
             0.9999999999999873,
@@ -1867,7 +1867,7 @@
         },
         {
           "condition_number": 2751459.35797544,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7560429202859049,
             0.9999962991638254,
             0.9999999999999001,
@@ -1923,7 +1923,7 @@
         },
         {
           "condition_number": 1615208.9827850407,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7567278574742857,
             0.9999863582518044,
             0.9999999999997099,
@@ -1979,7 +1979,7 @@
         },
         {
           "condition_number": 244432.48964118905,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9376239614689866,
             0.9998980015177965,
             0.9999999999843069,
@@ -2035,7 +2035,7 @@
         },
         {
           "condition_number": 137224.32483586413,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9750090436471909,
             0.9999355118801001,
             0.9999999999482219,
@@ -2091,7 +2091,7 @@
         },
         {
           "condition_number": 47036.24681018735,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9827789123057795,
             0.999592240425253,
             0.9999999995557879,
@@ -2147,7 +2147,7 @@
         },
         {
           "condition_number": 35488.32148855945,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9847423181292861,
             0.9987652411329992,
             0.9999999992180991,
@@ -2389,7 +2389,7 @@
     "source": "validation/reference_data/p0043_experimental_raw_femu_m20_v1/fields.npz",
     "state_count": 8
   },
-  "method": "per-state and cumulative SVD/Fisher analysis of archived P43 FEMU Jacobians",
+  "method": "per-state and cumulative SVD/sensitivity-Gram analysis of archived P43 FEMU Jacobians",
   "no_forward_or_finite_difference": true,
   "noise_and_observation": {
     "noise_sha256": "82247ccdbcbccfd31b270dac67e3a717b8e7070c701459ee68abdb790665597b",
@@ -2416,7 +2416,7 @@
             ]
           },
           "condition_number": 1356655420.0348349,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9987230343471675,
             0.9999999993434857,
             1.0,
@@ -2481,7 +2481,7 @@
             ]
           },
           "condition_number": 379233711.48290145,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.996627754896473,
             0.9999999696435226,
             1.0,
@@ -2546,7 +2546,7 @@
             ]
           },
           "condition_number": 2026680.49057736,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8563182423948428,
             0.9999887107838367,
             0.9999999999997915,
@@ -2611,7 +2611,7 @@
             ]
           },
           "condition_number": 646710.1887246273,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8040962086301245,
             0.9999553110884467,
             0.9999999999980774,
@@ -2676,7 +2676,7 @@
             ]
           },
           "condition_number": 132332.26678229927,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8809306458617726,
             0.9998542875546632,
             0.9999999999496951,
@@ -2741,7 +2741,7 @@
             ]
           },
           "condition_number": 35641.33050052958,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9429046433788899,
             0.9996183879426944,
             0.9999999992577333,
@@ -2806,7 +2806,7 @@
             ]
           },
           "condition_number": 14143.955052252295,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9723314070950165,
             0.9992479696242551,
             0.9999999951395936,
@@ -2871,7 +2871,7 @@
             ]
           },
           "condition_number": 9696.574333537807,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9806558017557143,
             0.9987208331603854,
             0.9999999895701048,
@@ -2923,7 +2923,7 @@
       ],
       "full": {
         "condition_number": 9696.574333537807,
-        "cumulative_information": [
+        "cumulative_gram_energy_fraction": [
           0.9806558017557143,
           0.9987208331603854,
           0.9999999895701048,
@@ -2973,7 +2973,7 @@
       "per_state": [
         {
           "condition_number": 1356657484.3060255,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9987230343471675,
             0.9999999993434857,
             1.0,
@@ -3029,7 +3029,7 @@
         },
         {
           "condition_number": 381977133.226898,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9964352443452009,
             0.9999999681368825,
             1.0,
@@ -3085,7 +3085,7 @@
         },
         {
           "condition_number": 1843264.5204248505,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8333167129557005,
             0.9999872134827293,
             0.9999999999997546,
@@ -3141,7 +3141,7 @@
         },
         {
           "condition_number": 456928.4654396727,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.7756395780272404,
             0.9999213662989346,
             0.9999999999962849,
@@ -3197,7 +3197,7 @@
         },
         {
           "condition_number": 123512.54294172153,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9569281095612493,
             0.9998763609036689,
             0.9999999999372726,
@@ -3253,7 +3253,7 @@
         },
         {
           "condition_number": 37186.98279722169,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9768608441287462,
             0.9995804392228641,
             0.9999999992935998,
@@ -3309,7 +3309,7 @@
         },
         {
           "condition_number": 13283.350953616018,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9876189566519543,
             0.9991348045003206,
             0.9999999944027576,
@@ -3365,7 +3365,7 @@
         },
         {
           "condition_number": 8651.685297635773,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9904121976044983,
             0.9983098290503484,
             0.9999999867683333,
@@ -3578,7 +3578,7 @@
         "interpretation": "geometric subset summaries; no temporal covariance or statistical optimality claim"
       }
     },
-    "wrap_free_dicom_surrogate": {
+    "wrap_free_dic_surrogate": {
       "cumulative": [
         {
           "angles_to_full_cumulative_subspace_deg": {
@@ -3596,7 +3596,7 @@
             ]
           },
           "condition_number": 2549486912.241,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9995696970374337,
             0.9999999997551918,
             1.0,
@@ -3661,7 +3661,7 @@
             ]
           },
           "condition_number": 707387310.2637064,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9965334904748563,
             0.9999999756749949,
             1.0,
@@ -3726,7 +3726,7 @@
             ]
           },
           "condition_number": 1563424.2633809634,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9176760937147035,
             0.9999757418730731,
             0.9999999999996245,
@@ -3791,7 +3791,7 @@
             ]
           },
           "condition_number": 510810.2583761457,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8683888889782,
             0.9999174347571204,
             0.999999999996672,
@@ -3856,7 +3856,7 @@
             ]
           },
           "condition_number": 114854.6542259798,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8681939454184701,
             0.9998430113933655,
             0.9999999999341858,
@@ -3921,7 +3921,7 @@
             ]
           },
           "condition_number": 42326.6759718596,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9461103784564101,
             0.9994403752223769,
             0.9999999994719032,
@@ -3986,7 +3986,7 @@
             ]
           },
           "condition_number": 16966.438882752474,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.966923351865554,
             0.9979630914447398,
             0.9999999966409949,
@@ -4051,7 +4051,7 @@
             ]
           },
           "condition_number": 10561.625221767237,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9767622255292491,
             0.9956358336151694,
             0.9999999912435645,
@@ -4103,7 +4103,7 @@
       ],
       "full": {
         "condition_number": 10561.625221767237,
-        "cumulative_information": [
+        "cumulative_gram_energy_fraction": [
           0.9767622255292491,
           0.9956358336151694,
           0.9999999912435645,
@@ -4153,7 +4153,7 @@
       "per_state": [
         {
           "condition_number": 2549482062.289087,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9995696970374337,
             0.9999999997551918,
             1.0,
@@ -4209,7 +4209,7 @@
         },
         {
           "condition_number": 1068361263.7979809,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9963227707045572,
             0.9999999754840415,
             1.0,
@@ -4265,7 +4265,7 @@
         },
         {
           "condition_number": 1444100.7033100228,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9414571005033672,
             0.9999715118072185,
             0.9999999999995485,
@@ -4321,7 +4321,7 @@
         },
         {
           "condition_number": 1400103.7337609995,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8005198238572289,
             0.9998640297247551,
             0.9999999999995917,
@@ -4377,7 +4377,7 @@
         },
         {
           "condition_number": 191778.06531250253,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.8943371103146788,
             0.9999732020165208,
             0.9999999999756833,
@@ -4433,7 +4433,7 @@
         },
         {
           "condition_number": 140025.04369994486,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9762749775536337,
             0.9996554383321037,
             0.9999999999502078,
@@ -4489,7 +4489,7 @@
         },
         {
           "condition_number": 17212.207726362933,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9850928774298248,
             0.998769897408109,
             0.9999999966749054,
@@ -4545,7 +4545,7 @@
         },
         {
           "condition_number": 10335.162710949067,
-          "cumulative_information": [
+          "cumulative_gram_energy_fraction": [
             0.9914619293585392,
             0.9976565538850151,
             0.9999999907180034,

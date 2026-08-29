@@ -37,6 +37,10 @@ The hydrated payload is `(3600, 3100, 2)` `float32`.
 **Noise conclusion:** structured bias is present, but no tested nuisance
 projection simultaneously provides zero bias and unit-scale modal variance.
 
+The nuisance order used by the analysis is explicitly
+`wrap-free DIC transfer -> declared nuisance projection -> registered corner
+whitener`.  The projection is not applied after whitening.
+
 ## 3. Temporal information
 
 The archived final M20 wrap-free surrogate has singular values
@@ -46,9 +50,11 @@ The archived final M20 wrap-free surrogate has singular values
 - The first two directions dominate early and transition states.
 - The `Q+b`-like third direction grows mainly in the later states; the fourth
   remains effectively null.
-- The one-based frame subset `{6, 7, 8}` retains about 98.1% of the full Fisher
-  trace and has a rank-3 angle of about `0.001°` to the full set. This is a
-  geometric subset result, not a temporal statistical optimum.
+- The one-based frame subset `{6, 7, 8}` retains about 98.1% of the full
+  sensitivity-Gram trace under the registered wrap-free/corner-whitened
+  surrogate and has a rank-3 angle of about `0.001°` to the full set. This is a
+  geometric subset result, not experimental Fisher information or a temporal
+  statistical optimum.
 - Prior-to-final frame checks show strong local-linearity error (relative
   errors about `1.3–5.0`); late-frame correlation improves, reaching about
   `0.95` for the final state. Rank-3 subspaces remain stable while individual
@@ -102,3 +108,34 @@ experimental SNR. Therefore a boundary-only FEMU should not be started yet.
 The next defensible step is to obtain a declared observation-noise model with
 independent spatial/temporal validation, then revisit detectability before any
 expensive identification.
+
+## 9. Sensitivity-subspace noise calibration
+
+The new offline analysis estimates noise directly in the rank-3 subspace of the
+N2 affine-cleaned, wrap-free final M20 sensitivity, without applying the
+corner whitener.  Calibration uses P43 solve-neighbourhood windows excluding
+the core; validation uses disjoint core windows and an independent spatial
+split.  The two temporal constructions are deliberately only brackets:
+T0 uses distinct windows for the eight states, while T1 repeats one window as a
+common-mode extreme.
+
+- For full8/T0, core validation has modal mean norm `0.448`, covariance
+  eigenvalues `0.717–1.323`; the disjoint split has mean norm `0.079` and
+  eigenvalues `0.780–1.500`.  This is an O(1) spatial calibration, not a
+  claim of a qualified experimental covariance.
+- For full8/T1, the corresponding split eigenvalues are `0.780–1.997`, and
+  the temporal construction changes the conditional singular values from
+  `(0.01055, 0.00242, 0.000151)` (T0) to
+  `(0.00685, 0.00113, 0.000111)` (T1).  The absolute scale therefore depends
+  materially on the unknown temporal covariance.
+- The late3 states `{6, 7, 8}` show the same conclusion: their rank-3
+  geometric sensitivity is retained, but T0/T1 still produce different
+  conditional scales.  The first-mode local signal scale for the archived
+  prior-to-final parameter displacement is only `6.57e-4` (T0 full8) or
+  `2.41e-4` (T1 full8) in the corresponding whitened modal coordinates.
+
+**Subspace-noise verdict: B.**  A local 3x3 spatial covariance is provisionally
+usable for a declared surrogate, but temporal covariance remains the blocker
+for an absolute experimental likelihood.  Rank-3 remains the geometric search
+subspace; an experimentally detectable rank is not fixed, and no boundary-only
+FEMU should be launched on this evidence alone.

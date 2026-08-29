@@ -2,7 +2,7 @@
 """Offline temporal information analysis of archived P43 FEMU Jacobians.
 
 The eight scored states are decomposed from the archived displacement
-Jacobians.  Per-state and cumulative SVD/Fisher summaries are computed for
+Jacobians.  Per-state and cumulative SVD/sensitivity-Gram summaries are computed for
 the raw displacement sensitivity and for the registered wrap-free DIC
 surrogate.  This is algebra on archived arrays only: no forward solve or
 finite-difference sensitivity is performed.
@@ -110,7 +110,7 @@ def _svd_summary(matrix: np.ndarray) -> dict[str, object]:
         "singular_values": singular.tolist(),
         "normalised": (singular / singular[0]).tolist(),
         "condition_number": float(singular[0] / singular[-1]),
-        "cumulative_information": cumulative.tolist(),
+        "cumulative_gram_energy_fraction": cumulative.tolist(),
         "right_singular_vectors": vectors.tolist(),
         "rank_above_threshold": {
             str(level): int(np.count_nonzero(singular / singular[0] >= level))
@@ -119,9 +119,9 @@ def _svd_summary(matrix: np.ndarray) -> dict[str, object]:
     }
 
 
-def _fisher_summary(matrices: list[np.ndarray]) -> dict[str, object]:
-    fisher = sum((matrix.T @ matrix for matrix in matrices), np.zeros((PARAMETERS, PARAMETERS)))
-    eigenvalues, vectors = np.linalg.eigh(fisher)
+def _gram_summary(matrices: list[np.ndarray]) -> dict[str, object]:
+    gram = sum((matrix.T @ matrix for matrix in matrices), np.zeros((PARAMETERS, PARAMETERS)))
+    eigenvalues, vectors = np.linalg.eigh(gram)
     order = np.argsort(eigenvalues)[::-1]
     eigenvalues = np.maximum(eigenvalues[order], 0.0)
     vectors = vectors[:, order]
@@ -131,9 +131,9 @@ def _fisher_summary(matrices: list[np.ndarray]) -> dict[str, object]:
         "singular_values": singular.tolist(),
         "normalised": (singular / singular[0]).tolist(),
         "condition_number": float(singular[0] / singular[-1]) if singular[-1] else None,
-        "cumulative_information": cumulative.tolist(),
+        "cumulative_gram_energy_fraction": cumulative.tolist(),
         "right_singular_vectors": vectors.tolist(),
-        "trace": float(np.trace(fisher)),
+        "trace": float(np.trace(gram)),
         "smallest_eigenvalue": float(eigenvalues[-1]),
     }
 
@@ -150,12 +150,12 @@ def _subset_summary(matrices: list[np.ndarray], full_vectors: np.ndarray) -> dic
     for size in range(1, STATES + 1):
         candidates = []
         for subset in itertools.combinations(range(STATES), size):
-            summary = _fisher_summary([matrices[index] for index in subset])
+            summary = _gram_summary([matrices[index] for index in subset])
             vectors = np.asarray(summary["right_singular_vectors"], dtype=np.float64)
             rank3_angle = float(
                 np.max(np.degrees(subspace_angles(vectors[:, :3], full_vectors[:, :3])))
             )
-            trace_fraction = float(summary["trace"] / _fisher_summary(matrices)["trace"])
+            trace_fraction = float(summary["trace"] / _gram_summary(matrices)["trace"])
             candidates.append((trace_fraction, rank3_angle, subset, summary))
         best_trace = max(candidates, key=lambda item: item[0])
         best_angle = min(candidates, key=lambda item: item[1])
@@ -181,11 +181,11 @@ def _analyse_family(matrices: list[np.ndarray]) -> dict[str, object]:
     per_state = [_svd_summary(matrix) for matrix in matrices]
     cumulative: list[dict[str, object]] = []
     current: list[np.ndarray] = []
-    full = _fisher_summary(matrices)
+    full = _gram_summary(matrices)
     full_vectors = np.asarray(full["right_singular_vectors"], dtype=np.float64)
     for state, matrix in enumerate(matrices):
         current.append(matrix)
-        summary = _fisher_summary(current)
+        summary = _gram_summary(current)
         vectors = np.asarray(summary["right_singular_vectors"], dtype=np.float64)
         summary["through_state"] = state + 1
         summary["source_scored_state_index"] = SCORED_STATE_INDICES[state]
@@ -213,7 +213,9 @@ def main() -> int:
     final_raw, final_observed = _state_matrices(final, transfer, whitener)
     report = {
         "schema_version": 1,
-        "method": "per-state and cumulative SVD/Fisher analysis of archived P43 FEMU Jacobians",
+        "method": (
+            "per-state and cumulative SVD/sensitivity-Gram analysis of archived P43 FEMU Jacobians"
+        ),
         "no_forward_or_finite_difference": True,
         "jacobian": {
             "source": str(FIELDS_PATH.relative_to(ROOT)),
@@ -231,11 +233,11 @@ def main() -> int:
         },
         "prior": {
             "raw_mechanical": _analyse_family(prior_raw),
-            "wrap_free_dicom_surrogate": _analyse_family(prior_observed),
+            "wrap_free_dic_surrogate": _analyse_family(prior_observed),
         },
         "final": {
             "raw_mechanical": _analyse_family(final_raw),
-            "wrap_free_dicom_surrogate": _analyse_family(final_observed),
+            "wrap_free_dic_surrogate": _analyse_family(final_observed),
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

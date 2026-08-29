@@ -3,9 +3,9 @@
 
 The script applies the same declared nuisance projection to repeat-frame
 noise and archived displacement sensitivities.  It compares no projection
-(N0), translation removal (N1), and affine removal (N2) after the registered
-wrap-free transfer and corner whitener.  No mechanical solve or finite
-difference is performed.
+(N0), translation removal (N1), and affine removal (N2) in the exact order
+wrap-free transfer -> nuisance projection -> registered corner whitener.
+No mechanical solve or finite difference is performed.
 """
 
 from __future__ import annotations
@@ -224,8 +224,7 @@ def _main() -> int:
     report = {
         "schema_version": 1,
         "method": (
-            "N0/N1/N2 nuisance projection after wrap-free DIC transfer "
-            "and registered corner whitening"
+            "N0/N1/N2: wrap-free DIC transfer -> nuisance projection -> registered corner whitening"
         ),
         "no_forward_or_finite_difference": True,
         "noise": {
