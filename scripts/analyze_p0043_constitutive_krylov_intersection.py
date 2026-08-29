@@ -155,7 +155,6 @@ def main() -> int:
         verdict_text = "the observable-matched Krylov fixture produces no meaningful correction"
     else:
         eta3_max = max(item["raw"]["eta3"] for item in eta_results.values())
-        final_eta3 = final_eta["eta3"]
         smallest_angle = min(
             angle
             for item in angles.values()
@@ -167,7 +166,7 @@ def main() -> int:
                 "the current SRIX tangent has substantial local geometric overlap "
                 "with the fitted Krylov correction"
             )
-        elif eta3_max > 0.2 or final_eta3 > 0.2:
+        elif eta3_max > 0.2 or smallest_angle < 45.0:
             verdict = "B"
             verdict_text = (
                 "SRIX explains part of the correction, but the remaining/final "
