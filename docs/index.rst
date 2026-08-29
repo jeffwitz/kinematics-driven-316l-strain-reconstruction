@@ -26,13 +26,18 @@ Choose what you need
 * **Learn by example** — :doc:`tutorials/index`
 * **Use the software** — :doc:`how-to/index`
 * **Understand the science** — :doc:`explanation/index`
-* **Scientific strategy and identification big picture** — :doc:`explanation/identification/identification_strategy_big_picture`
+* **Methodological landscape** — :doc:`explanation/methodological_landscape`
 * **Look up a contract** — :doc:`reference/index`
 * **Check the evidence** — :doc:`evidence/index`
 * **Develop and maintain** — :doc:`maintainers/index`
 
 Recommended journeys
 --------------------
+
+**Understand the methodological landscape**
+   :doc:`explanation/methodological_landscape` →
+   :doc:`explanation/spectral_mechanics/plastic_inverse_reuse` →
+   :doc:`explanation/identification/femu_identification`
 
 **First reconstruction**
    :doc:`tutorials/first_reconstruction` →
@@ -49,11 +54,6 @@ Recommended journeys
    :doc:`explanation/spectral_mechanics/full_dirichlet_formulation` →
    :doc:`explanation/spectral_mechanics/solver_pipeline` →
    :doc:`explanation/spectral_mechanics/tet2_newton_gmres`
-
-**Understand the methodological landscape**
-   :doc:`explanation/methodological_landscape` →
-   :doc:`explanation/spectral_mechanics/plastic_inverse_reuse` →
-   :doc:`explanation/identification/femu_identification`
 
 **Find a scientific result**
    :doc:`evidence/index` →

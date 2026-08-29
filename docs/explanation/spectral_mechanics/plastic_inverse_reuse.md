@@ -37,8 +37,11 @@ A^T:g_y\longmapsto g_{\varepsilon_p}.
 ```
 
 Here $y$ can be a displacement, strain or declared observed field after the
-appropriate observation map. The `A` solve is linear around the registered
-reference state; it is not a replacement for the nonlinear constitutive loop.
+appropriate observation map. For the qualified full-field gate, `A` is the
+linear elastic response to an eigenstrain/plastic-strain perturbation under
+the registered homogeneous-elasticity and full-Dirichlet treatment. It is
+distinct from the nonlinear constitutive Newton loop and from a generic
+tangent of an arbitrary SRIX state.
 
 ## Why the adjoint matters
 
