@@ -57,7 +57,9 @@ experimental “whitened” Jacobian remains a scalar consistency control: scala
 rescaling changes singular-value magnitudes but not $V$ or normalised singular
 values, so it is not a substitute for this spatial chain.
 
-The resulting full-chain SVD retains three directions at the $10^{-3}$
-threshold for the experimental M20 final point and leaves the fourth
-opposite-sign $Q-b$ direction effectively null.  Complete values and angles
-are in `validation/reference_data/p0043_parametric_dic_weighting_v1/report.json`.
+The periodic and wrap-free spectral surrogate SVDs both retain three
+directions at the $10^{-3}$ threshold for the experimental M20 final point and
+leave the fourth opposite-sign $Q-b$ direction effectively null.  The
+wrap-free full variant has absolute singular values
+`0.336070, 0.051059, 0.010771, 0.000008782`; complete values and angles are
+in `validation/reference_data/p0043_parametric_dic_weighting_v1/report.json`.

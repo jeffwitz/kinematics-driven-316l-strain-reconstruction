@@ -92,6 +92,8 @@ def _transform(
     matrix: np.ndarray,
     transfer: DICSpectralTransfer,
     whitener: DICSpectralWhitener | None,
+    *,
+    wrap_free: bool,
 ) -> np.ndarray:
     rows = matrix.shape[0]
     states = 8
@@ -105,7 +107,11 @@ def _transform(
     for state in range(states):
         for parameter in range(matrix.shape[1]):
             field = fields[state, ..., parameter]
-            transformed = transfer.apply(field)
+            transformed = (
+                transfer.apply_without_wrap(field)
+                if wrap_free
+                else transfer.apply(field)
+            )
             if whitener is not None:
                 transformed = whitener.apply(transformed)
             output[state, ..., parameter] = transformed
@@ -117,6 +123,14 @@ def _svd(matrix: np.ndarray) -> dict[str, object]:
     vectors = vh.T
     normalised = singular / singular[0]
     cumulative = np.cumsum(singular**2) / np.sum(singular**2)
+
+    def relative_amplitude(delta: float) -> float | None:
+        # exp(delta)-1 is not useful once it overflows; retain the log-scale
+        # one-sigma quantity in that case instead of emitting a warning.
+        if delta > np.log(np.finfo(np.float64).max):
+            return None
+        return float(np.expm1(delta))
+
     return {
         "shape": list(matrix.shape),
         "singular_values": singular.tolist(),
@@ -127,6 +141,14 @@ def _svd(matrix: np.ndarray) -> dict[str, object]:
             for level in (0.90, 0.95, 0.99)
         },
         "condition_number": float(singular[0] / singular[-1]),
+        "one_sigma_log_amplitude": (1.0 / singular).tolist(),
+        "three_sigma_log_amplitude": (3.0 / singular).tolist(),
+        "one_sigma_relative_amplitude": [
+            relative_amplitude(float(value)) for value in (1.0 / singular)
+        ],
+        "three_sigma_relative_amplitude": [
+            relative_amplitude(float(value)) for value in (3.0 / singular)
+        ],
         "rank_above_threshold": {
             str(level): int(np.count_nonzero(normalised >= level))
             for level in (1.0e-2, 1.0e-3, 1.0e-4)
@@ -149,10 +171,15 @@ def main() -> int:
 
     transfer = DICSpectralTransfer.from_sinusoidal_csv(TRANSFER)
     report: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "method": "offline archived displacement Jacobian post-processing",
         "no_forward_or_finite_difference": True,
-        "transfer": str(TRANSFER.relative_to(ROOT)),
+        "transfer": {
+            "source": str(TRANSFER.relative_to(ROOT)),
+            "periodic_variant": "DICSpectralTransfer.apply",
+            "wrap_free_variant": "DICSpectralTransfer.apply_without_wrap",
+            "interpretation": "spectral DIC surrogates; not a new image-level DIC run",
+        },
         "whitener": {
             "source": str(NOISE.relative_to(ROOT)),
             "source_shape": list(np.load(NOISE, mmap_mode="r", allow_pickle=False).shape),
@@ -177,14 +204,18 @@ def main() -> int:
     for name, (path, key) in CASES.items():
         with np.load(path, allow_pickle=False) as archive:
             raw = np.asarray(archive[key], dtype=np.float64)
-        transfer_only = _transform(raw, transfer, None)
+        transfer_only = _transform(raw, transfer, None, wrap_free=False)
         side = round((raw.shape[0] / 16) ** 0.5)
         whitener = whiteners.setdefault(side, _whitener((side, side, 2)))
-        full = _transform(raw, transfer, whitener)
+        full = _transform(raw, transfer, whitener, wrap_free=False)
+        wrap_free_transfer = _transform(raw, transfer, None, wrap_free=True)
+        wrap_free_full = _transform(raw, transfer, whitener, wrap_free=True)
         levels = {
             "raw_mechanical": _svd(raw),
-            "dic_transfer_only": _svd(transfer_only),
-            "dic_transfer_plus_spatial_whitening": _svd(full),
+            "dic_periodic_transfer": _svd(transfer_only),
+            "dic_periodic_transfer_plus_spatial_whitening": _svd(full),
+            "dic_wrap_free_transfer": _svd(wrap_free_transfer),
+            "dic_wrap_free_transfer_plus_spatial_whitening": _svd(wrap_free_full),
         }
         report["cases"][name] = {  # type: ignore[index]
             "source": str(path.relative_to(ROOT)),
@@ -200,20 +231,33 @@ def main() -> int:
 
     for name, vectors in right_vectors.items():
         report["angles"][name] = {  # type: ignore[index]
-            "raw_to_transfer_only": _angles(
-                vectors["raw_mechanical"], vectors["dic_transfer_only"]
+            "raw_to_periodic_transfer": _angles(
+                vectors["raw_mechanical"], vectors["dic_periodic_transfer"]
             ),
-            "transfer_only_to_full": _angles(
-                vectors["dic_transfer_only"], vectors["dic_transfer_plus_spatial_whitening"]
+            "periodic_transfer_to_periodic_full": _angles(
+                vectors["dic_periodic_transfer"],
+                vectors["dic_periodic_transfer_plus_spatial_whitening"],
             ),
-            "raw_to_full": _angles(
+            "raw_to_periodic_full": _angles(
                 vectors["raw_mechanical"],
-                vectors["dic_transfer_plus_spatial_whitening"],
+                vectors["dic_periodic_transfer_plus_spatial_whitening"],
+            ),
+            "periodic_to_wrap_free_transfer": _angles(
+                vectors["dic_periodic_transfer"],
+                vectors["dic_wrap_free_transfer"],
+            ),
+            "periodic_full_to_wrap_free_full": _angles(
+                vectors["dic_periodic_transfer_plus_spatial_whitening"],
+                vectors["dic_wrap_free_transfer_plus_spatial_whitening"],
+            ),
+            "raw_to_wrap_free_full": _angles(
+                vectors["raw_mechanical"],
+                vectors["dic_wrap_free_transfer_plus_spatial_whitening"],
             ),
         }
 
     final_vectors = {
-        name: vectors["dic_transfer_plus_spatial_whitening"]
+        name: vectors["dic_wrap_free_transfer_plus_spatial_whitening"]
         for name, vectors in right_vectors.items()
     }
     for first, second in (
@@ -224,6 +268,23 @@ def main() -> int:
         report["angles"][f"{first}_vs_{second}"] = _angles(  # type: ignore[index]
             final_vectors[first], final_vectors[second]
         )
+
+    report["angles"]["experimental_raw_m20_prior_vs_final_periodic_full"] = _angles(
+        right_vectors["experimental_raw_m20_prior"][
+            "dic_periodic_transfer_plus_spatial_whitening"
+        ],
+        right_vectors["experimental_raw_m20_final"][
+            "dic_periodic_transfer_plus_spatial_whitening"
+        ],
+    )
+    report["angles"]["experimental_raw_m20_prior_vs_final_wrap_free_full"] = _angles(
+        right_vectors["experimental_raw_m20_prior"][
+            "dic_wrap_free_transfer_plus_spatial_whitening"
+        ],
+        right_vectors["experimental_raw_m20_final"][
+            "dic_wrap_free_transfer_plus_spatial_whitening"
+        ],
+    )
 
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(

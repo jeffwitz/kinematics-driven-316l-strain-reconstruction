@@ -149,10 +149,11 @@ The archived raw and scalar-whitened controls have almost identical spectra
 because the recorded whitening is scalar.  Multiplying a Jacobian by a scalar
 changes singular-value magnitudes but not $V$ or normalised singular values;
 that agreement is therefore an algebraic consistency check, not an independent
-validation of the spatial DIC chain.  The now-registered offline full-chain
-calculation retains three directions above the $10^{-3}$ threshold at the
-experimental M20 final point, while the opposite-sign $Q-b$ direction remains
-effectively null; it does not establish experimental calibration.
+validation of the spatial DIC chain.  The now-registered offline periodic and
+wrap-free spectral surrogates both retain three directions above the
+$10^{-3}$ threshold at the experimental M20 final point, while the
+opposite-sign $Q-b$ direction remains effectively null; they do not establish
+image-level DIC qualification or experimental calibration.
 
 Definitions and recorded values are collected in [SRIX parametric
 observability](srix_parametric_observability) and its [evidence

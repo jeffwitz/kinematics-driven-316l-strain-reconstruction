@@ -3603,11 +3603,11 @@
     },
     {
       "id": "E-SRIX-PARAM-OBS-006",
-      "question": "What does the registered DIC transfer and spatial whitener do to archived SRIX parameter sensitivities?",
+      "question": "What does the periodic spectral DIC surrogate do to archived SRIX parameter sensitivities?",
       "fidelity": "offline post-processing of archived displacement Jacobians; no forward or finite-difference calculation",
       "parameters": "theta=(tau0,R,Q,b) in log coordinates; 8 scored states; transfer CSV; canonical repeated-frame noise conversion; 256 windows with seed 42; one-node boundary support mask",
-      "status": "supported for the registered offline calculation; experimental calibration not claimed",
-      "conclusion": "For the experimental M20 final point, the normalised spectrum changes from (1, 0.143084, 0.016465, 0.00001553) before observation to (1, 0.050649, 0.007111, 0.000002408) after transfer and spatial whitening. Three directions remain above the 1e-3 threshold, while the opposite-sign Q-b direction remains effectively null; the raw-to-full rank-three principal angle is about 0.020 degrees.",
+      "status": "control surrogate; experimental calibration not claimed",
+      "conclusion": "For the experimental M20 final point, the periodic surrogate gives normalised spectrum (1, 0.050649, 0.007111, 0.000002408) after transfer and spatial whitening. Three directions remain above the 1e-3 threshold, but the periodic wrap changes the third-mode amplitude and is therefore retained only as an operator-sensitivity control.",
       "sources": [
         {
           "path": "validation/reference_data/p0043_parametric_dic_weighting_v1/report.json",
@@ -3624,6 +3624,24 @@
         {
           "path": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
           "role": "hydrated repeated-frame noise input"
+        }
+      ]
+    },
+    {
+      "id": "E-SRIX-PARAM-OBS-007",
+      "question": "What does the wrap-free spectral DIC surrogate do to archived SRIX parameter sensitivities?",
+      "fidelity": "offline post-processing of archived displacement Jacobians with the affine-preserving transfer variant; no forward or finite-difference calculation",
+      "parameters": "theta=(tau0,R,Q,b) in log coordinates; 8 scored states; same transfer CSV, canonical repeated-frame noise conversion, 256 windows with seed 42 and one-node boundary support mask",
+      "status": "supported for the registered offline surrogate; experimental calibration not claimed",
+      "conclusion": "For the experimental M20 final point, the wrap-free transfer plus spatial whitening gives normalised spectrum (1, 0.151930, 0.032049, 0.00002613) and absolute singular values (0.336070, 0.051059, 0.010771, 0.000008782). Three directions remain above the 1e-3 threshold; the fourth opposite-sign Q-b direction remains effectively null. The raw-to-full rank-three angle is about 0.0148 degrees. The third mode is mathematically non-null but requires a one-sigma log-coordinate scale of about 92.84 under this metric.",
+      "sources": [
+        {
+          "path": "validation/reference_data/p0043_parametric_dic_weighting_v1/report.json",
+          "role": "machine-readable offline wrap-free SVD report"
+        },
+        {
+          "path": "scripts/analyze_srix_parametric_dic_weighting.py",
+          "role": "reproducible offline post-processing script"
         }
       ]
     },

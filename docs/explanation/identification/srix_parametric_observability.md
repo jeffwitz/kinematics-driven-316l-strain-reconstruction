@@ -141,36 +141,65 @@ experimental uniqueness             not established
 316L parameter identification       not claimed
 ```
 
-The field-observability analysis remains a distinct prerequisite.  The full
-offline construction is recorded in
+The field-observability analysis remains a distinct prerequisite.  The offline
+periodic and wrap-free spectral surrogate constructions are recorded in
 `validation/reference_data/p0043_parametric_dic_weighting_v1/report.json`.
 It uses the registered conversion of the repeated-frame payload
 (`noise[:512,:512]` to canonical millimetres), 256 seeded windows, the
 one-node boundary support mask, and the archived sinusoidal transfer.  No
-forward or finite-difference calculation was performed.
+forward or finite-difference calculation was performed, and these are not new
+image-level DIC qualifications.
 
-For the experimental M20 final Jacobian, the three successive levels are:
+For the experimental M20 final Jacobian, the raw sensitivity and the two
+registered spectral DIC surrogates are:
 
 | Level | Normalised singular values | Condition number | Rank at $10^{-2}/10^{-3}/10^{-4}$ |
 |---|---|---:|---:|
 | raw displacement | `1, 0.143084, 0.016465, 0.00001553` | `6.44e4` | `3 / 3 / 3` |
-| DIC transfer only | `1, 0.045725, 0.005725, 0.000002047` | `4.88e5` | `2 / 3 / 3` |
-| transfer + spatial whitening | `1, 0.050649, 0.007111, 0.000002408` | `4.15e5` | `2 / 3 / 3` |
+| periodic spectral DIC surrogate | `1, 0.045725, 0.005725, 0.000002047` | `4.88e5` | `2 / 3 / 3` |
+| periodic surrogate + spatial whitening | `1, 0.050649, 0.007111, 0.000002408` | `4.15e5` | `2 / 3 / 3` |
+| wrap-free spectral DIC surrogate | `1, 0.070028, 0.012360, 0.00001045` | `9.57e4` | `3 / 3 / 3` |
+| wrap-free surrogate + spatial whitening | `1, 0.151930, 0.032049, 0.00002613` | `3.83e4` | `3 / 3 / 3` |
 
-The registered DIC chain therefore leaves a useful third direction at the
-$10^{-3}$ scale, but attenuates it substantially; the fourth opposite-sign
-$Q-b$ direction remains effectively null.  The full-chain rank-three
-subspace is close to the raw one (principal angle about $0.020^\circ$), while
-its leading one-dimensional direction rotates by about $1.75^\circ$.  At the
-prior point the full-chain spectrum is
-`1, 0.077415, 0.012622, 0.00001777`; this difference is a change of evaluation
-point, not a direct effect of the measured data vector.
+The periodic and wrap-free variants differ because the periodic FFT surrogate
+wraps the affine part of a crop across its boundary.  The wrap-free surrogate
+increases the third relative mode from `0.007111` to `0.032049`; the
+attenuation seen with the periodic operator is therefore not a stable claim
+about the observation itself.  Both variants leave the fourth opposite-sign
+$Q-b$ direction effectively null.  Their full rank-three angle is about
+$0.015^\circ$, while the rank-two angle is about $8.06^\circ$ and the
+rank-one angle about $0.99^\circ$.  These are spectral surrogates, not a new
+image-level DIC qualification.
 
-The synthetic M20 control has the same full-chain spectrum as the experimental
-prior because the archived displacement Jacobians coincide at that point.  The
-synthetic M100 control retains three directions above $10^{-3}$ and has full
-chain spectrum `1, 0.358349, 0.044036, 0.00012164`.  These controls do not
-authorise experimental calibration.
+For the preferred wrap-free full variant, the absolute singular values are
+`0.336070, 0.051059, 0.010771, 0.000008782`.  In whitened residual units,
+the local one- and three-sigma log-coordinate scales $1/\sigma_j$ and
+$3/\sigma_j$ are:
+
+| Mode | $1/\sigma_j$ | $3/\sigma_j$ |
+|---:|---:|---:|
+| 1 | `2.976` | `8.927` |
+| 2 | `19.585` | `58.755` |
+| 3 | `92.844` | `278.532` |
+| 4 | `113872.7` | `341618.2` |
+
+These are detectability scales, not confidence intervals or a claim about a
+physically plausible parameter range.  The third mode is mathematically
+non-null but requires a very large local log perturbation to produce a
+one-sigma signal under this registered metric.
+
+At the prior point, the wrap-free full spectrum is
+`1, 0.139006, 0.066843, 0.00009468`; prior-to-final wrap-free angles are
+about $23.66^\circ$ (rank 1), $1.39^\circ$ and $0.023^\circ$ (rank 2), and
+$0.276^\circ$ (rank 3).  The three-dimensional observable workspace is thus
+stable while its dominant internal directions move with the linearisation
+point.
+
+The synthetic M20 control has the same wrap-free full-chain spectrum as the
+experimental prior because the archived displacement Jacobians coincide at
+that point.  The synthetic M100 control retains three directions above
+$10^{-3}$ under the wrap-free variant.  These controls do not authorise
+experimental calibration.
 
 The exact key/shape/dtype inventory is recorded in
 {doc}`../../_audit/srix_parametric_fields_inventory`.
