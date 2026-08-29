@@ -117,8 +117,9 @@ kinematics + equilibrium + D >= 0
 still do not select a constitutive direction.
 ```
 
-Positive dissipation removes anti-physical directions, but the material law
-must still select a direction inside the admissible half-space.
+Positive dissipation removes anti-dissipative directions, but the material law
+must still select a direction inside the admissible half-space.  A dissipative
+direction can still be materially incorrect.
 
 ## From a history to a law hypothesis
 
@@ -139,10 +140,13 @@ Using the declared EBSD orientation and specimen-frame Schmid tensors, write
 =\sum_{\alpha=1}^{12}\Delta\gamma^\alpha P^\alpha.
 ```
 
-The unconstrained observable-projected increment has FCC representation error
+Under the currently registered EBSD orientation assignment, the
+observable-projected increment has FCC representation error
 $e_{\mathrm{FCC}}\simeq2\times10^{-12}$, effectively exact, whereas the raw
-field has $e_{\mathrm{FCC}}\simeq0.353$.  The observable correction is therefore
-in the FCC tensor span even though the unfiltered latent field is not.
+field has $e_{\mathrm{FCC}}\simeq0.353$.  The observable correction therefore
+lies in the local FCC tensor span even though the unfiltered latent field does
+not.  This is a geometric compatibility result under the registered mapping,
+not independent validation of the physical DIC--EBSD co-registration.
 
 Imposing thermodynamic sign compatibility system by system raises the recorded
 median error to about $0.546$ (represented share $\rho\simeq0.836$).  The

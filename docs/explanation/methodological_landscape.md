@@ -230,6 +230,7 @@ campaign history:
 | Branch | Revisit trigger |
 |---|---|
 | REGM | A demonstrated link between the equilibrium proxy and the measured observable |
+| DIC-driven dissipative reconstruction | Curated multi-case full-field data with independently supported registration, allowing reconstructed directions to be compared across experiments and against candidate constitutive laws |
 | Richer reduced bases | Observable-aware basis design or orthogonalisation |
 | TANN | Physically grounded parameterisation and curated multi-case data |
 | Nonlocal coupling | Curated localisation data showing a qualified local model is inadequate |
