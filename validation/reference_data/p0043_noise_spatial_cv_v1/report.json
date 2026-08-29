@@ -1,0 +1,2442 @@
+{
+  "method": "non-overlapping coarse tile spatial cross-validation",
+  "no_forward_or_finite_difference": true,
+  "noise_source": "validation/reference_data/dic_uncertainty_propagation_p0043_v1/centred_repeat_flow_pixels.npy",
+  "schema_version": 1,
+  "tile_shape_nominal_axis0_axis1": [
+    600,
+    620
+  ],
+  "tiles": {
+    "tile_0_0": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          0.00014957429434891815,
+          -0.00018747588634412173
+        ],
+        [
+          -2.353644442027677e-05,
+          6.471980074443684e-06
+        ],
+        [
+          -1.417408483595063e-05,
+          3.9190497450222706e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 1.3623478888833953e-05,
+        "uy": 1.5339795661184623e-05,
+        "vector": 2.0516054882978883e-05
+      },
+      "bounds_axis0_axis1": [
+        0,
+        600,
+        0,
+        620
+      ],
+      "energy_fraction_removed_by_affine": 0.992832021350261,
+      "energy_fraction_removed_by_translation": 0.9795473657413358,
+      "raw_rms": {
+        "ux": 0.00015103153508965833,
+        "uy": 0.0001894997237025059,
+        "vector": 0.00024232348188911682
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005844601270354688,
+            "low_frequency_fraction": 0.9941553987296453
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004361258187765449,
+            "low_frequency_fraction": 0.9956387418122346
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008172689408916467,
+            "low_frequency_fraction": 0.9918273105910835
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004818110191686986,
+            "low_frequency_fraction": 0.995181889808313
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008172689408916356,
+            "low_frequency_fraction": 0.9918273105910836
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004818110191686986,
+            "low_frequency_fraction": 0.995181889808313
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.092976496672171e-05,
+        "uy": 2.762132007729092e-05,
+        "vector": 3.4655337025837434e-05
+      }
+    },
+    "tile_0_1": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          0.00012450599417314898,
+          -0.0001259612803741907
+        ],
+        [
+          -2.001763034025221e-05,
+          -5.554182818968122e-06
+        ],
+        [
+          -1.2966716679978903e-05,
+          2.7066440502266216e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 8.775055205360396e-06,
+        "uy": 9.516480906743832e-06,
+        "vector": 1.2944690135555157e-05
+      },
+      "bounds_axis0_axis1": [
+        0,
+        600,
+        620,
+        1240
+      ],
+      "energy_fraction_removed_by_affine": 0.9947604984748074,
+      "energy_fraction_removed_by_translation": 0.9808290019107928,
+      "raw_rms": {
+        "ux": 0.00012557461920721508,
+        "uy": 0.00012732678934566365,
+        "vector": 0.0001788325928742056
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0024966180854206765,
+            "low_frequency_fraction": 0.9975033819145793
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0057648456912468005,
+            "low_frequency_fraction": 0.9942351543087532
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00476821270333605,
+            "low_frequency_fraction": 0.995231787296664
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0065142503210667835,
+            "low_frequency_fraction": 0.9934857496789332
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00476821270333605,
+            "low_frequency_fraction": 0.995231787296664
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0065142503210667835,
+            "low_frequency_fraction": 0.9934857496789332
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.6347550397306295e-05,
+        "uy": 1.8597503369250482e-05,
+        "vector": 2.4761048757307123e-05
+      }
+    },
+    "tile_0_2": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          0.00011582045938184822,
+          -5.952013867448956e-05
+        ],
+        [
+          -2.5826708881612993e-05,
+          -1.6662313442475927e-05
+        ],
+        [
+          -1.5434806400015852e-06,
+          3.461785582286383e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 8.931383009275735e-06,
+        "uy": 7.583254952932184e-06,
+        "vector": 1.1716456722898414e-05
+      },
+      "bounds_axis0_axis1": [
+        0,
+        600,
+        1240,
+        1860
+      ],
+      "energy_fraction_removed_by_affine": 0.9922930055847639,
+      "energy_fraction_removed_by_translation": 0.9520113754461489,
+      "raw_rms": {
+        "ux": 0.00011712398170499334,
+        "uy": 6.398251231762043e-05,
+        "vector": 0.000133460814372257
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0027801321627776154,
+            "low_frequency_fraction": 0.9972198678372224
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004137162214724488,
+            "low_frequency_fraction": 0.9958628377852755
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007120437130238244,
+            "low_frequency_fraction": 0.9928795628697618
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007221308279440231,
+            "low_frequency_fraction": 0.9927786917205598
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007120437130238355,
+            "low_frequency_fraction": 0.9928795628697616
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007221308279440231,
+            "low_frequency_fraction": 0.9927786917205598
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.7425506563921584e-05,
+        "uy": 2.3475838103120604e-05,
+        "vector": 2.923633447703754e-05
+      }
+    },
+    "tile_0_3": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          9.55598629794045e-05,
+          2.291468940622711e-05
+        ],
+        [
+          -2.7097354439884535e-05,
+          4.594380499791959e-06
+        ],
+        [
+          -1.2711964332621796e-05,
+          4.593394928881102e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.968508121048038e-06,
+        "uy": 7.256490048630755e-06,
+        "vector": 1.0060653719266392e-05
+      },
+      "bounds_axis0_axis1": [
+        0,
+        600,
+        1860,
+        2480
+      ],
+      "energy_fraction_removed_by_affine": 0.9906021820767835,
+      "energy_fraction_removed_by_translation": 0.896616094211349,
+      "raw_rms": {
+        "ux": 9.736456741499663e-05,
+        "uy": 3.592187187554497e-05,
+        "vector": 0.0001037797661731449
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.003963374024281263,
+            "low_frequency_fraction": 0.9960366259757187
+          },
+          "uy": {
+            "high_frequency_fraction": 0.003688646767139092,
+            "low_frequency_fraction": 0.9963113532328609
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006640100370640112,
+            "low_frequency_fraction": 0.9933598996293599
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006859341229346616,
+            "low_frequency_fraction": 0.9931406587706534
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006640100370640223,
+            "low_frequency_fraction": 0.9933598996293598
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006859341229346616,
+            "low_frequency_fraction": 0.9931406587706534
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.8659356239350538e-05,
+        "uy": 2.7664017937733497e-05,
+        "vector": 3.3368689871288076e-05
+      }
+    },
+    "tile_0_4": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          6.121057518237884e-05,
+          0.00011616285677272157
+        ],
+        [
+          -2.7831847012206228e-05,
+          1.1794756320421221e-05
+        ],
+        [
+          -1.9782346745101945e-05,
+          4.8266998109191415e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 7.869271691862566e-06,
+        "uy": 7.601746158191173e-06,
+        "vector": 1.094129707182488e-05
+      },
+      "bounds_axis0_axis1": [
+        0,
+        600,
+        2480,
+        3100
+      ],
+      "energy_fraction_removed_by_affine": 0.9935554851118523,
+      "energy_fraction_removed_by_translation": 0.9281188044082327,
+      "raw_rms": {
+        "ux": 6.479656262572191e-05,
+        "uy": 0.00011990496056614762,
+        "vector": 0.0001362930449306891
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0027085010345878624,
+            "low_frequency_fraction": 0.9972914989654121
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004615990847516405,
+            "low_frequency_fraction": 0.9953840091524836
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007999266387201609,
+            "low_frequency_fraction": 0.9920007336127984
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006112395199116771,
+            "low_frequency_fraction": 0.9938876048008832
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007999266387201387,
+            "low_frequency_fraction": 0.9920007336127986
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006112395199116771,
+            "low_frequency_fraction": 0.9938876048008832
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.1256999175602636e-05,
+        "uy": 2.9721882086601206e-05,
+        "vector": 3.654107673182868e-05
+      }
+    },
+    "tile_1_0": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          0.00010597647149983911,
+          -0.0001734261962128966
+        ],
+        [
+          -1.740230462913283e-05,
+          5.159362711152564e-06
+        ],
+        [
+          -1.383850824825324e-05,
+          2.316919178015188e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 9.618891742170796e-06,
+        "uy": 1.038128512290528e-05,
+        "vector": 1.415253189894517e-05
+      },
+      "bounds_axis0_axis1": [
+        600,
+        1200,
+        0,
+        620
+      ],
+      "energy_fraction_removed_by_affine": 0.9952153356566138,
+      "energy_fraction_removed_by_translation": 0.98676506290586,
+      "raw_rms": {
+        "ux": 0.00010718610170025857,
+        "uy": 0.00017427803804830248,
+        "vector": 0.0002046013072872797
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00368413185496852,
+            "low_frequency_fraction": 0.9963158681450315
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004004982750234198,
+            "low_frequency_fraction": 0.9959950172497658
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006431081233929659,
+            "low_frequency_fraction": 0.9935689187660703
+          },
+          "uy": {
+            "high_frequency_fraction": 0.005773776951368381,
+            "low_frequency_fraction": 0.9942262230486316
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006431081233929659,
+            "low_frequency_fraction": 0.9935689187660703
+          },
+          "uy": {
+            "high_frequency_fraction": 0.00577377695136827,
+            "low_frequency_fraction": 0.9942262230486317
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.6057642608474007e-05,
+        "uy": 1.721014273886127e-05,
+        "vector": 2.353798842793218e-05
+      }
+    },
+    "tile_1_1": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          9.736942851710615e-05,
+          -0.00012369792533784626
+        ],
+        [
+          -1.6417247054970664e-05,
+          7.204006206631066e-06
+        ],
+        [
+          -1.523493523127578e-05,
+          2.5245624694678327e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 9.252243785889722e-06,
+        "uy": 7.588848866173907e-06,
+        "vector": 1.196639637431269e-05
+      },
+      "bounds_axis0_axis1": [
+        600,
+        1200,
+        620,
+        1240
+      ],
+      "energy_fraction_removed_by_affine": 0.9943453687944711,
+      "energy_fraction_removed_by_translation": 0.9786188124718248,
+      "raw_rms": {
+        "ux": 9.866189398889708e-05,
+        "uy": 0.00012485695000644055,
+        "vector": 0.0001591333632221324
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0016845425886090615,
+            "low_frequency_fraction": 0.9983154574113909
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0040141547972912806,
+            "low_frequency_fraction": 0.9959858452027087
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005996529152844321,
+            "low_frequency_fraction": 0.9940034708471557
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006002734535907828,
+            "low_frequency_fraction": 0.9939972654640922
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005996529152844321,
+            "low_frequency_fraction": 0.9940034708471557
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006002734535907828,
+            "low_frequency_fraction": 0.9939972654640922
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.5917402920339095e-05,
+        "uy": 1.6972955901181807e-05,
+        "vector": 2.3268969632363975e-05
+      }
+    },
+    "tile_1_2": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          5.5102970753913115e-05,
+          -5.986227468605617e-05
+        ],
+        [
+          -3.557489877039591e-05,
+          1.8795188899390815e-05
+        ],
+        [
+          -1.1894726698556917e-05,
+          4.674771181688561e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 1.005623054614773e-05,
+        "uy": 5.9481710280091e-06,
+        "vector": 1.1683685693124415e-05
+      },
+      "bounds_axis0_axis1": [
+        600,
+        1200,
+        1240,
+        1860
+      ],
+      "energy_fraction_removed_by_affine": 0.983096736955598,
+      "energy_fraction_removed_by_translation": 0.8197050507553085,
+      "raw_rms": {
+        "ux": 6.0067007532293866e-05,
+        "uy": 6.684176860232185e-05,
+        "vector": 8.986583012341846e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0034145457864300788,
+            "low_frequency_fraction": 0.9965854542135699
+          },
+          "uy": {
+            "high_frequency_fraction": 0.00312203604333805,
+            "low_frequency_fraction": 0.996877963956662
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007018984999075495,
+            "low_frequency_fraction": 0.9929810150009245
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006266593464952508,
+            "low_frequency_fraction": 0.9937334065350475
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007018984999075495,
+            "low_frequency_fraction": 0.9929810150009245
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006266593464952508,
+            "low_frequency_fraction": 0.9937334065350475
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.391041630708458e-05,
+        "uy": 2.9737688196925445e-05,
+        "vector": 3.815806739440126e-05
+      }
+    },
+    "tile_1_3": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          3.974758205746911e-05,
+          4.3202420770364946e-05
+        ],
+        [
+          -2.6777482825981136e-05,
+          7.795666557042562e-06
+        ],
+        [
+          -1.1149720227613761e-05,
+          6.0906823791411845e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.497014574029614e-06,
+        "uy": 6.250663332823177e-06,
+        "vector": 9.015652526326339e-06
+      },
+      "bounds_axis0_axis1": [
+        600,
+        1200,
+        1860,
+        2480
+      ],
+      "energy_fraction_removed_by_affine": 0.9839675773500477,
+      "energy_fraction_removed_by_translation": 0.6797674309275836,
+      "raw_rms": {
+        "ux": 4.3628698701639084e-05,
+        "uy": 5.627066224504438e-05,
+        "vector": 7.12028846318337e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0021300902950044387,
+            "low_frequency_fraction": 0.9978699097049956
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004639545093173103,
+            "low_frequency_fraction": 0.9953604549068269
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007490011245214312,
+            "low_frequency_fraction": 0.9925099887547857
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006912024573404119,
+            "low_frequency_fraction": 0.9930879754265959
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007490011245214423,
+            "low_frequency_fraction": 0.9925099887547856
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006912024573404119,
+            "low_frequency_fraction": 0.9930879754265959
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.7988692864773152e-05,
+        "uy": 3.60546566905882e-05,
+        "vector": 4.0293068139064814e-05
+      }
+    },
+    "tile_1_4": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          1.2562724990895456e-05,
+          0.000145082939306331
+        ],
+        [
+          -1.5679167673068155e-05,
+          1.0017184091384519e-05
+        ],
+        [
+          -1.4490068898622717e-05,
+          3.7447599740717554e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 7.992378850720649e-06,
+        "uy": 5.770942998265799e-06,
+        "vector": 9.858088191058246e-06
+      },
+      "bounds_axis0_axis1": [
+        600,
+        1200,
+        2480,
+        3100
+      ],
+      "energy_fraction_removed_by_affine": 0.995574394404172,
+      "energy_fraction_removed_by_translation": 0.9657486633575337,
+      "raw_rms": {
+        "ux": 1.9342510573953486e-05,
+        "uy": 0.00014691791569216764,
+        "vector": 0.00014818571681047548
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0033622476098502663,
+            "low_frequency_fraction": 0.9966377523901497
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0020803508745329546,
+            "low_frequency_fraction": 0.997919649125467
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0063803974282938825,
+            "low_frequency_fraction": 0.9936196025717061
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0067903993389736295,
+            "low_frequency_fraction": 0.9932096006610264
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0063803974282939935,
+            "low_frequency_fraction": 0.993619602571706
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0067903993389735184,
+            "low_frequency_fraction": 0.9932096006610265
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.4707503394751898e-05,
+        "uy": 2.3147671018191797e-05,
+        "vector": 2.742490345786212e-05
+      }
+    },
+    "tile_2_0": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          6.837209613400442e-05,
+          -0.00016425846181310013
+        ],
+        [
+          -2.22064896843815e-05,
+          8.512292205270569e-06
+        ],
+        [
+          -2.10381140773069e-05,
+          2.7223473579361155e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 1.0720934780568858e-05,
+        "uy": 9.002900251609134e-06,
+        "vector": 1.3999666264223208e-05
+      },
+      "bounds_axis0_axis1": [
+        1200,
+        1800,
+        0,
+        620
+      ],
+      "energy_fraction_removed_by_affine": 0.9939577280846439,
+      "energy_fraction_removed_by_translation": 0.9759223295018787,
+      "raw_rms": {
+        "ux": 7.143260904637379e-05,
+        "uy": 0.00016532986884833695,
+        "vector": 0.00018010159124388976
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00368190604399643,
+            "low_frequency_fraction": 0.9963180939560036
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0022047329827425965,
+            "low_frequency_fraction": 0.9977952670172574
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00480386985231307,
+            "low_frequency_fraction": 0.9951961301476869
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0047266708624813525,
+            "low_frequency_fraction": 0.9952733291375186
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004803869852313292,
+            "low_frequency_fraction": 0.9951961301476867
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0047266708624813525,
+            "low_frequency_fraction": 0.9952733291375186
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.068511796955883e-05,
+        "uy": 1.879157407466017e-05,
+        "vector": 2.794633002055912e-05
+      }
+    },
+    "tile_2_1": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          4.031673648036568e-05,
+          -0.00010063082809715602
+        ],
+        [
+          -3.0112911147509325e-05,
+          1.662226558039948e-05
+        ],
+        [
+          -1.2716562570561902e-05,
+          4.345785979830572e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 8.705421969098635e-06,
+        "uy": 8.083730498735289e-06,
+        "vector": 1.1879859866018917e-05
+      },
+      "bounds_axis0_axis1": [
+        1200,
+        1800,
+        620,
+        1240
+      ],
+      "energy_fraction_removed_by_affine": 0.9891223879236389,
+      "energy_fraction_removed_by_translation": 0.9057801887741327,
+      "raw_rms": {
+        "ux": 4.537150125902011e-05,
+        "uy": 0.00010447908988298358,
+        "vector": 0.00011390545794330504
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0032731128163621115,
+            "low_frequency_fraction": 0.9967268871836379
+          },
+          "uy": {
+            "high_frequency_fraction": 0.004872236981296352,
+            "low_frequency_fraction": 0.9951277630187036
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00897572536550617,
+            "low_frequency_fraction": 0.9910242746344938
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007306768085226345,
+            "low_frequency_fraction": 0.9926932319147737
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008975725365506393,
+            "low_frequency_fraction": 0.9910242746344936
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007306768085226345,
+            "low_frequency_fraction": 0.9926932319147737
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.081186887499654e-05,
+        "uy": 2.80947799289724e-05,
+        "vector": 3.496356024960018e-05
+      }
+    },
+    "tile_2_2": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -5.9278724190724345e-06,
+          -1.7331592428930115e-05
+        ],
+        [
+          -2.2822467147953593e-05,
+          1.789910045344009e-05
+        ],
+        [
+          -8.654242853268491e-06,
+          2.753189415376068e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 9.336375279734e-06,
+        "uy": 6.952640582245531e-06,
+        "vector": 1.1640752313743025e-05
+      },
+      "bounds_axis0_axis1": [
+        1200,
+        1800,
+        1240,
+        1860
+      ],
+      "energy_fraction_removed_by_affine": 0.868556101575843,
+      "energy_fraction_removed_by_translation": 0.3254630002629343,
+      "raw_rms": {
+        "ux": 1.7931952447015725e-05,
+        "uy": 2.663376147797657e-05,
+        "vector": 3.210782099470111e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004038215303861281,
+            "low_frequency_fraction": 0.9959617846961387
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008319078222201903,
+            "low_frequency_fraction": 0.9916809217777981
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0064550041063805574,
+            "low_frequency_fraction": 0.9935449958936194
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008689465292111453,
+            "low_frequency_fraction": 0.9913105347078885
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0064550041063807795,
+            "low_frequency_fraction": 0.9935449958936192
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008689465292111676,
+            "low_frequency_fraction": 0.9913105347078883
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.6923807111440216e-05,
+        "uy": 2.0223084689116887e-05,
+        "vector": 2.6370218078135465e-05
+      }
+    },
+    "tile_2_3": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -8.937447012559066e-06,
+          5.127401701752347e-05
+        ],
+        [
+          -2.5553085194418622e-05,
+          5.274632056301598e-08
+        ],
+        [
+          -5.244707409955165e-06,
+          4.3467450331418385e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 5.891016108435877e-06,
+        "uy": 6.563193280257943e-06,
+        "vector": 8.819273032618576e-06
+      },
+      "bounds_axis0_axis1": [
+        1200,
+        1800,
+        1860,
+        2480
+      ],
+      "energy_fraction_removed_by_affine": 0.9786677530383058,
+      "energy_fraction_removed_by_translation": 0.742958311969655,
+      "raw_rms": {
+        "ux": 1.849758769315389e-05,
+        "uy": 5.7479932029521334e-05,
+        "vector": 6.0382972240394765e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.001615221684836854,
+            "low_frequency_fraction": 0.9983847783151631
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0035353253722191225,
+            "low_frequency_fraction": 0.9964646746277809
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007510142469630332,
+            "low_frequency_fraction": 0.9924898575303697
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007031585507720872,
+            "low_frequency_fraction": 0.9929684144922791
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.007510142469630221,
+            "low_frequency_fraction": 0.9924898575303698
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007031585507720872,
+            "low_frequency_fraction": 0.9929684144922791
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.619514715473808e-05,
+        "uy": 2.5979179452112746e-05,
+        "vector": 3.061373150023854e-05
+      }
+    },
+    "tile_2_4": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -2.7200325220997573e-05,
+          0.00014683232211251408
+        ],
+        [
+          -1.894669083920482e-05,
+          -3.444273845106105e-06
+        ],
+        [
+          -2.3885657303801936e-06,
+          3.7773801893582426e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.2726033081663094e-06,
+        "uy": 6.598223162988763e-06,
+        "vector": 9.103960740810584e-06
+      },
+      "bounds_axis0_axis1": [
+        1200,
+        1800,
+        2480,
+        3100
+      ],
+      "energy_fraction_removed_by_affine": 0.996394166764296,
+      "energy_fraction_removed_by_translation": 0.970156357684836,
+      "raw_rms": {
+        "ux": 3.0019488641463357e-05,
+        "uy": 0.0001486081817500801,
+        "vector": 0.00015160989869187198
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00420361912639311,
+            "low_frequency_fraction": 0.9957963808736069
+          },
+          "uy": {
+            "high_frequency_fraction": 0.002353428699969573,
+            "low_frequency_fraction": 0.9976465713000304
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00870031587485709,
+            "low_frequency_fraction": 0.9912996841251429
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007815818921468098,
+            "low_frequency_fraction": 0.9921841810785319
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008700315874856757,
+            "low_frequency_fraction": 0.9912996841251432
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007815818921468098,
+            "low_frequency_fraction": 0.9921841810785319
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.2700866354974128e-05,
+        "uy": 2.2905476771105314e-05,
+        "vector": 2.6191083831688696e-05
+      }
+    },
+    "tile_3_0": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          2.745164322205085e-05,
+          -0.00014904509131251665
+        ],
+        [
+          -2.0282052394891604e-05,
+          6.836945313971133e-06
+        ],
+        [
+          -7.493808596811917e-06,
+          2.717221965844859e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 9.295059886929788e-06,
+        "uy": 9.655205501065183e-06,
+        "vector": 1.3402280834597264e-05
+      },
+      "bounds_axis0_axis1": [
+        1800,
+        2400,
+        0,
+        620
+      ],
+      "energy_fraction_removed_by_affine": 0.9923781318586583,
+      "energy_fraction_removed_by_translation": 0.9746030967252288,
+      "raw_rms": {
+        "ux": 3.156499283369129e-05,
+        "uy": 0.00015023381963229492,
+        "vector": 0.00015351400370617764
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.002775216999312713,
+            "low_frequency_fraction": 0.9972247830006873
+          },
+          "uy": {
+            "high_frequency_fraction": 0.002832606770364454,
+            "low_frequency_fraction": 0.9971673932296355
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008177964268307192,
+            "low_frequency_fraction": 0.9918220357316928
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008208607155472447,
+            "low_frequency_fraction": 0.9917913928445276
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008177964268307192,
+            "low_frequency_fraction": 0.9918220357316928
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008208607155472447,
+            "low_frequency_fraction": 0.9917913928445276
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.558063082805761e-05,
+        "uy": 1.8861636115484836e-05,
+        "vector": 2.4464614731345964e-05
+      }
+    },
+    "tile_3_1": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -1.5273286809959023e-05,
+          -7.43967402898121e-05
+        ],
+        [
+          -2.2869328786509338e-05,
+          1.9680089306731052e-05
+        ],
+        [
+          -2.5663928797109073e-05,
+          5.391213973901134e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 7.264492515300292e-06,
+        "uy": 1.0346142796184254e-05,
+        "vector": 1.2641816414736022e-05
+      },
+      "bounds_axis0_axis1": [
+        1800,
+        2400,
+        620,
+        1240
+      ],
+      "energy_fraction_removed_by_affine": 0.9784749783894768,
+      "energy_fraction_removed_by_translation": 0.7768927204220816,
+      "raw_rms": {
+        "ux": 2.610016729173604e-05,
+        "uy": 8.211833296088475e-05,
+        "vector": 8.616634691648133e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.003255286371963706,
+            "low_frequency_fraction": 0.9967447136280363
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0037087916107858554,
+            "low_frequency_fraction": 0.9962912083892141
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006740141228678942,
+            "low_frequency_fraction": 0.9932598587713211
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0059471093763838745,
+            "low_frequency_fraction": 0.9940528906236161
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006740141228679053,
+            "low_frequency_fraction": 0.993259858771321
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0059471093763838745,
+            "low_frequency_fraction": 0.9940528906236161
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.116472165367034e-05,
+        "uy": 3.476414305753983e-05,
+        "vector": 4.0700013331722594e-05
+      }
+    },
+    "tile_3_2": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -3.144608974727597e-05,
+          6.054754808318103e-06
+        ],
+        [
+          -9.991086502891831e-06,
+          9.291122085157945e-06
+        ],
+        [
+          2.7362119002462652e-06,
+          3.198316884864502e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 5.78615556732685e-06,
+        "uy": 6.982971314699244e-06,
+        "vector": 9.068709093979167e-06
+      },
+      "bounds_axis0_axis1": [
+        1800,
+        2400,
+        1240,
+        1860
+      ],
+      "energy_fraction_removed_by_affine": 0.9457006378162344,
+      "energy_fraction_removed_by_translation": 0.6770901378697748,
+      "raw_rms": {
+        "ux": 3.253036847839395e-05,
+        "uy": 2.136279620126792e-05,
+        "vector": 3.8917784300715146e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.003032702509537688,
+            "low_frequency_fraction": 0.9969672974904623
+          },
+          "uy": {
+            "high_frequency_fraction": 0.00592499673192004,
+            "low_frequency_fraction": 0.99407500326808
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004723074738661848,
+            "low_frequency_fraction": 0.9952769252613382
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007943773465948656,
+            "low_frequency_fraction": 0.9920562265340513
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004723074738661737,
+            "low_frequency_fraction": 0.9952769252613383
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007943773465948656,
+            "low_frequency_fraction": 0.9920562265340513
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 8.328764190824098e-06,
+        "uy": 2.048680076898396e-05,
+        "vector": 2.211509255450685e-05
+      }
+    },
+    "tile_3_3": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -4.9504160447851476e-05,
+          8.343837404519903e-05
+        ],
+        [
+          -1.5408848305061852e-05,
+          3.225448728800382e-05
+        ],
+        [
+          -1.0359534168666207e-05,
+          4.439705943980121e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 5.426096705901381e-06,
+        "uy": 8.05966303531206e-06,
+        "vector": 9.71600194033368e-06
+      },
+      "bounds_axis0_axis1": [
+        1800,
+        2400,
+        1860,
+        2480
+      ],
+      "energy_fraction_removed_by_affine": 0.9911189232910944,
+      "energy_fraction_removed_by_translation": 0.8855256668204204,
+      "raw_rms": {
+        "ux": 5.094508596373763e-05,
+        "uy": 8.963268454551736e-05,
+        "vector": 0.00010309907818544591
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.003891292290099879,
+            "low_frequency_fraction": 0.9961087077099001
+          },
+          "uy": {
+            "high_frequency_fraction": 0.003955507490562504,
+            "low_frequency_fraction": 0.9960444925094375
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005079095313650583,
+            "low_frequency_fraction": 0.9949209046863494
+          },
+          "uy": {
+            "high_frequency_fraction": 0.005941060424747069,
+            "low_frequency_fraction": 0.9940589395752529
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005079095313650583,
+            "low_frequency_fraction": 0.9949209046863494
+          },
+          "uy": {
+            "high_frequency_fraction": 0.005941060424747069,
+            "low_frequency_fraction": 0.9940589395752529
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.2030788926995443e-05,
+        "uy": 3.2742264361672255e-05,
+        "vector": 3.4882599641304346e-05
+      }
+    },
+    "tile_3_4": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -5.64319926769491e-05,
+          0.00015412229027927916
+        ],
+        [
+          -1.1806381745317611e-05,
+          1.030164393903084e-05
+        ],
+        [
+          8.337141002160104e-06,
+          3.361742057335155e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 5.69328414722605e-06,
+        "uy": 5.562096957066528e-06,
+        "vector": 7.959296887342763e-06
+      },
+      "bounds_axis0_axis1": [
+        1800,
+        2400,
+        2480,
+        3100
+      ],
+      "energy_fraction_removed_by_affine": 0.9976950818572093,
+      "energy_fraction_removed_by_translation": 0.9801114866261189,
+      "raw_rms": {
+        "ux": 5.733102245769141e-05,
+        "uy": 0.00015555718401319342,
+        "vector": 0.00016578565569481292
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0035814463544624475,
+            "low_frequency_fraction": 0.9964185536455376
+          },
+          "uy": {
+            "high_frequency_fraction": 0.002663306085292527,
+            "low_frequency_fraction": 0.9973366939147075
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004819117073876833,
+            "low_frequency_fraction": 0.9951808829261232
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006123358850325555,
+            "low_frequency_fraction": 0.9938766411496744
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004819117073876833,
+            "low_frequency_fraction": 0.9951808829261232
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006123358850325555,
+            "low_frequency_fraction": 0.9938766411496744
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.0113176481852377e-05,
+        "uy": 2.107978029260378e-05,
+        "vector": 2.3380194091100654e-05
+      }
+    },
+    "tile_4_0": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -2.7049217344282577e-05,
+          -0.00011616347225298806
+        ],
+        [
+          -2.940499856817551e-05,
+          2.7644019646413922e-05
+        ],
+        [
+          -2.334503692872212e-05,
+          4.133193778334969e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 1.1077416287507415e-05,
+        "uy": 9.554574156777485e-06,
+        "vector": 1.462870598939282e-05
+      },
+      "bounds_axis0_axis1": [
+        2400,
+        3000,
+        0,
+        620
+      ],
+      "energy_fraction_removed_by_affine": 0.9864023184603475,
+      "energy_fraction_removed_by_translation": 0.9039075535270867,
+      "raw_rms": {
+        "ux": 3.6411538866515734e-05,
+        "uy": 0.00012005043193451835,
+        "vector": 0.00012545081255333488
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0017455390313732,
+            "low_frequency_fraction": 0.9982544609686268
+          },
+          "uy": {
+            "high_frequency_fraction": 0.002777959017832843,
+            "low_frequency_fraction": 0.9972220409821672
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006089752533234627,
+            "low_frequency_fraction": 0.9939102474667654
+          },
+          "uy": {
+            "high_frequency_fraction": 0.005981545019801526,
+            "low_frequency_fraction": 0.9940184549801985
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006089752533234627,
+            "low_frequency_fraction": 0.9939102474667654
+          },
+          "uy": {
+            "high_frequency_fraction": 0.005981545019801526,
+            "low_frequency_fraction": 0.9940184549801985
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.437498725516633e-05,
+        "uy": 3.0301054796714123e-05,
+        "vector": 3.888822348067602e-05
+      }
+    },
+    "tile_4_1": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -4.568691772920934e-05,
+          -3.802347285455634e-05
+        ],
+        [
+          -1.3510322310840434e-05,
+          7.243986658785333e-06
+        ],
+        [
+          -7.225022417296267e-06,
+          3.108313952603792e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 8.39823259660821e-06,
+        "uy": 5.646324088156424e-06,
+        "vector": 1.0119846167567263e-05
+      },
+      "bounds_axis0_axis1": [
+        2400,
+        3000,
+        620,
+        1240
+      ],
+      "energy_fraction_removed_by_affine": 0.9747421840369198,
+      "energy_fraction_removed_by_translation": 0.8713674119928434,
+      "raw_rms": {
+        "ux": 4.7289823261101686e-05,
+        "uy": 4.264164705778032e-05,
+        "vector": 6.36760351142133e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.002129798190066201,
+            "low_frequency_fraction": 0.9978702018099338
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0035492015738369798,
+            "low_frequency_fraction": 0.996450798426163
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005609626130144152,
+            "low_frequency_fraction": 0.9943903738698558
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008961949433759164,
+            "low_frequency_fraction": 0.9910380505662408
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.00560962613014393,
+            "low_frequency_fraction": 0.9943903738698561
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008961949433759386,
+            "low_frequency_fraction": 0.9910380505662406
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.220790450776381e-05,
+        "uy": 1.930092163289412e-05,
+        "vector": 2.283765549152986e-05
+      }
+    },
+    "tile_4_2": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -6.240753458785897e-05,
+          3.937625932700333e-05
+        ],
+        [
+          -2.0228257182680934e-05,
+          2.168579796334754e-05
+        ],
+        [
+          -2.0390853963726318e-05,
+          4.6420546926003475e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.800375561185465e-06,
+        "uy": 7.79963658441155e-06,
+        "vector": 1.034791953109699e-05
+      },
+      "bounds_axis0_axis1": [
+        2400,
+        3000,
+        1240,
+        1860
+      ],
+      "energy_fraction_removed_by_affine": 0.9840324217763428,
+      "energy_fraction_removed_by_translation": 0.8119812835379114,
+      "raw_rms": {
+        "ux": 6.493718860204703e-05,
+        "uy": 4.989203680316752e-05,
+        "vector": 8.18904988378159e-05
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004737389497142308,
+            "low_frequency_fraction": 0.9952626105028577
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0012237569762990619,
+            "low_frequency_fraction": 0.9987762430237009
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008067435138240042,
+            "low_frequency_fraction": 0.99193256486176
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006323033547487089,
+            "low_frequency_fraction": 0.9936769664525129
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008067435138240042,
+            "low_frequency_fraction": 0.99193256486176
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006323033547486867,
+            "low_frequency_fraction": 0.9936769664525131
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.79482057655622e-05,
+        "uy": 3.0638628196790106e-05,
+        "vector": 3.5508641595872106e-05
+      }
+    },
+    "tile_4_3": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -7.939016323919096e-05,
+          0.00011838574247659876
+        ],
+        [
+          -1.8424698157758295e-05,
+          4.950541216612741e-07
+        ],
+        [
+          1.3468023557248018e-06,
+          3.144276803152206e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 7.144921687298678e-06,
+        "uy": 6.23687794237847e-06,
+        "vector": 9.4841210655368e-06
+      },
+      "bounds_axis0_axis1": [
+        2400,
+        3000,
+        1860,
+        2480
+      ],
+      "energy_fraction_removed_by_affine": 0.9956864932881042,
+      "energy_fraction_removed_by_translation": 0.9743542233970899,
+      "raw_rms": {
+        "ux": 8.042380756290182e-05,
+        "uy": 0.00011993656087161864,
+        "vector": 0.000144404873382535
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0016764006221101635,
+            "low_frequency_fraction": 0.9983235993778898
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0024674700429265783,
+            "low_frequency_fraction": 0.9975325299570734
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006480112459153475,
+            "low_frequency_fraction": 0.9935198875408465
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007453066381267304,
+            "low_frequency_fraction": 0.9925469336187327
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006480112459153475,
+            "low_frequency_fraction": 0.9935198875408465
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007453066381267304,
+            "low_frequency_fraction": 0.9925469336187327
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.285265745942301e-05,
+        "uy": 1.9224843613819468e-05,
+        "vector": 2.3125427904042396e-05
+      }
+    },
+    "tile_4_4": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -7.025088846421892e-05,
+          0.000174497161391063
+        ],
+        [
+          -3.1553421596411347e-06,
+          -1.4503358067495985e-06
+        ],
+        [
+          -3.1221222225982815e-06,
+          2.6186755288436194e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.302631173256518e-06,
+        "uy": 5.1831728211883735e-06,
+        "vector": 8.160174030032167e-06
+      },
+      "bounds_axis0_axis1": [
+        2400,
+        3000,
+        2480,
+        3100
+      ],
+      "energy_fraction_removed_by_affine": 0.9981341320436791,
+      "energy_fraction_removed_by_translation": 0.9915040055444793,
+      "raw_rms": {
+        "ux": 7.057974222579331e-05,
+        "uy": 0.000175231700090556,
+        "vector": 0.00018891174852106349
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005150992414036382,
+            "low_frequency_fraction": 0.9948490075859636
+          },
+          "uy": {
+            "high_frequency_fraction": 0.003944570565984518,
+            "low_frequency_fraction": 0.9960554294340155
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006109202751603315,
+            "low_frequency_fraction": 0.9938907972483967
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0063088441376589754,
+            "low_frequency_fraction": 0.993691155862341
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006109202751603315,
+            "low_frequency_fraction": 0.9938907972483967
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0063088441376589754,
+            "low_frequency_fraction": 0.993691155862341
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 6.805342213823882e-06,
+        "uy": 1.6027769123846772e-05,
+        "vector": 1.7412698404744226e-05
+      }
+    },
+    "tile_5_0": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -8.767389406215723e-05,
+          -8.87697365807942e-05
+        ],
+        [
+          -2.9559305014029668e-05,
+          6.7115897806669165e-06
+        ],
+        [
+          -6.421397876267771e-06,
+          2.5158842519173783e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 9.19642839786431e-06,
+        "uy": 8.184150149284124e-06,
+        "vector": 1.2310751761897874e-05
+      },
+      "bounds_axis0_axis1": [
+        3000,
+        3600,
+        0,
+        620
+      ],
+      "energy_fraction_removed_by_affine": 0.9906741829302702,
+      "energy_fraction_removed_by_translation": 0.9578918347967426,
+      "raw_rms": {
+        "ux": 8.987379196976958e-05,
+        "uy": 9.040897386149228e-05,
+        "vector": 0.00012747972794806836
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004335871570277705,
+            "low_frequency_fraction": 0.9956641284297223
+          },
+          "uy": {
+            "high_frequency_fraction": 0.003447387054703377,
+            "low_frequency_fraction": 0.9965526129452966
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0076770264920770215,
+            "low_frequency_fraction": 0.992322973507923
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008377252629532594,
+            "low_frequency_fraction": 0.9916227473704674
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0076770264920770215,
+            "low_frequency_fraction": 0.992322973507923
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008377252629532372,
+            "low_frequency_fraction": 0.9916227473704676
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.9763268530361654e-05,
+        "uy": 1.7138156903949354e-05,
+        "vector": 2.615918968675377e-05
+      }
+    },
+    "tile_5_1": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -0.00010701178134506082,
+          -4.680151888926072e-06
+        ],
+        [
+          -4.240504842948062e-05,
+          2.4607425291819797e-05
+        ],
+        [
+          -1.6537840666179215e-05,
+          5.3231745924767347e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 9.134441690485293e-06,
+        "uy": 9.33274228061552e-06,
+        "vector": 1.3059023833092006e-05
+      },
+      "bounds_axis0_axis1": [
+        3000,
+        3600,
+        620,
+        1240
+      ],
+      "energy_fraction_removed_by_affine": 0.9873553050744848,
+      "energy_fraction_removed_by_translation": 0.8507070153223146,
+      "raw_rms": {
+        "ux": 0.00011057946474835994,
+        "uy": 3.5483954657577734e-05,
+        "vector": 0.00011613323840389014
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.0030212066542627536,
+            "low_frequency_fraction": 0.9969787933457372
+          },
+          "uy": {
+            "high_frequency_fraction": 0.005207046040094254,
+            "low_frequency_fraction": 0.9947929539599057
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006073163956138439,
+            "low_frequency_fraction": 0.9939268360438616
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006712544833918477,
+            "low_frequency_fraction": 0.9932874551660815
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.006073163956138439,
+            "low_frequency_fraction": 0.9939268360438616
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006712544833918477,
+            "low_frequency_fraction": 0.9932874551660815
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 2.7862101094330232e-05,
+        "uy": 3.517395650815545e-05,
+        "vector": 4.4872083680483224e-05
+      }
+    },
+    "tile_5_2": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -0.00012043025201685266,
+          8.225527763035882e-05
+        ],
+        [
+          -2.2215165974755376e-05,
+          9.662700881235951e-06
+        ],
+        [
+          5.321963094066173e-06,
+          3.1953351021945835e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 1.1272434591094299e-05,
+        "uy": 7.75144555755957e-06,
+        "vector": 1.3680376085558068e-05
+      },
+      "bounds_axis0_axis1": [
+        3000,
+        3600,
+        1240,
+        1860
+      ],
+      "energy_fraction_removed_by_affine": 0.9914944975314881,
+      "energy_fraction_removed_by_translation": 0.9666264095180593,
+      "raw_rms": {
+        "ux": 0.00012167595810530016,
+        "uy": 8.484503897722284e-05,
+        "vector": 0.00014833650737390615
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005092588455500868,
+            "low_frequency_fraction": 0.9949074115444991
+          },
+          "uy": {
+            "high_frequency_fraction": 0.002734692540100059,
+            "low_frequency_fraction": 0.9972653074598999
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008995310620400487,
+            "low_frequency_fraction": 0.9910046893795995
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0060426030434944655,
+            "low_frequency_fraction": 0.9939573969565055
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.008995310620400487,
+            "low_frequency_fraction": 0.9910046893795995
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0060426030434944655,
+            "low_frequency_fraction": 0.9939573969565055
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.7366438322230514e-05,
+        "uy": 2.0802642644603265e-05,
+        "vector": 2.7098766041997153e-05
+      }
+    },
+    "tile_5_3": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -0.00010559178488548413,
+          0.00012209822413975185
+        ],
+        [
+          -9.134983838786141e-06,
+          2.7526616216069363e-06
+        ],
+        [
+          6.280827985094703e-06,
+          1.5235494208609977e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.328435202887517e-06,
+        "uy": 4.989174278997183e-06,
+        "vector": 8.058594921160547e-06
+      },
+      "bounds_axis0_axis1": [
+        3000,
+        3600,
+        1860,
+        2480
+      ],
+      "energy_fraction_removed_by_affine": 0.9975254745868424,
+      "energy_fraction_removed_by_translation": 0.9929050116442173,
+      "raw_rms": {
+        "ux": 0.00010597535121603301,
+        "uy": 0.0001225276530802568,
+        "vector": 0.0001619993852911709
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.003927146720491659,
+            "low_frequency_fraction": 0.9960728532795083
+          },
+          "uy": {
+            "high_frequency_fraction": 0.0052581276932885945,
+            "low_frequency_fraction": 0.9947418723067114
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005642143669397415,
+            "low_frequency_fraction": 0.9943578563306026
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008129244169064354,
+            "low_frequency_fraction": 0.9918707558309356
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005642143669397082,
+            "low_frequency_fraction": 0.9943578563306029
+          },
+          "uy": {
+            "high_frequency_fraction": 0.008129244169064354,
+            "low_frequency_fraction": 0.9918707558309356
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 9.008331147303191e-06,
+        "uy": 1.0249362481360785e-05,
+        "vector": 1.3645492344866073e-05
+      }
+    },
+    "tile_5_4": {
+      "affine_basis": "[1, x_normalized, y_normalized] per component",
+      "affine_coefficients": [
+        [
+          -9.335724879241836e-05,
+          0.00017754594254241205
+        ],
+        [
+          -2.2900912842204852e-05,
+          1.0821683091073057e-05
+        ],
+        [
+          3.594855035095067e-06,
+          3.602220723370699e-05
+        ]
+      ],
+      "affine_removed_rms": {
+        "ux": 6.545644323041529e-06,
+        "uy": 5.77974639820325e-06,
+        "vector": 8.732177737043073e-06
+      },
+      "bounds_axis0_axis1": [
+        3000,
+        3600,
+        2480,
+        3100
+      ],
+      "energy_fraction_removed_by_affine": 0.9981387326332676,
+      "energy_fraction_removed_by_translation": 0.9822035531267276,
+      "raw_rms": {
+        "ux": 9.454175748027607e-05,
+        "uy": 0.00017896665738364185,
+        "vector": 0.00020240357793905982
+      },
+      "shape": [
+        600,
+        620,
+        2
+      ],
+      "spectrum_affine_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.004502777110204859,
+            "low_frequency_fraction": 0.9954972228897951
+          },
+          "uy": {
+            "high_frequency_fraction": 0.007736426793486628,
+            "low_frequency_fraction": 0.9922635732065134
+          }
+        }
+      },
+      "spectrum_raw": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005198208501525303,
+            "low_frequency_fraction": 0.9948017914984747
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006371725283732865,
+            "low_frequency_fraction": 0.9936282747162671
+          }
+        }
+      },
+      "spectrum_translation_removed": {
+        "components": {
+          "ux": {
+            "high_frequency_fraction": 0.005198208501525303,
+            "low_frequency_fraction": 0.9948017914984747
+          },
+          "uy": {
+            "high_frequency_fraction": 0.006371725283732865,
+            "low_frequency_fraction": 0.9936282747162671
+          }
+        }
+      },
+      "translation_removed_rms": {
+        "ux": 1.4918713261200143e-05,
+        "uy": 2.2505615783625726e-05,
+        "vector": 2.700131010099515e-05
+      }
+    }
+  }
+}
