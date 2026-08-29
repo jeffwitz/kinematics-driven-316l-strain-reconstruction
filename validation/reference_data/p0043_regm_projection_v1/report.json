@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "reason": "REGM ranking reports archive scalar objectives and timing, not residual vectors on the M20 scored-state support.",
+  "no_forward_or_finite_difference": true,
+  "inspected_artifacts": [
+    {
+      "path": "validation/reference_data/srix_regm_femu_observed_ranking_v1/report.json",
+      "available": ["candidate levels", "T1/T2 scalar RMS objectives", "theta"],
+      "missing": ["REGM residual vector", "common observed-support vector"]
+    },
+    {
+      "path": "validation/reference_data/srix_regm_femu_ranking_v1/report.json",
+      "available": ["exact-space scalar REGM/FEMU objectives", "theta"],
+      "missing": ["REGM residual vector on the archived P43 M20 Jacobian support"]
+    }
+  ],
+  "required_for_future_projection": [
+    "REGM residual vector with the same eight-state, 21x21x2 ordering",
+    "declared observation transfer and mask provenance",
+    "matching parameter-space SVD left singular vectors"
+  ],
+  "interpretation": "No interpolation or support-forcing was attempted; REGM projection remains unqualified."
+}
