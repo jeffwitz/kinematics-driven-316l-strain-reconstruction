@@ -1,14 +1,18 @@
-# Run a full-Dirichlet spectral reconstruction
+# Reproduce the registered full-Dirichlet spectral qualification
 
 **Mode:** how-to  
 **Domain:** spectral
 
 ## Goal
 
-Run the registered small full-Dirichlet spectral comparison and inspect its
-mechanical diagnostics. This is the shortest reproducible route through the
-matrix-free Newton--GMRES solver; it compares CPS4, two-history TET2 and the
-one-history EBI-TET variant on the same registered case.
+Reproduce the registered small full-Dirichlet spectral qualification and
+inspect its mechanical diagnostics. This is the shortest reproducible route
+through the matrix-free Newton--GMRES solver; it compares CPS4, two-history
+TET2 and the one-history EBI-TET variant on the same registered case.
+
+This page uses a qualification driver, not a generic arbitrary-DIC production
+CLI. The generic formulation and Python API are documented separately; no
+general-purpose spectral case runner is currently exposed here.
 
 ## Prerequisites
 
@@ -16,7 +20,7 @@ Install the project dependencies, build the registered MFront library and run
 from the repository root:
 
 ```bash
-source /home/jeff/.local/share/tfel/env/env.sh
+TFEL_ENV_FILE=/path/to/tfel/env.sh \
 ./scripts/build_mfront_behaviour.sh
 export MFRONT_BEHAVIOUR_LIBRARY="$PWD/build/mfront/src/libBehaviour.so"
 ```

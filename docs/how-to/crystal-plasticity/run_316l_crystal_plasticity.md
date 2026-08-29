@@ -5,18 +5,19 @@
 
 ## Goal
 
-Run the registered P43 crystal-plasticity case with the twelve-system SRIX law
-under a three-traction structural plane-stress closure. The command below uses
-the registered 20x20 M20 crop and eight increments, with the homogeneous
-orientation control; an EBSD HDF5 source can be supplied when that payload is
-available.
+Run the registered P43 M20 crystal-plasticity qualification case with the
+twelve-system SRIX law under a three-traction structural plane-stress closure.
+This is an executable registered case, not a claim that the qualification
+driver is a generic crystal-plasticity application interface. The command uses
+the homogeneous orientation control; an EBSD HDF5 source can be supplied when
+that payload is available.
 
 ## Prerequisites
 
 Build the MFront behaviour and expose it to the driver:
 
 ```bash
-source /home/jeff/.local/share/tfel/env/env.sh
+TFEL_ENV_FILE=/path/to/tfel/env.sh \
 ./scripts/build_mfront_behaviour.sh
 export MFRONT_BEHAVIOUR_LIBRARY="$PWD/build/mfront/src/libBehaviour.so"
 ```
