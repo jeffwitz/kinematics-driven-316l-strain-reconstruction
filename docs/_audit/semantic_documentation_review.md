@@ -51,3 +51,10 @@ Explanation, Reference, How-to and Evidence pages and check that they contain
 the actual equations, commands/procedure, provenance and claim boundary. The
 automated checker verifies routing, mode, status, manifest consistency and
 current-to-legacy links; it does not pretend to perform that semantic review.
+
+The historical inversion campaigns are now synthesised canonically in
+`explanation/identification/observable_fit_vs_latent_identifiability.md`.
+Their source records remain `tensor_local_inverse_results.md`,
+`local_coefficient_inverse_results.md`, `tann_fcc_primary_run_results.md` and
+`tann_fcc_recovery_strategy.md`; they are not deleted or reclassified as new
+production evidence.

@@ -43,6 +43,7 @@ commands belong in How-to guides and stable interfaces belong in Reference.
 ## Understand identification
 
 - {doc}`identification/identification_strategy_big_picture`
+- {doc}`identification/observable_fit_vs_latent_identifiability`
 - {doc}`identification/femu_identification`
 - {doc}`identification/identifiability`
 - {doc}`identification/dic_weighted_tensor_observability`
@@ -86,6 +87,7 @@ native-srix/optimization_strategy
 native-srix/gpu_path
 identification/femu_identification
 identification/identification_strategy_big_picture
+identification/observable_fit_vs_latent_identifiability
 identification/identifiability
 identification/dic_weighted_tensor_observability
 identification/srix_parametric_observability

@@ -98,7 +98,9 @@ The first question can have many answers.  In the archived tensor-inverse
 study, the displacement observable was reproduced to essentially machine
 precision while the latent tensor field could still be wrong by nearly 100%.
 Agreement of a displacement field therefore does not validate a unique hidden
-constitutive state.
+constitutive state.  The complete progression from free-field inversion to
+local/TANN closure is summarised in
+{doc}`observable_fit_vs_latent_identifiability`.
 
 The second question is studied by the free tensor/eigenstrain observability
 operator.  Its leading modes are statistically detectable through the
