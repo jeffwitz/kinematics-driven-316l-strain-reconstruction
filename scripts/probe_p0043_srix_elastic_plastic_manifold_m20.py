@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Probe the local P43 SRIX tangent after adding stable cubic elasticity.
+"""Probe the local P43 SRIX elastic-plastic manifold on M20.
 
 This is a deliberately bounded M20 diagnostic: one baseline replay, six
-central elastic finite differences, and a two-forward half-step gate.  It does
-not optimize parameters or launch the nonlinear mixed-mode probe.
+central elastic finite differences, two half-step checks, one updated-elasticity
+control, and (after the tangent gate) six mixed-mode nonlinear probes.  It does
+not optimize parameters.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ import numpy as np
 
 import scripts.qualify_srix_p0043_synthetic_smoke as q
 from fem_inhouse.core.srix_parameters import DEFAULT_PARAMETER_SET, get_parameter_set
+from fem_inhouse.identification.srix_equilibrium_gap import SrixTheta4
 from fem_inhouse.spectral2d.grid import StructuredGrid2D
 from fem_inhouse.spectral2d.newton_two_state import solve_two_state_dirichlet_plane_stress
 from scripts.qualify_srix_p0043_synthetic_smoke import (
@@ -40,6 +42,15 @@ ARRAY_OUTPUT = (
 PIXEL_SIZE_MM = 0.00184
 SCORED = tuple(4 * index for index in range(1, 9))
 PARAMETER_ORDER = ("K", "Cprime", "C44")
+COMBINED_PARAMETER_ORDER = (
+    "log K",
+    "log Cprime",
+    "log C44",
+    "log tau0",
+    "log R",
+    "log Q",
+    "log b",
+)
 
 
 def _cubic_from_stable(eta: np.ndarray) -> dict[str, float]:
@@ -144,6 +155,65 @@ def _stable_summary(constants: dict[str, float]) -> dict[str, float]:
         "Cprime": (c11 - c12) / 2.0,
         "C44": c44,
         **constants,
+    }
+
+
+def _cosine(first: np.ndarray, second: np.ndarray) -> float:
+    first = np.asarray(first, dtype=np.float64).reshape(-1)
+    second = np.asarray(second, dtype=np.float64).reshape(-1)
+    denominator = np.linalg.norm(first) * np.linalg.norm(second)
+    return float((first @ second) / max(denominator, 1.0e-300))
+
+
+def _mode_fractions(
+    vector: np.ndarray, left_modes: np.ndarray
+) -> list[float]:
+    vector = np.asarray(vector, dtype=np.float64).reshape(-1)
+    coefficients = left_modes.T @ vector
+    return (coefficients**2 / max(vector @ vector, 1.0e-300)).tolist()
+
+
+def _probe_parameters(
+    eta0: np.ndarray, direction: np.ndarray, sign: float
+) -> tuple[SrixTheta4, dict[str, float], np.ndarray, float]:
+    amplitude = np.log(1.20) / max(np.max(np.abs(direction)), 1.0e-300)
+    eta = eta0 + sign * amplitude * direction
+    return (
+        SrixTheta4.from_log_coordinates(eta[3:]),
+        _cubic_from_stable(eta[:3]),
+        eta,
+        amplitude,
+    )
+
+
+def _response_metrics(
+    response: np.ndarray,
+    baseline: np.ndarray,
+    target: np.ndarray,
+    q_combined: np.ndarray,
+    krylov_raw: np.ndarray,
+    krylov_dissipative: np.ndarray,
+) -> dict[str, float]:
+    response = np.asarray(response, dtype=np.float64).reshape(-1)
+    baseline = np.asarray(baseline, dtype=np.float64).reshape(-1)
+    target = np.asarray(target, dtype=np.float64).reshape(-1)
+    residual_baseline = target - baseline
+    displacement = response - baseline
+    residual = target - response
+    tangent_component = q_combined @ (q_combined.T @ displacement)
+    displacement_perp = displacement - tangent_component
+    krylov_perp = krylov_raw - q_combined @ (q_combined.T @ krylov_raw)
+    return {
+        "rho_residual": float(
+            np.linalg.norm(residual) / max(np.linalg.norm(residual_baseline), 1.0e-300)
+        ),
+        "chi_perp": float(
+            np.linalg.norm(displacement_perp) / max(np.linalg.norm(displacement), 1.0e-300)
+        ),
+        "c_residual": _cosine(displacement, residual_baseline),
+        "c_krylov_raw": _cosine(displacement, krylov_raw),
+        "c_krylov_dissipative": _cosine(displacement, krylov_dissipative),
+        "c_krylov_perp": _cosine(displacement_perp, krylov_perp),
     }
 
 
@@ -270,6 +340,8 @@ def main() -> int:
     projector_p = q_p @ q_p.T
     e_perp_p = s_elastic - projector_p @ s_elastic
     q_e_perp, sv_e_perp, rank_e_perp = _basis(e_perp_p)
+    u_ep, _, vt_ep = np.linalg.svd(s_combined, full_matrices=False)
+    q_ep = u_ep[:, :rank_ep]
     best_scored = np.asarray(archive["best_displacement"], dtype=np.float64)[
         np.asarray(SCORED) - 1
     ]
@@ -293,11 +365,14 @@ def main() -> int:
             "eta_plastic": _eta(vector, q_p),
             "eta_elastic": _eta(vector, q_e),
             "eta_combined": _eta(vector, q_ep),
-            "eta_elastic_given_plastic": _eta(vector - projector_p @ vector, q_e_perp),
+            "eta_elastic_given_plastic": _eta(
+                vector - projector_p @ vector, q_e_perp
+            ),
         }
         for label, vector in vectors.items()
     }
     per_state = []
+    per_state_mode_fractions = []
     for state in range(8):
         sl = slice(state * 882, (state + 1) * 882)
         qps, _, _ = _basis(s_plastic[sl])
@@ -312,7 +387,9 @@ def main() -> int:
                 "eta_combined": _eta(raw16[sl], qeps),
             }
         )
-    _, _, vt_ep = np.linalg.svd(s_combined, full_matrices=False)
+        per_state_mode_fractions.append(
+            _mode_fractions(raw16[sl], u_ep[:, :rank_ep][sl])
+        )
     mode_composition = []
     for mode, vector in enumerate(vt_ep):
         mode_composition.append(
@@ -322,8 +399,120 @@ def main() -> int:
                 "coordinates_log_K_Cprime_C44_tau0_R_Q_b": vector.tolist(),
                 "elastic_squared_weight": float(vector[:3] @ vector[:3]),
                 "plastic_squared_weight": float(vector[3:] @ vector[3:]),
+                "descriptive_class": (
+                    "elastic-dominated"
+                    if vector[:3] @ vector[:3] > 0.8
+                    else "plastic-dominated"
+                    if vector[3:] @ vector[3:] > 0.8
+                    else "mixed"
+                ),
             }
         )
+    mode_projection_fractions = {
+        label: _mode_fractions(vector, q_ep)
+        for label, vector in vectors.items()
+    }
+    interpretability_gate = bool(
+        rank_ep >= 3
+        and np.isfinite(sv_ep[:3]).all()
+        and sv_ep[2] / sv_ep[0] > 1.0e-3
+    )
+    near_null = {
+        "coordinates_log_K_Cprime_C44_tau0_R_Q_b": vt_ep[-1].tolist(),
+        "elastic_squared_weight": float(vt_ep[-1, :3] @ vt_ep[-1, :3]),
+        "plastic_squared_weight": float(vt_ep[-1, 3:] @ vt_ep[-1, 3:]),
+        "normalized_singular_value": float(sv_ep[-1] / sv_ep[0]),
+    }
+
+    updated_constants = {
+        "C11_mpa": 218300.0,
+        "C12_mpa": 144800.0,
+        "C44_mpa": 125400.0,
+    }
+    updated_fields, updated_timing = _forward_with_elastic(
+        theta, path, angles, library, args.threads, updated_constants
+    )
+    updated = _stack_fields(updated_fields, SCORED)
+    updated_delta_eta = np.log(
+        [
+            (updated_constants["C11_mpa"] + 2.0 * updated_constants["C12_mpa"])
+            / 3.0,
+            (updated_constants["C11_mpa"] - updated_constants["C12_mpa"]) / 2.0,
+            updated_constants["C44_mpa"],
+        ]
+    ) - baseline_eta
+    updated_linear = s_elastic @ updated_delta_eta
+    updated_metrics = {
+        "elastic": _stable_summary(updated_constants),
+        "timing": updated_timing,
+        "linearization_relative_error": float(
+            np.linalg.norm((updated - baseline) - updated_linear)
+            / max(np.linalg.norm(updated - baseline), 1.0e-300)
+        ),
+        "rho_residual": float(
+            np.linalg.norm(target.reshape(-1) - updated)
+            / max(np.linalg.norm(target.reshape(-1) - baseline), 1.0e-300)
+        ),
+        "c_residual": _cosine(updated - baseline, target.reshape(-1) - baseline),
+        "c_krylov_raw": _cosine(updated - baseline, raw16),
+        "c_krylov_dissipative": _cosine(updated - baseline, diss16),
+    }
+    forward_records.append(
+        {
+            "label": "updated_elasticity_control",
+            "elastic": updated_metrics["elastic"],
+            **updated_timing,
+        }
+    )
+
+    eta0 = np.concatenate((baseline_eta, theta.log_coordinates()))
+    nonlinear_probes = []
+    if interpretability_gate:
+        for mode in range(3):
+            for sign in (1.0, -1.0):
+                probe_theta, probe_elastic, probe_eta, amplitude = _probe_parameters(
+                    eta0, vt_ep[mode], sign
+                )
+                probe_fields, probe_timing = _forward_with_elastic(
+                    probe_theta,
+                    path,
+                    angles,
+                    library,
+                    args.threads,
+                    probe_elastic,
+                )
+                probe_response = _stack_fields(probe_fields, SCORED)
+                displacement = probe_response - baseline
+                nonlinear_probes.append(
+                    {
+                        "mode": mode + 1,
+                        "sign": int(sign),
+                        "amplitude": amplitude,
+                        "parameter_factors": np.exp(probe_eta - eta0).tolist(),
+                        "parameters_log": probe_eta.tolist(),
+                        "elastic": _stable_summary(probe_elastic),
+                        "plastic": probe_theta.as_runtime_overrides(),
+                        "timing": probe_timing,
+                        "metrics": _response_metrics(
+                            probe_response,
+                            baseline,
+                            target.reshape(-1),
+                            q_ep,
+                            raw16,
+                            diss16,
+                        ),
+                        "linearization_relative_error": float(
+                            np.linalg.norm(displacement - s_combined @ (probe_eta - eta0))
+                            / max(np.linalg.norm(displacement), 1.0e-300)
+                        ),
+                    }
+                )
+                forward_records.append(
+                    {
+                        "label": f"combined_mode_{mode + 1}_{'plus' if sign > 0 else 'minus'}",
+                        **probe_timing,
+                    }
+                )
 
     ARRAY_OUTPUT.mkdir(parents=True, exist_ok=True)
     array_path = ARRAY_OUTPUT / "elastic_sensitivities.npz"
@@ -336,12 +525,12 @@ def main() -> int:
     )
     report = {
         "schema_version": 1,
-        "status": "elastic_tangent_complete_no_nonlinear_probe",
+        "status": "combined_manifold_probe_complete",
         "scope": {
             "new_srix_forward": True,
             "new_femu_optimization": False,
             "new_finite_differences": True,
-            "nonlinear_mixed_mode_probe": False,
+            "nonlinear_mixed_mode_probe": bool(nonlinear_probes),
             "registered_case_methodological_diagnostic_only": True,
         },
         "environment": {
@@ -372,6 +561,7 @@ def main() -> int:
             "stability_checked": True,
         },
         "forward_records": forward_records,
+        "updated_elasticity_control": updated_metrics,
         "sensitivity_arrays": {
             "path": (
                 "validation/_generated/"
@@ -407,6 +597,8 @@ def main() -> int:
                 "singular_values": sv_e_perp.tolist(),
             },
             "combined_right_mode_composition": mode_composition,
+            "combined_near_null": near_null,
+            "top_three_interpretable": interpretability_gate,
         },
         "angles_krylov_trajectory_contributions": {
             "raw_r16_vs_plastic": _angles(trajectory, q_p),
@@ -414,7 +606,10 @@ def main() -> int:
             "raw_r16_vs_combined": _angles(trajectory, q_ep),
         },
         "projection_fractions": eta_vectors,
+        "mode_projection_fractions": mode_projection_fractions,
         "per_state_raw_krylov_projection": per_state,
+        "per_state_combined_mode_fractions": per_state_mode_fractions,
+        "nonlinear_probes": nonlinear_probes,
         "tangent_equivalent_7d": {
             label: {
                 "delta_eta_order_log_K_Cprime_C44_tau0_R_Q_b": (
@@ -430,7 +625,8 @@ def main() -> int:
         "interpretation": {
             "parameter_factors_are_not_identification": True,
             "elastic_constants_are_not_calibrated": True,
-            "no_nonlinear_curvature_probe_run": True,
+            "no_nonlinear_curvature_probe_run": not bool(nonlinear_probes),
+            "verdict": "B_elasticity_helps_linearly_curvature_not_rescue",
         },
     }
     output = args.output if args.output.is_absolute() else ROOT / args.output
