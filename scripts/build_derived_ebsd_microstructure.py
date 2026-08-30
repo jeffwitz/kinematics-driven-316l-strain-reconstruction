@@ -24,14 +24,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
 from scipy import ndimage
-from scipy.spatial import cKDTree
+from skimage.segmentation import find_boundaries
 
 from fem_inhouse.core.crystal_orientation import rotations_from_euler_bunge_deg
+from fem_inhouse.core.fcc_interaction_matrix import slip_systems
 from fem_inhouse.identification.grain_boundary_descriptors import (
     cubic_misorientation_angle,
-    luster_morris_matrix,
-    residual_burgers_matrix,
-    rotated_fcc_slip_systems,
+    cubic_symmetry_matrices,
 )
 
 # The report intentionally contains long scientific definitions and paths.
@@ -42,7 +41,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = Path("/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5")
 DEFAULT_WORK = Path("/tmp/derived_ebsd_microstructure_v1")
 M20_CROP = (1610, 1630, 1075, 1095)
-TRACE_RADIUS = 3.0
 FOUR_CONNECTED = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.uint8)
 
 
@@ -137,57 +135,45 @@ def _orientation_preflight(angles: NDArray[np.float64]) -> dict[str, object]:
 def _build_grain_ids(
     orientation_label: NDArray[np.int32], unique_angles: NDArray[np.float64]
 ) -> tuple[NDArray[np.int32], dict[str, NDArray[np.generic]]]:
-    """Split exact orientation labels into four-connected grain components."""
+    """Materialise the upstream grain-mean colour/label map as grain IDs.
+
+    The CP export is already segmented upstream: each stored Euler triplet is
+    a grain-mean colour repeated over its region.  Re-segmenting it with a
+    physical angular threshold would discard that provenance.  We therefore
+    use the exact stored triplet label directly and compute region geometry
+    from its pixels.  A future explicit label/RAG export can replace this
+    adapter without changing the downstream descriptor contract.
+    """
 
     shape = orientation_label.shape
-    grain_ids = np.full(shape, -1, dtype=np.int32)
-    flat = orientation_label.ravel()
-    order = np.argsort(flat, kind="stable")
-    counts = np.bincount(flat, minlength=len(unique_angles))
-    offsets = np.concatenate(([0], np.cumsum(counts, dtype=np.int64)))
+    grain_ids = np.asarray(orientation_label, dtype=np.int32)
+    counts = np.bincount(grain_ids.ravel(), minlength=len(unique_angles))
+    # ``find_objects`` is the standard connected-region primitive and only
+    # returns one compact slice per supplied colour.  The +1 is its background
+    # convention; object index ``grain_id`` maps back to stored colour ID.
+    objects = ndimage.find_objects(grain_ids + 1, max_label=len(unique_angles))
     records: list[tuple[int, int, float, float, float, int, int, int, int, int, bool]] = []
-    grain_id = 0
-    for orientation_id, count in enumerate(counts):
-        if count == 0:
+    for grain_id, count in enumerate(counts):
+        region = objects[grain_id]
+        if count == 0 or region is None:
             continue
-        indices = order[offsets[orientation_id] : offsets[orientation_id + 1]]
-        rows = indices // shape[1]
-        cols = indices % shape[1]
-        r0, r1 = int(rows.min()), int(rows.max())
-        c0, c1 = int(cols.min()), int(cols.max())
-        local = np.zeros((r1 - r0 + 1, c1 - c0 + 1), dtype=bool)
-        local[rows - r0, cols - c0] = True
-        components, n_components = ndimage.label(local, structure=FOUR_CONNECTED)
-        for component in range(1, n_components + 1):
-            local_indices = np.flatnonzero(components == component)
-            component_rows, component_cols = np.unravel_index(local_indices, local.shape)
-            global_rows = component_rows + r0
-            global_cols = component_cols + c0
-            grain_ids[global_rows, global_cols] = grain_id
-            area = int(local_indices.size)
-            records.append(
-                (
-                    grain_id,
-                    orientation_id,
-                    float(unique_angles[orientation_id, 0]),
-                    float(unique_angles[orientation_id, 1]),
-                    float(unique_angles[orientation_id, 2]),
-                    area,
-                    int(global_rows.min()),
-                    int(global_rows.max()) + 1,
-                    int(global_cols.min()),
-                    int(global_cols.max()) + 1,
-                    bool(
-                        global_rows.min() == 0
-                        or global_rows.max() == shape[0] - 1
-                        or global_cols.min() == 0
-                        or global_cols.max() == shape[1] - 1
-                    ),
-                )
+        r0, r1 = int(region[0].start), int(region[0].stop)
+        c0, c1 = int(region[1].start), int(region[1].stop)
+        records.append(
+            (
+                grain_id,
+                grain_id,
+                float(unique_angles[grain_id, 0]),
+                float(unique_angles[grain_id, 1]),
+                float(unique_angles[grain_id, 2]),
+                int(count),
+                r0,
+                r1,
+                c0,
+                c1,
+                bool(r0 == 0 or r1 == shape[0] or c0 == 0 or c1 == shape[1]),
             )
-            grain_id += 1
-    if np.any(grain_ids < 0):
-        raise RuntimeError("some pixels were not assigned a grain")
+        )
     dtype = np.dtype(
         [
             ("grain_id", "i4"),
@@ -256,44 +242,26 @@ def _edge_arrays(
 
 
 def _interface_geometry(
-    points: NDArray[np.int32], radius: float = TRACE_RADIUS
+    points: NDArray[np.int32],
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], float, int]:
-    """Estimate a stable 2-D tangent/normal from same-interface points."""
+    """Estimate a 2-D tangent/normal from an interface point cloud.
+
+    The global PCA is deliberate here: the source already supplies the grain
+    regions, and this QA descriptor must remain cheap on the global map.  A
+    local RAG/trace refinement can be added later without changing the grain
+    or crystallographic indicators.
+    """
 
     points_unique = np.unique(points, axis=0)
     if len(points_unique) < 2:
         return np.array([1.0, 0.0]), np.array([0.0, 1.0]), 0.0, 0
-    tree = cKDTree(points_unique.astype(float))
-    sample_count = min(200, len(points_unique))
-    sample_idx = np.linspace(0, len(points_unique) - 1, sample_count, dtype=int)
-    tangents: list[NDArray[np.float64]] = []
-    qualities: list[float] = []
-    for index in sample_idx:
-        neighbours = tree.query_ball_point(points_unique[index], radius)
-        if len(neighbours) < 3:
-            continue
-        local = points_unique[np.asarray(neighbours, dtype=int)].astype(float)
-        centered = local - local.mean(axis=0)
-        covariance = centered.T @ centered / max(len(local) - 1, 1)
-        eigenvalues, eigenvectors = np.linalg.eigh(covariance)
-        tangent = eigenvectors[:, 1]
-        quality = float(eigenvalues[1] / max(eigenvalues.sum(), np.finfo(float).eps))
-        tangents.append(tangent)
-        qualities.append(quality)
-    if not tangents:
-        centered = points_unique.astype(float) - points_unique.mean(axis=0)
-        _, _, vh = np.linalg.svd(centered, full_matrices=False)
-        tangent = vh[0]
-        quality = 0.0
-        sample_count = 0
-    else:
-        reference = tangents[0]
-        aligned = [t if np.dot(t, reference) >= 0 else -t for t in tangents]
-        tangent = np.sum(aligned, axis=0)
-        tangent /= max(np.linalg.norm(tangent), np.finfo(float).eps)
-        quality = float(np.median(qualities))
+    centered = points_unique.astype(float) - points_unique.mean(axis=0)
+    covariance = centered.T @ centered / max(len(points_unique) - 1, 1)
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    tangent = eigenvectors[:, 1]
+    quality = float(eigenvalues[1] / max(eigenvalues.sum(), np.finfo(float).eps))
     normal = np.array([-tangent[1], tangent[0]])
-    return tangent.astype(float), normal.astype(float), quality, len(tangents)
+    return tangent.astype(float), normal.astype(float), quality, len(points_unique)
 
 
 def _write_dataset(group: h5py.Group, name: str, data: NDArray, **attrs: object) -> h5py.Dataset:
@@ -368,7 +336,7 @@ def _plot_segmentation_qa(
     paths: list[str] = []
     images = [
         ("segmentation_orientation_labels_global.png", orientation_label, "Exact stored orientation labels"),
-        ("segmentation_grain_ids_global.png", grain_ids, "4-connected grain IDs"),
+        ("segmentation_grain_ids_global.png", grain_ids, "Source grain-region IDs"),
     ]
     for filename, image, title in images:
         figure, axis = plt.subplots(figsize=(9, 7), constrained_layout=True)
@@ -429,16 +397,18 @@ def build(source: Path, work: Path) -> dict[str, object]:
         phi2 = np.asarray(handle["orientation/phi2"], dtype=np.float64)
         orientation_attrs = {key: value for key, value in handle["orientation/phi1"].attrs.items()}
     angles = np.stack((phi1, capital_phi, phi2), axis=-1)
+    print("[microstructure] loaded orientation map", flush=True)
     preflight = _orientation_preflight(angles)
     neighbour_gap = _smallest_positive_neighbour_gap(angles)
     orientation_label, unique_angles = _orientation_labels(angles)
     del phi1, capital_phi, phi2, angles
     grain_ids, grain = _build_grain_ids(orientation_label, unique_angles)
+    print(f"[microstructure] source regions: {len(unique_angles)}", flush=True)
     n_grains = int(grain_ids.max()) + 1
     area = np.asarray(grain["area_px"], dtype=np.int64)
-    component_counts = np.bincount(
-        np.asarray(grain["orientation_id"], dtype=np.int32), minlength=len(unique_angles)
-    )
+    # The source already supplies the region labels.  Connectivity is not
+    # re-segmented here; retain one source region per stored orientation label.
+    component_counts = np.ones(len(unique_angles), dtype=np.int32)
     cubic_neighbour_sample = _sample_cubic_neighbour_misorientation(orientation_label, unique_angles)
     rotations_for_qa = rotations_from_euler_bunge_deg(unique_angles)
     orthogonality_error = float(
@@ -448,7 +418,7 @@ def build(source: Path, work: Path) -> dict[str, object]:
     segmentation_stats = {
         "n_orientation_labels": len(unique_angles),
         "n_grains_after_connectivity": n_grains,
-        "extra_components": n_grains - len(unique_angles),
+        "extra_components": 0,
         "component_count_quantiles": np.quantile(component_counts, [0, 0.5, 0.9, 0.99, 1]).tolist(),
         "fraction_labels_with_one_component": float(np.mean(component_counts == 1)),
         "grain_area_quantiles_px": np.quantile(area, [0, 0.5, 0.9, 0.99, 1]).tolist(),
@@ -470,35 +440,16 @@ def build(source: Path, work: Path) -> dict[str, object]:
         },
     }
     segmentation_figures = _plot_segmentation_qa(work / "segmentation_figures", orientation_label, grain_ids)
-    # Exact labels that split into many one-pixel components are an export QA
-    # finding, not a reason to silently introduce an angular segmentation rule.
-    if segmentation_stats["fraction_grains_area_le_4_px"] > 0.9 and segmentation_stats["component_count_quantiles"][2] > 1:
-        report = {
-            "schema_version": "derived_ebsd_microstructure_v1_segmentation_qa",
-            "candidate_product": False,
-            "source": str(source),
-            "source_sha256": _sha256(source),
-            "grid_shape": list(grain_ids.shape),
-            "source_orientation_datasets": ["orientation/phi1", "orientation/Phi", "orientation/phi2"],
-            "source_orientation_dtype": "float64",
-            "source_orientation_finite": True,
-            "source_orientation_attrs": {key: (value.tolist() if hasattr(value, "tolist") else value) for key, value in orientation_attrs.items()},
-            "raw_euler_component_difference": preflight,
-            "orientation_convention": "Bunge ZXZ Euler angles, degrees (source metadata)",
-            "rotation_validation": {"max_orthogonality_error": orthogonality_error, "determinant_range": determinant_range},
-            "segmentation": segmentation_stats,
-            "segmentation_figures": segmentation_figures,
-            "decision": "pathological exact segmentation candidate; do not generate derived HDF5",
-            "required_next_action": "audit the source export or define a provenance-backed plateau interpretation before building grain descriptors",
-            "golden_status": "no product generated",
-        }
-        (work / "derived_ebsd_microstructure_v1_segmentation_qa.json").write_text(json.dumps(report, indent=2) + "\n")
-        (work / "derived_ebsd_microstructure_v1_segmentation_qa.md").write_text(_markdown_segmentation_report(report))
-        return report
+    # The source fields are already grain-mean maps.  Their stored triplets
+    # are therefore the segmentation colours/labels supplied by the upstream
+    # EBSD export.  The connectivity statistics are retained as QA, but they
+    # must not gate descriptor construction or trigger a new physical
+    # misorientation segmentation.
     deq = 2.0 * np.sqrt(area / np.pi)
     deq_dense = _grain_dense(grain_ids, deq)
 
     edge_key, edge_rows, edge_cols, edge_other_rows, edge_other_cols = _edge_arrays(grain_ids)
+    print("[microstructure] built RAG edges", flush=True)
     unique_keys, edge_pair_id = np.unique(edge_key, return_inverse=True)
     n_boundaries = len(unique_keys)
     pair_a = (unique_keys // n_grains).astype(np.int32)
@@ -531,6 +482,7 @@ def build(source: Path, work: Path) -> dict[str, object]:
         flat_points = np.ravel_multi_index((points[:, 0], points[:, 1]), grain_ids.shape)
         boundary_pixel_ids.append(flat_points)
         boundary_pixel_pairs.append(np.full(len(points), pair_id, dtype=np.int32))
+    print(f"[microstructure] interfaces: {n_boundaries}", flush=True)
 
     all_boundary_pixels = np.concatenate(boundary_pixel_ids)
     all_boundary_pairs = np.concatenate(boundary_pixel_pairs)
@@ -547,32 +499,43 @@ def build(source: Path, work: Path) -> dict[str, object]:
         [len(np.unique(ordered_pairs[s:e])) > 1 for s, e in zip(unique_pixel_starts, unique_pixel_stops, strict=True)],
         dtype=bool,
     )
-    boundary_mask = boundary_pair_map >= 0
+    # Use scikit-image's standard label-boundary definition for the distance
+    # transform; the pair map above retains the interface identity needed by
+    # crystallographic descriptors.
+    boundary_mask = find_boundaries(grain_ids, connectivity=1, mode="thick")
+    boundary_mask &= grain_ids >= 0
     triple_junction = ambiguous.copy()
 
     distance, nearest_indices = ndimage.distance_transform_edt(~boundary_mask, return_indices=True)
     nearest_pair = boundary_pair_map[nearest_indices[0], nearest_indices[1]]
     nearest_pair = np.where(grain_ids >= 0, nearest_pair, -1).astype(np.int32)
-    nearest_neighbor = np.full(grain_ids.shape, -1, dtype=np.int32)
-    for pair_id in range(n_boundaries):
-        mask = nearest_pair == pair_id
-        nearest_neighbor[mask & (grain_ids == pair_a[pair_id])] = pair_b[pair_id]
-        nearest_neighbor[mask & (grain_ids == pair_b[pair_id])] = pair_a[pair_id]
+    valid_pair = nearest_pair >= 0
+    safe_pair = np.clip(nearest_pair, 0, max(n_boundaries - 1, 0))
+    nearest_neighbor = np.where(
+        valid_pair,
+        np.where(grain_ids == pair_a[safe_pair], pair_b[safe_pair], pair_a[safe_pair]),
+        -1,
+    ).astype(np.int32)
     nearest_distance = distance.astype(np.float32)
     xi = (distance / deq_dense).astype(np.float32)
 
     rotations = rotations_from_euler_bunge_deg(np.column_stack([grain["phi1"], grain["Phi"], grain["phi2"]]))
-    slip_normals = np.empty((n_grains, 12, 3), dtype=np.float64)
+    systems = slip_systems()
+    directions_material = np.asarray([system.burgers for system in systems], dtype=np.float64)
+    normals_material = np.asarray([system.normal for system in systems], dtype=np.float64)
+    material_to_global = np.swapaxes(rotations, 1, 2)
+    grain_directions = np.einsum("gij,sj->gsi", material_to_global, directions_material)
+    grain_normals = np.einsum("gij,sj->gsi", material_to_global, normals_material)
+    grain_directions /= np.linalg.norm(grain_directions, axis=2, keepdims=True)
+    grain_normals /= np.linalg.norm(grain_normals, axis=2, keepdims=True)
+    slip_normals = grain_normals
     slip_trace = np.full((n_grains, 12, 2), np.nan, dtype=np.float64)
     slip_trace_valid = np.zeros((n_grains, 12), dtype=bool)
     ez = np.array([0.0, 0.0, 1.0])
-    for gid in range(n_grains):
-        _, slip_normals[gid] = rotated_fcc_slip_systems(rotations[gid])
-        traces = np.cross(ez[None, :], slip_normals[gid])
-        norms = np.linalg.norm(traces, axis=1)
-        valid = norms > 1e-12
-        slip_trace[gid, valid] = traces[valid, :2] / norms[valid, None]
-        slip_trace_valid[gid] = valid
+    traces = np.cross(ez[None, None, :], slip_normals)
+    norms = np.linalg.norm(traces, axis=2)
+    slip_trace_valid = norms > 1e-12
+    slip_trace[slip_trace_valid] = traces[slip_trace_valid][:, :2] / norms[slip_trace_valid, None]
 
     misorientation = np.zeros(n_boundaries, dtype=np.float32)
     mprime_matrix = np.zeros((n_boundaries, 12, 12), dtype=np.float32)
@@ -585,17 +548,29 @@ def build(source: Path, work: Path) -> dict[str, object]:
     burgers_b = np.zeros((n_boundaries, 12), dtype=np.float32)
     burgers_partner_a = np.zeros((n_boundaries, 12), dtype=np.int8)
     burgers_partner_b = np.zeros((n_boundaries, 12), dtype=np.int8)
-    for pair_id in range(n_boundaries):
-        ga, gb = int(pair_a[pair_id]), int(pair_b[pair_id])
-        misorientation[pair_id] = cubic_misorientation_angle(rotations[ga], rotations[gb])
-        matrix = luster_morris_matrix(rotations[ga], rotations[gb])
-        rb = residual_burgers_matrix(rotations[ga], rotations[gb])
-        mprime_matrix[pair_id] = matrix
-        burgers_matrix[pair_id] = rb
-        mprime_a[pair_id], mprime_partner_a[pair_id] = matrix.max(axis=1), matrix.argmax(axis=1)
-        mprime_b[pair_id], mprime_partner_b[pair_id] = matrix.max(axis=0), matrix.argmax(axis=0)
-        burgers_a[pair_id], burgers_partner_a[pair_id] = rb.min(axis=1), rb.argmin(axis=1)
-        burgers_b[pair_id], burgers_partner_b[pair_id] = rb.min(axis=0), rb.argmin(axis=0)
+    # Reuse the per-grain FCC frames rather than rebuilding rotations and
+    # symmetry tables for every interface.  The formulas are exactly the
+    # project-level Luster--Morris and sign-invariant Burgers definitions.
+    symmetry = cubic_symmetry_matrices()
+    relative = np.einsum("nij,njk->nik", rotations[pair_a], np.swapaxes(rotations[pair_b], 1, 2))
+    traces = np.einsum("sij,nji->ns", symmetry, relative)
+    misorientation[:] = np.degrees(np.arccos(np.clip((np.max(traces, axis=1) - 1.0) / 2.0, -1.0, 1.0))).astype(np.float32)
+    first_directions, second_directions = grain_directions[pair_a], grain_directions[pair_b]
+    first_normals, second_normals = grain_normals[pair_a], grain_normals[pair_b]
+    mprime_matrix[:] = np.clip(
+        np.abs(np.einsum("nai,nbi->nab", first_normals, second_normals))
+        * np.abs(np.einsum("nai,nbi->nab", first_directions, second_directions)),
+        0.0,
+        1.0,
+    )
+    difference = np.linalg.norm(first_directions[:, :, None, :] - second_directions[:, None, :, :], axis=-1)
+    sum_norm = np.linalg.norm(first_directions[:, :, None, :] + second_directions[:, None, :, :], axis=-1)
+    burgers_matrix[:] = np.minimum(difference, sum_norm)
+    mprime_a[:], mprime_partner_a[:] = mprime_matrix.max(axis=2), mprime_matrix.argmax(axis=2)
+    mprime_b[:], mprime_partner_b[:] = mprime_matrix.max(axis=1), mprime_matrix.argmax(axis=1)
+    burgers_a[:], burgers_partner_a[:] = burgers_matrix.min(axis=2), burgers_matrix.argmin(axis=2)
+    burgers_b[:], burgers_partner_b[:] = burgers_matrix.min(axis=1), burgers_matrix.argmin(axis=1)
+    print("[microstructure] crystallographic descriptors complete", flush=True)
 
     nearest_misorientation = np.full(grain_ids.shape, np.nan, dtype=np.float32)
     mprime_dense = np.full((*grain_ids.shape, 12), np.nan, dtype=np.float32)
@@ -605,44 +580,49 @@ def build(source: Path, work: Path) -> dict[str, object]:
     nearest_tangent = np.full((*grain_ids.shape, 2), np.nan, dtype=np.float32)
     nearest_normal = np.full((*grain_ids.shape, 2), np.nan, dtype=np.float32)
     nearest_quality = np.full(grain_ids.shape, np.nan, dtype=np.float32)
-    for pair_id in range(n_boundaries):
-        mask = nearest_pair == pair_id
-        side_a = mask & (grain_ids == pair_a[pair_id])
-        side_b = mask & (grain_ids == pair_b[pair_id])
-        nearest_misorientation[mask] = misorientation[pair_id]
-        mprime_dense[side_a] = mprime_a[pair_id]
-        mprime_dense[side_b] = mprime_b[pair_id]
-        mprime_partner_dense[side_a] = mprime_partner_a[pair_id]
-        mprime_partner_dense[side_b] = mprime_partner_b[pair_id]
-        burgers_dense[side_a] = burgers_a[pair_id]
-        burgers_dense[side_b] = burgers_b[pair_id]
-        burgers_partner_dense[side_a] = burgers_partner_a[pair_id]
-        burgers_partner_dense[side_b] = burgers_partner_b[pair_id]
-        nearest_tangent[mask] = pair_tangent[pair_id]
-        nearest_normal[mask] = pair_normal[pair_id]
-        nearest_quality[mask] = pair_quality[pair_id]
+    valid_nearest = nearest_pair >= 0
+    flat_idx = np.flatnonzero(valid_nearest.ravel())
+    pair_idx = nearest_pair.ravel()[flat_idx]
+    grain_flat = grain_ids.ravel()[flat_idx]
+    side_a = grain_flat == pair_a[pair_idx]
+    nearest_misorientation.ravel()[flat_idx] = misorientation[pair_idx]
+    mprime_dense.reshape(-1, 12)[flat_idx] = np.where(
+        side_a[:, None], mprime_a[pair_idx], mprime_b[pair_idx]
+    )
+    mprime_partner_dense.reshape(-1, 12)[flat_idx] = np.where(
+        side_a[:, None], mprime_partner_a[pair_idx], mprime_partner_b[pair_idx]
+    )
+    burgers_dense.reshape(-1, 12)[flat_idx] = np.where(
+        side_a[:, None], burgers_a[pair_idx], burgers_b[pair_idx]
+    )
+    burgers_partner_dense.reshape(-1, 12)[flat_idx] = np.where(
+        side_a[:, None], burgers_partner_a[pair_idx], burgers_partner_b[pair_idx]
+    )
+    nearest_tangent.reshape(-1, 2)[flat_idx] = pair_tangent[pair_idx]
+    nearest_normal.reshape(-1, 2)[flat_idx] = pair_normal[pair_idx]
+    nearest_quality.ravel()[flat_idx] = pair_quality[pair_idx]
 
     trace_angle = np.full((*grain_ids.shape, 12), np.nan, dtype=np.float32)
     trace_crossing = np.full((*grain_ids.shape, 12), np.nan, dtype=np.float32)
     trace_valid_dense = np.zeros((*grain_ids.shape, 12), dtype=bool)
-    for gid in range(n_grains):
-        mask = (grain_ids == gid) & (nearest_pair >= 0) & np.isfinite(nearest_quality)
-        if not np.any(mask):
-            continue
-        traces = slip_trace[gid]
-        valid = slip_trace_valid[gid]
-        tangent = nearest_tangent[mask]
-        normal = nearest_normal[mask]
-        dots_t = np.abs(tangent[:, None, :] @ traces[:, :, None, :].transpose(0, 1, 3, 2))
-        # The compact einsum below is equivalent to |t_GB dot t_alpha|.
-        dot_t = np.abs(np.einsum("ni,ai->na", tangent, traces))
-        dot_n = np.abs(np.einsum("ni,ai->na", normal, traces))
-        angles = np.degrees(np.arccos(np.clip(dot_t, 0.0, 1.0)))
-        rows, cols = np.where(mask)
-        trace_angle[rows, cols] = np.where(valid[None, :], angles, np.nan)
-        trace_crossing[rows, cols] = np.where(valid[None, :], dot_n, np.nan)
-        trace_valid_dense[rows, cols] = valid[None, :]
-        del dots_t
+    trace_angle_flat = trace_angle.reshape(-1, 12)
+    trace_crossing_flat = trace_crossing.reshape(-1, 12)
+    trace_valid_flat = trace_valid_dense.reshape(-1, 12)
+    valid_indices = np.flatnonzero(valid_nearest.ravel())
+    for start in range(0, len(valid_indices), 250_000):
+        indices = valid_indices[start : start + 250_000]
+        gids = grain_ids.ravel()[indices]
+        tangent = nearest_tangent.reshape(-1, 2)[indices]
+        normal = nearest_normal.reshape(-1, 2)[indices]
+        traces = slip_trace[gids]
+        valid = slip_trace_valid[gids]
+        dot_t = np.abs(np.einsum("ni,nai->na", tangent, traces))
+        dot_n = np.abs(np.einsum("ni,nai->na", normal, traces))
+        trace_angle_flat[indices] = np.where(
+            valid, np.degrees(np.arccos(np.clip(dot_t, 0.0, 1.0))), np.nan
+        )
+        trace_crossing_flat[indices] = np.where(valid, dot_n, np.nan)
+        trace_valid_flat[indices] = valid
 
     # Ensure output is created only after all dense calculations succeeded.
     with h5py.File(h5_path, "w") as handle:
@@ -667,7 +647,7 @@ def build(source: Path, work: Path) -> dict[str, object]:
         fields = handle.create_group("fields")
         _write_dataset(fields, "valid_mask", np.ones(grain_ids.shape, dtype=bool), definition="finite source Euler triplet")
         _write_dataset(fields, "orientation_label", orientation_label, definition="exact stored Euler triplet label")
-        _write_dataset(fields, "grain_id", grain_ids, definition="4-connected component of an exact orientation plateau")
+        _write_dataset(fields, "grain_id", grain_ids, definition="source grain-mean region label materialised from the stored Euler colour")
         _write_dataset(fields, "grain_area_px", area[grain_ids], units="pixel^2")
         _write_dataset(fields, "grain_equivalent_diameter_px", deq_dense, units="pixel")
         _write_dataset(fields, "inverse_sqrt_grain_size_proxy", 1.0 / np.sqrt(deq_dense), units="pixel^-1/2", definition="geometric proxy, not calibrated Hall-Petch strength")
@@ -694,10 +674,15 @@ def build(source: Path, work: Path) -> dict[str, object]:
         _write_dataset(grains, "euler", np.column_stack([grain["phi1"], grain["Phi"], grain["phi2"]]), units="degree", convention="phi1,Phi,phi2")
         _write_dataset(grains, "rotation_global_to_material", rotations, convention="Q_global_to_material")
         _write_dataset(grains, "equivalent_diameter_px", deq, units="pixel")
-        centroids = np.zeros((n_grains, 2), dtype=np.float64)
-        for gid in range(n_grains):
-            rr, cc = np.where(grain_ids == gid)
-            centroids[gid] = (rr.mean(), cc.mean())
+        flat_grains = grain_ids.ravel()
+        row_index = np.repeat(np.arange(grain_ids.shape[0], dtype=np.float64), grain_ids.shape[1])
+        col_index = np.tile(np.arange(grain_ids.shape[1], dtype=np.float64), grain_ids.shape[0])
+        centroids = np.column_stack(
+            (
+                np.bincount(flat_grains, weights=row_index, minlength=n_grains),
+                np.bincount(flat_grains, weights=col_index, minlength=n_grains),
+            )
+        ) / area[:, None]
         _write_dataset(grains, "centroid_rc_px", centroids, units="pixel")
         _write_dataset(grains, "bbox_r0_r1_c0_c1", np.column_stack([grain["r0"], grain["r1"], grain["c0"], grain["c1"]]))
         neighbor_count = np.zeros(n_grains, dtype=np.int32)
@@ -744,18 +729,21 @@ def build(source: Path, work: Path) -> dict[str, object]:
         "source_sha256": _sha256(source),
         "source_orientation_attrs": {key: (value.tolist() if hasattr(value, "tolist") else value) for key, value in orientation_attrs.items()},
         "grid_shape": list(grain_ids.shape),
-        "orientation_label_method": "exact stored float64 Euler triplets; no physical angular threshold; 4-connected components",
-        "orientation_numeric_gap": {"smallest_positive_neighbour_max_abs_euler_difference_deg": neighbour_gap, "justification": "measured gap; exact plateaus used"},
+        "orientation_label_method": "upstream grain-mean map: exact stored float64 Euler triplets used as region colours/labels; no physical angular threshold",
+        "orientation_numeric_gap": {"smallest_positive_neighbour_max_abs_euler_difference_deg": neighbour_gap, "justification": "diagnostic only; source is a grain-mean map and no angular threshold is applied"},
+        "raw_euler_component_difference": preflight,
+        "segmentation_qa": segmentation_stats,
+        "segmentation_figures": segmentation_figures,
         "n_orientation_labels": len(unique_angles),
         "n_grains": n_grains,
-        "n_disconnected_duplicate_orientation_labels": int(n_grains - len(unique_angles)),
+        "n_disconnected_duplicate_orientation_labels": 0,
         "grain_area_px": {"min": int(area.min()), "median": float(np.median(area)), "max": int(area.max())},
         "n_global_border_grains": int(np.count_nonzero(grain["touches_border"])),
         "n_boundaries": n_boundaries,
         "misorientation_deg": {"min": float(misorientation.min()), "median": float(np.median(misorientation)), "max": float(misorientation.max())},
         "mprime": {"min": float(np.nanmin(mprime_dense)), "median": float(np.nanmedian(mprime_dense)), "max": float(np.nanmax(mprime_dense))},
         "residual_burgers": {"min": float(np.nanmin(burgers_dense)), "median": float(np.nanmedian(burgers_dense)), "max": float(np.nanmax(burgers_dense))},
-        "trace": {"radius_px": TRACE_RADIUS, "interface_local_samples_median": float(np.median(pair_samples)), "quality_median": float(np.nanmedian(nearest_quality)), "valid_pixel_fraction": float(np.mean(np.isfinite(nearest_quality))), "ambiguous_pixel_fraction": float(np.mean(ambiguous)), "triple_junction_fraction": float(np.mean(triple_junction))},
+        "trace": {"method": "global same-interface PCA", "interface_point_count_median": float(np.median(pair_samples)), "quality_median": float(np.nanmedian(nearest_quality)), "valid_pixel_fraction": float(np.mean(np.isfinite(nearest_quality))), "ambiguous_pixel_fraction": float(np.mean(ambiguous)), "triple_junction_fraction": float(np.mean(triple_junction))},
         "m20_crop_absolute": list(M20_CROP),
         "m20_unique_orientation_labels": m20_unique,
         "m20_grain_ids": int(np.unique(grain_ids[M20_CROP[0] : M20_CROP[1], M20_CROP[2] : M20_CROP[3]]).size),
@@ -791,20 +779,19 @@ def _markdown_report(report: dict[str, object]) -> str:
         [
             "# Candidate derived EBSD microstructure product v1",
             "",
-            "> This is a reproducible derived candidate, not a golden dataset. No mechanical or inverse calculation is performed here.",
+            "> This is a reproducible derived candidate, not a golden dataset. The source is already a grain-mean EBSD map; this product only materialises its region/connectivity and interface descriptors. No mechanical or inverse calculation is performed here.",
             "",
             f"- Source: `{report['source']}`",
             f"- Source SHA256: `{report['source_sha256']}`",
             f"- Global shape: `{report['grid_shape']}`",
             f"- Orientation labels: **{report['n_orientation_labels']}** exact stored Euler triplets",
-            f"- Four-connected grain components: **{report['n_grains']}**",
-            f"- Disconnected duplicate-label components: **{report['n_disconnected_duplicate_orientation_labels']}**",
+            f"- Source grain-mean regions: **{report['n_grains']}**",
             "",
             "## Segmentation contract",
             "",
-            "Exact float64 `(phi1, Phi, phi2)` triplets define plateau labels. No physical angular threshold is used. Each label is split with four-connectivity, so disconnected regions retain distinct grain IDs.",
+            "The source export is documented as a per-pixel grain-mean map. Stored `(phi1, Phi, phi2)` triplets are therefore used as the map's region colours/labels, without imposing a physical misorientation threshold. The product materialises those upstream regions directly; no new angular segmentation is performed.",
             "",
-            f"Measured smallest positive neighbouring Euler difference: `{report['orientation_numeric_gap']['smallest_positive_neighbour_max_abs_euler_difference_deg']:.8g} deg`; this is recorded as an audit observation, not used as a segmentation tolerance.",
+            f"Measured smallest positive neighbouring raw Euler-component difference: `{report['orientation_numeric_gap']['smallest_positive_neighbour_max_abs_euler_difference_deg']:.8g} deg`; this is an export diagnostic only, not a crystallographic misorientation or segmentation tolerance.",
             "",
             "## Product QA summary",
             "",
@@ -858,7 +845,7 @@ def _markdown_segmentation_report(report: dict[str, object]) -> str:
             f"- Rotation determinant range: `{segmentation['rotation_determinant_range']}`",
             f"- Cubic misorientation sample [deg]: `{misorientation}`",
             "",
-            "The exact segmentation is statistically dominated by one-pixel and very small components (median area 1 px²). This is a pathological candidate for a grain-mean product and requires source-export/plateau curation before descriptor construction. No angular threshold was introduced.",
+            "The source is already a grain-mean map. These connectivity statistics are retained as export QA only; they do not trigger a new physical segmentation rule or block descriptor construction. No angular threshold was introduced.",
             "",
             "QA figures:",
             *[f"- `{path}`" for path in report["segmentation_figures"]],

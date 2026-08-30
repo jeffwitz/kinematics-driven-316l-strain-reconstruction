@@ -1,57 +1,17 @@
 {
-  "schema_version": "derived_ebsd_microstructure_v1_segmentation_qa",
-  "candidate_product": false,
+  "schema_version": "derived_ebsd_microstructure_v1_preflight",
   "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
   "source_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
   "grid_shape": [3600, 3100],
-  "source_orientation_datasets": ["orientation/phi1", "orientation/Phi", "orientation/phi2"],
-  "source_orientation_dtype": "float64",
-  "source_orientation_finite": true,
-  "source_orientation_attrs": {
-    "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
-    "description": "Euler angle phi1, per-pixel grain-mean",
-    "original_shape": [4400, 5400],
-    "pixel_size_um": 1.84,
-    "shape": [3600, 3100],
-    "source_file": "3.1.phi1_mean_per_grain_field.npy",
-    "units": "deg"
-  },
-  "orientation_convention": "Bunge ZXZ Euler angles, degrees (source metadata)",
-  "raw_euler_component_difference": {
-    "neighbour_pairs": 22313300,
-    "exact_equal_fraction": 0.9608147158869373,
-    "positive_difference_count": 874353,
-    "positive_difference_quantiles_deg": [0.0018111616373062134, 0.048569679260253906, 0.2758979797363281, 1.34750634431839, 2.954536646604538, 31.536414623260498, 110.34287929534912, 198.0254729092121, 255.00170254707336, 1410.3348503112793],
-    "smallest_positive_difference_deg": 0.0018111616373062134,
-    "note": "raw max Euler-component difference; not crystallographic misorientation and not a segmentation gate"
-  },
-  "rotation_validation": {
-    "max_orthogonality_error": 6.661338147750939e-16,
-    "determinant_range": [0.9999999999999994, 1.0000000000000007]
-  },
-  "segmentation": {
-    "n_orientation_labels": 29238,
-    "n_grains_after_connectivity": 224795,
-    "extra_components": 195557,
-    "component_count_quantiles": [1.0, 3.0, 20.0, 50.0, 115.0],
-    "fraction_labels_with_one_component": 0.3291606813051508,
-    "grain_area_quantiles_px": [1.0, 1.0, 2.0, 15.0, 235628.0],
-    "grain_area_mean_px": 49.64523232278298,
-    "fraction_grains_area_le_1_px": 0.8773860628572699,
-    "fraction_grains_area_le_2_px": 0.9160257123156654,
-    "fraction_grains_area_le_4_px": 0.9504259436375364,
-    "fraction_pixels_in_area_le_1_px_grains": 0.017673118279569893,
-    "fraction_pixels_in_area_le_2_px_grains": 0.019229749103942654,
-    "fraction_pixels_in_area_le_4_px_grains": 0.0215755376344086
-  },
-  "cubic_neighbour_misorientation_sample_deg": {
-    "count": 2000,
-    "min": 0.0016363529140706258,
-    "median": 29.773296179139862,
-    "max": 61.91038687917706,
-    "quantiles": [0.3511559101823077, 29.773296179139862, 58.628783321878736]
-  },
-  "decision": "pathological exact segmentation candidate; do not generate derived HDF5",
-  "required_next_action": "audit the source export or define a provenance-backed plateau interpretation before building grain descriptors",
-  "golden_status": "no product generated"
+  "orientation_label_method": "source grain-mean Euler triplets used as stored region colours; no angular threshold",
+  "n_source_regions": 29238,
+  "n_interfaces": 77773,
+  "grain_area_px": {"min": 1, "median": 6.0, "max": 235628},
+  "cubic_misorientation_deg": {"min": 0.0016363529721274972, "median": 26.795066833496094, "max": 62.37626647949219},
+  "mprime": {"min": 0.41880106925964355, "median": 0.9083595275878906, "max": 1.0},
+  "residual_burgers": {"min": 1.2112196600355674e-05, "median": 0.2621772587299347, "max": 0.762243926525116},
+  "m20_source_regions": 15,
+  "h5_payload": {"path": "/tmp/derived_ebsd_microstructure_v1/derived_ebsd_microstructure_v1.h5", "sha256": "ef9afab13a5a2322650298a388b91b989e7becf920c36f23a91cde0972643c01", "committed": false},
+  "status": "candidate derived product; not golden",
+  "raw_euler_1410_degree_value": "component-wise Euler difference only; not a crystallographic misorientation"
 }

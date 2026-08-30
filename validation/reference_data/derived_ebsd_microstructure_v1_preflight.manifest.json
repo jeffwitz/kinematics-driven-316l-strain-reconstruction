@@ -1,11 +1,14 @@
 {
-  "schema_version": "derived_ebsd_microstructure_v1_segmentation_qa",
-  "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "schema_version": "derived_ebsd_microstructure_v1",
   "source_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
-  "grid_shape": [3600, 3100],
-  "payload_generated": false,
-  "reason": "exact stored-label connectivity is pathologically fragmented; source export semantics require audit",
-  "report": "validation/reference_data/derived_ebsd_microstructure_v1_preflight.md",
-  "json_report": "validation/reference_data/derived_ebsd_microstructure_v1_preflight.json",
-  "generator": "scripts/build_derived_ebsd_microstructure.py"
+  "source_regions": 29238,
+  "interfaces": 77773,
+  "global_hdf5": {
+    "path": "/tmp/derived_ebsd_microstructure_v1/derived_ebsd_microstructure_v1.h5",
+    "size_bytes": 389208483,
+    "sha256": "ef9afab13a5a2322650298a388b91b989e7becf920c36f23a91cde0972643c01",
+    "committed": false
+  },
+  "generation_command": "PYTHONPATH=src python scripts/build_derived_ebsd_microstructure.py --work /tmp/derived_ebsd_microstructure_v1",
+  "golden_status": "candidate; not promoted"
 }
