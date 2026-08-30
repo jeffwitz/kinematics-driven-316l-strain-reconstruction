@@ -1,0 +1,63 @@
+{
+  "schema_version": "derived_ebsd_microstructure_working_A8_v1",
+  "status": "WORKING_DERIVED_PRODUCT_NOT_GOLDEN",
+  "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "source_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
+  "cleanup_source": "/tmp/derived_ebsd_cleanup_v1/amin_8.npz",
+  "cleanup_Amin_px": 8,
+  "grid_shape": [
+    3600,
+    3100
+  ],
+  "raw_component_count": 224795,
+  "working_grain_count": 4963,
+  "reassigned_pixel_fraction": 0.025082706093189962,
+  "ambiguous_component_count": 67,
+  "ambiguous_pixel_fraction": 6.003584229390681e-06,
+  "n_boundaries": 11473,
+  "grain_area_px": {
+    "min": 1,
+    "median": 14.0,
+    "max": 238187
+  },
+  "misorientation_deg": {
+    "min": 0.0,
+    "median": 38.670772552490234,
+    "max": 62.212913513183594
+  },
+  "mprime": {
+    "min": 0.421501487493515,
+    "median": 0.7869679927825928,
+    "max": 0.9999998211860657
+  },
+  "residual_burgers": {
+    "min": 0.000219124456634745,
+    "median": 0.3742978274822235,
+    "max": 0.7638174891471863
+  },
+  "trace": {
+    "valid_fraction": 0.9714611111111111,
+    "quality_median": 0.9166666865348816,
+    "ambiguous_boundary_fraction": 0.005157347670250896,
+    "local_radius_px": 3.0
+  },
+  "m20": {
+    "working_grain_count": 7,
+    "reassigned_fraction": 0.04,
+    "global_area_inherited": true
+  },
+  "figures": [
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/01_working_grain_ids.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/02_reassigned_pixels.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/03_equivalent_diameter_px.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/04_distance_to_gb_over_deq.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/05_nearest_gb_misorientation_deg.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/06_max_mprime.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/07_min_residual_burgers.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/08_local_trace_quality.png",
+    "/tmp/derived_ebsd_microstructure_working_A8_v1/figures/09_local_trace_vectors_m20like_crop.png"
+  ],
+  "h5_path": "/tmp/derived_ebsd_microstructure_working_A8_v1/derived_ebsd_microstructure_working_A8_v1.h5",
+  "h5_sha256": "05265f236a00cefceb281992cc53d101134482c14e290c0f95d4c8531c95b1ed",
+  "no_mechanics_run": true
+}
