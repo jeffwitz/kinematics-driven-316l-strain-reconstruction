@@ -1,0 +1,236 @@
+{
+  "inspection": {
+    "datasets": [
+      {
+        "attributes": {
+          "description": "DIC displacement field, x-component, step 40",
+          "pixel_size_um": 1.84,
+          "shape": [
+            3600,
+            3100
+          ],
+          "source_file": "U_40.npy",
+          "units": "px"
+        },
+        "dtype": "float32",
+        "path": "displacement/U",
+        "shape": [
+          3600,
+          3100
+        ]
+      },
+      {
+        "attributes": {
+          "description": "DIC displacement field, y-component, step 40",
+          "pixel_size_um": 1.84,
+          "shape": [
+            3600,
+            3100
+          ],
+          "source_file": "V_40.npy",
+          "units": "px"
+        },
+        "dtype": "float32",
+        "path": "displacement/V",
+        "shape": [
+          3600,
+          3100
+        ]
+      },
+      {
+        "attributes": {
+          "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+          "description": "Euler angle Phi, per-pixel grain-mean",
+          "original_shape": [
+            4400,
+            5400
+          ],
+          "pixel_size_um": 1.84,
+          "shape": [
+            3600,
+            3100
+          ],
+          "source_file": "3.2.Phi_mean_per_grain_field.npy",
+          "units": "deg"
+        },
+        "dtype": "float64",
+        "path": "orientation/Phi",
+        "shape": [
+          3600,
+          3100
+        ]
+      },
+      {
+        "attributes": {
+          "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+          "description": "Euler angle phi1, per-pixel grain-mean",
+          "original_shape": [
+            4400,
+            5400
+          ],
+          "pixel_size_um": 1.84,
+          "shape": [
+            3600,
+            3100
+          ],
+          "source_file": "3.1.phi1_mean_per_grain_field.npy",
+          "units": "deg"
+        },
+        "dtype": "float64",
+        "path": "orientation/phi1",
+        "shape": [
+          3600,
+          3100
+        ]
+      },
+      {
+        "attributes": {
+          "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+          "description": "Euler angle phi2, per-pixel grain-mean",
+          "original_shape": [
+            4400,
+            5400
+          ],
+          "pixel_size_um": 1.84,
+          "shape": [
+            3600,
+            3100
+          ],
+          "source_file": "3.3.phi2_mean_per_grain_field.npy",
+          "units": "deg"
+        },
+        "dtype": "float64",
+        "path": "orientation/phi2",
+        "shape": [
+          3600,
+          3100
+        ]
+      },
+      {
+        "attributes": {
+          "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+          "description": "Max Schmid factor, per-pixel grain-mean",
+          "original_shape": [
+            4400,
+            5400
+          ],
+          "pixel_size_um": 1.84,
+          "shape": [
+            3600,
+            3100
+          ],
+          "source_file": "4.Max_Schmid_factor_mean_per_grain_field.npy",
+          "units": "-"
+        },
+        "dtype": "float64",
+        "path": "schmid/max_schmid_factor",
+        "shape": [
+          3600,
+          3100
+        ]
+      },
+      {
+        "attributes": {
+          "description": "Post-test surface height map (contains NaN = invalid pixels)",
+          "pixel_size_um": "TBD",
+          "shape": [
+            3855,
+            5613
+          ],
+          "source_file": "height_after_test.npy",
+          "units": "unknown"
+        },
+        "dtype": "float64",
+        "path": "topography/height_after_test",
+        "shape": [
+          3855,
+          5613
+        ]
+      }
+    ],
+    "grain_label_candidates": [],
+    "grain_labels_available": false,
+    "m20_crop": [
+      1610,
+      1630,
+      1075,
+      1095
+    ],
+    "m20_orientation_shape": [
+      20,
+      20,
+      3
+    ],
+    "m20_unique_orientation_count": 15,
+    "native_ebsd_step": {
+      "independently_documented": false,
+      "interpretation": "metadata value is present, but it is not independently established as the native EBSD acquisition step",
+      "metadata_pixel_size_um": 1.84
+    },
+    "orientation_attributes": {
+      "Phi": {
+        "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+        "description": "Euler angle Phi, per-pixel grain-mean",
+        "original_shape": [
+          4400,
+          5400
+        ],
+        "pixel_size_um": 1.84,
+        "shape": [
+          3600,
+          3100
+        ],
+        "source_file": "3.2.Phi_mean_per_grain_field.npy",
+        "units": "deg"
+      },
+      "phi1": {
+        "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+        "description": "Euler angle phi1, per-pixel grain-mean",
+        "original_shape": [
+          4400,
+          5400
+        ],
+        "pixel_size_um": 1.84,
+        "shape": [
+          3600,
+          3100
+        ],
+        "source_file": "3.1.phi1_mean_per_grain_field.npy",
+        "units": "deg"
+      },
+      "phi2": {
+        "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+        "description": "Euler angle phi2, per-pixel grain-mean",
+        "original_shape": [
+          4400,
+          5400
+        ],
+        "pixel_size_um": 1.84,
+        "shape": [
+          3600,
+          3100
+        ],
+        "source_file": "3.3.phi2_mean_per_grain_field.npy",
+        "units": "deg"
+      }
+    },
+    "orientation_is_grain_mean": true,
+    "orientation_shape": [
+      3600,
+      3100
+    ],
+    "sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
+    "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5"
+  },
+  "methodological_scope": "P43 microstructure-to-k_perp screening preflight",
+  "reason": "CP_dataset contains orientation and Schmid fields but no grain ID or segmentation dataset; no P43 microstructural screening was run",
+  "required_before_screening": [
+    "source grain IDs or a provenance-backed segmentation",
+    "explicit label-to-orientation and boundary convention",
+    "independent decision on whether the native EBSD step is known"
+  ],
+  "schema_version": 1,
+  "screening_performed": false,
+  "status": "preflight_blocked_no_grain_labels",
+  "verdict": "E_data_geometry_insufficient"
+}
