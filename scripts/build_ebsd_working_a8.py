@@ -18,6 +18,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import ndimage
 from scipy.spatial import cKDTree
+from skimage.measure import label as skimage_label
 from skimage.segmentation import find_boundaries
 
 from fem_inhouse.core.crystal_orientation import rotations_from_euler_bunge_deg
@@ -122,6 +123,49 @@ def _edge_arrays(grain_ids: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndar
     )
 
 
+def _pair_misorientation(
+    rotations: np.ndarray, pair_a: np.ndarray, pair_b: np.ndarray, symmetry: np.ndarray
+) -> np.ndarray:
+    relative = np.einsum("nij,njk->nik", rotations[pair_a], np.swapaxes(rotations[pair_b], 1, 2))
+    traces = np.einsum("sij,nji->ns", symmetry, relative)
+    return np.degrees(np.arccos(np.clip((np.max(traces, axis=1) - 1.0) / 2.0, -1.0, 1.0))).astype(np.float32)
+
+
+def _nan_extreme(values: np.ndarray, *, maximum: bool) -> np.ndarray:
+    finite = np.isfinite(values)
+    fill = np.where(finite, values, -np.inf if maximum else np.inf)
+    result = np.max(fill, axis=-1) if maximum else np.min(fill, axis=-1)
+    return np.where(np.any(finite, axis=-1), result, np.nan)
+
+
+def _connected_components_by_exact_label(
+    orientation_labels: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Split exact final orientation labels into deterministic 4-components."""
+
+    labels = np.asarray(orientation_labels, dtype=np.int32)
+    component_map = np.full(labels.shape, -1, dtype=np.int32)
+    slices = ndimage.find_objects(labels + 1, max_label=int(labels.max()) + 1)
+    component_orientation: list[int] = []
+    component_area: list[int] = []
+    next_id = 0
+    for orientation_id, region in enumerate(slices):
+        if region is None:
+            continue
+        view = labels[region] == orientation_id
+        local = skimage_label(view, connectivity=1, background=0)
+        count = int(local.max())
+        if count == 0:
+            continue
+        target = component_map[region]
+        target[view] = local[view] + next_id - 1
+        sizes = np.bincount(local.ravel(), minlength=count + 1)[1:]
+        component_orientation.extend([orientation_id] * count)
+        component_area.extend(int(value) for value in sizes)
+        next_id += count
+    return component_map, np.asarray(component_orientation, dtype=np.int32), np.asarray(component_area, dtype=np.int64)
+
+
 def _plot_fields(work: Path, fields: dict[str, np.ndarray]) -> list[str]:
     work.mkdir(parents=True, exist_ok=True)
     plots = [
@@ -130,8 +174,8 @@ def _plot_fields(work: Path, fields: dict[str, np.ndarray]) -> list[str]:
         ("03_equivalent_diameter_px.png", fields["diameter"], "Working equivalent diameter [px]", "viridis"),
         ("04_distance_to_gb_over_deq.png", fields["xi"], "Distance to GB / equivalent diameter", "magma"),
         ("05_nearest_gb_misorientation_deg.png", fields["misorientation"], "Nearest GB cubic misorientation [deg]", "viridis"),
-        ("06_max_mprime.png", np.nanmax(fields["mprime"], axis=-1), "Max Luster-Morris m'", "viridis"),
-        ("07_min_residual_burgers.png", np.nanmin(fields["burgers"], axis=-1), "Min residual Burgers", "magma"),
+        ("06_max_mprime.png", _nan_extreme(fields["mprime"], maximum=True), "Max Luster-Morris m'", "viridis"),
+        ("07_min_residual_burgers.png", _nan_extreme(fields["burgers"], maximum=False), "Min residual Burgers", "magma"),
         ("08_local_trace_quality.png", fields["quality"], "Nearest local GB trace quality", "viridis"),
     ]
     paths: list[str] = []
@@ -172,10 +216,10 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
     cleanup_fmax = cleanup["cleanup_fmax"].astype(np.float64)
     cleanup_angle = cleanup["cleanup_fusion_misorientation_deg"].astype(np.float64)
 
-    unique_raw, working_inverse = np.unique(clean_component_raw, return_inverse=True)
-    working_grain = working_inverse.reshape(raw_component.shape).astype(np.int32)
-    n_grains = len(unique_raw)
-    working_orientation = component_orientation[unique_raw]
+    precanonical_unique_raw, precanonical_inverse = np.unique(clean_component_raw, return_inverse=True)
+    precanonical_working_grain = precanonical_inverse.reshape(raw_component.shape).astype(np.int32)
+    precanonical_n_grains = len(precanonical_unique_raw)
+    precanonical_orientation = component_orientation[precanonical_unique_raw]
     with h5py.File(source, "r") as handle:
         phi1 = handle["orientation/phi1"][:]
         capital_phi = handle["orientation/Phi"][:]
@@ -186,8 +230,27 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
     unique_angles = np.unique(records)
     euler = np.column_stack([unique_angles[name] for name in ("phi1", "Phi", "phi2")])
     rotations_by_label = rotations_from_euler_bunge_deg(euler)
-    rotations = rotations_by_label[working_orientation]
     source_euler = euler
+    # Canonicalize the post-cleanup orientation field without an angular
+    # threshold: exact final Euler labels are split by 4-connectivity.  This
+    # removes artificial interfaces between adjacent cleaned regions that
+    # inherited the same grain-mean orientation.
+    final_orientation_label = cleanup["clean_orientation_label"].astype(np.int32)
+    canonical_component_raw, canonical_orientation, canonical_area = _connected_components_by_exact_label(
+        final_orientation_label
+    )
+    working_grain = canonical_component_raw.astype(np.int32)
+    n_grains = len(canonical_area)
+    working_orientation = canonical_orientation
+    rotations = rotations_by_label[working_orientation]
+    symmetry = cubic_symmetry_matrices()
+    pre_edge_key, *_ = _edge_arrays(precanonical_working_grain)
+    pre_unique_keys = np.unique(pre_edge_key)
+    pre_pair_a = (pre_unique_keys // precanonical_n_grains).astype(np.int32)
+    pre_pair_b = (pre_unique_keys % precanonical_n_grains).astype(np.int32)
+    pre_misorientation = _pair_misorientation(
+        rotations_by_label[precanonical_orientation], pre_pair_a, pre_pair_b, symmetry
+    )
     del phi1, capital_phi, phi2, angles, records, unique_angles, rotations_by_label
 
     area = np.bincount(working_grain.ravel(), minlength=n_grains).astype(np.int64)
@@ -264,6 +327,8 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
     nearest_normal = boundary_normal_map[nearest_indices[0], nearest_indices[1]]
     nearest_quality = boundary_quality_map[nearest_indices[0], nearest_indices[1]]
     valid_pair = nearest_pair >= 0
+    nearest_boundary_ambiguous = ambiguous_boundary[nearest_indices[0], nearest_indices[1]]
+    nearest_triple_junction = ambiguous_boundary[nearest_indices[0], nearest_indices[1]]
     safe_pair = np.clip(nearest_pair, 0, max(n_boundaries - 1, 0))
     nearest_neighbor = np.where(
         valid_pair,
@@ -271,8 +336,11 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         -1,
     ).astype(np.int32)
     cleanup_ambiguous_dense = raw_ambiguous[clean_component_raw]
-    triple = ambiguous_boundary
-
+    qa_valid = valid_pair & (~cleanup_ambiguous_dense) & (~nearest_boundary_ambiguous) & (~nearest_triple_junction)
+    qa_indices = np.flatnonzero(qa_valid)
+    qa_pairs = nearest_pair.ravel()[qa_indices]
+    qa_incident = np.isin(working_grain.ravel()[qa_indices], pair_a[qa_pairs]) | np.isin(working_grain.ravel()[qa_indices], pair_b[qa_pairs])
+    qa_self_neighbor = nearest_neighbor.ravel()[qa_indices] == working_grain.ravel()[qa_indices]
     systems = slip_systems()
     directions_material = np.asarray([system.burgers for system in systems], dtype=np.float64)
     normals_material = np.asarray([system.normal for system in systems], dtype=np.float64)
@@ -303,7 +371,7 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
     burgers_b, burgers_partner_b = burgers_matrix.min(axis=1), burgers_matrix.argmin(axis=1).astype(np.int8)
     # Nearest-GB crystallographic descriptors are undefined for cleanup
     # ambiguities or pixels equidistant to several interfaces.
-    descriptor_valid_dense = valid_pair & (~cleanup_ambiguous_dense) & (~ambiguous_boundary)
+    descriptor_valid_dense = valid_pair & (~cleanup_ambiguous_dense) & (~nearest_boundary_ambiguous) & (~nearest_triple_junction)
     flat_nearest = nearest_pair.ravel()
     valid = descriptor_valid_dense.ravel()
     indices = np.flatnonzero(valid)
@@ -334,8 +402,8 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         trace_crossing[chunk] = np.where(valid_trace, dot_n, np.nan)
         trace_valid[chunk] = valid_trace
     trace_valid &= (~cleanup_ambiguous_dense.ravel())[:, None]
-    trace_valid &= (~ambiguous_boundary.ravel())[:, None]
-    trace_valid &= (~triple.ravel())[:, None]
+    trace_valid &= (~nearest_boundary_ambiguous.ravel())[:, None]
+    trace_valid &= (~nearest_triple_junction.ravel())[:, None]
     trace_valid &= np.isfinite(nearest_quality.ravel())[:, None] & (nearest_quality.ravel()[:, None] >= 0.8)
 
     final_orientation_dense = working_orientation[working_grain]
@@ -350,6 +418,9 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         bbox[gid] = [location[0].start, location[0].stop, location[1].start, location[1].stop]
         touches[gid] = bool(bbox[gid, 0] == 0 or bbox[gid, 1] == working_grain.shape[0] or bbox[gid, 2] == 0 or bbox[gid, 3] == working_grain.shape[1])
     grain_euler = source_euler[working_orientation]
+    source_component_id = np.full(n_grains, np.iinfo(np.int32).max, dtype=np.int32)
+    np.minimum.at(source_component_id, working_grain.ravel(), clean_component_raw.ravel())
+    source_component_id[source_component_id == np.iinfo(np.int32).max] = -1
     neighbor_count = np.zeros(n_grains, dtype=np.int32)
     for ga, gb in zip(pair_a, pair_b, strict=True):
         neighbor_count[ga] += 1
@@ -381,7 +452,8 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         write_dataset(raw, "connected_component_id", raw_component, definition="4-connected component of exact source label")
         cleanup_group = handle.create_group("cleanup")
         write_dataset(cleanup_group, "raw_component_id", raw_component)
-        write_dataset(cleanup_group, "working_grain_id", working_grain)
+        write_dataset(cleanup_group, "precanonical_working_grain_id", precanonical_working_grain)
+        write_dataset(cleanup_group, "working_grain_id", working_grain, definition="canonical exact final Euler triplet plus 4-connected component")
         write_dataset(cleanup_group, "reassigned_mask", working_fields["reassigned"])
         write_dataset(cleanup_group, "ambiguous_mask", cleanup_ambiguous_dense)
         write_dataset(cleanup_group, "source_component_area_px", component_areas[raw_component], units="pixel^2")
@@ -402,7 +474,8 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         write_dataset(fields, "distance_to_gb_over_deq", working_fields["xi"])
         write_dataset(fields, "nearest_boundary_id", nearest_pair)
         write_dataset(fields, "nearest_neighbor_grain_id", nearest_neighbor)
-        write_dataset(fields, "nearest_boundary_ambiguous", ambiguous_boundary)
+        write_dataset(fields, "nearest_boundary_ambiguous", nearest_boundary_ambiguous)
+        write_dataset(fields, "nearest_triple_junction", nearest_triple_junction)
         write_dataset(fields, "nearest_gb_point_rc", np.stack((nearest_indices[0], nearest_indices[1]), axis=-1).astype(np.int32), units="pixel")
         write_dataset(fields, "nearest_gb_local_tangent_xy", nearest_tangent, units="1")
         write_dataset(fields, "nearest_gb_local_normal_xy", nearest_normal, units="1")
@@ -417,7 +490,7 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         write_dataset(fields, "slip_trace_descriptor_valid", trace_valid.reshape((*working_grain.shape, 12)))
         grains = handle.create_group("grains")
         write_dataset(grains, "grain_id", grain_indices.astype(np.int32))
-        write_dataset(grains, "source_component_id", unique_raw.astype(np.int32))
+        write_dataset(grains, "source_component_id", source_component_id, definition="representative raw component; full provenance is retained in cleanup maps")
         write_dataset(grains, "orientation_id", working_orientation)
         write_dataset(grains, "euler", grain_euler, units="degree", convention="phi1,Phi,phi2")
         write_dataset(grains, "rotation_global_to_material", rotations, convention="Q_global_to_material")
@@ -462,16 +535,22 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         "cleanup_Amin_px": 8,
         "grid_shape": list(working_grain.shape),
         "raw_component_count": len(component_areas),
+        "working_grain_count_before_canonicalization": int(precanonical_n_grains),
         "working_grain_count": int(n_grains),
+        "canonicalization_merged_grain_count": int(precanonical_n_grains - n_grains),
         "reassigned_pixel_fraction": float(np.mean(working_fields["reassigned"])),
         "ambiguous_component_count": int(np.count_nonzero(raw_ambiguous)),
         "ambiguous_pixel_fraction": float(np.mean(cleanup_ambiguous_dense)),
+        "interfaces_before_canonicalization": len(pre_unique_keys),
         "n_boundaries": int(n_boundaries),
+        "zero_degree_interfaces_before_canonicalization": int(np.count_nonzero(pre_misorientation <= 1e-6)),
+        "zero_degree_interfaces": int(np.count_nonzero(misorientation <= 1e-6)),
+        "qa": {"nearest_boundary_incidence_fraction": float(np.mean(qa_incident)) if len(qa_incident) else 1.0, "nearest_neighbor_self_fraction": float(np.mean(qa_self_neighbor)) if len(qa_self_neighbor) else 0.0, "nonambiguous_pixel_count": len(qa_indices)},
         "grain_area_px": {"min": int(area.min()), "median": float(np.median(area)), "max": int(area.max())},
         "misorientation_deg": {"min": float(misorientation.min()), "median": float(np.median(misorientation)), "max": float(misorientation.max())},
         "mprime": {"min": float(np.nanmin(mprime_dense)), "median": float(np.nanmedian(mprime_dense)), "max": float(np.nanmax(mprime_dense))},
         "residual_burgers": {"min": float(np.nanmin(burgers_dense)), "median": float(np.nanmedian(burgers_dense)), "max": float(np.nanmax(burgers_dense))},
-        "trace": {"valid_fraction": float(np.mean(trace_valid)), "quality_median": float(np.nanmedian(nearest_quality)), "ambiguous_boundary_fraction": float(np.mean(ambiguous_boundary)), "local_radius_px": 3.0},
+        "trace": {"valid_fraction": float(np.mean(trace_valid)), "quality_median": float(np.nanmedian(nearest_quality)), "boundary_point_ambiguity_fraction": float(np.mean(ambiguous_boundary)), "nearest_boundary_ambiguous_fraction": float(np.mean(nearest_boundary_ambiguous)), "nearest_triple_junction_fraction": float(np.mean(nearest_triple_junction)), "local_radius_px": 3.0},
         "m20": {"working_grain_count": int(np.unique(working_grain[m20]).size), "reassigned_fraction": float(np.mean(working_fields["reassigned"][m20])), "global_area_inherited": True},
         "figures": figures,
         "h5_path": str(h5_path),

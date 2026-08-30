@@ -13,10 +13,12 @@ trace descriptors.
 
 - Source grid: `3600 × 3100`
 - Raw 4-connected components: `224,795`
-- Working grains: `4,963`
+- Working grains before exact-orientation canonicalisation: `4,963`
+- Working grains after exact-orientation canonicalisation: `4,958` (`5` adjacent same-orientation regions merged)
 - Pixels reassigned: `2.5083%`
 - Ambiguous components: `67` (`6.0e-6` of pixels)
-- Cleaned interfaces: `11,473`
+- Interfaces before canonicalisation: `11,473`; after: `11,465`
+- Zero-degree interfaces before canonicalisation: `4`; after: `0`
 - M20 working grains: `7`
 - M20 areas are inherited from the global working map.
 
@@ -32,14 +34,19 @@ fields were patched.
 | indicator | range / value |
 | --- | ---: |
 | grain area | 1–238,187 px² (median 14 px²) |
-| cubic boundary misorientation | 0–62.2129° (median 38.6708°) |
-| nearest-neighbour (m'_{\max}) | 0.4215–1.0000 (median 0.7870) |
+| cubic boundary misorientation | 0.03596–62.2129° (median 38.6733°) |
+| nearest-neighbour (m'_{\max}) | 0.4215–1.0000 (median 0.7868) |
 | nearest-neighbour residual Burgers | 2.19e-4–0.7638 (median 0.3743) |
-| valid local trace descriptors | 97.1461% of pixel×system entries |
+| valid local trace descriptors | 96.8118% of pixel×system entries |
 
-Pixels marked by `cleanup_ambiguous` or an ambiguous nearest interface have
+Pixels marked by `cleanup_ambiguous` or whose nearest boundary point is
+ambiguous/triple-junction have
 undefined nearest-neighbour crystallographic descriptors. Their raw and
 working IDs remain available for inspection.
+
+The nearest-point masks are explicitly propagated from the distance-transform
+indices (`nearest_boundary_ambiguous` and `nearest_triple_junction`), rather
+than testing the ambiguity of the current interior pixel.
 
 ## Local grain-boundary geometry
 
@@ -64,7 +71,7 @@ triple-junction regions are masked by `slip_trace_descriptor_valid`.
 ## QA gates
 
 - nearest boundary is incident to the current working grain on 100% of
-  11,102,444 non-ambiguous pixels;
+  11,062,671 non-ambiguous/non-triple-junction pixels;
 - nearest neighbour is never the current grain on that support;
 - local tangents and normals have unit norm to float32 precision;
 - trace angles lie in `[0°, 90°]`;
@@ -83,8 +90,12 @@ The HDF5 payload is intentionally not committed:
 
 ```text
 /tmp/derived_ebsd_microstructure_working_A8_v1/derived_ebsd_microstructure_working_A8_v1.h5
-SHA256 05265f236a00cefceb281992cc53d101134482c14e290c0f95d4c8531c95b1ed
+SHA256 17fda698c61b3669b33367cb6cee354d652e87d7481d1571f159e6830007b5be
 ```
 
 Figures are in `/tmp/derived_ebsd_microstructure_working_A8_v1/figures/`.
 No mechanics, Krylov, FEMU, SRIX or (k_\perp) screening was run.
+
+The product remains a working derived product, not a golden dataset. The
+canonicalisation uses exact final Euler triplets plus 4-connectivity after the
+reversible A_min=8 cleanup; no angular merge threshold is applied.
