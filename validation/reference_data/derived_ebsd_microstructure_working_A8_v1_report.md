@@ -72,6 +72,8 @@ triple-junction regions are masked by `slip_trace_descriptor_valid`.
 
 - nearest boundary is incident to the current working grain on 100% of
   11,062,671 non-ambiguous/non-triple-junction pixels;
+- nearest-neighbour IDs match the incident boundary pair on 100% of that
+  support;
 - nearest neighbour is never the current grain on that support;
 - local tangents and normals have unit norm to float32 precision;
 - trace angles lie in `[0°, 90°]`;

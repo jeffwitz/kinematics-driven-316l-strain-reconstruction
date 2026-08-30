@@ -22,6 +22,7 @@
   "zero_degree_interfaces": 0,
   "qa": {
     "nearest_boundary_incidence_fraction": 1.0,
+    "nearest_neighbor_match_fraction": 1.0,
     "nearest_neighbor_self_fraction": 0.0,
     "nonambiguous_pixel_count": 11062671
   },

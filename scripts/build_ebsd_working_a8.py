@@ -339,8 +339,11 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
     qa_valid = valid_pair & (~cleanup_ambiguous_dense) & (~nearest_boundary_ambiguous) & (~nearest_triple_junction)
     qa_indices = np.flatnonzero(qa_valid)
     qa_pairs = nearest_pair.ravel()[qa_indices]
-    qa_incident = np.isin(working_grain.ravel()[qa_indices], pair_a[qa_pairs]) | np.isin(working_grain.ravel()[qa_indices], pair_b[qa_pairs])
-    qa_self_neighbor = nearest_neighbor.ravel()[qa_indices] == working_grain.ravel()[qa_indices]
+    qa_grains = working_grain.ravel()[qa_indices]
+    qa_incident = (qa_grains == pair_a[qa_pairs]) | (qa_grains == pair_b[qa_pairs])
+    qa_expected_neighbor = np.where(qa_grains == pair_a[qa_pairs], pair_b[qa_pairs], pair_a[qa_pairs])
+    qa_neighbor_match = nearest_neighbor.ravel()[qa_indices] == qa_expected_neighbor
+    qa_self_neighbor = nearest_neighbor.ravel()[qa_indices] == qa_grains
     systems = slip_systems()
     directions_material = np.asarray([system.burgers for system in systems], dtype=np.float64)
     normals_material = np.asarray([system.normal for system in systems], dtype=np.float64)
@@ -545,7 +548,7 @@ def build(source: Path, cleanup_path: Path, work: Path) -> dict[str, object]:
         "n_boundaries": int(n_boundaries),
         "zero_degree_interfaces_before_canonicalization": int(np.count_nonzero(pre_misorientation <= 1e-6)),
         "zero_degree_interfaces": int(np.count_nonzero(misorientation <= 1e-6)),
-        "qa": {"nearest_boundary_incidence_fraction": float(np.mean(qa_incident)) if len(qa_incident) else 1.0, "nearest_neighbor_self_fraction": float(np.mean(qa_self_neighbor)) if len(qa_self_neighbor) else 0.0, "nonambiguous_pixel_count": len(qa_indices)},
+        "qa": {"nearest_boundary_incidence_fraction": float(np.mean(qa_incident)) if len(qa_incident) else 1.0, "nearest_neighbor_match_fraction": float(np.mean(qa_neighbor_match)) if len(qa_neighbor_match) else 1.0, "nearest_neighbor_self_fraction": float(np.mean(qa_self_neighbor)) if len(qa_self_neighbor) else 0.0, "nonambiguous_pixel_count": len(qa_indices)},
         "grain_area_px": {"min": int(area.min()), "median": float(np.median(area)), "max": int(area.max())},
         "misorientation_deg": {"min": float(misorientation.min()), "median": float(np.median(misorientation)), "max": float(misorientation.max())},
         "mprime": {"min": float(np.nanmin(mprime_dense)), "median": float(np.nanmedian(mprime_dense)), "max": float(np.nanmax(mprime_dense))},
