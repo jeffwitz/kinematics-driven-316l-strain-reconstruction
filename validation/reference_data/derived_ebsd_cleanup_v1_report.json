@@ -1,0 +1,160 @@
+{
+  "schema_version": "ebsd_cleanup_screening_v1",
+  "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "source_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
+  "grid_shape": [
+    3600,
+    3100
+  ],
+  "exact_orientation_label_count": 29238,
+  "four_connected_component_count": 224795,
+  "eight_connected_component_count": 145505,
+  "source_label_component_count_delta": 195557,
+  "variants": {
+    "amin_1": {
+      "minimum_area_px": 1,
+      "raw_component_count": 224795,
+      "final_grain_count": 27609,
+      "small_component_count": 197232,
+      "eligible_small_component_count": 197206,
+      "ambiguous_component_count": 46,
+      "reassigned_pixel_count": 197186,
+      "reassigned_pixel_fraction": 0.017668996415770608,
+      "ambiguous_pixel_fraction": 4.121863799283154e-06,
+      "fmax_quantiles": [
+        0.25,
+        0.6666666666666666,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fusion_misorientation_quantiles_deg": [
+        0.010710627941128715,
+        6.851335333954309,
+        19.891512544549038,
+        34.272433359781566,
+        59.43891535862062
+      ],
+      "final_area_quantiles_px": [
+        1.0,
+        2.0,
+        4.0,
+        7.0,
+        237511.0
+      ],
+      "m20_raw_orientation_count": 15,
+      "m20_clean_grain_count": 7,
+      "m20_reassigned_pixel_fraction": 0.04,
+      "m20_ambiguous_pixel_fraction": 0.0
+    },
+    "amin_2": {
+      "minimum_area_px": 2,
+      "raw_component_count": 224795,
+      "final_grain_count": 18916,
+      "small_component_count": 205918,
+      "eligible_small_component_count": 205884,
+      "ambiguous_component_count": 39,
+      "reassigned_pixel_count": 214565,
+      "reassigned_pixel_fraction": 0.01922625448028674,
+      "ambiguous_pixel_fraction": 3.4946236559139785e-06,
+      "fmax_quantiles": [
+        0.25,
+        0.6666666666666666,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fusion_misorientation_quantiles_deg": [
+        0.010710627941128715,
+        7.4554303337042,
+        20.926181875280243,
+        34.84590797475328,
+        59.43891535862062
+      ],
+      "final_area_quantiles_px": [
+        1.0,
+        4.0,
+        6.0,
+        9.0,
+        237651.0
+      ],
+      "m20_raw_orientation_count": 15,
+      "m20_clean_grain_count": 7,
+      "m20_reassigned_pixel_fraction": 0.04,
+      "m20_ambiguous_pixel_fraction": 0.0
+    },
+    "amin_4": {
+      "minimum_area_px": 4,
+      "raw_component_count": 224795,
+      "final_grain_count": 11190,
+      "small_component_count": 213651,
+      "eligible_small_component_count": 213608,
+      "ambiguous_component_count": 46,
+      "reassigned_pixel_count": 240737,
+      "reassigned_pixel_fraction": 0.02157141577060932,
+      "ambiguous_pixel_fraction": 4.121863799283154e-06,
+      "fmax_quantiles": [
+        0.25,
+        0.6666666666666666,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fusion_misorientation_quantiles_deg": [
+        0.010710627941128715,
+        7.713766674560144,
+        21.467778200787922,
+        35.162326038536456,
+        59.43891535862062
+      ],
+      "final_area_quantiles_px": [
+        1.0,
+        6.0,
+        8.0,
+        12.0,
+        237852.0
+      ],
+      "m20_raw_orientation_count": 15,
+      "m20_clean_grain_count": 7,
+      "m20_reassigned_pixel_fraction": 0.04,
+      "m20_ambiguous_pixel_fraction": 0.0
+    },
+    "amin_8": {
+      "minimum_area_px": 8,
+      "raw_component_count": 224795,
+      "final_grain_count": 4963,
+      "small_component_count": 219899,
+      "eligible_small_component_count": 219835,
+      "ambiguous_component_count": 67,
+      "reassigned_pixel_count": 279923,
+      "reassigned_pixel_fraction": 0.025082706093189962,
+      "ambiguous_pixel_fraction": 6.003584229390681e-06,
+      "fmax_quantiles": [
+        0.25,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fusion_misorientation_quantiles_deg": [
+        0.011238718671719987,
+        7.90696684233269,
+        21.91246440129088,
+        35.441792520572236,
+        59.655088652535206
+      ],
+      "final_area_quantiles_px": [
+        1.0,
+        10.0,
+        14.0,
+        522.5,
+        238187.0
+      ],
+      "m20_raw_orientation_count": 15,
+      "m20_clean_grain_count": 7,
+      "m20_reassigned_pixel_fraction": 0.04,
+      "m20_ambiguous_pixel_fraction": 0.0
+    }
+  },
+  "artifact_policy": "local compressed maps; no HDF5/golden promotion"
+}
