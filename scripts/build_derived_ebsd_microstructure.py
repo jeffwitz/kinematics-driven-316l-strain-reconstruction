@@ -130,7 +130,7 @@ def _orientation_preflight(angles: NDArray[np.float64]) -> dict[str, object]:
         "smallest_positive_difference_deg": float(positive.min()) if positive.size else 0.0,
         "clear_numeric_gap_detected": clear_gap,
         "candidate_log10_gap": gap_bounds,
-        "decision": "proceed" if clear_gap else "STOP: no defensible numerical quantization gap",
+        "decision": "diagnostic only; no segmentation gate",
     }
 
 
@@ -356,6 +356,70 @@ def _plot_qa(
     return paths
 
 
+def _plot_segmentation_qa(
+    out: Path,
+    orientation_label: NDArray[np.int32],
+    grain_ids: NDArray[np.int32],
+    crop: tuple[int, int, int, int] = M20_CROP,
+) -> list[str]:
+    """Write only the segmentation figures needed before product promotion."""
+
+    out.mkdir(parents=True, exist_ok=True)
+    paths: list[str] = []
+    images = [
+        ("segmentation_orientation_labels_global.png", orientation_label, "Exact stored orientation labels"),
+        ("segmentation_grain_ids_global.png", grain_ids, "4-connected grain IDs"),
+    ]
+    for filename, image, title in images:
+        figure, axis = plt.subplots(figsize=(9, 7), constrained_layout=True)
+        axis.imshow(image[::8, ::8], origin="upper", cmap="nipy_spectral")
+        axis.set_title(title)
+        axis.set_xlabel("EBSD column (downsampled)")
+        axis.set_ylabel("EBSD row (downsampled)")
+        path = out / filename
+        figure.savefig(path, dpi=130)
+        plt.close(figure)
+        paths.append(str(path))
+    r0, r1, c0, c1 = crop
+    for filename, image, title in (
+        ("segmentation_orientation_labels_m20.png", orientation_label[r0:r1, c0:c1], "Exact labels, M20 crop"),
+        ("segmentation_grain_ids_m20.png", grain_ids[r0:r1, c0:c1], "Grain IDs, M20 crop"),
+    ):
+        figure, axis = plt.subplots(figsize=(7, 7), constrained_layout=True)
+        axis.imshow(image, origin="upper", cmap="nipy_spectral", interpolation="nearest")
+        axis.set_title(title)
+        axis.set_xlabel("EBSD column")
+        axis.set_ylabel("EBSD row")
+        path = out / filename
+        figure.savefig(path, dpi=160)
+        plt.close(figure)
+        paths.append(str(path))
+    return paths
+
+
+def _sample_cubic_neighbour_misorientation(
+    orientation_label: NDArray[np.int32], unique_angles: NDArray[np.float64], sample_size: int = 2000
+) -> NDArray[np.float64]:
+    """Compute true cubic misorientation for a deterministic neighbour sample."""
+
+    right_a, right_b = orientation_label[:, :-1], orientation_label[:, 1:]
+    down_a, down_b = orientation_label[:-1], orientation_label[1:]
+    pairs = np.concatenate(
+        (
+            np.column_stack((right_a[right_a != right_b], right_b[right_a != right_b])),
+            np.column_stack((down_a[down_a != down_b], down_b[down_a != down_b])),
+        )
+    )
+    if not len(pairs):
+        return np.empty(0, dtype=np.float64)
+    rotations = rotations_from_euler_bunge_deg(unique_angles)
+    indices = np.linspace(0, len(pairs) - 1, min(sample_size, len(pairs)), dtype=int)
+    return np.asarray(
+        [cubic_misorientation_angle(rotations[int(i)], rotations[int(j)]) for i, j in pairs[indices]],
+        dtype=np.float64,
+    )
+
+
 def build(source: Path, work: Path) -> dict[str, object]:
     work.mkdir(parents=True, exist_ok=True)
     h5_path = work / "derived_ebsd_microstructure_v1.h5"
@@ -366,51 +430,71 @@ def build(source: Path, work: Path) -> dict[str, object]:
         orientation_attrs = {key: value for key, value in handle["orientation/phi1"].attrs.items()}
     angles = np.stack((phi1, capital_phi, phi2), axis=-1)
     preflight = _orientation_preflight(angles)
-    if not bool(preflight["clear_numeric_gap_detected"]):
-        report = {
-            "schema_version": "derived_ebsd_microstructure_v1_preflight",
-            "candidate_product": False,
-            "source": str(source),
-            "source_sha256": _sha256(source),
-            "grid_shape": list(angles.shape[:2]),
-            "source_orientation_datasets": ["orientation/phi1", "orientation/Phi", "orientation/phi2"],
-            "source_orientation_dtype": "float64",
-            "source_orientation_finite": True,
-            "source_orientation_attrs": {
-                key: (value.tolist() if hasattr(value, "tolist") else value)
-                for key, value in orientation_attrs.items()
-            },
-            "orientation_convention": "Bunge ZXZ Euler angles, degrees (source metadata)",
-            "preflight": preflight,
-            "n_orientation_labels_exact": len(np.unique(angles.reshape(-1, 3), axis=0)),
-            "decision": "blocked; do not invent a segmentation tolerance",
-            "required_next_action": "audit source export/quantization or provide an independently justified numerical tolerance",
-            "golden_status": "no product generated",
-        }
-        (work / "derived_ebsd_microstructure_v1_preflight.json").write_text(json.dumps(report, indent=2) + "\n")
-        (work / "derived_ebsd_microstructure_v1_preflight.md").write_text(
-            "# Derived EBSD microstructure preflight\n\n"
-            "> **STOP:** the stored Euler maps do not expose a defensible numerical quantisation gap. No grain segmentation or HDF5 product was generated.\n\n"
-            f"- Source: `{source}`\n"
-            f"- Grid: `{report['grid_shape']}`\n"
-            f"- Exact triplets: `{report['n_orientation_labels_exact']}`\n"
-            f"- Exact neighbour equality: `{preflight['exact_equal_fraction']:.6f}`\n"
-            f"- Positive neighbour-difference quantiles [deg]: `{preflight['positive_difference_quantiles_deg']}`\n"
-            f"- Smallest positive difference [deg]: `{preflight['smallest_positive_difference_deg']:.8g}`\n\n"
-            "The non-zero differences form a continuous distribution from approximately "
-            "`1.8e-3 deg` upward; no empty interval separates numerical quantisation from "
-            "orientation changes. Exact triplets would fragment the map into boundary/noise "
-            "components, while an angular tolerance would be an unverified physical rule.\n\n"
-            "Next action: audit the source export/quantisation or supply an independently justified "
-            "numerical tolerance. The candidate HDF5 remains ungenerated and is not golden.\n"
-        )
-        return report
     neighbour_gap = _smallest_positive_neighbour_gap(angles)
     orientation_label, unique_angles = _orientation_labels(angles)
     del phi1, capital_phi, phi2, angles
     grain_ids, grain = _build_grain_ids(orientation_label, unique_angles)
     n_grains = int(grain_ids.max()) + 1
     area = np.asarray(grain["area_px"], dtype=np.int64)
+    component_counts = np.bincount(
+        np.asarray(grain["orientation_id"], dtype=np.int32), minlength=len(unique_angles)
+    )
+    cubic_neighbour_sample = _sample_cubic_neighbour_misorientation(orientation_label, unique_angles)
+    rotations_for_qa = rotations_from_euler_bunge_deg(unique_angles)
+    orthogonality_error = float(
+        np.max(np.abs(np.einsum("nij,nkj->nik", rotations_for_qa, rotations_for_qa) - np.eye(3)))
+    )
+    determinant_range = [float(np.min(np.linalg.det(rotations_for_qa))), float(np.max(np.linalg.det(rotations_for_qa)))]
+    segmentation_stats = {
+        "n_orientation_labels": len(unique_angles),
+        "n_grains_after_connectivity": n_grains,
+        "extra_components": n_grains - len(unique_angles),
+        "component_count_quantiles": np.quantile(component_counts, [0, 0.5, 0.9, 0.99, 1]).tolist(),
+        "fraction_labels_with_one_component": float(np.mean(component_counts == 1)),
+        "grain_area_quantiles_px": np.quantile(area, [0, 0.5, 0.9, 0.99, 1]).tolist(),
+        "grain_area_mean_px": float(np.mean(area)),
+        "fraction_grains_area_le_1_px": float(np.mean(area <= 1)),
+        "fraction_grains_area_le_2_px": float(np.mean(area <= 2)),
+        "fraction_grains_area_le_4_px": float(np.mean(area <= 4)),
+        "fraction_pixels_in_area_le_1_px_grains": float(np.sum(area[area <= 1]) / area.sum()),
+        "fraction_pixels_in_area_le_2_px_grains": float(np.sum(area[area <= 2]) / area.sum()),
+        "fraction_pixels_in_area_le_4_px_grains": float(np.sum(area[area <= 4]) / area.sum()),
+        "rotation_max_orthogonality_error": orthogonality_error,
+        "rotation_determinant_range": determinant_range,
+        "cubic_neighbour_misorientation_sample_deg": {
+            "count": len(cubic_neighbour_sample),
+            "min": float(np.min(cubic_neighbour_sample)) if len(cubic_neighbour_sample) else None,
+            "median": float(np.median(cubic_neighbour_sample)) if len(cubic_neighbour_sample) else None,
+            "max": float(np.max(cubic_neighbour_sample)) if len(cubic_neighbour_sample) else None,
+            "quantiles": np.quantile(cubic_neighbour_sample, [0.01, 0.5, 0.99]).tolist() if len(cubic_neighbour_sample) else [],
+        },
+    }
+    segmentation_figures = _plot_segmentation_qa(work / "segmentation_figures", orientation_label, grain_ids)
+    # Exact labels that split into many one-pixel components are an export QA
+    # finding, not a reason to silently introduce an angular segmentation rule.
+    if segmentation_stats["fraction_grains_area_le_4_px"] > 0.9 and segmentation_stats["component_count_quantiles"][2] > 1:
+        report = {
+            "schema_version": "derived_ebsd_microstructure_v1_segmentation_qa",
+            "candidate_product": False,
+            "source": str(source),
+            "source_sha256": _sha256(source),
+            "grid_shape": list(grain_ids.shape),
+            "source_orientation_datasets": ["orientation/phi1", "orientation/Phi", "orientation/phi2"],
+            "source_orientation_dtype": "float64",
+            "source_orientation_finite": True,
+            "source_orientation_attrs": {key: (value.tolist() if hasattr(value, "tolist") else value) for key, value in orientation_attrs.items()},
+            "raw_euler_component_difference": preflight,
+            "orientation_convention": "Bunge ZXZ Euler angles, degrees (source metadata)",
+            "rotation_validation": {"max_orthogonality_error": orthogonality_error, "determinant_range": determinant_range},
+            "segmentation": segmentation_stats,
+            "segmentation_figures": segmentation_figures,
+            "decision": "pathological exact segmentation candidate; do not generate derived HDF5",
+            "required_next_action": "audit the source export or define a provenance-backed plateau interpretation before building grain descriptors",
+            "golden_status": "no product generated",
+        }
+        (work / "derived_ebsd_microstructure_v1_segmentation_qa.json").write_text(json.dumps(report, indent=2) + "\n")
+        (work / "derived_ebsd_microstructure_v1_segmentation_qa.md").write_text(_markdown_segmentation_report(report))
+        return report
     deq = 2.0 * np.sqrt(area / np.pi)
     deq_dense = _grain_dense(grain_ids, deq)
 
@@ -748,6 +832,43 @@ def _markdown_report(report: dict[str, object]) -> str:
     )
 
 
+def _markdown_segmentation_report(report: dict[str, object]) -> str:
+    segmentation = report["segmentation"]
+    misorientation = segmentation["cubic_neighbour_misorientation_sample_deg"]
+    return "\n".join(
+        [
+            "# Exact EBSD plateau segmentation QA",
+            "",
+            "> The raw Euler-component diagnostic is not a crystallographic misorientation and is not used as a segmentation gate.",
+            "",
+            f"- Source: `{report['source']}`",
+            f"- Global grid: `{report['grid_shape']}`",
+            f"- Exact stored triplets: **{segmentation['n_orientation_labels']}**",
+            f"- Four-connected components: **{segmentation['n_grains_after_connectivity']}**",
+            f"- Additional components beyond labels: **{segmentation['extra_components']}**",
+            f"- Labels with one component: `{segmentation['fraction_labels_with_one_component']:.6f}`",
+            f"- Grain-area quantiles [px²]: `{segmentation['grain_area_quantiles_px']}`",
+            f"- Grain median/mean area [px²]: `{segmentation['grain_area_quantiles_px'][1]}` / `{segmentation['grain_area_mean_px']:.3f}`",
+            f"- Fractions of grains with area ≤1/2/4 px²: `{segmentation['fraction_grains_area_le_1_px']:.6f}`, `{segmentation['fraction_grains_area_le_2_px']:.6f}`, `{segmentation['fraction_grains_area_le_4_px']:.6f}`",
+            f"- Fractions of pixels in those grains: `{segmentation['fraction_pixels_in_area_le_1_px_grains']:.6f}`, `{segmentation['fraction_pixels_in_area_le_2_px_grains']:.6f}`, `{segmentation['fraction_pixels_in_area_le_4_px_grains']:.6f}`",
+            "",
+            "## Rotation and true neighbour misorientation checks",
+            "",
+            f"- Maximum rotation orthogonality error: `{segmentation['rotation_max_orthogonality_error']:.3e}`",
+            f"- Rotation determinant range: `{segmentation['rotation_determinant_range']}`",
+            f"- Cubic misorientation sample [deg]: `{misorientation}`",
+            "",
+            "The exact segmentation is statistically dominated by one-pixel and very small components (median area 1 px²). This is a pathological candidate for a grain-mean product and requires source-export/plateau curation before descriptor construction. No angular threshold was introduced.",
+            "",
+            "QA figures:",
+            *[f"- `{path}`" for path in report["segmentation_figures"]],
+            "",
+            "No HDF5 product was generated or promoted to golden. No mechanics, k_perp screening, FEMU, or SRIX calculation was run.",
+            "",
+        ]
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
@@ -757,7 +878,7 @@ def main() -> None:
     summary_keys = (
         ("grid_shape", "n_orientation_labels", "n_grains", "n_boundaries", "h5_path", "h5_sha256")
         if report.get("candidate_product")
-        else ("grid_shape", "n_orientation_labels_exact", "decision")
+        else ("grid_shape", "decision")
     )
     print(json.dumps({key: report[key] for key in summary_keys}, indent=2))
 

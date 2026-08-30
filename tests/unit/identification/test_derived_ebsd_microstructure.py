@@ -22,4 +22,4 @@ def test_preflight_rejects_a_non_separated_positive_difference_distribution() ->
     angles = np.stack((row[:, None], np.zeros((12, 1)), np.zeros((12, 1))), axis=-1)
     result = _orientation_preflight(angles)
     assert result["clear_numeric_gap_detected"] is False
-    assert str(result["decision"]).startswith("STOP")
+    assert result["decision"] == "diagnostic only; no segmentation gate"

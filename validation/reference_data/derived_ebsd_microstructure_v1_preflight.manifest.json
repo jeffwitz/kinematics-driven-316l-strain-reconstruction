@@ -1,10 +1,10 @@
 {
-  "schema_version": "derived_ebsd_microstructure_v1_preflight",
+  "schema_version": "derived_ebsd_microstructure_v1_segmentation_qa",
   "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
   "source_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
   "grid_shape": [3600, 3100],
   "payload_generated": false,
-  "reason": "no defensible numerical quantization gap in stored neighbouring Euler differences",
+  "reason": "exact stored-label connectivity is pathologically fragmented; source export semantics require audit",
   "report": "validation/reference_data/derived_ebsd_microstructure_v1_preflight.md",
   "json_report": "validation/reference_data/derived_ebsd_microstructure_v1_preflight.json",
   "generator": "scripts/build_derived_ebsd_microstructure.py"
