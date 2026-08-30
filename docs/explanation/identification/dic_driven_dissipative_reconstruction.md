@@ -200,3 +200,39 @@ It is therefore a constructive intermediate layer between the qualified
 mechanical/adjoint core and constitutive validation.  Its next scientific test
 requires better-curated DIC, EBSD and loading histories, not another attempt to
 optimise the present P43 record.
+
+## Comparing the reconstructed correction with SRIX
+
+The observable Krylov correction also provides a model-adequacy diagnostic for
+an existing constitutive family.  On the registered M20 P43 case, the local
+SRIX tangent was evaluated jointly in three stable cubic-elastic coordinates
+$(\log K,\log C',\log C_{44})$ and four plastic coordinates
+$(\log\tau_0,\log R,\log Q,\log b)$.  The elastic directions add genuinely new
+observable content: the squared projection of the raw rank-16 Krylov correction
+increases from $0.064$ for plastic parameters alone to $0.217$ for the combined
+tangent.  For the final SRIX residual, the corresponding increase is
+$0.210\rightarrow0.413$.
+
+The combined SVD remains structured rather than arbitrary: its leading mode is
+mostly plastic, modes 2--4 are mostly elastic, and the near-null direction is
+still essentially the $Q-b$ combination.  Thus the result does not reject the
+basic elastic or plastic ingredients.  It shows instead that the current
+seven-parameter family generates only part of the field morphology required by
+the data; a large correction remains transverse to its local tangent.
+
+Six bounded nonlinear probes along the first three combined modes were then
+used to test whether ordinary manifold curvature reaches that transverse
+component.  The largest residual reduction was about 1.7%, and the transverse
+Krylov alignment $c_{K,\perp}$ was small and changed sign between opposite
+probes (maximum about $+0.154$).  The recorded conclusion is therefore:
+
+> SRIX contains relevant physical ingredients, but the present constitutive
+> structure is too constrained to generate the full data-driven correction;
+> the remaining issue is more plausibly a missing constitutive direction than
+> a simple bad choice of parameter values.
+
+This is a registered-case methodological diagnostic only.  It does not
+constitute a material calibration, a rejection of SRIX in general, or an
+experimental claim about 316L while physical DIC--EBSD co-registration remains
+unproven.  Full mode compositions, projections and probe metrics are recorded
+in `validation/p0043_srix_elastic_plastic_manifold_probe_m20.md`.
