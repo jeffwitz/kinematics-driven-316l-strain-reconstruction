@@ -1,0 +1,45 @@
+{
+  "schema_version": "derived_ebsd_microstructure_v1_preflight",
+  "candidate_product": false,
+  "source": "/home/jeff/CNRS/Theses/Adil/essais/9_numerical/CP_dataset.h5",
+  "source_sha256": "e2684b5353a53b03871c8ced5ed457c3d2de88de3fb8b7560071bf6d3cda28fb",
+  "grid_shape": [3600, 3100],
+  "source_orientation_datasets": ["orientation/phi1", "orientation/Phi", "orientation/phi2"],
+  "source_orientation_dtype": "float64",
+  "source_orientation_finite": true,
+  "source_orientation_attrs": {
+    "cropped_from_uncropped": "rows 400:4000, cols 1211:4311",
+    "description": "Euler angle phi1, per-pixel grain-mean",
+    "original_shape": [4400, 5400],
+    "pixel_size_um": 1.84,
+    "shape": [3600, 3100],
+    "source_file": "3.1.phi1_mean_per_grain_field.npy",
+    "units": "deg"
+  },
+  "orientation_convention": "Bunge ZXZ Euler angles, degrees (source metadata)",
+  "preflight": {
+    "neighbour_pairs": 22313300,
+    "exact_equal_fraction": 0.9608147158869373,
+    "positive_difference_count": 874353,
+    "positive_difference_quantiles_deg": [
+      0.0018111616373062134,
+      0.048569679260253906,
+      0.2758979797363281,
+      1.34750634431839,
+      2.954536646604538,
+      31.536414623260498,
+      110.34287929534912,
+      198.0254729092121,
+      255.00170254707336,
+      1410.3348503112793
+    ],
+    "smallest_positive_difference_deg": 0.0018111616373062134,
+    "clear_numeric_gap_detected": false,
+    "candidate_log10_gap": [],
+    "decision": "STOP: no defensible numerical quantization gap"
+  },
+  "n_orientation_labels_exact": 29238,
+  "decision": "blocked; do not invent a segmentation tolerance",
+  "required_next_action": "audit source export/quantization or provide an independently justified numerical tolerance",
+  "golden_status": "no product generated"
+}
