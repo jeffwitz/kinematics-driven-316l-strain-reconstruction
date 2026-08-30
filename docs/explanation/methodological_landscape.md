@@ -189,7 +189,7 @@ conditions under which a method would be worth revisiting:
 | FEMU | Which constitutive parameters best explain the observations? | Synthetic/registered demonstrations; experimental use remains open |
 | SVD | Which parameter combinations can the observations distinguish? | Geometric and synthetic/registered demonstrations |
 | REGM | Can an equilibrium proxy accelerate or screen inversion? | Exploratory; registered negative transfer to the current DIC observable |
-| DIC-driven dissipative reconstruction | What plastic correction is required by measured kinematics before choosing a constitutive law? | Reduced/full-field reconstruction and dissipative projection demonstrated on registered cases; constitutive uniqueness open |
+| DIC-driven dissipative reconstruction | What plastic correction is required by measured kinematics, and which constitutive directions are missing from a candidate law? | Reduced/full-field reconstruction, dissipative projection and registered-case tangent/curvature diagnostics demonstrated; constitutive enrichment open |
 | Reduced basis | How can a high-dimensional latent field be represented? | Synthetic demonstrations; basis richness and nullspaces documented |
 | TANN | Can a causal constitutive evolution law be learned from data? | Pipeline and sequential adjoint developed; no qualified learned law |
 | Nonlocal coupling | Is spatial interaction missing from a local material model? | Spatial redistribution demonstrated; physical length scale uncalibrated |
@@ -211,7 +211,11 @@ conditions under which a method would be worth revisiting:
   choosing a full constitutive law first.  The observable increment is exactly
   in the FCC tensor span, but the dissipative constraint still leaves a large
   zero-work boundary; this is a route to constitutive hypotheses, not a
-  recovery of true slip histories.  Revisit it on curated full-field cases.
+  recovery of true slip histories.  Its newer role is to compare the
+  reconstructed correction with a candidate constitutive tangent and identify
+  observable directions that the current law does not generate.  Revisit it on
+  curated multi-case data to screen structured descriptors such as grain size,
+  boundary proximity, misorientation and slip-transfer compatibility.
 * **TANN** established a causal state-propagation and sequential-adjoint
   pipeline, but the registered learning configuration did not establish a
   useful scientific constitutive law.  The old runs are provenance and
@@ -230,7 +234,7 @@ campaign history:
 | Branch | Revisit trigger |
 |---|---|
 | REGM | A demonstrated link between the equilibrium proxy and the measured observable |
-| DIC-driven dissipative reconstruction | Curated multi-case full-field data with independently supported registration, allowing reconstructed directions to be compared across experiments and against candidate constitutive laws |
+| DIC-driven dissipative reconstruction | Curated multi-case full-field data with independently supported registration, allowing transverse reconstructed directions to be compared across experiments and used to screen physically structured constitutive enrichments |
 | Richer reduced bases | Observable-aware basis design or orthogonalisation |
 | TANN | Physically grounded parameterisation and curated multi-case data |
 | Nonlocal coupling | Curated localisation data showing a qualified local model is inadequate |
