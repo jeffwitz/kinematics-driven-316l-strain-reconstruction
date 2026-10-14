@@ -6,7 +6,7 @@ Research software for full-field computational mechanics and inverse identificat
 
 This project grew out of the **DIC-based in-house FEM implementation developed by Adil Kılınç**, available at:
 
-<https://github.com/kilincadil/DIC-based-inHouse-FEM>
+<https://github.com/adilkilinc/DIC-based-inHouse-FEM>
 
 That implementation provided the initial computational basis for the kinematics-driven reconstruction workflow, in particular the structured finite-element treatment of DIC-prescribed boundary conditions and the J2/Ludwik reference model. Its scientific contribution remains part of the provenance of this repository and should be acknowledged when the present software is used or cited.
 
